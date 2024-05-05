@@ -1,0 +1,28 @@
+{
+  "name": "semiphemeral",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/main/index.cjs",
+  "scripts": {
+    "dev:renderer": "vite packages/renderer",
+    "build:renderer": "vue-tsc -p packages/renderer/tsconfig.json --noEmit && vite build packages/renderer",
+    "build:preload": "tsc -p packages/preload/tsconfig.json --noEmit && vite build packages/preload",
+    "build:main": "tsc -p packages/main/tsconfig.json --noEmit && vite build packages/main",
+    "build": "npm run build:renderer && npm run build:preload && npm run build:main",
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development tsx scripts/dev-server.ts"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.2",
+    "tsx": "^4.9.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0",
+    "vue-tsc": "^2.0.6"
+  }
+}
