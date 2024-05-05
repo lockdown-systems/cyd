@@ -11,12 +11,15 @@
         "isolatedModules": true,
         "lib": [
             "esnext",
-            "dom"
+            "dom",
+            "es6"
         ],
         "types": [
             "node",
             "vite/client"
-        ]
+        ],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
     },
     "include": [
         "./src/**/*.ts",
