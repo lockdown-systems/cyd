@@ -30,7 +30,7 @@ async function createWindow() {
 
     // Define the URL to use for the `BrowserWindow`, depending on the DEV env.
     const pageUrl = import.meta.env.DEV
-        ? 'http://localhost:3000'
+        ? 'http://localhost:5173'
         : new URL('../dist/renderer/index.html', `file://${__dirname}`).toString()
 
     await browserWindow.loadURL(pageUrl)
