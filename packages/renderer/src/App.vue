@@ -1,30 +1,88 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { ref, onMounted, provide } from "vue"
+import { Service } from "./models";
+import ErrorMessage from './components/ErrorMessage.vue';
+
+// Error messages
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+
+// const infoMessage = ref("");
+
+provide('showError', (message: string) => {
+  errorMessage.value = message;
+  showErrorModal.value = true;
+});
+
+provide('hideError', () => {
+  errorMessage.value = '';
+  showErrorModal.value = false;
+});
+
+// Services
+const services = ref<Service[]>([]);
+const getServices = async () => {
+  // invoke("get_services").then((data) => {
+  //   services.value = data as Service[];
+  // }).catch(error => {
+  //   console.error('Failed to load services:', error);
+  // });
+}
+provide('services', services);
+provide('getServices', getServices);
+
+onMounted(() => {
+  getServices();
+  // infoMessage.value = `This app is using Chrome (v${versions.chrome()}), Node.js (v${versions.node()}), and Electron (v${versions.electron()})`;
+});
 </script>
 
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <Suspense>
+    <template #default>
+      <div class="h-100">
+        <router-view></router-view>
+        <ErrorMessage v-if="showErrorModal" :message="errorMessage" @close="showErrorModal = false" />
+      </div>
+    </template>
+    <template #fallback>
+      <div class="container mt-5">
+        <div class="text-center mb-4">
+          <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Logo" style="width: 120px;" />
+        </div>
+        <p class="lead text-muted text-center">
+          Automatically delete your old posts, except the ones you want to keep.
+        </p>
+        <p id="versions"></p>
+      </div>
+    </template>
+  </Suspense>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<style>
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+#app {
+  height: 100%;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+.modal-backdrop.show {
+  display: none;
+}
+
+.modal.show {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1050;
 }
 </style>
