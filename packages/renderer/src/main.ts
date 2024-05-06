@@ -8,11 +8,13 @@ import App from "./App.vue";
 import Services from "./pages/Services.vue";
 import NewService from "./pages/NewService.vue";
 import Service from "./pages/Service.vue";
+import TestWebview from "./pages/TestWebview.vue";
 
 const routes = [
     { path: '/', component: Services },
     { path: '/new', component: NewService },
-    { path: '/service/:id', component: Service }
+    { path: '/service/:id', component: Service },
+    { path: '/test-webview', component: TestWebview }
 ]
 
 const router = createRouter({

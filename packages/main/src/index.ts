@@ -1,8 +1,8 @@
-import "reflect-metadata"
+// import "reflect-metadata"
 import { join } from 'node:path'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 
-import { AppDataSource } from "./data-source"
+// import { AppDataSource } from "./data-source"
 
 const isSingleInstance = app.requestSingleInstanceLock()
 
@@ -11,9 +11,9 @@ if (!isSingleInstance) {
     process.exit(0)
 }
 
-AppDataSource.initialize().then(async () => {
-    console.log("Database is initialized")
-}).catch(error => console.log(error))
+// AppDataSource.initialize().then(async () => {
+//     console.log("Database is initialized")
+// }).catch(error => console.log(error))
 
 async function createWindow() {
     const browserWindow = new BrowserWindow({
@@ -21,7 +21,7 @@ async function createWindow() {
         width: 1200,
         height: 768,
         webPreferences: {
-            webviewTag: false,
+            webviewTag: true,
             preload: join(__dirname, '../preload/index.cjs'),
             nodeIntegration: false
         },

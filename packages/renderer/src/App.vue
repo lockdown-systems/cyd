@@ -53,7 +53,6 @@ onMounted(() => {
         <p class="lead text-muted text-center">
           Automatically delete your old posts, except the ones you want to keep.
         </p>
-        <p id="versions"></p>
       </div>
     </template>
   </Suspense>

@@ -51,6 +51,9 @@ const serviceClicked = async (index: number) => {
           <p class="text-center">
             <router-link to="/new" class="btn btn-primary">Add First Service</router-link>
           </p>
+          <p class="text-center">
+            <router-link to="/test-webview" class="btn btn-primary">Test Webview</router-link>
+          </p>
         </div>
       </div>
     </template>
