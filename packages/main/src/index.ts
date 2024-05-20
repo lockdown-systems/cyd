@@ -18,7 +18,7 @@ if (!isSingleInstance) {
 async function createWindow() {
     const browserWindow = new BrowserWindow({
         show: false,
-        width: 1200,
+        width: 1024,
         height: 768,
         webPreferences: {
             webviewTag: true,
