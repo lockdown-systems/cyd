@@ -19,7 +19,6 @@
     "@types/bootstrap": "^5.2.10",
     "bootstrap": "^5.3.3",
     "electron-log": "^5.1.4",
-    "reflect-metadata": "^0.2.2",
     "vue": "^3.4.21",
     "vue-router": "^4.3.2"
   },

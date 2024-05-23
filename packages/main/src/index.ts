@@ -1,24 +1,20 @@
-import "reflect-metadata" // Required by TypeORM
 import log from 'electron-log/main';
 import { join } from 'node:path'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
-
-import { initializeDatabase } from "./database"
+import { PrismaClient } from '@prisma/client'
+import { getConfig } from './config'
 
 const isSingleInstance = app.requestSingleInstanceLock()
-
 if (!isSingleInstance) {
     app.quit()
     process.exit(0)
 }
 
+const prisma = new PrismaClient()
+
 // Initialize the logger
 log.initialize();
 log.info('User data folder is at:', app.getPath('userData'))
-
-// Initialize the data source
-log.info('Initializing data source...')
-const appDataSource = initializeDatabase()
 
 async function createWindow() {
     const browserWindow = new BrowserWindow({
@@ -37,12 +33,14 @@ async function createWindow() {
     })
 
     // IPC events
+
     ipcMain.on('open-url', (event, url) => {
         shell.openExternal(url)
     })
 
-    ipcMain.on('get-user', (event) => {
-        // TODO: return logged in user
+    ipcMain.on('get-user', async (event) => {
+        const loggedInUser: string | null = await getConfig(prisma, 'loggedInUser')
+        return loggedInUser
     })
 
     ipcMain.on('authenticate', (event) => {
@@ -64,7 +62,7 @@ async function createWindow() {
 
 app.on('second-instance', () => {
     createWindow().catch((err) =>
-        console.error('Error while trying to prevent second-instance Electron event:', err)
+        log.error('Error while trying to prevent second-instance Electron event:', err)
     )
 })
 
@@ -76,11 +74,15 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
     createWindow().catch((err) =>
-        console.error('Error while trying to handle activate Electron event:', err)
+        log.error('Error while trying to handle activate Electron event:', err)
     )
 })
+
+app.on('before-quit', async () => {
+    await prisma.$disconnect()
+});
 
 app
     .whenReady()
     .then(createWindow)
-    .catch((e) => console.error('Failed to create window:', e))
+    .catch((e) => log.error('Failed to create window:', e))
