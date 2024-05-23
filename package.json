@@ -15,6 +15,7 @@
     "dev": "cross-env NODE_ENV=development tsx scripts/dev-server.ts"
   },
   "dependencies": {
+    "@prisma/client": "^5.14.0",
     "@types/bootstrap": "^5.2.10",
     "bootstrap": "^5.3.3",
     "electron-log": "^5.1.4",
