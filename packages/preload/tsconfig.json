@@ -10,7 +10,9 @@
         "lib": [
             "esnext",
             "dom"
-        ]
+        ],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
     },
     "include": [
         "./**/*.ts"

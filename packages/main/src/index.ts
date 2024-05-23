@@ -1,8 +1,9 @@
-// import "reflect-metadata"
+import "reflect-metadata" // Required by TypeORM
+import log from 'electron-log/main';
 import { join } from 'node:path'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 
-// import { AppDataSource } from "./data-source"
+import { initializeDatabase } from "./database"
 
 const isSingleInstance = app.requestSingleInstanceLock()
 
@@ -11,9 +12,13 @@ if (!isSingleInstance) {
     process.exit(0)
 }
 
-// AppDataSource.initialize().then(async () => {
-//     console.log("Database is initialized")
-// }).catch(error => console.log(error))
+// Initialize the logger
+log.initialize();
+log.info('User data folder is at:', app.getPath('userData'))
+
+// Initialize the data source
+log.info('Initializing data source...')
+const appDataSource = initializeDatabase()
 
 async function createWindow() {
     const browserWindow = new BrowserWindow({
@@ -31,8 +36,21 @@ async function createWindow() {
         browserWindow?.show()
     })
 
+    // IPC events
     ipcMain.on('open-url', (event, url) => {
         shell.openExternal(url)
+    })
+
+    ipcMain.on('get-user', (event) => {
+        // TODO: return logged in user
+    })
+
+    ipcMain.on('authenticate', (event) => {
+        // TODO: authenticate with server
+    })
+
+    ipcMain.on('token', (event) => {
+        // TODO: get a token from the server
     })
 
     const pageUrl = import.meta.env.DEV
