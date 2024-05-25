@@ -1,7 +1,7 @@
 import log from 'electron-log/main';
 import { join } from 'node:path'
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
-import { PrismaClient } from '@prisma/client'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { prisma, runPrismaMigrations } from './prisma'
 import { getConfig, setConfig } from './config'
 
 const isSingleInstance = app.requestSingleInstanceLock()
@@ -14,32 +14,11 @@ if (!isSingleInstance) {
 log.initialize();
 log.info('User data folder is at:', app.getPath('userData'))
 
-// Initialize the database, and log SQL queries
-const prisma = new PrismaClient({
-    log: [
-        {
-            emit: 'event',
-            level: 'query',
-        },
-        {
-            emit: 'stdout',
-            level: 'error',
-        },
-        {
-            emit: 'stdout',
-            level: 'info',
-        },
-        {
-            emit: 'stdout',
-            level: 'warn',
-        },
-    ],
-})
-prisma.$on('query', (e) => {
-    log.log(`Query: ${e.query}, Params: ${e.params}`)
-})
-
 async function createWindow() {
+    // Run database migrations
+    await runPrismaMigrations();
+
+    // Create the browser window
     const browserWindow = new BrowserWindow({
         show: false,
         width: 1024,

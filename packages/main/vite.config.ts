@@ -26,8 +26,9 @@ export default defineConfig({
                 'electron',
                 // Exclude Node builtin modules.
                 ...builtinModules.flatMap((p) => [p, `node:${p}`]),
-                // Exclude Prisma Client from the build
+                // Exclude Prisma from the build
                 '@prisma/client',
+                `@prisma/client/runtime`
             ],
             output: {
                 // Will be named `index.cjs`.
