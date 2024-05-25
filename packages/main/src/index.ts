@@ -75,6 +75,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('activate', () => {
+    // Create the window
     createWindow().catch((err) =>
         log.error('Error while trying to handle activate Electron event:', err)
     )
@@ -84,6 +85,7 @@ app.on('before-quit', async () => {
     await prisma.$disconnect()
 });
 
+app.enableSandbox()
 app
     .whenReady()
     .then(createWindow)
