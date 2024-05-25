@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
 
+const userEmail = ref<string>("");
+
+onMounted(() => {
+    // Get the logged in user
+    (window as any).api.getConfig("userEmail").then((value: string) => {
+        userEmail.value = value;
+    });
+});
 </script>
 
 <template>
@@ -22,6 +31,8 @@
                         </div>
                     </form>
                 </div>
+
+                <p>Logged in user: {{ userEmail }}</p>
             </div>
         </div>
     </div>

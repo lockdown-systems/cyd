@@ -2,7 +2,7 @@ import log from 'electron-log/main';
 import { join } from 'node:path'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { PrismaClient } from '@prisma/client'
-import { getConfig } from './config'
+import { getConfig, setConfig } from './config'
 
 const isSingleInstance = app.requestSingleInstanceLock()
 if (!isSingleInstance) {
@@ -10,11 +10,34 @@ if (!isSingleInstance) {
     process.exit(0)
 }
 
-const prisma = new PrismaClient()
-
 // Initialize the logger
 log.initialize();
 log.info('User data folder is at:', app.getPath('userData'))
+
+// Initialize the database, and log SQL queries
+const prisma = new PrismaClient({
+    log: [
+        {
+            emit: 'event',
+            level: 'query',
+        },
+        {
+            emit: 'stdout',
+            level: 'error',
+        },
+        {
+            emit: 'stdout',
+            level: 'info',
+        },
+        {
+            emit: 'stdout',
+            level: 'warn',
+        },
+    ],
+})
+prisma.$on('query', (e) => {
+    log.log(`Query: ${e.query}, Params: ${e.params}`)
+})
 
 async function createWindow() {
     const browserWindow = new BrowserWindow({
@@ -34,13 +57,13 @@ async function createWindow() {
 
     // IPC events
 
-    ipcMain.on('open-url', (event, url) => {
-        shell.openExternal(url)
+    ipcMain.handle('getConfig', async (_, key) => {
+        const value = await getConfig(prisma, key)
+        return value
     })
 
-    ipcMain.on('get-user', async (event) => {
-        const loggedInUser: string | null = await getConfig(prisma, 'loggedInUser')
-        return loggedInUser
+    ipcMain.on('setConfig', async (_, key, value) => {
+        await setConfig(prisma, key, value)
     })
 
     ipcMain.on('authenticate', (event) => {

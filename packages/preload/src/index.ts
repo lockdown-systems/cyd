@@ -1,11 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('api', {
-    openUrl: (url: string) => {
-        ipcRenderer.send('open-url', url)
+    getConfig: (key: string): Promise<string> => {
+        return ipcRenderer.invoke('getConfig', key);
     },
-    getUser: () => {
-        ipcRenderer.send('get-user')
+    setConfig: (key: string, value: string) => {
+        ipcRenderer.send('setConfig', key, value)
     },
     authenticate: () => {
         ipcRenderer.send('authenticate')

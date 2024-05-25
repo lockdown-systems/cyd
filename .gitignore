@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Prisma dev database
+prisma/dev.db
+prisma/dev/db-journal
