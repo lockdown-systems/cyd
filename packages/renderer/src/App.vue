@@ -2,6 +2,10 @@
 import { ref, onMounted, provide } from "vue"
 import ErrorMessage from './components/ErrorMessage.vue';
 
+// API URL
+const apiUrl = ref('');
+provide('apiUrl', apiUrl);
+
 // Error messages
 const showErrorModal = ref(false);
 const errorMessage = ref('');
@@ -16,7 +20,8 @@ provide('hideError', () => {
   showErrorModal.value = false;
 });
 
-onMounted(() => {
+onMounted(async () => {
+  apiUrl.value = await (window as any).api.getApiUrl();
 });
 </script>
 <template>

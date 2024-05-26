@@ -10,9 +10,9 @@
     "build:preload": "tsc -p packages/preload/tsconfig.json --noEmit && vite build packages/preload",
     "build:main": "tsc -p packages/main/tsconfig.json --noEmit && vite build packages/main",
     "build": "npm run build:renderer && npm run build:preload && npm run build:main",
-    "start": "npm run build && electron .",
+    "start": "SEMIPHEMERAL_ENV=dev npm run build && electron .",
     "start-inspect": "npm run build && electron --inspect=9229 .",
-    "dev": "cross-env NODE_ENV=development tsx scripts/dev-server.ts"
+    "dev": "cross-env NODE_ENV=development SEMIPHEMERAL_ENV=local tsx scripts/dev-server.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",

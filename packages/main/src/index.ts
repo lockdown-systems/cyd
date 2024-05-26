@@ -36,6 +36,17 @@ async function createWindow() {
 
     // IPC events
 
+    ipcMain.handle('getApiUrl', async (_) => {
+        // Get SEMIPHEMERAL_ENV from the environment
+        const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV
+        if (semiphemeralEnv == "local") {
+            return "http://localhost:8080/api/v1"
+        } else if (semiphemeralEnv == "staging") {
+            return "https://staging-semiphemeral.fly.dev/api/v1/"
+        }
+        return "https://semiphemeral.com/api/v1"
+    })
+
     ipcMain.handle('getConfig', async (_, key) => {
         const value = await getConfig(prisma, key)
         return value
