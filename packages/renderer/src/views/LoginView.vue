@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, inject } from 'vue';
+import type {Ref} from 'vue';
 import { useRouter } from 'vue-router'
 
 import { getApiInfo } from '../helpers';
@@ -7,6 +8,7 @@ import { getApiInfo } from '../helpers';
 const router = useRouter();
 
 const showError = inject('showError') as (message: string) => void;
+const apiUrl = inject('apiUrl') as Ref<string>;
 
 const userEmail = ref('');
 const verificationCode = ref('');
@@ -23,7 +25,23 @@ function authenticate() {
         return;
     }
 
-    // TODO: authenticate
+    fetch(`${apiUrl.value}/authenticate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: userEmail.value
+        })
+    }).then(async (response) => {
+        if(response.ok) {
+            loginState.value = 'authenticating';
+        } else {
+            showError('Failed to authenticate. Please try again.');
+        }
+    }).catch((error) => {
+        showError('Failed to authenticate: '+error.message);
+    });
 }
 
 function token() {
