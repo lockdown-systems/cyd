@@ -1,3 +1,4 @@
+import os from 'os'
 import log from 'electron-log/main';
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
@@ -17,6 +18,24 @@ log.info('User data folder is at:', app.getPath('userData'))
 async function createWindow() {
     // Run database migrations
     await runPrismaMigrations();
+
+    // If a device description has not been created yet, make one now
+    const deviceName = await getConfig(prisma, "deviceDescription")
+    if (!deviceName) {
+        let description = "";
+        switch (os.platform()) {
+            case 'darwin':
+                description += 'macOS: ';
+            case 'win32':
+                description += 'Windows: ';
+            case 'linux':
+                description += 'Linux: ';
+            default:
+                description += 'Unknown OS: ';
+        }
+        description += os.hostname();
+        await setConfig(prisma, "deviceDescription", description)
+    }
 
     // Create the browser window
     const browserWindow = new BrowserWindow({

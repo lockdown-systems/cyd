@@ -3,63 +3,86 @@ import { onMounted, ref, inject } from 'vue';
 import type {Ref} from 'vue';
 import { useRouter } from 'vue-router'
 
-import { getApiInfo } from '../helpers';
+import API from '../api';
+import { getDeviceInfo } from '../helpers';
 
 const router = useRouter();
 
 const showError = inject('showError') as (message: string) => void;
-const apiUrl = inject('apiUrl') as Ref<string>;
+const api = inject('api') as Ref<API>;
 
 const userEmail = ref('');
 const verificationCode = ref('');
 
-const apiInfo = ref<ApiInfo | null>(null);
+const deviceInfo = ref<DeviceInfo | null>(null);
 
-type LoginState = 'start' | 'authenticating' | 'token';
+type LoginState = 'start' | 'registerDevice';
 const loginState = ref<LoginState>('start');
 
-function authenticate() {
-    console.log('Authenticating...')
+async function authenticate() {
     if(!userEmail.value) {
         showError('Please enter your email address.');
         return;
     }
 
-    fetch(`${apiUrl.value}/authenticate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+    try {
+        await api.value?.authenticate({
             email: userEmail.value
-        })
-    }).then(async (response) => {
-        if(response.ok) {
-            loginState.value = 'authenticating';
-        } else {
-            showError('Failed to authenticate. Please try again.');
-        }
-    }).catch((error) => {
-        showError('Failed to authenticate: '+error.message);
-    });
-}
-
-function token() {
-    console.log('Token...')
-    if(!verificationCode.value) {
-        showError('Please enter the verification code.');
+        });
+    } catch {
+        showError("Failed to authenticate. Please try again later.");
         return;
     }
 
-    // TODO: get token
+    await (window as any).api.setConfig("userEmail", userEmail.value);
+    loginState.value = "registerDevice";
+}
+
+async function registerDevice() {
+    if(!deviceInfo.value) {
+        showError('Failed to get device info. Please try again later.');
+        return;
+    }
+
+    // Register the device
+    try {
+        const registerDeviceApiResponse = await api.value?.registerDevice({
+            email: userEmail.value,
+            verificationCode: verificationCode.value,
+            description: deviceInfo.value?.deviceDescription,
+        });
+        await (window as any).api.setConfig("deviceToken", registerDeviceApiResponse.deviceToken);
+
+        // Get an API token
+        const tokenApiResponse = await api.value?.getToken({
+            email: userEmail.value,
+            deviceToken: registerDeviceApiResponse.deviceToken,
+        });
+        await (window as any).api.setConfig("apiToken", tokenApiResponse.token);
+
+        // Redirect to the dashboard
+        router.push('/dashboard');
+    } catch {
+        showError('Failed to register device. Please try again later.');
+    }
+}
+
+function goBack() {
+    loginState.value = 'start';
 }
 
 onMounted(async () => {
-    apiInfo.value = await getApiInfo();
-    userEmail.value = apiInfo.value?.userEmail;
-    
+    try {
+        deviceInfo.value = await getDeviceInfo(api.value);
+        if(deviceInfo.value) {
+            userEmail.value = deviceInfo.value.userEmail;
+        }
+    } catch {
+        showError("Failed to get device info. Please try again later.");
+    }
+
     // Already logged in? Redirect to the dashboard
-    if(apiInfo.value?.valid) {
+    if(deviceInfo.value?.valid) {
         router.push('/dashboard');
     }
 });
@@ -84,10 +107,11 @@ onMounted(async () => {
                                 <input type="email" class="form-control" id="email" placeholder="Email address" v-model="userEmail">
                                 <button type="submit" class="btn btn-primary mt-2" @click="authenticate">Continue</button>
                             </template>
-                            <template v-else-if="loginState == 'authenticating'">
+                            <template v-else-if="loginState == 'registerDevice'">
                                 <p>We've emailed you a verification code. Enter it below.</p>
-                                <input type="text" class="form-control" id="verificationCode" placeholder="000000" v-model="verificationCode">
-                                <button type="submit" class="btn btn-primary mt-2" @click="token">Continue</button>
+                                <input type="text" class="form-control" id="verificationCode" v-model="verificationCode">
+                                <button type="submit" class="btn mt-2" @click="goBack">Back</button>
+                                <button type="submit" class="btn btn-primary mt-2" @click="registerDevice">Continue</button>
                             </template>
                             <template v-else-if="loginState == 'token'">
                                 <p>Logging in...</p>

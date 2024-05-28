@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, provide } from "vue"
+
+import API from './api';
 import ErrorMessage from './components/ErrorMessage.vue';
 
-// API URL
-const apiUrl = ref('');
-provide('apiUrl', apiUrl);
+// API
+const api = ref<API | null>(null);
+provide('api', api);
 
 // Error messages
 const showErrorModal = ref(false);
@@ -21,7 +23,13 @@ provide('hideError', () => {
 });
 
 onMounted(async () => {
-  apiUrl.value = await (window as any).api.getApiUrl();
+  const apiUrl = await (window as any).api.getApiUrl();
+  if(apiUrl) {
+    api.value = new API(apiUrl);
+  } else {
+    showErrorModal.value = true;
+    errorMessage.value = 'Unable to get API URL. Please contact support.';
+  }
 });
 </script>
 <template>
