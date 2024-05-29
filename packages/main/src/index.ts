@@ -26,10 +26,13 @@ async function createWindow() {
         switch (os.platform()) {
             case 'darwin':
                 description += 'macOS: ';
+                break
             case 'win32':
                 description += 'Windows: ';
+                break
             case 'linux':
                 description += 'Linux: ';
+                break
             default:
                 description += 'Unknown OS: ';
         }

@@ -19,22 +19,35 @@ const deviceInfo = ref<DeviceInfo | null>(null);
 type LoginState = 'start' | 'registerDevice';
 const loginState = ref<LoginState>('start');
 
+function disableStartFields() {
+    document.getElementById("email")?.setAttribute("disabled", "true");
+    document.getElementById("start-continue")?.setAttribute("disabled", "true");
+}
+
+function enableStartFields() {
+    document.getElementById("email")?.setAttribute("disabled", "false");
+    document.getElementById("start-continue")?.setAttribute("disabled", "false");
+}
+
 async function authenticate() {
     if(!userEmail.value) {
         showError('Please enter your email address.');
         return;
     }
 
-    try {
-        await api.value?.authenticate({
-            email: userEmail.value
-        });
-    } catch {
-        showError("Failed to authenticate. Please try again later.");
+    disableStartFields();
+
+    const resp = await api.value?.authenticate({
+        email: userEmail.value
+    });
+    if ("error" in resp && resp.error) {
+        showError(resp.message);
+        enableStartFields();
         return;
     }
 
     await (window as any).api.setConfig("userEmail", userEmail.value);
+    enableStartFields();
     loginState.value = "registerDevice";
 }
 
@@ -45,26 +58,42 @@ async function registerDevice() {
     }
 
     // Register the device
-    try {
-        const registerDeviceApiResponse = await api.value?.registerDevice({
-            email: userEmail.value,
-            verificationCode: verificationCode.value,
-            description: deviceInfo.value?.deviceDescription,
-        });
-        await (window as any).api.setConfig("deviceToken", registerDeviceApiResponse.deviceToken);
-
-        // Get an API token
-        const tokenApiResponse = await api.value?.getToken({
-            email: userEmail.value,
-            deviceToken: registerDeviceApiResponse.deviceToken,
-        });
-        await (window as any).api.setConfig("apiToken", tokenApiResponse.token);
-
-        // Redirect to the dashboard
-        router.push('/dashboard');
-    } catch {
+    const registerDeviceResp = await api.value?.registerDevice({
+        email: userEmail.value,
+        verificationCode: verificationCode.value,
+        description: deviceInfo.value?.deviceDescription,
+    });
+    if ("error" in registerDeviceResp) {
         showError('Failed to register device. Please try again later.');
+        return;
     }
+    if(!registerDeviceResp.deviceToken) {
+        showError('Failed to register device. Please try again later.');
+        return;
+    }
+
+    // Save the device token
+    await (window as any).api.setConfig("deviceToken", registerDeviceResp.deviceToken);
+
+    // Get an API token
+    const getTokenResp = await api.value?.getToken({
+        email: userEmail.value,
+        deviceToken: registerDeviceResp.deviceToken,
+    });
+    if("error" in getTokenResp) {
+        showError('Failed to register device. Please try again later.');
+        return;
+    }
+    if(!getTokenResp.token) {
+        showError('Failed to get API token. Please try again later.');
+        return;
+    }
+
+    // Save the API token
+    await (window as any).api.setConfig("apiToken", getTokenResp.token);
+
+    // Redirect to the dashboard
+    router.push('/dashboard');
 }
 
 function goBack() {
@@ -100,12 +129,12 @@ onMounted(async () => {
                 </p>
 
                 <div class="d-flex flex-column align-items-center">
-                    <form class="w-50" @submit.prevent>
+                    <form @submit.prevent>
                         <div class="form-group d-flex flex-column align-items-center">
                             <template v-if="loginState == 'start'">
                                 <p>Login to Semiphemeral using your email address.</p>
                                 <input type="email" class="form-control" id="email" placeholder="Email address" v-model="userEmail">
-                                <button type="submit" class="btn btn-primary mt-2" @click="authenticate">Continue</button>
+                                <button type="submit" class="btn btn-primary mt-2" id="start-continue" @click="authenticate">Continue</button>
                             </template>
                             <template v-else-if="loginState == 'registerDevice'">
                                 <p>We've emailed you a verification code. Enter it below.</p>

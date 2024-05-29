@@ -8,6 +8,12 @@ type DeviceInfo = {
     valid: boolean;
 };
 
+// API error response
+type ApiErrorResponse = {
+    error: boolean;
+    message: string;
+};
+
 // API models for POST /api/v1/authenticate
 type AuthApiRequest = {
     email: string;
