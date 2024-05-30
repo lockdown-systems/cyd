@@ -11,7 +11,7 @@ export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
         "valid": false
     };
 
-    const deviceDescription = await (window as any).api.getConfig("deviceDescription");
+    const deviceDescription = await (window as any).electron.getConfig("deviceDescription");
     if (!deviceDescription) {
         // This should never happen
         deviceInfo["deviceDescription"] = "Unknown device";
@@ -19,16 +19,16 @@ export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
         deviceInfo["deviceDescription"] = deviceDescription;
     }
 
-    const userEmail = await (window as any).api.getConfig("userEmail");
+    const userEmail = await (window as any).electron.getConfig("userEmail");
     if (userEmail) {
         deviceInfo["userEmail"] = userEmail;
 
-        const deviceToken = await (window as any).api.getConfig("deviceToken");
+        const deviceToken = await (window as any).electron.getConfig("deviceToken");
         if (deviceToken && deviceToken.length > 0) {
             deviceInfo["deviceToken"] = deviceToken;
 
             // Do we already have a valid API token?
-            const apiToken = await (window as any).api.getConfig("apiToken");
+            const apiToken = await (window as any).electron.getConfig("apiToken");
             if (apiToken && apiToken.length > 0) {
                 deviceInfo["apiToken"] = apiToken;
 
