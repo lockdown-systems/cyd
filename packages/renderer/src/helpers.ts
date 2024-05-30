@@ -1,4 +1,4 @@
-import API from './api';
+import API from './ServerApi';
 
 // This function checks to see if there's a userEmail and deviceToken, and if so if the
 // deviceToken is valid. The email could still be there, even if the token is invalid.

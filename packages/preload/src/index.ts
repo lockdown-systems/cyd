@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-contextBridge.exposeInMainWorld('api', {
+contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
         return ipcRenderer.invoke('getApiUrl')
     },

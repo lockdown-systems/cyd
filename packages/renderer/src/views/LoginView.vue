@@ -3,13 +3,13 @@ import { onMounted, ref, inject } from 'vue';
 import type {Ref} from 'vue';
 import { useRouter } from 'vue-router'
 
-import API from '../api';
+import ServerAPI from '../ServerApi';
 import { getDeviceInfo } from '../helpers';
 
 const router = useRouter();
 
 const showError = inject('showError') as (message: string) => void;
-const api = inject('api') as Ref<API>;
+const serverApi = inject('api') as Ref<ServerAPI>;
 
 const userEmail = ref('');
 const verificationCode = ref('');
@@ -37,7 +37,7 @@ async function authenticate() {
 
     disableStartFields();
 
-    const resp = await api.value?.authenticate({
+    const resp = await serverApi.value?.authenticate({
         email: userEmail.value
     });
     if ("error" in resp && resp.error) {
@@ -46,7 +46,7 @@ async function authenticate() {
         return;
     }
 
-    await (window as any).api.setConfig("userEmail", userEmail.value);
+    await (window as any).electron.setConfig("userEmail", userEmail.value);
     enableStartFields();
     loginState.value = "registerDevice";
 }
@@ -58,7 +58,7 @@ async function registerDevice() {
     }
 
     // Register the device
-    const registerDeviceResp = await api.value?.registerDevice({
+    const registerDeviceResp = await serverApi.value?.registerDevice({
         email: userEmail.value,
         verificationCode: verificationCode.value,
         description: deviceInfo.value?.deviceDescription,
@@ -73,10 +73,10 @@ async function registerDevice() {
     }
 
     // Save the device token
-    await (window as any).api.setConfig("deviceToken", registerDeviceResp.deviceToken);
+    await (window as any).electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
 
     // Get an API token
-    const getTokenResp = await api.value?.getToken({
+    const getTokenResp = await serverApi.value?.getToken({
         email: userEmail.value,
         deviceToken: registerDeviceResp.deviceToken,
     });
@@ -90,7 +90,7 @@ async function registerDevice() {
     }
 
     // Save the API token
-    await (window as any).api.setConfig("apiToken", getTokenResp.token);
+    await (window as any).electron.setConfig("apiToken", getTokenResp.token);
 
     // Redirect to the dashboard
     router.push('/dashboard');
@@ -102,7 +102,7 @@ function goBack() {
 
 onMounted(async () => {
     try {
-        deviceInfo.value = await getDeviceInfo(api.value);
+        deviceInfo.value = await getDeviceInfo(serverApi.value);
         if(deviceInfo.value) {
             userEmail.value = deviceInfo.value.userEmail;
         }

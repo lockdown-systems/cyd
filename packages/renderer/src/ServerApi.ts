@@ -5,7 +5,7 @@ function fetchWithTimeout(resource: RequestInfo, options: RequestInit, timeout =
     });
 }
 
-export default class API {
+export default class ServerAPI {
     private apiUrl: string;
 
     constructor(apiUrl: string) {
