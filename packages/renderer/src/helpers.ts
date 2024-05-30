@@ -45,11 +45,17 @@ export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
                         email: deviceInfo["userEmail"],
                         deviceToken: deviceInfo["deviceToken"]
                     })
-                    deviceInfo["apiToken"] = tokenApiResponse.token;
-                    deviceInfo["valid"] = true;
-                    (window as any).api.setConfig("apiToken", deviceInfo["apiToken"]);
+                    if ("error" in tokenApiResponse) {
+                        console.error("Error getting API token", tokenApiResponse.message);
+                        deviceInfo["deviceToken"] = "";
+                        (window as any).api.setConfig("deviceToken", "");
+                        (window as any).api.setConfig("apiToken", "");
+                    } else {
+                        deviceInfo["apiToken"] = tokenApiResponse.token;
+                        deviceInfo["valid"] = true;
+                        (window as any).api.setConfig("apiToken", deviceInfo["apiToken"]);
+                    }
                 } catch (error) {
-                    // We can't get a new API token, so the device token is no longer valid
                     console.error("Error getting API token", error);
                     deviceInfo["deviceToken"] = "";
                     (window as any).api.setConfig("deviceToken", "");
