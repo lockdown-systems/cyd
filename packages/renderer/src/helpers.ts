@@ -1,8 +1,8 @@
-import API from './ServerApi';
+import ServerAPI from './ServerApi';
 
 // This function checks to see if there's a userEmail and deviceToken, and if so if the
 // deviceToken is valid. The email could still be there, even if the token is invalid.
-export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
+export async function getDeviceInfo(): Promise<DeviceInfo> {
     let deviceInfo: DeviceInfo = {
         "userEmail": "",
         "deviceDescription": "",
@@ -10,6 +10,9 @@ export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
         "apiToken": "",
         "valid": false
     };
+
+    const serverApi = new ServerAPI();
+    await serverApi.initialize();
 
     const deviceDescription = await (window as any).electron.getConfig("deviceDescription");
     if (!deviceDescription) {
@@ -33,7 +36,8 @@ export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
                 deviceInfo["apiToken"] = apiToken;
 
                 // Check if the API token is valid
-                if (await api.ping()) {
+                const pingResp = await serverApi.ping();
+                if (pingResp) {
                     deviceInfo["valid"] = true;
                 }
             }
@@ -41,7 +45,7 @@ export async function getDeviceInfo(api: API): Promise<DeviceInfo> {
             // If we don't have a valid API token, get a new one
             if (!deviceInfo["valid"]) {
                 try {
-                    const tokenApiResponse = await api.getToken({
+                    const tokenApiResponse = await serverApi.getToken({
                         email: deviceInfo["userEmail"],
                         deviceToken: deviceInfo["deviceToken"]
                     })

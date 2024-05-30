@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref, inject } from 'vue';
-import type { Ref } from 'vue';
 import { useRouter } from 'vue-router'
 
 import ServerAPI from '../ServerApi';
@@ -9,7 +8,8 @@ import { getDeviceInfo } from '../helpers';
 const router = useRouter();
 
 const showError = inject('showError') as (message: string) => void;
-const serverApi = inject('api') as Ref<ServerAPI>;
+
+const serverApi = ref(new ServerAPI());
 
 const userEmail = ref('');
 const verificationCode = ref('');
@@ -37,7 +37,7 @@ async function authenticate() {
 
     disableStartFields();
 
-    const resp = await serverApi.value?.authenticate({
+    const resp = await serverApi.value.authenticate({
         email: userEmail.value
     });
     if ("error" in resp && resp.error) {
@@ -54,21 +54,24 @@ async function authenticate() {
 async function registerDevice() {
     if (!deviceInfo.value) {
         showError('Failed to get device info. Please try again later.');
+        await goBack();
         return;
     }
 
     // Register the device
-    const registerDeviceResp = await serverApi.value?.registerDevice({
+    const registerDeviceResp = await serverApi.value.registerDevice({
         email: userEmail.value,
         verificationCode: verificationCode.value,
         description: deviceInfo.value?.deviceDescription,
     });
     if ("error" in registerDeviceResp) {
         showError('Failed to register device. Please try again later.');
+        await goBack();
         return;
     }
     if (!registerDeviceResp.deviceToken) {
         showError('Failed to register device. Please try again later.');
+        await goBack();
         return;
     }
 
@@ -76,16 +79,18 @@ async function registerDevice() {
     await (window as any).electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
 
     // Get an API token
-    const getTokenResp = await serverApi.value?.getToken({
+    const getTokenResp = await serverApi.value.getToken({
         email: userEmail.value,
         deviceToken: registerDeviceResp.deviceToken,
     });
     if ("error" in getTokenResp) {
         showError('Failed to register device. Please try again later.');
+        await goBack();
         return;
     }
     if (!getTokenResp.token) {
         showError('Failed to get API token. Please try again later.');
+        await goBack();
         return;
     }
 
@@ -96,14 +101,16 @@ async function registerDevice() {
     router.push('/dashboard');
 }
 
-function goBack() {
+async function goBack() {
     verificationCode.value = '';
     loginState.value = 'start';
 }
 
 onMounted(async () => {
+    await serverApi.value.initialize();
+
     try {
-        deviceInfo.value = await getDeviceInfo(serverApi.value);
+        deviceInfo.value = await getDeviceInfo();
         if (deviceInfo.value) {
             userEmail.value = deviceInfo.value.userEmail;
         }

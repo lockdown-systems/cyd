@@ -6,10 +6,12 @@ function fetchWithTimeout(resource: RequestInfo, options: RequestInit, timeout =
 }
 
 export default class ServerAPI {
-    private apiUrl: string;
+    private apiUrl: string | null = null;
 
-    constructor(apiUrl: string) {
-        this.apiUrl = apiUrl;
+    constructor() { }
+
+    async initialize(): Promise<void> {
+        this.apiUrl = await (window as any).electron.getApiUrl();
     }
 
     returnError(message: string) {
@@ -84,10 +86,14 @@ export default class ServerAPI {
         });
     }
 
-    async ping(): Promise<boolean | ApiErrorResponse> {
-        const response = await fetchWithTimeout(`${this.apiUrl}/ping`, {
-            method: "GET"
-        });
-        return (response.status == 200);
+    async ping(): Promise<boolean> {
+        try {
+            const response = await fetchWithTimeout(`${this.apiUrl}/ping`, {
+                method: "GET"
+            });
+            return (response.status == 200);
+        } catch {
+            return false;
+        }
     }
 }
