@@ -15,6 +15,7 @@
     "dev": "cross-env NODE_ENV=development SEMIPHEMERAL_ENV=local tsx scripts/dev-server.ts"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.2",
     "@prisma/client": "^5.14.0",
     "@types/bootstrap": "^5.2.10",
     "bootstrap": "^5.3.3",

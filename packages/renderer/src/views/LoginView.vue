@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref, inject } from 'vue';
+import { onMounted, ref, inject, Ref } from 'vue';
 import { useRouter } from 'vue-router'
 
 import ServerAPI from '../ServerApi';
-import { getDeviceInfo } from '../helpers';
 
 const router = useRouter();
 
 const showError = inject('showError') as (message: string) => void;
+const userEmail = inject('userEmail') as Ref<string>;
 
 const serverApi = ref(new ServerAPI());
 
-const userEmail = ref('');
 const verificationCode = ref('');
 
 const deviceInfo = ref<DeviceInfo | null>(null);
@@ -108,20 +107,6 @@ async function goBack() {
 
 onMounted(async () => {
     await serverApi.value.initialize();
-
-    try {
-        deviceInfo.value = await getDeviceInfo();
-        if (deviceInfo.value) {
-            userEmail.value = deviceInfo.value.userEmail;
-        }
-    } catch {
-        showError("Failed to get device info. Please try again later.");
-    }
-
-    // Already logged in? Redirect to the dashboard
-    if (deviceInfo.value?.valid) {
-        router.push('/dashboard');
-    }
 });
 </script>
 
