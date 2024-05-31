@@ -52,18 +52,18 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
                     if ("error" in tokenApiResponse) {
                         console.error("Error getting API token", tokenApiResponse.message);
                         deviceInfo["deviceToken"] = "";
-                        (window as any).api.setConfig("deviceToken", "");
-                        (window as any).api.setConfig("apiToken", "");
+                        (window as any).electron.setConfig("deviceToken", "");
+                        (window as any).electron.setConfig("apiToken", "");
                     } else {
                         deviceInfo["apiToken"] = tokenApiResponse.token;
                         deviceInfo["valid"] = true;
-                        (window as any).api.setConfig("apiToken", deviceInfo["apiToken"]);
+                        (window as any).electron.setConfig("apiToken", deviceInfo["apiToken"]);
                     }
                 } catch (error) {
                     console.error("Error getting API token", error);
                     deviceInfo["deviceToken"] = "";
-                    (window as any).api.setConfig("deviceToken", "");
-                    (window as any).api.setConfig("apiToken", "");
+                    (window as any).electron.setConfig("deviceToken", "");
+                    (window as any).electron.setConfig("apiToken", "");
                 }
             }
         }
