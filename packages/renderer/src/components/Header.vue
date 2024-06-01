@@ -1,30 +1,64 @@
 <script setup lang="ts">
-defineProps({
-    userEmail: {
-        type: String,
+import { inject, Ref } from 'vue';
+import { useRouter } from 'vue-router'
+
+import ServerAPI from '../ServerApi';
+
+const router = useRouter();
+
+const showError = inject('showError') as (message: string) => void;
+const userEmail = inject('userEmail') as Ref<string>;
+const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
+
+const signOut = async () => {
+    if (deviceInfo.value === null) {
+        showError('Cannot sign out without device info');
+        return;
     }
-});
+
+    // Delete the device
+    const deleteDeviceResp = await serverApi.value.deleteDevice({
+        deviceToken: deviceInfo.value.deviceToken
+    });
+    if (deleteDeviceResp !== undefined && deleteDeviceResp.error) {
+        console.log("Error deleting device", deleteDeviceResp.message)
+    }
+
+    // Sign out
+    const logoutResp = await serverApi.value.logout();
+    if ("error" in logoutResp && logoutResp.error) {
+        console.log("Error logging out", logoutResp.message);
+    }
+
+    // Delete the device from the local storage
+    await (window as any).electron.setConfig("apiToken", "");
+    await (window as any).electron.setConfig("deviceToken", "");
+
+    // Redirect to the login page
+    router.push('/');
+};
 </script>
 
 <template>
-    <header class="d-flex flex-column flex-md-row justify-content-between align-items-center p-2 bg-light">
-        <div class="d-flex align-items-center mb-2 mb-md-0">
-            <img class="logo mr-2" src="/logo.png" alt="Semiphemeral Logo">
-            <h1 class="h4 mb-0">Semiphemeral</h1>
-        </div>
-        <template v-if="userEmail != ''">
+    <template v-if="userEmail != '' && deviceInfo?.valid">
+        <header class="d-flex flex-column flex-md-row justify-content-between align-items-center p-2 bg-light">
+            <div class="d-flex align-items-center mb-2 mb-md-0">
+                <img class="logo mr-2" src="/logo.png" alt="Semiphemeral Logo">
+                <h1 class="h4 mb-0">Semiphemeral</h1>
+            </div>
             <div class="d-flex align-items-center">
                 <div class="mr-2">
                     <i class="fa-regular fa-face-smile"></i>
                     {{ userEmail }}
                 </div>
                 <div>
-                    <button class="btn btn-secondary btn-sm mr-2">Sign out</button>
-                    <button class="btn btn-secondary btn-sm"><i class="fa-solid fa-gear"></i></button>
+                    <button class="btn btn-secondary btn-sm mr-2"><i class="fa-solid fa-gear"></i></button>
+                    <button class="btn btn-secondary btn-sm" @click="signOut">Sign out</button>
                 </div>
             </div>
-        </template>
-    </header>
+        </header>
+    </template>
 </template>
 
 <style scoped>

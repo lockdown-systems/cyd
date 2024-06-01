@@ -10,8 +10,13 @@ import ErrorMessage from './components/ErrorMessage.vue';
 
 const router = useRouter();
 
+// Server API
 const serverApi = ref(new ServerAPI());
+provide('serverApi', serverApi);
+
+// Device info
 const deviceInfo = ref<DeviceInfo | null>(null);
+provide('deviceInfo', deviceInfo);
 
 // User info
 const userEmail = ref('');
@@ -40,6 +45,7 @@ onMounted(async () => {
     deviceInfo.value = await getDeviceInfo();
     if (deviceInfo.value) {
       userEmail.value = deviceInfo.value.userEmail;
+      serverApi.value.setToken(deviceInfo.value.deviceToken);
     }
   } catch {
     showError("Failed to get device info. Please try again later.");
@@ -54,7 +60,7 @@ onMounted(async () => {
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <Header :user-email="userEmail" />
+    <Header :device-info="deviceInfo" />
     <div class="flex-grow-1 m-2">
       <RouterView />
     </div>

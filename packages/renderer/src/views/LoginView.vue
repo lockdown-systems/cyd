@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, inject, Ref } from 'vue';
+import { ref, inject, Ref } from 'vue';
 import { useRouter } from 'vue-router'
 
 import ServerAPI from '../ServerApi';
@@ -8,12 +8,10 @@ const router = useRouter();
 
 const showError = inject('showError') as (message: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
-
-const serverApi = ref(new ServerAPI());
+const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const verificationCode = ref('');
-
-const deviceInfo = ref<DeviceInfo | null>(null);
 
 type LoginState = 'start' | 'registerDevice';
 const loginState = ref<LoginState>('start');
@@ -104,10 +102,6 @@ async function goBack() {
     verificationCode.value = '';
     loginState.value = 'start';
 }
-
-onMounted(async () => {
-    await serverApi.value.initialize();
-});
 </script>
 
 <template>
