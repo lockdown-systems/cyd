@@ -29,45 +29,16 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
         const deviceToken = await (window as any).electron.getConfig("deviceToken");
         if (deviceToken && deviceToken.length > 0) {
             deviceInfo["deviceToken"] = deviceToken;
-
-            // Do we already have a valid API token?
-            const apiToken = await (window as any).electron.getConfig("apiToken");
-            if (apiToken && apiToken.length > 0) {
-                deviceInfo["apiToken"] = apiToken;
-                serverApi.setToken(apiToken);
-
-                // Check if the API token is valid
-                const pingResp = await serverApi.ping();
-                if (pingResp) {
-                    deviceInfo["valid"] = true;
-                }
-            }
-
-            // If we don't have a valid API token, get a new one
-            if (!deviceInfo["valid"]) {
-                try {
-                    const tokenApiResponse = await serverApi.getToken({
-                        email: deviceInfo["userEmail"],
-                        deviceToken: deviceInfo["deviceToken"]
-                    })
-                    if ("error" in tokenApiResponse) {
-                        console.error("Error getting API token", tokenApiResponse.message);
-                        deviceInfo["deviceToken"] = "";
-                        (window as any).electron.setConfig("deviceToken", "");
-                        (window as any).electron.setConfig("apiToken", "");
-                    } else {
-                        deviceInfo["apiToken"] = tokenApiResponse.token;
-                        deviceInfo["valid"] = true;
-                        (window as any).electron.setConfig("apiToken", deviceInfo["apiToken"]);
-                    }
-                } catch (error) {
-                    console.error("Error getting API token", error);
-                    deviceInfo["deviceToken"] = "";
-                    (window as any).electron.setConfig("deviceToken", "");
-                    (window as any).electron.setConfig("apiToken", "");
-                }
+            const pingResp = await serverApi.ping();
+            if (pingResp) {
+                deviceInfo["valid"] = true;
+                console.log("Device is valid");
+            } else {
+                console.log("Device is invalid");
             }
         }
+    } else {
+        console.log("No userEmail found in config");
     }
     return deviceInfo;
 }

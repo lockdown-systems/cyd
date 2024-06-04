@@ -10,6 +10,7 @@ const showError = inject('showError') as (message: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
+const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
 const verificationCode = ref('');
 
@@ -45,6 +46,9 @@ async function authenticate() {
 
     await (window as any).electron.setConfig("userEmail", userEmail.value);
     enableStartFields();
+
+    serverApi.value.setUserEmail(userEmail.value);
+
     loginState.value = "registerDevice";
 }
 
@@ -75,24 +79,14 @@ async function registerDevice() {
     // Save the device token
     await (window as any).electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
 
-    // Get an API token
-    const getTokenResp = await serverApi.value.getToken({
-        email: userEmail.value,
-        deviceToken: registerDeviceResp.deviceToken,
-    });
-    if ("error" in getTokenResp) {
-        showError('Failed to register device. Please try again later.');
-        await goBack();
-        return;
-    }
-    if (!getTokenResp.token) {
-        showError('Failed to get API token. Please try again later.');
-        await goBack();
-        return;
+    // Get a new API
+    const pingResp = await serverApi.value.ping();
+    if (!pingResp) {
+        showError('Failed to register new device. Please try again later.');
     }
 
-    // Save the API token
-    await (window as any).electron.setConfig("apiToken", getTokenResp.token);
+    // Refresh the device info
+    await refreshDeviceInfo();
 
     // Redirect to the dashboard
     router.push('/dashboard');

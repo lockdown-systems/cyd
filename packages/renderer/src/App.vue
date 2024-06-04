@@ -18,6 +18,20 @@ provide('serverApi', serverApi);
 const deviceInfo = ref<DeviceInfo | null>(null);
 provide('deviceInfo', deviceInfo);
 
+const refreshDeviceInfo = async () => {
+  try {
+    deviceInfo.value = await getDeviceInfo();
+    if (deviceInfo.value) {
+      userEmail.value = deviceInfo.value.userEmail;
+      serverApi.value.setUserEmail(deviceInfo.value.userEmail);
+      serverApi.value.setDeviceToken(deviceInfo.value.deviceToken);
+    }
+  } catch {
+    showError("Failed to get device info. Please try again later.");
+  }
+};
+provide('refreshDeviceInfo', refreshDeviceInfo);
+
 // User info
 const userEmail = ref('');
 provide('userEmail', userEmail);
@@ -40,16 +54,7 @@ provide('hideError', hideError);
 
 onMounted(async () => {
   await serverApi.value.initialize();
-
-  try {
-    deviceInfo.value = await getDeviceInfo();
-    if (deviceInfo.value) {
-      userEmail.value = deviceInfo.value.userEmail;
-      serverApi.value.setToken(deviceInfo.value.deviceToken);
-    }
-  } catch {
-    showError("Failed to get device info. Please try again later.");
-  }
+  await refreshDeviceInfo();
 
   // Already logged in? Redirect to the dashboard
   if (deviceInfo.value?.valid) {
