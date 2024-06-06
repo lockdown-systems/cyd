@@ -53,14 +53,18 @@ export default class ServerAPI {
                     return;
                 }
 
-                console.log("Failed to authenticate with the server. Trying to get a new API token.");
-
                 // Try to get a new token, and then try one more time
+                console.log("Failed to authenticate with the server. Trying to get a new API token.");
                 this.getNewApiToken().then(success => {
                     if (success) {
+                        console.log("Got a new API token. Retrying the request.")
                         fetch(resource, options).then(resolve, reject);
                     } else {
-                        reject(new Error('Unauthorized'));
+                        console.log("Failed to get a new API token.")
+                        resolve(new Response(JSON.stringify({ "message": "Authentication failed" }), {
+                            status: 401,
+                            headers: { 'Content-type': 'application/json' }
+                        }));
                     }
                 });
             }, reject);

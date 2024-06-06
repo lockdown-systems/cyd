@@ -19,6 +19,8 @@ function createFetchResponse(status: number, data: any) {
     }
 }
 
+// API helper function tests
+
 test('ServerAPI.initialize() sets apiUrl', async () => {
     const serverApi = new ServerAPI();
     await serverApi.initialize();
@@ -41,7 +43,11 @@ test('ServerAPI.fetch() should set method and headers', async () => {
     });
 })
 
+// Authentication tests
+
 test('ServerAPI.fetchAuthenticated() should send API token in headers', async () => {
+    mockFetch.mockClear();
+
     const userEmail = 'test@lockdown.systems';
     const deviceToken = 'this-is-a-device-token';
 
@@ -51,12 +57,11 @@ test('ServerAPI.fetchAuthenticated() should send API token in headers', async ()
     serverApi.setDeviceToken(deviceToken);
 
     // Get an API token
-    const mockTokenApiResponse = {
+    mockFetch.mockResolvedValue(createFetchResponse(200, {
         expiration: new Date(),
         token: 'this-is-a-new-api-token',
         email: userEmail
-    };
-    mockFetch.mockResolvedValue(createFetchResponse(200, mockTokenApiResponse))
+    }))
 
     const result = await serverApi.getNewApiToken();
     expect(result).toBe(true);
@@ -75,7 +80,9 @@ test('ServerAPI.fetchAuthenticated() should send API token in headers', async ()
     });
 })
 
-test('ServerAPI.getNewApiToken() returns true on valid device token', async () => {
+test('ServerAPI.fetchAuthenticated() with good device token but not API token should fail the first time but work the second', async () => {
+    mockFetch.mockClear();
+
     const userEmail = 'test@lockdown.systems';
     const deviceToken = 'this-is-a-device-token';
 
@@ -84,12 +91,61 @@ test('ServerAPI.getNewApiToken() returns true on valid device token', async () =
     serverApi.setUserEmail(userEmail);
     serverApi.setDeviceToken(deviceToken);
 
-    const mockTokenApiResponse = {
+    // The first time we try to fetch, we will get a 401 error
+    mockFetch.mockResolvedValueOnce(createFetchResponse(401, {
+        message: 'Authentication failed'
+    }));
+    // The second time we try to fetch, we will get a 200 response with an API token
+    mockFetch.mockResolvedValueOnce(createFetchResponse(200, {
         expiration: new Date(),
         token: 'this-is-a-new-api-token',
         email: userEmail
-    };
-    mockFetch.mockResolvedValue(createFetchResponse(200, mockTokenApiResponse))
+    }));
+    // Set the default response to 200 OK
+    mockFetch.mockResolvedValue(createFetchResponse(200, {}));
+
+    const response = await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/v1/test', { test: 'data' });
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+});
+
+test('ServerAPI.fetchAuthenticated() with bad device token and no API token should fail', async () => {
+    mockFetch.mockClear();
+
+    const userEmail = 'test@lockdown.systems';
+    const deviceToken = 'this-is-a-BAD-device-token';
+
+    const serverApi = new ServerAPI();
+    await serverApi.initialize();
+    serverApi.setUserEmail(userEmail);
+    serverApi.setDeviceToken(deviceToken);
+
+    // Always return with authentication failed
+    mockFetch.mockResolvedValue(createFetchResponse(401, {
+        message: 'Authentication failed'
+    }));
+
+    const response = await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/v1/test', { test: 'data' });
+    expect(response.status).toBe(401);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+});
+
+test('ServerAPI.getNewApiToken() returns true on valid device token', async () => {
+    mockFetch.mockClear();
+
+    const userEmail = 'test@lockdown.systems';
+    const deviceToken = 'this-is-a-device-token';
+
+    const serverApi = new ServerAPI();
+    await serverApi.initialize();
+    serverApi.setUserEmail(userEmail);
+    serverApi.setDeviceToken(deviceToken);
+
+    mockFetch.mockResolvedValue(createFetchResponse(200, {
+        expiration: new Date(),
+        token: 'this-is-a-new-api-token',
+        email: userEmail
+    }));
 
     const result = await serverApi.getNewApiToken();
     expect(mockFetch).toHaveBeenCalledWith('https://mock/api/v1/token', {
@@ -107,6 +163,8 @@ test('ServerAPI.getNewApiToken() returns true on valid device token', async () =
 });
 
 test('ServerAPI.getNewApiToken() returns false on invalid device token', async () => {
+    mockFetch.mockClear();
+
     const userEmail = 'test@lockdown.systems';
     const deviceToken = 'this-is-a-BAD-device-token';
 
@@ -115,10 +173,9 @@ test('ServerAPI.getNewApiToken() returns false on invalid device token', async (
     serverApi.setUserEmail(userEmail);
     serverApi.setDeviceToken(deviceToken);
 
-    const mockErrorResponse = {
+    mockFetch.mockResolvedValue(createFetchResponse(401, {
         message: 'Authentication failed'
-    };
-    mockFetch.mockResolvedValue(createFetchResponse(401, mockErrorResponse))
+    }))
 
     const result = await serverApi.getNewApiToken();
     expect(mockFetch).toHaveBeenCalledWith('https://mock/api/v1/token', {
