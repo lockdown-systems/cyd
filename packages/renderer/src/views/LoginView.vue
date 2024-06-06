@@ -2,7 +2,7 @@
 import { ref, inject, Ref } from 'vue';
 import { useRouter } from 'vue-router'
 
-import ServerAPI from '../ServerApi';
+import ServerAPI from '../ServerAPI';
 
 const router = useRouter();
 

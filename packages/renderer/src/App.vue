@@ -2,7 +2,7 @@
 import { ref, provide, onMounted } from "vue"
 import { useRouter } from 'vue-router'
 
-import ServerAPI from './ServerApi';
+import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
 import Header from './components/Header.vue';

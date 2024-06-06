@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import ServerAPI from './ServerApi'
+import ServerAPI from './ServerAPI'
 
 // Mock the electron IPC API
 vi.stubGlobal('window', {
@@ -42,8 +42,6 @@ test('ServerAPI.fetch() should set method and headers', async () => {
         })
     });
 })
-
-// Authentication tests
 
 test('ServerAPI.fetchAuthenticated() should send API token in headers', async () => {
     mockFetch.mockClear();
@@ -191,3 +189,6 @@ test('ServerAPI.getNewApiToken() returns false on invalid device token', async (
 
     expect(result).toBe(false);
 });
+
+// Authentication tests
+

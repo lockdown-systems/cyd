@@ -27,25 +27,29 @@ export default class ServerAPI {
     }
 
     fetch(method: string, resource: RequestInfo, body: any): Promise<Response> {
-        const options = {
+        const options: RequestInit = {
             method: method,
             headers: {
                 "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body),
+            }
         };
+        if (body !== null) {
+            options.body = JSON.stringify(body);
+        }
         return fetch(resource, options);
     }
 
     fetchAuthenticated(method: string, resource: RequestInfo, body: any): Promise<Response> {
-        const options = {
+        const options: RequestInit = {
             method: method,
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + this.apiToken
-            },
-            body: JSON.stringify(body),
+            }
         };
+        if (body !== null) {
+            options.body = JSON.stringify(body);
+        }
         return new Promise((resolve, reject) => {
             fetch(resource, options).then(response => {
                 if (response.status != 401) {
@@ -85,6 +89,13 @@ export default class ServerAPI {
             return true;
         }
         return false;
+    }
+
+    async validateApiToken(): Promise<boolean> {
+        if (typeof this.apiToken === 'string') {
+            return true;
+        }
+        return this.getNewApiToken();
     }
 
     // Auth API (not authenticated)
@@ -142,13 +153,7 @@ export default class ServerAPI {
             return this.returnError("Failed to get a new API token.")
         }
         try {
-            const response = await this.fetchAuthenticated(`${this.apiUrl}/logout`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + this.apiToken
-                }
-            });
+            const response = await this.fetchAuthenticated("POST", `${this.apiUrl}/logout`, null);
             if (response.status != 200) {
                 return this.returnError("Failed to logout with the server. Got status code " + response.status + ".")
             }
@@ -167,14 +172,7 @@ export default class ServerAPI {
             return this.returnError("Failed to get a new API token.")
         }
         try {
-            const response = await this.fetchAuthenticated(`${this.apiUrl}/device`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + this.apiToken
-                },
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetchAuthenticated("DELETE", `${this.apiUrl}/device`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to delete device with the server. Got status code " + response.status + ".")
             }
@@ -190,12 +188,7 @@ export default class ServerAPI {
             return false;
         }
         try {
-            const response = await this.fetchAuthenticated(`${this.apiUrl}/ping`, {
-                method: "GET",
-                headers: {
-                    "Authorization": "Bearer " + this.apiToken
-                }
-            });
+            const response = await this.fetchAuthenticated("GET", `${this.apiUrl}/ping`, null);
             return (response.status == 200);
         } catch {
             return false;
