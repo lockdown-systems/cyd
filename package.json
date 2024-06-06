@@ -28,6 +28,7 @@
     "@types/node": "^20.12.8",
     "@vitejs/plugin-vue": "^5.0.4",
     "cross-env": "^7.0.3",
+    "cypress": "^13.11.0",
     "electron": "^30.0.2",
     "prisma": "^5.14.0",
     "ts-node": "^10.9.2",
