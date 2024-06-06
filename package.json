@@ -13,7 +13,7 @@
     "start": "SEMIPHEMERAL_ENV=dev npm run build && electron .",
     "start-inspect": "npm run build && electron --inspect=9229 .",
     "dev": "cross-env NODE_ENV=development SEMIPHEMERAL_ENV=local tsx scripts/dev-server.ts",
-    "test:renderer": "vitest run packages/renderer/"
+    "tests": "vitest run ."
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.2",
