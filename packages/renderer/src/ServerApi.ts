@@ -26,32 +26,43 @@ export default class ServerAPI {
         return apiErrorResponse
     }
 
-    fetch(resource: RequestInfo, options: RequestInit): Promise<Response> {
+    fetch(method: string, resource: RequestInfo, body: any): Promise<Response> {
+        const options = {
+            method: method,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body),
+        };
+        return fetch(resource, options);
+    }
+
+    fetchAuthenticated(method: string, resource: RequestInfo, body: any): Promise<Response> {
+        const options = {
+            method: method,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + this.apiToken
+            },
+            body: JSON.stringify(body),
+        };
         return new Promise((resolve, reject) => {
             fetch(resource, options).then(response => {
-                if (response.status === 401) {
-                    console.log("Invalid API token, trying to get a new one.")
-                    // Try to get a new token
-                    if (typeof this.userEmail === 'string' && typeof this.deviceToken === 'string') {
-                        this.getToken({
-                            email: this.userEmail,
-                            deviceToken: this.deviceToken
-                        }).then(tokenApiResponse => {
-                            if ("error" in tokenApiResponse) {
-                                reject(new Error('Unauthorized'));
-                            } else {
-                                // Try the request again
-                                console.log("Trying the request again")
-                                this.apiToken = tokenApiResponse.token;
-                                fetch(resource, options).then(resolve, reject);
-                            }
-                        }, reject);
+                if (response.status != 401) {
+                    resolve(response);
+                    return;
+                }
+
+                console.log("Failed to authenticate with the server. Trying to get a new API token.");
+
+                // Try to get a new token, and then try one more time
+                this.getNewApiToken().then(success => {
+                    if (success) {
+                        fetch(resource, options).then(resolve, reject);
                     } else {
                         reject(new Error('Unauthorized'));
                     }
-                } else {
-                    resolve(response);
-                }
+                });
             }, reject);
         });
     }
@@ -72,34 +83,18 @@ export default class ServerAPI {
         return false;
     }
 
-    async validateApiToken(): Promise<boolean> {
-        if (this.apiToken === null) {
-            if (!await this.getNewApiToken()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     // Auth API (not authenticated)
 
     async authenticate(request: AuthApiRequest): Promise<AuthApiResponse | ApiErrorResponse> {
         console.log("POST /authenticate");
         try {
-            const response = await this.fetch(`${this.apiUrl}/authenticate`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetch("POST", `${this.apiUrl}/authenticate`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to authenticate with the server. Got status code " + response.status + ".")
             }
             const data: AuthApiResponse = await response.json();
             return data;
         } catch {
-            // Why isn't this getting caught?
             return this.returnError("Failed to authenticate with the server. Maybe the server is down?")
         }
     }
@@ -107,13 +102,7 @@ export default class ServerAPI {
     async registerDevice(request: RegisterDeviceApiRequest): Promise<RegisterDeviceApiResponse | ApiErrorResponse> {
         console.log("POST /device");
         try {
-            const response = await this.fetch(`${this.apiUrl}/device`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetch("POST", `${this.apiUrl}/device`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to register device with the server. Got status code " + response.status + ".")
             }
@@ -128,13 +117,7 @@ export default class ServerAPI {
     async getToken(request: TokenApiRequest): Promise<TokenApiResponse | ApiErrorResponse> {
         console.log("POST /token");
         try {
-            const response = await this.fetch(`${this.apiUrl}/token`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetch("POST", `${this.apiUrl}/token`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to get token with the server. Got status code " + response.status + ".")
             }
@@ -155,7 +138,7 @@ export default class ServerAPI {
             return this.returnError("Failed to get a new API token.")
         }
         try {
-            const response = await this.fetch(`${this.apiUrl}/logout`, {
+            const response = await this.fetchAuthenticated(`${this.apiUrl}/logout`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -180,7 +163,7 @@ export default class ServerAPI {
             return this.returnError("Failed to get a new API token.")
         }
         try {
-            const response = await this.fetch(`${this.apiUrl}/device`, {
+            const response = await this.fetchAuthenticated(`${this.apiUrl}/device`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -203,7 +186,7 @@ export default class ServerAPI {
             return false;
         }
         try {
-            const response = await this.fetch(`${this.apiUrl}/ping`, {
+            const response = await this.fetchAuthenticated(`${this.apiUrl}/ping`, {
                 method: "GET",
                 headers: {
                     "Authorization": "Bearer " + this.apiToken
