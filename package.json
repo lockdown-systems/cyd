@@ -25,6 +25,8 @@
     "vue-router": "^4.3.2"
   },
   "devDependencies": {
+    "@cypress/vue": "^6.0.0",
+    "@types/jest": "^29.5.12",
     "@types/node": "^20.12.8",
     "@vitejs/plugin-vue": "^5.0.4",
     "cross-env": "^7.0.3",
