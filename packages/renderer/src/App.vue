@@ -46,6 +46,12 @@ const showError = (message: string) => {
 };
 provide('showError', showError);
 
+// Navigation
+const navigate = (path: string) => {
+  router.push(path);
+};
+provide('navigate', navigate);
+
 onMounted(async () => {
   await serverApi.value.initialize();
   await refreshDeviceInfo();

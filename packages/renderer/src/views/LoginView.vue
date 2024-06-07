@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { ref, inject, Ref } from 'vue';
-import { useRouter } from 'vue-router'
-
+import { ref, inject, Ref, watch } from 'vue';
 import ServerAPI from '../ServerAPI';
 
-const router = useRouter();
-
 const showError = inject('showError') as (message: string) => void;
+const navigate = inject('navigate') as (path: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
@@ -20,8 +17,17 @@ const loginState = ref<LoginState>('start');
 const emailInputEl = ref<HTMLInputElement | null>(null);
 const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
 const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
-const verificationContinueButtonEl = ref<HTMLButtonElement | null>(null);
-const backButtonEl = ref<HTMLButtonElement | null>(null);
+
+watch(verificationCode, async (newValue, _oldValue) => {
+    if (newValue.length < 6) {
+        // Strip non-numeric characters
+        verificationCode.value = newValue.replace(/[^0-9]/g, '');
+    }
+    // Auto-submit on 6 digits
+    if (newValue.length === 6) {
+        await registerDevice();
+    }
+});
 
 function disableStartFields() {
     emailInputEl.value?.setAttribute("disabled", "true");
@@ -72,8 +78,9 @@ async function registerDevice() {
         description: deviceInfo.value?.deviceDescription,
     });
     if ("error" in registerDeviceResp) {
-        showError('Failed to register device. Please try again later.');
-        await goBack();
+        verificationCode.value = '';
+        verificationCodeInputEl.value?.focus();
+        showError('Invalid verification code.');
         return;
     }
     if (!registerDeviceResp.deviceToken) {
@@ -95,7 +102,7 @@ async function registerDevice() {
     await refreshDeviceInfo();
 
     // Redirect to the dashboard
-    router.push('/dashboard');
+    navigate('/dashboard');
 }
 
 async function goBack() {
@@ -137,9 +144,6 @@ async function goBack() {
                                 <div class="button-container mt-2">
                                     <button type="submit" class="btn btn-secondary" rel="backButtonEl"
                                         data-vue-ref="backButtonEl" @click="goBack">Back</button>
-                                    <button type="submit" class="btn btn-primary" rel="verificationContinueButtonEl"
-                                        data-vue-ref="verificationContinueButtonEl"
-                                        @click="registerDevice">Continue</button>
                                 </div>
                             </div>
                         </template>

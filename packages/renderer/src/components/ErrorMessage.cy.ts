@@ -1,11 +1,10 @@
-import { mount } from '@cypress/vue';
 import ErrorMessage from './ErrorMessage.vue'
 
 describe('<ErrorMessage />', () => {
   const message = 'Test error message';
 
   beforeEach(() => {
-    mount(ErrorMessage, {
+    cy.mount(ErrorMessage, {
       propsData: {
         message: message
       }

@@ -1,7 +1,15 @@
 /// <reference types="cypress" />
 
-declare namespace Cypress {
-    interface Chainable<Subject> {
-        vueRef: (refName: string) => Chainable<JQuery<HTMLElement>>;
+import { mount } from 'cypress/vue'
+
+type MountParams = Parameters<typeof mount>
+type OptionsParam = MountParams[1]
+
+declare global {
+    namespace Cypress {
+        interface Chainable {
+            mount: typeof mount;
+            vueRef: (refName: string) => Chainable<JQuery<HTMLElement>>;
+        }
     }
 }

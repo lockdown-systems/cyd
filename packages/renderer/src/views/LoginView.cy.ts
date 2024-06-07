@@ -1,12 +1,11 @@
 import { ref } from 'vue';
-import { mount } from '@cypress/vue';
 
 import LoginView from './LoginView.vue'
 import ServerAPI from '../ServerAPI';
 
 describe('<LoginView />', () => {
   it('starts with the email field visible and the value blank', () => {
-    mount(LoginView);
+    cy.mount(LoginView);
 
     cy.vueRef('emailInputEl').should('be.visible');
     cy.vueRef('emailInputEl').should('have.value', '');
@@ -15,7 +14,7 @@ describe('<LoginView />', () => {
   it('prepopulates the email field if it is saved', () => {
     const testEmail = 'test@lockdown.systems';
 
-    mount(LoginView, {
+    cy.mount(LoginView, {
       global: {
         plugins: [(app) => {
           app.provide('userEmail', ref(testEmail));
@@ -30,7 +29,7 @@ describe('<LoginView />', () => {
   it('shows an error message if the email field is blank', () => {
     const showError = cy.stub();
 
-    mount(LoginView, {
+    cy.mount(LoginView, {
       global: {
         plugins: [(app) => {
           app.provide('userEmail', '');
@@ -49,7 +48,7 @@ describe('<LoginView />', () => {
     const testEmail = 'test@lockdown.systems';
     const showError = cy.stub();
 
-    mount(LoginView, {
+    cy.mount(LoginView, {
       global: {
         plugins: [(app) => {
           app.provide('serverApi', ref(new ServerAPI()));
@@ -80,7 +79,7 @@ describe('<LoginView />', () => {
       const serverApi = new ServerAPI();
       await serverApi.initialize();
 
-      mount(LoginView, {
+      cy.mount(LoginView, {
         global: {
           plugins: [(app) => {
             app.provide('serverApi', ref(serverApi));
@@ -109,60 +108,116 @@ describe('<LoginView />', () => {
     });
   })
 
-  // it('should only allow 6 digits in the verification code field', () => {
-  //   const testEmail = 'test@lockdown.systems';
-  //   const showError = cy.stub();
+  it('should only allow digits in the verification code field', () => {
+    const testEmail = 'test@lockdown.systems';
+    const showError = cy.stub();
 
-  //   cy.window().then((win) => {
-  //     (win as any).electron = {
-  //       getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' }
-  //     }
-  //   });
+    cy.window().then(async (win) => {
+      (win as any).electron = {
+        getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
+        setConfig: async (_key: string, _value: string): Promise<void> => { return },
+      }
 
-  //   const serverApi = new ServerAPI();
-  //   serverApi.initialize().then(() => {
-  //     mount(LoginView, {
-  //       global: {
-  //         plugins: [(app) => {
-  //           app.provide('serverApi', ref(serverApi));
-  //           app.provide('userEmail', ref(testEmail));
-  //           app.provide('showError', showError);
-  //         }]
-  //       }
-  //     });
+      const serverApi = new ServerAPI();
+      await serverApi.initialize();
 
-  //     // Click through to the verification code page
-  //     cy.intercept('POST', 'https://mock/api/v1/authenticate', {
-  //       statusCode: 200,
-  //       body: {
-  //         message: 'Verification code sent to email'
-  //       }
-  //     });
+      cy.mount(LoginView, {
+        global: {
+          plugins: [(app) => {
+            app.provide('serverApi', ref(serverApi));
+            app.provide('userEmail', ref(testEmail));
+            app.provide('showError', showError);
+          }]
+        }
+      });
 
-  //     cy.vueRef('startContinueButtonEl').click();
-  //     cy.wrap(showError).should('not.be.called');
+      // Click through to the verification code page
+      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+        statusCode: 200,
+        body: {
+          message: 'Verification code sent to email'
+        }
+      });
 
-  //     cy.vueRef('verificationCodeInputEl').should('be.visible');
+      cy.vueRef('startContinueButtonEl').click();
+      cy.wrap(showError).should('not.be.called');
 
-  //     // Try typing more than 6 digits
-  //     cy.vueRef('verificationCodeInputEl').type('1234567');
-  //     cy.vueRef('verificationCodeInputEl').should('have.value', '123456');
-  //     cy.vueRef('verificationContinueButtonEl').should('be.enabled');
+      cy.vueRef('verificationCodeInputEl').should('be.visible');
 
-  //     // Clear the field
-  //     cy.vueRef('verificationCodeInputEl').clear();
-  //     cy.vueRef('verificationCodeInputEl').should('have.value', '');
-  //     cy.vueRef('verificationContinueButtonEl').should('be.disabled');
+      // Clear the field
+      cy.vueRef('verificationCodeInputEl').clear();
+      cy.vueRef('verificationCodeInputEl').should('have.value', '');
 
-  //     // Type 3 digits
-  //     cy.vueRef('verificationCodeInputEl').type('123');
-  //     cy.vueRef('verificationContinueButtonEl').should('be.disabled');
+      // Type 3 digits
+      cy.vueRef('verificationCodeInputEl').type('123');
 
-  //     // Try typing letters
-  //     cy.vueRef('verificationCodeInputEl').type('abc');
-  //     cy.vueRef('verificationCodeInputEl').should('have.value', '123');
-  //   });
-  // })
+      // Try typing letters
+      cy.vueRef('verificationCodeInputEl').type('abc');
+      cy.vueRef('verificationCodeInputEl').should('have.value', '123');
+    });
+  })
+
+  it('should auto-submit verification code after 6 digits', () => {
+    const testEmail = 'test@lockdown.systems';
+    const showError = cy.stub();
+    const navigate = cy.spy();
+
+    cy.window().then(async (win) => {
+      (win as any).electron = {
+        getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
+        setConfig: async (_key: string, _value: string): Promise<void> => { return },
+      }
+
+      const serverApi = new ServerAPI();
+      await serverApi.initialize();
+
+      cy.mount(LoginView, {
+        global: {
+          plugins: [(app) => {
+            app.provide('serverApi', ref(serverApi));
+            app.provide('userEmail', ref(testEmail));
+            app.provide('showError', showError);
+            app.provide('navigate', navigate);
+            app.provide('deviceInfo', ref({
+              userEmail: testEmail,
+              deviceDescription: "test device",
+              deviceToken: "",
+              apiToken: "",
+              valid: false
+            }));
+            app.provide('refreshDeviceInfo', async () => { return });
+          }]
+        }
+      });
+
+      // Click through to the verification code page
+      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+        statusCode: 200,
+        body: {
+          message: 'Verification code sent to email'
+        }
+      });
+
+      cy.vueRef('startContinueButtonEl').click();
+      cy.wrap(showError).should('not.be.called');
+
+      cy.vueRef('verificationCodeInputEl').should('be.visible');
+
+      cy.intercept('POST', 'https://mock/api/v1/device', {
+        statusCode: 200,
+        body: {
+          deviceToken: 'this-is-a-device-token'
+        }
+      });
+      cy.intercept('GET', 'https://mock/api/v1/ping', {
+        statusCode: 200
+      });
+
+      // Type 6 digits, should auto-submit
+      cy.vueRef('verificationCodeInputEl').type('123456');
+      cy.wrap(navigate).should('be.calledWith', '/dashboard');
+    });
+  })
 
   // it('should show an error on wrong verification code guess but let you keep guessing', () => {
 
