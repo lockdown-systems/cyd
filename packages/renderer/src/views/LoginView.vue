@@ -19,6 +19,9 @@ const loginState = ref<LoginState>('start');
 
 const emailInputEl = ref<HTMLInputElement | null>(null);
 const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
+const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
+const verificationContinueButtonEl = ref<HTMLButtonElement | null>(null);
+const backButtonEl = ref<HTMLButtonElement | null>(null);
 
 function disableStartFields() {
     emailInputEl.value?.setAttribute("disabled", "true");
@@ -127,12 +130,15 @@ async function goBack() {
                             <div>
                                 <p>We've emailed you a verification code. Enter it below.</p>
                                 <div class="verification-code-container">
-                                    <input type="text" class="form-control verification-code" id="verificationCode"
+                                    <input type="text" class="form-control verification-code"
+                                        rel="verificationCodeInputEl" data-vue-ref="verificationCodeInputEl"
                                         v-model="verificationCode" maxlength="6">
                                 </div>
                                 <div class="button-container mt-2">
-                                    <button type="submit" class="btn btn-secondary" @click="goBack">Back</button>
-                                    <button type="submit" class="btn btn-primary"
+                                    <button type="submit" class="btn btn-secondary" rel="backButtonEl"
+                                        data-vue-ref="backButtonEl" @click="goBack">Back</button>
+                                    <button type="submit" class="btn btn-primary" rel="verificationContinueButtonEl"
+                                        data-vue-ref="verificationContinueButtonEl"
                                         @click="registerDevice">Continue</button>
                                 </div>
                             </div>
