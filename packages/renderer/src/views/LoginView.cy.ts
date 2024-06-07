@@ -71,34 +71,41 @@ describe('<LoginView />', () => {
     const testEmail = 'test@lockdown.systems';
     const showError = cy.stub();
 
-    mount(LoginView, {
-      global: {
-        plugins: [(app) => {
-          app.provide('serverApi', ref(new ServerAPI()));
-          app.provide('userEmail', ref(testEmail));
-          app.provide('showError', showError);
-        }]
-      }
-    });
-
     cy.window().then((win) => {
       (win as any).electron = {
-        getApiUrl: () => 'https://mock/api/v1'
+        getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' }
       }
     });
 
-    cy.intercept('POST', 'https://mock/api/v1/authenticate', {
-      statusCode: 200,
-      body: {
-        message: 'Verification code sent to email'
-      }
+    const serverApi = new ServerAPI();
+    serverApi.initialize().then(() => {
+
+      mount(LoginView, {
+        global: {
+          plugins: [(app) => {
+            app.provide('serverApi', ref(serverApi));
+            app.provide('userEmail', ref(testEmail));
+            app.provide('showError', showError);
+          }]
+        }
+      });
+
+      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+        statusCode: 200,
+        body: {
+          message: 'Verification code sent to email'
+        }
+      });
+
+      cy.vueRef('emailInputEl').should('be.visible');
+      cy.vueRef('emailInputEl').should('have.value', testEmail);
+      cy.vueRef('startContinueButtonEl').click();
+
+      cy.wrap(showError).should('not.be.called');
+
+      cy.vueRef('emailInputEl').should('not.be.visible');
+      cy.vueRef('verificationCodeInputEl').should('be.visible');
     });
-
-    cy.vueRef('emailInputEl').should('be.visible');
-    cy.vueRef('emailInputEl').should('have.value', testEmail);
-    cy.vueRef('startContinueButtonEl').click();
-
-    cy.wrap(showError).should('not.be.called');
   })
 
   // it('should only allow 6 digits in the verification code field', () => {
