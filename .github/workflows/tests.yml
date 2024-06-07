@@ -29,3 +29,4 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
       - run: npm run tests
+      - run: npm run tests:components
