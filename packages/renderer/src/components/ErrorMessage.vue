@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, inject } from 'vue';
+import { ref, onMounted, onUnmounted, defineEmits } from 'vue';
 import Modal from 'bootstrap/js/dist/modal';
 
-const hideError = inject('hideError') as () => void;
-
 defineProps({
-    message: String
+    message: String,
+    showErrorMessage: Boolean
 });
+
+const emit = defineEmits(['update:showErrorMessage']);
+
+const hideError = () => {
+    emit('update:showErrorMessage', false);
+};
 
 const errorModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;

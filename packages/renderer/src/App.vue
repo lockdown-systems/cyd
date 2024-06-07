@@ -2,7 +2,7 @@
 import { ref, provide, onMounted } from "vue"
 import { useRouter } from 'vue-router'
 
-import ServerAPI from './ServerApi';
+import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
 import Header from './components/Header.vue';
@@ -46,12 +46,6 @@ const showError = (message: string) => {
 };
 provide('showError', showError);
 
-const hideError = () => {
-  errorMessage.value = '';
-  showErrorModal.value = false;
-};
-provide('hideError', hideError);
-
 onMounted(async () => {
   await serverApi.value.initialize();
   await refreshDeviceInfo();
@@ -69,7 +63,8 @@ onMounted(async () => {
     <div class="flex-grow-1 m-2">
       <RouterView />
     </div>
-    <ErrorMessage v-if="showErrorModal" :message="errorMessage" @close="showErrorModal = false" />
+    <ErrorMessage v-if="showErrorModal" :message="errorMessage" :show-error-message="showErrorModal"
+      @update:show-error-message="showErrorModal = $event" @close="showErrorModal = false" />
   </div>
 </template>
 
