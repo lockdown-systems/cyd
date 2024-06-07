@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, defineEmits } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import Modal from 'bootstrap/js/dist/modal';
 
 defineProps({

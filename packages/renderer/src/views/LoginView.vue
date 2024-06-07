@@ -17,14 +17,17 @@ const verificationCode = ref('');
 type LoginState = 'start' | 'registerDevice';
 const loginState = ref<LoginState>('start');
 
+const emailInputEl = ref<HTMLInputElement | null>(null);
+const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
+
 function disableStartFields() {
-    document.getElementById("email")?.setAttribute("disabled", "true");
-    document.getElementById("start-continue")?.setAttribute("disabled", "true");
+    emailInputEl.value?.setAttribute("disabled", "true");
+    startContinueButtonEl.value?.setAttribute("disabled", "true");
 }
 
 function enableStartFields() {
-    document.getElementById("email")?.setAttribute("disabled", "false");
-    document.getElementById("start-continue")?.setAttribute("disabled", "false");
+    emailInputEl.value?.removeAttribute("disabled");
+    startContinueButtonEl.value?.removeAttribute("disabled");
 }
 
 async function authenticate() {
@@ -114,9 +117,9 @@ async function goBack() {
                         <template v-if="loginState == 'start'">
                             <div class="form-group d-flex flex-column align-items-center">
                                 <p>Login to Semiphemeral using your email address.</p>
-                                <input type="email" class="form-control" id="email" placeholder="Email address"
+                                <input type="email" class="form-control" ref="emailInputEl" placeholder="Email address"
                                     v-model="userEmail">
-                                <button type="submit" class="btn btn-primary mt-2" id="start-continue"
+                                <button type="submit" class="btn btn-primary mt-2" rel="startContinueButtonEl"
                                     @click="authenticate">Continue</button>
                             </div>
                         </template>
