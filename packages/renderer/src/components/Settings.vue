@@ -139,7 +139,7 @@ onUnmounted(() => {
                                 </div>
                             </div>
                         </div>
-                        <div class="m-2">
+                        <div class="m-2" v-if="devices.length > 1">
                             <button class="btn btn-danger btn-sm" @click="revokeAll">Revoke All</button>
                         </div>
                     </div>
