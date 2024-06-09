@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { inject, Ref } from 'vue';
-import { useRouter } from 'vue-router'
 
 import ServerAPI from '../ServerAPI';
 
-const router = useRouter();
-
 const showError = inject('showError') as (message: string) => void;
+const showSettings = inject('showSettings') as () => void;
+const navigate = inject('navigate') as (path: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
-const signOut = async () => {
+const settingsClicked = async () => {
+    showSettings();
+};
+
+const signOutClicked = async () => {
     if (deviceInfo.value === null) {
         showError('Cannot sign out without device info');
         return;
@@ -20,7 +23,8 @@ const signOut = async () => {
 
     // Delete the device
     const deleteDeviceResp = await serverApi.value.deleteDevice({
-        deviceToken: deviceInfo.value.deviceToken
+        // this API route takes either a UUID or a device token
+        uuid: deviceInfo.value.deviceToken
     });
     if (deleteDeviceResp !== undefined && deleteDeviceResp.error) {
         console.log("Error deleting device", deleteDeviceResp.message)
@@ -35,12 +39,13 @@ const signOut = async () => {
     // Delete the device from the local storage
     await (window as any).electron.setConfig("apiToken", "");
     await (window as any).electron.setConfig("deviceToken", "");
+    await (window as any).electron.setConfig("deviceUUID", "");
 
     // Refresh the device info
     await refreshDeviceInfo();
 
     // Redirect to the login page
-    router.push('/');
+    navigate('/');
 };
 </script>
 
@@ -58,8 +63,9 @@ const signOut = async () => {
                     {{ userEmail }}
                 </div>
                 <div>
-                    <button class="btn btn-secondary btn-sm mr-2"><i class="fa-solid fa-gear"></i></button>
-                    <button class="btn btn-secondary btn-sm" @click="signOut">Sign out</button>
+                    <button class="btn btn-secondary btn-sm mr-2" @click="settingsClicked"><i
+                            class="fa-solid fa-gear"></i></button>
+                    <button class="btn btn-secondary btn-sm" @click="signOutClicked">Sign out</button>
                 </div>
             </div>
         </header>

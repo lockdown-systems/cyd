@@ -4,6 +4,7 @@ type DeviceInfo = {
     userEmail: string;
     deviceDescription: string;
     deviceToken: string;
+    deviceUUID: string;
     apiToken: string;
     valid: boolean;
 };
@@ -31,7 +32,19 @@ type RegisterDeviceApiRequest = {
 };
 
 type RegisterDeviceApiResponse = {
+    uuid: string;
     deviceToken: string;
+};
+
+// API models for GET /api/v1/devices (an array of these)
+type GetDevicesApiResponse = {
+    uuid: string;
+    description: string;
+    lastAccessedAt: Date;
+};
+
+type GetDevicesApiResponseArray = {
+    devices: GetDevicesApiResponse[];
 };
 
 // API models for POST /api/v1/token
@@ -53,5 +66,5 @@ type LogoutApiResponse = {
 
 // API models for DELETE /api/v1/device
 type DeleteDeviceApiRequest = {
-    deviceToken: string;
+    uuid: string;
 };

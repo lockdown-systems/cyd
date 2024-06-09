@@ -7,6 +7,7 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
         "userEmail": "",
         "deviceDescription": "",
         "deviceToken": "",
+        "deviceUUID": "",
         "apiToken": "",
         "valid": false
     };
@@ -29,6 +30,11 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
         const deviceToken = await (window as any).electron.getConfig("deviceToken");
         if (deviceToken && deviceToken.length > 0) {
             deviceInfo["deviceToken"] = deviceToken;
+
+            const deviceUUID = await (window as any).electron.getConfig("deviceUUID");
+            if (deviceUUID) {
+                deviceInfo["deviceUUID"] = deviceUUID;
+            }
 
             serverApi.setUserEmail(userEmail);
             serverApi.setDeviceToken(deviceToken);

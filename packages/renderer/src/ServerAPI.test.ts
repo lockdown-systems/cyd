@@ -190,5 +190,3 @@ test('ServerAPI.getNewApiToken() returns false on invalid device token', async (
     expect(result).toBe(false);
 });
 
-// Authentication tests
-

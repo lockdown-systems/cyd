@@ -7,6 +7,7 @@ import { getDeviceInfo } from './helpers';
 
 import Header from './components/Header.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
+import Settings from './components/Settings.vue';
 
 const router = useRouter();
 
@@ -46,6 +47,13 @@ const showError = (message: string) => {
 };
 provide('showError', showError);
 
+// Settings
+const showSettingsModal = ref(false);
+const showSettings = () => {
+  showSettingsModal.value = true;
+};
+provide('showSettings', showSettings);
+
 // Navigation
 const navigate = (path: string) => {
   router.push(path);
@@ -69,8 +77,13 @@ onMounted(async () => {
     <div class="flex-grow-1 m-2">
       <RouterView />
     </div>
-    <ErrorMessage v-if="showErrorModal" :message="errorMessage" :show-error-message="showErrorModal"
-      @update:show-error-message="showErrorModal = $event" @close="showErrorModal = false" />
+
+    <!-- Settings modal -->
+    <Settings v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
+
+    <!-- Error message modal -->
+    <ErrorMessage v-if="showErrorModal" :message="errorMessage" @hide="showErrorModal = false"
+      @close="showErrorModal = false" />
   </div>
 </template>
 
@@ -107,6 +120,15 @@ body {
   z-index: 1050;
 }
 
+/* Headers */
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
 /* Bootstrap style that for some reason aren't making it */
 .mr-1 {
   margin-right: 0.25rem;
@@ -118,5 +140,9 @@ body {
 
 .mr-3 {
   margin-right: 1rem;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
 }
 </style>

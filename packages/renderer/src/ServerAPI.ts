@@ -181,6 +181,25 @@ export default class ServerAPI {
         }
     }
 
+    async getDevices(): Promise<GetDevicesApiResponseArray | ApiErrorResponse> {
+        console.log("GET /devices");
+        if (!await this.validateApiToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("GET", `${this.apiUrl}/devices`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to get devices. Got status code " + response.status + ".")
+            }
+            const data: GetDevicesApiResponseArray = {
+                devices: await response.json()
+            };
+            return data;
+        } catch {
+            return this.returnError("Failed to get devices. Maybe the server is down?")
+        }
+    }
+
     async ping(): Promise<boolean> {
         console.log("GET /ping");
         if (!await this.validateApiToken()) {

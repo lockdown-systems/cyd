@@ -89,6 +89,9 @@ async function registerDevice() {
         return;
     }
 
+    // Save the device UUID
+    await (window as any).electron.setConfig("deviceUUID", registerDeviceResp.uuid);
+
     // Save the device token
     await (window as any).electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
     serverApi.value.setDeviceToken(registerDeviceResp.deviceToken);
