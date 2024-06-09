@@ -91,8 +91,9 @@ async function registerDevice() {
 
     // Save the device token
     await (window as any).electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
+    serverApi.value.setDeviceToken(registerDeviceResp.deviceToken);
 
-    // Get a new API
+    // Get a new API token
     const pingResp = await serverApi.value.ping();
     if (!pingResp) {
         showError('Failed to register new device. Please try again later.');

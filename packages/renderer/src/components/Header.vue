@@ -10,6 +10,7 @@ const showError = inject('showError') as (message: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
+const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
 const signOut = async () => {
     if (deviceInfo.value === null) {
@@ -34,6 +35,9 @@ const signOut = async () => {
     // Delete the device from the local storage
     await (window as any).electron.setConfig("apiToken", "");
     await (window as any).electron.setConfig("deviceToken", "");
+
+    // Refresh the device info
+    await refreshDeviceInfo();
 
     // Redirect to the login page
     router.push('/');
