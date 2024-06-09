@@ -27,7 +27,7 @@ const refreshDeviceInfo = async () => {
       serverApi.value.setDeviceToken(deviceInfo.value.deviceToken);
     }
   } catch {
-    showError("Failed to get device info. Please try again later.");
+    showError("Failed to get saved device info.");
   }
 };
 provide('refreshDeviceInfo', refreshDeviceInfo);

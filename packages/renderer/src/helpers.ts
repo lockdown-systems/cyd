@@ -29,6 +29,9 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
         const deviceToken = await (window as any).electron.getConfig("deviceToken");
         if (deviceToken && deviceToken.length > 0) {
             deviceInfo["deviceToken"] = deviceToken;
+
+            serverApi.setUserEmail(userEmail);
+            serverApi.setDeviceToken(deviceToken);
             const pingResp = await serverApi.ping();
             if (pingResp) {
                 deviceInfo["valid"] = true;
