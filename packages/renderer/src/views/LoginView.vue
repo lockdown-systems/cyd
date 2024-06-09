@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { ref, inject, Ref } from 'vue';
-import { useRouter } from 'vue-router'
-
+import { ref, inject, Ref, watch } from 'vue';
 import ServerAPI from '../ServerAPI';
 
-const router = useRouter();
-
 const showError = inject('showError') as (message: string) => void;
+const navigate = inject('navigate') as (path: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
@@ -17,14 +14,29 @@ const verificationCode = ref('');
 type LoginState = 'start' | 'registerDevice';
 const loginState = ref<LoginState>('start');
 
+const emailInputEl = ref<HTMLInputElement | null>(null);
+const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
+const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
+
+watch(verificationCode, async (newValue, _oldValue) => {
+    if (newValue.length < 6) {
+        // Strip non-numeric characters
+        verificationCode.value = newValue.replace(/[^0-9]/g, '');
+    }
+    // Auto-submit on 6 digits
+    if (newValue.length === 6) {
+        await registerDevice();
+    }
+});
+
 function disableStartFields() {
-    document.getElementById("email")?.setAttribute("disabled", "true");
-    document.getElementById("start-continue")?.setAttribute("disabled", "true");
+    emailInputEl.value?.setAttribute("disabled", "true");
+    startContinueButtonEl.value?.setAttribute("disabled", "true");
 }
 
 function enableStartFields() {
-    document.getElementById("email")?.setAttribute("disabled", "false");
-    document.getElementById("start-continue")?.setAttribute("disabled", "false");
+    emailInputEl.value?.removeAttribute("disabled");
+    startContinueButtonEl.value?.removeAttribute("disabled");
 }
 
 async function authenticate() {
@@ -66,8 +78,9 @@ async function registerDevice() {
         description: deviceInfo.value?.deviceDescription,
     });
     if ("error" in registerDeviceResp) {
-        showError('Failed to register device. Please try again later.');
-        await goBack();
+        verificationCode.value = '';
+        verificationCodeInputEl.value?.focus();
+        showError('Invalid verification code.');
         return;
     }
     if (!registerDeviceResp.deviceToken) {
@@ -78,8 +91,9 @@ async function registerDevice() {
 
     // Save the device token
     await (window as any).electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
+    serverApi.value.setDeviceToken(registerDeviceResp.deviceToken);
 
-    // Get a new API
+    // Get a new API token
     const pingResp = await serverApi.value.ping();
     if (!pingResp) {
         showError('Failed to register new device. Please try again later.');
@@ -89,7 +103,7 @@ async function registerDevice() {
     await refreshDeviceInfo();
 
     // Redirect to the dashboard
-    router.push('/dashboard');
+    navigate('/dashboard');
 }
 
 async function goBack() {
@@ -114,23 +128,23 @@ async function goBack() {
                         <template v-if="loginState == 'start'">
                             <div class="form-group d-flex flex-column align-items-center">
                                 <p>Login to Semiphemeral using your email address.</p>
-                                <input type="email" class="form-control" id="email" placeholder="Email address"
-                                    v-model="userEmail">
-                                <button type="submit" class="btn btn-primary mt-2" id="start-continue"
-                                    @click="authenticate">Continue</button>
+                                <input type="email" class="form-control" ref="emailInputEl" data-vue-ref="emailInputEl"
+                                    placeholder="Email address" v-model="userEmail">
+                                <button type="submit" class="btn btn-primary mt-2" rel="startContinueButtonEl"
+                                    data-vue-ref="startContinueButtonEl" @click="authenticate">Continue</button>
                             </div>
                         </template>
                         <template v-else-if="loginState == 'registerDevice'">
                             <div>
                                 <p>We've emailed you a verification code. Enter it below.</p>
                                 <div class="verification-code-container">
-                                    <input type="text" class="form-control verification-code" id="verificationCode"
+                                    <input type="text" class="form-control verification-code"
+                                        rel="verificationCodeInputEl" data-vue-ref="verificationCodeInputEl"
                                         v-model="verificationCode" maxlength="6">
                                 </div>
                                 <div class="button-container mt-2">
-                                    <button type="submit" class="btn btn-secondary" @click="goBack">Back</button>
-                                    <button type="submit" class="btn btn-primary"
-                                        @click="registerDevice">Continue</button>
+                                    <button type="submit" class="btn btn-secondary" rel="backButtonEl"
+                                        data-vue-ref="backButtonEl" @click="goBack">Back</button>
                                 </div>
                             </div>
                         </template>

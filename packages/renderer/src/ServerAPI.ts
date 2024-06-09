@@ -95,7 +95,7 @@ export default class ServerAPI {
         if (typeof this.apiToken === 'string') {
             return true;
         }
-        return this.getNewApiToken();
+        return await this.getNewApiToken();
     }
 
     // Auth API (not authenticated)
