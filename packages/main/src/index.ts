@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { prisma, runPrismaMigrations } from './prisma'
 import { getConfig, setConfig } from './config'
+import { PrismaClient } from '@prisma/client'
 
 const isSingleInstance = app.requestSingleInstanceLock()
 if (!isSingleInstance) {
@@ -76,6 +77,16 @@ async function createWindow() {
 
     ipcMain.on('setConfig', async (_, key, value) => {
         await setConfig(prisma, key, value)
+    })
+
+    ipcMain.on('getXAccounts', async (_) => {
+        return await prisma.xAccount.findMany();
+    })
+
+    ipcMain.on('createXAccount', async (_) => {
+        return await prisma.xAccount.create({
+            data: {}
+        })
     })
 
     const pageUrl = import.meta.env.DEV

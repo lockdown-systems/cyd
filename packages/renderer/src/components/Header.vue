@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, Ref } from 'vue';
+import { inject, ref, Ref, onMounted, onUnmounted } from 'vue';
 
 import ServerAPI from '../ServerAPI';
 
@@ -10,6 +10,14 @@ const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
+
+const headerEl = ref<HTMLInputElement | null>(null);
+const emits = defineEmits(['adjustMainContent']);
+
+const updateHeaderHeight = () => {
+    const headerHeight = headerEl.value?.offsetHeight || 0;
+    emits('adjustMainContent', headerHeight);
+};
 
 const settingsClicked = async () => {
     showSettings();
@@ -47,12 +55,21 @@ const signOutClicked = async () => {
     // Redirect to the login page
     navigate('/');
 };
+
+onMounted(() => {
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', updateHeaderHeight);
+});
 </script>
 
 <template>
     <template v-if="userEmail != '' && deviceInfo?.valid">
         <header class="d-flex flex-column flex-md-row justify-content-between align-items-center p-2 bg-light"
-            data-vue-ref="header">
+            data-vue-ref="headerEl" ref="headerEl">
             <div class="d-flex align-items-center mb-2 mb-md-0">
                 <img class="logo mr-2" src="/logo.png" alt="Semiphemeral Logo">
                 <h1 class="h4 mb-0">Semiphemeral</h1>
@@ -73,6 +90,14 @@ const signOutClicked = async () => {
 </template>
 
 <style scoped>
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
 header .logo {
     max-height: 2.2rem;
 }

@@ -5,7 +5,7 @@ import Header from './Header.vue'
 describe('<Header />', () => {
   it('should be hidden without userEmail and valid deviceInfo', () => {
     cy.mount(Header);
-    cy.vueRef('header').should('not.exist');
+    cy.vueRef('headerEl').should('not.exist');
   })
 
   it('should be shown with userEmail and valid deviceInfo', () => {
@@ -26,6 +26,6 @@ describe('<Header />', () => {
       }
     });
 
-    cy.vueRef('header').should('be.visible');
+    cy.vueRef('headerEl').should('be.visible');
   })
 })

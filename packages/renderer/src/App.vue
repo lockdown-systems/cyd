@@ -11,6 +11,14 @@ import Settings from './components/Settings.vue';
 
 const router = useRouter();
 
+// Main content padding from the header
+const mainContentEl = ref<HTMLElement | null>(null);
+const adjustMainContentPadding = (headerHeight: number) => {
+  if (mainContentEl.value) {
+    mainContentEl.value.style.paddingTop = `${headerHeight}px`;
+  }
+};
+
 // Server API
 const serverApi = ref(new ServerAPI());
 provide('serverApi', serverApi);
@@ -73,8 +81,8 @@ onMounted(async () => {
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <Header :device-info="deviceInfo" />
-    <div class="flex-grow-1 m-2">
+    <Header :device-info="deviceInfo" @adjust-main-content="adjustMainContentPadding" />
+    <div class="flex-grow-1 m-2" ref="mainContentEl">
       <RouterView />
     </div>
 

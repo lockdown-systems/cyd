@@ -9,5 +9,11 @@ contextBridge.exposeInMainWorld('electron', {
     },
     setConfig: (key: string, value: string) => {
         ipcRenderer.send('setConfig', key, value)
+    },
+    getXAccounts: (): Promise<XAccount[]> => {
+        return ipcRenderer.invoke('getXAccounts')
+    },
+    createXAccount: (): Promise<XAccount> => {
+        return ipcRenderer.invoke('createXAccount')
     }
 })
