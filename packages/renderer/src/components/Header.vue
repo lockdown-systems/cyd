@@ -57,8 +57,8 @@ const signOutClicked = async () => {
 };
 
 onMounted(() => {
-    updateHeaderHeight();
     window.addEventListener('resize', updateHeaderHeight);
+    setTimeout(updateHeaderHeight, 100);
 });
 
 onUnmounted(() => {
@@ -70,10 +70,10 @@ onUnmounted(() => {
     <template v-if="userEmail != '' && deviceInfo?.valid">
         <header class="d-flex flex-column flex-md-row justify-content-between align-items-center p-2 bg-light"
             data-vue-ref="headerEl" ref="headerEl">
-            <div class="d-flex align-items-center mb-2 mb-md-0">
+            <RouterLink to="/dashboard" class="d-flex align-items-center mb-2 mb-md-0">
                 <img class="logo mr-2" src="/logo.png" alt="Semiphemeral Logo">
                 <h1 class="h4 mb-0">Semiphemeral</h1>
-            </div>
+            </RouterLink>
             <div class="d-flex align-items-center">
                 <div class="mr-2">
                     <i class="fa-regular fa-face-smile"></i>
@@ -100,5 +100,10 @@ header {
 
 header .logo {
     max-height: 2.2rem;
+}
+
+a {
+    text-decoration: none;
+    color: #1a5568;
 }
 </style>

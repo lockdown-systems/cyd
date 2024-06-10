@@ -82,7 +82,7 @@ onMounted(async () => {
 <template>
   <div class="d-flex flex-column vh-100">
     <Header :device-info="deviceInfo" @adjust-main-content="adjustMainContentPadding" />
-    <div class="flex-grow-1 m-2" ref="mainContentEl">
+    <div class="flex-grow-1 m-3" ref="mainContentEl">
       <RouterView />
     </div>
 
@@ -152,5 +152,9 @@ h2 {
 
 .mb-3 {
   margin-bottom: 1rem;
+}
+
+.mt-5 {
+  margin-top: 3rem;
 }
 </style>

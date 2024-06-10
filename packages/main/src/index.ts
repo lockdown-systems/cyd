@@ -75,15 +75,15 @@ async function createWindow() {
         return value
     })
 
-    ipcMain.on('setConfig', async (_, key, value) => {
+    ipcMain.handle('setConfig', async (_, key, value) => {
         await setConfig(prisma, key, value)
     })
 
-    ipcMain.on('getXAccounts', async (_) => {
+    ipcMain.handle('getXAccounts', async (_) => {
         return await prisma.xAccount.findMany();
     })
 
-    ipcMain.on('createXAccount', async (_) => {
+    ipcMain.handle('createXAccount', async (_) => {
         return await prisma.xAccount.create({
             data: {}
         })
