@@ -78,14 +78,6 @@ async function createWindow() {
         await setConfig(prisma, key, value)
     })
 
-    ipcMain.on('authenticate', (event) => {
-        // TODO: authenticate with server
-    })
-
-    ipcMain.on('token', (event) => {
-        // TODO: get a token from the server
-    })
-
     const pageUrl = import.meta.env.DEV
         ? 'http://localhost:5173'
         : new URL('../dist/renderer/index.html', `file://${__dirname}`).toString()

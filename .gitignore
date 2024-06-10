@@ -25,4 +25,4 @@ dist-ssr
 
 # Prisma dev database
 prisma/dev.db
-prisma/dev/db-journal
+prisma/dev.db-journal

@@ -9,11 +9,5 @@ contextBridge.exposeInMainWorld('electron', {
     },
     setConfig: (key: string, value: string) => {
         ipcRenderer.send('setConfig', key, value)
-    },
-    authenticate: () => {
-        ipcRenderer.send('authenticate')
-    },
-    token: () => {
-        ipcRenderer.send('token')
     }
 })

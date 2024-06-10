@@ -15,3 +15,20 @@ model Config {
   key   String @unique
   value String
 }
+
+model XAccount {
+  id                           Int      @id @default(autoincrement())
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+  accessedAt                   DateTime @default(now())
+  username                     String
+  cookies                      String
+  deleteTweets                 Boolean  @default(false)
+  tweetsDaysThreshold          Int      @default(20)
+  tweetsEnableRetweetThreshold Boolean  @default(false)
+  tweetsLikeThreshold          Int      @default(20)
+  deleteLikes                  Boolean  @default(false)
+  likesDaysThreshold           Int      @default(60)
+  deleteDirectMessages         Boolean  @default(false)
+  directMessageDaysThreshold   Int      @default(30)
+}
