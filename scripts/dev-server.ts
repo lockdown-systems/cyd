@@ -10,6 +10,10 @@ const sharedConfig: InlineConfig = {
     build: { watch: {} },
 }
 
+const stripNewlinesAtEnd = (str: string): string => {
+    return str.replace(/\n+$/, '');
+}
+
 /**
  * Create a Vite build watcher that automatically recompiles when a file is
  * edited.
@@ -46,11 +50,11 @@ const setupMainWatcher = async () => {
 
         // Restart Electron process when main package is edited and recompiled
         spawnProcess = spawn(String(electronPath), ['.'])
-        spawnProcess.stdout.on('data', (data: string) => {
-            console.log(`stdout: ${data}`);
+        spawnProcess.stdout.on('data', (data: Buffer) => {
+            console.log(`\x1b[32mstdout:\x1b[0m ${stripNewlinesAtEnd(data.toString())}`);
         });
-        spawnProcess.stderr.on('data', (data: string) => {
-            console.error(`stderr: ${data}`);
+        spawnProcess.stderr.on('data', (data: Buffer) => {
+            console.error(`\x1b[31mstderr:\x1b[0m ${stripNewlinesAtEnd(data.toString())}`);
         });
         spawnProcess.on('close', (code: number) => {
             console.log(`child process exited with code ${code}`);
