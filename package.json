@@ -15,7 +15,8 @@
     "dev": "cross-env NODE_ENV=development SEMIPHEMERAL_ENV=local tsx scripts/dev-server.ts",
     "tests": "vitest run .",
     "tests:components": "cd packages/renderer && cypress run --component",
-    "open-cypress": "cd packages/renderer && cypress open"
+    "open-cypress": "cd packages/renderer && cypress open",
+    "migrate": "npx prisma migrate dev"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.2",
