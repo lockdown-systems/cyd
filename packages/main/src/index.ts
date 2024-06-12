@@ -16,6 +16,8 @@ if (!isSingleInstance) {
 log.initialize();
 log.info('User data folder is at:', app.getPath('userData'))
 
+const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV;
+
 async function createWindow() {
     // Run database migrations
     await runPrismaMigrations();
@@ -42,7 +44,7 @@ async function createWindow() {
     }
 
     // Create the browser window
-    const browserWindow = new BrowserWindow({
+    const win = new BrowserWindow({
         show: false,
         width: 1024,
         height: 768,
@@ -53,15 +55,14 @@ async function createWindow() {
         },
     })
 
-    browserWindow.on('ready-to-show', () => {
-        browserWindow?.show()
+    win.on('ready-to-show', () => {
+        win?.show()
     })
 
     // IPC events
 
     ipcMain.handle('getApiUrl', async (_) => {
         // Get SEMIPHEMERAL_ENV from the environment
-        const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV
         if (semiphemeralEnv == "local") {
             return "http://localhost:8080/api/v1"
         } else if (semiphemeralEnv == "staging") {
@@ -93,9 +94,15 @@ async function createWindow() {
         ? 'http://localhost:5173'
         : new URL('../dist/renderer/index.html', `file://${__dirname}`).toString()
 
-    await browserWindow.loadURL(pageUrl)
+    await win.loadURL(pageUrl)
 
-    return browserWindow
+    // If we're in local or staging, pre-open developer tools
+    if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
+        win.webContents.openDevTools();
+        win.setSize(1600, 768);
+    }
+
+    return win
 }
 
 app.on('second-instance', () => {
