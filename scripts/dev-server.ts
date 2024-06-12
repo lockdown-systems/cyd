@@ -46,6 +46,16 @@ const setupMainWatcher = async () => {
 
         // Restart Electron process when main package is edited and recompiled.
         spawnProcess = spawn(String(electronPath), ['.'])
+        spawnProcess.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+        });
+        spawnProcess.stderr.on('data', (data) => {
+            console.error(`stderr: ${data}`);
+        });
+        spawnProcess.on('close', (code) => {
+            console.log(`child process exited with code ${code}`);
+            process.exit(0);
+        });
     })
 }
 
