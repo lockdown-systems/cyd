@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { prisma, runPrismaMigrations } from './prisma'
 import { getConfig, setConfig } from './config'
+import { PrismaClient } from '@prisma/client'
 
 const isSingleInstance = app.requestSingleInstanceLock()
 if (!isSingleInstance) {
@@ -74,16 +75,18 @@ async function createWindow() {
         return value
     })
 
-    ipcMain.on('setConfig', async (_, key, value) => {
+    ipcMain.handle('setConfig', async (_, key, value) => {
         await setConfig(prisma, key, value)
     })
 
-    ipcMain.on('authenticate', (event) => {
-        // TODO: authenticate with server
+    ipcMain.handle('getXAccounts', async (_) => {
+        return await prisma.xAccount.findMany();
     })
 
-    ipcMain.on('token', (event) => {
-        // TODO: get a token from the server
+    ipcMain.handle('createXAccount', async (_) => {
+        return await prisma.xAccount.create({
+            data: {}
+        })
     })
 
     const pageUrl = import.meta.env.DEV

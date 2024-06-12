@@ -10,10 +10,10 @@ contextBridge.exposeInMainWorld('electron', {
     setConfig: (key: string, value: string) => {
         ipcRenderer.send('setConfig', key, value)
     },
-    authenticate: () => {
-        ipcRenderer.send('authenticate')
+    getXAccounts: (): Promise<XAccount[]> => {
+        return ipcRenderer.invoke('getXAccounts')
     },
-    token: () => {
-        ipcRenderer.send('token')
+    createXAccount: (): Promise<XAccount> => {
+        return ipcRenderer.invoke('createXAccount')
     }
 })

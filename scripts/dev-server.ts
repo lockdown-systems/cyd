@@ -58,6 +58,7 @@ const setupMainWatcher = async () => {
         });
         spawnProcess.on('close', (code: number) => {
             console.log(`child process exited with code ${code}`);
+            process.exit(0);
         });
     })
 }

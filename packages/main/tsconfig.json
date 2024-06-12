@@ -24,6 +24,7 @@
     "include": [
         "./src/**/*.ts",
         "./src/**/*.d.ts",
+        "../shared.d.ts"
     ],
     "references": [
         {
