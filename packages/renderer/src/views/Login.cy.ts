@@ -1,11 +1,11 @@
 import { ref } from 'vue';
 
-import LoginView from './LoginView.vue'
+import Login from './Login.vue'
 import ServerAPI from '../ServerAPI';
 
-describe('<LoginView />', () => {
+describe('<Login />', () => {
   it('starts with the email field visible and the value blank', () => {
-    cy.mount(LoginView);
+    cy.mount(Login);
 
     cy.vueRef('emailInputEl').should('be.visible');
     cy.vueRef('emailInputEl').should('have.value', '');
@@ -14,7 +14,7 @@ describe('<LoginView />', () => {
   it('prepopulates the email field if it is saved', () => {
     const testEmail = 'test@lockdown.systems';
 
-    cy.mount(LoginView, {
+    cy.mount(Login, {
       global: {
         plugins: [(app) => {
           app.provide('userEmail', ref(testEmail));
@@ -29,7 +29,7 @@ describe('<LoginView />', () => {
   it('shows an error message if the email field is blank', () => {
     const showError = cy.stub();
 
-    cy.mount(LoginView, {
+    cy.mount(Login, {
       global: {
         plugins: [(app) => {
           app.provide('userEmail', '');
@@ -48,7 +48,7 @@ describe('<LoginView />', () => {
     const testEmail = 'test@lockdown.systems';
     const showError = cy.stub();
 
-    cy.mount(LoginView, {
+    cy.mount(Login, {
       global: {
         plugins: [(app) => {
           app.provide('serverApi', ref(new ServerAPI()));
@@ -79,7 +79,7 @@ describe('<LoginView />', () => {
       const serverApi = new ServerAPI();
       await serverApi.initialize();
 
-      cy.mount(LoginView, {
+      cy.mount(Login, {
         global: {
           plugins: [(app) => {
             app.provide('serverApi', ref(serverApi));
@@ -121,7 +121,7 @@ describe('<LoginView />', () => {
       const serverApi = new ServerAPI();
       await serverApi.initialize();
 
-      cy.mount(LoginView, {
+      cy.mount(Login, {
         global: {
           plugins: [(app) => {
             app.provide('serverApi', ref(serverApi));
@@ -171,7 +171,7 @@ describe('<LoginView />', () => {
       const serverApi = new ServerAPI();
       await serverApi.initialize();
 
-      cy.mount(LoginView, {
+      cy.mount(Login, {
         global: {
           plugins: [(app) => {
             app.provide('serverApi', ref(serverApi));
@@ -232,7 +232,7 @@ describe('<LoginView />', () => {
       const serverApi = new ServerAPI();
       await serverApi.initialize();
 
-      cy.mount(LoginView, {
+      cy.mount(Login, {
         global: {
           plugins: [(app) => {
             app.provide('serverApi', ref(serverApi));
@@ -294,7 +294,7 @@ describe('<LoginView />', () => {
       const serverApi = new ServerAPI();
       await serverApi.initialize();
 
-      cy.mount(LoginView, {
+      cy.mount(Login, {
         global: {
           plugins: [(app) => {
             app.provide('serverApi', ref(serverApi));

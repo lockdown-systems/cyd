@@ -4,7 +4,6 @@ import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { prisma, runPrismaMigrations } from './prisma'
 import { getConfig, setConfig } from './config'
-import { PrismaClient } from '@prisma/client'
 
 const isSingleInstance = app.requestSingleInstanceLock()
 if (!isSingleInstance) {

@@ -1,23 +1,28 @@
 import { createRouter, createWebHistory } from "vue-router";
-import LoginView from "../views/LoginView.vue";
-import DashboardView from "../views/DashboardView.vue";
-import AddServiceView from "../views/AddServiceView.vue";
+import Login from "../views/Login.vue";
+import Dashboard from "../views/Dashboard.vue";
+import AddService from "../views/AddService.vue";
+import AccountX from "../views/AccountX.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",
-      component: LoginView,
+      component: Login,
     },
     {
       path: "/dashboard",
-      component: DashboardView,
+      component: Dashboard,
     },
     {
       path: "/add-service",
-      component: AddServiceView,
-    }
+      component: AddService,
+    },
+    {
+      path: "/account/x/:id",
+      component: AccountX,
+    },
   ],
 });
 
