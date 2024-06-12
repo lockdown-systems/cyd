@@ -34,9 +34,9 @@ export const prisma = new PrismaClient({
         },
     ],
 })
-prisma.$on('query', (e) => {
-    log.log(`Query: ${e.query}, Params: ${e.params}`)
-})
+// prisma.$on('query', (e) => {
+//     log.log(`Query: ${e.query}, Params: ${e.params}`)
+// })
 
 // Find the location of the migration engine and query engine
 const platformToExecutables: any = {
@@ -45,8 +45,8 @@ const platformToExecutables: any = {
         queryEngine: 'node_modules/@prisma/engines/query_engine-windows.dll.node',
     },
     linux: {
-        schemaEngine: 'node_modules/@prisma/engines/schema-engine-debian-openssl-1.1.x',
-        queryEngine: 'node_modules/@prisma/engines/libquery_engine-debian-openssl-1.1.x.so.node'
+        schemaEngine: 'node_modules/@prisma/engines/schema-engine-debian-openssl-3.0.x',
+        queryEngine: 'node_modules/@prisma/engines/libquery_engine-debian-openssl-3.0.x.so.node'
     },
     darwin: {
         schemaEngine: 'node_modules/@prisma/engines/schema-engine-darwin',
