@@ -108,7 +108,7 @@ export class AccountXViewModel {
                 if (this.account.username === null) {
                     this.instructions = `
 I can help you automatically delete your tweets, likes, and direct messages, 
-except for the ones you want to keep. To start, login to your X account below.
+except for the ones you want to keep. **To start, login to your X account below.**
 `;
                     this.showBrowser = true;
                     await this.webview.loadURL("https://x.com/login");
