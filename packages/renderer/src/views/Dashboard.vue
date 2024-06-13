@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, inject } from 'vue'
-import XAccount from '../components/XAccount.vue';
+import AccountCardX from '../components/AccountCardX.vue';
 
 const navigate = inject('navigate') as (path: string) => void;
 
@@ -29,7 +29,7 @@ onMounted(async () => {
         </div>
 
         <div class="d-flex flex-wrap">
-            <XAccount v-for="(account, _) in xAccounts" :account="account" @clicked="xAccountClicked(account)" />
+            <AccountCardX v-for="(account, _) in xAccounts" :account="account" @clicked="xAccountClicked(account)" />
         </div>
 
         <div class="p-2">
