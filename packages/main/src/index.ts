@@ -98,7 +98,7 @@ async function createWindow() {
     // If we're in local or staging, pre-open developer tools
     if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
         win.webContents.openDevTools();
-        win.setSize(1600, 768);
+        win.setSize(1400, 768);
     }
 
     return win

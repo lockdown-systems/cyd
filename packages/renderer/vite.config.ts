@@ -4,7 +4,16 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          // Treat <webview> tag as a custom element
+          isCustomElement: (tag) => tag.includes('webview'),
+        },
+      },
+    }),
+  ],
   // Please note that `__dirname = packages/renderer` in this context.
   root: __dirname,
   base: './',

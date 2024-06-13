@@ -12,10 +12,14 @@ import Settings from './modals/Settings.vue';
 const router = useRouter();
 
 // Main content padding from the header
+const mainContentPadding = ref(0);
+provide('mainContentPadding', mainContentPadding);
+
 const mainContentEl = ref<HTMLElement | null>(null);
 const adjustMainContentPadding = (headerHeight: number) => {
   if (mainContentEl.value) {
     mainContentEl.value.style.paddingTop = `${headerHeight}px`;
+    mainContentPadding.value = headerHeight;
   }
 };
 
