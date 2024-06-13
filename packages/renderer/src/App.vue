@@ -6,8 +6,8 @@ import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
 import Header from './components/Header.vue';
-import ErrorMessage from './components/ErrorMessage.vue';
-import Settings from './components/Settings.vue';
+import ErrorMessage from './modals/ErrorMessage.vue';
+import Settings from './modals/Settings.vue';
 
 const router = useRouter();
 
