@@ -1,11 +1,24 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, onMounted } from 'vue'
 
 const showError = inject('showError') as (message: string) => void;
 const navigate = inject('navigate') as (path: string) => void;
+const showBack = inject('showBack') as (text: string, navigation: string) => void;
 
 const selectServiceClicked = async (service: string) => {
     if (service === 'X') {
+        // If there's an X account with no username, navigate to it
+        const xAccounts = await (window as any).electron.getXAccounts();
+        for (const xAccount of xAccounts) {
+            if (xAccount.username === null) {
+                console.log('Found an X account with no username so using that instead', xAccount.id)
+                navigate(`/account/x/${xAccount.id}`);
+                return;
+            }
+        }
+
+        // Otherwise create a new X account
+        console.log('Creating a new X account')
         const xAccount = await (window as any).electron.createXAccount();
         navigate(`/account/x/${xAccount.id}`);
     } else {
@@ -13,6 +26,10 @@ const selectServiceClicked = async (service: string) => {
         showError('Service not yet implemented');
     }
 }
+
+onMounted(() => {
+    showBack('Your accounts', '/dashboard');
+});
 </script>
 
 <template>

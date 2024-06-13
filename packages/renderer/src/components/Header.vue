@@ -10,6 +10,13 @@ const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
+const hideBack = inject('hideBack') as () => void;
+
+const props = defineProps<{
+    showBackButton: boolean;
+    backText: string;
+    backNavigation: string;
+}>();
 
 const headerEl = ref<HTMLInputElement | null>(null);
 const emits = defineEmits(['adjustMainContent']);
@@ -53,7 +60,13 @@ const signOutClicked = async () => {
     await refreshDeviceInfo();
 
     // Redirect to the login page
+    backClicked();
     navigate('/');
+};
+
+const backClicked = () => {
+    hideBack();
+    navigate(props.backNavigation);
 };
 
 onMounted(() => {
@@ -68,12 +81,11 @@ onUnmounted(() => {
 
 <template>
     <template v-if="userEmail != '' && deviceInfo?.valid">
-        <header class="d-flex flex-column flex-md-row justify-content-between align-items-center p-2 bg-light"
+        <header class="d-flex flex-md-row justify-content-between align-items-center p-2 bg-light"
             data-vue-ref="headerEl" ref="headerEl">
-            <RouterLink to="/dashboard" class="d-flex align-items-center mb-2 mb-md-0">
-                <img class="logo mr-2" src="/logo.png" alt="Semiphemeral Logo">
-                <h1 class="h4 mb-0">Semiphemeral</h1>
-            </RouterLink>
+            <button v-if="showBackButton" class="btn btn-secondary btn-sm" @click="backClicked"><i
+                    class="fa-solid fa-circle-left"></i> {{ backText }}</button>
+            <div></div>
             <div class="d-flex align-items-center">
                 <div class="mr-2">
                     <i class="fa-regular fa-face-smile"></i>

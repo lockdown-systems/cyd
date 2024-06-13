@@ -68,6 +68,23 @@ const navigate = (path: string) => {
 };
 provide('navigate', navigate);
 
+// Back button
+const showBackButton = ref(false);
+const backText = ref('');
+const backNavigation = ref('');
+
+const showBack = (text: string, navigation: string) => {
+  backText.value = text;
+  backNavigation.value = navigation;
+  showBackButton.value = true;
+};
+provide('showBack', showBack);
+
+const hideBack = () => {
+  showBackButton.value = false;
+};
+provide('hideBack', hideBack);
+
 onMounted(async () => {
   await serverApi.value.initialize();
   await refreshDeviceInfo();
@@ -81,7 +98,8 @@ onMounted(async () => {
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <Header :device-info="deviceInfo" @adjust-main-content="adjustMainContentPadding" />
+    <Header :show-back-button="showBackButton" :back-text="backText" :back-navigation="backNavigation"
+      :device-info="deviceInfo" @adjust-main-content="adjustMainContentPadding" />
     <div class="flex-grow-1 m-3" ref="mainContentEl">
       <RouterView />
     </div>
