@@ -1,3 +1,5 @@
+import Electron from 'electron';
+
 export enum State {
     Login = "login",
     Dashboard = "dashboard",
@@ -14,17 +16,21 @@ export class AccountXModel {
     private account: XAccount;
     private state: string;
     private showBrowser: boolean;
+    private webview: Electron.WebviewTag;
 
     public instructions: string;
 
-    constructor(account: XAccount) {
+    constructor(account: XAccount, webview: Electron.WebviewTag) {
         this.account = account;
+        this.webview = webview;
+
         this.state = State.Login;
         this.instructions = "";
         this.showBrowser = false;
     }
 
     async run() {
+        console.log("State is " + this.state)
         switch (this.state) {
             case State.Login:
                 // Never logged in before
@@ -34,6 +40,7 @@ Excellent choice! I can help you automatically delete your tweets, likes, and di
 except for the ones you want to keep. To start, login to your X account below.
 `;
                     this.showBrowser = true;
+                    this.webview.loadURL("https://twitter.com/login");
                 } else {
                     // We have logged in before. Are we currently logged in?
                 }

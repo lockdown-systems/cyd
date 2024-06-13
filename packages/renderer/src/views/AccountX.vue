@@ -2,6 +2,7 @@
 import { ref, inject, onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue';
 import { useRoute } from 'vue-router';
+import Electron from 'electron';
 
 import SpeechBubble from '../components/SpeechBubble.vue';
 
@@ -17,7 +18,7 @@ const accountXModel = ref<AccountXModel | null>(null);
 
 const containerEl = ref<HTMLElement | null>(null);
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
-const webviewComponent = ref<any>(null);
+const webviewComponent = ref<Electron.WebviewTag | null>(null);
 
 const webviewStyle = ref('');
 const containerStyle = ref('height: calc(100vh - 0px)');
@@ -32,8 +33,8 @@ const loadXAccount = async () => {
         }
     }
 
-    if (foundAccount !== null) {
-        accountXModel.value = new AccountXModel(foundAccount);
+    if (foundAccount !== null && webviewComponent.value !== null) {
+        accountXModel.value = new AccountXModel(foundAccount, webviewComponent.value);
     }
 }
 
@@ -66,7 +67,7 @@ onUnmounted(() => {
 <template>
     <div ref="containerEl" class="d-flex flex-column" :style="containerStyle">
         <SpeechBubble ref="speechBubbleComponent" :message="accountXModel?.instructions || ''" class="speech-bubble" />
-        <webview rel="webviewComponent" src="https://micahflee.com" class="webview" :style="webviewStyle">
+        <webview ref="webviewComponent" src="about:blank" class="webview" :style="webviewStyle">
         </webview>
     </div>
 </template>
@@ -78,5 +79,9 @@ onUnmounted(() => {
 
 .speech-bubble {
     padding-bottom: 10px;
+}
+
+.hidden {
+    display: none;
 }
 </style>
