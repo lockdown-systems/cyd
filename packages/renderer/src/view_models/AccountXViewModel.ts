@@ -46,6 +46,7 @@ export class AccountXViewModel {
         while (!this.webviewReady) {
             await new Promise(resolve => setTimeout(resolve, 200));
         }
+        this.webview.openDevTools();
     }
 
     async loginPageTests(): Promise<boolean> {
@@ -63,38 +64,38 @@ export class AccountXViewModel {
     async getUsername(): Promise<string> {
         this.log("getUsername", "getting username");
         const code = `
-(() => {
-    // Click the profile icon
-    let profileIconEl = document.querySelector('[data-testid="DashButton_ProfileIcon_Link"]')
-    if(profileIconEl === null) {
-        return "";
-    }
-    profileIconEl.click();
-    
-    // Find the account div on the sidebar
-    let accountEl = document.querySelector('div[aria-label="Account"]');
-    if(accountEl === null) {
-        return "";
-    }
-    
-    // Get the profile button
-    let profileEl = accountEl.parentElement.children[1];
-    if(profileEl === null) {
-        return "";
-    }
+        (() => {
+            // Click the profile icon
+            let profileIconEl = document.querySelector('[data-testid="DashButton_ProfileIcon_Link"]')
+            if(profileIconEl === null) {
+                return "";
+            }
+            profileIconEl.click();
 
-    // Get the profile link
-    linkEl = profileEl.querySelector('a');
-    if(linkEl === null) {
-        return "";
-    }
+            // Find the account div on the sidebar
+            let accountEl = document.querySelector('div[aria-label="Account"]');
+            if(accountEl === null) {
+                return "";
+            }
 
-    // Get the username from the link
-    let username = linkEl.getAttribute("href");
-    username = username.replace(/^\\//, "");
-    return username;
-})()
-`;
+            // Get the profile button
+            let profileEl = accountEl.parentElement.children[1];
+            if(profileEl === null) {
+                return "";
+            }
+
+            // Get the profile link
+            linkEl = profileEl.querySelector('a');
+            if(linkEl === null) {
+                return "";
+            }
+
+            // Get the username from the link
+            let username = linkEl.getAttribute("href");
+            username = username.replace(/^\\//, "");
+            return username;
+        })()
+        `;
         const resp = await this.webview.executeJavaScript(code);
         console.log("Username is " + resp);
         return resp;
@@ -131,7 +132,11 @@ except for the ones you want to keep. **To start, login to your X account below.
 
                     // We're logged in, get the username
                     this.log("run", "login succeeded");
-                    this.account.username = await this.getUsername();
+
+                    //this.account.username = await this.getUsername();
+
+                    const resp = await this.webview.executeJavaScript(`(() => { console.log("does it work at all?"); alert('test'); return "test"; })`);
+                    console.log("Response", typeof resp, resp);
 
 
 
