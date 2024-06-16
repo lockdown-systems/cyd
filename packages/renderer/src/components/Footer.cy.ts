@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-import Header from './Header.vue'
+import Header from './Footer.vue'
 
 describe('<Header />', () => {
   it('should be hidden without userEmail and valid deviceInfo', () => {

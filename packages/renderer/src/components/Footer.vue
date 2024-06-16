@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, Ref, onMounted, onUnmounted } from 'vue';
+import { inject, Ref } from 'vue';
 
 import ServerAPI from '../ServerAPI';
 
@@ -17,14 +17,6 @@ const props = defineProps<{
     backText: string;
     backNavigation: string;
 }>();
-
-const headerEl = ref<HTMLInputElement | null>(null);
-const emits = defineEmits(['adjustMainContent']);
-
-const updateHeaderHeight = () => {
-    const headerHeight = headerEl.value?.offsetHeight || 0;
-    emits('adjustMainContent', headerHeight);
-};
 
 const settingsClicked = async () => {
     showSettings();
@@ -68,21 +60,12 @@ const backClicked = () => {
     hideBack();
     navigate(props.backNavigation);
 };
-
-onMounted(() => {
-    window.addEventListener('resize', updateHeaderHeight);
-    setTimeout(updateHeaderHeight, 100);
-});
-
-onUnmounted(() => {
-    window.removeEventListener('resize', updateHeaderHeight);
-});
 </script>
 
 <template>
     <template v-if="userEmail != '' && deviceInfo?.valid">
-        <header class="d-flex flex-md-row justify-content-between align-items-center p-2 bg-light"
-            data-vue-ref="headerEl" ref="headerEl">
+        <div class="footer d-flex flex-md-row justify-content-between align-items-center p-2 bg-light"
+            data-vue-ref="headerEl">
             <button v-if="showBackButton" class="btn btn-secondary btn-sm" @click="backClicked"><i
                     class="fa-solid fa-circle-left"></i> {{ backText }}</button>
             <div></div>
@@ -97,21 +80,17 @@ onUnmounted(() => {
                     <button class="btn btn-secondary btn-sm" @click="signOutClicked">Sign out</button>
                 </div>
             </div>
-        </header>
+        </div>
     </template>
 </template>
 
 <style scoped>
-header {
+.footer {
     position: fixed;
-    top: 0;
+    bottom: 0;
     left: 0;
     width: 100%;
     z-index: 1000;
-}
-
-header .logo {
-    max-height: 2.2rem;
 }
 
 a {

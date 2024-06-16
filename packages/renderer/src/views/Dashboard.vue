@@ -35,5 +35,9 @@ onMounted(async () => {
         <div class="p-2">
             <button class="btn btn-primary" @click="navigate('/add-service')">Add another account</button>
         </div>
+
+        <div class="p-2">
+            <RouterLink to="/browser-test">Browser Test</RouterLink>
+        </div>
     </div>
 </template>

@@ -5,23 +5,11 @@ import { useRouter } from 'vue-router'
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
-import Header from './components/Header.vue';
+import Footer from './components/Footer.vue';
 import ErrorMessage from './modals/ErrorMessage.vue';
 import Settings from './modals/Settings.vue';
 
 const router = useRouter();
-
-// Main content padding from the header
-const mainContentPadding = ref(0);
-provide('mainContentPadding', mainContentPadding);
-
-const mainContentEl = ref<HTMLElement | null>(null);
-const adjustMainContentPadding = (headerHeight: number) => {
-  if (mainContentEl.value) {
-    mainContentEl.value.style.paddingTop = `${headerHeight}px`;
-    mainContentPadding.value = headerHeight;
-  }
-};
 
 // Server API
 const serverApi = ref(new ServerAPI());
@@ -102,11 +90,12 @@ onMounted(async () => {
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <Header :show-back-button="showBackButton" :back-text="backText" :back-navigation="backNavigation"
-      :device-info="deviceInfo" @adjust-main-content="adjustMainContentPadding" />
-    <div class="flex-grow-1 m-3" ref="mainContentEl">
+    <div class="flex-grow-1 m-3">
       <RouterView />
     </div>
+
+    <Footer :show-back-button="showBackButton" :back-text="backText" :back-navigation="backNavigation"
+      :device-info="deviceInfo" />
 
     <!-- Settings modal -->
     <Settings v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
@@ -116,12 +105,6 @@ onMounted(async () => {
       @close="showErrorModal = false" />
   </div>
 </template>
-
-<style scoped>
-header .logo {
-  max-height: 2.2rem;
-}
-</style>
 
 <style>
 html,
@@ -148,6 +131,17 @@ body {
   width: 100vw;
   height: 100vh;
   z-index: 1050;
+}
+
+/* Webview styles */
+
+.wrapper {
+  height: calc(100vh - 80px);
+}
+
+.webview {
+  border: 5px solid black;
+  height: 100vh;
 }
 
 /* Headers */

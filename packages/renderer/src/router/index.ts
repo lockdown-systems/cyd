@@ -3,6 +3,7 @@ import Login from "../views/Login.vue";
 import Dashboard from "../views/Dashboard.vue";
 import AddService from "../views/AddService.vue";
 import AccountX from "../views/AccountX.vue";
+import BrowserTest from "../views/BrowserTest.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +23,10 @@ const router = createRouter({
     {
       path: "/account/x/:id",
       component: AccountX,
+    },
+    {
+      path: "/browser-test",
+      component: BrowserTest,
     },
   ],
 });
