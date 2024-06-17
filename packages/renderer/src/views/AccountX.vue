@@ -33,11 +33,16 @@ onMounted(async () => {
     showBack('Your accounts', '/dashboard');
     const account = await loadXAccount();
 
-    if (account !== null && webviewComponent.value !== null) {
-        accountXViewModel.value = new AccountXViewModel(account, webviewComponent.value);
-        await accountXViewModel.value.waitForWebviewReady();
-        // TODO: catch exceptions
-        await accountXViewModel.value.run();
+    if (webviewComponent.value !== null) {
+        const webview = webviewComponent.value;
+
+        if (account !== null) {
+            accountXViewModel.value = new AccountXViewModel(account, webview);
+            await accountXViewModel.value.init();
+
+            // TODO: catch exceptions
+            await accountXViewModel.value.run();
+        }
     }
 });
 

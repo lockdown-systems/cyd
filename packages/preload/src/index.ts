@@ -4,6 +4,9 @@ contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
         return ipcRenderer.invoke('getApiUrl')
     },
+    isDevMode: (): Promise<boolean> => {
+        return ipcRenderer.invoke('isDevMode')
+    },
     getConfig: (key: string): Promise<string> => {
         return ipcRenderer.invoke('getConfig', key);
     },
@@ -15,5 +18,8 @@ contextBridge.exposeInMainWorld('electron', {
     },
     createXAccount: (): Promise<XAccount> => {
         return ipcRenderer.invoke('createXAccount')
+    },
+    saveXAccount: (accountJSON: string) => {
+        ipcRenderer.invoke('saveXAccount', accountJSON)
     }
 })

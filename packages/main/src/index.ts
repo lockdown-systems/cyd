@@ -61,13 +61,19 @@ async function createWindow() {
     // IPC events
 
     ipcMain.handle('getApiUrl', async (_) => {
-        // Get SEMIPHEMERAL_ENV from the environment
         if (semiphemeralEnv == "local") {
             return "http://localhost:8080/api/v1"
         } else if (semiphemeralEnv == "staging") {
             return "https://staging-semiphemeral.fly.dev/api/v1/"
         }
         return "https://semiphemeral.com/api/v1"
+    })
+
+    ipcMain.handle('isDevMode', async (_) => {
+        if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
+            return true
+        }
+        return false
     })
 
     ipcMain.handle('getConfig', async (_, key) => {
@@ -86,6 +92,14 @@ async function createWindow() {
     ipcMain.handle('createXAccount', async (_) => {
         return await prisma.xAccount.create({
             data: {}
+        })
+    })
+
+    ipcMain.handle('saveXAccount', async (_, accountJson) => {
+        const account = JSON.parse(accountJson)
+        return await prisma.xAccount.update({
+            where: { id: account.id },
+            data: account
         })
     })
 

@@ -16,26 +16,33 @@ export class AccountXViewModel {
     private account: XAccount;
     private state: string;
     private webview: Electron.WebviewTag;
-    private webviewReady: boolean;
+    private ready: boolean;
 
     public showBrowser: boolean;
     public instructions: string;
 
     constructor(account: XAccount, webview: Electron.WebviewTag) {
-        console.log("AccountXViewModel initialized");
         this.account = account;
         this.webview = webview;
 
         this.state = State.Login;
-        this.webviewReady = false;
         this.instructions = "";
         this.showBrowser = false;
+        this.ready = false;
 
         // Wait for the webview to finish loading
         this.webview.addEventListener("dom-ready", () => {
-            this.webviewReady = true;
-            console.log("AccountXViewModel: webview is ready");
+            const url = this.webview.getURL();
+            console.log("AccountXViewModel: dom-ready", url);
+            this.ready = true;
         });
+    }
+
+    async init() {
+        // Open dev tools in local or staging, but not in production
+        if (await (window as any).electron.isDevMode()) {
+            this.webview.openDevTools();
+        }
     }
 
     log(func: string, message: string) {
@@ -43,10 +50,52 @@ export class AccountXViewModel {
     }
 
     async waitForWebviewReady() {
-        while (!this.webviewReady) {
+        this.ready = false;
+        while (!this.ready) {
             await new Promise(resolve => setTimeout(resolve, 200));
         }
-        this.webview.openDevTools();
+    }
+
+    async loadURL(url: string) {
+        console.log("AccountXViewModel.loadURL", url);
+        await this.webview.loadURL(url);
+        await this.waitForWebviewReady();
+    }
+
+    async waitForURL(url: string) {
+        console.log("waitForURL", url);
+        let done = false;
+        while (!done) {
+            const newURL = this.webview.getURL();
+            this.log("waitForURL", `waiting... currently: ${newURL}`);
+            if (newURL == url) {
+                break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+
+    async scriptClickElement(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            let el = document.querySelector('${selector}');
+            if(el === null) { return false; }
+            el.click();
+            return true;
+        })()
+        `;
+        return await this.webview.executeJavaScript(code);
+    }
+
+    async scriptGetInnerText(selector: string): Promise<null | string> {
+        const code = `
+        (() => {
+            let el = document.querySelector('${selector}');
+            if(el === null) { return null; }
+            return el.innerText;
+        })()
+        `;
+        return await this.webview.executeJavaScript(code);
     }
 
     async loginPageTests(): Promise<boolean> {
@@ -61,48 +110,37 @@ export class AccountXViewModel {
         return true;
     }
 
-    async getUsername(): Promise<string> {
-        this.log("getUsername", "getting username");
-        const code = `
-        (() => {
-            // Click the profile icon
-            let profileIconEl = document.querySelector('[data-testid="DashButton_ProfileIcon_Link"]')
-            if(profileIconEl === null) {
-                return "";
-            }
-            profileIconEl.click();
+    async getUsername(): Promise<null | string> {
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Find the account div on the sidebar
-            let accountEl = document.querySelector('div[aria-label="Account"]');
-            if(accountEl === null) {
-                return "";
-            }
+        const clickResp = await this.scriptClickElement('[data-testid="AppTabBar_Profile_Link"]')
+        if (!clickResp) {
+            this.log("getUsername", "failed to click profile link")
+            return null;
+        }
 
-            // Get the profile button
-            let profileEl = accountEl.parentElement.children[1];
-            if(profileEl === null) {
-                return "";
-            }
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Get the profile link
-            linkEl = profileEl.querySelector('a');
-            if(linkEl === null) {
-                return "";
-            }
+        const usernameInnerText = await this.scriptGetInnerText('[data-testid="UserName"]');
+        if (usernameInnerText === null) {
+            this.log("getUsername", "failed to get username innerText")
+            return null;
+        }
 
-            // Get the username from the link
-            let username = linkEl.getAttribute("href");
-            username = username.replace(/^\\//, "");
-            return username;
-        })()
-        `;
-        const resp = await this.webview.executeJavaScript(code);
-        console.log("Username is " + resp);
-        return resp;
+        const parts = usernameInnerText.split("@");
+        if (parts.length !== 2) {
+            this.log("getUsername", `invalid innerText: ${usernameInnerText}`)
+            return null;
+        }
+
+        const username = parts[1];
+        this.log("getUsername", `got username: ${username}`);
+        return username;
     }
 
     async run() {
         this.log("run", "running")
+
         switch (this.state) {
             case State.Login:
                 // Never logged in before
@@ -112,31 +150,28 @@ I can help you automatically delete your tweets, likes, and direct messages,
 except for the ones you want to keep. **To start, login to your X account below.**
 `;
                     this.showBrowser = true;
-                    await this.webview.loadURL("https://x.com/login");
+                    await this.loadURL("https://x.com/login");
 
                     if (!await this.loginPageTests()) {
                         this.log("run", "login page tests failed");
                         // TODO: display error message / report automation test errors
                     }
 
-                    // Wait for the URL to be https://twitter.com/home, which means the login succeeded
-                    let loggedIn = false;
-                    while (!loggedIn) {
-                        const url = this.webview.getURL();
-                        this.log("run", `current URL: ${url}`);
-                        if (url == "https://x.com/home") {
-                            break;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
+                    await this.waitForURL("https://x.com/home");
 
-                    // We're logged in, get the username
+                    // We're logged in
                     this.log("run", "login succeeded");
 
-                    //this.account.username = await this.getUsername();
+                    // Get the username
+                    const username = await this.getUsername();
+                    if (username === null) {
+                        this.log("run", "failed to get username");
+                        break;
+                    }
 
-                    const resp = await this.webview.executeJavaScript(`(() => { console.log("does it work at all?"); alert('test'); return "test"; })`);
-                    console.log("Response", typeof resp, resp);
+                    // Save it
+                    this.account.username = username;
+                    await (window as any).electron.saveXAccount(JSON.stringify(this.account));
 
 
 
