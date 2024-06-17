@@ -173,10 +173,26 @@ except for the ones you want to keep. **To start, login to your X account below.
                     this.account.username = username;
                     await (window as any).electron.saveXAccount(JSON.stringify(this.account));
 
-
+                    // TODO: redirect to dashboard
 
                 } else {
                     // We have logged in before. Are we currently logged in?
+                    this.instructions = `
+Checking to see if you're still logged in to your X account...
+`;
+                    this.showBrowser = true;
+                    await this.loadURL("https://x.com/login");
+
+                    if (this.webview.getURL() == "https://x.com/home") {
+                        // We're logged in
+                        this.log("run", "login succeeded");
+
+                        // TODO: redirect to dashboard
+                    } else {
+                        this.instructions = `
+You've been logged out. **To continue, log back into your X account below.**
+`;
+                    }
                 }
 
                 break;

@@ -42,7 +42,11 @@ onMounted(async () => {
 
             // TODO: catch exceptions
             await accountXViewModel.value.run();
+        } else {
+            console.error('Account not found');
         }
+    } else {
+        console.error('Webview component not found');
     }
 });
 
@@ -54,7 +58,7 @@ onUnmounted(() => {
     <div class="wrapper d-flex flex-column">
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
-        <webview ref="webviewComponent" src="about:blank" class="webview"
+        <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${accountID}`"
             :class="{ 'hidden': !accountXViewModel?.showBrowser }">
         </webview>
     </div>

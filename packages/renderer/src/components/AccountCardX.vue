@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineEmits(['clicked']);
 
-const props = defineProps<{
+defineProps<{
     account: XAccount;
 }>();
 </script>
@@ -10,11 +10,10 @@ const props = defineProps<{
     <div class="card m-2" @click="$emit('clicked')">
         <div class="card-body">
             <h6 class="card-title text-muted">
-                <i class="fa-brands fa-square-x-twitter"></i>
-                X (formerly Twitter)
+                <i class="fa-brands fa-square-x-twitter"></i> X/Twitter
             </h6>
-            <template v-if="account.username == ''">
-                <h5 class="card-subtitle mb-2">not logged in yet</h5>
+            <template v-if="account.username == null">
+                <h5 class="card-subtitle mb-2 text-muted">not logged in yet</h5>
             </template>
             <template v-else>
                 <h5 class="card-subtitle mb-2">@{{ account.username }}</h5>
