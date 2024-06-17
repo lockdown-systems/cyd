@@ -9,11 +9,17 @@ const props = defineProps<{
 <template>
     <div class="card m-2" @click="$emit('clicked')">
         <div class="card-body">
-            <h5 class="card-title">
+            <h6 class="card-title text-muted">
                 <i class="fa-brands fa-square-x-twitter"></i>
                 X (formerly Twitter)
-            </h5>
-            <h6 class="card-subtitle mb-2 text-muted">not logged in yet</h6>
+            </h6>
+            <template v-if="account.username == ''">
+                <h5 class="card-subtitle mb-2">not logged in yet</h5>
+            </template>
+            <template v-else>
+                <h5 class="card-subtitle mb-2">@{{ account.username }}</h5>
+            </template>
+
         </div>
     </div>
 </template>
