@@ -15,8 +15,7 @@
         "experimentalDecorators": true,
     },
     "include": [
-        "./**/*.ts",
-        "../shared.d.ts"
+        "./**/*.ts"
     ],
     "references": [
         {
