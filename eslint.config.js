@@ -1,19 +1,19 @@
-import eslint from '@eslint/js'
-import tseslint from 'typescript-eslint'
-import pluginVue from 'eslint-plugin-vue'
+const eslint = require('@eslint/js');
+const tseslint = require('typescript-eslint');
+const pluginVue = require('eslint-plugin-vue');
 
-export default tseslint.config(
+module.exports = tseslint.config(
     {
         ignores: [
             'dist/',
-            'packages/renderer/cypress.config.cjs',
-            'packages/renderer/cypress/',
+            'src/renderer/cypress.config.cjs',
+            'src/renderer/cypress/',
             'eslint.config.js',
-            'packages/main/vite.config.ts',
-            'scripts/dev-server.ts',
             'forge.config.ts',
             'forge.env.d.ts',
-            `vite.*.config.ts`,
+            'vite.*.config.ts',
+            '.vite/',
+            'src/renderer/.vite/'
         ],
     },
     eslint.configs.recommended,
