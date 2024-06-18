@@ -5,6 +5,7 @@
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data in tech platforms, except for what you want to keep",
   "license": "proprietary",
+  "authors": "Lockdown Systems",
   "scripts": {
     "start": "prisma generate && electron-forge start",
     "package": "prisma generate && electron-forge package",
