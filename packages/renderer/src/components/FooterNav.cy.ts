@@ -1,12 +1,12 @@
 import { ref } from 'vue';
 
-import Header from './Footer.vue'
+import Header from './FooterNav.vue';
 
 describe('<Header />', () => {
   it('should be hidden without userEmail and valid deviceInfo', () => {
     cy.mount(Header);
     cy.vueRef('headerEl').should('not.exist');
-  })
+  });
 
   it('should be shown with userEmail and valid deviceInfo', () => {
     const testEmail = 'test@lockdown.systems';
@@ -27,5 +27,5 @@ describe('<Header />', () => {
     });
 
     cy.vueRef('headerEl').should('be.visible');
-  })
-})
+  });
+});

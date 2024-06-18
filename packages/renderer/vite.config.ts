@@ -1,7 +1,7 @@
-import { join } from 'node:path'
-import { builtinModules } from 'node:module'
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import { join } from 'node:path';
+import { builtinModules } from 'node:module';
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   plugins: [
@@ -31,4 +31,4 @@ export default defineConfig({
       external: [...builtinModules.flatMap((p) => [p, `node:${p}`])],
     },
   },
-})
+});

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-import Login from './Login.vue'
+import Login from './LoginView.vue'
 import ServerAPI from '../ServerAPI';
 
 describe('<Login />', () => {
@@ -71,6 +71,7 @@ describe('<Login />', () => {
     const showError = cy.stub();
 
     cy.window().then(async (win) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (win as any).electron = {
         getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
         setConfig: async (_key: string, _value: string): Promise<void> => { return },
@@ -113,6 +114,7 @@ describe('<Login />', () => {
     const showError = cy.stub();
 
     cy.window().then(async (win) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (win as any).electron = {
         getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
         setConfig: async (_key: string, _value: string): Promise<void> => { return },
@@ -163,6 +165,7 @@ describe('<Login />', () => {
     const navigate = cy.spy();
 
     cy.window().then(async (win) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (win as any).electron = {
         getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
         setConfig: async (_key: string, _value: string): Promise<void> => { return },
@@ -224,6 +227,7 @@ describe('<Login />', () => {
     const showError = cy.stub();
 
     cy.window().then(async (win) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (win as any).electron = {
         getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
         setConfig: async (_key: string, _value: string): Promise<void> => { return },
@@ -286,6 +290,7 @@ describe('<Login />', () => {
     const showError = cy.stub();
 
     cy.window().then(async (win) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (win as any).electron = {
         getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
         setConfig: async (_key: string, _value: string): Promise<void> => { return },

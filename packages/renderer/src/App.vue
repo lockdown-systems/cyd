@@ -2,12 +2,13 @@
 import { ref, provide, onMounted } from "vue"
 import { useRouter } from 'vue-router'
 
+import type { DeviceInfo } from './types';
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
-import Footer from './components/Footer.vue';
+import FooterNav from './components/FooterNav.vue';
 import ErrorMessage from './modals/ErrorMessage.vue';
-import Settings from './modals/Settings.vue';
+import SettingsModal from './modals/SettingsModal.vue';
 
 const router = useRouter();
 
@@ -94,11 +95,11 @@ onMounted(async () => {
       <RouterView />
     </div>
 
-    <Footer :show-back-button="showBackButton" :back-text="backText" :back-navigation="backNavigation"
+    <FooterNav :show-back-button="showBackButton" :back-text="backText" :back-navigation="backNavigation"
       :device-info="deviceInfo" />
 
     <!-- Settings modal -->
-    <Settings v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
+    <SettingsModal v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
 
     <!-- Error message modal -->
     <ErrorMessage v-if="showErrorModal" :message="errorMessage" @hide="showErrorModal = false"

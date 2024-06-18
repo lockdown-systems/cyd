@@ -34,9 +34,13 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="wrapper d-flex flex-column">
-        <webview ref="webviewComponent" src="https://example.com" class="webview"></webview>
-    </div>
+  <div class="wrapper d-flex flex-column">
+    <webview
+      ref="webviewComponent"
+      src="https://example.com"
+      class="webview"
+    />
+  </div>
 </template>
 
 <style scoped></style>

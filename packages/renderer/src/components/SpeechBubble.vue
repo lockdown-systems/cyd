@@ -10,16 +10,23 @@ const parsedMessage = computed(() => marked.parse(props.message));
 </script>
 
 <template>
-    <div class="row align-items-center">
-        <div class="col-auto">
-            <img src="/logo.png" class="bird img-fluid" alt="Semiphemeral Bird" />
-        </div>
-        <div class="col">
-            <div class="bubble p-3 text-black rounded-5">
-                <div class="bubble-inner" v-html="parsedMessage"></div>
-            </div>
-        </div>
+  <div class="row align-items-center">
+    <div class="col-auto">
+      <img
+        src="/logo.png"
+        class="bird img-fluid"
+        alt="Semiphemeral Bird"
+      >
     </div>
+    <div class="col">
+      <div class="bubble p-3 text-black rounded-5">
+        <div
+          class="bubble-inner"
+          v-html="parsedMessage"
+        />
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>

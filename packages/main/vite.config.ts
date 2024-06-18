@@ -1,5 +1,5 @@
-import { builtinModules } from 'node:module'
-import { defineConfig } from 'vite'
+import { builtinModules } from 'node:module';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
     envDir: process.cwd(),
@@ -36,4 +36,4 @@ export default defineConfig({
             },
         },
     },
-})
+});

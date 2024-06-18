@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import Electron from 'electron';
 
 import SpeechBubble from '../components/SpeechBubble.vue';
+import type { XAccount } from '../types';
 
 import { AccountXViewModel } from '../view_models/AccountXViewModel'
 
@@ -19,7 +20,7 @@ const webviewComponent = ref<Electron.WebviewTag | null>(null);
 
 const loadXAccount = async (): Promise<XAccount | null> => {
     let foundAccount: XAccount | null = null;
-    const xAccounts = await (window as any).electron.getXAccounts();
+    const xAccounts = await window.electron.getXAccounts();
     for (const account of xAccounts) {
         if (account.id === accountID) {
             foundAccount = account;
@@ -59,8 +60,7 @@ onUnmounted(() => {
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${accountID}`"
-            :class="{ 'hidden': !accountXViewModel?.showBrowser }">
-        </webview>
+            :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
     </div>
 </template>
 

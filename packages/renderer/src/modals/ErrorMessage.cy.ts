@@ -1,4 +1,4 @@
-import ErrorMessage from './ErrorMessage.vue'
+import ErrorMessage from './ErrorMessage.vue';
 
 describe('<ErrorMessage />', () => {
   const message = 'Test error message';

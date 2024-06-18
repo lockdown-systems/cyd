@@ -1,5 +1,5 @@
-import { builtinModules } from 'node:module'
-import { defineConfig } from 'vite'
+import { builtinModules } from 'node:module';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
     // Please note that `__dirname = packages/preload` in this context.
@@ -39,4 +39,4 @@ export default defineConfig({
             },
         },
     },
-})
+});
