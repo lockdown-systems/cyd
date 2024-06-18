@@ -7,7 +7,7 @@ export default class ServerAPI {
     constructor() { }
 
     async initialize(): Promise<void> {
-        this.apiUrl = await (window as any).electron.getApiUrl();
+        this.apiUrl = await window.electron.getApiUrl();
     }
 
     setUserEmail(userEmail: string) {
@@ -19,13 +19,14 @@ export default class ServerAPI {
     }
 
     returnError(message: string) {
-        let apiErrorResponse: ApiErrorResponse = {
+        const apiErrorResponse: ApiErrorResponse = {
             error: true,
             message: message
         }
         return apiErrorResponse
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fetch(method: string, resource: RequestInfo, body: any): Promise<Response> {
         const options: RequestInit = {
             method: method,
@@ -39,6 +40,7 @@ export default class ServerAPI {
         return fetch(resource, options);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fetchAuthenticated(method: string, resource: RequestInfo, body: any): Promise<Response> {
         const options: RequestInit = {
             method: method,

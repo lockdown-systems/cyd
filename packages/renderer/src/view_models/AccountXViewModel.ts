@@ -40,7 +40,7 @@ export class AccountXViewModel {
 
     async init() {
         // Open dev tools in local or staging, but not in production
-        if (await (window as any).electron.isDevMode()) {
+        if (await window.electron.isDevMode()) {
             this.webview.openDevTools();
         }
     }
@@ -64,8 +64,8 @@ export class AccountXViewModel {
 
     async waitForURL(url: string) {
         console.log("waitForURL", url);
-        let done = false;
-        while (!done) {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
             const newURL = this.webview.getURL();
             this.log("waitForURL", `waiting... currently: ${newURL}`);
             if (newURL == url) {
@@ -171,7 +171,7 @@ except for the ones you want to keep. **To start, login to your X account below.
 
                     // Save it
                     this.account.username = username;
-                    await (window as any).electron.saveXAccount(JSON.stringify(this.account));
+                    await window.electron.saveXAccount(JSON.stringify(this.account));
 
                     // TODO: redirect to dashboard
 

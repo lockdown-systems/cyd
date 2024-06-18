@@ -60,7 +60,7 @@ async function createWindow() {
 
     // IPC events
 
-    ipcMain.handle('getApiUrl', async (_) => {
+    ipcMain.handle('getApiUrl', async () => {
         if (semiphemeralEnv == "local") {
             return "http://localhost:8080/api/v1"
         } else if (semiphemeralEnv == "staging") {

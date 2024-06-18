@@ -39,7 +39,16 @@ export const prisma = new PrismaClient({
 // })
 
 // Find the location of the migration engine and query engine
-const platformToExecutables: any = {
+interface ExecutablePaths {
+    schemaEngine: string;
+    queryEngine: string;
+}
+
+type PlatformExecutables = {
+    [key: string]: ExecutablePaths;
+};
+
+const platformToExecutables: PlatformExecutables = {
     win32: {
         schemaEngine: 'node_modules/@prisma/engines/schema-engine-windows.exe',
         queryEngine: 'node_modules/@prisma/engines/query_engine-windows.dll.node',
@@ -126,7 +135,7 @@ export async function runPrismaMigrations(): Promise<number> {
                 log.error("Child process got error:", err);
             });
 
-            child.on("close", (code, signal) => {
+            child.on("close", (code, _signal) => {
                 resolve(code);
             })
 

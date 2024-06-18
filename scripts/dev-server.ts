@@ -1,8 +1,6 @@
-import { InlineConfig, ViteDevServer } from 'vite'
-import { ChildProcessWithoutNullStreams } from 'child_process'
+import { InlineConfig, ViteDevServer, build, createLogger, createServer } from 'vite'
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
 import electronPath from 'electron'
-import { build, createLogger, createServer } from 'vite'
-import { spawn } from 'child_process'
 
 // Shared config across multiple build watchers.
 const sharedConfig: InlineConfig = {
@@ -18,6 +16,7 @@ const stripNewlinesAtEnd = (str: string): string => {
  * Create a Vite build watcher that automatically recompiles when a file is
  * edited.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getWatcher = (name: string, configFilePath: string, writeBundle: any) =>
     build({
         ...sharedConfig,
@@ -38,7 +37,7 @@ const setupPreloadWatcher = async (viteServer: ViteDevServer) =>
  * Setup the `main` watcher.
  */
 const setupMainWatcher = async () => {
-    const logger = createLogger('info', { prefix: '[main]' })
+    createLogger('info', { prefix: '[main]' })
     let spawnProcess: ChildProcessWithoutNullStreams | null = null
 
     return getWatcher('reload-app-on-main-package-change', 'packages/main/vite.config.ts', () => {

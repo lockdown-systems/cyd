@@ -11,7 +11,15 @@ vi.stubGlobal('window', {
 // Mock fetch
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
-function createFetchResponse(status: number, data: any) {
+
+type FetchResponseData = {
+    expiration?: Date;
+    token?: string;
+    email?: string;
+    message?: string;
+};
+
+function createFetchResponse(status: number, data: FetchResponseData) {
     return {
         status: status,
         headers: { 'Content-type': 'application/json' },
@@ -24,7 +32,7 @@ function createFetchResponse(status: number, data: any) {
 test('ServerAPI.initialize() sets apiUrl', async () => {
     const serverApi = new ServerAPI();
     await serverApi.initialize();
-    expect((window as any).electron.getApiUrl).toHaveBeenCalled();
+    expect(window.electron.getApiUrl).toHaveBeenCalled();
 })
 
 test('ServerAPI.fetch() should set method and headers', async () => {
