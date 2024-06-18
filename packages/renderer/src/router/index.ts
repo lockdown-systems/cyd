@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Login from "../views/LoginView.vue";
-import Dashboard from "../views/DashboardView.vue";
-import AddService from "../views/AddService.vue";
-import AccountX from "../views/AccountX.vue";
+import LoginView from "../views/LoginView.vue";
+import DashboardView from "../views/DashboardView.vue";
+import AddServiceView from "../views/AddServiceView.vue";
+import AccountXView from "../views/AccountXView.vue";
 import BrowserTest from "../views/BrowserTest.vue";
 
 const router = createRouter({
@@ -10,19 +10,19 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      component: Login,
+      component: LoginView,
     },
     {
       path: "/dashboard",
-      component: Dashboard,
+      component: DashboardView,
     },
     {
       path: "/add-service",
-      component: AddService,
+      component: AddServiceView,
     },
     {
       path: "/account/x/:id",
-      component: AccountX,
+      component: AccountXView,
     },
     {
       path: "/browser-test",
