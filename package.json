@@ -2,15 +2,15 @@
   "name": "semiphemeral",
   "private": true,
   "version": "0.0.0",
-  "main": "dist/main/index.cjs",
+  "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "tests": "vitest run .",
-    "tests:components": "cd packages/renderer && cypress run --component",
-    "open-cypress": "cd packages/renderer && cypress open",
+    "tests:components": "cd src/renderer && cypress run --component",
+    "open-cypress": "cd src/renderer && cypress open",
     "migrate": "npx prisma migrate dev",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"

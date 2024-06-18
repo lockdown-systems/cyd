@@ -5,15 +5,15 @@ const pluginVue = require('eslint-plugin-vue');
 module.exports = tseslint.config(
     {
         ignores: [
-            'dist/',
-            'src/renderer/cypress.config.cjs',
-            'src/renderer/cypress/',
+            '.vite/',
             'eslint.config.js',
             'forge.config.ts',
             'forge.env.d.ts',
             'vite.*.config.ts',
-            '.vite/',
-            'src/renderer/.vite/'
+            'src/renderer/.vite/',
+            'src/renderer/vite.config.ts',
+            'src/renderer/cypress.config.cjs',
+            'src/renderer/cypress/',
         ],
     },
     eslint.configs.recommended,

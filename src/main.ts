@@ -50,7 +50,7 @@ async function createWindow() {
         height: 768,
         webPreferences: {
             webviewTag: true,
-            preload: join(__dirname, '../preload/index.cjs'),
+            preload: join(__dirname, './preload.js'),
             nodeIntegration: false
         },
     });

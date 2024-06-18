@@ -2,23 +2,23 @@ import { join } from 'node:path';
 import { builtinModules } from 'node:module';
 import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
-import { pluginExposeRenderer } from './vite.base.config';
+import { pluginExposeRenderer } from '../../vite.base.config';
 import vue from '@vitejs/plugin-vue';
 
 // https://vitejs.dev/config
 export default defineConfig((env) => {
   const forgeEnv = env as ConfigEnv<'renderer'>;
   const { root, mode, forgeConfigSelf } = forgeEnv;
-  const name = forgeConfigSelf.name ?? '';
+  const name = '';
 
   return {
-    root: join(__dirname, 'src/renderer'),
+    root: __dirname,
     mode,
     base: './',
     build: {
-      outDir: `.vite/renderer/${name}`,
+      outDir: `../../.vite/renderer/${name}`,
       rollupOptions: {
-        input: join(__dirname, 'src/renderer/src/main.ts'),
+        input: join(__dirname, 'src/main.ts'),
         external: [...builtinModules.flatMap((p) => [p, `node:${p}`])],
       },
     },

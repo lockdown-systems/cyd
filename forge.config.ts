@@ -34,13 +34,13 @@ const config: ForgeConfig = {
         },
         {
           entry: 'src/renderer/src/main.ts',
-          config: 'vite.renderer.config.ts',
+          config: 'src/renderer/vite.config.ts',
         },
       ],
       renderer: [
         {
           name: 'main_window',
-          config: 'vite.renderer.config.ts',
+          config: 'src/renderer/vite.config.ts',
         },
       ],
     }),
