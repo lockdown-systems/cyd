@@ -1,4 +1,5 @@
 import { createApp } from "vue";
+import type { XAccount } from "./types";
 
 declare global {
     interface Window {

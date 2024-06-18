@@ -10,7 +10,10 @@ export default tseslint.config(
             'packages/renderer/cypress/',
             'eslint.config.js',
             'packages/main/vite.config.ts',
-            'scripts/dev-server.ts'
+            'scripts/dev-server.ts',
+            'forge.config.ts',
+            'forge.env.d.ts',
+            `vite.*.config.ts`,
         ],
     },
     eslint.configs.recommended,

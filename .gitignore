@@ -26,3 +26,10 @@ dist-ssr
 # Prisma dev database
 prisma/dev.db
 prisma/dev.db-journal
+
+
+# Vite
+.vite/
+
+# Electron-Forge
+out/
