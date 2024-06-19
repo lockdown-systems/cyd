@@ -31,15 +31,19 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     beforeAsar: [(buildPath, _electronVersion, _platform, _arch, callback) => {
-      // Copy the .prisma folder to the build directory
-      const srcPath = path.join(__dirname, 'node_modules/.prisma/');
-      const destPath = path.join(buildPath, 'node_modules/.prisma/');
-      copyDirectory(srcPath, destPath);
-
-      // Copy index.html to the build directory
-      const srcIndexPath = path.join(__dirname, 'src/renderer/index.html');
-      const destIndexPath = path.join(buildPath, '.vite/build/index.html');
-      fs.copyFileSync(srcIndexPath, destIndexPath);
+      // Copy the prisma folders to app.asar
+      copyDirectory(
+        path.join(__dirname, 'prisma/'),
+        path.join(buildPath, 'prisma/')
+      );
+      copyDirectory(
+        path.join(__dirname, 'node_modules/@prisma/'),
+        path.join(buildPath, 'node_modules/@prisma/')
+      );
+      copyDirectory(
+        path.join(__dirname, 'node_modules/.prisma/'),
+        path.join(buildPath, 'node_modules/.prisma/')
+      );
 
       callback();
     }]

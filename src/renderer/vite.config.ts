@@ -18,7 +18,7 @@ export default defineConfig((env) => {
     build: {
       outDir: `../../.vite/renderer/${name}`,
       rollupOptions: {
-        input: join(__dirname, 'src/main.ts'),
+        input: [join(__dirname, 'src/main.ts'), join(__dirname, 'index.html')],
         external: [...builtinModules.flatMap((p) => [p, `node:${p}`])],
       },
     },

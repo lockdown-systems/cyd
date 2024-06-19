@@ -14,29 +14,8 @@ export const prisma = new PrismaClient({
         db: {
             url: dbUrl
         }
-    },
-    log: [
-        {
-            emit: 'event',
-            level: 'query',
-        },
-        {
-            emit: 'stdout',
-            level: 'error',
-        },
-        {
-            emit: 'stdout',
-            level: 'info',
-        },
-        {
-            emit: 'stdout',
-            level: 'warn',
-        },
-    ],
+    }
 })
-// prisma.$on('query', (e) => {
-//     log.log(`Query: ${e.query}, Params: ${e.params}`)
-// })
 
 // Find the location of the migration engine and query engine
 interface ExecutablePaths {

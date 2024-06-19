@@ -6,11 +6,13 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { prisma, runPrismaMigrations } from './prisma';
 import { getConfig, setConfig } from './config';
 
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
     app.quit();
 }
-
 
 const isSingleInstance = app.requestSingleInstanceLock();
 if (!isSingleInstance) {
@@ -114,11 +116,11 @@ async function createWindow() {
     }
     global.ipcHandlersRegistered = true;
 
-    if (import.meta.env.DEV) {
-        win.loadURL('http://localhost:5173');
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+        win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-        win.loadFile(join(__dirname, `/index.html`));
-    }
+        win.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    };
 
     // If we're in local or staging, pre-open developer tools
     if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
