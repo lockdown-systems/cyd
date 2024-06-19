@@ -1,4 +1,5 @@
 import Electron from 'electron';
+import { XAccount } from '../types';
 
 export enum State {
     Login = "login",
