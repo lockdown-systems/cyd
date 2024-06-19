@@ -23,6 +23,7 @@ log.initialize();
 log.info('User data folder is at:', app.getPath('userData'));
 
 const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV;
+let win: BrowserWindow | null = null;
 
 async function createWindow() {
     // Run database migrations
@@ -50,7 +51,7 @@ async function createWindow() {
     }
 
     // Create the browser window
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         show: false,
         width: 1024,
         height: 768,
@@ -67,54 +68,57 @@ async function createWindow() {
 
     // IPC events
 
-    ipcMain.handle('getApiUrl', async () => {
-        if (semiphemeralEnv == "local") {
-            return "http://localhost:8080/api/v1";
-        } else if (semiphemeralEnv == "staging") {
-            return "https://staging-semiphemeral.fly.dev/api/v1/";
-        }
-        return "https://semiphemeral.com/api/v1";
-    });
-
-    ipcMain.handle('isDevMode', async (_) => {
-        if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
-            return true;
-        }
-        return false;
-    });
-
-    ipcMain.handle('getConfig', async (_, key) => {
-        const value = await getConfig(prisma, key);
-        return value;
-    });
-
-    ipcMain.handle('setConfig', async (_, key, value) => {
-        await setConfig(prisma, key, value);
-    });
-
-    ipcMain.handle('getXAccounts', async (_) => {
-        return await prisma.xAccount.findMany();
-    });
-
-    ipcMain.handle('createXAccount', async (_) => {
-        return await prisma.xAccount.create({
-            data: {}
+    if (!global.ipcHandlersRegistered) {
+        ipcMain.handle('getApiUrl', async () => {
+            if (semiphemeralEnv == "local") {
+                return "http://localhost:8080/api/v1";
+            } else if (semiphemeralEnv == "staging") {
+                return "https://staging-semiphemeral.fly.dev/api/v1/";
+            }
+            return "https://semiphemeral.com/api/v1";
         });
-    });
 
-    ipcMain.handle('saveXAccount', async (_, accountJson) => {
-        const account = JSON.parse(accountJson);
-        return await prisma.xAccount.update({
-            where: { id: account.id },
-            data: account
+        ipcMain.handle('isDevMode', async (_) => {
+            if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
+                return true;
+            }
+            return false;
         });
-    });
 
-    const pageUrl = import.meta.env.DEV
-        ? 'http://localhost:5173'
-        : new URL('../dist/renderer/index.html', `file://${__dirname}`).toString();
+        ipcMain.handle('getConfig', async (_, key) => {
+            const value = await getConfig(prisma, key);
+            return value;
+        });
 
-    await win.loadURL(pageUrl);
+        ipcMain.handle('setConfig', async (_, key, value) => {
+            await setConfig(prisma, key, value);
+        });
+
+        ipcMain.handle('getXAccounts', async (_) => {
+            return await prisma.xAccount.findMany();
+        });
+
+        ipcMain.handle('createXAccount', async (_) => {
+            return await prisma.xAccount.create({
+                data: {}
+            });
+        });
+
+        ipcMain.handle('saveXAccount', async (_, accountJson) => {
+            const account = JSON.parse(accountJson);
+            return await prisma.xAccount.update({
+                where: { id: account.id },
+                data: account
+            });
+        });
+    }
+    global.ipcHandlersRegistered = true;
+
+    if (import.meta.env.DEV) {
+        win.loadURL('http://localhost:5173');
+    } else {
+        win.loadFile(join(__dirname, `/index.html`));
+    }
 
     // If we're in local or staging, pre-open developer tools
     if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
@@ -125,10 +129,12 @@ async function createWindow() {
     return win;
 }
 
-app.on('second-instance', () => {
-    createWindow().catch((err) =>
-        log.error('Error while trying to prevent second-instance Electron event:', err)
-    );
+app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+        if (win.isMinimized()) win.restore();
+        win.focus();
+    }
 });
 
 app.on('window-all-closed', () => {

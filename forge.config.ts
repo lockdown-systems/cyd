@@ -7,9 +7,42 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
+import fs from 'fs';
+import path from 'path';
+
+function copyDirectory(srcDir: string, destDir: string) {
+  fs.mkdirSync(destDir, { recursive: true });
+
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name);
+    const destPath = path.join(destDir, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirectory(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    beforeAsar: [(buildPath, _electronVersion, _platform, _arch, callback) => {
+      // Copy the .prisma folder to the build directory
+      const srcPath = path.join(__dirname, 'node_modules/.prisma/');
+      const destPath = path.join(buildPath, 'node_modules/.prisma/');
+      copyDirectory(srcPath, destPath);
+
+      // Copy index.html to the build directory
+      const srcIndexPath = path.join(__dirname, 'src/renderer/index.html');
+      const destIndexPath = path.join(buildPath, '.vite/build/index.html');
+      fs.copyFileSync(srcIndexPath, destIndexPath);
+
+      callback();
+    }]
   },
   rebuildConfig: {},
   makers: [

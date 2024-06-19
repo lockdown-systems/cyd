@@ -89,9 +89,6 @@ const queryEnginePath = path.join(
 
 // Run a Prisma command
 export async function runPrismaMigrations(): Promise<number> {
-    log.info("Schema engine path", schemaEnginePath);
-    log.info("Query engine path", queryEnginePath);
-
     const schemaPath = path.join(
         app.getAppPath().replace('app.asar', 'app.asar.unpacked'),
         'prisma',
@@ -105,7 +102,6 @@ export async function runPrismaMigrations(): Promise<number> {
     try {
         const exitCode = await new Promise((resolve, _) => {
             const prismaPath = path.resolve(__dirname, "..", "..", "node_modules/prisma/build/index.js");
-            log.info("Prisma path", prismaPath);
 
             const child = fork(
                 prismaPath,
