@@ -6,6 +6,12 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { prisma, runPrismaMigrations } from './prisma';
 import { getConfig, setConfig } from './config';
 
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (require('electron-squirrel-startup')) {
+    app.quit();
+}
+
+
 const isSingleInstance = app.requestSingleInstanceLock();
 if (!isSingleInstance) {
     app.quit();
@@ -132,10 +138,11 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-    // Create the window
-    createWindow().catch((err) =>
-        log.error('Error while trying to handle activate Electron event:', err)
-    );
+    // On OS X it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
 });
 
 app.on('before-quit', async () => {
