@@ -51,6 +51,12 @@ async function createWindow() {
         setConfig("deviceDescription", description);
     }
 
+    // Set the icon in Linux (in macOS and Windows it's set in forge.config.ts)
+    let icon: string | undefined = undefined;
+    if (os.platform() === 'linux') {
+        icon = join(__dirname, '../renderer/main_window/icon.png');
+    }
+
     // Create the browser window
     win = new BrowserWindow({
         show: false,
@@ -61,6 +67,7 @@ async function createWindow() {
             preload: join(__dirname, './preload.js'),
             nodeIntegration: false
         },
+        icon: icon
     });
 
     win.on('ready-to-show', () => {

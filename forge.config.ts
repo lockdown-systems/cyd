@@ -12,6 +12,7 @@ const config: ForgeConfig = {
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     asar: true,
+    icon: "assets/icon",
   },
   rebuildConfig: {},
   makers: [
