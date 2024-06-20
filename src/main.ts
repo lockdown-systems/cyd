@@ -3,8 +3,7 @@ import os from 'os';
 import log from 'electron-log/main';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { prisma, runPrismaMigrations } from './prisma';
-import { getConfig, setConfig } from './config';
+import { runMigrations, getConfig, setConfig, getXAccounts, createXAccount, saveXAccount } from './database';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -29,10 +28,10 @@ let win: BrowserWindow | null = null;
 
 async function createWindow() {
     // Run database migrations
-    await runPrismaMigrations();
+    runMigrations();
 
     // If a device description has not been created yet, make one now
-    const deviceName = await getConfig(prisma, "deviceDescription");
+    const deviceName = getConfig("deviceDescription");
     if (!deviceName) {
         let description = "";
         switch (os.platform()) {
@@ -49,7 +48,7 @@ async function createWindow() {
                 description += 'Unknown OS: ';
         }
         description += os.hostname();
-        await setConfig(prisma, "deviceDescription", description);
+        setConfig("deviceDescription", description);
     }
 
     // Create the browser window
@@ -88,30 +87,24 @@ async function createWindow() {
         });
 
         ipcMain.handle('getConfig', async (_, key) => {
-            const value = await getConfig(prisma, key);
-            return value;
+            return getConfig(key);
         });
 
         ipcMain.handle('setConfig', async (_, key, value) => {
-            await setConfig(prisma, key, value);
+            setConfig(key, value);
         });
 
         ipcMain.handle('getXAccounts', async (_) => {
-            return await prisma.xAccount.findMany();
+            return getXAccounts();
         });
 
         ipcMain.handle('createXAccount', async (_) => {
-            return await prisma.xAccount.create({
-                data: {}
-            });
+            return createXAccount();
         });
 
         ipcMain.handle('saveXAccount', async (_, accountJson) => {
             const account = JSON.parse(accountJson);
-            return await prisma.xAccount.update({
-                where: { id: account.id },
-                data: account
-            });
+            return saveXAccount(account);
         });
     }
     global.ipcHandlersRegistered = true;
@@ -151,10 +144,6 @@ app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
     }
-});
-
-app.on('before-quit', async () => {
-    await prisma.$disconnect();
 });
 
 app.enableSandbox();

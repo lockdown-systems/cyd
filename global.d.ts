@@ -11,7 +11,6 @@ type XAccount = {
     updatedAt: Date;
     accessedAt: Date;
     username: string;
-    cookies: string;
     deleteTweets: boolean;
     tweetsDaysThreshold: number;
     tweetsEnableRetweetThreshold: boolean;
