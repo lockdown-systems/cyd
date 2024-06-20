@@ -22,7 +22,7 @@ export default defineConfig((env) => {
     define,
     resolve: {
       // Load the Node.js entry.
-      mainFields: ['module', 'jsnext:main', 'jsnext'],
+      mainFields: ['node', 'module', 'jsnext:main', 'jsnext'],
     },
   };
 

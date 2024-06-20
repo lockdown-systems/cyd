@@ -9,7 +9,7 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig((env) => {
   const forgeEnv = env as ConfigEnv<'renderer'>;
   const { root, mode, forgeConfigSelf } = forgeEnv;
-  const name = '';
+  const name = 'main_window';
 
   return {
     root: __dirname,

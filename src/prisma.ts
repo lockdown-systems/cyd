@@ -3,12 +3,12 @@ import { fork } from "child_process";
 
 import { app } from 'electron'
 import log from 'electron-log/main';
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client/index';
 
 // Determine the sqlite database URL
 const dbUrl = `file:${path.join(app.getPath('userData'), 'db.sqlite')}`;
 
-// Initialize the database, and log SQL queries
+// Initialize the database client
 export const prisma = new PrismaClient({
     datasources: {
         db: {
