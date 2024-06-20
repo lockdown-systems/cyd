@@ -8,6 +8,9 @@ import { PrismaClient } from '@prisma/client/index';
 // Determine the sqlite database URL
 const dbUrl = `file:${path.join(app.getPath('userData'), 'db.sqlite')}`;
 
+// Get the path to the resources directory
+const resourcesPath = app.getAppPath().replace('app.asar', '');
+
 // Initialize the database client
 export const prisma = new PrismaClient({
     datasources: {
@@ -45,7 +48,6 @@ const platformToExecutables: PlatformExecutables = {
         queryEngine: 'node_modules/@prisma/engines/libquery_engine-darwin-arm64.dylib.node',
     }
 };
-const extraResourcesPath = app.getAppPath().replace('app.asar', '');
 
 // Determine the platform name
 let platformName;
@@ -58,29 +60,29 @@ if (isDarwin && process.arch === "arm64") {
 
 // Find some other important paths
 const schemaEnginePath = path.join(
-    extraResourcesPath,
+    resourcesPath,
     platformToExecutables[platformName].schemaEngine
 );
 const queryEnginePath = path.join(
-    extraResourcesPath,
+    resourcesPath,
     platformToExecutables[platformName].queryEngine
 );
 
 // Run a Prisma command
 export async function runPrismaMigrations(): Promise<number> {
     const schemaPath = path.join(
-        app.getAppPath().replace('app.asar', 'app.asar.unpacked'),
+        resourcesPath,
         'prisma',
         "schema.prisma"
     );
     const command = ["migrate", "deploy", "--schema", schemaPath];
 
-    // Currently we don't have any direct method to invoke prisma migration programatically.
-    // As a workaround, we spawn migration script as a child process and wait for its completion.
-    // Please also refer to the following GitHub issue: https://github.com/prisma/prisma/issues/4703
+    // There's no way to programatically run migrations, so spawn a subprocess instead
+    // Related issue: https://github.com/prisma/prisma/issues/4703
     try {
         const exitCode = await new Promise((resolve, _) => {
-            const prismaPath = path.resolve(__dirname, "..", "..", "node_modules/prisma/build/index.js");
+            const prismaPath = path.join(resourcesPath, "node_modules/prisma/build/index.js");
+            log.info(`Running database migrations: ${prismaPath} ${command.join(" ")}`);
 
             const child = fork(
                 prismaPath,
@@ -111,6 +113,7 @@ export async function runPrismaMigrations(): Promise<number> {
             });
 
             child.on("close", (code, _signal) => {
+                log.info("Child process exited with code:", code);
                 resolve(code);
             })
 

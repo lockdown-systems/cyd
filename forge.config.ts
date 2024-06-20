@@ -29,7 +29,8 @@ function copyDirectory(srcDir: string, destDir: string) {
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: true,
+    appBundleId: 'systems.lockdown.semiphemeral',
+    appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     beforeAsar: [(buildPath, _electronVersion, _platform, _arch, callback) => {
       // Copy the prisma folders to app.asar
       copyDirectory(
@@ -41,12 +42,37 @@ const config: ForgeConfig = {
         path.join(buildPath, 'node_modules/@prisma/')
       );
       copyDirectory(
+        path.join(__dirname, 'node_modules/prisma/'),
+        path.join(buildPath, 'node_modules/prisma/')
+      );
+      copyDirectory(
         path.join(__dirname, 'node_modules/.prisma/'),
         path.join(buildPath, 'node_modules/.prisma/')
       );
 
       callback();
-    }]
+    }],
+    afterComplete: [(buildPath, _electronVersion, _platform, _arch, callback) => {
+      copyDirectory(
+        path.join(__dirname, 'prisma/'),
+        path.join(buildPath, 'resources/prisma/')
+      );
+      copyDirectory(
+        path.join(__dirname, 'node_modules/@prisma/'),
+        path.join(buildPath, 'resources/node_modules/@prisma/')
+      );
+      copyDirectory(
+        path.join(__dirname, 'node_modules/prisma/'),
+        path.join(buildPath, 'resources/node_modules/prisma/')
+      );
+      copyDirectory(
+        path.join(__dirname, 'node_modules/.prisma/'),
+        path.join(buildPath, 'resources/node_modules/.prisma/')
+      );
+
+      callback();
+    }],
+    asar: true,
   },
   rebuildConfig: {},
   makers: [
