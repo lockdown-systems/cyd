@@ -7,71 +7,10 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
-import fs from 'fs';
-import path from 'path';
-
-function copyDirectory(srcDir: string, destDir: string) {
-  fs.mkdirSync(destDir, { recursive: true });
-
-  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const srcPath = path.join(srcDir, entry.name);
-    const destPath = path.join(destDir, entry.name);
-
-    if (entry.isDirectory()) {
-      copyDirectory(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
-}
-
 const config: ForgeConfig = {
   packagerConfig: {
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
-    beforeAsar: [(buildPath, _electronVersion, _platform, _arch, callback) => {
-      // Copy the prisma folders to app.asar
-      copyDirectory(
-        path.join(__dirname, 'prisma/'),
-        path.join(buildPath, 'prisma/')
-      );
-      copyDirectory(
-        path.join(__dirname, 'node_modules/@prisma/'),
-        path.join(buildPath, 'node_modules/@prisma/')
-      );
-      copyDirectory(
-        path.join(__dirname, 'node_modules/prisma/'),
-        path.join(buildPath, 'node_modules/prisma/')
-      );
-      copyDirectory(
-        path.join(__dirname, 'node_modules/.prisma/'),
-        path.join(buildPath, 'node_modules/.prisma/')
-      );
-
-      callback();
-    }],
-    afterComplete: [(buildPath, _electronVersion, _platform, _arch, callback) => {
-      copyDirectory(
-        path.join(__dirname, 'prisma/'),
-        path.join(buildPath, 'resources/prisma/')
-      );
-      copyDirectory(
-        path.join(__dirname, 'node_modules/@prisma/'),
-        path.join(buildPath, 'resources/node_modules/@prisma/')
-      );
-      copyDirectory(
-        path.join(__dirname, 'node_modules/prisma/'),
-        path.join(buildPath, 'resources/node_modules/prisma/')
-      );
-      copyDirectory(
-        path.join(__dirname, 'node_modules/.prisma/'),
-        path.join(buildPath, 'resources/node_modules/.prisma/')
-      );
-
-      callback();
-    }],
     asar: true,
   },
   rebuildConfig: {},
