@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "main": ".vite/build/main.js",
-  "description": "Automatically delete your data in tech platforms, except for what you want to keep",
+  "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",
   "authors": "Lockdown Systems",
   "scripts": {

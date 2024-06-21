@@ -55,7 +55,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="coming-soon card m-2">
+        <!-- <div class="coming-soon card m-2">
           <div class="card-body">
             <h5 class="card-title">
               <i class="fa-brands fa-facebook" />
@@ -81,7 +81,7 @@ onMounted(() => {
               private data with third parties in order to train AI models
             </p>
           </div>
-        </div>
+        </div> -->
 
         <div class="coming-soon card m-2">
           <div class="card-body">
@@ -91,7 +91,7 @@ onMounted(() => {
             </h5>
             <p class="card-text">
               Reddit is a social news aggregation platform and forum that sells
-              all your data to AI companies
+              your data to AI companies
             </p>
           </div>
         </div>
@@ -104,7 +104,7 @@ onMounted(() => {
             </h5>
             <p class="card-text">
               Stack Overflow is question-and-answer website for programmers that
-              sells all yoru data to AI companies
+              sells your data to AI companies
             </p>
           </div>
         </div>
