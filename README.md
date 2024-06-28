@@ -2,7 +2,7 @@
 
 Useful blog post for setting up Electron, Vite.js, Vue.js, with TypeScript: https://www.jsgarden.co/blog/electron-with-typescript-and-vite-as-a-build-system
 
-The environment variable `SEMIPHEMERAL_ENV` is used to determine the API URL. It can be `local` (as in local development on a laptop, http://127.0.0.1:8080/api/v1/), `staging` (the staging server at https://staging-semiphemeral.fly.dev/api/v1/), or `prod` (the prod server at http://semiphemeral.com/api/v1/). If it's not set, it defaults to `prod`.
+The environment variable `SEMIPHEMERAL_ENV` is used to determine the API URL. It can be `local` (as in local development on a laptop, http://127.0.0.1:8080/v1/), `dev` (the dev server at https://dev-api.semiphemeral.com/v1/), or `prod` (the prod server at http://api.semiphemeral.com/v1/). If it's not set, it defaults to `prod`.
 
 ## API for renderer to call to main
 

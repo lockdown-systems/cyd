@@ -79,15 +79,15 @@ async function createWindow() {
     if (!global.ipcHandlersRegistered) {
         ipcMain.handle('getApiUrl', async () => {
             if (semiphemeralEnv == "local") {
-                return "http://localhost:8080/api/v1";
-            } else if (semiphemeralEnv == "staging") {
-                return "https://staging-semiphemeral.fly.dev/api/v1/";
+                return "http://localhost:8080/v1";
+            } else if (semiphemeralEnv == "dev") {
+                return "https://dev-api.semiphemeral.com/v1/";
             }
-            return "https://semiphemeral.com/api/v1";
+            return "https://api.semiphemeral.com/v1";
         });
 
         ipcMain.handle('isDevMode', async (_) => {
-            if (semiphemeralEnv == "local" || semiphemeralEnv == "staging") {
+            if (semiphemeralEnv == "local" || semiphemeralEnv == "dev") {
                 return true;
             }
             return false;
