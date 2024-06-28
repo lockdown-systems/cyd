@@ -2,7 +2,7 @@ import process from 'process';
 import os from 'os';
 import log from 'electron-log/main';
 import { join } from 'node:path';
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { runMigrations, getConfig, setConfig, getAccounts, createAccount, saveAccount } from './database';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -26,13 +26,20 @@ log.info('User data folder is at:', app.getPath('userData'));
 const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV;
 let win: BrowserWindow | null = null;
 
-async function createWindow() {
+async function initializeApp() {
     // Run database migrations
-    runMigrations();
+    try {
+        await runMigrations();
+    } catch (error) {
+        console.error("Failed to run migrations:", error);
+        dialog.showErrorBox('Semiphemeral Error', 'Failed to run database migrations. The application will now exit.');
+        app.quit();
+        return;
+    }
 
     // If a device description has not been created yet, make one now
-    const deviceName = getConfig("deviceDescription");
-    if (!deviceName) {
+    const deviceDescription = getConfig("deviceDescription");
+    if (!deviceDescription) {
         let description = "";
         switch (os.platform()) {
             case 'darwin':
@@ -51,6 +58,10 @@ async function createWindow() {
         setConfig("deviceDescription", description);
     }
 
+    await createWindow();
+}
+
+async function createWindow() {
     // Set the icon in Linux (in macOS and Windows it's set in forge.config.ts)
     let icon: string | undefined = undefined;
     if (os.platform() === 'linux') {
@@ -156,5 +167,5 @@ app.on('activate', () => {
 app.enableSandbox();
 app
     .whenReady()
-    .then(createWindow)
-    .catch((e) => log.error('Failed to create window:', e));
+    .then(initializeApp)
+    .catch((e) => log.error('Failed to initialize app and create window:', e));

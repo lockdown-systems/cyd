@@ -10,8 +10,8 @@ const dbPath = `${path.join(app.getPath('userData'), 'db.sqlite')}`;
 export const db = new Database(dbPath, {});
 db.pragma('journal_mode = WAL');
 
-export const runMigrations = () => {
-    run(db)
+export const runMigrations = async () => {
+    await run(db)
 }
 
 export const getConfig = (key: string): string | null => {

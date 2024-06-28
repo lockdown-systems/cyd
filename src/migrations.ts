@@ -10,7 +10,7 @@ const run = async (db: Database) => {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     key TEXT NOT NULL UNIQUE,
                     value TEXT NOT NULL
-                )
+                );
                 `, `
                 CREATE TABLE xAccount (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +26,18 @@ const run = async (db: Database) => {
                     likesDaysThreshold INTEGER DEFAULT 60,
                     deleteDirectMessages BOOLEAN DEFAULT 0,
                     directMessageDaysThreshold INTEGER DEFAULT 30
-                    );
+                );
+            `]
+        },
+        {
+            name: "create account table",
+            sql: [`
+                CREATE TABLE account (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    sortOrder INTEGER NOT NULL,
+                    xAccountId INTEGER
+                );
             `]
         }
     ];
