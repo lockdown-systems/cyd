@@ -12,8 +12,7 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
   <div class="container-fluid">
     <div class="row">
       <div class="sidebar col-auto d-flex flex-column gap-2">
-        <div class="services-list flex-grow-1 d-flex flex-column mt-3">
-        </div>
+        <div class="services-list flex-grow-1 d-flex flex-column mt-3" />
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">
           <div class="btn-container">

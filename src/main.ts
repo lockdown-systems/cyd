@@ -3,7 +3,7 @@ import os from 'os';
 import log from 'electron-log/main';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { runMigrations, getConfig, setConfig, getXAccounts, createXAccount, saveXAccount } from './database';
+import { runMigrations, getConfig, setConfig, getAccounts, createAccount, saveAccount } from './database';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -101,17 +101,17 @@ async function createWindow() {
             setConfig(key, value);
         });
 
-        ipcMain.handle('getXAccounts', async (_) => {
-            return getXAccounts();
+        ipcMain.handle('getAccounts', async (_) => {
+            return getAccounts();
         });
 
-        ipcMain.handle('createXAccount', async (_) => {
-            return createXAccount();
+        ipcMain.handle('createAccount', async (_) => {
+            return createAccount();
         });
 
         ipcMain.handle('saveXAccount', async (_, accountJson) => {
             const account = JSON.parse(accountJson);
-            return saveXAccount(account);
+            return saveAccount(account);
         });
     }
     global.ipcHandlersRegistered = true;

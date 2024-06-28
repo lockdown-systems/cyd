@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { Account } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -13,13 +14,13 @@ contextBridge.exposeInMainWorld('electron', {
     setConfig: (key: string, value: string) => {
         ipcRenderer.invoke('setConfig', key, value)
     },
-    getXAccounts: (): Promise<XAccount[]> => {
+    getAccounts: (): Promise<Account[]> => {
         return ipcRenderer.invoke('getXAccounts')
     },
-    createXAccount: (): Promise<XAccount> => {
+    createAccount: (): Promise<Account> => {
         return ipcRenderer.invoke('createXAccount')
     },
-    saveXAccount: (accountJSON: string) => {
-        ipcRenderer.invoke('saveXAccount', accountJSON)
+    saveAccount: (accountJSON: string) => {
+        ipcRenderer.invoke('saveAccount', accountJSON)
     }
 })
