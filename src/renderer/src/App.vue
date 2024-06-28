@@ -5,7 +5,6 @@ import type { DeviceInfo } from './types';
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
-import ErrorMessage from './modals/ErrorMessage.vue';
 import SettingsModal from './modals/SettingsModal.vue';
 
 import LoginView from "./views/LoginView.vue";
@@ -32,7 +31,7 @@ const refreshDeviceInfo = async () => {
       serverApi.value.setDeviceToken(deviceInfo.value.deviceToken);
     }
   } catch {
-    showError("Failed to get saved device info.");
+    window.electron.showError("Failed to get saved device info.");
   }
 };
 provide('refreshDeviceInfo', refreshDeviceInfo);
@@ -40,16 +39,6 @@ provide('refreshDeviceInfo', refreshDeviceInfo);
 // User info
 const userEmail = ref('');
 provide('userEmail', userEmail);
-
-// Error messages
-const showErrorModal = ref(false);
-const errorMessage = ref('');
-
-const showError = (message: string) => {
-  errorMessage.value = message;
-  showErrorModal.value = true;
-};
-provide('showError', showError);
 
 // Settings
 const showSettingsModal = ref(false);
@@ -104,10 +93,6 @@ onMounted(async () => {
 
     <!-- Settings modal -->
     <SettingsModal v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
-
-    <!-- Error message modal -->
-    <ErrorMessage v-if="showErrorModal" :message="errorMessage" @hide="showErrorModal = false"
-      @close="showErrorModal = false" />
   </div>
 </template>
 

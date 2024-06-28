@@ -120,9 +120,13 @@ async function createWindow() {
             return createAccount();
         });
 
-        ipcMain.handle('saveXAccount', async (_, accountJson) => {
+        ipcMain.handle('saveAccount', async (_, accountJson) => {
             const account = JSON.parse(accountJson);
             return saveAccount(account);
+        });
+
+        ipcMain.handle('showError', async (_, message) => {
+            dialog.showErrorBox('Semiphemeral Error', message);
         });
     }
     global.ipcHandlersRegistered = true;

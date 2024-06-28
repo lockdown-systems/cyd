@@ -3,8 +3,6 @@ import { ref, inject, Ref, watch } from 'vue';
 import type { DeviceInfo } from '../types';
 import ServerAPI from '../ServerAPI';
 
-const showError = inject('showError') as (message: string) => void;
-
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
@@ -44,7 +42,7 @@ function enableStartFields() {
 
 async function authenticate() {
   if (!userEmail.value) {
-    showError('Please enter your email address.');
+    window.electron.showError('Please enter your email address.');
     return;
   }
 
@@ -54,7 +52,7 @@ async function authenticate() {
     email: userEmail.value
   });
   if ("error" in resp && resp.error) {
-    showError(resp.message);
+    window.electron.showError(resp.message);
     enableStartFields();
     return;
   }
@@ -69,7 +67,7 @@ async function authenticate() {
 
 async function registerDevice() {
   if (!deviceInfo.value) {
-    showError('Failed to get device info. Please try again later.');
+    window.electron.showError('Failed to get device info. Please try again later.');
     await goBack();
     return;
   }
@@ -83,11 +81,11 @@ async function registerDevice() {
   if ("error" in registerDeviceResp) {
     verificationCode.value = '';
     verificationCodeInputEl.value?.focus();
-    showError('Invalid verification code.');
+    window.electron.showError('Invalid verification code.');
     return;
   }
   if (!registerDeviceResp.deviceToken) {
-    showError('Failed to register device. Please try again later.');
+    window.electron.showError('Failed to register device. Please try again later.');
     await goBack();
     return;
   }
@@ -102,7 +100,7 @@ async function registerDevice() {
   // Get a new API token
   const pingResp = await serverApi.value.ping();
   if (!pingResp) {
-    showError('Failed to register new device. Please try again later.');
+    window.electron.showError('Failed to register new device. Please try again later.');
   }
 
   // Refresh the device info

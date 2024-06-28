@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import type { XAccount } from "./types";
+import type { Account } from "../../shared_types";
 
 declare global {
     interface Window {
@@ -8,9 +8,10 @@ declare global {
             isDevMode: () => Promise<boolean>;
             getConfig: (key: string) => Promise<string>;
             setConfig: (key: string, value: string) => void;
-            getXAccounts: () => Promise<XAccount[]>;
-            createXAccount: () => Promise<XAccount>;
-            saveXAccount: (accountJSON: string) => void;
+            getAccounts: () => Promise<Account[]>;
+            createAccount: () => Promise<Account>;
+            saveAccount: (accountJSON: string) => void;
+            showError: (message: string) => void;
         };
     }
 }

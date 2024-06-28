@@ -22,5 +22,8 @@ contextBridge.exposeInMainWorld('electron', {
     },
     saveAccount: (accountJSON: string) => {
         ipcRenderer.invoke('saveAccount', accountJSON)
+    },
+    showError: (message: string) => {
+        ipcRenderer.invoke('showError', message)
     }
 })
