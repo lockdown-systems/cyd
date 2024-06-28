@@ -4,7 +4,7 @@ import type { DeviceInfo } from '../types';
 import ServerAPI from '../ServerAPI';
 
 const showError = inject('showError') as (message: string) => void;
-const navigate = inject('navigate') as (path: string) => void;
+
 const userEmail = inject('userEmail') as Ref<string>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
@@ -18,6 +18,8 @@ const loginState = ref<LoginState>('start');
 const emailInputEl = ref<HTMLInputElement | null>(null);
 const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
 const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
+
+const emit = defineEmits(['loginSuccess']);
 
 watch(verificationCode, async (newValue, _oldValue) => {
   if (newValue.length < 6) {
@@ -106,8 +108,9 @@ async function registerDevice() {
   // Refresh the device info
   await refreshDeviceInfo();
 
-  // Redirect to the tabs view
-  navigate('/tabs');
+  // Success
+  emit('loginSuccess');
+
 }
 
 async function goBack() {

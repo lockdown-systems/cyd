@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { ref, provide, onMounted } from "vue"
-import { useRouter } from 'vue-router'
 
 import type { DeviceInfo } from './types';
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
-import FooterNav from './components/FooterNav.vue';
 import ErrorMessage from './modals/ErrorMessage.vue';
 import SettingsModal from './modals/SettingsModal.vue';
 
-const router = useRouter();
+import LoginView from "./views/LoginView.vue";
+import TabsView from "./views/TabsView.vue";
+
+// Application state
+const isFirstLoad = ref(true);
+const isLoggedIn = ref(false);
 
 // Server API
 const serverApi = ref(new ServerAPI());
@@ -56,47 +59,48 @@ const showSettings = () => {
 provide('showSettings', showSettings);
 
 // Navigation
-const navigate = (path: string) => {
-  router.push(path);
+const navigate = (_path: string) => {
+  // TODO: change how navigation works
+  // router.push(path);
 };
 provide('navigate', navigate);
-
-// Back button
-const showBackButton = ref(false);
-const backText = ref('');
-const backNavigation = ref('');
-
-const showBack = (text: string, navigation: string) => {
-  backText.value = text;
-  backNavigation.value = navigation;
-  showBackButton.value = true;
-};
-provide('showBack', showBack);
-
-const hideBack = () => {
-  showBackButton.value = false;
-};
-provide('hideBack', hideBack);
 
 onMounted(async () => {
   await serverApi.value.initialize();
   await refreshDeviceInfo();
+  isFirstLoad.value = false;
 
-  // Already logged in? Redirect to the tabs view
+  // Already logged in?
   if (deviceInfo.value?.valid) {
-    router.push('/tabs');
+    isLoggedIn.value = true;
   }
 });
 </script>
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <div class="flex-grow-1 m-3">
-      <RouterView />
+    <div class="flex-grow-1">
+      <template v-if="isFirstLoad">
+        <div class="container p-2 h-100">
+          <div class="d-flex align-items-center h-100">
+            <div class="w-100">
+              <div class="text-center">
+                <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird" style="width: 120px;">
+              </div>
+              <p class="lead text-muted text-center">
+                Automatically delete your old posts, except the ones you want to keep.
+              </p>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template v-else-if="!isLoggedIn">
+        <LoginView @login-success="isLoggedIn = true" />
+      </template>
+      <template v-else>
+        <TabsView />
+      </template>
     </div>
-
-    <FooterNav :show-back-button="showBackButton" :back-text="backText" :back-navigation="backNavigation"
-      :device-info="deviceInfo" />
 
     <!-- Settings modal -->
     <SettingsModal v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
