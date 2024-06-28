@@ -15,10 +15,10 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.invoke('setConfig', key, value)
     },
     getAccounts: (): Promise<Account[]> => {
-        return ipcRenderer.invoke('getXAccounts')
+        return ipcRenderer.invoke('getAccounts')
     },
     createAccount: (): Promise<Account> => {
-        return ipcRenderer.invoke('createXAccount')
+        return ipcRenderer.invoke('createAccount')
     },
     saveAccount: (accountJSON: string) => {
         ipcRenderer.invoke('saveAccount', accountJSON)

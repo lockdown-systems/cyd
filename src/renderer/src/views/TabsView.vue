@@ -1,27 +1,44 @@
 <script setup lang="ts">
-import { inject, Ref, ref } from 'vue';
+import { inject, Ref, ref, onMounted } from 'vue';
 import type { DeviceInfo } from '../types';
+import type { Account } from '../../../shared_types';
 
-const addServiceBtnShowInfo = ref(false);
+const addAccountBtnShowInfo = ref(false);
 const userBtnShowInfo = ref(false);
+const accounts = ref<Account[]>([]);
 
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
+
+const addAccountClicked = async () => {
+  const _account = await window.electron.createAccount();
+  accounts.value = await window.electron.getAccounts();
+  console.log('Account created:', _account);
+  console.log(accounts.value);
+};
+
+onMounted(async () => {
+  accounts.value = await window.electron.getAccounts();
+  if (accounts.value.length === 0) {
+    await addAccountClicked();
+  }
+});
 </script>
 
 <template>
   <div class="container-fluid">
     <div class="row">
       <div class="sidebar col-auto d-flex flex-column gap-2">
-        <div class="services-list flex-grow-1 d-flex flex-column mt-3" />
+        <div class="accounts-list flex-grow-1 d-flex flex-column mt-3" />
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">
           <div class="btn-container">
-            <div class="add-service-btn sidebar-btn d-flex justify-content-center align-items-center"
-              @mouseover="addServiceBtnShowInfo = true" @mouseleave="addServiceBtnShowInfo = false">
+            <div class="add-account-btn sidebar-btn d-flex justify-content-center align-items-center"
+              @mouseover="addAccountBtnShowInfo = true" @mouseleave="addAccountBtnShowInfo = false"
+              @click="addAccountClicked">
               <i class="fa-solid fa-plus" />
             </div>
-            <div v-if="addServiceBtnShowInfo" class="info-popup">
-              Add a service
+            <div v-if="addAccountBtnShowInfo" class="info-popup">
+              Add an account
             </div>
           </div>
 
@@ -65,14 +82,14 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
   cursor: pointer;
 }
 
-.sidebar .add-service-btn {
+.sidebar .add-account-btn {
   color: #ffffff;
   background-color: #000000;
   opacity: 0.3;
   border-radius: 50%;
 }
 
-.sidebar .add-service-btn:hover {
+.sidebar .add-account-btn:hover {
   opacity: 0.6;
 }
 

@@ -172,8 +172,8 @@ export const createAccount = (): Account => {
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
-    const stmt = db.prepare('INSERT INTO account (sortOrder) VALUES (?)').run(sortOrder);
-    const info = stmt.run();
+    const stmt = db.prepare('INSERT INTO account (sortOrder) VALUES (?)');
+    const info = stmt.run(sortOrder);
 
     // Return it
     const account = getAccount(info.lastInsertRowid);

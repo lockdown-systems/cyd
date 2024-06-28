@@ -15,8 +15,8 @@ const run = async (db: Database) => {
                 `, `
                 CREATE TABLE account (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    type TEXT NOT NULL,
-                    sortOrder INTEGER NOT NULL,
+                    type TEXT NOT NULL DEFAULT 'unknown',
+                    sortOrder INTEGER NOT NULL DEFAULT 0,
                     xAccountId INTEGER DEFAULT NULL
                 );
                 `, `
