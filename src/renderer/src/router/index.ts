@@ -1,7 +1,7 @@
 import { createRouter, createMemoryHistory } from "vue-router";
 import LoginView from "../views/LoginView.vue";
 import TabsView from "../views/TabsView.vue";
-import AddServiceView from "../views/AddServiceView.vue";
+import AddServiceView from "../views/AccountView.vue";
 import AccountXView from "../views/AccountXView.vue";
 
 const router = createRouter({
