@@ -1,4 +1,5 @@
 export type Account = {
+    id: number;
     type: string; // "X"
     sortOrder: number;
     xAccount: XAccount | null;
