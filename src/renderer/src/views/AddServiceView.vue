@@ -28,7 +28,7 @@ const selectServiceClicked = async (service: string) => {
 }
 
 onMounted(() => {
-  showBack('Your accounts', '/dashboard');
+  showBack('Your accounts', '/tabs');
 });
 </script>
 

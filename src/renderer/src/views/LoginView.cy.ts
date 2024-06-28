@@ -218,7 +218,7 @@ describe('<Login />', () => {
 
       // Type 6 digits, should auto-submit
       cy.vueRef('verificationCodeInputEl').type('123456');
-      cy.wrap(navigate).should('be.calledWith', '/dashboard');
+      cy.wrap(navigate).should('be.calledWith', '/tabs');
     });
   })
 

@@ -18,9 +18,9 @@ const xAccountClicked = (xAccount: XAccount) => {
 
 onMounted(async () => {
   await loadXAccounts();
-  if (xAccounts.value.length === 0) {
-    navigate('/add-service');
-  }
+  // if (xAccounts.value.length === 0) {
+  //   navigate('/add-service');
+  // }
 })
 </script>
 
@@ -39,12 +39,6 @@ onMounted(async () => {
       <button class="btn btn-primary" @click="navigate('/add-service')">
         Add another account
       </button>
-    </div>
-
-    <div class="p-2">
-      <RouterLink to="/browser-test">
-        Browser Test
-      </RouterLink>
     </div>
   </div>
 </template>

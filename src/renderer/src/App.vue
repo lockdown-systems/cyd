@@ -82,9 +82,9 @@ onMounted(async () => {
   await serverApi.value.initialize();
   await refreshDeviceInfo();
 
-  // Already logged in? Redirect to the dashboard
+  // Already logged in? Redirect to the tabs view
   if (deviceInfo.value?.valid) {
-    router.push('/dashboard');
+    router.push('/tabs');
   }
 });
 </script>

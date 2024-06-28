@@ -1,9 +1,8 @@
 import { createRouter, createMemoryHistory } from "vue-router";
 import LoginView from "../views/LoginView.vue";
-import DashboardView from "../views/DashboardView.vue";
+import TabsView from "../views/TabsView.vue";
 import AddServiceView from "../views/AddServiceView.vue";
 import AccountXView from "../views/AccountXView.vue";
-import BrowserTest from "../views/BrowserTest.vue";
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -13,8 +12,8 @@ const router = createRouter({
       component: LoginView,
     },
     {
-      path: "/dashboard",
-      component: DashboardView,
+      path: "/tabs",
+      component: TabsView,
     },
     {
       path: "/add-service",
@@ -23,10 +22,6 @@ const router = createRouter({
     {
       path: "/account/x/:id",
       component: AccountXView,
-    },
-    {
-      path: "/browser-test",
-      component: BrowserTest,
     },
   ],
 });

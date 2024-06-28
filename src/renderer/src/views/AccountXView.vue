@@ -31,7 +31,7 @@ const loadXAccount = async (): Promise<XAccount | null> => {
 }
 
 onMounted(async () => {
-    showBack('Your accounts', '/dashboard');
+    showBack('Your accounts', '/tabs');
     const account = await loadXAccount();
 
     if (webviewComponent.value !== null) {

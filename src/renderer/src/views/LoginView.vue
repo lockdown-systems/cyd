@@ -106,8 +106,8 @@ async function registerDevice() {
   // Refresh the device info
   await refreshDeviceInfo();
 
-  // Redirect to the dashboard
-  navigate('/dashboard');
+  // Redirect to the tabs view
+  navigate('/tabs');
 }
 
 async function goBack() {
