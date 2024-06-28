@@ -81,7 +81,7 @@ async function createWindow() {
             if (semiphemeralEnv == "local") {
                 return "http://localhost:8080/v1";
             } else if (semiphemeralEnv == "dev") {
-                return "https://dev-api.semiphemeral.com/v1/";
+                return "https://dev-api.semiphemeral.com/v1";
             }
             return "https://api.semiphemeral.com/v1";
         });
