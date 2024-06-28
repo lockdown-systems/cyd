@@ -1,3 +1,16 @@
+import {
+    ApiErrorResponse,
+    AuthApiRequest,
+    AuthApiResponse,
+    RegisterDeviceApiRequest,
+    RegisterDeviceApiResponse,
+    TokenApiRequest,
+    TokenApiResponse,
+    LogoutApiResponse,
+    DeleteDeviceApiRequest,
+    GetDevicesApiResponseArray
+} from "./types";
+
 export default class ServerAPI {
     private apiUrl: string | null = null;
     private userEmail: string | null = null;
