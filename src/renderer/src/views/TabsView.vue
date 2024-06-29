@@ -30,6 +30,11 @@ const addAccountClicked = async () => {
   activeAccountId.value = account.id;
 };
 
+const accountSelected = (account: Account, accountType: string) => {
+  // TODO: Create a new account of the right type. Probably need to implement a new preloader function to do this.
+  console.log('Account selected:', account, accountType);
+}
+
 onMounted(async () => {
   accounts.value = await window.electron.getAccounts();
   if (accounts.value.length === 0) {
@@ -73,7 +78,7 @@ onMounted(async () => {
 
       <div class="main-content col">
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
-          :class="{ 'hide': activeAccountId !== account.id }" />
+          :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected" />
       </div>
     </div>
   </div>
