@@ -87,7 +87,7 @@ onMounted(async () => {
         <LoginView @login-success="isLoggedIn = true" />
       </template>
       <template v-else>
-        <TabsView />
+        <TabsView @sign-off="isLoggedIn = false" />
       </template>
     </div>
 
