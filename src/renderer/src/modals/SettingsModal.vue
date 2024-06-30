@@ -14,7 +14,6 @@ const hide = () => {
 const settingsModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const showError = inject('showError') as (message: string) => void;
 const userEmail = inject('userEmail') as Ref<string>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
@@ -70,7 +69,7 @@ const revokeAll = async () => {
 const getDevices = async () => {
   const resp = await serverApi.value.getDevices();
   if ("error" in resp && resp.error) {
-    showError(resp.message);
+    window.electron.showError(resp.message);
     return;
   }
   if ("devices" in resp) {
@@ -104,14 +103,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="settingsModal" ref="settingsModal" class="modal fade" tabindex="-1" role="dialog"
-    aria-labelledby="settingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+  <div id="settingsModal" ref="settingsModal" class="modal fade" role="dialog" aria-labelledby="settingsModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-xl modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
-            Settings for {{ userEmail }}
-          </h5>
+          <h4 class="modal-title">
+            Semiphemeral Settings
+          </h4>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
         </div>
         <div class="modal-body">
@@ -155,3 +154,9 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.modal-xl {
+  max-width: 90%;
+}
+</style>

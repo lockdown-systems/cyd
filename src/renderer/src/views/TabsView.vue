@@ -60,7 +60,8 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
 };
 
 const settingsClicked = async () => {
-  console.log('Settings clicked');
+  userBtnShowMenu.value = false;
+  showSettings()
 };
 
 const signOutClicked = async () => {

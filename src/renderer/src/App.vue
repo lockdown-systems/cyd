@@ -108,6 +108,8 @@ body {
   height: 100%;
 }
 
+/* Modal styles */
+
 .modal-backdrop.show {
   display: none;
 }
@@ -121,6 +123,24 @@ body {
   width: 100vw;
   height: 100vh;
   z-index: 1050;
+}
+
+.modal-dialog {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.modal-body {
+  overflow-y: auto;
 }
 
 /* Webview styles */
