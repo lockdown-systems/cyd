@@ -7,12 +7,12 @@ import { getDeviceInfo } from './helpers';
 
 import SettingsModal from './modals/SettingsModal.vue';
 
-import LoginView from "./views/LoginView.vue";
+import SignInView from "./views/SignInView.vue";
 import TabsView from "./views/TabsView.vue";
 
 // Application state
 const isFirstLoad = ref(true);
-const isLoggedIn = ref(false);
+const isSignedIn = ref(false);
 
 // Server API
 const serverApi = ref(new ServerAPI());
@@ -61,7 +61,7 @@ onMounted(async () => {
 
   // Already logged in?
   if (deviceInfo.value?.valid) {
-    isLoggedIn.value = true;
+    isSignedIn.value = true;
   }
 });
 </script>
@@ -83,11 +83,11 @@ onMounted(async () => {
           </div>
         </div>
       </template>
-      <template v-else-if="!isLoggedIn">
-        <LoginView @on-login-success="isLoggedIn = true" />
+      <template v-else-if="!isSignedIn">
+        <SignInView @on-sign-in="isSignedIn = true" />
       </template>
       <template v-else>
-        <TabsView @on-sign-off="isLoggedIn = false" />
+        <TabsView @on-sign-off="isSignedIn = false" />
       </template>
     </div>
 

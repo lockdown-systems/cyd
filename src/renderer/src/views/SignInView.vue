@@ -10,14 +10,14 @@ const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
 const verificationCode = ref('');
 
-type LoginState = 'start' | 'registerDevice' | 'token';
-const loginState = ref<LoginState>('start');
+type SignInState = 'start' | 'registerDevice' | 'token';
+const signInState = ref<SignInState>('start');
 
 const emailInputEl = ref<HTMLInputElement | null>(null);
 const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
 const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
 
-const emit = defineEmits(['onLoginSuccess']);
+const emit = defineEmits(['onSignIn']);
 
 watch(verificationCode, async (newValue, _oldValue) => {
   if (newValue.length < 6) {
@@ -62,7 +62,7 @@ async function authenticate() {
 
   serverApi.value.setUserEmail(userEmail.value);
 
-  loginState.value = "registerDevice";
+  signInState.value = "registerDevice";
 }
 
 async function registerDevice() {
@@ -107,13 +107,13 @@ async function registerDevice() {
   await refreshDeviceInfo();
 
   // Success
-  emit('onLoginSuccess');
-  loginState.value = 'token';
+  emit('onSignIn');
+  signInState.value = 'token';
 }
 
 async function goBack() {
   verificationCode.value = '';
-  loginState.value = 'start';
+  signInState.value = 'start';
 }
 </script>
 
@@ -130,7 +130,7 @@ async function goBack() {
 
         <div class="d-flex flex-column align-items-center">
           <form @submit.prevent>
-            <template v-if="loginState == 'start'">
+            <template v-if="signInState == 'start'">
               <div class="form-group d-flex flex-column align-items-center">
                 <p>Login to Semiphemeral using your email address.</p>
                 <input ref="emailInputEl" v-model="userEmail" type="email" class="form-control"
@@ -141,7 +141,7 @@ async function goBack() {
                 </button>
               </div>
             </template>
-            <template v-else-if="loginState == 'registerDevice'">
+            <template v-else-if="signInState == 'registerDevice'">
               <div>
                 <p>We've emailed you a verification code. Enter it below.</p>
                 <div class="verification-code-container">
@@ -156,8 +156,8 @@ async function goBack() {
                 </div>
               </div>
             </template>
-            <template v-else-if="loginState == 'token'">
-              <p>Logging in...</p>
+            <template v-else-if="signInState == 'token'">
+              <p>Signing in...</p>
             </template>
           </form>
         </div>
