@@ -70,19 +70,13 @@ const signOutClicked = async () => {
     return;
   }
 
-  // Delete the device
+  // Delete the logged in device
   const deleteDeviceResp = await serverApi.value.deleteDevice({
     // this API route takes either a UUID or a device token
     uuid: deviceInfo.value.deviceToken
   });
   if (deleteDeviceResp !== undefined && deleteDeviceResp.error) {
     console.log("Error deleting device", deleteDeviceResp.message)
-  }
-
-  // Sign out
-  const logoutResp = await serverApi.value.logout();
-  if ("error" in logoutResp && logoutResp.error) {
-    console.log("Error logging out", logoutResp.message);
   }
 
   // Delete the device from the local storage
