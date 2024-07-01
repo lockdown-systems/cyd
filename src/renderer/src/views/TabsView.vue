@@ -101,6 +101,8 @@ onMounted(async () => {
   accounts.value = await window.electron.getAccounts();
   if (accounts.value.length === 0) {
     await addAccountClicked();
+  } else {
+    activeAccountId.value = accounts.value[0].id;
   }
 
   document.addEventListener('click', outsideUserMenuClicked);
@@ -140,14 +142,20 @@ onUnmounted(async () => {
             <div v-if="userBtnShowInfo" class="info-popup">
               You are signed in as {{ deviceInfo?.userEmail }}
             </div>
-            <div ref="userMenuPopupEl" v-if="userBtnShowMenu" class="user-menu-popup">
+            <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="user-menu-popup">
               <ul>
-                <li class="menu-text">Signed in as {{ deviceInfo?.userEmail }}</li>
-                <li class="menu-line">
-                  <hr />
+                <li class="menu-text">
+                  Signed in as {{ deviceInfo?.userEmail }}
                 </li>
-                <li class="menu-btn" @click="settingsClicked">Settings</li>
-                <li class="menu-btn" @click="signOutClicked">Sign out</li>
+                <li class="menu-line">
+                  <hr>
+                </li>
+                <li class="menu-btn" @click="settingsClicked">
+                  Settings
+                </li>
+                <li class="menu-btn" @click="signOutClicked">
+                  Sign out
+                </li>
               </ul>
             </div>
           </div>
