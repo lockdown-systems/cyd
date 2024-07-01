@@ -17,7 +17,7 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const showSettings = inject('showSettings') as () => void;
 
-const emit = defineEmits(['onSignOff']);
+const emit = defineEmits(['onSignOut']);
 
 const accountClicked = (account: Account) => {
   activeAccountId.value = account.id;
@@ -86,6 +86,7 @@ const signOutClicked = async () => {
   }
 
   // Delete the device from the local storage
+  await window.electron.setConfig("userEmail", "");
   await window.electron.setConfig("apiToken", "");
   await window.electron.setConfig("deviceToken", "");
   await window.electron.setConfig("deviceUUID", "");
@@ -94,7 +95,7 @@ const signOutClicked = async () => {
   await refreshDeviceInfo();
 
   // Sign off
-  emit('onSignOff');
+  emit('onSignOut');
 };
 
 onMounted(async () => {

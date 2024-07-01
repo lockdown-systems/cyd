@@ -132,7 +132,7 @@ async function goBack() {
           <form @submit.prevent>
             <template v-if="signInState == 'start'">
               <div class="form-group d-flex flex-column align-items-center">
-                <p>Login to Semiphemeral using your email address.</p>
+                <p>Sign in to Semiphemeral using your email address.</p>
                 <input ref="emailInputEl" v-model="userEmail" type="email" class="form-control"
                   data-vue-ref="emailInputEl" placeholder="Email address">
                 <button type="submit" class="btn btn-primary mt-2" rel="startContinueButtonEl"

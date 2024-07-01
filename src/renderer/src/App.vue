@@ -47,12 +47,14 @@ const showSettings = () => {
 };
 provide('showSettings', showSettings);
 
-// Navigation
-const navigate = (_path: string) => {
-  // TODO: change how navigation works
-  // router.push(path);
+const signOut = async () => {
+  isSignedIn.value = false;
+  isFirstLoad.value = true;
+  serverApi.value = new ServerAPI();
+  await serverApi.value.initialize();
+  await refreshDeviceInfo();
+  isFirstLoad.value = false;
 };
-provide('navigate', navigate);
 
 onMounted(async () => {
   await serverApi.value.initialize();
@@ -87,7 +89,7 @@ onMounted(async () => {
         <SignInView @on-sign-in="isSignedIn = true" />
       </template>
       <template v-else>
-        <TabsView @on-sign-off="isSignedIn = false" />
+        <TabsView @on-sign-out="signOut" />
       </template>
     </div>
 

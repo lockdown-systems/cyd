@@ -214,8 +214,8 @@ describe('<Login />', () => {
       // Type 6 digits, should auto-submit
       cy.vueRef('verificationCodeInputEl').type('123456');
 
-      // Check that we're logging in by searching the html for the string "Logging in..."
-      cy.contains('Logging in...').should('exist');
+      // Check that we're logging in by searching the html for the string "Signing in..."
+      cy.contains('Signing in...').should('exist');
     });
   })
 
