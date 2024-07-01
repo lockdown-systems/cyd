@@ -14,7 +14,6 @@ const hide = () => {
 const settingsModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const userEmail = inject('userEmail') as Ref<string>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const serverApi = inject('serverApi') as Ref<ServerAPI>;

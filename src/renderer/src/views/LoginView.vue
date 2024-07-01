@@ -10,14 +10,14 @@ const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
 const verificationCode = ref('');
 
-type LoginState = 'start' | 'registerDevice';
+type LoginState = 'start' | 'registerDevice' | 'token';
 const loginState = ref<LoginState>('start');
 
 const emailInputEl = ref<HTMLInputElement | null>(null);
 const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
 const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
 
-const emit = defineEmits(['loginSuccess']);
+const emit = defineEmits(['onLoginSuccess']);
 
 watch(verificationCode, async (newValue, _oldValue) => {
   if (newValue.length < 6) {
@@ -107,8 +107,8 @@ async function registerDevice() {
   await refreshDeviceInfo();
 
   // Success
-  emit('loginSuccess');
-
+  emit('onLoginSuccess');
+  loginState.value = 'token';
 }
 
 async function goBack() {

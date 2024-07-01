@@ -17,7 +17,7 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const showSettings = inject('showSettings') as () => void;
 
-const emit = defineEmits(['signOff']);
+const emit = defineEmits(['onSignOff']);
 
 const accountClicked = (account: Account) => {
   activeAccountId.value = account.id;
@@ -94,7 +94,7 @@ const signOutClicked = async () => {
   await refreshDeviceInfo();
 
   // Sign off
-  emit('signOff');
+  emit('onSignOff');
 };
 
 onMounted(async () => {

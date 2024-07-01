@@ -33,3 +33,6 @@ prisma/dev.db-journal
 
 # Electron-Forge
 out/
+
+# Tests
+src/renderer/cypress/screenshots/
