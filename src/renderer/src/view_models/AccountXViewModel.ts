@@ -1,5 +1,5 @@
 import Electron from 'electron';
-import { XAccount } from '../types';
+import type { Account } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -14,7 +14,7 @@ export enum State {
 }
 
 export class AccountXViewModel {
-    private account: XAccount;
+    private account: Account;
     private state: string;
     private webview: Electron.WebviewTag;
     private ready: boolean;
@@ -22,7 +22,7 @@ export class AccountXViewModel {
     public showBrowser: boolean;
     public instructions: string;
 
-    constructor(account: XAccount, webview: Electron.WebviewTag) {
+    constructor(account: Account, webview: Electron.WebviewTag) {
         this.account = account;
         this.webview = webview;
 
@@ -32,9 +32,10 @@ export class AccountXViewModel {
         this.ready = false;
 
         // Wait for the webview to finish loading
-        this.webview.addEventListener("dom-ready", () => {
+        this.webview.addEventListener("dom-ready", async () => {
             const url = this.webview.getURL();
             console.log("AccountXViewModel: dom-ready", url);
+            await new Promise(resolve => setTimeout(resolve, 200));
             this.ready = true;
         });
     }
@@ -145,10 +146,10 @@ export class AccountXViewModel {
         switch (this.state) {
             case State.Login:
                 // Never logged in before
-                if (this.account.username === null) {
+                if (this.account.xAccount?.username === null) {
                     this.instructions = `
-I can help you automatically delete your tweets, likes, and direct messages, 
-except for the ones you want to keep. **To start, login to your X account below.**
+I can help you automatically archive your tweets and/or direct messages, and then delete your tweets, likes,
+and direct messages, except for the ones you want to keep. **To start, login to your X account below.**
 `;
                     this.showBrowser = true;
                     await this.loadURL("https://x.com/login");
@@ -171,10 +172,10 @@ except for the ones you want to keep. **To start, login to your X account below.
                     }
 
                     // Save it
-                    this.account.username = username;
-                    await window.electron.saveXAccount(JSON.stringify(this.account));
+                    this.account.xAccount.username = username;
+                    await window.electron.saveAccount(JSON.stringify(this.account));
 
-                    // TODO: redirect to dashboard
+                    this.state = State.Dashboard;
 
                 } else {
                     // We have logged in before. Are we currently logged in?
@@ -183,22 +184,36 @@ Checking to see if you're still logged in to your X account...
 `;
                     this.showBrowser = true;
                     await this.loadURL("https://x.com/login");
+                    await new Promise(resolve => setTimeout(resolve, 500));
 
                     if (this.webview.getURL() == "https://x.com/home") {
-                        // We're logged in
                         this.log("run", "login succeeded");
-
-                        // TODO: redirect to dashboard
+                        this.state = State.Dashboard;
                     } else {
                         this.instructions = `
 You've been logged out. **To continue, log back into your X account below.**
 `;
+                        await this.waitForURL("https://x.com/home");
+                        this.log("run", "login succeeded");
+                        this.state = State.Dashboard;
                     }
+                }
+                break;
+
+            case State.Dashboard:
+                this.showBrowser = false;
+                await this.loadURL("about:blank");
+
+                this.instructions = `You're logged in as **@${this.account.xAccount?.username}**. What would you like to do next?`;
+
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await new Promise(resolve => setTimeout(resolve, 5000));
                 }
 
                 break;
 
-            case State.Dashboard:
+
             case State.DownloadArchive:
             case State.UnlikeTweets:
             case State.FinishUnlikeTweets:

@@ -14,24 +14,29 @@ export const runMigrations = async () => {
     await run(db)
 }
 
+// Helpers
+
+function exec(sql: string, params: Array<number | string | bigint | Buffer | null> = [], cmd: 'run' | 'all' | 'get' = 'run') {
+    console.log("Executing SQL:", sql, "Params:", params);
+    const stmt = db.prepare(sql);
+    return stmt[cmd](...params);
+}
+
 // Config
 
 export const getConfig = (key: string): string | null => {
-    const stmt = db.prepare('SELECT value FROM config WHERE key = ?');
-    const row = stmt.get(key);
+    const row = exec('SELECT value FROM config WHERE key = ?', [key], 'get');
     return row ? row.value : null;
 }
 
 export const setConfig = (key: string, value: string) => {
-    const stmt = db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)');
-    stmt.run(key, value);
+    exec('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
 }
 
 // X accounts
 
 export const getXAccount = (id: number): XAccount | null => {
-    const stmt = db.prepare('SELECT * FROM xAccount WHERE id = ?');
-    const row = stmt.get(id);
+    const row = exec('SELECT * FROM xAccount WHERE id = ?', [id], 'get');
     if (!row) {
         return null;
     }
@@ -53,8 +58,7 @@ export const getXAccount = (id: number): XAccount | null => {
 }
 
 export const getXAccounts = (): XAccount[] => {
-    const stmt = db.prepare('SELECT * FROM xAccount');
-    const rows = stmt.all();
+    const rows = exec('SELECT * FROM xAccount', [], 'all');
 
     const accounts: XAccount[] = [];
     for (const row of rows) {
@@ -78,8 +82,7 @@ export const getXAccounts = (): XAccount[] => {
 }
 
 export const createXAccount = (): XAccount => {
-    const stmt = db.prepare('INSERT INTO xAccount DEFAULT VALUES');
-    const info = stmt.run();
+    const info = exec('INSERT INTO xAccount DEFAULT VALUES');
     const account = getXAccount(info.lastInsertRowid);
     if (!account) {
         throw new Error("Failed to create account");
@@ -88,7 +91,7 @@ export const createXAccount = (): XAccount => {
 }
 
 export const saveXAccount = (account: XAccount) => {
-    const stmt = db.prepare(`
+    exec(`
         UPDATE xAccount
         SET
             updatedAt = CURRENT_TIMESTAMP,
@@ -103,26 +106,24 @@ export const saveXAccount = (account: XAccount) => {
             deleteDirectMessages = ?,
             directMessageDaysThreshold = ?
         WHERE id = ?
-    `);
-    stmt.run(
+    `, [
         account.username,
-        account.deleteTweets,
+        account.deleteTweets ? 1 : 0,
         account.tweetsDaysThreshold,
-        account.tweetsEnableRetweetThreshold,
+        account.tweetsEnableRetweetThreshold ? 1 : 0,
         account.tweetsLikeThreshold,
-        account.deleteLikes,
+        account.deleteLikes ? 1 : 0,
         account.likesDaysThreshold,
-        account.deleteDirectMessages,
+        account.deleteDirectMessages ? 1 : 0,
         account.directMessageDaysThreshold,
         account.id
-    );
+    ]);
 }
 
 // Accounts, which contain all others
 
 export const getAccount = (id: number): Account | null => {
-    const stmt = db.prepare('SELECT * FROM account WHERE id = ?');
-    const row = stmt.get(id);
+    const row = exec('SELECT * FROM account WHERE id = ?', [id], 'get');
     if (!row) {
         return null;
     }
@@ -143,8 +144,7 @@ export const getAccount = (id: number): Account | null => {
 }
 
 export const getAccounts = (): Account[] => {
-    const stmt = db.prepare('SELECT * FROM account');
-    const rows = stmt.all();
+    const rows = exec('SELECT * FROM account', [], 'all');
 
     const accounts: Account[] = [];
     for (const row of rows) {
@@ -167,13 +167,11 @@ export const getAccounts = (): Account[] => {
 
 export const createAccount = (): Account => {
     // Figure out the sortOrder for the new account
-    const sortOrderStmt = db.prepare('SELECT MAX(sortOrder) as maxSortOrder FROM account');
-    const row = sortOrderStmt.get();
+    const row = exec('SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get');
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
-    const stmt = db.prepare('INSERT INTO account (sortOrder) VALUES (?)');
-    const info = stmt.run(sortOrder);
+    const info = exec('INSERT INTO account (sortOrder) VALUES (?)', [sortOrder]);
 
     // Return it
     const account = getAccount(info.lastInsertRowid);
@@ -203,18 +201,17 @@ export const selectNewAccount = (accountID: number, type: string): Account => {
     }
 
     // Update the account
-    const stmt = db.prepare(`
+    exec(`
         UPDATE account
         SET
             type = ?,
             xAccountId = ?
         WHERE id = ?
-    `);
-    stmt.run(
+    `, [
         type,
         account.xAccount.id,
         account.id
-    );
+    ]);
 
     account.type = type;
     return account;
@@ -225,16 +222,15 @@ export const saveAccount = (account: Account) => {
         saveXAccount(account.xAccount);
     }
 
-    const stmt = db.prepare(`
+    exec(`
         UPDATE account
         SET
             type = ?,
             sortOrder = ?
         WHERE id = ?
-    `);
-    stmt.run(
+    `, [
         account.type,
         account.sortOrder,
         account.id
-    );
+    ]);
 }

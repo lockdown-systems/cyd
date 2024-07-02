@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AccountXView from './AccountXView.vue';
 import type { Account } from '../../../shared_types';
 
 const props = defineProps<{
@@ -44,7 +45,7 @@ const accountClicked = (accountType: string) => {
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <p>Placeholder for X</p>
+      <AccountXView :account="account" />
     </template>
 
     <template v-else>

@@ -148,7 +148,7 @@ body {
 /* Webview styles */
 
 .wrapper {
-  height: calc(100vh - 80px);
+  height: calc(100vh - 30px);
 }
 
 .webview {
