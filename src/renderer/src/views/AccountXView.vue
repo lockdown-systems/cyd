@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import Electron from 'electron';
 
+import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import type { Account } from '../../../shared_types';
 
@@ -43,6 +44,7 @@ onUnmounted(() => {
 
 <template>
     <div class="wrapper d-flex flex-column">
+        <AccountHeader :account="account" />
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${account.id}`"

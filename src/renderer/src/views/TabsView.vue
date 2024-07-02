@@ -53,7 +53,7 @@ const accountSelected = async (account: Account, accountType: string) => {
     }
   } catch (e: unknown) {
     if (e instanceof Error) {
-      await window.electron.showError(e.message); 
+      await window.electron.showError(e.message);
     }
   }
 }
