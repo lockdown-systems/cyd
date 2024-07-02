@@ -1,5 +1,4 @@
-import Electron from 'electron';
-import type { Account } from '../../../shared_types';
+import { BaseViewModel } from './BaseViewModel';
 
 export enum State {
     Login = "login",
@@ -13,91 +12,14 @@ export enum State {
     FinishDeleteDirectMessages = "finishDeleteDirectMessages",
 }
 
-export class AccountXViewModel {
-    private account: Account;
-    private state: string;
-    private webview: Electron.WebviewTag;
-    private ready: boolean;
-
-    public showBrowser: boolean;
-    public instructions: string;
-
-    constructor(account: Account, webview: Electron.WebviewTag) {
-        this.account = account;
-        this.webview = webview;
-
-        this.state = State.Login;
-        this.instructions = "";
-        this.showBrowser = false;
-        this.ready = false;
-
-        // Wait for the webview to finish loading
-        this.webview.addEventListener("dom-ready", async () => {
-            const url = this.webview.getURL();
-            console.log("AccountXViewModel: dom-ready", url);
-            await new Promise(resolve => setTimeout(resolve, 200));
-            this.ready = true;
-        });
-    }
-
+export class AccountXViewModel extends BaseViewModel {
     async init() {
-        // Open dev tools in local or staging, but not in production
-        if (await window.electron.isDevMode()) {
-            this.webview.openDevTools();
-        }
+        this.state = State.Login;
+        super.init();
     }
 
     log(func: string, message: string) {
         console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
-    }
-
-    async waitForWebviewReady() {
-        this.ready = false;
-        while (!this.ready) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
-    }
-
-    async loadURL(url: string) {
-        console.log("AccountXViewModel.loadURL", url);
-        await this.webview.loadURL(url);
-        await this.waitForWebviewReady();
-    }
-
-    async waitForURL(url: string) {
-        console.log("waitForURL", url);
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-            const newURL = this.webview.getURL();
-            this.log("waitForURL", `waiting... currently: ${newURL}`);
-            if (newURL == url) {
-                break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    }
-
-    async scriptClickElement(selector: string): Promise<boolean> {
-        const code = `
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return false; }
-            el.click();
-            return true;
-        })()
-        `;
-        return await this.webview.executeJavaScript(code);
-    }
-
-    async scriptGetInnerText(selector: string): Promise<null | string> {
-        const code = `
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return null; }
-            return el.innerText;
-        })()
-        `;
-        return await this.webview.executeJavaScript(code);
     }
 
     async loginPageTests(): Promise<boolean> {
@@ -142,6 +64,7 @@ export class AccountXViewModel {
 
     async run() {
         this.log("run", "running")
+        await this.waitForWebviewReady();
 
         switch (this.state) {
             case State.Login:
