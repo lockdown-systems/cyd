@@ -37,9 +37,25 @@ const addAccountClicked = async () => {
   activeAccountId.value = account.id;
 };
 
-const accountSelected = (account: Account, accountType: string) => {
-  // TODO: Create a new account of the right type. Probably need to implement a new preloader function to do this.
-  console.log('Account selected:', account, accountType);
+const accountSelected = async (account: Account, accountType: string) => {
+  try {
+    const newAccount = await window.electron.selectAccountType(account.id, accountType);
+    if (newAccount === null) {
+      throw new Error('Failed to select account type');
+    }
+
+    // For the account in the accounts list
+    for (let i = 0; i < accounts.value.length; i++) {
+      if (accounts.value[i].id === account.id) {
+        accounts.value[i] = newAccount;
+        break;
+      }
+    }
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      await window.electron.showError(e.message); 
+    }
+  }
 }
 
 const userMenuPopupEl = ref<HTMLDivElement | null>(null);

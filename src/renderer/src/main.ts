@@ -10,6 +10,7 @@ declare global {
             setConfig: (key: string, value: string) => void;
             getAccounts: () => Promise<Account[]>;
             createAccount: () => Promise<Account>;
+            selectAccountType: (accountID: number, type: string) => Promise<Account>;
             saveAccount: (accountJSON: string) => void;
             showError: (message: string) => void;
         };

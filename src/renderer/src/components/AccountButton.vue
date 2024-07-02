@@ -29,10 +29,10 @@ const clicked = () => {
         </div>
         <div v-if="showInfo" class="info-popup">
             <template v-if="props.account.type == 'unknown'">
-                Start deleting your data
+                Delete data from a new account
             </template>
             <template v-else-if="props.account.type == 'X'">
-                <template v-if="props.account.xAccount?.username == ''">
+                <template v-if="props.account.xAccount?.username == null">
                     Login to your X account
                 </template>
                 <template v-else>
@@ -49,10 +49,13 @@ const clicked = () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    opacity: 0.7;
 }
 
-.btn-container.active {
+.btn-container .account-btn {
+    opacity: 0.5;
+}
+
+.btn-container.active .account-btn {
     opacity: 1.0;
 }
 

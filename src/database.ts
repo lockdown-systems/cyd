@@ -183,6 +183,43 @@ export const createAccount = (): Account => {
     return account;
 }
 
+export const selectNewAccount = (accountID: number, type: string): Account => {
+    // Get the account
+    const account = getAccount(accountID);
+    if (!account) {
+        throw new Error("Account not found");
+    }
+    if (account.type != "unknown") {
+        throw new Error("Account already has a type");
+    }
+
+    // Create the new account type
+    switch (type) {
+        case "X":
+            account.xAccount = createXAccount();
+            break;
+        default:
+            throw new Error("Unknown account type");
+    }
+
+    // Update the account
+    const stmt = db.prepare(`
+        UPDATE account
+        SET
+            type = ?,
+            xAccountId = ?
+        WHERE id = ?
+    `);
+    stmt.run(
+        type,
+        account.xAccount.id,
+        account.id
+    );
+
+    account.type = type;
+    return account;
+}
+
 export const saveAccount = (account: Account) => {
     if (account.xAccount) {
         saveXAccount(account.xAccount);

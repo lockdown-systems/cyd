@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electron', {
     createAccount: (): Promise<Account> => {
         return ipcRenderer.invoke('createAccount')
     },
+    selectAccountType: (accountID: number, type: string): Promise<Account> => {
+        return ipcRenderer.invoke('selectNewAccount', accountID, type)
+    },
     saveAccount: (accountJSON: string) => {
         ipcRenderer.invoke('saveAccount', accountJSON)
     },
