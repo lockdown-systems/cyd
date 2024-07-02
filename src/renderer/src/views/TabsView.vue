@@ -117,10 +117,12 @@ onMounted(async () => {
   }
 
   document.addEventListener('click', outsideUserMenuClicked);
+  document.addEventListener('auxclick', outsideUserMenuClicked);
 });
 
 onUnmounted(async () => {
   document.removeEventListener('click', outsideUserMenuClicked);
+  document.removeEventListener('auxclick', outsideUserMenuClicked);
 });
 </script>
 
@@ -153,7 +155,7 @@ onUnmounted(async () => {
             <div v-if="userBtnShowInfo" class="info-popup">
               You are signed in as {{ deviceInfo?.userEmail }}
             </div>
-            <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="user-menu-popup">
+            <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="menu-popup">
               <ul>
                 <li class="menu-text">
                   Signed in as {{ deviceInfo?.userEmail }}
@@ -189,14 +191,7 @@ onUnmounted(async () => {
   border-right: 3px solid #5b9bb9;
 }
 
-.sidebar .btn-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sidebar .sidebar-btn {
+.sidebar-btn {
   width: 40px;
   height: 40px;
   font-size: 25px;
@@ -204,75 +199,35 @@ onUnmounted(async () => {
   cursor: pointer;
 }
 
-.sidebar .add-account-btn {
+.add-account-btn {
   color: #ffffff;
   background-color: #000000;
   opacity: 0.3;
   border-radius: 50%;
 }
 
-.sidebar .add-account-btn:hover {
+.add-account-btn:hover {
   opacity: 0.6;
 }
 
-.sidebar .user-btn {
+.user-btn {
   color: #000000;
   background-color: #ffffff;
   opacity: 0.6;
 }
 
-.sidebar .user-btn:hover {
+.user-btn:hover {
   opacity: 0.9;
 }
 
-.sidebar .info-popup {
-  position: absolute;
+.info-popup {
   bottom: 4px;
   left: 45px;
-  background-color: #000000;
-  color: #ffffff;
-  padding: 3px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
 }
 
-.sidebar .user-menu-popup {
-  position: absolute;
+.menu-popup {
   bottom: 4px;
   left: 45px;
-  background-color: #333333;
-  color: #ffffff;
-  border: 1px solid #111111;
-  padding: 10px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
-.sidebar .user-menu-popup ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar .user-menu-popup ul li {
-  padding: 3px 6px;
-}
-
-.sidebar .user-menu-popup ul li.menu-text {
-  color: #999999;
-}
-
-.sidebar .user-menu-popup ul li.menu-line hr {
-  margin: 5px 0;
-}
-
-.sidebar .user-menu-popup ul li.menu-btn {
-  cursor: pointer;
-}
-
-.sidebar .user-menu-popup ul li.menu-btn:hover {
-  background-color: #555555;
-
 }
 
 .hide {

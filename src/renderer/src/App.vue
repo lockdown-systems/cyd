@@ -110,6 +110,63 @@ body {
   height: 100%;
 }
 
+/* Menu popups */
+
+.menu-popup {
+  position: absolute;
+  background-color: #333333;
+  color: #ffffff;
+  border: 1px solid #111111;
+  padding: 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.menu-popup ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu-popup ul li {
+  padding: 3px 6px;
+}
+
+.menu-popup ul li.menu-text {
+  color: #999999;
+}
+
+.menu-popup ul li.menu-line hr {
+  margin: 5px 0;
+}
+
+.menu-popup ul li.menu-btn {
+  cursor: pointer;
+}
+
+.menu-popup ul li.menu-btn:hover {
+  background-color: #555555;
+}
+
+/* Buttons */
+
+.btn-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.info-popup {
+  position: absolute;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 3px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 /* Modal styles */
 
 .modal-backdrop.show {

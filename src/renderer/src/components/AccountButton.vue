@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import type { Account } from '../../../shared_types';
 
 const props = defineProps<{
@@ -7,19 +7,52 @@ const props = defineProps<{
     active: boolean;
 }>();
 
-const emit = defineEmits(['clicked']);
+const emit = defineEmits(['onSettingsClicked', 'onDeleteClicked']);
 
 const showInfo = ref(false);
+const showMenu = ref(false);
+const menuBtnEl = ref<HTMLDivElement | null>(null);
+const menuPopupEl = ref<HTMLDivElement | null>(null);
 
-const clicked = () => {
-    emit('clicked');
+const settingsClicked = () => {
+    emit('onSettingsClicked', props.account);
 };
+
+const deleteClicked = () => {
+    emit('onDeleteClicked', props.account);
+};
+
+const menuAuxClicked = () => {
+    showMenu.value = !showMenu.value;
+};
+
+const outsideMenuClicked = (event: MouseEvent) => {
+    setTimeout(() => {
+        if (
+            showMenu.value &&
+            !menuBtnEl.value?.contains(event.target as Node) &&
+            !menuPopupEl.value?.contains(event.target as Node)
+        ) {
+            showMenu.value = false;
+        }
+    }, 100);
+};
+
+onMounted(async () => {
+    document.addEventListener('click', outsideMenuClicked);
+    document.addEventListener('auxclick', outsideMenuClicked);
+});
+
+onUnmounted(async () => {
+    document.removeEventListener('click', outsideMenuClicked);
+    document.removeEventListener('auxclick', outsideMenuClicked);
+});
 </script>
 
 <template>
     <div class="btn-container" :class="{ 'active': active }">
-        <div class="account-btn d-flex justify-content-center align-items-center" @mouseover="showInfo = true"
-            @mouseleave="showInfo = false" @click="clicked">
+        <div ref="menuBtnEl" class="account-btn d-flex justify-content-center align-items-center"
+            @mouseover="showInfo = true" @mouseleave="showInfo = false" @auxclick="menuAuxClicked">
             <template v-if="props.account.type == 'unknown'">
                 <i class="fa-solid fa-gears" />
             </template>
@@ -40,17 +73,20 @@ const clicked = () => {
                 </template>
             </template>
         </div>
+        <div v-if="showMenu" ref="menuPopupEl" class="menu-popup">
+            <ul>
+                <li class="menu-btn" @click="settingsClicked">
+                    Settings
+                </li>
+                <li class="menu-btn" @click="deleteClicked">
+                    Delete
+                </li>
+            </ul>
+        </div>
     </div>
 </template>
 
 <style scoped>
-.btn-container {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .btn-container .account-btn {
     opacity: 0.5;
 }
@@ -70,13 +106,12 @@ const clicked = () => {
 }
 
 .info-popup {
-    position: absolute;
     bottom: 4px;
     left: 45px;
-    background-color: #000000;
-    color: #ffffff;
-    padding: 3px 6px;
-    border-radius: 4px;
-    white-space: nowrap;
+}
+
+.menu-popup {
+    top: 4px;
+    left: 45px;
 }
 </style>
