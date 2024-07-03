@@ -39,14 +39,23 @@ const addAccountClicked = async () => {
 };
 
 const deleteAccount = async (account: Account) => {
-  const result = await window.electron.showQuestion(
+  if (await window.electron.showQuestion(
     'Are you sure you want to remove this account from Semiphemeral?',
     'Yes, remove it',
     'No, keep it'
-  );
-  console.log(result);
+  )) {
+    const accountIDToDelete = account.id;
+    await window.electron.deleteAccount(accountIDToDelete);
+    accounts.value = await window.electron.getAccounts();
 
-  console.log('Delete account', account);
+    if (accounts.value.length === 0) {
+      await addAccountClicked();
+    } else {
+      if (activeAccountId.value == accountIDToDelete) {
+        activeAccountId.value = accounts.value[0].id;
+      }
+    }
+  }
 }
 
 const accountSelected = async (account: Account, accountType: string) => {

@@ -16,6 +16,8 @@ const accountXViewModel = ref<AccountXViewModel | null>(null);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
+const isWebviewMounted = ref(true);
+
 
 onMounted(async () => {
     if (webviewComponent.value !== null) {
@@ -26,7 +28,7 @@ onMounted(async () => {
             await accountXViewModel.value.init();
 
             // eslint-disable-next-line no-constant-condition
-            while (true) {
+            while (isWebviewMounted.value) {
                 // TODO: catch exceptions
                 await accountXViewModel.value.run();
 
@@ -39,6 +41,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    isWebviewMounted.value = false;
 });
 </script>
 

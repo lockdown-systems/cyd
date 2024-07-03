@@ -234,3 +234,23 @@ export const saveAccount = (account: Account) => {
         account.id
     ]);
 }
+
+export const deleteAccount = (accountID: number) => {
+    // Get the account
+    const account = getAccount(accountID);
+    if (!account) {
+        throw new Error("Account not found");
+    }
+
+    // Delete the account type
+    switch (account.type) {
+        case "X":
+            if (account.xAccount) {
+                exec('DELETE FROM xAccount WHERE id = ?', [account.xAccount.id]);
+            }
+            break;
+    }
+
+    // Delete the account
+    exec('DELETE FROM account WHERE id = ?', [accountID]);
+}

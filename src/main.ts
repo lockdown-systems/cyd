@@ -3,7 +3,16 @@ import os from 'os';
 import log from 'electron-log/main';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import { runMigrations, getConfig, setConfig, getAccounts, createAccount, selectNewAccount, saveAccount } from './database';
+import {
+    runMigrations,
+    getConfig,
+    setConfig,
+    getAccounts,
+    createAccount,
+    selectNewAccount,
+    saveAccount,
+    deleteAccount
+} from './database';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -130,7 +139,7 @@ async function createWindow() {
         });
 
         ipcMain.handle('deleteAccount', async (_, _accountID) => {
-            // TODO: implement
+            deleteAccount(_accountID);
         });
 
         ipcMain.handle('showError', async (_, message) => {

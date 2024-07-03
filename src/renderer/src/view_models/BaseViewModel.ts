@@ -3,8 +3,10 @@ import type { Account } from '../../../shared_types';
 
 export class BaseViewModel {
     public account: Account;
-    public state: string;
     public webview: Electron.WebviewTag;
+    public isWebviewDestroyed: boolean;
+
+    public state: string;
     public domReady: boolean;
     public stoppedLoading: boolean;
 
@@ -14,6 +16,7 @@ export class BaseViewModel {
     constructor(account: Account, webview: Electron.WebviewTag) {
         this.account = account;
         this.webview = webview;
+        this.isWebviewDestroyed = false;
 
         this.state = "";
         this.instructions = "";
@@ -22,30 +25,41 @@ export class BaseViewModel {
         this.stoppedLoading = false;
 
         // Wait for the webview to finish loading
-        this.webview.addEventListener("did-stop-loading", async () => {
-            const url = this.webview.getURL();
-            this.log("did-stop-loading", url);
+        this.getWebview()?.addEventListener("did-stop-loading", async () => {
+            const url = this.getWebview()?.getURL();
+            this.log("did-stop-loading", url ?? "");
             await new Promise(resolve => setTimeout(resolve, 200));
             this.stoppedLoading = true;
         });
 
         // Figure out the first dom-ready
-        this.webview.addEventListener("dom-ready", async () => {
-            const url = this.webview.getURL();
-            this.log("dom-ready", url);
+        this.getWebview()?.addEventListener("dom-ready", async () => {
+            const url = this.getWebview()?.getURL();
+            this.log("dom-ready", url ?? "");
             await new Promise(resolve => setTimeout(resolve, 200));
             this.domReady = true;
 
             // Remove the event listener
-            this.webview.removeEventListener("dom-ready", () => { });
+            this.getWebview()?.removeEventListener("dom-ready", () => { });
         });
     }
 
     async init() {
         // Open dev tools in local or staging, but not in production
         if (await window.electron.isDevMode()) {
-            this.webview.openDevTools();
+            this.getWebview()?.openDevTools();
         }
+    }
+
+    destroy() {
+        this.isWebviewDestroyed = true;
+    }
+
+    getWebview(): Electron.WebviewTag | null {
+        if (this.isWebviewDestroyed) {
+            return null;
+        }
+        return this.webview;
     }
 
     log(func: string, message: string) {
@@ -59,7 +73,7 @@ export class BaseViewModel {
         }
 
         // Not loading? Then we're done
-        if (!this.webview.isLoading()) {
+        if (!this.getWebview()?.isLoading()) {
             this.stoppedLoading = true;
             return;
         }
@@ -73,7 +87,7 @@ export class BaseViewModel {
 
     async loadURL(url: string) {
         console.log("AccountXViewModel.loadURL", url);
-        await this.webview.loadURL(url);
+        await this.getWebview()?.loadURL(url);
         await this.waitForWebviewReady();
     }
 
@@ -81,7 +95,7 @@ export class BaseViewModel {
         console.log("waitForURL", url);
         // eslint-disable-next-line no-constant-condition
         while (true) {
-            const newURL = this.webview.getURL();
+            const newURL = this.getWebview()?.getURL();
             this.log("waitForURL", `waiting... currently: ${newURL}`);
             if (newURL == url) {
                 break;
@@ -99,7 +113,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        return await this.webview.executeJavaScript(code);
+        return await this.getWebview()?.executeJavaScript(code);
     }
 
     async scriptGetInnerText(selector: string): Promise<null | string> {
@@ -110,6 +124,6 @@ export class BaseViewModel {
             return el.innerText;
         })()
         `;
-        return await this.webview.executeJavaScript(code);
+        return await this.getWebview()?.executeJavaScript(code);
     }
 }
