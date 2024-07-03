@@ -26,7 +26,13 @@ contextBridge.exposeInMainWorld('electron', {
     saveAccount: (accountJSON: string) => {
         ipcRenderer.invoke('saveAccount', accountJSON)
     },
+    deleteAccount: (accountID: number) => {
+        return ipcRenderer.invoke('deleteAccount', accountID)
+    },
     showError: (message: string) => {
         ipcRenderer.invoke('showError', message)
+    },
+    showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
+        return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     }
 })

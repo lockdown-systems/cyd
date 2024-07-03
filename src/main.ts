@@ -129,8 +129,22 @@ async function createWindow() {
             return saveAccount(account);
         });
 
+        ipcMain.handle('deleteAccount', async (_, _accountID) => {
+            // TODO: implement
+        });
+
         ipcMain.handle('showError', async (_, message) => {
             dialog.showErrorBox('Semiphemeral Error', message);
+        });
+
+        ipcMain.handle('showQuestion', async (_, message, trueText, falseText) => {
+            const result = dialog.showMessageBoxSync({
+                message: message,
+                type: 'question',
+                buttons: [falseText, trueText],
+                defaultId: 0,
+            });
+            return result === 1;
         });
     }
     global.ipcHandlersRegistered = true;

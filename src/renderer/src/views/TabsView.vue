@@ -38,6 +38,17 @@ const addAccountClicked = async () => {
   activeAccountId.value = account.id;
 };
 
+const deleteAccount = async (account: Account) => {
+  const result = await window.electron.showQuestion(
+    'Are you sure you want to remove this account from Semiphemeral?',
+    'Yes, remove it',
+    'No, keep it'
+  );
+  console.log(result);
+
+  console.log('Delete account', account);
+}
+
 const accountSelected = async (account: Account, accountType: string) => {
   try {
     const newAccount = await window.electron.selectAccountType(account.id, accountType);
@@ -134,7 +145,7 @@ onUnmounted(async () => {
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
           <AccountButton v-for="account in accounts" :key="account.id" :account="account"
             :active="account.id === activeAccountId" @click="accountClicked(account)"
-            @on-settings-clicked="showAccountSettings(account)" />
+            @on-settings-clicked="showAccountSettings(account)" @on-delete-clicked="deleteAccount(account)" />
         </div>
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">

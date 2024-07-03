@@ -77,7 +77,7 @@ onUnmounted(async () => {
                     Settings
                 </li>
                 <li class="menu-btn" @click="deleteClicked">
-                    Delete
+                    Remove
                 </li>
             </ul>
         </div>

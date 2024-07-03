@@ -12,7 +12,9 @@ declare global {
             createAccount: () => Promise<Account>;
             selectAccountType: (accountID: number, type: string) => Promise<Account>;
             saveAccount: (accountJSON: string) => void;
+            deleteAccount: (accountID: number) => void;
             showError: (message: string) => void;
+            showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
         };
     }
 }
