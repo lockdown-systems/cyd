@@ -51,3 +51,12 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
     }
     return deviceInfo;
 }
+
+export function getAccountIcon(accountType: string): string {
+    switch (accountType) {
+        case "X":
+            return "fa-brands fa-x-twitter";
+        default:
+            return "fa-solid fa-gears";
+    }
+}

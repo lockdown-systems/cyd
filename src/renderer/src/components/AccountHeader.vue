@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getAccountIcon } from '../helpers';
 import type { Account } from '../../../shared_types';
 
 defineProps<{
@@ -31,19 +32,16 @@ const onSettingsClicked = () => {
             </div>
         </div>
         <div class="label d-flex align-items-center">
+            <span class="logo">
+                <i :class="getAccountIcon(account.type)" />
+            </span>
             <template v-if="account.type == 'X'">
-                <span class="logo">
-                    <i class="fa-brands fa-x-twitter" />
-                </span>
                 <template v-if="account.xAccount?.username == null">
                     <span class="label-text">not logged in</span>
                 </template>
                 <template v-else>
                     <span class="label-text">@{{ account.xAccount?.username }}</span>
                 </template>
-            </template>
-            <template v-else>
-                <span class="label-text">unknown account type</span>
             </template>
         </div>
         <div class="btn-container">

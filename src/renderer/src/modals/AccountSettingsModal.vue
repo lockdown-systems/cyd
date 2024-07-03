@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { getAccountIcon } from '../helpers';
 import Modal from 'bootstrap/js/dist/modal';
 import type { Account } from '../../../shared_types';
 
@@ -42,10 +43,9 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        <!-- account.type should never be "unknown" here -->
+                        <i :class="getAccountIcon(account?.type || '')" />
+                        <span>Settings: </span>
                         <template v-if="account?.type == 'X'">
-                            <i class="fa-brands fa-x-twitter" />
-                            <span>Settings: </span>
                             <span v-if="account?.xAccount?.username != ''">@{{ account?.xAccount?.username }}</span>
                             <span v-else>not logged in</span>
                         </template>

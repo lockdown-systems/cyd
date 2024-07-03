@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AccountXView from './AccountXView.vue';
+import { getAccountIcon } from '../helpers';
 import type { Account } from '../../../shared_types';
 
 const props = defineProps<{
@@ -31,7 +32,7 @@ const accountClicked = (accountType: string) => {
           <div class="card m-2" @click="accountClicked('X')">
             <div class="card-body d-flex align-items-center">
               <div class="logo mr-2">
-                <i class="fa-brands fa-x-twitter" />
+                <i :class="getAccountIcon('X')" />
               </div>
               <div class="name">
                 X (formerly Twitter)

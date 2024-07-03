@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { getAccountIcon } from '../helpers';
 import type { Account } from '../../../shared_types';
 
 const props = defineProps<{
@@ -55,12 +56,7 @@ onUnmounted(async () => {
     <div class="btn-container" :class="{ 'active': active }">
         <div ref="menuBtnEl" class="account-btn d-flex justify-content-center align-items-center"
             @mouseover="showInfo = true" @mouseleave="showInfo = false" @auxclick="menuAuxClicked">
-            <template v-if="props.account.type == 'unknown'">
-                <i class="fa-solid fa-gears" />
-            </template>
-            <template v-else-if="props.account.type == 'X'">
-                <i class="fa-brands fa-x-twitter" />
-            </template>
+            <i :class="getAccountIcon(account.type)" />
         </div>
         <div v-if="showInfo" class="info-popup">
             <template v-if="props.account.type == 'unknown'">
