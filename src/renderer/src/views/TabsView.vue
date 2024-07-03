@@ -16,6 +16,7 @@ const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const showSettings = inject('showSettings') as () => void;
+const showAccountSettings = inject('showAccountSettings') as (account: Account) => void;
 
 const emit = defineEmits(['onSignOut']);
 
@@ -132,7 +133,8 @@ onUnmounted(async () => {
       <div class="sidebar col-auto d-flex flex-column gap-2">
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
           <AccountButton v-for="account in accounts" :key="account.id" :account="account"
-            :active="account.id === activeAccountId" @click="accountClicked(account)" />
+            :active="account.id === activeAccountId" @click="accountClicked(account)"
+            @on-settings-clicked="showAccountSettings(account)" />
         </div>
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">

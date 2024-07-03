@@ -2,10 +2,13 @@
 import { ref, provide, onMounted } from "vue"
 
 import type { DeviceInfo } from './types';
+import type { Account } from '../../shared_types';
+
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
 import SettingsModal from './modals/SettingsModal.vue';
+import AccountSettingsModal from './modals/AccountSettingsModal.vue';
 
 import SignInView from "./views/SignInView.vue";
 import TabsView from "./views/TabsView.vue";
@@ -46,6 +49,15 @@ const showSettings = () => {
   showSettingsModal.value = true;
 };
 provide('showSettings', showSettings);
+
+// Account settings
+const accountSettingsAccount = ref<Account | null>(null);
+const showAccountSettingsModal = ref(false);
+const showAccountSettings = (account: Account) => {
+  accountSettingsAccount.value = account;
+  showAccountSettingsModal.value = true;
+};
+provide('showAccountSettings', showAccountSettings);
 
 const signOut = async () => {
   isSignedIn.value = false;
@@ -95,6 +107,10 @@ onMounted(async () => {
 
     <!-- Settings modal -->
     <SettingsModal v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
+
+    <!-- Account settings modal -->
+    <AccountSettingsModal v-if="showAccountSettingsModal" :account="accountSettingsAccount"
+      @hide="showAccountSettingsModal = false" @close="showAccountSettingsModal = false" />
   </div>
 </template>
 
@@ -200,6 +216,10 @@ body {
 
 .modal-body {
   overflow-y: auto;
+}
+
+.modal-xl {
+  max-width: 90%;
 }
 
 /* Webview styles */

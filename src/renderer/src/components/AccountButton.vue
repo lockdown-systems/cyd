@@ -15,10 +15,12 @@ const menuBtnEl = ref<HTMLDivElement | null>(null);
 const menuPopupEl = ref<HTMLDivElement | null>(null);
 
 const settingsClicked = () => {
+    showMenu.value = false;
     emit('onSettingsClicked', props.account);
 };
 
 const deleteClicked = () => {
+    showMenu.value = false;
     emit('onDeleteClicked', props.account);
 };
 
@@ -75,7 +77,7 @@ onUnmounted(async () => {
         </div>
         <div v-if="showMenu" ref="menuPopupEl" class="menu-popup">
             <ul>
-                <li class="menu-btn" @click="settingsClicked">
+                <li v-if="account.type != 'unknown'" class="menu-btn" @click="settingsClicked">
                     Settings
                 </li>
                 <li class="menu-btn" @click="deleteClicked">
