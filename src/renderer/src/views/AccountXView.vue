@@ -12,12 +12,13 @@ const props = defineProps<{
     account: Account;
 }>();
 
+const emit = defineEmits(['onRefreshClicked']);
+
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const isWebviewMounted = ref(true);
-
 
 onMounted(async () => {
     if (webviewComponent.value !== null) {
@@ -26,8 +27,6 @@ onMounted(async () => {
         if (props.account.xAccount !== null) {
             accountXViewModel.value = new AccountXViewModel(props.account, webview);
             await accountXViewModel.value.init();
-
-            // eslint-disable-next-line no-constant-condition
             while (isWebviewMounted.value) {
                 // TODO: catch exceptions
                 await accountXViewModel.value.run();
@@ -47,7 +46,7 @@ onUnmounted(() => {
 
 <template>
     <div class="wrapper d-flex flex-column">
-        <AccountHeader :account="account" />
+        <AccountHeader :account="account" @on-refresh-clicked="emit('onRefreshClicked')" />
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${account.id}`"

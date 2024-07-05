@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import AccountXView from './AccountXView.vue';
 import { getAccountIcon } from '../helpers';
 import type { Account } from '../../../shared_types';
@@ -11,13 +12,22 @@ const emit = defineEmits<{
   accountSelected: [account: Account, accountType: string]
 }>()
 
+const isRefreshing = ref(false);
+
+const refresh = () => {
+  isRefreshing.value = true;
+  setTimeout(() => {
+    isRefreshing.value = false;
+  }, 1);
+};
+
 const accountClicked = (accountType: string) => {
   emit('accountSelected', props.account, accountType);
 };
 </script>
 
 <template>
-  <div>
+  <div v-if="!isRefreshing">
     <template v-if="account.type == 'unknown'">
       <div class="mt-3 bt-3 br-3">
         <p class="lead">
@@ -48,7 +58,7 @@ const accountClicked = (accountType: string) => {
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <AccountXView :account="account" />
+      <AccountXView :account="account" @on-refresh-clicked="refresh" />
     </template>
 
     <template v-else>

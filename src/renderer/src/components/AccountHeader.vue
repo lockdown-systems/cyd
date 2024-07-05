@@ -7,13 +7,15 @@ const props = defineProps<{
     account: Account;
 }>();
 
+const emit = defineEmits(['onRefreshClicked']);
+
 const showAccountSettings = inject('showAccountSettings') as (account: Account) => void;
 
 const refreshBtnShowInfo = ref(false);
 const settingsBtnShowInfo = ref(false);
 
 const onRefreshClicked = () => {
-    console.log('Refresh clicked');
+    emit('onRefreshClicked');
 };
 
 const onSettingsClicked = () => {
