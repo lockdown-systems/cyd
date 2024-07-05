@@ -93,7 +93,7 @@ onUnmounted(() => {
             class="speech-bubble" />
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${account.id}`"
             :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
-        <template v-if="accountXViewModel?.state == State.DashboardDisplay">
+        <div class="dashboard" template v-if="accountXViewModel?.state == State.DashboardDisplay">
             <h2>Download my data</h2>
             <div class="container mb-4">
                 <form>
@@ -243,12 +243,13 @@ onUnmounted(() => {
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary"
+                        :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDirectMessages)">
                         Start Deleting
                     </button>
                 </form>
             </div>
-        </template>
+        </div>
     </div>
 </template>
 
@@ -259,6 +260,11 @@ onUnmounted(() => {
 
 .hidden {
     display: none;
+}
+
+.dashboard {
+    height: 100vh;
+    overflow: auto;
 }
 
 .form-short {

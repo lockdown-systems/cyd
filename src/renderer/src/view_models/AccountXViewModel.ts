@@ -127,7 +127,7 @@ You've been logged out. **To continue, log back into your X account below.**
             case State.Dashboard:
                 this.showBrowser = false;
                 await this.loadURL("about:blank");
-                this.instructions = `What would you like to do next?`;
+                this.instructions = `What would you like to do?`;
                 this.state = State.DashboardDisplay;
                 break;
 
