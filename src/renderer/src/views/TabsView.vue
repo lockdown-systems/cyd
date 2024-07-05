@@ -20,8 +20,20 @@ const showAccountSettings = inject('showAccountSettings') as (account: Account) 
 
 const emit = defineEmits(['onSignOut']);
 
-const accountClicked = (account: Account) => {
+const accountClicked = async (account: Account) => {
   activeAccountId.value = account.id;
+
+  // If we clicked out of an unknown account, remove the unknown account
+  if (account.type !== 'unknown') {
+    for (let i = 0; i < accounts.value.length; i++) {
+      if (accounts.value[i].type === 'unknown') {
+        const accountIDToDelete = accounts.value[i].id;
+        await window.electron.deleteAccount(accountIDToDelete);
+        accounts.value = await window.electron.getAccounts();
+        break;
+      }
+    }
+  }
 };
 
 const addAccountClicked = async () => {
