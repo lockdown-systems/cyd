@@ -26,14 +26,20 @@ const run = async (db: Database) => {
                     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                     accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                     username TEXT,
+                    archiveTweets BOOLEAN DEFAULT 1,
+                    archiveDirectMessages BOOLEAN DEFAULT 1,
                     deleteTweets BOOLEAN DEFAULT 0,
-                    tweetsDaysThreshold INTEGER DEFAULT 20,
-                    tweetsEnableRetweetThreshold BOOLEAN DEFAULT 0,
-                    tweetsLikeThreshold INTEGER DEFAULT 20,
+                    deleteTweetsDaysOld INTEGER DEFAULT 30,
+                    deleteTweetsLikesThresholdEnabled BOOLEAN DEFAULT 1,
+                    deleteTweetsLikesThreshold INTEGER DEFAULT 20,
+                    deleteTweetsRetweetsThresholdEnabled BOOLEAN DEFAULT 1,
+                    deleteTweetsRetweetsThreshold INTEGER DEFAULT 20,
+                    deleteRetweets BOOLEAN DEFAULT 0,
+                    deleteRetweetsDaysOld INTEGER DEFAULT 30,
                     deleteLikes BOOLEAN DEFAULT 0,
-                    likesDaysThreshold INTEGER DEFAULT 60,
+                    deleteLikesDaysOld INTEGER DEFAULT 60,
                     deleteDirectMessages BOOLEAN DEFAULT 0,
-                    directMessageDaysThreshold INTEGER DEFAULT 30
+                    deleteDirectMessagesDaysOld INTEGER DEFAULT 30
                 );
                 `,
             ]

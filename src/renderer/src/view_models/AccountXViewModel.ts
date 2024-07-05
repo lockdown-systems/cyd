@@ -3,6 +3,7 @@ import { BaseViewModel } from './BaseViewModel';
 export enum State {
     Login = "login",
     Dashboard = "dashboard",
+    DashboardDisplay = "dashboardDisplay",
     DownloadArchive = "downloadArchive",
     UnlikeTweets = "unlikeTweets",
     FinishUnlikeTweets = "finishUnlikeTweets",
@@ -126,16 +127,9 @@ You've been logged out. **To continue, log back into your X account below.**
             case State.Dashboard:
                 this.showBrowser = false;
                 await this.loadURL("about:blank");
-
-                this.instructions = `You're logged in as **@${this.account.xAccount?.username}**. What would you like to do next?`;
-
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                }
-
+                this.instructions = `What would you like to do next?`;
+                this.state = State.DashboardDisplay;
                 break;
-
 
             case State.DownloadArchive:
             case State.UnlikeTweets:
