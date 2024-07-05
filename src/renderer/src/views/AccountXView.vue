@@ -36,6 +36,56 @@ const deleteLikesDaysOld = ref(0);
 const deleteDirectMessages = ref(false);
 const deleteDirectMessagesDaysOld = ref(0);
 
+const updateSettings = async () => {
+    console.log('Updating settings')
+    const updatedAccount: Account = {
+        id: props.account.id,
+        type: props.account.type,
+        sortOrder: props.account.sortOrder,
+        xAccount: {
+            id: props.account.xAccount?.id || 0,
+            createdAt: props.account.xAccount?.createdAt || new Date(),
+            updatedAt: new Date(),
+            accessedAt: new Date(),
+            username: props.account.xAccount?.username || '',
+            archiveTweets: archiveTweets.value,
+            archiveDirectMessages: archiveDirectMessages.value,
+            deleteTweets: deleteTweets.value,
+            deleteTweetsDaysOld: deleteTweetsDaysOld.value,
+            deleteTweetsLikesThresholdEnabled: deleteTweetsLikesThresholdEnabled.value,
+            deleteTweetsLikesThreshold: deleteTweetsLikesThreshold.value,
+            deleteTweetsRetweetsThresholdEnabled: deleteTweetsRetweetsThresholdEnabled.value,
+            deleteTweetsRetweetsThreshold: deleteTweetsRetweetsThreshold.value,
+            deleteRetweets: deleteRetweets.value,
+            deleteRetweetsDaysOld: deleteRetweetsDaysOld.value,
+            deleteLikes: deleteLikes.value,
+            deleteLikesDaysOld: deleteLikesDaysOld.value,
+            deleteDirectMessages: deleteDirectMessages.value,
+            deleteDirectMessagesDaysOld: deleteDirectMessagesDaysOld.value
+        }
+    };
+    await window.electron.saveAccount(JSON.stringify(updatedAccount));
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.account = updatedAccount;
+    }
+};
+
+const startDownloadingClicked = async () => {
+    await updateSettings();
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.state = State.Download;
+        await runNextState();
+    }
+};
+
+const startDeletingClicked = async () => {
+    await updateSettings();
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.state = State.Download;
+        await runNextState();
+    }
+};
+
 const runNextState = async () => {
     if (accountXViewModel.value !== null) {
         await accountXViewModel.value.run();
@@ -93,10 +143,10 @@ onUnmounted(() => {
             class="speech-bubble" />
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${account.id}`"
             :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
-        <div class="dashboard" template v-if="accountXViewModel?.state == State.DashboardDisplay">
+        <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
             <h2>Download my data</h2>
             <div class="container mb-4">
-                <form>
+                <form @submit.prevent>
                     <div class=" mb-3 form-check">
                         <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
                         <label class="form-check-label" for="archiveTweets">Archive tweets</label>
@@ -106,7 +156,7 @@ onUnmounted(() => {
                             class="form-check-input">
                         <label class="form-check-label" for="archiveDirectMessages">Archive direct messages</label>
                     </div>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" @click="startDownloadingClicked">
                         Start Downloading
                     </button>
                 </form>
@@ -114,7 +164,7 @@ onUnmounted(() => {
 
             <h2>Delete my data</h2>
             <div class="container mb-4">
-                <form>
+                <form @submit.prevent>
                     <div class="d-flex align-items-center">
                         <div class="form-check mb-2">
                             <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input">
@@ -244,7 +294,8 @@ onUnmounted(() => {
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary"
-                        :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDirectMessages)">
+                        :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDirectMessages)"
+                        @click="startDeletingClicked">
                         Start Deleting
                     </button>
                 </form>

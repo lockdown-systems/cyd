@@ -4,13 +4,11 @@ export enum State {
     Login = "login",
     Dashboard = "dashboard",
     DashboardDisplay = "dashboardDisplay",
-    DownloadArchive = "downloadArchive",
-    UnlikeTweets = "unlikeTweets",
-    FinishUnlikeTweets = "finishUnlikeTweets",
-    DeleteTweets = "deleteTweets",
-    FinishDeleteTweets = "finishDeleteTweets",
-    DeleteDirectMessages = "deleteDirectMessages",
-    FinishDeleteDirectMessages = "finishDeleteDirectMessages",
+    Download = "download",
+    DownloadTweets = "downloadTweets",
+    DownloadDirectMessages = "downloadDirectMessages",
+    DownloadComplete = "downloadComplete",
+    Delete = "delete",
 }
 
 export class AccountXViewModel extends BaseViewModel {
@@ -131,13 +129,37 @@ You've been logged out. **To continue, log back into your X account below.**
                 this.state = State.DashboardDisplay;
                 break;
 
-            case State.DownloadArchive:
-            case State.UnlikeTweets:
-            case State.FinishUnlikeTweets:
-            case State.DeleteTweets:
-            case State.FinishDeleteTweets:
-            case State.DeleteDirectMessages:
-            case State.FinishDeleteDirectMessages:
+            case State.Download:
+                // Start with tweets
+                if (this.account.xAccount?.archiveTweets) {
+                    this.state = State.DownloadTweets;
+                    break;
+                }
+
+                // Or skip to DMs
+                this.state = State.DownloadDirectMessages;
+                break;
+
+            case State.DownloadTweets:
+                // TODO: implement
+
+                // Where next?
+                if (this.account.xAccount?.archiveDirectMessages) {
+                    this.state = State.DownloadDirectMessages;
+                } else {
+                    this.state = State.DownloadComplete;
+                }
+                break;
+
+            case State.DownloadDirectMessages:
+                // TODO: implement
+
+                // Where next?
+                this.state = State.DownloadComplete;
+                break;
+
+            case State.DownloadComplete:
+            case State.Delete:
                 break;
 
         }
