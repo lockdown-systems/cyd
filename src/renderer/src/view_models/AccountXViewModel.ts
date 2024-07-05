@@ -21,18 +21,6 @@ export class AccountXViewModel extends BaseViewModel {
         console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
     }
 
-    async loginPageTests(): Promise<boolean> {
-        this.log("loginPageTests", "running tests")
-        // TODO: implement
-        return true;
-    }
-
-    async homepagePageTests(): Promise<boolean> {
-        this.log("homepagePageTests", "running tests")
-        // TODO: implement
-        return true;
-    }
-
     async getUsername(): Promise<null | string> {
         await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -74,13 +62,7 @@ I can help you automatically archive your tweets and/or direct messages, and the
 and direct messages, except for the ones you want to keep. **To start, login to your X account below.**
 `;
                     this.showBrowser = true;
-                    await this.loadURL("https://x.com/login");
-
-                    if (!await this.loginPageTests()) {
-                        this.log("run", "login page tests failed");
-                        // TODO: display error message / report automation test errors
-                    }
-
+                    await this.loadURL("https://x.com/i/flow/login");
                     await this.waitForURL("https://x.com/home");
 
                     // We're logged in
@@ -90,6 +72,8 @@ and direct messages, except for the ones you want to keep. **To start, login to 
                     const username = await this.getUsername();
                     if (username === null) {
                         this.log("run", "failed to get username");
+
+                        // TODO: automation error
                         break;
                     }
 
@@ -105,11 +89,27 @@ and direct messages, except for the ones you want to keep. **To start, login to 
 Checking to see if you're still logged in to your X account...
 `;
                     this.showBrowser = true;
-                    await this.loadURL("https://x.com/login");
+                    await this.loadURL("https://x.com/i/flow/login");
                     await new Promise(resolve => setTimeout(resolve, 500));
 
                     if (this.webview.getURL() == "https://x.com/home") {
                         this.log("run", "login succeeded");
+
+                        // Get the username
+                        const username = await this.getUsername();
+                        if (username === null) {
+                            this.log("run", "failed to get username");
+
+                            // TODO: automation error
+                            break;
+                        }
+
+                        if (this.account.xAccount?.username !== username) {
+                            console.log(`Username changed from ${this.account.xAccount?.username} to ${username}`);
+                            // TODO: username changed error
+                            break;
+                        }
+
                         this.state = State.Dashboard;
                     } else {
                         this.instructions = `
@@ -141,7 +141,14 @@ You've been logged out. **To continue, log back into your X account below.**
                 break;
 
             case State.DownloadTweets:
+                this.showBrowser = true;
+                this.instructions = `
+Hang tight while I archive your tweets...
+`;
+                await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+
                 // TODO: implement
+                await new Promise(resolve => setTimeout(resolve, 10000));
 
                 // Where next?
                 if (this.account.xAccount?.archiveDirectMessages) {
