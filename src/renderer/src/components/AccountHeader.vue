@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, inject } from 'vue';
 import { getAccountIcon } from '../helpers';
 import type { Account } from '../../../shared_types';
 
-defineProps<{
+const props = defineProps<{
     account: Account;
 }>();
+
+const showAccountSettings = inject('showAccountSettings') as (account: Account) => void;
 
 const refreshBtnShowInfo = ref(false);
 const settingsBtnShowInfo = ref(false);
@@ -15,7 +17,7 @@ const onRefreshClicked = () => {
 };
 
 const onSettingsClicked = () => {
-    console.log('Settings clicked');
+    showAccountSettings(props.account);
 };
 </script>
 
