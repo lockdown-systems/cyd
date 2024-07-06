@@ -85,6 +85,14 @@ export class BaseViewModel {
         }
     }
 
+    async waitForLoadingToFinish() {
+        do {
+            this.log("waitForLoadingToFinish", "waiting...")
+            await new Promise(resolve => setTimeout(resolve, 200));
+        } while (this.getWebview()?.isLoading());
+        this.log("waitForLoadingToFinish", "done");
+    }
+
     async loadURL(url: string) {
         console.log("AccountXViewModel.loadURL", url);
         await this.getWebview()?.loadURL(url);
@@ -102,6 +110,29 @@ export class BaseViewModel {
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
+    }
+
+    async scrollToBottom() {
+        await this.waitForLoadingToFinish();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        let lastScrollTop = 0;
+        let newScrollTop = 0;
+        do {
+            // Find the last scroll position
+            lastScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+
+            // Scroll to the bottom
+            this.log("scrollToBottom", "scrolling to bottom")
+            await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await this.waitForLoadingToFinish();
+
+            // Get the new scroll position
+            newScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+
+        } while (newScrollTop > lastScrollTop);
+        this.log("scrollToBottom", "done");
     }
 
     async scriptClickElement(selector: string): Promise<boolean> {
@@ -122,6 +153,17 @@ export class BaseViewModel {
             let el = document.querySelector('${selector}');
             if(el === null) { return null; }
             return el.innerText;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    async scriptGetAllInnerHTML(selector: string): Promise<string[]> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            const elsHTML = Array.from(els).map(el => el.innerHTML);
+            return elsHTML;
         })()
         `;
         return await this.getWebview()?.executeJavaScript(code);

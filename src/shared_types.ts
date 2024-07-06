@@ -26,3 +26,16 @@ export type XAccount = {
     deleteDirectMessages: boolean;
     deleteDirectMessagesDaysOld: number;
 };
+
+export type XTweet = {
+    id: number | null;
+    xAccountId: number;
+    tweetId: string;
+    username: string;
+    timestamp: Date;
+    text: string;
+    retweets: number;
+    likes: number;
+    isRetweet: boolean;
+    path: string; // "{username}/status/{tweetId}"
+};

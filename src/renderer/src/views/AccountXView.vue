@@ -74,7 +74,7 @@ const startDownloadingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.state = State.Download;
-        await runNextState();
+        await startStateLoop();
     }
 };
 
@@ -82,7 +82,19 @@ const startDeletingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.state = State.Download;
+        await startStateLoop();
+    }
+};
+
+const startStateLoop = async () => {
+    while (isWebviewMounted.value) {
         await runNextState();
+
+        if (accountXViewModel.value?.state === State.DashboardDisplay) {
+            break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
 };
 
@@ -116,15 +128,7 @@ onMounted(async () => {
         if (props.account.xAccount !== null) {
             accountXViewModel.value = new AccountXViewModel(props.account, webview);
             await accountXViewModel.value.init();
-            while (isWebviewMounted.value) {
-                await runNextState();
-
-                if (accountXViewModel.value?.state === State.DashboardDisplay) {
-                    break;
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
+            await startStateLoop();
         }
     } else {
         console.error('Webview component not found');

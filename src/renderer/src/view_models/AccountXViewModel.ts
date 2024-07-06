@@ -1,4 +1,7 @@
+import * as cheerio from 'cheerio';
+
 import { BaseViewModel } from './BaseViewModel';
+import type { XTweet } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -12,6 +15,8 @@ export enum State {
 }
 
 export class AccountXViewModel extends BaseViewModel {
+    private tweetHTMLs: string[] = [];
+
     async init() {
         this.state = State.Login;
         super.init();
@@ -19,6 +24,74 @@ export class AccountXViewModel extends BaseViewModel {
 
     log(func: string, message: string) {
         console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
+    }
+
+    async parseTweetHTMLs() {
+        for (const tweetHTML of this.tweetHTMLs) {
+            const $ = cheerio.load(tweetHTML);
+
+            const userNameDiv = $('div[data-testid="User-Name"]');
+            if (userNameDiv.length === 0) {
+                this.log("parseTweetHTMLs", "no User-Name div found");
+                continue;
+            }
+
+            const links = userNameDiv.find('a');
+            if (links.length !== 3) {
+                this.log("parseTweetHTMLs", `unexpected number of links: ${links.length}`);
+                continue;
+            }
+
+            const tweetLink = links[2];
+            const path = $(tweetLink).attr('href');
+            if (path === undefined) {
+                this.log("parseTweetHTMLs", "no href found");
+                continue;
+            }
+
+            // tweetPath is like: '/nexamind91325/status/1780651436629750204'
+            const pathParts = path.split("/");
+            if (pathParts.length !== 4) {
+                this.log("parseTweetHTMLs", `unexpected number of parts: ${pathParts.length}`);
+                continue;
+            }
+
+            const username = pathParts[1];
+            const tweetId = pathParts[3];
+
+            const timestampStr = $('time').attr('datetime');
+            if (timestampStr === undefined) {
+                this.log("parseTweetHTMLs", "no datetime found");
+                continue;
+            }
+
+            const timestamp = new Date(timestampStr);
+
+            const tweetTextDiv = $('div[data-testid="tweetText"]');
+            if (tweetTextDiv.length === 0) {
+                this.log("parseTweetHTMLs", "no tweetText div found");
+                continue;
+            }
+
+            const text = tweetTextDiv.text();
+
+            // const tweet: XTweet = {
+            //     xAccountId: this.account.xAccount?.id ?? 0,
+            //     tweetId: tweetId,
+            //     username: username,
+            //     timestamp: timestamp,
+            // }
+
+            // const tweetID = $('article').attr('data-id');
+            // const tweetText = $('article [data-testid="tweet"]').text();
+            // console.log(`Tweet ID: ${tweetID}, Text: ${tweetText}`);
+
+            // tweet id
+            // text
+            // date
+            // retweets
+            // likes
+        }
     }
 
     async getUsername(): Promise<null | string> {
@@ -62,7 +135,7 @@ I can help you automatically archive your tweets and/or direct messages, and the
 and direct messages, except for the ones you want to keep. **To start, login to your X account below.**
 `;
                     this.showBrowser = true;
-                    await this.loadURL("https://x.com/i/flow/login");
+                    await this.loadURL("https://x.com/login");
                     await this.waitForURL("https://x.com/home");
 
                     // We're logged in
@@ -89,7 +162,7 @@ and direct messages, except for the ones you want to keep. **To start, login to 
 Checking to see if you're still logged in to your X account...
 `;
                     this.showBrowser = true;
-                    await this.loadURL("https://x.com/i/flow/login");
+                    await this.loadURL("https://x.com/login");
                     await new Promise(resolve => setTimeout(resolve, 500));
 
                     if (this.webview.getURL() == "https://x.com/home") {
@@ -143,11 +216,23 @@ You've been logged out. **To continue, log back into your X account below.**
             case State.DownloadTweets:
                 this.showBrowser = true;
                 this.instructions = `
-Hang tight while I archive your tweets...
+Hang on while I scroll down to your very earliest tweet.
 `;
                 await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
 
-                // TODO: implement
+                // Scroll to bottom
+                await this.scrollToBottom();
+
+                // Parse tweets
+                this.instructions = `
+Now I'm looking through all your tweets...
+`;
+                this.tweetHTMLs = await this.scriptGetAllInnerHTML('article') || [];
+                this.instructions = `
+I found ${this.tweetHTMLs.length.toLocaleString()} tweets in your timeline.
+`;
+                await this.parseTweetHTMLs();
+
                 await new Promise(resolve => setTimeout(resolve, 10000));
 
                 // Where next?

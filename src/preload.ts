@@ -34,5 +34,13 @@ contextBridge.exposeInMainWorld('electron', {
     },
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
+    },
+    X: {
+        getMostRecentTweetTimestamp: (username: string): Promise<string> => {
+            return ipcRenderer.invoke('X:getMostRecentTweetTimestamp', username)
+        },
+        getMostRecentDirectMessageTimestamp: (username: string): Promise<string> => {
+            return ipcRenderer.invoke('X:getMostRecentDirectMessageTimestamp', username)
+        },
     }
 })
