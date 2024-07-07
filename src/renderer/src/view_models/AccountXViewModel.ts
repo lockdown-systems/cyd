@@ -1,4 +1,4 @@
-import * as cheerio from 'cheerio';
+// import * as cheerio from 'cheerio';
 
 import { BaseViewModel } from './BaseViewModel';
 
@@ -25,73 +25,73 @@ export class AccountXViewModel extends BaseViewModel {
         console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
     }
 
-    async parseTweetHTMLs() {
-        for (const tweetHTML of this.tweetHTMLs) {
-            const $ = cheerio.load(tweetHTML);
+    // async parseTweetHTMLs() {
+    //     for (const tweetHTML of this.tweetHTMLs) {
+    //         const $ = cheerio.load(tweetHTML);
 
-            const userNameDiv = $('div[data-testid="User-Name"]');
-            if (userNameDiv.length === 0) {
-                this.log("parseTweetHTMLs", "no User-Name div found");
-                continue;
-            }
+    //         const userNameDiv = $('div[data-testid="User-Name"]');
+    //         if (userNameDiv.length === 0) {
+    //             this.log("parseTweetHTMLs", "no User-Name div found");
+    //             continue;
+    //         }
 
-            const links = userNameDiv.find('a');
-            if (links.length !== 3) {
-                this.log("parseTweetHTMLs", `unexpected number of links: ${links.length}`);
-                continue;
-            }
+    //         const links = userNameDiv.find('a');
+    //         if (links.length !== 3) {
+    //             this.log("parseTweetHTMLs", `unexpected number of links: ${links.length}`);
+    //             continue;
+    //         }
 
-            const tweetLink = links[2];
-            const path = $(tweetLink).attr('href');
-            if (path === undefined) {
-                this.log("parseTweetHTMLs", "no href found");
-                continue;
-            }
+    //         const tweetLink = links[2];
+    //         const path = $(tweetLink).attr('href');
+    //         if (path === undefined) {
+    //             this.log("parseTweetHTMLs", "no href found");
+    //             continue;
+    //         }
 
-            // tweetPath is like: '/nexamind91325/status/1780651436629750204'
-            const pathParts = path.split("/");
-            if (pathParts.length !== 4) {
-                this.log("parseTweetHTMLs", `unexpected number of parts: ${pathParts.length}`);
-                continue;
-            }
+    //         // tweetPath is like: '/nexamind91325/status/1780651436629750204'
+    //         const pathParts = path.split("/");
+    //         if (pathParts.length !== 4) {
+    //             this.log("parseTweetHTMLs", `unexpected number of parts: ${pathParts.length}`);
+    //             continue;
+    //         }
 
-            const username = pathParts[1];
-            const tweetId = pathParts[3];
+    //         const username = pathParts[1];
+    //         const tweetId = pathParts[3];
 
-            const timestampStr = $('time').attr('datetime');
-            if (timestampStr === undefined) {
-                this.log("parseTweetHTMLs", "no datetime found");
-                continue;
-            }
+    //         const timestampStr = $('time').attr('datetime');
+    //         if (timestampStr === undefined) {
+    //             this.log("parseTweetHTMLs", "no datetime found");
+    //             continue;
+    //         }
 
-            const timestamp = new Date(timestampStr);
+    //         const timestamp = new Date(timestampStr);
 
-            const tweetTextDiv = $('div[data-testid="tweetText"]');
-            if (tweetTextDiv.length === 0) {
-                this.log("parseTweetHTMLs", "no tweetText div found");
-                continue;
-            }
+    //         const tweetTextDiv = $('div[data-testid="tweetText"]');
+    //         if (tweetTextDiv.length === 0) {
+    //             this.log("parseTweetHTMLs", "no tweetText div found");
+    //             continue;
+    //         }
 
-            const text = tweetTextDiv.text();
+    //         const text = tweetTextDiv.text();
 
-            // const tweet: XTweet = {
-            //     xAccountId: this.account.xAccount?.id ?? 0,
-            //     tweetId: tweetId,
-            //     username: username,
-            //     timestamp: timestamp,
-            // }
+    //         // const tweet: XTweet = {
+    //         //     xAccountId: this.account.xAccount?.id ?? 0,
+    //         //     tweetId: tweetId,
+    //         //     username: username,
+    //         //     timestamp: timestamp,
+    //         // }
 
-            // const tweetID = $('article').attr('data-id');
-            // const tweetText = $('article [data-testid="tweet"]').text();
-            // console.log(`Tweet ID: ${tweetID}, Text: ${tweetText}`);
+    //         // const tweetID = $('article').attr('data-id');
+    //         // const tweetText = $('article [data-testid="tweet"]').text();
+    //         // console.log(`Tweet ID: ${tweetID}, Text: ${tweetText}`);
 
-            // tweet id
-            // text
-            // date
-            // retweets
-            // likes
-        }
-    }
+    //         // tweet id
+    //         // text
+    //         // date
+    //         // retweets
+    //         // likes
+    //     }
+    // }
 
     async getUsername(): Promise<null | string> {
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -217,11 +217,17 @@ You've been logged out. **To continue, log back into your X account below.**
                 this.instructions = `
 Hang on while I scroll down to your very earliest tweet.
 `;
+                // Start monitoring network requests
+                await window.electron.X.fetchStart(this.account.id);
+
+                // Load the timeline and wait for tweets to appear
                 await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+                await this.waitForSelector('article');
 
                 // Scroll to bottom
-                await window.electron.X.fetchStart(this.account.id);
                 await this.scrollToBottom();
+
+                // Stop monitoring network requests
                 await window.electron.X.fetchStop(this.account.id);
 
                 // Parse tweets

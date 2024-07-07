@@ -46,9 +46,9 @@ export class BaseViewModel {
 
     async init() {
         // Open dev tools in local or staging, but not in production
-        if (await window.electron.isDevMode()) {
-            this.getWebview()?.openDevTools();
-        }
+        // if (await window.electron.isDevMode()) {
+        //     this.getWebview()?.openDevTools();
+        // }
     }
 
     destroy() {
@@ -91,6 +91,22 @@ export class BaseViewModel {
             await new Promise(resolve => setTimeout(resolve, 200));
         } while (this.getWebview()?.isLoading());
         this.log("waitForLoadingToFinish", "done");
+    }
+
+    async waitForSelector(selector: string, timeout: number = 30000) {
+        const startTime = Date.now();
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            if (Date.now() - startTime > timeout) {
+                throw new Error(`Timeout waiting for selector: ${selector}`);
+            }
+            const found = await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
+            if (found) {
+                console.log("waitForSelector", `found: ${selector}`);
+                break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
     }
 
     async loadURL(url: string) {
