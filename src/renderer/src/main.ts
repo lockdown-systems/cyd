@@ -15,6 +15,10 @@ declare global {
             deleteAccount: (accountID: number) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
+            X: {
+                fetchStart: (accountID: number) => void;
+                fetchStop: (accountID: number) => void;
+            };
         };
     }
 }

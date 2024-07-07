@@ -36,11 +36,11 @@ contextBridge.exposeInMainWorld('electron', {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
     X: {
-        getMostRecentTweetTimestamp: (username: string): Promise<string> => {
-            return ipcRenderer.invoke('X:getMostRecentTweetTimestamp', username)
+        fetchStart: (accountID: number) => {
+            ipcRenderer.invoke('X:fetchStart', accountID)
         },
-        getMostRecentDirectMessageTimestamp: (username: string): Promise<string> => {
-            return ipcRenderer.invoke('X:getMostRecentDirectMessageTimestamp', username)
-        },
+        fetchStop: (accountID: number) => {
+            ipcRenderer.invoke('X:fetchStop', accountID)
+        }
     }
 })

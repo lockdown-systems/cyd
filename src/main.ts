@@ -4,6 +4,7 @@ import log from 'electron-log/main';
 import { session } from 'electron';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+
 import {
     runMigrations,
     getConfig,
@@ -14,6 +15,7 @@ import {
     saveAccount,
     deleteAccount
 } from './database';
+import { defineAccountXIPC } from './account_x';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -159,6 +161,9 @@ async function createWindow() {
             });
             return result === 1;
         });
+
+        // IPC handlers for X
+        defineAccountXIPC();
     }
     global.ipcHandlersRegistered = true;
 

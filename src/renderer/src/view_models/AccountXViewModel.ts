@@ -1,7 +1,6 @@
 import * as cheerio from 'cheerio';
 
 import { BaseViewModel } from './BaseViewModel';
-import type { XTweet } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -221,7 +220,9 @@ Hang on while I scroll down to your very earliest tweet.
                 await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
 
                 // Scroll to bottom
+                await window.electron.X.fetchStart(this.account.id);
                 await this.scrollToBottom();
+                await window.electron.X.fetchStop(this.account.id);
 
                 // Parse tweets
                 this.instructions = `
@@ -231,7 +232,7 @@ Now I'm looking through all your tweets...
                 this.instructions = `
 I found ${this.tweetHTMLs.length.toLocaleString()} tweets in your timeline.
 `;
-                await this.parseTweetHTMLs();
+                // await this.parseTweetHTMLs();
 
                 await new Promise(resolve => setTimeout(resolve, 10000));
 
