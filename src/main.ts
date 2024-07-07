@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 
 import {
-    runMigrations,
+    runMainMigrations,
     getConfig,
     setConfig,
     getAccounts,
@@ -15,7 +15,7 @@ import {
     saveAccount,
     deleteAccount
 } from './database';
-import { defineAccountXIPC } from './account_x';
+import { defineIpcX } from './account_x';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -41,7 +41,7 @@ let win: BrowserWindow | null = null;
 async function initializeApp() {
     // Run database migrations
     try {
-        await runMigrations();
+        runMainMigrations();
     } catch (error) {
         console.error("Failed to run migrations:", error);
         dialog.showErrorBox('Semiphemeral Error', 'Failed to run database migrations. The application will now exit.');
@@ -163,7 +163,7 @@ async function createWindow() {
         });
 
         // IPC handlers for X
-        defineAccountXIPC();
+        defineIpcX();
     }
     global.ipcHandlersRegistered = true;
 

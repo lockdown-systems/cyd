@@ -14,7 +14,7 @@ export enum State {
 }
 
 export class AccountXViewModel extends BaseViewModel {
-    private tweetHTMLs: string[] = [];
+    private fetchTweetsDone: boolean = false;
 
     async init() {
         this.state = State.Login;
@@ -213,6 +213,7 @@ You've been logged out. **To continue, log back into your X account below.**
                 break;
 
             case State.DownloadTweets:
+                this.fetchTweetsDone = false;
                 this.showBrowser = true;
                 this.instructions = `
 Hang on while I scroll down to your very earliest tweet.
@@ -234,13 +235,10 @@ Hang on while I scroll down to your very earliest tweet.
                 this.instructions = `
 Now I'm looking through all your tweets...
 `;
-                this.tweetHTMLs = await this.scriptGetAllInnerHTML('article') || [];
-                this.instructions = `
-I found ${this.tweetHTMLs.length.toLocaleString()} tweets in your timeline.
-`;
-                // await this.parseTweetHTMLs();
+                this.fetchTweetsDone = await window.electron.X.fetchParse(this.account.id);
+                console.log("done", this.fetchTweetsDone);
 
-                await new Promise(resolve => setTimeout(resolve, 10000));
+                await new Promise(resolve => setTimeout(resolve, 60000));
 
                 // Where next?
                 if (this.account.xAccount?.archiveDirectMessages) {

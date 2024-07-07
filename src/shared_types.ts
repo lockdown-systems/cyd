@@ -29,13 +29,18 @@ export type XAccount = {
 
 export type XTweet = {
     id: number | null;
-    xAccountId: number;
-    tweetId: string;
     username: string;
-    timestamp: Date;
-    text: string;
-    retweets: number;
-    likes: number;
-    isRetweet: boolean;
+    tweetId: string; // id_str
+    conversationId: string; // conversation_id_str
+    createdAt: Date; // created_at
+    likeCount: number; // favorite_count
+    quoteCount: number; // quote_count
+    replyCount: number; // reply_count
+    retweetCount: number; // retweet_count
+    isLiked: boolean; // favorited
+    isRetweeted: boolean; // retweeted
+    text: string; // full_text
     path: string; // "{username}/status/{tweetId}"
+    addedToDatabaseAt: Date;
+    archivedAt: Date;
 };
