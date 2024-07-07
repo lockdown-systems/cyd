@@ -1,6 +1,7 @@
 import process from 'process';
 import os from 'os';
 import log from 'electron-log/main';
+import { session } from 'electron';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import {
@@ -138,8 +139,11 @@ async function createWindow() {
             return saveAccount(account);
         });
 
-        ipcMain.handle('deleteAccount', async (_, _accountID) => {
-            deleteAccount(_accountID);
+        ipcMain.handle('deleteAccount', async (_, accountID) => {
+            const ses = session.fromPartition(`persist:account-${accountID}`);
+            await ses.closeAllConnections();
+            await ses.clearStorageData();
+            deleteAccount(accountID);
         });
 
         ipcMain.handle('showError', async (_, message) => {

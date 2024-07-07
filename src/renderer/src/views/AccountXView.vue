@@ -145,7 +145,7 @@ onUnmounted(() => {
         <AccountHeader :account="account" @on-refresh-clicked="emit('onRefreshClicked')" />
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
-        <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:x-${account.id}`"
+        <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
             :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
             <h2>Download my data</h2>
