@@ -17,6 +17,10 @@ declare global {
                 saveAccount: (accountJSON: string) => void;
                 deleteAccount: (accountID: number) => void;
             },
+            mitmProxy: {
+                start: (accountID: number) => void;
+                stop: (accountID: number) => void;
+            },
             X: {
                 fetchStart: (accountID: number) => void;
                 fetchStop: (accountID: number) => void;

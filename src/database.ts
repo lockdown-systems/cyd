@@ -354,32 +354,32 @@ export const deleteAccount = (accountID: number) => {
 }
 
 export const defineIPCDatabase = () => {
-    ipcMain.handle('getConfig', async (_, key) => {
+    ipcMain.handle('database:getConfig', async (_, key) => {
         return getConfig(key);
     });
 
-    ipcMain.handle('setConfig', async (_, key, value) => {
+    ipcMain.handle('database:setConfig', async (_, key, value) => {
         setConfig(key, value);
     });
 
-    ipcMain.handle('getAccounts', async (_) => {
+    ipcMain.handle('database:getAccounts', async (_) => {
         return getAccounts();
     });
 
-    ipcMain.handle('createAccount', async (_) => {
+    ipcMain.handle('database:createAccount', async (_) => {
         return createAccount();
     });
 
-    ipcMain.handle('selectNewAccount', async (_, accountID, type) => {
+    ipcMain.handle('database:selectNewAccount', async (_, accountID, type) => {
         return selectNewAccount(accountID, type);
     });
 
-    ipcMain.handle('saveAccount', async (_, accountJson) => {
+    ipcMain.handle('database:saveAccount', async (_, accountJson) => {
         const account = JSON.parse(accountJson);
         return saveAccount(account);
     });
 
-    ipcMain.handle('deleteAccount', async (_, accountID) => {
+    ipcMain.handle('database:deleteAccount', async (_, accountID) => {
         const ses = session.fromPartition(`persist:account-${accountID}`);
         await ses.closeAllConnections();
         await ses.clearStorageData();

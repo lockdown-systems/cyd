@@ -125,6 +125,10 @@ onMounted(async () => {
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
+        // Start the MITM proxy
+        await window.electron.mitmProxy.start(props.account.id);
+
+        // Start the state loop
         if (props.account.xAccount !== null) {
             accountXViewModel.value = new AccountXViewModel(props.account, webview);
             await accountXViewModel.value.init();
@@ -135,7 +139,10 @@ onMounted(async () => {
     }
 });
 
-onUnmounted(() => {
+onUnmounted(async () => {
+    // Stop the MITM proxy
+    await window.electron.mitmProxy.start(props.account.id);
+
     isWebviewMounted.value = false;
 });
 </script>

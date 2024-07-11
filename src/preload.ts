@@ -16,26 +16,34 @@ contextBridge.exposeInMainWorld('electron', {
     },
     database: {
         getConfig: (key: string): Promise<string> => {
-            return ipcRenderer.invoke('getConfig', key);
+            return ipcRenderer.invoke('database:getConfig', key);
         },
         setConfig: (key: string, value: string) => {
-            ipcRenderer.invoke('setConfig', key, value)
+            ipcRenderer.invoke('database:setConfig', key, value)
         },
         getAccounts: (): Promise<Account[]> => {
-            return ipcRenderer.invoke('getAccounts')
+            return ipcRenderer.invoke('database:getAccounts')
         },
         createAccount: (): Promise<Account> => {
-            return ipcRenderer.invoke('createAccount')
+            return ipcRenderer.invoke('database:createAccount')
         },
         selectAccountType: (accountID: number, type: string): Promise<Account> => {
-            return ipcRenderer.invoke('selectNewAccount', accountID, type)
+            return ipcRenderer.invoke('database:selectNewAccount', accountID, type)
         },
         saveAccount: (accountJSON: string) => {
-            ipcRenderer.invoke('saveAccount', accountJSON)
+            ipcRenderer.invoke('database:saveAccount', accountJSON)
         },
         deleteAccount: (accountID: number) => {
-            return ipcRenderer.invoke('deleteAccount', accountID)
+            return ipcRenderer.invoke('database:deleteAccount', accountID)
         },
+    },
+    mitmProxy: {
+        start: (accountID: number) => {
+            ipcRenderer.invoke('mitmProxy:start', accountID)
+        },
+        stop: (accountID: number) => {
+            ipcRenderer.invoke('mitmProxy:stop', accountID)
+        }
     },
     X: {
         fetchStart: (accountID: number) => {

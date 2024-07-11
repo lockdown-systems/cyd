@@ -84,7 +84,7 @@ class MITMController {
 export const mitmControllers: Record<number, MITMController> = {};
 
 export const defineIPCMITMProxy = () => {
-    ipcMain.handle('mitmStart', async (_, accountID: number) => {
+    ipcMain.handle('mitmProxy:start', async (_, accountID: number) => {
         // If no account info exists, create it
         if (!mitmControllers[accountID]) {
             mitmControllers[accountID] = new MITMController(accountID);
@@ -96,7 +96,7 @@ export const defineIPCMITMProxy = () => {
         await mitmControllers[accountID].startMITM(ses);
     });
 
-    ipcMain.handle('mitmStop', async (_, accountID: number) => {
+    ipcMain.handle('mitmProxy:stop', async (_, accountID: number) => {
         // Stop MITM
         const ses = session.fromPartition(`persist:account-${accountID}`);
         await mitmControllers[accountID].stopMITM(ses);
