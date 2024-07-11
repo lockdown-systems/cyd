@@ -1,5 +1,5 @@
 import path from "path"
-import { app } from 'electron'
+import { app, ipcMain, session } from 'electron'
 import Database from 'better-sqlite3'
 
 import { Account, XAccount } from './shared_types'
@@ -352,3 +352,37 @@ export const deleteAccount = (accountID: number) => {
     // Delete the account
     exec('DELETE FROM account WHERE id = ?', [accountID]);
 }
+
+export const defineIPCDatabase = () => {
+    ipcMain.handle('getConfig', async (_, key) => {
+        return getConfig(key);
+    });
+
+    ipcMain.handle('setConfig', async (_, key, value) => {
+        setConfig(key, value);
+    });
+
+    ipcMain.handle('getAccounts', async (_) => {
+        return getAccounts();
+    });
+
+    ipcMain.handle('createAccount', async (_) => {
+        return createAccount();
+    });
+
+    ipcMain.handle('selectNewAccount', async (_, accountID, type) => {
+        return selectNewAccount(accountID, type);
+    });
+
+    ipcMain.handle('saveAccount', async (_, accountJson) => {
+        const account = JSON.parse(accountJson);
+        return saveAccount(account);
+    });
+
+    ipcMain.handle('deleteAccount', async (_, accountID) => {
+        const ses = session.fromPartition(`persist:account-${accountID}`);
+        await ses.closeAllConnections();
+        await ses.clearStorageData();
+        deleteAccount(accountID);
+    });
+};

@@ -199,7 +199,7 @@ class XAccountController {
 
 const controllers: Record<number, XAccountController> = {};
 
-export const defineIpcX = () => {
+export const defineIPCX = () => {
     ipcMain.handle('X:fetchStart', async (_, accountID: number) => {
         // If no account info exists, create it
         if (!controllers[accountID]) {

@@ -1,7 +1,6 @@
 import process from 'process';
 import os from 'os';
 import log from 'electron-log/main';
-import { session } from 'electron';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 
@@ -9,13 +8,10 @@ import {
     runMainMigrations,
     getConfig,
     setConfig,
-    getAccounts,
-    createAccount,
-    selectNewAccount,
-    saveAccount,
-    deleteAccount
+    defineIPCDatabase
 } from './database';
-import { defineIpcX } from './account_x';
+import { defineIPCMITMProxy } from './mitm_proxy';
+import { defineIPCX } from './account_x';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -116,38 +112,6 @@ async function createWindow() {
             return false;
         });
 
-        ipcMain.handle('getConfig', async (_, key) => {
-            return getConfig(key);
-        });
-
-        ipcMain.handle('setConfig', async (_, key, value) => {
-            setConfig(key, value);
-        });
-
-        ipcMain.handle('getAccounts', async (_) => {
-            return getAccounts();
-        });
-
-        ipcMain.handle('createAccount', async (_) => {
-            return createAccount();
-        });
-
-        ipcMain.handle('selectNewAccount', async (_, accountID, type) => {
-            return selectNewAccount(accountID, type);
-        });
-
-        ipcMain.handle('saveAccount', async (_, accountJson) => {
-            const account = JSON.parse(accountJson);
-            return saveAccount(account);
-        });
-
-        ipcMain.handle('deleteAccount', async (_, accountID) => {
-            const ses = session.fromPartition(`persist:account-${accountID}`);
-            await ses.closeAllConnections();
-            await ses.clearStorageData();
-            deleteAccount(accountID);
-        });
-
         ipcMain.handle('showError', async (_, message) => {
             dialog.showErrorBox('Semiphemeral Error', message);
         });
@@ -162,8 +126,9 @@ async function createWindow() {
             return result === 1;
         });
 
-        // IPC handlers for X
-        defineIpcX();
+        defineIPCDatabase();
+        defineIPCMITMProxy();
+        defineIPCX();
     }
     global.ipcHandlersRegistered = true;
 
