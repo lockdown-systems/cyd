@@ -1,30 +1,12 @@
-import { createServer } from 'net'
-import path from "path"
 import fs from 'fs'
+import path from "path"
 
-import { app, ipcMain, session } from 'electron'
+import { ipcMain, session } from 'electron'
 import { Proxy } from "http-mitm-proxy"
 
+import { findOpenPort, getAccountSettingsPath } from "./helpers"
 import { Account } from './shared_types'
 import { getAccount } from './database'
-
-async function findOpenPort(): Promise<number> {
-    return new Promise((resolve, reject) => {
-        const server = createServer();
-        server.unref();
-        server.on('error', reject);
-        server.listen(0, () => {
-            const address = server.address();
-            if (!address || typeof address === 'string') {
-                return reject(new Error('No address'));
-            }
-            const port = address.port;
-            server.close(() => {
-                resolve(port);
-            });
-        });
-    });
-}
 
 class MITMController {
     private account: Account | null;
@@ -40,13 +22,8 @@ class MITMController {
             return;
         }
 
-        // Make sure the account settings folder exists
-        const accountSettingsPath = `${path.join(app.getPath('userData'), `account-${accountID}`)}`;
-        if (!fs.existsSync(accountSettingsPath)) {
-            fs.mkdirSync(accountSettingsPath);
-        }
-
-        // Set the CA path
+        // Set the proxy SSL dir
+        const accountSettingsPath = getAccountSettingsPath(accountID);
         this.proxySSLCADir = path.join(accountSettingsPath, 'ca');
 
         // Create the proxy
@@ -61,7 +38,8 @@ class MITMController {
         });
     }
 
-    async startMITM(_ses: Electron.Session) {
+    async startMITM(ses: Electron.Session) {
+        // Start the proxy
         console.log(`MITMController: Account ${this.account?.id}, starting MITM`);
         this.proxyPort = await findOpenPort()
         this.proxy.listen({
@@ -70,14 +48,42 @@ class MITMController {
         });
 
         console.log(`MITMController: Account ${this.account?.id}, listening on port ${this.proxyPort}`);
-        // ses.webRequest.onSendHeaders({ urls: ['https://x.com/i/api/graphql/*'], types: ['xhr'] }, () => { });
+
+        // Make the webview use the proxy
+        ses.setProxy({
+            proxyRules: `127.0.0.1:${this.proxyPort}`
+        })
+
+        // Verify SSL certificates
+        ses.setCertificateVerifyProc((request, callback) => {
+            const certPath = path.join(this.proxySSLCADir, 'certs', `${request.hostname}.pem`);
+            const certData = fs.readFileSync(certPath).toString();
+
+            // Trim whitespace and remove the '\r' characters, to normalize the certificates
+            const certDataTrimmed = certData.trim().replace(/\r/g, '');
+            const requestDataTrimmed = request.certificate.data.trim().replace(/\r/g, '');
+
+            if (certDataTrimmed == requestDataTrimmed) {
+                // Certificate verified
+                callback(0);
+            } else {
+                // Fallback to Chromium certificate verification
+                callback(-3);
+            }
+        })
     }
 
-    async stopMITM(_ses: Electron.Session) {
+    async stopMITM(ses: Electron.Session) {
         console.log(`MITMController: Account ${this.account?.id}, stopping MITM`);
         this.proxy.close();
 
-        // ses.webRequest.onSendHeaders({ urls: ['https://x.com/i/api/graphql/*'], types: ['xhr'] }, () => { });
+        // Use the default proxy settings again
+        ses.setProxy({})
+
+        // Use Chromium for SSL verification
+        ses.setCertificateVerifyProc((_request, callback) => {
+            callback(-3);
+        })
     }
 }
 

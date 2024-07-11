@@ -1,10 +1,9 @@
 import path from 'path'
-import os from 'os'
-import fs from 'fs'
 
 import { ipcMain, session } from 'electron'
 import Database from 'better-sqlite3'
 
+import { getAccountDataPath } from './helpers'
 import { XAccount } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
@@ -27,23 +26,8 @@ class XAccountController {
             return;
         }
 
-        // Make sure the Semiphemeral data folder exists
-        const semiphemeralDataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
-        if (!fs.existsSync(semiphemeralDataPath)) {
-            fs.mkdirSync(semiphemeralDataPath);
-        }
-
-        // Make sure the X data folder exists
-        const xDataPath = path.join(semiphemeralDataPath, 'X');
-        if (!fs.existsSync(xDataPath)) {
-            fs.mkdirSync(xDataPath);
-        }
-
         // Make sure the account data folder exists
-        this.accountDataPath = path.join(xDataPath, this.account.username);
-        if (!fs.existsSync(this.accountDataPath)) {
-            fs.mkdirSync(this.accountDataPath);
-        }
+        this.accountDataPath = getAccountDataPath('X', this.account.username);
 
         // Open the database
         this.db = new Database(path.join(this.accountDataPath, 'data.db'), {});

@@ -1,7 +1,8 @@
 import path from "path"
-import { app, ipcMain, session } from 'electron'
+import { ipcMain, session } from 'electron'
 import Database from 'better-sqlite3'
 
+import { getSettingsPath } from "./helpers"
 import { Account, XAccount } from './shared_types'
 
 export type Migration = {
@@ -9,7 +10,7 @@ export type Migration = {
     sql: string[];
 };
 
-const dbPath = `${path.join(app.getPath('userData'), 'db.sqlite')}`;
+const dbPath = path.join(getSettingsPath(), 'db.sqlite');
 
 export const db = new Database(dbPath, {});
 db.pragma('journal_mode = WAL');
