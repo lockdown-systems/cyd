@@ -64,7 +64,7 @@ const updateSettings = async () => {
             deleteDirectMessagesDaysOld: deleteDirectMessagesDaysOld.value
         }
     };
-    await window.electron.saveAccount(JSON.stringify(updatedAccount));
+    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.account = updatedAccount;
     }

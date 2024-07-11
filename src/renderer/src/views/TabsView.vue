@@ -28,8 +28,8 @@ const accountClicked = async (account: Account) => {
     for (let i = 0; i < accounts.value.length; i++) {
       if (accounts.value[i].type === 'unknown') {
         const accountIDToDelete = accounts.value[i].id;
-        await window.electron.deleteAccount(accountIDToDelete);
-        accounts.value = await window.electron.getAccounts();
+        await window.electron.database.deleteAccount(accountIDToDelete);
+        accounts.value = await window.electron.database.getAccounts();
         break;
       }
     }
@@ -45,8 +45,8 @@ const addAccountClicked = async () => {
   }
 
   // Create a new account
-  const account = await window.electron.createAccount();
-  accounts.value = await window.electron.getAccounts();
+  const account = await window.electron.database.createAccount();
+  accounts.value = await window.electron.database.getAccounts();
   activeAccountId.value = account.id;
 };
 
@@ -57,8 +57,8 @@ const deleteAccount = async (account: Account) => {
     'No, keep it'
   )) {
     const accountIDToDelete = account.id;
-    await window.electron.deleteAccount(accountIDToDelete);
-    accounts.value = await window.electron.getAccounts();
+    await window.electron.database.deleteAccount(accountIDToDelete);
+    accounts.value = await window.electron.database.getAccounts();
 
     if (accounts.value.length === 0) {
       await addAccountClicked();
@@ -72,7 +72,7 @@ const deleteAccount = async (account: Account) => {
 
 const accountSelected = async (account: Account, accountType: string) => {
   try {
-    const newAccount = await window.electron.selectAccountType(account.id, accountType);
+    const newAccount = await window.electron.database.selectAccountType(account.id, accountType);
     if (newAccount === null) {
       throw new Error('Failed to select account type');
     }
@@ -129,10 +129,10 @@ const signOutClicked = async () => {
   }
 
   // Delete the device from the local storage
-  await window.electron.setConfig("userEmail", "");
-  await window.electron.setConfig("apiToken", "");
-  await window.electron.setConfig("deviceToken", "");
-  await window.electron.setConfig("deviceUUID", "");
+  await window.electron.database.setConfig("userEmail", "");
+  await window.electron.database.setConfig("apiToken", "");
+  await window.electron.database.setConfig("deviceToken", "");
+  await window.electron.database.setConfig("deviceUUID", "");
 
   // Refresh the device info
   await refreshDeviceInfo();
@@ -142,7 +142,7 @@ const signOutClicked = async () => {
 };
 
 onMounted(async () => {
-  accounts.value = await window.electron.getAccounts();
+  accounts.value = await window.electron.database.getAccounts();
   if (accounts.value.length === 0) {
     await addAccountClicked();
   } else {

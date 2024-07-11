@@ -6,15 +6,17 @@ declare global {
         electron: {
             getApiUrl: () => Promise<string>;
             isDevMode: () => Promise<boolean>;
-            getConfig: (key: string) => Promise<string>;
-            setConfig: (key: string, value: string) => void;
-            getAccounts: () => Promise<Account[]>;
-            createAccount: () => Promise<Account>;
-            selectAccountType: (accountID: number, type: string) => Promise<Account>;
-            saveAccount: (accountJSON: string) => void;
-            deleteAccount: (accountID: number) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
+            database: {
+                getConfig: (key: string) => Promise<string>;
+                setConfig: (key: string, value: string) => void;
+                getAccounts: () => Promise<Account[]>;
+                createAccount: () => Promise<Account>;
+                selectAccountType: (accountID: number, type: string) => Promise<Account>;
+                saveAccount: (accountJSON: string) => void;
+                deleteAccount: (accountID: number) => void;
+            },
             X: {
                 fetchStart: (accountID: number) => void;
                 fetchStop: (accountID: number) => void;

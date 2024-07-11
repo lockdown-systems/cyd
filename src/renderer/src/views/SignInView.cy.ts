@@ -7,12 +7,22 @@ const stubElectron = () => {
   return {
     getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
     isDevMode: cy.stub(),
-    getConfig: cy.stub(),
-    setConfig: cy.stub(),
-    getAccounts: cy.stub(),
-    createAccount: cy.stub(),
-    saveAccount: cy.stub(),
     showError: cy.stub(),
+    showQuestion: cy.stub(),
+    database: {
+      getConfig: cy.stub(),
+      setConfig: cy.stub(),
+      getAccounts: cy.stub(),
+      createAccount: cy.stub(),
+      selectAccountType: cy.stub(),
+      saveAccount: cy.stub(),
+      deleteAccount: cy.stub(),
+    },
+    X: {
+      fetchStart: cy.stub(),
+      fetchStop: cy.stub(),
+      fetchParse: cy.stub(),
+    }
   };
 }
 

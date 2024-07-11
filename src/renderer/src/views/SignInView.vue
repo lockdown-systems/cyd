@@ -57,7 +57,7 @@ async function authenticate() {
     return;
   }
 
-  await window.electron.setConfig("userEmail", userEmail.value);
+  await window.electron.database.setConfig("userEmail", userEmail.value);
   enableStartFields();
 
   serverApi.value.setUserEmail(userEmail.value);
@@ -91,10 +91,10 @@ async function registerDevice() {
   }
 
   // Save the device UUID
-  await window.electron.setConfig("deviceUUID", registerDeviceResp.uuid);
+  await window.electron.database.setConfig("deviceUUID", registerDeviceResp.uuid);
 
   // Save the device token
-  await window.electron.setConfig("deviceToken", registerDeviceResp.deviceToken);
+  await window.electron.database.setConfig("deviceToken", registerDeviceResp.deviceToken);
   serverApi.value.setDeviceToken(registerDeviceResp.deviceToken);
 
   // Get a new API token

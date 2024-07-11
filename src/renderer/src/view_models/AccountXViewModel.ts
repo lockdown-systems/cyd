@@ -151,7 +151,7 @@ and direct messages, except for the ones you want to keep. **To start, login to 
 
                     // Save it
                     this.account.xAccount.username = username;
-                    await window.electron.saveAccount(JSON.stringify(this.account));
+                    await window.electron.database.saveAccount(JSON.stringify(this.account));
 
                     this.state = State.Dashboard;
 
