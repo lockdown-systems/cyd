@@ -8,13 +8,29 @@ import { findOpenPort, getAccountSettingsPath } from "./helpers"
 import { Account } from './shared_types'
 import { getAccount } from './database'
 
+type ResponseData = {
+    host: string;
+    url: string;
+    body: string;
+}
+
 class MITMController {
     private account: Account | null;
-    private proxy: Proxy;
+    private proxy: Proxy | null;
     private proxyPort: number;
     private proxySSLCADir: string;
+    private proxyFilter: string[];
+    private isMonitoring: boolean;
+
+    public responseData: ResponseData[];
 
     constructor(accountID: number) {
+        this.proxyFilter = [];
+        this.proxy = null;
+
+        this.isMonitoring = false;
+        this.responseData = [];
+
         // Load the account
         this.account = getAccount(accountID);
         if (!this.account) {
@@ -25,20 +41,44 @@ class MITMController {
         // Set the proxy SSL dir
         const accountSettingsPath = getAccountSettingsPath(accountID);
         this.proxySSLCADir = path.join(accountSettingsPath, 'ca');
+    }
+
+    async startMITM(ses: Electron.Session, proxyFilter: string[]) {
+        // Set the proxy filters
+        this.proxyFilter = proxyFilter;
 
         // Create the proxy
         this.proxy = new Proxy();
-        this.proxy.onError(function (_ctx, err) {
-            console.log(`MITMController: Account ${accountID}, request`, err);
-        });
+        this.proxy.onRequest((ctx, callback) => {
+            if (this.isMonitoring) {
+                const url = `${ctx.clientToProxyRequest.headers.host}${ctx.clientToProxyRequest.url}`;
+                for (const filter of this.proxyFilter) {
+                    if (url.includes(filter)) {
+                        // We're monitoring this request
+                        console.log(`MITMController: Account ${this.account?.id} request filtered: ${url}`);
 
-        this.proxy.onRequest(function (ctx, callback) {
-            console.log(`MITMController: Account ${accountID}, request`, ctx.clientToProxyRequest.headers.host, ctx.clientToProxyRequest.url);
+                        const responseData: ResponseData = {
+                            host: ctx.clientToProxyRequest.headers.host ?? '',
+                            url: ctx.clientToProxyRequest.url ?? '',
+                            body: '',
+                        }
+
+                        ctx.onResponseData(function (ctx, chunk, callback) {
+                            responseData.body += chunk.toString();
+                            return callback(null, chunk);
+                        });
+
+                        ctx.onResponseEnd(function (ctx, callback) {
+                            console.log(`MITMController: Account ${this.account?.id} response filtered: ${url}`, responseData);
+                            this.responseData.push(responseData);
+                            return callback();
+                        });
+                    }
+                }
+            }
             return callback();
         });
-    }
 
-    async startMITM(ses: Electron.Session) {
         // Start the proxy
         console.log(`MITMController: Account ${this.account?.id}, starting MITM`);
         this.proxyPort = await findOpenPort()
@@ -75,7 +115,11 @@ class MITMController {
 
     async stopMITM(ses: Electron.Session) {
         console.log(`MITMController: Account ${this.account?.id}, stopping MITM`);
-        this.proxy.close();
+        if (this.proxy) {
+            this.proxy.close();
+            this.proxy = null;
+        }
+        this.proxyFilter = [];
 
         // Use the default proxy settings again
         ses.setProxy({})
@@ -85,12 +129,21 @@ class MITMController {
             callback(-3);
         })
     }
+
+    async startMonitoring() {
+        this.responseData = [];
+        this.isMonitoring = true;
+    }
+
+    async stopMonitoring() {
+        this.isMonitoring = false;
+    }
 }
 
 export const mitmControllers: Record<number, MITMController> = {};
 
 export const defineIPCMITMProxy = () => {
-    ipcMain.handle('mitmProxy:start', async (_, accountID: number) => {
+    ipcMain.handle('mitmProxy:start', async (_, accountID: number, proxyFilter: string[]) => {
         // If no account info exists, create it
         if (!mitmControllers[accountID]) {
             mitmControllers[accountID] = new MITMController(accountID);
@@ -99,7 +152,7 @@ export const defineIPCMITMProxy = () => {
 
         // Start MITM
         const ses = session.fromPartition(`persist:account-${accountID}`);
-        await mitmControllers[accountID].startMITM(ses);
+        await mitmControllers[accountID].startMITM(ses, proxyFilter);
     });
 
     ipcMain.handle('mitmProxy:stop', async (_, accountID: number) => {

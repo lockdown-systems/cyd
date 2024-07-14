@@ -38,8 +38,8 @@ contextBridge.exposeInMainWorld('electron', {
         },
     },
     mitmProxy: {
-        start: (accountID: number) => {
-            ipcRenderer.invoke('mitmProxy:start', accountID)
+        start: (accountID: number, proxyFilter: string[]) => {
+            ipcRenderer.invoke('mitmProxy:start', accountID, proxyFilter)
         },
         stop: (accountID: number) => {
             ipcRenderer.invoke('mitmProxy:stop', accountID)

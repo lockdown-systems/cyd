@@ -18,7 +18,7 @@ declare global {
                 deleteAccount: (accountID: number) => void;
             },
             mitmProxy: {
-                start: (accountID: number) => void;
+                start: (accountID: number, proxyFilter: string[]) => void;
                 stop: (accountID: number) => void;
             },
             X: {
