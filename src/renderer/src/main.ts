@@ -20,6 +20,8 @@ declare global {
             mitmProxy: {
                 start: (accountID: number, proxyFilter: string[]) => void;
                 stop: (accountID: number) => void;
+                startMonitoring: (accountID: number) => void;
+                stopMonitoring: (accountID: number) => void;
             },
             X: {
                 fetchStart: (accountID: number) => void;

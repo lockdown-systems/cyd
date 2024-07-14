@@ -2,11 +2,28 @@ import fs from 'fs'
 import path from "path"
 
 import { ipcMain, session } from 'electron'
-import { Proxy } from "http-mitm-proxy"
+import { Proxy, IContext } from "http-mitm-proxy"
 
 import { findOpenPort, getAccountSettingsPath } from "./helpers"
 import { Account } from './shared_types'
 import { getAccount } from './database'
+
+class CustomProxy extends Proxy {
+    _onError(kind: string, ctx: IContext | null, err: Error) {
+        // Removed console.error lines
+        this.onErrorHandlers.forEach((handler) => handler(ctx, err, kind));
+        if (ctx) {
+            ctx.onErrorHandlers.forEach((handler) => handler(ctx, err, kind));
+
+            if (ctx.proxyToClientResponse && !ctx.proxyToClientResponse.headersSent) {
+                ctx.proxyToClientResponse.writeHead(504, "Proxy Error");
+            }
+            if (ctx.proxyToClientResponse && !ctx.proxyToClientResponse.finished) {
+                ctx.proxyToClientResponse.end(`${kind}: ${err}`, "utf8");
+            }
+        }
+    }
+}
 
 type ResponseData = {
     host: string;
@@ -48,7 +65,11 @@ class MITMController {
         this.proxyFilter = proxyFilter;
 
         // Create the proxy
-        this.proxy = new Proxy();
+        this.proxy = new CustomProxy();
+        this.proxy.onError((_ctx, _err) => {
+            // ignore errors
+        });
+
         this.proxy.onRequest((ctx, callback) => {
             if (this.isMonitoring) {
                 const url = `${ctx.clientToProxyRequest.headers.host}${ctx.clientToProxyRequest.url}`;
@@ -159,5 +180,15 @@ export const defineIPCMITMProxy = () => {
         // Stop MITM
         const ses = session.fromPartition(`persist:account-${accountID}`);
         await mitmControllers[accountID].stopMITM(ses);
+    });
+
+    ipcMain.handle('mitmProxy:startMonitoring', async (_, accountID: number) => {
+        // Start monitoring
+        await mitmControllers[accountID].startMonitoring();
+    });
+
+    ipcMain.handle('mitmProxy:stopMonitoring', async (_, accountID: number) => {
+        // Stop monitoring
+        await mitmControllers[accountID].stopMonitoring();
     });
 };
