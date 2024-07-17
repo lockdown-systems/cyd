@@ -3,6 +3,7 @@ import path from "path"
 
 import { ipcMain, session } from 'electron'
 import { Proxy, IContext } from "http-mitm-proxy"
+import * as zlib from "zlib"
 
 import { findOpenPort, getAccountSettingsPath } from "./helpers"
 import { ResponseData, Account } from './shared_types'
@@ -66,29 +67,80 @@ export class MITMController {
                 for (const filter of this.proxyFilter) {
                     if (url.includes(filter)) {
                         // We're monitoring this request
-                        console.log(`MITMController: Account ${this.account?.id} request filtered: ${url}`);
+                        console.log(`MITMController: request filtered: ${url}`);
 
-                        console.log('debug 1')
                         const responseData: ResponseData = {
                             host: ctx.clientToProxyRequest.headers.host ?? '',
                             url: ctx.clientToProxyRequest.url ?? '',
                             body: '',
                         }
-                        console.log('debug 2', responseData)
 
-                        ctx.onResponseData(function (ctx, chunk, callback) {
-                            console.log(`MITMController: Account ${this.account?.id} response chunk (${chunk.length} bytes): ${url}`);
-                            responseData.body += chunk.toString();
+                        const chunks: Buffer[] = [];
+
+                        ctx.onResponseData((ctx, chunk, callback) => {
+                            console.log(`MITMController: response chunk (${chunk.length} bytes)`);
+                            chunks.push(chunk);
                             return callback(null, chunk);
                         });
 
-                        ctx.onResponseEnd(function (ctx, callback) {
-                            console.log(`MITMController: Account ${this.account?.id} response filtered: ${url}`, responseData);
-                            this.responseData.push(responseData);
-                            return callback();
-                        });
+                        ctx.onResponseEnd((ctx, callback) => {
+                            const buffer = Buffer.concat(chunks);
 
-                        console.log('debug 3')
+                            if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'gzip') {
+                                // Response is gzip-compressed
+                                console.log(`MITMController: response is gzip-compressed`);
+                                zlib.gunzip(buffer, (err, decompressed) => {
+                                    if (!err) {
+                                        responseData.body = decompressed.toString();
+                                    } else {
+                                        console.error("Error decompressing gzip response:", err);
+                                        responseData.body = buffer.toString();
+                                    }
+
+                                    console.log(`MITMController: response body`, responseData);
+                                    this.responseData.push(responseData);
+                                    return callback();
+                                });
+                            } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'br') {
+                                // Response is brotli-compressed
+                                console.log(`MITMController: response is brotli-compressed`);
+                                zlib.brotliDecompress(buffer, (err, decompressed) => {
+                                    if (!err) {
+                                        responseData.body = decompressed.toString();
+                                    } else {
+                                        console.error("Error decompressing brotli response:", err);
+                                        responseData.body = buffer.toString();
+                                    }
+
+                                    console.log(`MITMController: response body`, responseData);
+                                    this.responseData.push(responseData);
+                                    return callback();
+                                });
+                            } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'deflate') {
+                                // Response is deflate-compressed
+                                console.log(`MITMController: response is deflate-compressed`);
+                                zlib.inflate(buffer, (err, decompressed) => {
+                                    if (!err) {
+                                        responseData.body = decompressed.toString();
+                                    } else {
+                                        console.error("Error decompressing deflate response:", err);
+                                        responseData.body = buffer.toString();
+                                    }
+
+                                    console.log(`MITMController: response body`, responseData);
+                                    this.responseData.push(responseData);
+                                    return callback();
+                                });
+                            } else {
+                                // If not compressed, just convert buffer to string
+                                console.log(`MITMController: response is not compressed`);
+                                responseData.body = buffer.toString();
+
+                                console.log(`MITMController: response body`, responseData);
+                                this.responseData.push(responseData);
+                                return callback();
+                            }
+                        });
                     }
                 }
             }
