@@ -75,6 +75,7 @@ export class MITMController {
                             status: 0,
                             headers: {},
                             body: '',
+                            processed: false,
                         }
 
                         const chunks: Buffer[] = [];

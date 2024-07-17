@@ -4,6 +4,7 @@ export type ResponseData = {
     status: number;
     headers: Record<string, string | string[] | undefined>;
     body: string;
+    processed: boolean;
 }
 
 export type Account = {

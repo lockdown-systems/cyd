@@ -5,7 +5,7 @@ import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
 import { XAccount } from './shared_types'
-import { runMigrations, getXAccount } from './database'
+import { runMigrations, getXAccount, exec } from './database'
 
 import { MITMController, mitmControllers } from './mitm_proxy';
 
@@ -15,6 +15,8 @@ class XAccountController {
     private db: Database.Database;
 
     private mitmController: MITMController;
+
+    private fetchCount: number = 0;
 
     constructor(accountID: number, mitmController: MITMController) {
         this.mitmController = mitmController;
@@ -93,94 +95,101 @@ class XAccountController {
     // Returns false if more data needs to be fetched
     // Returns true if we are caught up
     async fetchParse(): Promise<boolean> {
+        this.fetchCount = 0;
+
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            console.log('XAccountController.fetchParse:', this.mitmController.responseData[i]);
+            const responseData = this.mitmController.responseData[i];
 
-            // try {
-            //     const body = JSON.parse(this.responseData[i].body);
+            if (
+                responseData.url.includes("/UserTweetsAndReplies?") &&
+                responseData.status == 200
+            ) {
+                try {
+                    const body = JSON.parse(responseData.body);
 
-            //     // Validate the response
-            //     if (!(
-            //         body["data"] &&
-            //         body["data"]["user"] &&
-            //         body["data"]["user"]["result"] &&
-            //         body["data"]["user"]["result"]["timeline_v2"] &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"] &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"] &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"].length > 0 &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0] &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["type"] &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["type"] == "TimelineAddEntries" &&
-            //         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"]
-            //     )) {
-            //         console.log('XAccountController.fetchParse: found invalid response, skipping', body)
-            //         continue;
-            //     }
+                    // Validate the response
+                    if (!(
+                        body["data"] &&
+                        body["data"]["user"] &&
+                        body["data"]["user"]["result"] &&
+                        body["data"]["user"]["result"]["timeline_v2"] &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"] &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"] &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"].length > 0 &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0] &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["type"] &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["type"] == "TimelineAddEntries" &&
+                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"]
+                    )) {
+                        console.log('XAccountController.fetchParse: found invalid response, skipping', body)
+                        continue;
+                    }
 
-            //     // Loop through the tweets
-            //     for (let j = 0; j < body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"].length; j++) {
-            //         const entry = body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"][j];
-            //         if (!(
-            //             entry &&
-            //             entry["content"] &&
-            //             entry["content"]["items"] &&
-            //             entry["content"]["items"].length > 0 &&
-            //             entry["content"]["items"][0] &&
-            //             entry["content"]["items"][0]["item"] &&
-            //             entry["content"]["items"][0]["item"]["itemContent"] &&
-            //             entry["content"]["items"][0]["item"]["itemContent"]["itemType"] &&
-            //             entry["content"]["items"][0]["item"]["itemContent"]["itemType"] == "TimelineTweet" &&
-            //             entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"] &&
-            //             entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"] &&
-            //             entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"]
-            //         )) {
-            //             console.log('XAccountController.fetchParse: found invalid tweet, skipping', entry)
-            //             continue;
-            //         }
-            //         const tweet = entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"];
+                    // Loop through the tweets
+                    for (let j = 0; j < body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"].length; j++) {
+                        const entry = body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"][j];
+                        if (!(
+                            entry &&
+                            entry["content"] &&
+                            entry["content"]["items"] &&
+                            entry["content"]["items"].length > 0 &&
+                            entry["content"]["items"][0] &&
+                            entry["content"]["items"][0]["item"] &&
+                            entry["content"]["items"][0]["item"]["itemContent"] &&
+                            entry["content"]["items"][0]["item"]["itemContent"]["itemType"] &&
+                            entry["content"]["items"][0]["item"]["itemContent"]["itemType"] == "TimelineTweet" &&
+                            entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"] &&
+                            entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"] &&
+                            entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"]
+                        )) {
+                            console.log('XAccountController.fetchParse: found invalid tweet, skipping', entry)
+                            continue;
+                        }
+                        const tweet = entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"];
 
-            //         if (!(
-            //             entry &&
-            //             entry["core"] &&
-            //             entry["core"]["user_results"] &&
-            //             entry["core"]["user_results"]["result"] &&
-            //             entry["core"]["user_results"]["result"]["legacy"] &&
-            //             entry["core"]["user_results"]["result"]["legacy"]["name"]
-            //         )) {
-            //             console.log('XAccountController.fetchParse: found invalid user, skipping', entry)
-            //             continue;
-            //         }
-            //         const username = entry["core"]["user_results"]["result"]["legacy"]["name"];
+                        if (!(
+                            entry &&
+                            entry["core"] &&
+                            entry["core"]["user_results"] &&
+                            entry["core"]["user_results"]["result"] &&
+                            entry["core"]["user_results"]["result"]["legacy"] &&
+                            entry["core"]["user_results"]["result"]["legacy"]["name"]
+                        )) {
+                            console.log('XAccountController.fetchParse: found invalid user, skipping', entry)
+                            continue;
+                        }
+                        const username = entry["core"]["user_results"]["result"]["legacy"]["name"];
 
-            //         // Have we seen this tweet before?
-            //         const existing = exec('SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
-            //         if (existing.length > 0) {
-            //             // We have seen this tweet, so return early
-            //             return true;
-            //         }
+                        // Have we seen this tweet before?
+                        const existing = exec('SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
+                        if (existing.length > 0) {
+                            // We have seen this tweet, so return early
+                            return true;
+                        }
 
-            //         // Add the tweet
-            //         exec('INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            //             username,
-            //             tweet["id_str"],
-            //             tweet["conversation_id_str"],
-            //             new Date(tweet["created_at"]).toISOString(),
-            //             tweet["favorite_count"],
-            //             tweet["quote_count"],
-            //             tweet["reply_count"],
-            //             tweet["retweet_count"],
-            //             tweet["favorited"],
-            //             tweet["retweeted"],
-            //             tweet["full_text"],
-            //             `${username}/status/${tweet['id_str']}`,
-            //             new Date().toISOString(),
-            //         ]);
-            //         this.fetchCount++;
-            //     }
+                        // Add the tweet
+                        exec('INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            username,
+                            tweet["id_str"],
+                            tweet["conversation_id_str"],
+                            new Date(tweet["created_at"]).toISOString(),
+                            tweet["favorite_count"],
+                            tweet["quote_count"],
+                            tweet["reply_count"],
+                            tweet["retweet_count"],
+                            tweet["favorited"],
+                            tweet["retweeted"],
+                            tweet["full_text"],
+                            `${username}/status/${tweet['id_str']}`,
+                            new Date().toISOString(),
+                        ]);
+                        this.fetchCount++;
+                    }
 
-            // } catch (error) {
-            //     console.error('XAccountController.fetchParse:', error);
-            // }
+                } catch (error) {
+                    console.error('XAccountController.fetchParse:', error);
+                }
+            }
         }
 
         return true;
