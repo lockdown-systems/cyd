@@ -1,3 +1,9 @@
+export type ResponseData = {
+    host: string;
+    url: string;
+    body: string;
+}
+
 export type Account = {
     id: number;
     type: string; // "X"

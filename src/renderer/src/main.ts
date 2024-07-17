@@ -1,5 +1,10 @@
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "@fortawesome/fontawesome-free/css/all.css";
+
 import { createApp } from "vue";
 import type { Account } from "../../shared_types";
+import App from "./App.vue";
 
 declare global {
     interface Window {
@@ -20,8 +25,6 @@ declare global {
             mitmProxy: {
                 start: (accountID: number, proxyFilter: string[]) => void;
                 stop: (accountID: number) => void;
-                startMonitoring: (accountID: number) => void;
-                stopMonitoring: (accountID: number) => void;
             },
             X: {
                 fetchStart: (accountID: number) => void;
@@ -31,12 +34,6 @@ declare global {
         };
     }
 }
-
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import "@fortawesome/fontawesome-free/css/all.css";
-
-import App from "./App.vue";
 
 createApp(App)
     .mount("#app");

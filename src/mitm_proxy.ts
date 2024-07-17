@@ -5,12 +5,12 @@ import { ipcMain, session } from 'electron'
 import { Proxy, IContext } from "http-mitm-proxy"
 
 import { findOpenPort, getAccountSettingsPath } from "./helpers"
-import { Account } from './shared_types'
+import { ResponseData, Account } from './shared_types'
 import { getAccount } from './database'
 
 class CustomProxy extends Proxy {
     _onError(kind: string, ctx: IContext | null, err: Error) {
-        // Removed console.error lines
+        // Stop logging all the errors to the console
         this.onErrorHandlers.forEach((handler) => handler(ctx, err, kind));
         if (ctx) {
             ctx.onErrorHandlers.forEach((handler) => handler(ctx, err, kind));
@@ -25,13 +25,7 @@ class CustomProxy extends Proxy {
     }
 }
 
-type ResponseData = {
-    host: string;
-    url: string;
-    body: string;
-}
-
-class MITMController {
+export class MITMController {
     private account: Account | null;
     private proxy: Proxy | null;
     private proxyPort: number;
@@ -39,7 +33,7 @@ class MITMController {
     private proxyFilter: string[];
     private isMonitoring: boolean;
 
-    public responseData: ResponseData[];
+    private responseData: ResponseData[];
 
     constructor(accountID: number) {
         this.proxyFilter = [];
@@ -66,10 +60,6 @@ class MITMController {
 
         // Create the proxy
         this.proxy = new CustomProxy();
-        this.proxy.onError((_ctx, _err) => {
-            // ignore errors
-        });
-
         this.proxy.onRequest((ctx, callback) => {
             if (this.isMonitoring) {
                 const url = `${ctx.clientToProxyRequest.headers.host}${ctx.clientToProxyRequest.url}`;
@@ -78,13 +68,16 @@ class MITMController {
                         // We're monitoring this request
                         console.log(`MITMController: Account ${this.account?.id} request filtered: ${url}`);
 
+                        console.log('debug 1')
                         const responseData: ResponseData = {
                             host: ctx.clientToProxyRequest.headers.host ?? '',
                             url: ctx.clientToProxyRequest.url ?? '',
                             body: '',
                         }
+                        console.log('debug 2', responseData)
 
                         ctx.onResponseData(function (ctx, chunk, callback) {
+                            console.log(`MITMController: Account ${this.account?.id} response chunk (${chunk.length} bytes): ${url}`);
                             responseData.body += chunk.toString();
                             return callback(null, chunk);
                         });
@@ -94,6 +87,8 @@ class MITMController {
                             this.responseData.push(responseData);
                             return callback();
                         });
+
+                        console.log('debug 3')
                     }
                 }
             }
@@ -158,6 +153,7 @@ class MITMController {
 
     async stopMonitoring() {
         this.isMonitoring = false;
+        return this.responseData;
     }
 }
 
@@ -180,15 +176,5 @@ export const defineIPCMITMProxy = () => {
         // Stop MITM
         const ses = session.fromPartition(`persist:account-${accountID}`);
         await mitmControllers[accountID].stopMITM(ses);
-    });
-
-    ipcMain.handle('mitmProxy:startMonitoring', async (_, accountID: number) => {
-        // Start monitoring
-        await mitmControllers[accountID].startMonitoring();
-    });
-
-    ipcMain.handle('mitmProxy:stopMonitoring', async (_, accountID: number) => {
-        // Stop monitoring
-        await mitmControllers[accountID].stopMonitoring();
     });
 };

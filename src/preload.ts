@@ -43,12 +43,6 @@ contextBridge.exposeInMainWorld('electron', {
         },
         stop: (accountID: number) => {
             ipcRenderer.invoke('mitmProxy:stop', accountID)
-        },
-        startMonitoring: (accountID: number) => {
-            ipcRenderer.invoke('mitmProxy:startMonitoring', accountID)
-        },
-        stopMonitoring: (accountID: number) => {
-            ipcRenderer.invoke('mitmProxy:stopMonitoring', accountID)
         }
     },
     X: {
