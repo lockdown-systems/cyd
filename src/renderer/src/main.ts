@@ -29,6 +29,7 @@ declare global {
             X: {
                 fetchStart: (accountID: number) => void;
                 fetchStop: (accountID: number) => void;
+                checkForRateLimit: (accountID: number) => Promise<null | number>;
                 fetchParse: (accountID: number) => Promise<boolean>;
             };
         };

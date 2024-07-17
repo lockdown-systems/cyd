@@ -4,7 +4,7 @@ import { ipcMain } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { ResponseData, XAccount } from './shared_types'
+import { XAccount } from './shared_types'
 import { runMigrations, getXAccount } from './database'
 
 import { MITMController, mitmControllers } from './mitm_proxy';
@@ -15,7 +15,6 @@ class XAccountController {
     private db: Database.Database;
 
     private mitmController: MITMController;
-    private responseData: ResponseData[];
 
     constructor(accountID: number, mitmController: MITMController) {
         this.mitmController = mitmController;
@@ -62,18 +61,40 @@ class XAccountController {
     }
 
     async fetchStartMonitoring() {
-        this.mitmController.startMonitoring();
+        await this.mitmController.startMonitoring();
     }
 
     async fetchStopMonitoring() {
-        this.responseData = await this.mitmController.stopMonitoring();
+        await this.mitmController.stopMonitoring();
+    }
+
+    async checkForRateLimit(): Promise<null | number> {
+        let rateLimit = false;
+        let rateLimitReset = 0;
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            if (this.mitmController.responseData[i].status == 429) {
+                rateLimit = true;
+                if (
+                    this.mitmController.responseData[i].headers['x-rate-limit-reset'] &&
+                    Number(this.mitmController.responseData[i].headers['x-rate-limit-reset']) > rateLimitReset
+                ) {
+                    rateLimitReset = Number(this.mitmController.responseData[i].headers['x-rate-limit-reset']);
+                }
+                break;
+            }
+        }
+
+        if (rateLimit) {
+            return rateLimitReset;
+        }
+        return null;
     }
 
     // Returns false if more data needs to be fetched
     // Returns true if we are caught up
     async fetchParse(): Promise<boolean> {
-        for (let i = 0; i < this.responseData.length; i++) {
-            console.log('XAccountController.fetchParse:', this.responseData[i]);
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            console.log('XAccountController.fetchParse:', this.mitmController.responseData[i]);
 
             // try {
             //     const body = JSON.parse(this.responseData[i].body);
@@ -183,6 +204,10 @@ export const defineIPCX = () => {
 
     ipcMain.handle('X:fetchStop', async (_, accountID: number) => {
         await controllers[accountID].fetchStopMonitoring();
+    });
+
+    ipcMain.handle('X:checkForRateLimit', async (_, accountID: number): Promise<null | number> => {
+        return await controllers[accountID].checkForRateLimit();
     });
 
     ipcMain.handle('X:fetchParse', async (_, accountID: number): Promise<boolean> => {

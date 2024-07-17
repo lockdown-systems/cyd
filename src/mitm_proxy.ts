@@ -34,7 +34,7 @@ export class MITMController {
     private proxyFilter: string[];
     private isMonitoring: boolean;
 
-    private responseData: ResponseData[];
+    public responseData: ResponseData[];
 
     constructor(accountID: number) {
         this.proxyFilter = [];
@@ -72,6 +72,8 @@ export class MITMController {
                         const responseData: ResponseData = {
                             host: ctx.clientToProxyRequest.headers.host ?? '',
                             url: ctx.clientToProxyRequest.url ?? '',
+                            status: 0,
+                            headers: {},
                             body: '',
                         }
 
@@ -84,6 +86,9 @@ export class MITMController {
                         });
 
                         ctx.onResponseEnd((ctx, callback) => {
+                            responseData.status = ctx.serverToProxyResponse?.statusCode ?? 0;
+                            responseData.headers = ctx.serverToProxyResponse?.headers ?? {};
+
                             const buffer = Buffer.concat(chunks);
 
                             if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'gzip') {
@@ -97,7 +102,12 @@ export class MITMController {
                                         responseData.body = buffer.toString();
                                     }
 
-                                    console.log(`MITMController: response body`, responseData);
+                                    console.log(`MITMController: got response`, {
+                                        host: ctx.clientToProxyRequest.headers.host,
+                                        url: ctx.clientToProxyRequest.url,
+                                        status: responseData.status,
+                                        bodyLength: responseData.body.length,
+                                    });
                                     this.responseData.push(responseData);
                                     return callback();
                                 });
@@ -112,7 +122,12 @@ export class MITMController {
                                         responseData.body = buffer.toString();
                                     }
 
-                                    console.log(`MITMController: response body`, responseData);
+                                    console.log(`MITMController: got response`, {
+                                        host: ctx.clientToProxyRequest.headers.host,
+                                        url: ctx.clientToProxyRequest.url,
+                                        status: responseData.status,
+                                        bodyLength: responseData.body.length,
+                                    });
                                     this.responseData.push(responseData);
                                     return callback();
                                 });
@@ -127,7 +142,12 @@ export class MITMController {
                                         responseData.body = buffer.toString();
                                     }
 
-                                    console.log(`MITMController: response body`, responseData);
+                                    console.log(`MITMController: got response`, {
+                                        host: ctx.clientToProxyRequest.headers.host,
+                                        url: ctx.clientToProxyRequest.url,
+                                        status: responseData.status,
+                                        bodyLength: responseData.body.length,
+                                    });
                                     this.responseData.push(responseData);
                                     return callback();
                                 });
@@ -136,7 +156,12 @@ export class MITMController {
                                 console.log(`MITMController: response is not compressed`);
                                 responseData.body = buffer.toString();
 
-                                console.log(`MITMController: response body`, responseData);
+                                console.log(`MITMController: got response`, {
+                                    host: ctx.clientToProxyRequest.headers.host,
+                                    url: ctx.clientToProxyRequest.url,
+                                    status: responseData.status,
+                                    bodyLength: responseData.body.length,
+                                });
                                 this.responseData.push(responseData);
                                 return callback();
                             }
@@ -205,7 +230,6 @@ export class MITMController {
 
     async stopMonitoring() {
         this.isMonitoring = false;
-        return this.responseData;
     }
 }
 

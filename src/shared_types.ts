@@ -1,6 +1,8 @@
 export type ResponseData = {
     host: string;
     url: string;
+    status: number;
+    headers: Record<string, string | string[] | undefined>;
     body: string;
 }
 

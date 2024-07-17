@@ -52,6 +52,9 @@ contextBridge.exposeInMainWorld('electron', {
         fetchStop: (accountID: number) => {
             ipcRenderer.invoke('X:fetchStop', accountID)
         },
+        checkForRateLimit: (accountID: number): Promise<null | number> => {
+            return ipcRenderer.invoke('X:checkForRateLimit', accountID)
+        },
         fetchParse: (accountID: number): Promise<boolean> => {
             return ipcRenderer.invoke('X:fetchParse', accountID)
         }

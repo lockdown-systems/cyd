@@ -15,6 +15,7 @@ export enum State {
 
 export class AccountXViewModel extends BaseViewModel {
     private fetchTweetsDone: boolean = false;
+    private rateLimitReset: null | number = null;
 
     async init() {
         this.state = State.Login;
@@ -227,6 +228,8 @@ Hang on while I scroll down to your very earliest tweet.
 
                 // Scroll to bottom
                 await this.scrollToBottom();
+                this.rateLimitReset = await window.electron.X.checkForRateLimit(this.account.id);
+                console.log("rateLimitReset", this.rateLimitReset);
 
                 // Stop monitoring network requests
                 await window.electron.X.fetchStop(this.account.id);
