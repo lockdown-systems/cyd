@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account } from "../../shared_types";
+import type { Account, XProgress } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -29,8 +29,7 @@ declare global {
             X: {
                 fetchStart: (accountID: number) => void;
                 fetchStop: (accountID: number) => void;
-                checkForRateLimit: (accountID: number) => Promise<null | number>;
-                fetchParse: (accountID: number) => Promise<boolean>;
+                fetchParse: (accountID: number) => Promise<XProgress>;
             };
         };
     }

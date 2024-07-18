@@ -4,7 +4,7 @@ import { ipcMain } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount } from './shared_types'
+import { XAccount, XProgress } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
 import { MITMController, mitmControllers } from './mitm_proxy';
@@ -15,8 +15,17 @@ class XAccountController {
     private db: Database.Database;
 
     private mitmController: MITMController;
-
-    private fetchCount: number = 0;
+    private progress: XProgress = {
+        isFetchFinished: false,
+        tweetsFetched: 0,
+        retweetsFetched: 0,
+        tweetsDeleted: 0,
+        retweetsDeleted: 0,
+        likesDeleted: 0,
+        directMessagesDeleted: 0,
+        isRateLimited: false,
+        rateLimitReset: null,
+    };
 
     constructor(accountID: number, mitmController: MITMController) {
         this.mitmController = mitmController;
@@ -70,36 +79,26 @@ class XAccountController {
         await this.mitmController.stopMonitoring();
     }
 
-    async checkForRateLimit(): Promise<null | number> {
-        let rateLimit = false;
-        let rateLimitReset = 0;
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (this.mitmController.responseData[i].status == 429) {
-                rateLimit = true;
-                if (
-                    this.mitmController.responseData[i].headers['x-rate-limit-reset'] &&
-                    Number(this.mitmController.responseData[i].headers['x-rate-limit-reset']) > rateLimitReset
-                ) {
-                    rateLimitReset = Number(this.mitmController.responseData[i].headers['x-rate-limit-reset']);
-                }
-                break;
-            }
-        }
-
-        if (rateLimit) {
-            return rateLimitReset;
-        }
-        return null;
-    }
-
     // Returns false if more data needs to be fetched
     // Returns true if we are caught up
-    async fetchParse(): Promise<boolean> {
-        this.fetchCount = 0;
-
+    async fetchParse(): Promise<XProgress> {
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             const responseData = this.mitmController.responseData[i];
 
+            // Already processed?
+            if (responseData.processed) {
+                continue;
+            }
+
+            // Rate limited?
+            if (responseData.status == 429) {
+                this.progress.isRateLimited = true;
+                this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
+                this.mitmController.responseData[i].processed = true;
+                return this.progress;
+            }
+
+            // Process the next response
             if (
                 responseData.url.includes("/UserTweetsAndReplies?") &&
                 responseData.status == 200
@@ -122,12 +121,29 @@ class XAccountController {
                         body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"]
                     )) {
                         console.log('XAccountController.fetchParse: found invalid response, skipping', body)
+                        this.mitmController.responseData[i].processed = true;
                         continue;
                     }
 
                     // Loop through the tweets
                     for (let j = 0; j < body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"].length; j++) {
                         const entry = body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"][j];
+
+                        // Quietly skip because it's not a tweet?
+                        if (
+                            entry &&
+                            entry["content"] &&
+                            entry["content"]["entryType"] &&
+                            (
+                                entry["content"]["entryType"] == "TimelineTimelineItem" ||
+                                entry["content"]["entryType"] == "TimelineTimelineModule" ||
+                                entry["content"]["entryType"] == "TimelineTimelineCursor"
+                            )
+                        ) {
+                            continue;
+                        }
+
+                        // Validate the tweet
                         if (!(
                             entry &&
                             entry["content"] &&
@@ -147,6 +163,7 @@ class XAccountController {
                         }
                         const tweet = entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"];
 
+                        // Validate the username
                         if (!(
                             entry &&
                             entry["core"] &&
@@ -164,7 +181,10 @@ class XAccountController {
                         const existing = exec('SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
                         if (existing.length > 0) {
                             // We have seen this tweet, so return early
-                            return true;
+                            this.mitmController.responseData[i].processed = true;
+
+                            this.progress.isFetchFinished = true;
+                            return this.progress;
                         }
 
                         // Add the tweet
@@ -183,16 +203,25 @@ class XAccountController {
                             `${username}/status/${tweet['id_str']}`,
                             new Date().toISOString(),
                         ]);
-                        this.fetchCount++;
+
+                        // Update progress
+                        if (tweet["retweeted"]) {
+                            this.progress.retweetsFetched++;
+                        } else {
+                            this.progress.tweetsFetched++;
+                        }
+
+                        this.mitmController.responseData[i].processed = true;
                     }
 
                 } catch (error) {
                     console.error('XAccountController.fetchParse:', error);
+                    this.mitmController.responseData[i].processed = true;
                 }
             }
         }
 
-        return true;
+        return this.progress;
     }
 }
 
@@ -215,11 +244,7 @@ export const defineIPCX = () => {
         await controllers[accountID].fetchStopMonitoring();
     });
 
-    ipcMain.handle('X:checkForRateLimit', async (_, accountID: number): Promise<null | number> => {
-        return await controllers[accountID].checkForRateLimit();
-    });
-
-    ipcMain.handle('X:fetchParse', async (_, accountID: number): Promise<boolean> => {
+    ipcMain.handle('X:fetchParse', async (_, accountID: number): Promise<XProgress> => {
         return await controllers[accountID].fetchParse();
     });
 };

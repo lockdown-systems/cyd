@@ -132,6 +132,18 @@ export class BaseViewModel {
         await this.waitForLoadingToFinish();
         await new Promise(resolve => setTimeout(resolve, 1000));
 
+        // Scroll to the bottom
+        this.log("scrollToBottom", "scrolling to bottom")
+        await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.waitForLoadingToFinish();
+    }
+
+    // Keep scrolling to the bottom in a loop until we can't scroll anymore
+    async scrollToVeryBottom() {
+        await this.waitForLoadingToFinish();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         let lastScrollTop = 0;
         let newScrollTop = 0;
         do {
@@ -139,16 +151,13 @@ export class BaseViewModel {
             lastScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
 
             // Scroll to the bottom
-            this.log("scrollToBottom", "scrolling to bottom")
-            await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await this.waitForLoadingToFinish();
+            await this.scrollToBottom();
 
             // Get the new scroll position
             newScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
 
         } while (newScrollTop > lastScrollTop);
-        this.log("scrollToBottom", "done");
+        this.log("scrollToVeryBottom", "done");
     }
 
     async scriptClickElement(selector: string): Promise<boolean> {

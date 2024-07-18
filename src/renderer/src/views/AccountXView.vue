@@ -150,10 +150,21 @@ onUnmounted(async () => {
 <template>
     <div class="wrapper d-flex flex-column">
         <AccountHeader :account="account" @on-refresh-clicked="emit('onRefreshClicked')" />
+
+        <!-- Speech bubble -->
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
+
+        <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
             :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
+
+        <!-- Progress
+        <div v-if="accountXViewModel?.progress !== null">
+            <p>progress: {{ JSON.stringify(accountXViewModel?.progress) }}</p>
+        </div> -->
+
+        <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
             <h2>Download my data</h2>
             <div class="container mb-4">

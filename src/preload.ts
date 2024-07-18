@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account } from './shared_types'
+import { Account, XProgress } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -52,10 +52,7 @@ contextBridge.exposeInMainWorld('electron', {
         fetchStop: (accountID: number) => {
             ipcRenderer.invoke('X:fetchStop', accountID)
         },
-        checkForRateLimit: (accountID: number): Promise<null | number> => {
-            return ipcRenderer.invoke('X:checkForRateLimit', accountID)
-        },
-        fetchParse: (accountID: number): Promise<boolean> => {
+        fetchParse: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:fetchParse', accountID)
         }
     }

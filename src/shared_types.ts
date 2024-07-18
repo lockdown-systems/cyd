@@ -53,3 +53,16 @@ export type XTweet = {
     addedToDatabaseAt: Date;
     archivedAt: Date;
 };
+
+// Progress for displaying in the UI
+export type XProgress = {
+    isFetchFinished: boolean;
+    tweetsFetched: number;
+    retweetsFetched: number;
+    tweetsDeleted: number;
+    retweetsDeleted: number;
+    likesDeleted: number;
+    directMessagesDeleted: number;
+    isRateLimited: boolean;
+    rateLimitReset: null | number;
+}
