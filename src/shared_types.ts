@@ -54,7 +54,6 @@ export type XTweet = {
     archivedAt: Date;
 };
 
-// Progress for displaying in the UI
 export type XProgress = {
     isFetchFinished: boolean;
     tweetsFetched: number;

@@ -9,6 +9,142 @@ import { runMigrations, getXAccount, exec } from './database'
 
 import { MITMController, mitmControllers } from './mitm_proxy';
 
+interface XAPILegacyTweet {
+    bookmark_count: number;
+    bookmarked: boolean;
+    created_at: string;
+    conversation_id_str: string;
+    display_text_range: number[];
+    favorite_count: number;
+    favorited: boolean;
+    full_text: string;
+    in_reply_to_screen_name: string;
+    in_reply_to_status_id_str: string;
+    in_reply_to_user_id_str: string;
+    is_quote_status: boolean;
+    lang: string;
+    quote_count: number;
+    reply_count: number;
+    retweet_count: number;
+    retweeted: boolean;
+    user_id_str: string;
+    id_str: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    entities: any;
+}
+
+interface XAPILegacyUser {
+    can_dm: boolean;
+    can_media_tag: boolean;
+    created_at: string;
+    default_profile: boolean;
+    default_profile_image: boolean;
+    description: string;
+    fast_followers_count: number;
+    favourites_count: number;
+    followers_count: number;
+    friends_count: number;
+    has_custom_timelines: boolean;
+    is_translator: boolean;
+    listed_count: number;
+    location: string;
+    media_count: number;
+    name: string;
+    needs_phone_verification: boolean;
+    normal_followers_count: number;
+    possibly_sensitive: boolean;
+    profile_banner_url: string;
+    profile_image_url_https: string;
+    profile_interstitial_type: string;
+    screen_name: string;
+    statuses_count: number;
+    translator_type: string;
+    verified: boolean;
+    want_retweets: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    entities: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pinned_tweet_ids_str: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    withheld_in_countries: any;
+}
+
+interface XAPIData {
+    user: {
+        result: {
+            __typename: string; // "User"
+            timeline_v2: {
+                timeline: {
+                    instructions: {
+                        type: string; // "TimelineClearCache", "TimelineAddEntries"
+                        entries?: {
+                            content: {
+                                entryType: string; // "TimelineTimelineModule", "TimelineTimelineItem", "TimelineTimelineCursor"
+                                __typename: string;
+                                value?: string;
+                                cursorType?: string;
+                                displayType?: string;
+                                items?: {
+                                    entryId: string;
+                                    item: {
+                                        itemContent: {
+                                            __typename: string;
+                                            itemType: string; // "TimelineTweet", "TimelineUser"
+                                            tweetDisplayType?: string;
+                                            tweet_results: {
+                                                results: {
+                                                    __typename?: string; // "Tweet"
+                                                    core: {
+                                                        user_results: {
+                                                            result?: {
+                                                                __typename?: string;
+                                                                has_graduated_access?: boolean;
+                                                                id?: string;
+                                                                is_blue_verified?: boolean;
+                                                                legacy: XAPILegacyUser;
+                                                                profile_image_shape?: string;
+                                                                rest_id?: string;
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                                tipjar_settings?: any;
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                                affiliates_highlighted_label?: any;
+                                                            }
+                                                        }
+                                                    };
+                                                    is_translatable?: boolean;
+                                                    legacy?: XAPILegacyTweet;
+                                                    rest_id?: string;
+                                                    source?: string;
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                    edit_control?: any;
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                    unmention_data?: any;
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                    views?: any;
+                                                }
+                                            };
+                                        };
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        clientEventInfo: any;
+                                    };
+                                }[]
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                clientEventInfo?: any;
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                metadata?: any;
+                            };
+                            entryId: string;
+                            sortIndex: string;
+                        }[];
+                    }[];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    metadata: any;
+                }
+            }
+        }
+    };
+}
+
 class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
@@ -77,101 +213,122 @@ class XAccountController {
         await this.mitmController.stopMonitoring();
     }
 
-    // Returns false if more data needs to be fetched
-    // Returns true if we are caught up
+    // Returns false if the loop should stop
+    fetchTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
+        // Have we seen this tweet before?
+        const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
+        if (existing.length > 0) {
+            // We have seen this tweet, so return early
+            this.mitmController.responseData[indexResponse].processed = true;
+
+            this.progress.isFetchFinished = true;
+            return false;
+        }
+
+        // Add the tweet
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            userLegacy["screen_name"],
+            tweetLegacy["id_str"],
+            tweetLegacy["conversation_id_str"],
+            new Date(tweetLegacy["created_at"]).toISOString(),
+            tweetLegacy["favorite_count"],
+            tweetLegacy["quote_count"],
+            tweetLegacy["reply_count"],
+            tweetLegacy["retweet_count"],
+            tweetLegacy["favorited"] ? 1 : 0,
+            tweetLegacy["retweeted"] ? 1 : 0,
+            tweetLegacy["full_text"],
+            `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
+            new Date().toISOString(),
+        ]);
+
+        // Update progress
+        if (tweetLegacy["retweeted"]) {
+            this.progress.retweetsFetched++;
+        } else {
+            this.progress.tweetsFetched++;
+        }
+
+        return true;
+    }
+
+    // Returns false if the loop should stop
+    fetchParseResponseData(indexResponse: number): boolean {
+        let shouldReturnFalse = false;
+        const responseData = this.mitmController.responseData[indexResponse];
+
+        // Already processed?
+        if (responseData.processed) {
+            return true;
+        }
+
+        // Rate limited?
+        if (responseData.status == 429) {
+            this.progress.isRateLimited = true;
+            this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
+            this.mitmController.responseData[indexResponse].processed = true;
+            return false;
+        }
+
+        // Process the next response
+        if (
+            responseData.url.includes("/UserTweetsAndReplies?") &&
+            responseData.status == 200
+        ) {
+            const body: XAPIData = JSON.parse(responseData.body);
+            console.log('XAccountController.fetchParse: body', responseData.body);
+
+            // Loop through instructions
+            body.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+                if (instructions["type"] != "TimelineAddEntries") {
+                    return;
+                }
+
+                // Loop through the entries
+                instructions.entries?.forEach((entries) => {
+                    if (entries.content.entryType == "TimelineTimelineCursor") {
+                        return;
+                    }
+
+                    entries.content.items?.forEach((item) => {
+                        const userLegacy = item.item.itemContent.tweet_results.results.core.user_results.result?.legacy;
+                        const tweetLegacy = item.item.itemContent.tweet_results.results.legacy;
+                        if (userLegacy && tweetLegacy && !this.fetchTweet(indexResponse, userLegacy, tweetLegacy)) {
+                            shouldReturnFalse = true;
+                            return;
+                        }
+                    });
+                });
+
+                if (shouldReturnFalse) {
+                    return;
+                }
+            });
+
+            this.mitmController.responseData[indexResponse].processed = true;
+            console.log('XAccountController.fetchParse: processed', this.progress);
+
+            if (shouldReturnFalse) {
+                return false;
+            }
+        } else {
+            // Skip response
+            this.mitmController.responseData[indexResponse].processed = true;
+        }
+
+        return true;
+    }
+
+    // Returns true if more data needs to be fetched
+    // Returns false if we are caught up
     async fetchParse(): Promise<XProgress> {
         console.log('XAccountController.fetchParse: starting');
 
-        for (let iResponse = 0; iResponse < this.mitmController.responseData.length; iResponse++) {
-            const responseData = this.mitmController.responseData[iResponse];
-
-            // Already processed?
-            if (responseData.processed) {
-                continue;
-            }
-
-            // Rate limited?
-            if (responseData.status == 429) {
-                this.progress.isRateLimited = true;
-                this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
-                this.mitmController.responseData[iResponse].processed = true;
+        this.mitmController.responseData.forEach((_response, indexResponse) => {
+            if (this.fetchParseResponseData(indexResponse)) {
                 return this.progress;
             }
-
-            // Process the next response
-            if (
-                responseData.url.includes("/UserTweetsAndReplies?") &&
-                responseData.status == 200
-            ) {
-                try {
-                    const body = JSON.parse(responseData.body);
-
-                    // Loop through instructions
-                    for (let iInstructions = 0; iInstructions < body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"].length; iInstructions++) {
-                        const instructions = body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][iInstructions];
-                        if (instructions["type"] == "TimelineAddEntries") {
-                            // Loop through the entries
-                            for (let iEntries = 0; iEntries < instructions["entries"].length; iEntries++) {
-                                const entries = instructions["entries"];
-
-                                // Loop through the items
-                                for (let iItems = 0; iItems < entries[iEntries]["content"]["items"].length; iItems++) {
-                                    const item = entries[iEntries]["content"]["items"][iItems]["item"]["itemContent"];
-                                    if (item["itemType"] != "TimelineTweet") {
-                                        continue;
-                                    }
-
-                                    const username = item["tweet_results"]["result"]["core"]["user_results"]["result"]["legacy"]["screen_name"];
-                                    const tweet = item["tweet_results"]["result"]["legacy"];
-
-                                    // Have we seen this tweet before?
-                                    const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
-                                    if (existing.length > 0) {
-                                        // We have seen this tweet, so return early
-                                        this.mitmController.responseData[iResponse].processed = true;
-
-                                        this.progress.isFetchFinished = true;
-                                        return this.progress;
-                                    }
-
-                                    // Add the tweet
-                                    exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                                        username,
-                                        tweet["id_str"],
-                                        tweet["conversation_id_str"],
-                                        new Date(tweet["created_at"]).toISOString(),
-                                        tweet["favorite_count"],
-                                        tweet["quote_count"],
-                                        tweet["reply_count"],
-                                        tweet["retweet_count"],
-                                        tweet["favorited"] ? 1 : 0,
-                                        tweet["retweeted"] ? 1 : 0,
-                                        tweet["full_text"],
-                                        `${username}/status/${tweet['id_str']}`,
-                                        new Date().toISOString(),
-                                    ]);
-
-                                    // Update progress
-                                    if (tweet["retweeted"]) {
-                                        this.progress.retweetsFetched++;
-                                    } else {
-                                        this.progress.tweetsFetched++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    this.mitmController.responseData[iResponse].processed = true;
-                    console.log('XAccountController.fetchParse: processed', this.progress);
-
-                } catch (error) {
-                    // TODO: more granularly skip
-                    console.error('XAccountController.fetchParse:', error);
-                    this.mitmController.responseData[iResponse].processed = true;
-                }
-            }
-        }
+        });
 
         return this.progress;
     }
