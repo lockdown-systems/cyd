@@ -217,4 +217,7 @@ test("XAccountController.fetchParsed() should add all the test tweets", async ()
 
     const progress: XProgress = await controller.fetchParse()
     expect(progress.tweetsFetched).toBe(20);
+
+    const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    expect(rows.length).toBe(20);
 })
