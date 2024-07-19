@@ -44,7 +44,7 @@ import { getSettingsPath, getAccountDataPath } from './helpers';
 import { Account, ResponseData } from './shared_types'
 import { XAccountController } from './account_x'
 import { IMITMController } from './mitm_proxy'
-import { runMainMigrations, createAccount, selectNewAccount, saveAccount } from './database';
+import { runMainMigrations, createAccount, selectNewAccount, saveAccount, exec } from './database';
 
 // Mock a MITMController
 class MockMITMController implements IMITMController {
@@ -95,6 +95,86 @@ afterEach(() => {
     });
 });
 
+// Fixtures
+
+const userLegacy = {
+    "can_dm": true,
+    "can_media_tag": true,
+    "created_at": "Sun Mar 17 18:12:01 +0000 2024",
+    "default_profile": true,
+    "default_profile_image": false,
+    "description": "shaping the future of intellect, blending advanced cognition with seamless digital integration for transformative insights",
+    "entities": {
+        "description": {
+            "urls": []
+        }
+    },
+    "fast_followers_count": 0,
+    "favourites_count": 231,
+    "followers_count": 43,
+    "friends_count": 10,
+    "has_custom_timelines": false,
+    "is_translator": false,
+    "listed_count": 0,
+    "location": "",
+    "media_count": 0,
+    "name": "nexamind",
+    "needs_phone_verification": false,
+    "normal_followers_count": 43,
+    "pinned_tweet_ids_str": [],
+    "possibly_sensitive": false,
+    "profile_banner_url": "https://pbs.twimg.com/profile_banners/1769426369526771712/1710699161",
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1769426514288971776/IiR3Z_q__normal.jpg",
+    "profile_interstitial_type": "",
+    "screen_name": "nexamind91325",
+    "statuses_count": 788,
+    "translator_type": "none",
+    "verified": false,
+    "want_retweets": false,
+    "withheld_in_countries": []
+};
+const tweetLegacy = {
+    "bookmark_count": 0,
+    "bookmarked": false,
+    "created_at": "Wed Apr 17 17:36:00 +0000 2024",
+    "conversation_id_str": "1780630805603385729",
+    "display_text_range": [
+        14,
+        54
+    ],
+    "entities": {
+        "hashtags": [],
+        "symbols": [],
+        "timestamps": [],
+        "urls": [],
+        "user_mentions": [
+            {
+                "id_str": "1769419140908150784",
+                "name": "echopulse",
+                "screen_name": "echo_pulse__",
+                "indices": [
+                    0,
+                    13
+                ]
+            }
+        ]
+    },
+    "favorite_count": 0,
+    "favorited": false,
+    "full_text": "@echo_pulse__ Pioneering the intellect of the next era",
+    "in_reply_to_screen_name": "echo_pulse__",
+    "in_reply_to_status_id_str": "1780630805603385729",
+    "in_reply_to_user_id_str": "1769419140908150784",
+    "is_quote_status": false,
+    "lang": "en",
+    "quote_count": 0,
+    "reply_count": 0,
+    "retweet_count": 0,
+    "retweeted": false,
+    "user_id_str": "1769426369526771712",
+    "id_str": "1780651436629750204"
+};
+
 // XAccountController tests
 
 test('XAccountController.constructor() creates a database for the user', async () => {
@@ -105,3 +185,33 @@ test('XAccountController.constructor() creates a database for the user', async (
     const files = fs.readdirSync(getAccountDataPath("X", "test"));
     expect(files).toContain('data.sqlite3');
 })
+
+test('XAccountController.fetchTweet() should add a tweet', async () => {
+    const mitmController = new MockMITMController();
+    const controller = new XAccountController(1, mitmController);
+
+    controller.fetchTweet(0, userLegacy, tweetLegacy)
+    const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    expect(rows.length).toBe(1);
+    expect(rows[0].text).toBe(tweetLegacy.full_text);
+})
+
+test("XAccountController.fetchTweet() should not add a tweet if it's already there", async () => {
+    const mitmController = new MockMITMController();
+    const controller = new XAccountController(1, mitmController);
+
+    let ret = controller.fetchTweet(0, userLegacy, tweetLegacy)
+    expect(ret).toBe(true);
+    let rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    expect(rows.length).toBe(1);
+
+    ret = controller.fetchTweet(0, userLegacy, tweetLegacy)
+    expect(ret).toBe(false);
+    rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    expect(rows.length).toBe(1);
+})
+
+// test("XAccountController.fetchParsed() should add all the test tweets", async () => {
+//     const mitmController = new MockMITMController();
+//     const _controller = new XAccountController(1, mitmController);
+// })

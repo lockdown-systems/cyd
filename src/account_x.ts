@@ -148,7 +148,9 @@ interface XAPIData {
 export class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
-    private db: Database.Database;
+
+    // Making this public so it can be accessed in tests
+    public db: Database.Database;
 
     private mitmController: IMITMController;
     private progress: XProgress = {
@@ -216,7 +218,7 @@ export class XAccountController {
     // Returns false if the loop should stop
     fetchTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
         // Have we seen this tweet before?
-        const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
+        const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all");
         if (existing.length > 0) {
             // We have seen this tweet, so return early
             this.mitmController.responseData[indexResponse].processed = true;
