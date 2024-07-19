@@ -7,7 +7,7 @@ import { getAccountDataPath } from './helpers'
 import { XAccount, XProgress } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
-import { MITMController, mitmControllers } from './mitm_proxy';
+import { IMITMController, mitmControllers } from './mitm_proxy';
 
 interface XAPILegacyTweet {
     bookmark_count: number;
@@ -145,12 +145,12 @@ interface XAPIData {
     };
 }
 
-class XAccountController {
+export class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
     private db: Database.Database;
 
-    private mitmController: MITMController;
+    private mitmController: IMITMController;
     private progress: XProgress = {
         isFetchFinished: false,
         tweetsFetched: 0,
@@ -163,7 +163,7 @@ class XAccountController {
         rateLimitReset: null,
     };
 
-    constructor(accountID: number, mitmController: MITMController) {
+    constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
 
         // Load the account

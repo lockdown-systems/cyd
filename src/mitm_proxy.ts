@@ -26,7 +26,17 @@ class CustomProxy extends Proxy {
     }
 }
 
-export class MITMController {
+// Interface for the MITM controller, so allow for mocking
+export interface IMITMController {
+    responseData: ResponseData[];
+
+    startMITM(ses: Electron.Session, proxyFilter: string[]): Promise<void>;
+    stopMITM(ses: Electron.Session): Promise<void>;
+    startMonitoring(): Promise<void>;
+    stopMonitoring(): Promise<void>;
+}
+
+export class MITMController implements IMITMController {
     private account: Account | null;
     private proxy: Proxy | null;
     private proxyPort: number;

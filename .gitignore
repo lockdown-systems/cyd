@@ -36,3 +36,5 @@ out/
 
 # Tests
 src/renderer/cypress/screenshots/
+testdata/settingsPath/
+testdata/dataPath/
