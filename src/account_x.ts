@@ -69,80 +69,91 @@ interface XAPILegacyUser {
     withheld_in_countries: any;
 }
 
-interface XAPIData {
-    user: {
-        result: {
-            __typename: string; // "User"
-            timeline_v2: {
-                timeline: {
-                    instructions: {
-                        type: string; // "TimelineClearCache", "TimelineAddEntries"
-                        entries?: {
-                            content: {
-                                entryType: string; // "TimelineTimelineModule", "TimelineTimelineItem", "TimelineTimelineCursor"
-                                __typename: string;
-                                value?: string;
-                                cursorType?: string;
-                                displayType?: string;
-                                items?: {
-                                    entryId: string;
-                                    item: {
-                                        itemContent: {
-                                            __typename: string;
-                                            itemType: string; // "TimelineTweet", "TimelineUser"
-                                            tweetDisplayType?: string;
-                                            tweet_results: {
-                                                results: {
-                                                    __typename?: string; // "Tweet"
-                                                    core: {
-                                                        user_results: {
-                                                            result?: {
-                                                                __typename?: string;
-                                                                has_graduated_access?: boolean;
-                                                                id?: string;
-                                                                is_blue_verified?: boolean;
-                                                                legacy: XAPILegacyUser;
-                                                                profile_image_shape?: string;
-                                                                rest_id?: string;
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                                tipjar_settings?: any;
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                                affiliates_highlighted_label?: any;
-                                                            }
-                                                        }
-                                                    };
-                                                    is_translatable?: boolean;
-                                                    legacy?: XAPILegacyTweet;
-                                                    rest_id?: string;
-                                                    source?: string;
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    edit_control?: any;
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    unmention_data?: any;
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    views?: any;
-                                                }
-                                            };
-                                        };
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        clientEventInfo: any;
-                                    };
-                                }[]
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                clientEventInfo?: any;
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                metadata?: any;
-                            };
-                            entryId: string;
-                            sortIndex: string;
-                        }[];
-                    }[];
+interface XAPITweetResults {
+    result: {
+        __typename?: string; // "Tweet"
+        core: {
+            user_results: {
+                result?: {
+                    __typename?: string;
+                    has_graduated_access?: boolean;
+                    id?: string;
+                    is_blue_verified?: boolean;
+                    legacy: XAPILegacyUser;
+                    profile_image_shape?: string;
+                    rest_id?: string;
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    metadata: any;
+                    tipjar_settings?: any;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    affiliates_highlighted_label?: any;
+                }
+            }
+        };
+        is_translatable?: boolean;
+        legacy?: XAPILegacyTweet;
+        rest_id?: string;
+        source?: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        edit_control?: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        unmention_data?: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        views?: any;
+    }
+}
+
+interface XAPIItemContent {
+    __typename: string;
+    itemType: string; // "TimelineTweet", "TimelineUser"
+    tweetDisplayType?: string;
+    tweet_results?: XAPITweetResults;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    user_results?: any;
+}
+
+interface XAPIData {
+    data: {
+        user: {
+            result: {
+                __typename: string; // "User"
+                timeline_v2: {
+                    timeline: {
+                        instructions: {
+                            type: string; // "TimelineClearCache", "TimelineAddEntries"
+                            entries?: {
+                                content: {
+                                    entryType: string; // "TimelineTimelineModule", "TimelineTimelineItem", "TimelineTimelineCursor"
+                                    __typename: string;
+                                    value?: string;
+                                    cursorType?: string;
+                                    displayType?: string;
+                                    // items is there when entryType is "TimelineTimelineModule"
+                                    items?: {
+                                        entryId: string;
+                                        item: {
+                                            itemContent: XAPIItemContent;
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            clientEventInfo: any;
+                                        };
+                                    }[];
+                                    // itemContent is there when entryType is "TimelineTimelineItem"
+                                    itemContent?: XAPIItemContent;
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    clientEventInfo?: any;
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    metadata?: any;
+                                };
+                                entryId: string;
+                                sortIndex: string;
+                            }[];
+                        }[];
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        metadata: any;
+                    }
                 }
             }
         }
-    };
+    }
 }
 
 export class XAccountController {
@@ -281,25 +292,32 @@ export class XAccountController {
             console.log('XAccountController.fetchParse: body', responseData.body);
 
             // Loop through instructions
-            body.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+            body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
                 if (instructions["type"] != "TimelineAddEntries") {
                     return;
                 }
 
                 // Loop through the entries
                 instructions.entries?.forEach((entries) => {
-                    if (entries.content.entryType == "TimelineTimelineCursor") {
-                        return;
-                    }
-
-                    entries.content.items?.forEach((item) => {
-                        const userLegacy = item.item.itemContent.tweet_results.results.core.user_results.result?.legacy;
-                        const tweetLegacy = item.item.itemContent.tweet_results.results.legacy;
+                    if (entries.content.entryType == "TimelineTimelineModule") {
+                        entries.content.items?.forEach((item) => {
+                            const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
+                            const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
+                            if (userLegacy && tweetLegacy && !this.fetchTweet(indexResponse, userLegacy, tweetLegacy)) {
+                                shouldReturnFalse = true;
+                                return;
+                            }
+                        });
+                    } else if (entries.content.entryType == "TimelineTimelineItem") {
+                        const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                        const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
                         if (userLegacy && tweetLegacy && !this.fetchTweet(indexResponse, userLegacy, tweetLegacy)) {
                             shouldReturnFalse = true;
                             return;
                         }
-                    });
+                    }
+
+
                 });
 
                 if (shouldReturnFalse) {

@@ -216,5 +216,5 @@ test("XAccountController.fetchParsed() should add all the test tweets", async ()
     const controller = new XAccountController(1, mitmController);
 
     const progress: XProgress = await controller.fetchParse()
-    expect(progress.tweetsFetched).toBe(20); // TODO: update this to the real number of tweets fetched
+    expect(progress.tweetsFetched).toBe(20);
 })
