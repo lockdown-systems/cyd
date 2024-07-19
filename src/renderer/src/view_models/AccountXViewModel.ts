@@ -150,18 +150,18 @@ You've been logged out. **To continue, log back into your X account below.**
 Hang on while I scroll down to your earliest tweets that I've seen.
 `;
                 // Start monitoring network requests
-                await window.electron.X.fetchStart(this.account.id);
+                await window.electron.X.indexStart(this.account.id);
 
                 // Load the timeline and wait for tweets to appear
                 await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
                 await this.waitForSelector('article');
 
-                while (this.progress === null || this.progress.isFetchFinished === false) {
+                while (this.progress === null || this.progress.isIndexFinished === false) {
                     // Scroll to bottom
                     await this.scrollToBottom();
 
                     // Parse so far
-                    this.progress = await window.electron.X.fetchParse(this.account.id);
+                    this.progress = await window.electron.X.indexParse(this.account.id);
                     console.log("progress", this.progress);
 
                     // Rate limited?
@@ -175,7 +175,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 }
 
                 // Stop monitoring network requests
-                await window.electron.X.fetchStop(this.account.id);
+                await window.electron.X.indexStop(this.account.id);
 
                 // Parse tweets
                 this.instructions = `

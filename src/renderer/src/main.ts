@@ -27,9 +27,9 @@ declare global {
                 stop: (accountID: number) => void;
             },
             X: {
-                fetchStart: (accountID: number) => void;
-                fetchStop: (accountID: number) => void;
-                fetchParse: (accountID: number) => Promise<XProgress>;
+                indexStart: (accountID: number) => void;
+                indexStop: (accountID: number) => void;
+                indexParse: (accountID: number) => Promise<XProgress>;
             };
         };
     }

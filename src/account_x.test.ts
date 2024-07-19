@@ -186,37 +186,37 @@ test('XAccountController.constructor() creates a database for the user', async (
     expect(files).toContain('data.sqlite3');
 })
 
-test('XAccountController.fetchTweet() should add a tweet', async () => {
+test('XAccountController.indexTweet() should add a tweet', async () => {
     const mitmController = new MockMITMController();
     const controller = new XAccountController(1, mitmController);
 
-    controller.fetchTweet(0, userLegacy, tweetLegacy)
+    controller.indexTweet(0, userLegacy, tweetLegacy)
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
     expect(rows.length).toBe(1);
     expect(rows[0].text).toBe(tweetLegacy.full_text);
 })
 
-test("XAccountController.fetchTweet() should not add a tweet if it's already there", async () => {
+test("XAccountController.indexTweet() should not add a tweet if it's already there", async () => {
     const mitmController = new MockMITMController();
     const controller = new XAccountController(1, mitmController);
 
-    let ret = controller.fetchTweet(0, userLegacy, tweetLegacy)
+    let ret = controller.indexTweet(0, userLegacy, tweetLegacy)
     expect(ret).toBe(true);
     let rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
     expect(rows.length).toBe(1);
 
-    ret = controller.fetchTweet(0, userLegacy, tweetLegacy)
+    ret = controller.indexTweet(0, userLegacy, tweetLegacy)
     expect(ret).toBe(false);
     rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
     expect(rows.length).toBe(1);
 })
 
-test("XAccountController.fetchParsed() should add all the test tweets", async () => {
+test("XAccountController.indexParsed() should add all the test tweets", async () => {
     const mitmController = new MockMITMController();
     const controller = new XAccountController(1, mitmController);
 
-    const progress: XProgress = await controller.fetchParse()
-    expect(progress.tweetsFetched).toBe(20);
+    const progress: XProgress = await controller.indexParse()
+    expect(progress.tweetsIndexed).toBe(20);
 
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
     expect(rows.length).toBe(20);

@@ -55,13 +55,23 @@ export type XTweet = {
 };
 
 export type XProgress = {
-    isFetchFinished: boolean;
-    tweetsFetched: number;
-    retweetsFetched: number;
+    currentJob: string; // "index", "archive", or "delete"
+
+    isIndexFinished: boolean;
+    isArchiveFinished: boolean;
+    isDeleteFinished: boolean;
+
+    tweetsIndexed: number;
+    retweetsIndexed: number;
+
+    tweetsArchived: number;
+    directMessageConversationsArchived: number;
+
     tweetsDeleted: number;
     retweetsDeleted: number;
     likesDeleted: number;
     directMessagesDeleted: number;
+
     isRateLimited: boolean;
     rateLimitReset: null | number;
 }

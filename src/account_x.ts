@@ -165,9 +165,14 @@ export class XAccountController {
 
     private mitmController: IMITMController;
     private progress: XProgress = {
-        isFetchFinished: false,
-        tweetsFetched: 0,
-        retweetsFetched: 0,
+        currentJob: "index",
+        isIndexFinished: false,
+        isArchiveFinished: false,
+        isDeleteFinished: false,
+        tweetsIndexed: 0,
+        retweetsIndexed: 0,
+        tweetsArchived: 0,
+        directMessageConversationsArchived: 0,
         tweetsDeleted: 0,
         retweetsDeleted: 0,
         likesDeleted: 0,
@@ -218,23 +223,23 @@ export class XAccountController {
         ])
     }
 
-    async fetchStartMonitoring() {
+    async indexStartMonitoring() {
         await this.mitmController.startMonitoring();
     }
 
-    async fetchStopMonitoring() {
+    async indexStopMonitoring() {
         await this.mitmController.stopMonitoring();
     }
 
     // Returns false if the loop should stop
-    fetchTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
+    indexTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
         // Have we seen this tweet before?
         const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all");
         if (existing.length > 0) {
             // We have seen this tweet, so return early
             this.mitmController.responseData[indexResponse].processed = true;
 
-            this.progress.isFetchFinished = true;
+            this.progress.isIndexFinished = true;
             return false;
         }
 
@@ -257,16 +262,16 @@ export class XAccountController {
 
         // Update progress
         if (tweetLegacy["retweeted"]) {
-            this.progress.retweetsFetched++;
+            this.progress.retweetsIndexed++;
         } else {
-            this.progress.tweetsFetched++;
+            this.progress.tweetsIndexed++;
         }
 
         return true;
     }
 
     // Returns false if the loop should stop
-    fetchParseResponseData(indexResponse: number): boolean {
+    indexParseResponseData(indexResponse: number): boolean {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[indexResponse];
 
@@ -289,7 +294,7 @@ export class XAccountController {
             responseData.status == 200
         ) {
             const body: XAPIData = JSON.parse(responseData.body);
-            console.log('XAccountController.fetchParse: body', responseData.body);
+            console.log('XAccountController.indexParse: body', responseData.body);
 
             // Loop through instructions
             body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
@@ -303,7 +308,7 @@ export class XAccountController {
                         entries.content.items?.forEach((item) => {
                             const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
                             const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
-                            if (userLegacy && tweetLegacy && !this.fetchTweet(indexResponse, userLegacy, tweetLegacy)) {
+                            if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
@@ -311,7 +316,7 @@ export class XAccountController {
                     } else if (entries.content.entryType == "TimelineTimelineItem") {
                         const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
                         const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
-                        if (userLegacy && tweetLegacy && !this.fetchTweet(indexResponse, userLegacy, tweetLegacy)) {
+                        if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy)) {
                             shouldReturnFalse = true;
                             return;
                         }
@@ -326,7 +331,7 @@ export class XAccountController {
             });
 
             this.mitmController.responseData[indexResponse].processed = true;
-            console.log('XAccountController.fetchParse: processed', this.progress);
+            console.log('XAccountController.indexParse: processed', this.progress);
 
             if (shouldReturnFalse) {
                 return false;
@@ -339,13 +344,16 @@ export class XAccountController {
         return true;
     }
 
-    // Returns true if more data needs to be fetched
+    // Returns true if more data needs to be indexed
     // Returns false if we are caught up
-    async fetchParse(): Promise<XProgress> {
-        console.log('XAccountController.fetchParse: starting');
+    async indexParse(): Promise<XProgress> {
+        console.log('XAccountController.indexParse: starting');
+
+        this.progress.currentJob = "index";
+        this.progress.isIndexFinished = false;
 
         this.mitmController.responseData.forEach((_response, indexResponse) => {
-            if (this.fetchParseResponseData(indexResponse)) {
+            if (this.indexParseResponseData(indexResponse)) {
                 return this.progress;
             }
         });
@@ -357,7 +365,7 @@ export class XAccountController {
 const controllers: Record<number, XAccountController> = {};
 
 export const defineIPCX = () => {
-    ipcMain.handle('X:fetchStart', async (_, accountID: number) => {
+    ipcMain.handle('X:indexStart', async (_, accountID: number) => {
         // If no account info exists, create it
         if (!controllers[accountID]) {
             controllers[accountID] = new XAccountController(accountID, mitmControllers[accountID]);
@@ -365,15 +373,15 @@ export const defineIPCX = () => {
         }
 
         // Start monitoring network requests
-        await controllers[accountID].fetchStartMonitoring();
+        await controllers[accountID].indexStartMonitoring();
 
     });
 
-    ipcMain.handle('X:fetchStop', async (_, accountID: number) => {
-        await controllers[accountID].fetchStopMonitoring();
+    ipcMain.handle('X:indexStop', async (_, accountID: number) => {
+        await controllers[accountID].indexStopMonitoring();
     });
 
-    ipcMain.handle('X:fetchParse', async (_, accountID: number): Promise<XProgress> => {
-        return await controllers[accountID].fetchParse();
+    ipcMain.handle('X:indexParse', async (_, accountID: number): Promise<XProgress> => {
+        return await controllers[accountID].indexParse();
     });
 };

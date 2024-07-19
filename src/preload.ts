@@ -46,14 +46,14 @@ contextBridge.exposeInMainWorld('electron', {
         }
     },
     X: {
-        fetchStart: (accountID: number) => {
-            ipcRenderer.invoke('X:fetchStart', accountID)
+        indexStart: (accountID: number) => {
+            ipcRenderer.invoke('X:indexStart', accountID)
         },
-        fetchStop: (accountID: number) => {
-            ipcRenderer.invoke('X:fetchStop', accountID)
+        indexStop: (accountID: number) => {
+            ipcRenderer.invoke('X:indexStop', accountID)
         },
-        fetchParse: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:fetchParse', accountID)
+        indexParse: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParse', accountID)
         }
     }
 })

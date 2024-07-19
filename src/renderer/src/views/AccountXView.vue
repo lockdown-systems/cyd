@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import Electron from 'electron';
 
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
-import type { Account } from '../../../shared_types';
+import ProgressXComponent from '../components/ProgressXComponent.vue';
+import type { Account, XProgress } from '../../../shared_types';
 
 import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
 
@@ -15,10 +16,18 @@ const props = defineProps<{
 const emit = defineEmits(['onRefreshClicked']);
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
+const progress = ref<XProgress | null>(null);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const isWebviewMounted = ref(true);
+
+// Keep progress updated
+watch(
+    () => accountXViewModel.value?.progress,
+    (newProgress) => { progress.value = newProgress; },
+    { deep: true, }
+);
 
 // Settings
 const archiveTweets = ref(false);
@@ -155,14 +164,12 @@ onUnmounted(async () => {
         <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
             class="speech-bubble" />
 
+        <!-- Progress -->
+        <ProgressXComponent v-if="progress" :progress="progress" />
+
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
             :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
-
-        <!-- Progress
-        <div v-if="accountXViewModel?.progress !== null">
-            <p>progress: {{ JSON.stringify(accountXViewModel?.progress) }}</p>
-        </div> -->
 
         <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
