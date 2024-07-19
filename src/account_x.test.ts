@@ -41,7 +41,7 @@ vi.mock('./helpers', () => ({
 import { getSettingsPath, getAccountDataPath } from './helpers';
 
 // Import the local modules after helpers has been mocked
-import { Account, ResponseData } from './shared_types'
+import { Account, ResponseData, XProgress } from './shared_types'
 import { XAccountController } from './account_x'
 import { IMITMController } from './mitm_proxy'
 import { runMainMigrations, createAccount, selectNewAccount, saveAccount, exec } from './database';
@@ -211,7 +211,10 @@ test("XAccountController.fetchTweet() should not add a tweet if it's already the
     expect(rows.length).toBe(1);
 })
 
-// test("XAccountController.fetchParsed() should add all the test tweets", async () => {
-//     const mitmController = new MockMITMController();
-//     const _controller = new XAccountController(1, mitmController);
-// })
+test("XAccountController.fetchParsed() should add all the test tweets", async () => {
+    const mitmController = new MockMITMController();
+    const controller = new XAccountController(1, mitmController);
+
+    const progress: XProgress = await controller.fetchParse()
+    expect(progress.tweetsFetched).toBe(20); // TODO: update this to the real number of tweets fetched
+})
