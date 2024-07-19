@@ -15,19 +15,17 @@ const dbPath = path.join(getSettingsPath(), 'db.sqlite');
 export const db = new Database(dbPath, {});
 db.pragma('journal_mode = WAL');
 
-export const runMigrations = (db: Database, migrations: Migration[]) => {
+export const runMigrations = (db: Database.Database, migrations: Migration[]) => {
     // Create a migrations table if necessary
     const migrationsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'").get();
     if (!migrationsTable) {
         // Create the migrations table
         console.info("Creating migrations table");
-        db.prepare(`
-            CREATE TABLE  migrations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                name TEXT NOT NULL, 
-                runAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `).run();
+        db.prepare(`CREATE TABLE  migrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    name TEXT NOT NULL, 
+    runAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)`).run();
     }
 
     // Apply the migrations in order
@@ -48,42 +46,36 @@ export const runMainMigrations = () => {
         {
             name: "initial",
             sql: [
-                `
-                CREATE TABLE config (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key TEXT NOT NULL UNIQUE,
-                    value TEXT NOT NULL
-                );
-                `, `
-                CREATE TABLE account (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    type TEXT NOT NULL DEFAULT 'unknown',
-                    sortOrder INTEGER NOT NULL DEFAULT 0,
-                    xAccountId INTEGER DEFAULT NULL
-                );
-                `, `
-                CREATE TABLE xAccount (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    username TEXT,
-                    archiveTweets BOOLEAN DEFAULT 1,
-                    archiveDirectMessages BOOLEAN DEFAULT 1,
-                    deleteTweets BOOLEAN DEFAULT 0,
-                    deleteTweetsDaysOld INTEGER DEFAULT 30,
-                    deleteTweetsLikesThresholdEnabled BOOLEAN DEFAULT 1,
-                    deleteTweetsLikesThreshold INTEGER DEFAULT 20,
-                    deleteTweetsRetweetsThresholdEnabled BOOLEAN DEFAULT 1,
-                    deleteTweetsRetweetsThreshold INTEGER DEFAULT 20,
-                    deleteRetweets BOOLEAN DEFAULT 0,
-                    deleteRetweetsDaysOld INTEGER DEFAULT 30,
-                    deleteLikes BOOLEAN DEFAULT 0,
-                    deleteLikesDaysOld INTEGER DEFAULT 60,
-                    deleteDirectMessages BOOLEAN DEFAULT 0,
-                    deleteDirectMessagesDaysOld INTEGER DEFAULT 30
-                );
-                `,
+                `CREATE TABLE config (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL
+);`, `CREATE TABLE account (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL DEFAULT 'unknown',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    xAccountId INTEGER DEFAULT NULL
+);`, `CREATE TABLE xAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    archiveTweets BOOLEAN DEFAULT 1,
+    archiveDirectMessages BOOLEAN DEFAULT 1,
+    deleteTweets BOOLEAN DEFAULT 0,
+    deleteTweetsDaysOld INTEGER DEFAULT 30,
+    deleteTweetsLikesThresholdEnabled BOOLEAN DEFAULT 1,
+    deleteTweetsLikesThreshold INTEGER DEFAULT 20,
+    deleteTweetsRetweetsThresholdEnabled BOOLEAN DEFAULT 1,
+    deleteTweetsRetweetsThreshold INTEGER DEFAULT 20,
+    deleteRetweets BOOLEAN DEFAULT 0,
+    deleteRetweetsDaysOld INTEGER DEFAULT 30,
+    deleteLikes BOOLEAN DEFAULT 0,
+    deleteLikesDaysOld INTEGER DEFAULT 60,
+    deleteDirectMessages BOOLEAN DEFAULT 0,
+    deleteDirectMessagesDaysOld INTEGER DEFAULT 30
+);`,
             ]
         }
     ]);
@@ -91,7 +83,7 @@ export const runMainMigrations = () => {
 
 // Helpers
 
-export const exec = (sql: string, params: Array<number | string | bigint | Buffer | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
+export const exec = (db: Database.Database, sql: string, params: Array<number | string | bigint | Buffer | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
     console.info("Executing SQL:", sql, "Params:", params);
     const stmt = db.prepare(sql);
     return stmt[cmd](...params);
@@ -100,18 +92,18 @@ export const exec = (sql: string, params: Array<number | string | bigint | Buffe
 // Config
 
 export const getConfig = (key: string): string | null => {
-    const row = exec('SELECT value FROM config WHERE key = ?', [key], 'get');
+    const row = exec(db, 'SELECT value FROM config WHERE key = ?', [key], 'get');
     return row ? row.value : null;
 }
 
 export const setConfig = (key: string, value: string) => {
-    exec('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
+    exec(db, 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
 }
 
 // X accounts
 
 export const getXAccount = (id: number): XAccount | null => {
-    const row = exec('SELECT * FROM xAccount WHERE id = ?', [id], 'get');
+    const row = exec(db, 'SELECT * FROM xAccount WHERE id = ?', [id], 'get');
     if (!row) {
         return null;
     }
@@ -139,7 +131,7 @@ export const getXAccount = (id: number): XAccount | null => {
 }
 
 export const getXAccounts = (): XAccount[] => {
-    const rows = exec('SELECT * FROM xAccount', [], 'all');
+    const rows = exec(db, 'SELECT * FROM xAccount', [], 'all');
 
     const accounts: XAccount[] = [];
     for (const row of rows) {
@@ -169,7 +161,7 @@ export const getXAccounts = (): XAccount[] => {
 }
 
 export const createXAccount = (): XAccount => {
-    const info = exec('INSERT INTO xAccount DEFAULT VALUES');
+    const info = exec(db, 'INSERT INTO xAccount DEFAULT VALUES');
     const account = getXAccount(info.lastInsertRowid);
     if (!account) {
         throw new Error("Failed to create account");
@@ -178,7 +170,7 @@ export const createXAccount = (): XAccount => {
 }
 
 export const saveXAccount = (account: XAccount) => {
-    exec(`
+    exec(db, `
         UPDATE xAccount
         SET
             updatedAt = CURRENT_TIMESTAMP,
@@ -222,7 +214,7 @@ export const saveXAccount = (account: XAccount) => {
 // Accounts, which contain all others
 
 export const getAccount = (id: number): Account | null => {
-    const row = exec('SELECT * FROM account WHERE id = ?', [id], 'get');
+    const row = exec(db, 'SELECT * FROM account WHERE id = ?', [id], 'get');
     if (!row) {
         return null;
     }
@@ -243,7 +235,7 @@ export const getAccount = (id: number): Account | null => {
 }
 
 export const getAccounts = (): Account[] => {
-    const rows = exec('SELECT * FROM account', [], 'all');
+    const rows = exec(db, 'SELECT * FROM account', [], 'all');
 
     const accounts: Account[] = [];
     for (const row of rows) {
@@ -266,11 +258,11 @@ export const getAccounts = (): Account[] => {
 
 export const createAccount = (): Account => {
     // Figure out the sortOrder for the new account
-    const row = exec('SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get');
+    const row = exec(db, 'SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get');
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
-    const info = exec('INSERT INTO account (sortOrder) VALUES (?)', [sortOrder]);
+    const info = exec(db, 'INSERT INTO account (sortOrder) VALUES (?)', [sortOrder]);
 
     // Return it
     const account = getAccount(info.lastInsertRowid);
@@ -300,7 +292,7 @@ export const selectNewAccount = (accountID: number, type: string): Account => {
     }
 
     // Update the account
-    exec(`
+    exec(db, `
         UPDATE account
         SET
             type = ?,
@@ -321,7 +313,7 @@ export const saveAccount = (account: Account) => {
         saveXAccount(account.xAccount);
     }
 
-    exec(`
+    exec(db, `
         UPDATE account
         SET
             type = ?,
@@ -345,13 +337,13 @@ export const deleteAccount = (accountID: number) => {
     switch (account.type) {
         case "X":
             if (account.xAccount) {
-                exec('DELETE FROM xAccount WHERE id = ?', [account.xAccount.id]);
+                exec(db, 'DELETE FROM xAccount WHERE id = ?', [account.xAccount.id]);
             }
             break;
     }
 
     // Delete the account
-    exec('DELETE FROM account WHERE id = ?', [accountID]);
+    exec(db, 'DELETE FROM account WHERE id = ?', [accountID]);
 }
 
 export const defineIPCDatabase = () => {

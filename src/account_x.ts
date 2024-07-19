@@ -41,31 +41,29 @@ class XAccountController {
         this.accountDataPath = getAccountDataPath('X', this.account.username);
 
         // Open the database
-        this.db = new Database(path.join(this.accountDataPath, 'data.db'), {});
+        this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
         this.db.pragma('journal_mode = WAL');
         runMigrations(this.db, [
             {
                 name: "initial",
                 sql: [
-                    `
-                    CREATE TABLE tweet (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT NOT NULL,
-                        tweetID TEXT NOT NULL UNIQUE,
-                        conversationID TEXT NOT NULL,
-                        createdAt DATETIME NOT NULL,
-                        likeCount INTEGER NOT NULL,
-                        quoteCount INTEGER NOT NULL,
-                        replyCount INTEGER NOT NULL,
-                        retweetCount INTEGER NOT NULL,
-                        isLiked BOOLEAN NOT NULL,
-                        isRetweeted BOOLEAN NOT NULL,
-                        text TEXT NOT NULL,
-                        path TEXT NOT NULL,
-                        addedToDatabaseAt DATETIME NOT NULL,
-                        archivedAt DATETIME
-                    );
-                    `,
+                    `CREATE TABLE tweet (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    tweetID TEXT NOT NULL UNIQUE,
+    conversationID TEXT NOT NULL,
+    createdAt DATETIME NOT NULL,
+    likeCount INTEGER NOT NULL,
+    quoteCount INTEGER NOT NULL,
+    replyCount INTEGER NOT NULL,
+    retweetCount INTEGER NOT NULL,
+    isLiked BOOLEAN NOT NULL,
+    isRetweeted BOOLEAN NOT NULL,
+    text TEXT NOT NULL,
+    path TEXT NOT NULL,
+    addedToDatabaseAt DATETIME NOT NULL,
+    archivedAt DATETIME
+);`,
                 ]
             }
         ])
@@ -127,7 +125,7 @@ class XAccountController {
                                     const tweet = item["tweet_results"]["result"]["legacy"];
 
                                     // Have we seen this tweet before?
-                                    const existing = exec('SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
+                                    const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
                                     if (existing.length > 0) {
                                         // We have seen this tweet, so return early
                                         this.mitmController.responseData[iResponse].processed = true;
@@ -137,7 +135,7 @@ class XAccountController {
                                     }
 
                                     // Add the tweet
-                                    exec('INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                                    exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                                         username,
                                         tweet["id_str"],
                                         tweet["conversation_id_str"],
@@ -146,8 +144,8 @@ class XAccountController {
                                         tweet["quote_count"],
                                         tweet["reply_count"],
                                         tweet["retweet_count"],
-                                        tweet["favorited"],
-                                        tweet["retweeted"],
+                                        tweet["favorited"] ? 1 : 0,
+                                        tweet["retweeted"] ? 1 : 0,
                                         tweet["full_text"],
                                         `${username}/status/${tweet['id_str']}`,
                                         new Date().toISOString(),
@@ -165,8 +163,10 @@ class XAccountController {
                     }
 
                     this.mitmController.responseData[iResponse].processed = true;
+                    console.log('XAccountController.fetchParse: processed', this.progress);
 
                 } catch (error) {
+                    // TODO: more granularly skip
                     console.error('XAccountController.fetchParse:', error);
                     this.mitmController.responseData[iResponse].processed = true;
                 }
