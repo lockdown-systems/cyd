@@ -82,8 +82,10 @@ class XAccountController {
     // Returns false if more data needs to be fetched
     // Returns true if we are caught up
     async fetchParse(): Promise<XProgress> {
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            const responseData = this.mitmController.responseData[i];
+        console.log('XAccountController.fetchParse: starting');
+
+        for (let iResponse = 0; iResponse < this.mitmController.responseData.length; iResponse++) {
+            const responseData = this.mitmController.responseData[iResponse];
 
             // Already processed?
             if (responseData.processed) {
@@ -94,7 +96,7 @@ class XAccountController {
             if (responseData.status == 429) {
                 this.progress.isRateLimited = true;
                 this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
-                this.mitmController.responseData[i].processed = true;
+                this.mitmController.responseData[iResponse].processed = true;
                 return this.progress;
             }
 
@@ -106,117 +108,67 @@ class XAccountController {
                 try {
                     const body = JSON.parse(responseData.body);
 
-                    // Validate the response
-                    if (!(
-                        body["data"] &&
-                        body["data"]["user"] &&
-                        body["data"]["user"]["result"] &&
-                        body["data"]["user"]["result"]["timeline_v2"] &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"] &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"] &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"].length > 0 &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0] &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["type"] &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["type"] == "TimelineAddEntries" &&
-                        body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"]
-                    )) {
-                        console.log('XAccountController.fetchParse: found invalid response, skipping', body)
-                        this.mitmController.responseData[i].processed = true;
-                        continue;
+                    // Loop through instructions
+                    for (let iInstructions = 0; iInstructions < body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"].length; iInstructions++) {
+                        const instructions = body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][iInstructions];
+                        if (instructions["type"] == "TimelineAddEntries") {
+                            // Loop through the entries
+                            for (let iEntries = 0; iEntries < instructions["entries"].length; iEntries++) {
+                                const entries = instructions["entries"];
+
+                                // Loop through the items
+                                for (let iItems = 0; iItems < entries[iEntries]["content"]["items"].length; iItems++) {
+                                    const item = entries[iEntries]["content"]["items"][iItems]["item"]["itemContent"];
+                                    if (item["itemType"] != "TimelineTweet") {
+                                        continue;
+                                    }
+
+                                    const username = item["tweet_results"]["result"]["core"]["user_results"]["result"]["legacy"]["screen_name"];
+                                    const tweet = item["tweet_results"]["result"]["legacy"];
+
+                                    // Have we seen this tweet before?
+                                    const existing = exec('SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
+                                    if (existing.length > 0) {
+                                        // We have seen this tweet, so return early
+                                        this.mitmController.responseData[iResponse].processed = true;
+
+                                        this.progress.isFetchFinished = true;
+                                        return this.progress;
+                                    }
+
+                                    // Add the tweet
+                                    exec('INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                                        username,
+                                        tweet["id_str"],
+                                        tweet["conversation_id_str"],
+                                        new Date(tweet["created_at"]).toISOString(),
+                                        tweet["favorite_count"],
+                                        tweet["quote_count"],
+                                        tweet["reply_count"],
+                                        tweet["retweet_count"],
+                                        tweet["favorited"],
+                                        tweet["retweeted"],
+                                        tweet["full_text"],
+                                        `${username}/status/${tweet['id_str']}`,
+                                        new Date().toISOString(),
+                                    ]);
+
+                                    // Update progress
+                                    if (tweet["retweeted"]) {
+                                        this.progress.retweetsFetched++;
+                                    } else {
+                                        this.progress.tweetsFetched++;
+                                    }
+                                }
+                            }
+                        }
                     }
 
-                    // Loop through the tweets
-                    for (let j = 0; j < body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"].length; j++) {
-                        const entry = body["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"][0]["entries"][j];
-
-                        // Quietly skip because it's not a tweet?
-                        if (
-                            entry &&
-                            entry["content"] &&
-                            entry["content"]["entryType"] &&
-                            (
-                                entry["content"]["entryType"] == "TimelineTimelineItem" ||
-                                entry["content"]["entryType"] == "TimelineTimelineModule" ||
-                                entry["content"]["entryType"] == "TimelineTimelineCursor"
-                            )
-                        ) {
-                            continue;
-                        }
-
-                        // Validate the tweet
-                        if (!(
-                            entry &&
-                            entry["content"] &&
-                            entry["content"]["items"] &&
-                            entry["content"]["items"].length > 0 &&
-                            entry["content"]["items"][0] &&
-                            entry["content"]["items"][0]["item"] &&
-                            entry["content"]["items"][0]["item"]["itemContent"] &&
-                            entry["content"]["items"][0]["item"]["itemContent"]["itemType"] &&
-                            entry["content"]["items"][0]["item"]["itemContent"]["itemType"] == "TimelineTweet" &&
-                            entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"] &&
-                            entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"] &&
-                            entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"]
-                        )) {
-                            console.log('XAccountController.fetchParse: found invalid tweet, skipping', entry)
-                            continue;
-                        }
-                        const tweet = entry["content"]["items"][0]["item"]["itemContent"]["tweet_results"]["result"]["legacy"];
-
-                        // Validate the username
-                        if (!(
-                            entry &&
-                            entry["core"] &&
-                            entry["core"]["user_results"] &&
-                            entry["core"]["user_results"]["result"] &&
-                            entry["core"]["user_results"]["result"]["legacy"] &&
-                            entry["core"]["user_results"]["result"]["legacy"]["name"]
-                        )) {
-                            console.log('XAccountController.fetchParse: found invalid user, skipping', entry)
-                            continue;
-                        }
-                        const username = entry["core"]["user_results"]["result"]["legacy"]["name"];
-
-                        // Have we seen this tweet before?
-                        const existing = exec('SELECT * FROM tweet WHERE tweetID = ?', [tweet["id_str"]]);
-                        if (existing.length > 0) {
-                            // We have seen this tweet, so return early
-                            this.mitmController.responseData[i].processed = true;
-
-                            this.progress.isFetchFinished = true;
-                            return this.progress;
-                        }
-
-                        // Add the tweet
-                        exec('INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                            username,
-                            tweet["id_str"],
-                            tweet["conversation_id_str"],
-                            new Date(tweet["created_at"]).toISOString(),
-                            tweet["favorite_count"],
-                            tweet["quote_count"],
-                            tweet["reply_count"],
-                            tweet["retweet_count"],
-                            tweet["favorited"],
-                            tweet["retweeted"],
-                            tweet["full_text"],
-                            `${username}/status/${tweet['id_str']}`,
-                            new Date().toISOString(),
-                        ]);
-
-                        // Update progress
-                        if (tweet["retweeted"]) {
-                            this.progress.retweetsFetched++;
-                        } else {
-                            this.progress.tweetsFetched++;
-                        }
-
-                        this.mitmController.responseData[i].processed = true;
-                    }
+                    this.mitmController.responseData[iResponse].processed = true;
 
                 } catch (error) {
                     console.error('XAccountController.fetchParse:', error);
-                    this.mitmController.responseData[i].processed = true;
+                    this.mitmController.responseData[iResponse].processed = true;
                 }
             }
         }
