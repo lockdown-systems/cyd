@@ -1,15 +1,12 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XProgress } from '../../../shared_types';
+import type { XJob, XProgress } from '../../../shared_types';
 
 export enum State {
     Login = "login",
     Dashboard = "dashboard",
     DashboardDisplay = "dashboardDisplay",
-    Download = "download",
-    DownloadTweets = "downloadTweets",
-    DownloadDirectMessages = "downloadDirectMessages",
-    DownloadComplete = "downloadComplete",
-    Delete = "delete",
+    RunJobs = "runJobs",
+    FinishedRunningJobs = "finishedRunningJobs",
 }
 
 export class AccountXViewModel extends BaseViewModel {
@@ -53,8 +50,82 @@ export class AccountXViewModel extends BaseViewModel {
         return username;
     }
 
+    async startArchiving() {
+        this.action = "Archive"
+
+        // TODO: Cancel pending jobs
+
+        // TODO: Add archive jobs based on settings
+
+        this.state = State.RunJobs;
+    }
+
+    async startDeleting() {
+        // TODO: implement
+        console.log("startDeleting: NOT IMPLEMENTED");
+    }
+
+    async runJob(job: XJob) {
+        switch (job.jobType) {
+            case "index":
+                this.showBrowser = true;
+                this.instructions = `
+Hang on while I scroll down to your earliest tweets that I've seen.
+`;
+                // Start monitoring network requests
+                await window.electron.X.indexStart(this.account.id);
+
+                // Load the timeline and wait for tweets to appear
+                await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+                await this.waitForSelector('article');
+
+                while (this.progress === null || this.progress.isIndexFinished === false) {
+                    // Scroll to bottom
+                    await this.scrollToBottom();
+
+                    // Parse so far
+                    this.progress = await window.electron.X.indexParse(this.account.id);
+                    console.log("progress", this.progress);
+
+                    // Rate limited?
+                    if (this.progress.isRateLimited) {
+                        // TODO: handle rate limit
+                        console.log("rate limited", this.progress);
+                    }
+
+                    console.log("waiting 20 seconds", this.progress);
+                    await new Promise(resolve => setTimeout(resolve, 20000));
+                }
+
+                // Stop monitoring network requests
+                await window.electron.X.indexStop(this.account.id);
+
+                break;
+
+            case "archiveTweets":
+                console.log("archiveTweets: NOT IMPLEMENTED");
+                break;
+
+            case "archiveDirectMessages":
+                console.log("archiveDirectMessages: NOT IMPLEMENTED");
+                break;
+
+            case "deleteTweets":
+                console.log("deleteTweets: NOT IMPLEMENTED");
+                break;
+
+            case "deleteLikes":
+                console.log("deleteLikes: NOT IMPLEMENTED");
+                break;
+
+            case "deleteDirectMessages":
+                console.log("deleteDirectMessages: NOT IMPLEMENTED");
+                break;
+        }
+    }
+
     async run() {
-        this.log("run", "running")
+        this.log("run", "running");
         await this.waitForWebviewReady();
 
         switch (this.state) {
@@ -133,76 +204,12 @@ You've been logged out. **To continue, log back into your X account below.**
                 this.state = State.DashboardDisplay;
                 break;
 
-            case State.Download:
-                // Start with tweets
-                if (this.account.xAccount?.archiveTweets) {
-                    this.state = State.DownloadTweets;
-                    break;
-                }
+            case State.RunJobs:
+                // TODO: Get pending jobs
 
-                // Or skip to DMs
-                this.state = State.DownloadDirectMessages;
+                // TODO: Run each job
+
                 break;
-
-            case State.DownloadTweets:
-                this.showBrowser = true;
-                this.instructions = `
-Hang on while I scroll down to your earliest tweets that I've seen.
-`;
-                // Start monitoring network requests
-                await window.electron.X.indexStart(this.account.id);
-
-                // Load the timeline and wait for tweets to appear
-                await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
-                await this.waitForSelector('article');
-
-                while (this.progress === null || this.progress.isIndexFinished === false) {
-                    // Scroll to bottom
-                    await this.scrollToBottom();
-
-                    // Parse so far
-                    this.progress = await window.electron.X.indexParse(this.account.id);
-                    console.log("progress", this.progress);
-
-                    // Rate limited?
-                    if (this.progress.isRateLimited) {
-                        // TODO: handle rate limit
-                        console.log("rate limited", this.progress);
-                    }
-
-                    console.log("waiting 20 seconds", this.progress);
-                    await new Promise(resolve => setTimeout(resolve, 20000));
-                }
-
-                // Stop monitoring network requests
-                await window.electron.X.indexStop(this.account.id);
-
-                // Parse tweets
-                this.instructions = `
-Now I'm looking through all your tweets...
-`;
-
-                await new Promise(resolve => setTimeout(resolve, 60000));
-
-                // Where next?
-                if (this.account.xAccount?.archiveDirectMessages) {
-                    this.state = State.DownloadDirectMessages;
-                } else {
-                    this.state = State.DownloadComplete;
-                }
-                break;
-
-            case State.DownloadDirectMessages:
-                // TODO: implement
-
-                // Where next?
-                this.state = State.DownloadComplete;
-                break;
-
-            case State.DownloadComplete:
-            case State.Delete:
-                break;
-
         }
     }
 }

@@ -27,6 +27,8 @@ declare global {
                 stop: (accountID: number) => void;
             },
             X: {
+                createJob: (accountID: number, jobType: string) => Promise<number>;
+                getLastFinishedJob: (accountID: number, jobType: string) => Promise<Record<string, string> | null>;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParse: (accountID: number) => Promise<XProgress>;

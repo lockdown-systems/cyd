@@ -79,10 +79,10 @@ const updateSettings = async () => {
     }
 };
 
-const startDownloadingClicked = async () => {
+const startArchivingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
-        accountXViewModel.value.state = State.Download;
+        accountXViewModel.value.startArchiving();
         await startStateLoop();
     }
 };
@@ -90,7 +90,7 @@ const startDownloadingClicked = async () => {
 const startDeletingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
-        accountXViewModel.value.state = State.Download;
+        accountXViewModel.value.startDeleting();
         await startStateLoop();
     }
 };
@@ -173,7 +173,7 @@ onUnmounted(async () => {
 
         <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
-            <h2>Download my data</h2>
+            <h2>Archive my data</h2>
             <div class="container mb-4">
                 <form @submit.prevent>
                     <div class=" mb-3 form-check">
@@ -185,8 +185,8 @@ onUnmounted(async () => {
                             class="form-check-input">
                         <label class="form-check-label" for="archiveDirectMessages">Archive direct messages</label>
                     </div>
-                    <button type="submit" class="btn btn-primary" @click="startDownloadingClicked">
-                        Start Downloading
+                    <button type="submit" class="btn btn-primary" @click="startArchivingClicked">
+                        Start Archiving
                     </button>
                 </form>
             </div>

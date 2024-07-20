@@ -7,6 +7,7 @@ export class BaseViewModel {
     public isWebviewDestroyed: boolean;
 
     public state: string;
+    public action: string;
     public domReady: boolean;
     public stoppedLoading: boolean;
 
@@ -19,6 +20,7 @@ export class BaseViewModel {
         this.isWebviewDestroyed = false;
 
         this.state = "";
+        this.action = "";
         this.instructions = "";
         this.showBrowser = false;
         this.domReady = false;

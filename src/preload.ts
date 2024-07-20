@@ -46,6 +46,12 @@ contextBridge.exposeInMainWorld('electron', {
         }
     },
     X: {
+        createJob: (accountID: number, jobType: string): Promise<number> => {
+            return ipcRenderer.invoke('X:createJob', accountID, jobType)
+        },
+        getLastFinishedJob: (accountID: number, jobType: string): Promise<Record<string, string> | null> => {
+            return ipcRenderer.invoke('X:getLastFinishedJob', accountID, jobType)
+        },
         indexStart: (accountID: number) => {
             ipcRenderer.invoke('X:indexStart', accountID)
         },

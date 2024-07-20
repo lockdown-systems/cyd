@@ -7,6 +7,8 @@ export type ResponseData = {
     processed: boolean;
 }
 
+// Settings models
+
 export type Account = {
     id: number;
     type: string; // "X"
@@ -36,6 +38,19 @@ export type XAccount = {
     deleteDirectMessagesDaysOld: number;
 };
 
+// X models
+
+export type XJob = {
+    id: number | null;
+    jobType: string; // "index", "archiveTweets", "archiveDirectMessages", "deleteTweets", "deleteLikes", "deleteDirectMessages"
+    status: string; // "pending", "running", "finished", "failed", "canceled"
+    scheduledAt: Date;
+    startedAt: Date | null;
+    finishedAt: Date | null;
+    progressJSON: string;
+    error: string | null;
+};
+
 export type XTweet = {
     id: number | null;
     username: string;
@@ -53,6 +68,8 @@ export type XTweet = {
     addedToDatabaseAt: Date;
     archivedAt: Date;
 };
+
+// Other X types
 
 export type XProgress = {
     currentJob: string; // "index", "archive", or "delete"

@@ -201,7 +201,16 @@ export class XAccountController {
             {
                 name: "initial",
                 sql: [
-                    `CREATE TABLE tweet (
+                    `CREATE TABLE job (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    jobType TEXT NOT NULL,
+    status TEXT NOT NULL,
+    scheduledAt TEXT NOT NULL,
+    startedAt TEXT,
+    finishedAt TEXT,
+    progressJSON TEXT,
+    error TEXT
+);`, `CREATE TABLE tweet (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     tweetID TEXT NOT NULL UNIQUE,
@@ -217,10 +226,33 @@ export class XAccountController {
     path TEXT NOT NULL,
     addedToDatabaseAt DATETIME NOT NULL,
     archivedAt DATETIME
-);`,
+);`
                 ]
             }
         ])
+    }
+
+    cancelPendingJobs() {
+        exec(this.db, 'UPDATE job SET status = "canceled" WHERE status = "pending"');
+    }
+
+    createJobs(jobTypes: string[]) {
+        jobTypes.forEach((jobType) => {
+            exec(this.db, 'INSERT INTO job (jobType, status, scheduledAt) VALUES (?, ?, ?)', [
+                jobType,
+                'pending',
+                new Date().toISOString(),
+            ]);
+        });
+    }
+
+    getLastFinishedJob(jobType: string): Promise<Record<string, string> | null> {
+        return exec(
+            this.db,
+            'SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1',
+            [jobType, "finished"],
+            "get"
+        );
     }
 
     async indexStartMonitoring() {
@@ -365,6 +397,15 @@ export class XAccountController {
 const controllers: Record<number, XAccountController> = {};
 
 export const defineIPCX = () => {
+    ipcMain.handle('X:createJob', async (_, accountID: number, jobType: string): Promise<number> => {
+        const info = controllers[accountID].createJob(jobType);
+        return info.lastInsertRowid;
+    });
+
+    ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<Record<string, string> | null> => {
+        return controllers[accountID].getLastFinishedJob(jobType);
+    });
+
     ipcMain.handle('X:indexStart', async (_, accountID: number) => {
         // If no account info exists, create it
         if (!controllers[accountID]) {
