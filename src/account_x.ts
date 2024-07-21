@@ -205,9 +205,9 @@ export class XAccountController {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     jobType TEXT NOT NULL,
     status TEXT NOT NULL,
-    scheduledAt TEXT NOT NULL,
-    startedAt TEXT,
-    finishedAt TEXT,
+    scheduledAt DATETIME NOT NULL,
+    startedAt DATETIME,
+    finishedAt DATETIME,
     progressJSON TEXT,
     error TEXT
 );`, `CREATE TABLE tweet (
@@ -241,28 +241,12 @@ export class XAccountController {
             exec(this.db, 'INSERT INTO job (jobType, status, scheduledAt) VALUES (?, ?, ?)', [
                 jobType,
                 'pending',
-                new Date().toISOString(),
+                new Date(),
             ]);
         });
 
         // Select pending jobs
-        const rows = exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all");
-
-        // Convert rows to jobs, since we can't store dates in JSON
-        const jobs: XJob[] = [];
-        rows.forEach((row) => {
-            jobs.push({
-                id: row.id,
-                jobType: row.jobType,
-                status: row.status,
-                scheduledAt: new Date(row.scheduledAt),
-                startedAt: row.startedAt ? new Date(row.startedAt) : null,
-                finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
-                progressJSON: row.progressJSON,
-                error: row.error,
-            });
-        });
-        return jobs;
+        return exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all");
     }
 
     getLastFinishedJob(jobType: string): Promise<Record<string, string> | null> {
@@ -276,8 +260,8 @@ export class XAccountController {
 
     updateJob(job: XJob) {
         console.log(job);
-        const startedAt = job.startedAt ? job.startedAt.toISOString() : null;
-        const finishedAt = job.finishedAt ? job.finishedAt.toISOString() : null;
+        const startedAt = job.startedAt ? job.startedAt : null;
+        const finishedAt = job.finishedAt ? job.finishedAt : null;
         exec(
             this.db,
             'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
@@ -310,7 +294,7 @@ export class XAccountController {
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
-            new Date(tweetLegacy["created_at"]).toISOString(),
+            new Date(tweetLegacy["created_at"]),
             tweetLegacy["favorite_count"],
             tweetLegacy["quote_count"],
             tweetLegacy["reply_count"],
@@ -319,7 +303,7 @@ export class XAccountController {
             tweetLegacy["retweeted"] ? 1 : 0,
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
-            new Date().toISOString(),
+            new Date(),
         ]);
 
         // Update progress

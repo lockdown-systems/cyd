@@ -83,10 +83,21 @@ export const runMainMigrations = () => {
 
 // Helpers
 
-export const exec = (db: Database.Database, sql: string, params: Array<number | string | bigint | Buffer | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
-    console.info("Executing SQL:", sql, "Params:", params);
+export const exec = (db: Database.Database, sql: string, params: Array<number | string | bigint | Buffer | Date | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
+    // Convert Date objects to ISO strings
+    const paramsConverted: Array<number | string | bigint | Buffer | null> = [];
+    for (const param of params) {
+        if (param instanceof Date) {
+            paramsConverted.push(param.toISOString());
+        } else {
+            paramsConverted.push(param);
+        }
+    }
+
+    // Execute the query
+    console.info("Executing SQL:", sql, "Params:", paramsConverted);
     const stmt = db.prepare(sql);
-    return stmt[cmd](...params);
+    return stmt[cmd](...paramsConverted);
 }
 
 // Config

@@ -66,7 +66,7 @@ export type XTweet = {
     text: string; // full_text
     path: string; // "{username}/status/{tweetId}"
     addedToDatabaseAt: Date;
-    archivedAt: Date;
+    archivedAt: Date | null;
 };
 
 // Other X types
