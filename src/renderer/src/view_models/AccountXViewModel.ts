@@ -73,6 +73,22 @@ export class AccountXViewModel extends BaseViewModel {
         console.log("startDeleting: NOT IMPLEMENTED");
     }
 
+    rateLimitSecondsLeft() {
+        if (this.progress && this.progress.rateLimitReset) {
+            return this.progress.rateLimitReset - Math.floor(Date.now() / 1000);
+        }
+        return 0;
+    }
+
+    async handleRateLimit() {
+        console.log("rate limited", this.progress);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.scrollToBottom();
+
+        // Wait until the rate limit is done
+        await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+    }
+
     async runJob(indexJob: number) {
         // Start the job
         this.jobs[indexJob].startedAt = new Date();
@@ -96,12 +112,24 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                 // Load the timeline and wait for tweets to appear
                 await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
-                await this.waitForSelector('article');
+                try {
+                    await this.waitForSelector('article');
+                } catch (e) {
+                    // Run indexParse so we can see if we were rate limited
+                    this.progress = await window.electron.X.indexParse(this.account.id, this.isFirstRun);
+                    this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                    console.log("progress", this.progress);
+
+                    if (this.progress.isRateLimited) {
+                        await this.handleRateLimit();
+                    }
+                }
 
                 while (this.progress === null || this.progress.isIndexFinished === false) {
                     // Scroll to bottom
                     const moreToScroll = await this.scrollToBottom();
-                    if (!moreToScroll) {
+                    if (!this.progress?.isRateLimited && !moreToScroll) {
                         this.progress = await window.electron.X.indexFinished(this.account.id);
                         break;
                     }
@@ -114,8 +142,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                     // Rate limited?
                     if (this.progress.isRateLimited) {
-                        // TODO: handle rate limit
-                        console.log("rate limited", this.progress);
+                        await this.handleRateLimit();
                     }
                 }
 
@@ -127,6 +154,9 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 this.jobs[indexJob].status = "finished";
                 this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                 await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                console.log("index job finished", this.progress);
+
+                await new Promise(resolve => setTimeout(resolve, 30000));
 
                 break;
 

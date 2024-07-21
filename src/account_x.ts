@@ -259,13 +259,11 @@ export class XAccountController {
     }
 
     updateJob(job: XJob) {
-        console.log(job);
-        const startedAt = job.startedAt ? job.startedAt : null;
-        const finishedAt = job.finishedAt ? job.finishedAt : null;
+        console.log('XAccountController.updateJob', job);
         exec(
             this.db,
             'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
-            [job.status, startedAt, finishedAt, job.progressJSON, job.error, job.id]
+            [job.status, job.startedAt ? job.startedAt : null, job.finishedAt ? job.finishedAt : null, job.progressJSON, job.error, job.id]
         );
     }
 

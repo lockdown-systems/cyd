@@ -95,7 +95,7 @@ export class BaseViewModel {
         this.log("waitForLoadingToFinish", "done");
     }
 
-    async waitForSelector(selector: string, timeout: number = 30000) {
+    async waitForSelector(selector: string, timeout: number = 10000) {
         const startTime = Date.now();
         // eslint-disable-next-line no-constant-condition
         while (true) {
