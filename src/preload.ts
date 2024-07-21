@@ -49,7 +49,7 @@ contextBridge.exposeInMainWorld('electron', {
         createJobs: (accountID: number, jobTypes: string[]): Promise<XJob[]> => {
             return ipcRenderer.invoke('X:createJobs', accountID, jobTypes)
         },
-        getLastFinishedJob: (accountID: number, jobType: string): Promise<Record<string, string> | null> => {
+        getLastFinishedJob: (accountID: number, jobType: string): Promise<XJob | null> => {
             return ipcRenderer.invoke('X:getLastFinishedJob', accountID, jobType)
         },
         updateJob: (accountID: number, jobJSON: XJob) => {
@@ -61,8 +61,8 @@ contextBridge.exposeInMainWorld('electron', {
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
         },
-        indexParse: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParse', accountID)
+        indexParse: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParse', accountID, isFirstRun)
         },
         indexFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexFinished', accountID)

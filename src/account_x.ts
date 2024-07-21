@@ -249,7 +249,7 @@ export class XAccountController {
         return exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all");
     }
 
-    getLastFinishedJob(jobType: string): Promise<Record<string, string> | null> {
+    getLastFinishedJob(jobType: string): Promise<XJob | null> {
         return exec(
             this.db,
             'SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1',
@@ -278,15 +278,19 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
+    indexTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
         // Have we seen this tweet before?
         const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all");
         if (existing.length > 0) {
-            // We have seen this tweet, so return early
-            this.mitmController.responseData[indexResponse].processed = true;
-
-            this.progress.isIndexFinished = true;
-            return false;
+            if (isFirstRun) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
+            } else {
+                // We have seen this tweet, so return early
+                this.mitmController.responseData[indexResponse].processed = true;
+                this.progress.isIndexFinished = true;
+                return false;
+            }
         }
 
         // Add the tweet
@@ -317,7 +321,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexParseResponseData(indexResponse: number): boolean {
+    indexParseResponseData(indexResponse: number, isFirstRun: boolean): boolean {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[indexResponse];
 
@@ -354,7 +358,7 @@ export class XAccountController {
                         entries.content.items?.forEach((item) => {
                             const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
                             const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
-                            if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy)) {
+                            if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
@@ -362,7 +366,7 @@ export class XAccountController {
                     } else if (entries.content.entryType == "TimelineTimelineItem") {
                         const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
                         const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
-                        if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy)) {
+                        if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy, isFirstRun)) {
                             shouldReturnFalse = true;
                             return;
                         }
@@ -392,14 +396,14 @@ export class XAccountController {
 
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
-    async indexParse(): Promise<XProgress> {
+    async indexParse(isFirstRun: boolean): Promise<XProgress> {
         console.log('XAccountController.indexParse: starting');
 
         this.progress.currentJob = "index";
         this.progress.isIndexFinished = false;
 
         this.mitmController.responseData.forEach((_response, indexResponse) => {
-            if (this.indexParseResponseData(indexResponse)) {
+            if (this.indexParseResponseData(indexResponse, isFirstRun)) {
                 return this.progress;
             }
         });
@@ -429,7 +433,7 @@ export const defineIPCX = () => {
         return controller.createJobs(jobTypes);
     });
 
-    ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<Record<string, string> | null> => {
+    ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<XJob | null> => {
         const controller = getController(accountID);
         return controller.getLastFinishedJob(jobType);
     });
@@ -451,9 +455,9 @@ export const defineIPCX = () => {
         await controller.indexStopMonitoring();
     });
 
-    ipcMain.handle('X:indexParse', async (_, accountID: number): Promise<XProgress> => {
+    ipcMain.handle('X:indexParse', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
         const controller = getController(accountID);
-        return await controller.indexParse();
+        return await controller.indexParse(isFirstRun);
     });
 
     ipcMain.handle('X:indexFinished', async (_, accountID: number): Promise<XProgress> => {

@@ -28,11 +28,11 @@ declare global {
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
-                getLastFinishedJob: (accountID: number, jobType: string) => Promise<Record<string, string> | null>;
+                getLastFinishedJob: (accountID: number, jobType: string) => Promise<XJob | null>;
                 updateJob: (accountID: number, jobJSON: string) => void;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
-                indexParse: (accountID: number) => Promise<XProgress>;
+                indexParse: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexFinished: (accountID: number) => Promise<XProgress>;
             };
         };

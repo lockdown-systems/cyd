@@ -12,6 +12,7 @@ export enum State {
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress | null = null;
     private jobs: XJob[] = [];
+    private isFirstRun: boolean = false;
 
     async init() {
         this.state = State.Login;
@@ -84,6 +85,12 @@ export class AccountXViewModel extends BaseViewModel {
                 this.instructions = `
 Hang on while I scroll down to your earliest tweets that I've seen.
 `;
+
+                // Check if this is the first time indexing has happened in this account
+                if (await window.electron.X.getLastFinishedJob(this.account.id, "index") == null) {
+                    this.isFirstRun = true;
+                }
+
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
 
@@ -100,7 +107,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     }
 
                     // Parse so far
-                    this.progress = await window.electron.X.indexParse(this.account.id);
+                    this.progress = await window.electron.X.indexParse(this.account.id, this.isFirstRun);
                     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                     console.log("progress", this.progress);
