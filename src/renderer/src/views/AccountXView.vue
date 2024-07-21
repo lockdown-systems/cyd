@@ -82,7 +82,7 @@ const updateSettings = async () => {
 const startArchivingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
-        accountXViewModel.value.startArchiving();
+        await accountXViewModel.value.startArchiving();
         await startStateLoop();
     }
 };
@@ -90,7 +90,7 @@ const startArchivingClicked = async () => {
 const startDeletingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
-        accountXViewModel.value.startDeleting();
+        await accountXViewModel.value.startDeleting();
         await startStateLoop();
     }
 };

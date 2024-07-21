@@ -11,6 +11,7 @@ export enum State {
 
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress | null = null;
+    private jobs: XJob[] = [];
 
     async init() {
         this.state = State.Login;
@@ -51,12 +52,18 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async startArchiving() {
-        this.action = "Archive"
+        this.action = "archive"
 
-        // TODO: Cancel pending jobs
+        const jobTypes = [];
+        jobTypes.push("index");
+        if (this.account.xAccount?.archiveTweets) {
+            jobTypes.push("archiveTweets");
+        }
+        if (this.account.xAccount?.archiveDirectMessages) {
+            jobTypes.push("archiveDirectMessages");
+        }
 
-        // TODO: Add archive jobs based on settings
-
+        this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
         this.state = State.RunJobs;
     }
 
@@ -65,8 +72,13 @@ export class AccountXViewModel extends BaseViewModel {
         console.log("startDeleting: NOT IMPLEMENTED");
     }
 
-    async runJob(job: XJob) {
-        switch (job.jobType) {
+    async runJob(indexJob: number) {
+        // Start the job
+        this.jobs[indexJob].startedAt = new Date();
+        this.jobs[indexJob].status = "running";
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+
+        switch (this.jobs[indexJob].jobType) {
             case "index":
                 this.showBrowser = true;
                 this.instructions = `
@@ -81,10 +93,16 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                 while (this.progress === null || this.progress.isIndexFinished === false) {
                     // Scroll to bottom
-                    await this.scrollToBottom();
+                    const moreToScroll = await this.scrollToBottom();
+                    if (!moreToScroll) {
+                        this.progress = await window.electron.X.indexFinished(this.account.id);
+                        break;
+                    }
 
                     // Parse so far
                     this.progress = await window.electron.X.indexParse(this.account.id);
+                    this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                     console.log("progress", this.progress);
 
                     // Rate limited?
@@ -92,13 +110,16 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         // TODO: handle rate limit
                         console.log("rate limited", this.progress);
                     }
-
-                    console.log("waiting 20 seconds", this.progress);
-                    await new Promise(resolve => setTimeout(resolve, 20000));
                 }
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                // Job finished
+                this.jobs[indexJob].finishedAt = new Date();
+                this.jobs[indexJob].status = "finished";
+                this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
 
                 break;
 
@@ -205,10 +226,9 @@ You've been logged out. **To continue, log back into your X account below.**
                 break;
 
             case State.RunJobs:
-                // TODO: Get pending jobs
-
-                // TODO: Run each job
-
+                for (let i = 0; i < this.jobs.length; i++) {
+                    await this.runJob(i);
+                }
                 break;
         }
     }

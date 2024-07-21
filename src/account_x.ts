@@ -4,7 +4,7 @@ import { ipcMain } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount, XProgress } from './shared_types'
+import { XAccount, XJob, XProgress } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
 import { IMITMController, mitmControllers } from './mitm_proxy';
@@ -232,11 +232,11 @@ export class XAccountController {
         ])
     }
 
-    cancelPendingJobs() {
-        exec(this.db, 'UPDATE job SET status = "canceled" WHERE status = "pending"');
-    }
+    createJobs(jobTypes: string[]): XJob[] {
+        // Cancel pending jobs
+        exec(this.db, "UPDATE job SET status = ? WHERE status = ?", ["canceled", "pending"]);
 
-    createJobs(jobTypes: string[]) {
+        // Create new pending jobs
         jobTypes.forEach((jobType) => {
             exec(this.db, 'INSERT INTO job (jobType, status, scheduledAt) VALUES (?, ?, ?)', [
                 jobType,
@@ -244,6 +244,25 @@ export class XAccountController {
                 new Date().toISOString(),
             ]);
         });
+
+        // Select pending jobs
+        const rows = exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all");
+
+        // Convert rows to jobs, since we can't store dates in JSON
+        const jobs: XJob[] = [];
+        rows.forEach((row) => {
+            jobs.push({
+                id: row.id,
+                jobType: row.jobType,
+                status: row.status,
+                scheduledAt: new Date(row.scheduledAt),
+                startedAt: row.startedAt ? new Date(row.startedAt) : null,
+                finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
+                progressJSON: row.progressJSON,
+                error: row.error,
+            });
+        });
+        return jobs;
     }
 
     getLastFinishedJob(jobType: string): Promise<Record<string, string> | null> {
@@ -252,6 +271,17 @@ export class XAccountController {
             'SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1',
             [jobType, "finished"],
             "get"
+        );
+    }
+
+    updateJob(job: XJob) {
+        console.log(job);
+        const startedAt = job.startedAt ? job.startedAt.toISOString() : null;
+        const finishedAt = job.finishedAt ? job.finishedAt.toISOString() : null;
+        exec(
+            this.db,
+            'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
+            [job.status, startedAt, finishedAt, job.progressJSON, job.error, job.id]
         );
     }
 
@@ -392,37 +422,58 @@ export class XAccountController {
 
         return this.progress;
     }
+
+    async indexFinished(): Promise<XProgress> {
+        console.log('XAccountController.indexFinished');
+        this.progress.isIndexFinished = true;
+        return this.progress;
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
 
+const getController = (accountID: number): XAccountController => {
+    if (!controllers[accountID]) {
+        controllers[accountID] = new XAccountController(accountID, mitmControllers[accountID]);
+    }
+    return controllers[accountID];
+}
+
 export const defineIPCX = () => {
-    ipcMain.handle('X:createJob', async (_, accountID: number, jobType: string): Promise<number> => {
-        const info = controllers[accountID].createJob(jobType);
-        return info.lastInsertRowid;
+    ipcMain.handle('X:createJobs', async (_, accountID: number, jobTypes: string[]): Promise<XJob[]> => {
+        const controller = getController(accountID);
+        return controller.createJobs(jobTypes);
     });
 
     ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<Record<string, string> | null> => {
-        return controllers[accountID].getLastFinishedJob(jobType);
+        const controller = getController(accountID);
+        return controller.getLastFinishedJob(jobType);
+    });
+
+    ipcMain.handle('X:updateJob', async (_, accountID: number, jobJSON: string) => {
+        const controller = getController(accountID);
+        const job = JSON.parse(jobJSON) as XJob;
+        controller.updateJob(job);
     });
 
     ipcMain.handle('X:indexStart', async (_, accountID: number) => {
-        // If no account info exists, create it
-        if (!controllers[accountID]) {
-            controllers[accountID] = new XAccountController(accountID, mitmControllers[accountID]);
-            // TODO: handle error if account not found
-        }
-
-        // Start monitoring network requests
-        await controllers[accountID].indexStartMonitoring();
+        const controller = getController(accountID);
+        await controller.indexStartMonitoring();
 
     });
 
     ipcMain.handle('X:indexStop', async (_, accountID: number) => {
-        await controllers[accountID].indexStopMonitoring();
+        const controller = getController(accountID);
+        await controller.indexStopMonitoring();
     });
 
     ipcMain.handle('X:indexParse', async (_, accountID: number): Promise<XProgress> => {
-        return await controllers[accountID].indexParse();
+        const controller = getController(accountID);
+        return await controller.indexParse();
+    });
+
+    ipcMain.handle('X:indexFinished', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getController(accountID);
+        return await controller.indexFinished();
     });
 };

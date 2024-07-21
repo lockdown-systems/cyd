@@ -130,7 +130,11 @@ export class BaseViewModel {
         }
     }
 
+    // Return true if we scrolled, and false if we can't scroll anymore
     async scrollToBottom() {
+        // Find the last scroll position
+        const scrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+
         await this.waitForLoadingToFinish();
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -139,27 +143,13 @@ export class BaseViewModel {
         await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
         await new Promise(resolve => setTimeout(resolve, 1000));
         await this.waitForLoadingToFinish();
-    }
 
-    // Keep scrolling to the bottom in a loop until we can't scroll anymore
-    async scrollToVeryBottom() {
-        await this.waitForLoadingToFinish();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        let lastScrollTop = 0;
-        let newScrollTop = 0;
-        do {
-            // Find the last scroll position
-            lastScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
-
-            // Scroll to the bottom
-            await this.scrollToBottom();
-
-            // Get the new scroll position
-            newScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
-
-        } while (newScrollTop > lastScrollTop);
-        this.log("scrollToVeryBottom", "done");
+        // Have we scrolled?
+        const newScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+        if (newScrollTop === scrollTop) {
+            return false;
+        }
+        return true;
     }
 
     async scriptClickElement(selector: string): Promise<boolean> {

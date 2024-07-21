@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress } from "../../shared_types";
+import type { Account, XProgress, XJob } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -27,11 +27,13 @@ declare global {
                 stop: (accountID: number) => void;
             },
             X: {
-                createJob: (accountID: number, jobType: string) => Promise<number>;
+                createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
                 getLastFinishedJob: (accountID: number, jobType: string) => Promise<Record<string, string> | null>;
+                updateJob: (accountID: number, jobJSON: string) => void;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParse: (accountID: number) => Promise<XProgress>;
+                indexFinished: (accountID: number) => Promise<XProgress>;
             };
         };
     }

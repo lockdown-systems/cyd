@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress } from './shared_types'
+import { Account, XProgress, XJob } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -46,11 +46,14 @@ contextBridge.exposeInMainWorld('electron', {
         }
     },
     X: {
-        createJob: (accountID: number, jobType: string): Promise<number> => {
-            return ipcRenderer.invoke('X:createJob', accountID, jobType)
+        createJobs: (accountID: number, jobTypes: string[]): Promise<XJob[]> => {
+            return ipcRenderer.invoke('X:createJobs', accountID, jobTypes)
         },
         getLastFinishedJob: (accountID: number, jobType: string): Promise<Record<string, string> | null> => {
             return ipcRenderer.invoke('X:getLastFinishedJob', accountID, jobType)
+        },
+        updateJob: (accountID: number, jobJSON: XJob) => {
+            ipcRenderer.invoke('X:updateJob', accountID, jobJSON)
         },
         indexStart: (accountID: number) => {
             ipcRenderer.invoke('X:indexStart', accountID)
@@ -60,6 +63,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         indexParse: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParse', accountID)
+        },
+        indexFinished: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexFinished', accountID)
         }
     }
 })
