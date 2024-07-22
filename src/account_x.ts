@@ -259,7 +259,6 @@ export class XAccountController {
     }
 
     updateJob(job: XJob) {
-        console.log('XAccountController.updateJob', job);
         exec(
             this.db,
             'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
@@ -330,6 +329,7 @@ export class XAccountController {
 
         // Rate limited?
         if (responseData.status == 429) {
+            console.log('XAccountController.indexParse: RATE LIMITED');
             this.progress.isRateLimited = true;
             this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[indexResponse].processed = true;
@@ -342,7 +342,7 @@ export class XAccountController {
             responseData.status == 200
         ) {
             const body: XAPIData = JSON.parse(responseData.body);
-            console.log('XAccountController.indexParse: body', responseData.body);
+            // console.log('XAccountController.indexParse: body', responseData.body);
 
             // Loop through instructions
             body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
@@ -395,7 +395,7 @@ export class XAccountController {
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
     async indexParse(isFirstRun: boolean): Promise<XProgress> {
-        console.log('XAccountController.indexParse: starting');
+        console.log(`XAccountController.indexParse: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "index";
         this.progress.isIndexFinished = false;

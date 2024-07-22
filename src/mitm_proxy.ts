@@ -77,8 +77,6 @@ export class MITMController implements IMITMController {
                 for (const filter of this.proxyFilter) {
                     if (url.includes(filter)) {
                         // We're monitoring this request
-                        console.log(`MITMController: request filtered: ${url}`);
-
                         const responseData: ResponseData = {
                             host: ctx.clientToProxyRequest.headers.host ?? '',
                             url: ctx.clientToProxyRequest.url ?? '',
@@ -91,7 +89,7 @@ export class MITMController implements IMITMController {
                         const chunks: Buffer[] = [];
 
                         ctx.onResponseData((ctx, chunk, callback) => {
-                            console.log(`MITMController: response chunk (${chunk.length} bytes)`);
+                            // console.log(`MITMController: response chunk (${chunk.length} bytes)`);
                             chunks.push(chunk);
                             return callback(null, chunk);
                         });
@@ -104,7 +102,7 @@ export class MITMController implements IMITMController {
 
                             if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'gzip') {
                                 // Response is gzip-compressed
-                                console.log(`MITMController: response is gzip-compressed`);
+                                // console.log(`MITMController: response is gzip-compressed`);
                                 zlib.gunzip(buffer, (err, decompressed) => {
                                     if (!err) {
                                         responseData.body = decompressed.toString();
@@ -124,7 +122,7 @@ export class MITMController implements IMITMController {
                                 });
                             } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'br') {
                                 // Response is brotli-compressed
-                                console.log(`MITMController: response is brotli-compressed`);
+                                // console.log(`MITMController: response is brotli-compressed`);
                                 zlib.brotliDecompress(buffer, (err, decompressed) => {
                                     if (!err) {
                                         responseData.body = decompressed.toString();
@@ -144,7 +142,7 @@ export class MITMController implements IMITMController {
                                 });
                             } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'deflate') {
                                 // Response is deflate-compressed
-                                console.log(`MITMController: response is deflate-compressed`);
+                                // console.log(`MITMController: response is deflate-compressed`);
                                 zlib.inflate(buffer, (err, decompressed) => {
                                     if (!err) {
                                         responseData.body = decompressed.toString();
@@ -164,7 +162,7 @@ export class MITMController implements IMITMController {
                                 });
                             } else {
                                 // If not compressed, just convert buffer to string
-                                console.log(`MITMController: response is not compressed`);
+                                // console.log(`MITMController: response is not compressed`);
                                 responseData.body = buffer.toString();
 
                                 console.log(`MITMController: got response`, {

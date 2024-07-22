@@ -87,6 +87,56 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Wait until the rate limit is done
         await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+
+        // Click retry.
+        /*
+        There are two conditions where rate limit occurs for index: if there are no tweets in the DOM's timeline yet, or if there are already some.
+
+        If there are no tweets, the HTML looks kind of like this:
+        
+        <div>
+            <nav aria-label="Profile timelines">
+            <div>
+                <div>...</div>
+                <button>...</button>
+            </div>
+        </div>
+
+        If there are tweets, the HTML looks like of like this:
+
+        <div>
+            <div data-testid="cellInnerDiv"></div>
+            <div data-testid="cellInnerDiv"></div>
+            <div data-testid="cellInnerDiv>...</div>
+                <div>...</div>
+                <button>...</button>
+            </div>
+        </div>
+        */
+        const code = `
+        (() => {
+            let el = document.querySelectorAll('[data-testid="cellInnerDiv"]');
+            if(el.length === 0) {
+                // no tweets have loaded yet
+                el = document.querySelector('[aria-label="Profile timelines"]');
+                if(el === null) { return false; }
+                el = el.parentNode.children[el.parentNode.children.length - 1];
+                if(el === null) { return false; }
+                el = el.querySelector('button');
+                if(el === null) { return false; }
+                el.click();
+            } else {
+                // tweets have loaded
+                el = els[els.length - 1];
+                if(el === null) { return false; }
+                let el = el.querySelector('button');
+                if(el === null) { return false; }
+                el.click();
+            }
+            return true;
+        })()
+        `;
+        await this.getWebview()?.executeJavaScript(code);
     }
 
     async runJob(indexJob: number) {
@@ -129,16 +179,18 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 while (this.progress === null || this.progress.isIndexFinished === false) {
                     // Scroll to bottom
                     const moreToScroll = await this.scrollToBottom();
-                    if (!this.progress?.isRateLimited && !moreToScroll) {
-                        this.progress = await window.electron.X.indexFinished(this.account.id);
-                        break;
-                    }
 
                     // Parse so far
                     this.progress = await window.electron.X.indexParse(this.account.id, this.isFirstRun);
                     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                     console.log("progress", this.progress);
+
+                    // Check if we're done
+                    if (!this.progress?.isRateLimited && !moreToScroll) {
+                        this.progress = await window.electron.X.indexFinished(this.account.id);
+                        break;
+                    }
 
                     // Rate limited?
                     if (this.progress.isRateLimited) {
