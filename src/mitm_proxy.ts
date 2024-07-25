@@ -255,6 +255,7 @@ export const defineIPCMITMProxy = () => {
 
         // Start MITM
         const ses = session.fromPartition(`persist:account-${accountID}`);
+        await ses.clearCache();
         await mitmControllers[accountID].startMITM(ses, proxyFilter);
     });
 
