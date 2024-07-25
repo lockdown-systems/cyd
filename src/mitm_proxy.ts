@@ -185,6 +185,7 @@ export class MITMController implements IMITMController {
         console.log(`MITMController: Account ${this.account?.id}, starting MITM`);
         this.proxyPort = await findOpenPort()
         this.proxy.listen({
+            host: "127.0.0.1",
             port: this.proxyPort,
             sslCaDir: this.proxySSLCADir,
         });
