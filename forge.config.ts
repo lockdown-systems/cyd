@@ -6,6 +6,12 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import path from 'path';
+
+import { downloadChromium } from './scripts/download-chromium';
+import { downloadSingleFileCLI } from './scripts/download-single-file-cli';
+
+const extraResource: string[] = [];
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -13,6 +19,39 @@ const config: ForgeConfig = {
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     asar: true,
     icon: "assets/icon",
+    beforeCopyExtraResources: [
+      async (buildPath, _electronVersion, platform, _arch) => {
+        // For macOS, download both the Intel and ARM versions
+        if (platform === 'darwin') {
+          await downloadChromium("mac-arm64", buildPath);
+          await downloadChromium("mac-intel", buildPath);
+          await downloadSingleFileCLI("mac-arm64", buildPath);
+          await downloadSingleFileCLI("mac-intel", buildPath);
+          extraResource.push(path.join(buildPath, "chromium-mac-arm64.zip"));
+          extraResource.push(path.join(buildPath, "chromium-mac-intel.zip"));
+          extraResource.push(path.join(buildPath, "single-file-aarch64-apple-darwin"));
+          extraResource.push(path.join(buildPath, "single-file-x86_64-apple-darwin"));
+        }
+        // We only have x64 builds for Windows and Linux
+        else {
+          let platformName: string;
+          if (platform === 'win32') {
+            platformName = 'win-x64';
+            extraResource.push(path.join(buildPath, "chromium-win-x64.zip"));
+            extraResource.push(path.join(buildPath, "single-file.exe"));
+          } else if (platform === 'linux') {
+            platformName = 'linux-x64';
+            extraResource.push(path.join(buildPath, "chromium-linux-x64.zip"));
+            extraResource.push(path.join(buildPath, "single-file-x86_64-linux"));
+          } else {
+            throw new Error(`Unsupported platform: ${platform}`);
+          }
+          await downloadChromium(platformName, buildPath);
+          await downloadSingleFileCLI(platformName, buildPath);
+        }
+      }
+    ],
+    // extraResource: extraResource,
   },
   rebuildConfig: {},
   makers: [
