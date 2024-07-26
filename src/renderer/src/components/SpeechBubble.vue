@@ -36,7 +36,7 @@ img.bird {
   margin: 0 0.5rem;
 }
 
-::v-deep .bubble-inner p:last-child {
+:deep(.bubble-inner p:last-child) {
   margin-bottom: 0 !important;
 }
 </style>
