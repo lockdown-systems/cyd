@@ -1,5 +1,5 @@
 import * as path from "path";
-import { createWriteStream, existsSync, mkdirSync } from "fs";
+import { createWriteStream, existsSync, mkdirSync, chmodSync } from "fs";
 import { Readable } from "stream";
 import { ReadableStream } from "stream/web";
 
@@ -118,6 +118,11 @@ export const downloadSingleFileCLI = async (platform: string, output_folder: str
                 .on('finish', resolve)
                 .on('error', reject);
         });
+
+        // Make it executable
+        if (platform !== "win-x64") {
+            await chmodSync(downloadPath, '755');
+        }
 
         console.log(`Downloaded to: ${downloadPath}`);
         return downloadPath;
