@@ -23,16 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
-# Prisma dev database
-prisma/dev.db
-prisma/dev.db-journal
-
-
 # Vite
 .vite/
 
-# Electron-Forge
+# Electron-Forge and packaging
 out/
+build
 
 # Tests
 src/renderer/cypress/screenshots/

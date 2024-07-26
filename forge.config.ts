@@ -8,8 +8,7 @@ import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import path from 'path';
 
-import { downloadChromium } from './scripts/download-chromium';
-import { downloadSingleFileCLI } from './scripts/download-single-file-cli';
+import { downloadChromium, downloadSingleFileCLI } from './scripts/download-deps';
 
 const extraResource: string[] = [];
 
@@ -20,38 +19,39 @@ const config: ForgeConfig = {
     asar: true,
     icon: "assets/icon",
     beforeCopyExtraResources: [
-      async (buildPath, _electronVersion, platform, _arch) => {
+      async (buildPath, _electronVersion, platform, _arch, callback) => {
         // For macOS, download both the Intel and ARM versions
         if (platform === 'darwin') {
-          await downloadChromium("mac-arm64", buildPath);
-          await downloadChromium("mac-intel", buildPath);
-          await downloadSingleFileCLI("mac-arm64", buildPath);
-          await downloadSingleFileCLI("mac-intel", buildPath);
-          extraResource.push(path.join(buildPath, "chromium-mac-arm64.zip"));
-          extraResource.push(path.join(buildPath, "chromium-mac-intel.zip"));
-          extraResource.push(path.join(buildPath, "single-file-aarch64-apple-darwin"));
-          extraResource.push(path.join(buildPath, "single-file-x86_64-apple-darwin"));
+          await downloadChromium("mac-arm64", "./build");
+          await downloadChromium("mac-intel", "./build");
+          await downloadSingleFileCLI("mac-arm64", "./build");
+          await downloadSingleFileCLI("mac-intel", "./build");
+          extraResource.push(path.join("./build", "chromium-mac-arm64.zip"));
+          extraResource.push(path.join("./build", "chromium-mac-intel.zip"));
+          extraResource.push(path.join("./build", "single-file-aarch64-apple-darwin"));
+          extraResource.push(path.join("./build", "single-file-x86_64-apple-darwin"));
         }
         // We only have x64 builds for Windows and Linux
         else {
           let platformName: string;
           if (platform === 'win32') {
             platformName = 'win-x64';
-            extraResource.push(path.join(buildPath, "chromium-win-x64.zip"));
-            extraResource.push(path.join(buildPath, "single-file.exe"));
+            extraResource.push(path.join("./build", "chromium-win-x64.zip"));
+            extraResource.push(path.join("./build", "single-file.exe"));
           } else if (platform === 'linux') {
             platformName = 'linux-x64';
-            extraResource.push(path.join(buildPath, "chromium-linux-x64.zip"));
-            extraResource.push(path.join(buildPath, "single-file-x86_64-linux"));
+            extraResource.push(path.join("./build", "chromium-linux-x64.zip"));
+            extraResource.push(path.join("./build", "single-file-x86_64-linux"));
           } else {
             throw new Error(`Unsupported platform: ${platform}`);
           }
-          await downloadChromium(platformName, buildPath);
-          await downloadSingleFileCLI(platformName, buildPath);
+          await downloadChromium(platformName, "./build");
+          await downloadSingleFileCLI(platformName, "./build");
         }
+        callback();
       }
     ],
-    // extraResource: extraResource,
+    extraResource: extraResource,
   },
   rebuildConfig: {},
   makers: [
