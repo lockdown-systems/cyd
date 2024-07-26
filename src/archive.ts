@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 import { ipcMain } from 'electron';
 import extract from 'extract-zip';
 
-import { getChromiumAppPath } from './helpers';
+import { getResourcesPath, getChromiumAppPath } from './helpers';
 
 export const defineIPCArchive = () => {
     ipcMain.handle('archive:isChromiumExtracted', async (_): Promise<boolean> => {
@@ -34,21 +34,22 @@ export const defineIPCArchive = () => {
         const platform = os.platform();
         const arch = os.arch();
         const chromiumAppPath = getChromiumAppPath();
+        const resourcesPath = getResourcesPath();
 
         let zipPath;
         switch (platform) {
             case 'darwin':
                 if (arch == 'arm64') {
-                    zipPath = path.join(process.resourcesPath, 'chromium-mac-arm64.zip');
+                    zipPath = path.join(resourcesPath, 'chromium-mac-arm64.zip');
                 } else {
-                    zipPath = path.join(process.resourcesPath, 'chromium-mac-intel.zip');
+                    zipPath = path.join(resourcesPath, 'chromium-mac-intel.zip');
                 }
                 break;
             case 'win32':
-                zipPath = path.join(process.resourcesPath, 'chromium-win-x64.zip');
+                zipPath = path.join(resourcesPath, 'chromium-win-x64.zip');
                 break;
             case 'linux':
-                zipPath = path.join(process.resourcesPath, 'chromium-linux-x64.zip');
+                zipPath = path.join(resourcesPath, 'chromium-linux-x64.zip');
                 break;
             default:
                 return false;

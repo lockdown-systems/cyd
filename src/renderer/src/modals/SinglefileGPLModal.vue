@@ -13,6 +13,7 @@ const singlefileGPLModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
 const agreeChecked = ref(true);
+const extractingChromium = ref(false);
 
 const readLicenseClicked = () => {
     window.electron.openURL('https://github.com/gildas-lormeau/single-file-cli/blob/master/LICENSE');
@@ -23,6 +24,15 @@ const accessSourceCodeClicked = () => {
 };
 
 const formSubmitted = async () => {
+    if (!await window.electron.archive.isChromiumExtracted()) {
+        extractingChromium.value = true;
+        if (await window.electron.archive.extractChromium()) {
+            extractingChromium.value = false;
+        } else {
+            window.electron.showError('Failed to extract Chromium');
+        }
+    }
+
     await acceptSinglefileGPLAccepted();
     hide();
 };
@@ -54,42 +64,57 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Accept the SingleFile CLI License
+                        <template v-if="extractingChromium">
+                            Extracting Chromium...
+                        </template>
+                        <template v-else>
+                            Accept the SingleFile CLI License
+                        </template>
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>
                 <div class="modal-body">
-                    <p>
-                        Semiphemeral uses <b>SingleFile CLI</b>, developed by Gildas Lormeau, to archive your data.
-                        SingleFile CLI is <b>open source software</b> that can save web pages as a single HTML file.
-                        It's licensed under the <b>Affero General Public License v3.0</b>.
-                    </p>
+                    <template v-if="extractingChromium">
+                        <p>
+                            Semiphemeral is extracting Chromium. This takes a few seconds...
+                        </p>
+                    </template>
+                    <template v-else>
+                        <p>
+                            Semiphemeral uses <b>SingleFile CLI</b>, developed by Gildas Lormeau, to archive your data.
+                            SingleFile CLI is <b>open source software</b> that can save web pages as a single HTML file.
+                            It's licensed under the <b>Affero General Public License v3.0</b>.
+                        </p>
 
-                    <div class="d-flex flex-column p-3 mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="icon d-flex justify-content-center">
-                                <i class="fa-regular fa-file" />
+                        <div class="d-flex flex-column p-3 mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="icon d-flex justify-content-center">
+                                    <i class="fa-regular fa-file" />
+                                </div>
+                                <a href="#" class="flex-grow-1" @click="readLicenseClicked">Read the license</a>
                             </div>
-                            <a href="#" class="flex-grow-1" @click="readLicenseClicked">Read the license</a>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <div class="icon d-flex justify-content-center">
-                                <i class="fa-solid fa-code" />
+                            <div class="d-flex align-items-center">
+                                <div class="icon d-flex justify-content-center">
+                                    <i class="fa-solid fa-code" />
+                                </div>
+                                <a href="#" class="flex-grow-1" @click="accessSourceCodeClicked">Access the source
+                                    code</a>
                             </div>
-                            <a href="#" class="flex-grow-1" @click="accessSourceCodeClicked">Access the source code</a>
                         </div>
-                    </div>
 
-                    <form @submit.prevent>
-                        <div class="mb-3 form-check">
-                            <input id="agreeChecked" v-model="agreeChecked" type="checkbox" class="form-check-input">
-                            <label class="form-check-label" for="agreeChecked">I agree to the terms of the AGPL license
-                                for SingleFile CLI</label>
-                        </div>
-                        <button type="submit" :disabled="!agreeChecked" class="btn btn-primary" @click="formSubmitted">
-                            Continue
-                        </button>
-                    </form>
+                        <form @submit.prevent>
+                            <div class="mb-3 form-check">
+                                <input id="agreeChecked" v-model="agreeChecked" type="checkbox"
+                                    class="form-check-input">
+                                <label class="form-check-label" for="agreeChecked">I understand that SingleFile CLI is
+                                    released under the AGPL license and comes with free software rights</label>
+                            </div>
+                            <button type="submit" :disabled="!agreeChecked" class="btn btn-primary"
+                                @click="formSubmitted">
+                                Continue
+                            </button>
+                        </form>
+                    </template>
                 </div>
             </div>
         </div>

@@ -5,6 +5,13 @@ import os from 'os'
 
 import { app } from 'electron'
 
+export const getResourcesPath = () => {
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
+        return process.resourcesPath;
+    }
+    return path.join(__dirname, "..", "..", "build");
+}
+
 export const getSettingsPath = () => {
     const settingsPath = path.join(app.getPath('userData'), "settings");
     if (!fs.existsSync(settingsPath)) {
