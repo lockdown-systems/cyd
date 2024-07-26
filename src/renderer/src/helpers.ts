@@ -61,3 +61,11 @@ export function getAccountIcon(accountType: string): string {
             return "fa-solid fa-gears";
     }
 }
+
+export async function isSinglefileGPLAccepted(): Promise<boolean> {
+    return await window.electron.database.getConfig("isSinglefileGPLAccepted") ? true : false;
+}
+
+export async function acceptSinglefileGPLAccepted(): Promise<void> {
+    await window.electron.database.setConfig("isSinglefileGPLAccepted", "true");
+}

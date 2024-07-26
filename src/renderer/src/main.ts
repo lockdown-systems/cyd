@@ -13,6 +13,7 @@ declare global {
             isDevMode: () => Promise<boolean>;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
+            openURL: (url: string) => void;
             database: {
                 getConfig: (key: string) => Promise<string>;
                 setConfig: (key: string, value: string) => void;
@@ -25,6 +26,10 @@ declare global {
             mitmProxy: {
                 start: (accountID: number, proxyFilter: string[]) => void;
                 stop: (accountID: number) => void;
+            },
+            archive: {
+                isChromiumExtracted: () => Promise<boolean>;
+                extractChromium: () => Promise<boolean>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;

@@ -43,6 +43,14 @@ export const getAccountDataPath = (accountType: string, accountUsername: string)
     return accountUserDataPath;
 }
 
+export const getChromiumAppPath = () => {
+    const chromiumAppPath = path.join(app.getPath('userData'), "chromium-app");
+    if (!fs.existsSync(chromiumAppPath)) {
+        fs.mkdirSync(chromiumAppPath);
+    }
+    return chromiumAppPath;
+}
+
 export async function findOpenPort(): Promise<number> {
     return new Promise((resolve, reject) => {
         const server = createServer();

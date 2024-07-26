@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, inject } from 'vue'
 import Electron from 'electron';
 
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import ProgressXComponent from '../components/ProgressXComponent.vue';
 import type { Account, XProgress } from '../../../shared_types';
+import { isSinglefileGPLAccepted } from '../helpers';
 
 import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
 
@@ -22,10 +23,12 @@ const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const isWebviewMounted = ref(true);
 
+const showSinglefileGPL = inject('showSinglefileGPL') as () => void;
+
 // Keep progress updated
 watch(
     () => accountXViewModel.value?.progress,
-    (newProgress) => { progress.value = newProgress; },
+    (newProgress) => { if (newProgress) progress.value = newProgress; },
     { deep: true, }
 );
 
@@ -81,9 +84,14 @@ const updateSettings = async () => {
 
 const startArchivingClicked = async () => {
     await updateSettings();
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.startArchiving();
-        await startStateLoop();
+
+    if (await isSinglefileGPLAccepted()) {
+        if (accountXViewModel.value !== null) {
+            await accountXViewModel.value.startArchiving();
+            await startStateLoop();
+        }
+    } else {
+        showSinglefileGPL();
     }
 };
 

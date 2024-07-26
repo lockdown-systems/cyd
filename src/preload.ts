@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('electron', {
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
+    openURL: (url: string) => {
+        ipcRenderer.invoke('openURL', url)
+    },
     database: {
         getConfig: (key: string): Promise<string> => {
             return ipcRenderer.invoke('database:getConfig', key);
@@ -43,6 +46,14 @@ contextBridge.exposeInMainWorld('electron', {
         },
         stop: (accountID: number) => {
             ipcRenderer.invoke('mitmProxy:stop', accountID)
+        }
+    },
+    archive: {
+        isChromiumExtracted: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:isChromiumExtracted')
+        },
+        extractChromium: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:extractChromium')
         }
     },
     X: {

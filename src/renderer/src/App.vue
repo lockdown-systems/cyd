@@ -9,6 +9,7 @@ import { getDeviceInfo } from './helpers';
 
 import SettingsModal from './modals/SettingsModal.vue';
 import AccountSettingsModal from './modals/AccountSettingsModal.vue';
+import SinglefileGPLModal from './modals/SinglefileGPLModal.vue';
 
 import SignInView from "./views/SignInView.vue";
 import TabsView from "./views/TabsView.vue";
@@ -58,6 +59,13 @@ const showAccountSettings = (account: Account) => {
   showAccountSettingsModal.value = true;
 };
 provide('showAccountSettings', showAccountSettings);
+
+// Singlefile GPL modal
+const showSinglefileGPLModal = ref(false);
+const showSinglefileGPL = () => {
+  showSinglefileGPLModal.value = true;
+};
+provide('showSinglefileGPL', showSinglefileGPL);
 
 const signOut = async () => {
   isSignedIn.value = false;
@@ -111,6 +119,10 @@ onMounted(async () => {
     <!-- Account settings modal -->
     <AccountSettingsModal v-if="showAccountSettingsModal" :account="accountSettingsAccount"
       @hide="showAccountSettingsModal = false" @close="showAccountSettingsModal = false" />
+
+    <!-- Singlefile GPL modal-->
+    <SinglefileGPLModal v-if="showSinglefileGPLModal" @hide="showSinglefileGPLModal = false"
+      @close="showSinglefileGPLModal = false" />
   </div>
 </template>
 

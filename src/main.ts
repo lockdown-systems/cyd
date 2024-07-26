@@ -2,7 +2,7 @@ import process from 'process';
 import os from 'os';
 import log from 'electron-log/main';
 import { join } from 'node:path';
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 
 import {
     runMainMigrations,
@@ -12,6 +12,7 @@ import {
 } from './database';
 import { defineIPCMITMProxy } from './mitm_proxy';
 import { defineIPCX } from './account_x';
+import { defineIPCArchive } from './archive';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -126,9 +127,14 @@ async function createWindow() {
             return result === 1;
         });
 
+        ipcMain.handle('openURL', async (_, url) => {
+            shell.openExternal(url);
+        });
+
         defineIPCDatabase();
         defineIPCMITMProxy();
         defineIPCX();
+        defineIPCArchive();
     }
     global.ipcHandlersRegistered = true;
 
