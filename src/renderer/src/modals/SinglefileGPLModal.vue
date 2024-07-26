@@ -12,7 +12,6 @@ const hide = () => {
 const singlefileGPLModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const agreeChecked = ref(true);
 const extractingChromium = ref(false);
 
 const readLicenseClicked = () => {
@@ -68,7 +67,7 @@ onUnmounted(() => {
                             Extracting Chromium...
                         </template>
                         <template v-else>
-                            Accept the SingleFile CLI License
+                            SingleFile CLI is Open Source
                         </template>
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
@@ -102,18 +101,9 @@ onUnmounted(() => {
                             </div>
                         </div>
 
-                        <form @submit.prevent>
-                            <div class="mb-3 form-check">
-                                <input id="agreeChecked" v-model="agreeChecked" type="checkbox"
-                                    class="form-check-input">
-                                <label class="form-check-label" for="agreeChecked">I understand that SingleFile CLI is
-                                    released under the AGPL license and comes with free software rights</label>
-                            </div>
-                            <button type="submit" :disabled="!agreeChecked" class="btn btn-primary"
-                                @click="formSubmitted">
-                                Continue
-                            </button>
-                        </form>
+                        <button type="submit" class="btn btn-primary" @click="formSubmitted">
+                            Awesome!
+                        </button>
                     </template>
                 </div>
             </div>
