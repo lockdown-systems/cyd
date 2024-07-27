@@ -7,3 +7,9 @@ The environment variable `SEMIPHEMERAL_ENV` is used to determine the API URL. Th
 - `prod`: the prod server at http://api.semiphemeral.com/v1/
 
 If it's not set, it defaults to `prod`.
+
+You need Chromium and SingleFile CLI downloaded for archiving to work in dev. To download, just make a build:
+
+```
+npm run make
+```

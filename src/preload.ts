@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob } from './shared_types'
+import { Account, XProgress, XJob, XTweet } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -54,6 +54,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         extractChromium: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:extractChromium')
+        },
+        savePage: (accountID: number, url: string, postDate: Date, postID: string): Promise<string | null> => {
+            return ipcRenderer.invoke('archive:savePage', accountID, url, postDate, postID)
         }
     },
     X: {
@@ -77,6 +80,12 @@ contextBridge.exposeInMainWorld('electron', {
         },
         indexFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexFinished', accountID)
-        }
+        },
+        archiveGetTweetIDs: (accountID: number): Promise<string[]> => {
+            return ipcRenderer.invoke('X:archiveGetTweetIDs', accountID)
+        },
+        archiveGetTweet: (accountID: number, tweetID: number): Promise<XTweet | null> => {
+            return ipcRenderer.invoke('X:archiveGetTweet', accountID, tweetID)
+        },
     }
 })

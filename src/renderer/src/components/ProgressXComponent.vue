@@ -9,7 +9,10 @@ const props = defineProps<{
     progress: XProgress | null;
 }>();
 
-const formatSeconds = (seconds: number) => {
+const formatSeconds = (seconds: number | null) => {
+    if (seconds === null) {
+        return '';
+    }
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     if (minutes == 0) {
@@ -19,10 +22,12 @@ const formatSeconds = (seconds: number) => {
 };
 
 onMounted(() => {
+    // @ts-expect-error intervalID is a NodeJS.Interval, not a number
     intervalID.value = setInterval(() => {
-        if (props.progress && props.progress.isRateLimited) {
+        if (props.progress && props.progress.isRateLimited && props.progress.rateLimitReset) {
+            const rateLimitReset = props.progress?.rateLimitReset;
             const currentUTCTimestamp = Math.floor(Date.now() / 1000);
-            rateLimitSecondsLeft.value = props.progress.rateLimitReset - currentUTCTimestamp;
+            rateLimitSecondsLeft.value = rateLimitReset - currentUTCTimestamp;
             if (rateLimitSecondsLeft.value <= 0) {
                 rateLimitSecondsLeft.value = 0;
             }
@@ -53,6 +58,25 @@ onUnmounted(() => {
                 <p v-if="progress.isRateLimited" class="rate-limit">
                     You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
                 </p>
+            </template>
+            <!-- Archive Tweets -->
+            <template v-if="progress.currentJob == 'archiveTweets'">
+                <p>
+                    Archived
+                    <b>{{ progress.tweetsArchived.toLocaleString() }} out of
+                        {{ progress.totalTweetsToArchive.toLocaleString() }} tweets</b>.
+                    <template v-if="progress.isArchiveTweetsFinished">
+                        Finished archiving tweets!
+                    </template>
+                </p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar"
+                        :style="{ width: `${(progress.tweetsArchived / progress.totalTweetsToArchive) * 100}%` }"
+                        :aria-valuenow="(progress.tweetsArchived / progress.totalTweetsToArchive) * 100"
+                        aria-valuemin="0" aria-valuemax="100">
+                        {{ ((progress.tweetsArchived / progress.totalTweetsToArchive) * 100).toFixed(2) }}%
+                    </div>
+                </div>
             </template>
         </div>
     </template>

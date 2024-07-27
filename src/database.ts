@@ -245,6 +245,14 @@ export const getAccount = (id: number): Account | null => {
     };
 }
 
+export async function getAccountUsername(account: Account): Promise<string | null> {
+    if (account.type == "X" && account.xAccount) {
+        return account.xAccount?.username;
+    }
+
+    return null;
+}
+
 export const getAccounts = (): Account[] => {
     const rows = exec(db, 'SELECT * FROM account', [], 'all');
 

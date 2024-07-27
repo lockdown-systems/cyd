@@ -72,16 +72,19 @@ export type XTweet = {
 // Other X types
 
 export type XProgress = {
-    currentJob: string; // "index", "archive", or "delete"
+    currentJob: string; // "index", "archiveTweets", "archiveDirectMessages", or "delete"
 
     isIndexFinished: boolean;
-    isArchiveFinished: boolean;
+    isArchiveTweetsFinished: boolean;
+    isArchiveDirectMessagesFinished: boolean;
     isDeleteFinished: boolean;
 
     tweetsIndexed: number;
     retweetsIndexed: number;
 
+    totalTweetsToArchive: number;
     tweetsArchived: number;
+    totalDirectMessageConversationsToArchive: number;
     directMessageConversationsArchived: number;
 
     tweetsDeleted: number;

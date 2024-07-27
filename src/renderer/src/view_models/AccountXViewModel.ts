@@ -1,5 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress } from '../../../shared_types';
+import type { XJob, XProgress, XTweet } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -14,6 +14,9 @@ export class AccountXViewModel extends BaseViewModel {
     private jobs: XJob[] = [];
     private isFirstRun: boolean = false;
 
+    private tweetIDs: string[] = [];
+    private currentTweet: XTweet | null = null;
+
     async init() {
         this.state = State.Login;
         this.progress = null;
@@ -22,6 +25,26 @@ export class AccountXViewModel extends BaseViewModel {
 
     log(func: string, message: string) {
         console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
+    }
+
+    async setAction(action: string) {
+        this.action = action;
+        switch (action) {
+            case "archive":
+                if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDirectMessages) {
+                    this.actionString = "I'm archiving your tweets and direct messages.";
+                } else {
+                    if (this.account.xAccount?.archiveDirectMessages) {
+                        this.actionString = "I'm archiving your tweets.";
+                    } else {
+                        this.actionString = "I'm archiving your direct messages.";
+                    }
+                }
+                break;
+            case "delete":
+                this.actionString = "I'm deleting your NOT IMPLEMENTED YET.";
+                break;
+        }
     }
 
     async getUsername(): Promise<null | string> {
@@ -53,7 +76,7 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async startArchiving() {
-        this.action = "archive"
+        this.setAction("archive");
 
         const jobTypes = [];
         jobTypes.push("index");
@@ -149,7 +172,7 @@ export class AccountXViewModel extends BaseViewModel {
             case "index":
                 this.showBrowser = true;
                 this.instructions = `
-Hang on while I scroll down to your earliest tweets that I've seen.
+**${this.actionString}** To start, I need to index your tweets. Hang on while I scroll down to your earliest tweets that I've seen.
 `;
 
                 // Check if this is the first time indexing has happened in this account
@@ -208,12 +231,38 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                 console.log("index job finished", this.progress);
 
-                await new Promise(resolve => setTimeout(resolve, 30000));
-
                 break;
 
             case "archiveTweets":
-                console.log("archiveTweets: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}** I'm saving archives of your tweets, one at a time. This may take a while.
+`;
+
+                // Start with a blank page
+                await this.loadURL("about:blank");
+
+                // Get tweet IDs
+                this.tweetIDs = await window.electron.X.archiveGetTweetIDs(this.account.id);
+                if (this.progress) {
+                    this.progress.currentJob = "archiveTweets";
+                    this.progress.totalTweetsToArchive = this.tweetIDs.length;
+                    this.progress.tweetsArchived = 0;
+                }
+
+                // Start archiving
+                if (this.tweetIDs.length > 0) {
+                    // TODO: finish all of them, but I'm just trying one for now
+                    this.currentTweet = await window.electron.X.archiveGetTweet(this.account.id, this.tweetIDs[0]);
+                    if (this.currentTweet !== null) {
+                        const url = `https://x.com/${this.currentTweet.path}`;
+                        const filename = await window.electron.archive.savePage(this.account.id, url, this.currentTweet.createdAt, this.currentTweet.tweetId);
+                        console.log("saved", filename);
+
+                        await new Promise(resolve => setTimeout(resolve, 30000));
+                    }
+                }
+
                 break;
 
             case "archiveDirectMessages":

@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob } from "../../shared_types";
+import type { Account, XProgress, XJob, XTweet } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -30,6 +30,7 @@ declare global {
             archive: {
                 isChromiumExtracted: () => Promise<boolean>;
                 extractChromium: () => Promise<boolean>;
+                savePage: (accountID: number, url: string, postDate: Date, postID: string) => Promise<string | null>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
@@ -39,6 +40,8 @@ declare global {
                 indexStop: (accountID: number) => void;
                 indexParse: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexFinished: (accountID: number) => Promise<XProgress>;
+                archiveGetTweetIDs: (accountID: number) => Promise<string[]>;
+                archiveGetTweet: (accountID: number, tweetID: string) => Promise<XTweet | null>;
             };
         };
     }

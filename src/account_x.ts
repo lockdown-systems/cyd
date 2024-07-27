@@ -4,7 +4,7 @@ import { ipcMain } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount, XJob, XProgress } from './shared_types'
+import { XAccount, XJob, XProgress, XTweet } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
 import { IMITMController, mitmControllers } from './mitm_proxy';
@@ -167,11 +167,14 @@ export class XAccountController {
     private progress: XProgress = {
         currentJob: "index",
         isIndexFinished: false,
-        isArchiveFinished: false,
+        isArchiveTweetsFinished: false,
+        isArchiveDirectMessagesFinished: false,
         isDeleteFinished: false,
         tweetsIndexed: 0,
         retweetsIndexed: 0,
+        totalTweetsToArchive: 0,
         tweetsArchived: 0,
+        totalDirectMessageConversationsToArchive: 0,
         directMessageConversationsArchived: 0,
         tweetsDeleted: 0,
         retweetsDeleted: 0,
@@ -414,6 +417,39 @@ export class XAccountController {
         this.progress.isIndexFinished = true;
         return this.progress;
     }
+
+    async archiveGetTweetIDs(): Promise<string[]> {
+        const username = this.account?.username;
+        if (!username) {
+            return [];
+        }
+        const tweetIDs = exec(this.db, 'SELECT tweetID FROM tweet WHERE username = ?', [username], "all");
+        return tweetIDs.map((tweetID) => tweetID.tweetID);
+    }
+
+    async archiveGetTweet(tweetID: number): Promise<XTweet | null> {
+        const tweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetID], "get");
+        if (!tweet) {
+            return null;
+        }
+        return {
+            id: tweet.id,
+            username: tweet.username,
+            tweetId: tweet.tweetID,
+            conversationId: tweet.conversationID,
+            createdAt: new Date(tweet.createdAt),
+            likeCount: tweet.likeCount,
+            quoteCount: tweet.quoteCount,
+            replyCount: tweet.replyCount,
+            retweetCount: tweet.retweetCount,
+            isLiked: tweet.isLiked ? true : false,
+            isRetweeted: tweet.isRetweeted ? true : false,
+            text: tweet.text,
+            path: tweet.path,
+            addedToDatabaseAt: new Date(tweet.addedToDatabaseAt),
+            archivedAt: tweet.archivedAt ? new Date(tweet.archivedAt) : null,
+        };
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -461,5 +497,15 @@ export const defineIPCX = () => {
     ipcMain.handle('X:indexFinished', async (_, accountID: number): Promise<XProgress> => {
         const controller = getController(accountID);
         return await controller.indexFinished();
+    });
+
+    ipcMain.handle('X:archiveGetTweetIDs', async (_, accountID: number): Promise<string[]> => {
+        const controller = getController(accountID);
+        return await controller.archiveGetTweetIDs();
+    });
+
+    ipcMain.handle('X:archiveGetTweet', async (_, accountID: number, tweetID: number): Promise<XTweet | null> => {
+        const controller = getController(accountID);
+        return await controller.archiveGetTweet(tweetID);
     });
 };
