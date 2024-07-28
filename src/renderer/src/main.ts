@@ -30,6 +30,8 @@ declare global {
             archive: {
                 isChromiumExtracted: () => Promise<boolean>;
                 extractChromium: () => Promise<boolean>;
+                saveCookiesFile: (accountID: number) => Promise<void>;
+                deleteCookiesFile: (accountID: number) => Promise<void>;
                 savePage: (accountID: number, url: string, postDate: Date, postID: string) => Promise<string | null>;
             },
             X: {

@@ -55,6 +55,12 @@ contextBridge.exposeInMainWorld('electron', {
         extractChromium: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:extractChromium')
         },
+        saveCookiesFile: (accountID: number) => {
+            ipcRenderer.invoke('archive:saveCookiesFile', accountID)
+        },
+        deleteCookiesFile: (accountID: number) => {
+            ipcRenderer.invoke('archive:deleteCookiesFile', accountID)
+        },
         savePage: (accountID: number, url: string, postDate: Date, postID: string): Promise<string | null> => {
             return ipcRenderer.invoke('archive:savePage', accountID, url, postDate, postID)
         }

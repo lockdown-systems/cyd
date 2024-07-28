@@ -250,6 +250,9 @@ export class AccountXViewModel extends BaseViewModel {
                     this.progress.tweetsArchived = 0;
                 }
 
+                // Save cookies to file
+                await window.electron.archive.saveCookiesFile(this.account.id);
+
                 // Start archiving
                 if (this.tweetIDs.length > 0) {
                     // TODO: finish all of them, but I'm just trying one for now
@@ -262,6 +265,9 @@ export class AccountXViewModel extends BaseViewModel {
                         await new Promise(resolve => setTimeout(resolve, 30000));
                     }
                 }
+
+                // Delete cookies file
+                await window.electron.archive.deleteCookiesFile(this.account.id);
 
                 break;
 

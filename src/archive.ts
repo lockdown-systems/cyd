@@ -57,6 +57,19 @@ export const defineIPCArchive = () => {
         }
     });
 
+    ipcMain.handle('archive:saveCookiesFile', async (_, accountID: number) => {
+        const ses = session.fromPartition(`persist:account-${accountID}`);
+        const cookies = ses.cookies.get({});
+        const cookiesJSON = JSON.stringify(cookies);
+        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
+        writeFileSync(cookiesPath, cookiesJSON);
+    });
+
+    ipcMain.handle('archive:deleteCookiesFile', async (_, accountID: number) => {
+        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
+        unlinkSync(cookiesPath);
+    });
+
     // Returns the path to the saved HTML file
     ipcMain.handle('archive:savePage', async (_, accountID: number, url: string, postDate: Date, postID: string): Promise<string | null> => {
         // Make sure we have the account and username
@@ -114,10 +127,9 @@ export const defineIPCArchive = () => {
 
         child.on('close', (code) => {
             console.log(`child process exited with code ${code}`);
-        });
 
-        // Delete the cookies file
-        // unlinkSync(cookiesPath);
+            // TODO: Return the promise here
+        });
 
         // Check if the file was created
         if (!existsSync(outputPath)) {
