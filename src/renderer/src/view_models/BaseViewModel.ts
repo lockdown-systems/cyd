@@ -122,12 +122,12 @@ export class BaseViewModel {
         await this.waitForWebviewReady();
     }
 
-    async loadURLWithoutFocus(url: string) {
-        console.log("AccountXViewModel.loadURLWithoutFocus", url);
+    async loadFile(filename: string) {
+        console.log("AccountXViewModel.loadFile", filename);
         const webview = this.getWebview();
         if (webview) {
             const contentsID = webview.getWebContentsId();
-            await window.electron.loadURLInWebviewWithoutFocus(contentsID, url);
+            await window.electron.loadFileInWebview(contentsID, filename);
 
         }
         await this.waitForWebviewReady();

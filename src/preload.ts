@@ -17,8 +17,8 @@ contextBridge.exposeInMainWorld('electron', {
     openURL: (url: string) => {
         ipcRenderer.invoke('openURL', url)
     },
-    loadURLInWebviewWithoutFocus: (webContentsId: number, url: string) => {
-        ipcRenderer.invoke('loadURLInWebviewWithoutFocus', webContentsId, url)
+    loadFileInWebview: (webContentsId: number, filename: string) => {
+        ipcRenderer.invoke('loadFileInWebview', webContentsId, filename)
     },
     database: {
         getConfig: (key: string): Promise<string> => {

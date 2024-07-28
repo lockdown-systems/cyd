@@ -14,7 +14,7 @@ declare global {
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             openURL: (url: string) => void;
-            loadURLInWebviewWithoutFocus: (webContentsId: number, url: string) => void;
+            loadFileInWebview: (webContentsId: number, filename: string) => void;
             database: {
                 getConfig: (key: string) => Promise<string>;
                 setConfig: (key: string, value: string) => void;

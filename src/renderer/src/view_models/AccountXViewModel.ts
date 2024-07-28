@@ -262,8 +262,9 @@ export class AccountXViewModel extends BaseViewModel {
                         console.log("saved", filename);
 
                         // Show the saved file
-                        //await this.loadURLWithoutFocus("file://" + filename);
-                        await this.loadURL("file://" + filename);
+                        if (filename) {
+                            await this.loadFile(filename);
+                        }
 
                         // Update progress
                         if (this.progress) {

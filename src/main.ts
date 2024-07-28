@@ -130,10 +130,10 @@ async function createWindow() {
             shell.openExternal(url);
         });
 
-        ipcMain.handle('loadURLInWebviewWithoutFocus', async (_, webContentsId: number, url: string) => {
+        ipcMain.handle('loadFileInWebview', async (_, webContentsId: number, filename: string) => {
             const wc = webContents.fromId(webContentsId);
             if (wc) {
-                await wc.loadURL(url);
+                await wc.loadFile(filename);
             }
         });
 
