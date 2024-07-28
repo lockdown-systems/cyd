@@ -236,7 +236,7 @@ export class AccountXViewModel extends BaseViewModel {
             case "archiveTweets":
                 this.showBrowser = true;
                 this.instructions = `
-**${this.actionString}** I'm saving archives of your tweets, one at a time. This may take a while.
+**${this.actionString}** I'm saving archives of your tweets, one at a time, starting at the oldest. Each tweet takes a few seconds to save. This may take a while.
 `;
 
                 // Start with a blank page
@@ -254,15 +254,20 @@ export class AccountXViewModel extends BaseViewModel {
                 await window.electron.archive.saveCookiesFile(this.account.id);
 
                 // Start archiving
-                if (this.tweetIDs.length > 0) {
-                    // TODO: finish all of them, but I'm just trying one for now
-                    this.currentTweet = await window.electron.X.archiveGetTweet(this.account.id, this.tweetIDs[0]);
+                for (let i = 0; i < this.tweetIDs.length; i++) {
+                    this.currentTweet = await window.electron.X.archiveGetTweet(this.account.id, this.tweetIDs[i]);
                     if (this.currentTweet !== null) {
                         const url = `https://x.com/${this.currentTweet.path}`;
                         const filename = await window.electron.archive.savePage(this.account.id, url, this.currentTweet.createdAt, this.currentTweet.tweetId);
                         console.log("saved", filename);
 
-                        await new Promise(resolve => setTimeout(resolve, 30000));
+                        // Show the saved file
+                        await this.loadURL("file://" + filename);
+
+                        // Update progress
+                        if (this.progress) {
+                            this.progress.tweetsArchived = i + 1;
+                        }
                     }
                 }
 

@@ -428,7 +428,12 @@ export class XAccountController {
         if (!username) {
             return [];
         }
-        const tweetIDs = exec(this.db, 'SELECT tweetID FROM tweet WHERE username = ?', [username], "all");
+        const tweetIDs = exec(
+            this.db,
+            'SELECT tweetID FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
+            [username, 0],
+            "all"
+        );
         return tweetIDs.map((tweetID) => tweetID.tweetID);
     }
 
