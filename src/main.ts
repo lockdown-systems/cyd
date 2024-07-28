@@ -10,7 +10,6 @@ import {
     setConfig,
     defineIPCDatabase
 } from './database';
-import { defineIPCMITMProxy } from './mitm_proxy';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
 
@@ -132,7 +131,6 @@ async function createWindow() {
         });
 
         defineIPCDatabase();
-        defineIPCMITMProxy();
         defineIPCX();
         defineIPCArchive();
     }

@@ -1,13 +1,13 @@
 import path from 'path'
 
-import { ipcMain } from 'electron'
+import { ipcMain, session } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
 import { XAccount, XJob, XProgress, XTweet } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
-import { IMITMController, mitmControllers } from './mitm_proxy';
+import { IMITMController, getMITMController } from './mitm_proxy';
 
 interface XAPILegacyTweet {
     bookmark_count: number;
@@ -270,11 +270,16 @@ export class XAccountController {
     }
 
     async indexStartMonitoring() {
+        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        await ses.clearCache();
+        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
         await this.mitmController.startMonitoring();
     }
 
     async indexStopMonitoring() {
         await this.mitmController.stopMonitoring();
+        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        await this.mitmController.stopMITM(ses);
     }
 
     // Returns false if the loop should stop
@@ -454,58 +459,58 @@ export class XAccountController {
 
 const controllers: Record<number, XAccountController> = {};
 
-const getController = (accountID: number): XAccountController => {
+const getXAccountController = (accountID: number): XAccountController => {
     if (!controllers[accountID]) {
-        controllers[accountID] = new XAccountController(accountID, mitmControllers[accountID]);
+        controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
     return controllers[accountID];
 }
 
 export const defineIPCX = () => {
     ipcMain.handle('X:createJobs', async (_, accountID: number, jobTypes: string[]): Promise<XJob[]> => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         return controller.createJobs(jobTypes);
     });
 
     ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<XJob | null> => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         return controller.getLastFinishedJob(jobType);
     });
 
     ipcMain.handle('X:updateJob', async (_, accountID: number, jobJSON: string) => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         const job = JSON.parse(jobJSON) as XJob;
         controller.updateJob(job);
     });
 
     ipcMain.handle('X:indexStart', async (_, accountID: number) => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         await controller.indexStartMonitoring();
 
     });
 
     ipcMain.handle('X:indexStop', async (_, accountID: number) => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         await controller.indexStopMonitoring();
     });
 
     ipcMain.handle('X:indexParse', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         return await controller.indexParse(isFirstRun);
     });
 
     ipcMain.handle('X:indexFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         return await controller.indexFinished();
     });
 
     ipcMain.handle('X:archiveGetTweetIDs', async (_, accountID: number): Promise<string[]> => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         return await controller.archiveGetTweetIDs();
     });
 
     ipcMain.handle('X:archiveGetTweet', async (_, accountID: number, tweetID: number): Promise<XTweet | null> => {
-        const controller = getController(accountID);
+        const controller = getXAccountController(accountID);
         return await controller.archiveGetTweet(tweetID);
     });
 };

@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from "path"
 
-import { ipcMain, session } from 'electron'
 import { Proxy, IContext } from "http-mitm-proxy"
 import * as zlib from "zlib"
 
@@ -243,25 +242,11 @@ export class MITMController implements IMITMController {
     }
 }
 
-export const mitmControllers: Record<number, MITMController> = {};
+const mitmControllers: Record<number, MITMController> = {};
 
-export const defineIPCMITMProxy = () => {
-    ipcMain.handle('mitmProxy:start', async (_, accountID: number, proxyFilter: string[]) => {
-        // If no account info exists, create it
-        if (!mitmControllers[accountID]) {
-            mitmControllers[accountID] = new MITMController(accountID);
-            // TODO: handle error if account not found
-        }
-
-        // Start MITM
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        await ses.clearCache();
-        await mitmControllers[accountID].startMITM(ses, proxyFilter);
-    });
-
-    ipcMain.handle('mitmProxy:stop', async (_, accountID: number) => {
-        // Stop MITM
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        await mitmControllers[accountID].stopMITM(ses);
-    });
-};
+export const getMITMController = (accountID: number): MITMController => {
+    if (!mitmControllers[accountID]) {
+        mitmControllers[accountID] = new MITMController(accountID);
+    }
+    return mitmControllers[accountID];
+}

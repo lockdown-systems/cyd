@@ -142,8 +142,6 @@ onMounted(async () => {
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
-        // Start the MITM proxy
-        await window.electron.mitmProxy.start(props.account.id, ["x.com/i/api/graphql"]);
 
         // Start the state loop
         if (props.account.xAccount !== null) {
@@ -157,9 +155,6 @@ onMounted(async () => {
 });
 
 onUnmounted(async () => {
-    // Stop the MITM proxy
-    await window.electron.mitmProxy.stop(props.account.id);
-
     isWebviewMounted.value = false;
 });
 </script>

@@ -60,6 +60,7 @@ export const defineIPCArchive = () => {
     ipcMain.handle('archive:saveCookiesFile', async (_, accountID: number) => {
         const ses = session.fromPartition(`persist:account-${accountID}`);
         const cookies = ses.cookies.get({});
+        console.log(`Cookies: ${JSON.stringify(cookies)}`);
         const cookiesJSON = JSON.stringify(cookies);
         const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
         writeFileSync(cookiesPath, cookiesJSON);

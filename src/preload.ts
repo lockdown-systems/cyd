@@ -40,14 +40,6 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('database:deleteAccount', accountID)
         },
     },
-    mitmProxy: {
-        start: (accountID: number, proxyFilter: string[]) => {
-            ipcRenderer.invoke('mitmProxy:start', accountID, proxyFilter)
-        },
-        stop: (accountID: number) => {
-            ipcRenderer.invoke('mitmProxy:stop', accountID)
-        }
-    },
     archive: {
         isChromiumExtracted: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:isChromiumExtracted')

@@ -23,10 +23,6 @@ declare global {
                 saveAccount: (accountJSON: string) => void;
                 deleteAccount: (accountID: number) => void;
             },
-            mitmProxy: {
-                start: (accountID: number, proxyFilter: string[]) => void;
-                stop: (accountID: number) => void;
-            },
             archive: {
                 isChromiumExtracted: () => Promise<boolean>;
                 extractChromium: () => Promise<boolean>;
