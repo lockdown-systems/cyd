@@ -1,9 +1,9 @@
-import Electron from 'electron';
+import { WebviewTag } from 'electron';
 import type { Account } from '../../../shared_types';
 
 export class BaseViewModel {
     public account: Account;
-    public webview: Electron.WebviewTag;
+    public webview: WebviewTag;
     public isWebviewDestroyed: boolean;
 
     public state: string;
@@ -15,7 +15,7 @@ export class BaseViewModel {
     public showBrowser: boolean;
     public instructions: string;
 
-    constructor(account: Account, webview: Electron.WebviewTag) {
+    constructor(account: Account, webview: WebviewTag) {
         this.account = account;
         this.webview = webview;
         this.isWebviewDestroyed = false;
@@ -59,7 +59,7 @@ export class BaseViewModel {
         this.isWebviewDestroyed = true;
     }
 
-    getWebview(): Electron.WebviewTag | null {
+    getWebview(): WebviewTag | null {
         if (this.isWebviewDestroyed) {
             return null;
         }
@@ -115,7 +115,21 @@ export class BaseViewModel {
 
     async loadURL(url: string) {
         console.log("AccountXViewModel.loadURL", url);
-        await this.getWebview()?.loadURL(url);
+        const webview = this.getWebview();
+        if (webview) {
+            await webview.loadURL(url);
+        }
+        await this.waitForWebviewReady();
+    }
+
+    async loadURLWithoutFocus(url: string) {
+        console.log("AccountXViewModel.loadURLWithoutFocus", url);
+        const webview = this.getWebview();
+        if (webview) {
+            const contentsID = webview.getWebContentsId();
+            await window.electron.loadURLInWebviewWithoutFocus(contentsID, url);
+
+        }
         await this.waitForWebviewReady();
     }
 

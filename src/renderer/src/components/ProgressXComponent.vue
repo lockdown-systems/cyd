@@ -7,6 +7,7 @@ const rateLimitSecondsLeft = ref<number | null>(null);
 
 const props = defineProps<{
     progress: XProgress | null;
+    accountID: number;
 }>();
 
 const formatSeconds = (seconds: number | null) => {
@@ -19,6 +20,10 @@ const formatSeconds = (seconds: number | null) => {
         return `${remainingSeconds} seconds`;
     }
     return `${minutes} minutes, ${remainingSeconds} seconds`;
+};
+
+const archivedTweetsOpenFolder = async () => {
+    await window.electron.X.openFolder(props.accountID, "Archived Tweets");
 };
 
 onMounted(() => {
@@ -69,13 +74,18 @@ onUnmounted(() => {
                         Finished archiving tweets!
                     </template>
                 </p>
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar"
-                        :style="{ width: `${(progress.tweetsArchived / progress.totalTweetsToArchive) * 100}%` }"
-                        :aria-valuenow="(progress.tweetsArchived / progress.totalTweetsToArchive) * 100"
-                        aria-valuemin="0" aria-valuemax="100">
-                        {{ ((progress.tweetsArchived / progress.totalTweetsToArchive) * 100).toFixed(2) }}%
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.tweetsArchived / progress.totalTweetsToArchive) * 100}%` }"
+                            :aria-valuenow="(progress.tweetsArchived / progress.totalTweetsToArchive) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.tweetsArchived / progress.totalTweetsToArchive) * 100) }}%
+                        </div>
                     </div>
+                    <button class="btn btn-primary" @click="archivedTweetsOpenFolder">
+                        Open Folder
+                    </button>
                 </div>
             </template>
         </div>
@@ -91,6 +101,10 @@ onUnmounted(() => {
 
 .progress-wrapper p {
     margin: 0;
+}
+
+.progress {
+    height: 30px;
 }
 
 .rate-limit {

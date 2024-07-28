@@ -168,7 +168,7 @@ onUnmounted(async () => {
             class="speech-bubble" />
 
         <!-- Progress -->
-        <ProgressXComponent v-if="progress" :progress="progress" />
+        <ProgressXComponent v-if="progress" :progress="progress" :account-i-d="account.id" />
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"

@@ -2,7 +2,7 @@ import process from 'process';
 import os from 'os';
 import log from 'electron-log/main';
 import { join } from 'node:path';
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, webContents } from 'electron';
 
 import {
     runMainMigrations,
@@ -112,11 +112,11 @@ async function createWindow() {
             return false;
         });
 
-        ipcMain.handle('showError', async (_, message) => {
+        ipcMain.handle('showError', async (_, message: string) => {
             dialog.showErrorBox('Semiphemeral Error', message);
         });
 
-        ipcMain.handle('showQuestion', async (_, message, trueText, falseText) => {
+        ipcMain.handle('showQuestion', async (_, message: string, trueText: string, falseText: string) => {
             const result = dialog.showMessageBoxSync({
                 message: message,
                 type: 'question',
@@ -128,6 +128,13 @@ async function createWindow() {
 
         ipcMain.handle('openURL', async (_, url) => {
             shell.openExternal(url);
+        });
+
+        ipcMain.handle('loadURLInWebviewWithoutFocus', async (_, webContentsId: number, url: string) => {
+            const wc = webContents.fromId(webContentsId);
+            if (wc) {
+                await wc.loadURL(url);
+            }
         });
 
         defineIPCDatabase();

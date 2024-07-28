@@ -120,7 +120,7 @@ export const defineIPCArchive = () => {
     });
 
     // Returns the path to the saved HTML file
-    ipcMain.handle('archive:savePage', async (_, accountID: number, url: string, postDate: Date, postID: string): Promise<string | null> => {
+    ipcMain.handle('archive:savePage', async (_, accountID: number, url: string, postDate: Date, postID: string, outputFolderName: string): Promise<string | null> => {
         // Make sure we have the account and username
         const account = await getAccount(accountID);
         if (!account) {
@@ -141,7 +141,7 @@ export const defineIPCArchive = () => {
         // Build the output filename
         const accountDataPath = getAccountDataPath(account.type, accountUsername);
         const filename = `${postDate.toISOString().split('T')[0]}_${postID}.html`;
-        const outputFolder = path.join(accountDataPath, 'Archived Tweets');
+        const outputFolder = path.join(accountDataPath, outputFolderName);
         if (!existsSync(outputFolder)) {
             mkdirSync(outputFolder);
         }

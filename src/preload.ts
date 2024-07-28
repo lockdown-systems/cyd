@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('electron', {
     openURL: (url: string) => {
         ipcRenderer.invoke('openURL', url)
     },
+    loadURLInWebviewWithoutFocus: (webContentsId: number, url: string) => {
+        ipcRenderer.invoke('loadURLInWebviewWithoutFocus', webContentsId, url)
+    },
     database: {
         getConfig: (key: string): Promise<string> => {
             return ipcRenderer.invoke('database:getConfig', key);
@@ -53,8 +56,8 @@ contextBridge.exposeInMainWorld('electron', {
         deleteCookiesFile: (accountID: number) => {
             ipcRenderer.invoke('archive:deleteCookiesFile', accountID)
         },
-        savePage: (accountID: number, url: string, postDate: Date, postID: string): Promise<string | null> => {
-            return ipcRenderer.invoke('archive:savePage', accountID, url, postDate, postID)
+        savePage: (accountID: number, url: string, postDate: Date, postID: string, outputFolderName: string): Promise<string | null> => {
+            return ipcRenderer.invoke('archive:savePage', accountID, url, postDate, postID, outputFolderName)
         }
     },
     X: {
@@ -85,5 +88,8 @@ contextBridge.exposeInMainWorld('electron', {
         archiveGetTweet: (accountID: number, tweetID: number): Promise<XTweet | null> => {
             return ipcRenderer.invoke('X:archiveGetTweet', accountID, tweetID)
         },
+        openFolder: (accountID: number, folderName: string) => {
+            ipcRenderer.invoke('X:openFolder', accountID, folderName);
+        }
     }
 })

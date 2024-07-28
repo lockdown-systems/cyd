@@ -14,6 +14,7 @@ declare global {
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             openURL: (url: string) => void;
+            loadURLInWebviewWithoutFocus: (webContentsId: number, url: string) => void;
             database: {
                 getConfig: (key: string) => Promise<string>;
                 setConfig: (key: string, value: string) => void;
@@ -28,7 +29,7 @@ declare global {
                 extractChromium: () => Promise<boolean>;
                 saveCookiesFile: (accountID: number) => Promise<void>;
                 deleteCookiesFile: (accountID: number) => Promise<void>;
-                savePage: (accountID: number, url: string, postDate: Date, postID: string) => Promise<string | null>;
+                savePage: (accountID: number, url: string, postDate: Date, postID: string, outputFolderName: string) => Promise<string | null>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
@@ -40,6 +41,7 @@ declare global {
                 indexFinished: (accountID: number) => Promise<XProgress>;
                 archiveGetTweetIDs: (accountID: number) => Promise<string[]>;
                 archiveGetTweet: (accountID: number, tweetID: string) => Promise<XTweet | null>;
+                openFolder: (accountID: number, folderName: string) => void;
             };
         };
     }

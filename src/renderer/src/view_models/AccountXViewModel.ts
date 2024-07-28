@@ -236,7 +236,7 @@ export class AccountXViewModel extends BaseViewModel {
             case "archiveTweets":
                 this.showBrowser = true;
                 this.instructions = `
-**${this.actionString}** I'm saving archives of your tweets, one at a time, starting at the oldest. Each tweet takes a few seconds to save. This may take a while.
+**${this.actionString}** I'm saving your tweets one at a time, starting at the oldest. Each tweet takes a few seconds to save. This may take a while...
 `;
 
                 // Start with a blank page
@@ -258,10 +258,11 @@ export class AccountXViewModel extends BaseViewModel {
                     this.currentTweet = await window.electron.X.archiveGetTweet(this.account.id, this.tweetIDs[i]);
                     if (this.currentTweet !== null) {
                         const url = `https://x.com/${this.currentTweet.path}`;
-                        const filename = await window.electron.archive.savePage(this.account.id, url, this.currentTweet.createdAt, this.currentTweet.tweetId);
+                        const filename = await window.electron.archive.savePage(this.account.id, url, this.currentTweet.createdAt, this.currentTweet.tweetId, "Archived Tweets");
                         console.log("saved", filename);
 
                         // Show the saved file
+                        //await this.loadURLWithoutFocus("file://" + filename);
                         await this.loadURL("file://" + filename);
 
                         // Update progress

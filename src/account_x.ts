@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { ipcMain, session } from 'electron'
+import { ipcMain, session, shell } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
@@ -460,6 +460,13 @@ export class XAccountController {
             archivedAt: tweet.archivedAt ? new Date(tweet.archivedAt) : null,
         };
     }
+
+    async openFolder(folderName: string) {
+        if (this.account) {
+            const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
+            await shell.openPath(folderPath);
+        }
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -517,5 +524,10 @@ export const defineIPCX = () => {
     ipcMain.handle('X:archiveGetTweet', async (_, accountID: number, tweetID: number): Promise<XTweet | null> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveGetTweet(tweetID);
+    });
+
+    ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {
+        const controller = getXAccountController(accountID);
+        await controller.openFolder(folderName);
     });
 };
