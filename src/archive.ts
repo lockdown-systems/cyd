@@ -5,9 +5,33 @@ import { spawn } from 'child_process';
 
 import { ipcMain, session } from 'electron';
 import extract from 'extract-zip';
+import Database from 'better-sqlite3'
 
 import { getAccountDataPath, getAccountSettingsPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
 import { getAccount, getAccountUsername } from './database';
+
+interface ChromiumCookie {
+    creation_utc: number;
+    host_key: string;
+    top_frame_site_key: string | null;
+    name: string;
+    value: string;
+    encrypted_value: string | null;
+    path: string;
+    expires_utc: number;
+    is_secure: number;
+    is_httponly: number;
+    last_access_utc: number;
+    has_expires: number;
+    is_persistent: number;
+    priority: number;
+    samesite: number;
+    source_scheme: number;
+    source_port: number;
+    last_update_utc: number;
+    source_type: number;
+    has_cross_site_ancestor: number;
+}
 
 export const defineIPCArchive = () => {
     ipcMain.handle('archive:isChromiumExtracted', async (_): Promise<boolean> => {
@@ -59,8 +83,32 @@ export const defineIPCArchive = () => {
 
     ipcMain.handle('archive:saveCookiesFile', async (_, accountID: number) => {
         const ses = session.fromPartition(`persist:account-${accountID}`);
-        const cookies = ses.cookies.get({});
-        console.log(`Cookies: ${JSON.stringify(cookies)}`);
+
+        // For some reason this is returning an empty object, so we'll read the cookies from sqlite3 instead
+        // const cookies = ses.cookies.get({});
+
+        let chromiumCookies: ChromiumCookie[] = [];
+        if (ses.storagePath) {
+            const cookiesDatabasePath = path.join(ses.storagePath, 'Cookies');
+            const db = new Database(cookiesDatabasePath, {});
+            db.pragma('journal_mode = WAL');
+
+            chromiumCookies = db.prepare('SELECT * FROM cookies').all() as ChromiumCookie[];
+        }
+
+        const cookies = chromiumCookies.map(cookie => {
+            return {
+                domain: cookie.host_key,
+                expires: cookie.has_expires ? cookie.expires_utc : -1,
+                httpOnly: cookie.is_httponly === 1,
+                name: cookie.name,
+                value: cookie.value,
+                path: cookie.path,
+                secure: cookie.is_secure === 1,
+                session: cookie.is_persistent === 0,
+                size: Buffer.byteLength(cookie.value, 'utf8')
+            }
+        });
         const cookiesJSON = JSON.stringify(cookies);
         const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
         writeFileSync(cookiesPath, cookiesJSON);
@@ -90,23 +138,23 @@ export const defineIPCArchive = () => {
             return null;
         }
 
-        // Get the session cookies
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        const cookies = ses.cookies.get({});
-        const cookiesJSON = JSON.stringify(cookies);
-        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
-        writeFileSync(cookiesPath, cookiesJSON);
-
         // Build the output filename
         const accountDataPath = getAccountDataPath(account.type, accountUsername);
-        const filename = `${postDate.toISOString().replace(/:/g, '-')}-${postID}.html`;
+        const filename = `${postDate.toISOString().split('T')[0]}_${postID}.html`;
         const outputFolder = path.join(accountDataPath, 'Archived Tweets');
         if (!existsSync(outputFolder)) {
             mkdirSync(outputFolder);
         }
         const outputPath = path.join(outputFolder, filename);
 
+        // Check if the file already exists
+        if (existsSync(outputPath)) {
+            console.log(`Page already saved: ${outputPath}`);
+            return outputPath;
+        }
+
         // Fire!
+        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
         const args = [
             '--browser-executable-path', chromiumBinPath,
             '--browser-load-max-time', '30000',
@@ -116,21 +164,34 @@ export const defineIPCArchive = () => {
             url, outputPath
         ]
         console.log(`Running SingleFile: ${singlefileBinPath} ${args.join(' ')}`);
-        const child = spawn(singlefileBinPath, args);
 
-        child.stdout.on('data', (data) => {
-            console.log(`stdout: ${data}`);
+        const savePage = () => new Promise<void>((resolve, reject) => {
+            const child = spawn(singlefileBinPath, args);
+
+            child.stdout.on('data', (data) => {
+                console.log(`stdout: ${data}`);
+            });
+
+            child.stderr.on('data', (data) => {
+                console.error(`stderr: ${data}`);
+            });
+
+            child.on('close', (code) => {
+                console.log(`child process exited with code ${code}`);
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Child process exited with code ${code}`));
+                }
+            });
         });
 
-        child.stderr.on('data', (data) => {
-            console.error(`stderr: ${data}`);
-        });
-
-        child.on('close', (code) => {
-            console.log(`child process exited with code ${code}`);
-
-            // TODO: Return the promise here
-        });
+        try {
+            await savePage();
+        } catch (error) {
+            console.error(`Failed to save page: ${error.message}`);
+            return null;
+        }
 
         // Check if the file was created
         if (!existsSync(outputPath)) {
