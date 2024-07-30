@@ -1,10 +1,11 @@
 import path from 'path'
+import fs from 'fs'
 
 import { ipcMain, session, shell } from 'electron'
 import Database from 'better-sqlite3'
 
-import { getAccountDataPath } from './helpers'
-import { XAccount, XJob, XProgress, XTweet } from './shared_types'
+import { getAccountDataPath, getAccountTempPath } from './helpers'
+import { XAccount, XJob, XProgress, XArchiveTweetsStartResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
 import { IMITMController, getMITMController } from './mitm_proxy';
@@ -423,42 +424,65 @@ export class XAccountController {
         return this.progress;
     }
 
-    async archiveGetTweetIDs(): Promise<string[]> {
-        const username = this.account?.username;
-        if (!username) {
-            return [];
+    // When you start archiving tweets you:
+    // - Write a list of tweet URLs to a file
+    // - Return the URLs path, output path, and all expected filenames
+    async archiveTweetsStart(): Promise<XArchiveTweetsStartResponse | null> {
+        if (this.account) {
+            // Select the tweets
+            const tweets = exec(
+                this.db,
+                'SELECT tweetID, path FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
+                [this.account.username, 0],
+                "all"
+            );
+
+            // Write URLs to disk
+            const urlsPath = path.join(getAccountTempPath(this.account?.id), "tweet_urls.txt");
+            const urls: string[] = [];
+            for (let i = 0; i < tweets.length; i++) {
+                urls.push(`https://x.com/${tweets[i].path}`)
+            }
+            fs.writeFileSync(urlsPath, urls.join('\n'), 'utf-8');
+
+            // Make sure the Archived Tweets folder exists
+            const accountDataPath = getAccountDataPath("X", this.account.username);
+            const outputPath = path.join(accountDataPath, "Archived Tweets");
+            if (!fs.existsSync(outputPath)) {
+                fs.mkdirSync(outputPath);
+            }
+
+            // Calculate the expected filenames
+            const expectedFilenames: string[] = []
+            for (let i = 0; i < tweets.length; i++) {
+                expectedFilenames.push(path.join(outputPath, `${tweets[i].tweetID}.html`))
+            }
+
+            return {
+                urlsPath: urlsPath,
+                outputPath: outputPath,
+                expectedFilenames: expectedFilenames
+            };
         }
-        const tweetIDs = exec(
-            this.db,
-            'SELECT tweetID FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
-            [username, 0],
-            "all"
-        );
-        return tweetIDs.map((tweetID) => tweetID.tweetID);
+        return null;
     }
 
-    async archiveGetTweet(tweetID: number): Promise<XTweet | null> {
-        const tweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetID], "get");
-        if (!tweet) {
-            return null;
+    // This looks at output path, checks for all expected files, and returns a list of filenames that are there.
+    // The renderer will display another one it hasn't displayed before every second, to show the progress
+    async archiveTweetsGetProgress(): Promise<string[]> {
+        if (this.account) {
+            const accountDataPath = getAccountDataPath("X", this.account.username);
+            const outputPath = path.join(accountDataPath, "Archived Tweets");
+
+            try {
+                const files = fs.readdirSync(outputPath);
+                return files;
+            } catch (error) {
+                console.error(`Error reading directory ${outputPath}:`, error);
+                return [];
+            }
         }
-        return {
-            id: tweet.id,
-            username: tweet.username,
-            tweetId: tweet.tweetID,
-            conversationId: tweet.conversationID,
-            createdAt: new Date(tweet.createdAt),
-            likeCount: tweet.likeCount,
-            quoteCount: tweet.quoteCount,
-            replyCount: tweet.replyCount,
-            retweetCount: tweet.retweetCount,
-            isLiked: tweet.isLiked ? true : false,
-            isRetweeted: tweet.isRetweeted ? true : false,
-            text: tweet.text,
-            path: tweet.path,
-            addedToDatabaseAt: new Date(tweet.addedToDatabaseAt),
-            archivedAt: tweet.archivedAt ? new Date(tweet.archivedAt) : null,
-        };
+        return [];
     }
 
     async openFolder(folderName: string) {
@@ -516,14 +540,14 @@ export const defineIPCX = () => {
         return await controller.indexFinished();
     });
 
-    ipcMain.handle('X:archiveGetTweetIDs', async (_, accountID: number): Promise<string[]> => {
+    ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
         const controller = getXAccountController(accountID);
-        return await controller.archiveGetTweetIDs();
+        return await controller.archiveTweetsStart();
     });
 
-    ipcMain.handle('X:archiveGetTweet', async (_, accountID: number, tweetID: number): Promise<XTweet | null> => {
+    ipcMain.handle('X:archiveTweetsGetProgress', async (_, accountID: number): Promise<string[]> => {
         const controller = getXAccountController(accountID);
-        return await controller.archiveGetTweet(tweetID);
+        return await controller.archiveTweetsGetProgress();
     });
 
     ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {

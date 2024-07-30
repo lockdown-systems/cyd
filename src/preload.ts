@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XTweet } from './shared_types'
+import { Account, XProgress, XJob, XArchiveTweetsStartResponse } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -56,9 +56,9 @@ contextBridge.exposeInMainWorld('electron', {
         deleteCookiesFile: (accountID: number) => {
             ipcRenderer.invoke('archive:deleteCookiesFile', accountID)
         },
-        savePage: (accountID: number, url: string, postDate: Date, postID: string, outputFolderName: string): Promise<string | null> => {
-            return ipcRenderer.invoke('archive:savePage', accountID, url, postDate, postID, outputFolderName)
-        }
+        savePage: (accountID: number, outputPath: string, urlsPath: string) => {
+            ipcRenderer.invoke('archive:savePage', accountID, outputPath, urlsPath)
+        },
     },
     X: {
         createJobs: (accountID: number, jobTypes: string[]): Promise<XJob[]> => {
@@ -82,11 +82,11 @@ contextBridge.exposeInMainWorld('electron', {
         indexFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexFinished', accountID)
         },
-        archiveGetTweetIDs: (accountID: number): Promise<string[]> => {
-            return ipcRenderer.invoke('X:archiveGetTweetIDs', accountID)
+        archiveTweetsStart: (accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
+            return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
         },
-        archiveGetTweet: (accountID: number, tweetID: number): Promise<XTweet | null> => {
-            return ipcRenderer.invoke('X:archiveGetTweet', accountID, tweetID)
+        archiveTweetsGetProgress: (accountID: number): Promise<string[]> => {
+            return ipcRenderer.invoke('X:archiveTweetsGetProgress', accountID)
         },
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);

@@ -1,14 +1,13 @@
 import os from 'os';
 import path from 'path';
-import { existsSync, writeFileSync, unlinkSync, mkdirSync } from 'fs';
+import { existsSync, writeFileSync, unlinkSync } from 'fs';
 import { spawn } from 'child_process';
 
 import { ipcMain, session } from 'electron';
 import extract from 'extract-zip';
 import Database from 'better-sqlite3'
 
-import { getAccountDataPath, getAccountSettingsPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
-import { getAccount, getAccountUsername } from './database';
+import { getAccountSettingsPath, getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
 
 interface ChromiumCookie {
     creation_utc: number;
@@ -110,50 +109,22 @@ export const defineIPCArchive = () => {
             }
         });
         const cookiesJSON = JSON.stringify(cookies);
-        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
+        const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
         writeFileSync(cookiesPath, cookiesJSON);
     });
 
     ipcMain.handle('archive:deleteCookiesFile', async (_, accountID: number) => {
-        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
+        const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
         unlinkSync(cookiesPath);
     });
 
-    // Returns the path to the saved HTML file
-    ipcMain.handle('archive:savePage', async (_, accountID: number, url: string, postDate: Date, postID: string, outputFolderName: string): Promise<string | null> => {
-        // Make sure we have the account and username
-        const account = await getAccount(accountID);
-        if (!account) {
-            return null;
-        }
-        const accountUsername = await getAccountUsername(account);
-        if (!accountUsername) {
-            return null;
-        }
-
-        // Get the Chromium and SingleFile paths
+    ipcMain.handle('archive:savePage', async (_, accountID: number, outputPath: string, urlsPath: string): Promise<void> => {
         const chromiumBinPath = getChromiumBinPath();
         const singlefileBinPath = getSinglefileBinPath();
         if (!chromiumBinPath || !singlefileBinPath) {
-            return null;
+            return;
         }
 
-        // Build the output filename
-        const accountDataPath = getAccountDataPath(account.type, accountUsername);
-        const filename = `${postDate.toISOString().split('T')[0]}_${postID}.html`;
-        const outputFolder = path.join(accountDataPath, outputFolderName);
-        if (!existsSync(outputFolder)) {
-            mkdirSync(outputFolder);
-        }
-        const outputPath = path.join(outputFolder, filename);
-
-        // Check if the file already exists
-        if (existsSync(outputPath)) {
-            console.log(`Page already saved: ${outputPath}`);
-            return outputPath;
-        }
-
-        // Fire!
         const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
         const args = [
             '--browser-executable-path', chromiumBinPath,
@@ -161,7 +132,11 @@ export const defineIPCArchive = () => {
             '--browser-cookies-file', cookiesPath,
             '--compress-CSS', 'true',
             '--compress-HTML', 'true',
-            url, outputPath
+            '--output-directory', outputPath,
+            '--urls-file', urlsPath,
+            // URLs are like: https://x.com/{username}/status/{tweetID}
+            // So filenames will be like: {tweetID}.html
+            '--filename-template', '{url-last-segment}.{filename-extension}'
         ]
         console.log(`Running SingleFile: ${singlefileBinPath} ${args.join(' ')}`);
 
@@ -190,16 +165,6 @@ export const defineIPCArchive = () => {
             await savePage();
         } catch (error) {
             console.error(`Failed to save page: ${error.message}`);
-            return null;
         }
-
-        // Check if the file was created
-        if (!existsSync(outputPath)) {
-            console.error(`Failed to save page: ${outputPath}`);
-            return null;
-        }
-        console.log(`Saved page: ${outputPath}`);
-
-        return outputPath;
     });
-};
+}

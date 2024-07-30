@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XTweet } from "../../shared_types";
+import type { Account, XProgress, XJob, XArchiveTweetsStartResponse } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -29,7 +29,7 @@ declare global {
                 extractChromium: () => Promise<boolean>;
                 saveCookiesFile: (accountID: number) => Promise<void>;
                 deleteCookiesFile: (accountID: number) => Promise<void>;
-                savePage: (accountID: number, url: string, postDate: Date, postID: string, outputFolderName: string) => Promise<string | null>;
+                savePage: (accountID: number, outputPath: string, urlsPath: string) => Promise<void>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
@@ -39,8 +39,8 @@ declare global {
                 indexStop: (accountID: number) => void;
                 indexParse: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexFinished: (accountID: number) => Promise<XProgress>;
-                archiveGetTweetIDs: (accountID: number) => Promise<string[]>;
-                archiveGetTweet: (accountID: number, tweetID: string) => Promise<XTweet | null>;
+                archiveTweetsStart: (accountID: number) => Promise<XArchiveTweetsStartResponse | null>;
+                archiveTweetsGetProgress: (accountID: number) => Promise<string[]>;
                 openFolder: (accountID: number, folderName: string) => void;
             };
         };

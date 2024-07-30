@@ -29,6 +29,17 @@ export const getAccountSettingsPath = (accountID: number) => {
     return accountSettingsPath;
 }
 
+export const getAccountTempPath = (accountID: number) => {
+    const settingsPath = getSettingsPath();
+    const accountSettingsPath = path.join(settingsPath, `account-${accountID}`);
+    const accountTempPath = path.join(accountSettingsPath, 'tmp');
+    if (!fs.existsSync(accountTempPath)) {
+        fs.mkdirSync(accountTempPath);
+    }
+    return accountTempPath;
+}
+
+
 export const getDataPath = () => {
     const dataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
     if (!fs.existsSync(dataPath)) {

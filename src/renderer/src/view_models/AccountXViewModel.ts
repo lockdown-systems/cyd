@@ -1,5 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress, XTweet } from '../../../shared_types';
+import type { XJob, XProgress, XArchiveTweetsStartResponse } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -14,8 +14,10 @@ export class AccountXViewModel extends BaseViewModel {
     private jobs: XJob[] = [];
     private isFirstRun: boolean = false;
 
-    private tweetIDs: string[] = [];
-    private currentTweet: XTweet | null = null;
+    private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
+    private progressInterval: number | null = null;
+    private finishedFilenames: string[] = [];
+    private progressCount: number = 0;
 
     async init() {
         this.state = State.Login;
@@ -242,38 +244,46 @@ export class AccountXViewModel extends BaseViewModel {
                 // Start with a blank page
                 await this.loadURL("about:blank");
 
-                // Get tweet IDs
-                this.tweetIDs = await window.electron.X.archiveGetTweetIDs(this.account.id);
-                if (this.progress) {
+                // Initialize archiving of tweets
+                this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
+                await window.electron.archive.saveCookiesFile(this.account.id);
+
+                // Start the progress
+                if (this.progress && this.archiveTweetsStartResponse) {
                     this.progress.currentJob = "archiveTweets";
-                    this.progress.totalTweetsToArchive = this.tweetIDs.length;
+                    this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.expectedFilenames.length;
                     this.progress.tweetsArchived = 0;
                 }
 
-                // Save cookies to file
-                await window.electron.archive.saveCookiesFile(this.account.id);
+                // Update progress every second, by counting the number of files that have been completed
+                // @ts-expect-error intervalID is a NodeJS.Interval, not a number
+                this.progressInterval = setInterval(async () => {
+                    this.finishedFilenames = await window.electron.X.archiveTweetsGetProgress(this.account.id);
 
-                // Start archiving
-                for (let i = 0; i < this.tweetIDs.length; i++) {
-                    this.currentTweet = await window.electron.X.archiveGetTweet(this.account.id, this.tweetIDs[i]);
-                    if (this.currentTweet !== null) {
-                        const url = `https://x.com/${this.currentTweet.path}`;
-                        const filename = await window.electron.archive.savePage(this.account.id, url, this.currentTweet.createdAt, this.currentTweet.tweetId, "Archived Tweets");
-                        console.log("saved", filename);
-
-                        // Show the saved file
-                        if (filename) {
-                            await this.loadFile(filename);
+                    this.progressCount = 0;
+                    if (this.progress && this.archiveTweetsStartResponse) {
+                        for (let i = 0; i < this.finishedFilenames.length; i++) {
+                            if (this.archiveTweetsStartResponse.expectedFilenames.includes(this.finishedFilenames[i])) {
+                                this.progressCount += 1;
+                            }
                         }
-
-                        // Update progress
-                        if (this.progress) {
-                            this.progress.tweetsArchived = i + 1;
-                        }
+                        this.progress.tweetsArchived = this.progressCount;
                     }
+
+                    // TODO: update the webview to load these finished files
+                }, 1000)
+
+                // Archive the tweets
+                if (this.archiveTweetsStartResponse) {
+                    await window.electron.archive.savePage(this.account.id, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.urlsPath);
                 }
 
-                // Delete cookies file
+                // Stop the progress interval
+                if (this.progressInterval) {
+                    clearInterval(this.progressInterval);
+                }
+
+                // Delete the cookies file
                 await window.electron.archive.deleteCookiesFile(this.account.id);
 
                 break;
