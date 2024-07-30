@@ -17,6 +17,7 @@ export class AccountXViewModel extends BaseViewModel {
     private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
     private progressInterval: number | null = null;
     private finishedFilenames: string[] = [];
+    private displayedFilenames: string[] = [];
     private progressCount: number = 0;
 
     async init() {
@@ -272,7 +273,16 @@ export class AccountXViewModel extends BaseViewModel {
                         console.log("progress", this.progress.tweetsArchived, this.progress.totalTweetsToArchive, this.finishedFilenames);
                     }
 
-                    // TODO: update the webview to load these finished files
+                    // Display the next tweet
+                    for (let i = 0; i < this.finishedFilenames.length; i++) {
+                        if (!this.displayedFilenames.includes(this.finishedFilenames[i])) {
+                            this.displayedFilenames.push(this.finishedFilenames[i]);
+                            if (this.webContentsID) {
+                                window.electron.X.archiveTweetsDisplayTweet(this.account.id, this.webContentsID, this.finishedFilenames[i]);
+                            }
+                            break;
+                        }
+                    }
                 }, 1000)
 
                 // Archive the tweets

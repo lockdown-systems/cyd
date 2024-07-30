@@ -88,6 +88,9 @@ contextBridge.exposeInMainWorld('electron', {
         archiveTweetsGetProgress: (accountID: number): Promise<string[]> => {
             return ipcRenderer.invoke('X:archiveTweetsGetProgress', accountID)
         },
+        archiveTweetsDisplayTweet: (accountID: number, webContentsID: number, filename: string) => {
+            ipcRenderer.invoke('X:archiveTweetsDisplayTweet', accountID, webContentsID, filename)
+        },
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);
         }

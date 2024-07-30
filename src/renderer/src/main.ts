@@ -41,6 +41,7 @@ declare global {
                 indexFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveTweetsStartResponse | null>;
                 archiveTweetsGetProgress: (accountID: number) => Promise<string[]>;
+                archiveTweetsDisplayTweet: (accountID: number, webContentsID: number, filename: string) => void;
                 openFolder: (accountID: number, folderName: string) => void;
             };
         };

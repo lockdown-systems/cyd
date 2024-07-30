@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 
-import { ipcMain, session, shell } from 'electron'
+import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath, getAccountTempPath } from './helpers'
@@ -485,6 +485,19 @@ export class XAccountController {
         return [];
     }
 
+    async archiveTweetsDisplayTweet(webContentsID: number, filename: string) {
+        if (this.account) {
+            const accountDataPath = getAccountDataPath("X", this.account.username);
+            const outputPath = path.join(accountDataPath, "Archived Tweets");
+            const filePath = path.join(outputPath, filename);
+            const wc = webContents.fromId(webContentsID);
+            if (wc) {
+                await wc.loadFile(filePath);
+            }
+
+        }
+    }
+
     async openFolder(folderName: string) {
         if (this.account) {
             const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
@@ -548,6 +561,11 @@ export const defineIPCX = () => {
     ipcMain.handle('X:archiveTweetsGetProgress', async (_, accountID: number): Promise<string[]> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweetsGetProgress();
+    });
+
+    ipcMain.handle('X:archiveTweetsDisplayTweet', async (_, accountID: number, webContentsID: number, filename: string) => {
+        const controller = getXAccountController(accountID);
+        await controller.archiveTweetsDisplayTweet(webContentsID, filename);
     });
 
     ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {

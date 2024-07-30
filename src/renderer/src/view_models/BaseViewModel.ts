@@ -4,6 +4,7 @@ import type { Account } from '../../../shared_types';
 export class BaseViewModel {
     public account: Account;
     public webview: WebviewTag;
+    public webContentsID: number | null;
     public isWebviewDestroyed: boolean;
 
     public state: string;
@@ -18,6 +19,7 @@ export class BaseViewModel {
     constructor(account: Account, webview: WebviewTag) {
         this.account = account;
         this.webview = webview;
+        this.webContentsID = null;
         this.isWebviewDestroyed = false;
 
         this.state = "";
@@ -43,8 +45,14 @@ export class BaseViewModel {
             await new Promise(resolve => setTimeout(resolve, 200));
             this.domReady = true;
 
-            // Remove the event listener
-            this.getWebview()?.removeEventListener("dom-ready", () => { });
+            const webview = this.getWebview();
+            if (webview) {
+                // Remove the event listener
+                webview.removeEventListener("dom-ready", () => { });
+
+                // Set the webContentsID
+                this.webContentsID = webview.getWebContentsId();
+            }
         });
     }
 
