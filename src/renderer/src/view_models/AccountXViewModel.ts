@@ -247,6 +247,7 @@ export class AccountXViewModel extends BaseViewModel {
                 // Initialize archiving of tweets
                 this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
                 await window.electron.archive.saveCookiesFile(this.account.id);
+                console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
 
                 // Start the progress
                 if (this.progress && this.archiveTweetsStartResponse) {
@@ -268,6 +269,7 @@ export class AccountXViewModel extends BaseViewModel {
                             }
                         }
                         this.progress.tweetsArchived = this.progressCount;
+                        console.log("progress", this.progress.tweetsArchived, this.progress.totalTweetsToArchive, this.finishedFilenames);
                     }
 
                     // TODO: update the webview to load these finished files
@@ -275,8 +277,15 @@ export class AccountXViewModel extends BaseViewModel {
 
                 // Archive the tweets
                 if (this.archiveTweetsStartResponse) {
-                    await window.electron.archive.savePage(this.account.id, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.urlsPath);
+                    console.log("singleFile: starting");
+                    if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.urlsPath)) {
+                        console.log("singleFile: failed");
+                    }
+                    console.log("singleFile: finished");
                 }
+
+                // Sleep 30 seconds
+                await new Promise(resolve => setTimeout(resolve, 30000));
 
                 // Stop the progress interval
                 if (this.progressInterval) {

@@ -56,8 +56,8 @@ contextBridge.exposeInMainWorld('electron', {
         deleteCookiesFile: (accountID: number) => {
             ipcRenderer.invoke('archive:deleteCookiesFile', accountID)
         },
-        savePage: (accountID: number, outputPath: string, urlsPath: string) => {
-            ipcRenderer.invoke('archive:savePage', accountID, outputPath, urlsPath)
+        singleFile: (accountID: number, outputPath: string, urlsPath: string): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:singleFile', accountID, outputPath, urlsPath)
         },
     },
     X: {

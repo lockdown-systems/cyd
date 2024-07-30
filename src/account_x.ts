@@ -455,7 +455,7 @@ export class XAccountController {
             // Calculate the expected filenames
             const expectedFilenames: string[] = []
             for (let i = 0; i < tweets.length; i++) {
-                expectedFilenames.push(path.join(outputPath, `${tweets[i].tweetID}.html`))
+                expectedFilenames.push(`${tweets[i].tweetID}.html`)
             }
 
             return {

@@ -7,7 +7,7 @@ import { ipcMain, session } from 'electron';
 import extract from 'extract-zip';
 import Database from 'better-sqlite3'
 
-import { getAccountSettingsPath, getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
+import { getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
 
 interface ChromiumCookie {
     creation_utc: number;
@@ -118,18 +118,19 @@ export const defineIPCArchive = () => {
         unlinkSync(cookiesPath);
     });
 
-    ipcMain.handle('archive:savePage', async (_, accountID: number, outputPath: string, urlsPath: string): Promise<void> => {
+    ipcMain.handle('archive:singleFile', async (_, accountID: number, outputPath: string, urlsPath: string): Promise<boolean> => {
         const chromiumBinPath = getChromiumBinPath();
         const singlefileBinPath = getSinglefileBinPath();
         if (!chromiumBinPath || !singlefileBinPath) {
-            return;
+            return false;
         }
 
-        const cookiesPath = path.join(getAccountSettingsPath(accountID), 'cookies.json');
+        const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
         const args = [
             '--browser-executable-path', chromiumBinPath,
             '--browser-load-max-time', '30000',
             '--browser-cookies-file', cookiesPath,
+            '--browser-wait-delay', '1000', // wait an extra second
             '--compress-CSS', 'true',
             '--compress-HTML', 'true',
             '--output-directory', outputPath,
@@ -140,7 +141,7 @@ export const defineIPCArchive = () => {
         ]
         console.log(`Running SingleFile: ${singlefileBinPath} ${args.join(' ')}`);
 
-        const savePage = () => new Promise<void>((resolve, reject) => {
+        const savePages = () => new Promise<void>((resolve, reject) => {
             const child = spawn(singlefileBinPath, args);
 
             child.stdout.on('data', (data) => {
@@ -159,12 +160,20 @@ export const defineIPCArchive = () => {
                     reject(new Error(`Child process exited with code ${code}`));
                 }
             });
+
+            child.on('error', (error) => {
+                console.error(`Failed to start child process: ${error.message}`);
+                reject(error);
+            });
         });
 
         try {
-            await savePage();
+            await savePages();
+            console.log('SingleFile completed');
+            return true;
         } catch (error) {
             console.error(`Failed to save page: ${error.message}`);
+            return false;
         }
     });
 }

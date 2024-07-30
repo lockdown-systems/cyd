@@ -29,7 +29,7 @@ declare global {
                 extractChromium: () => Promise<boolean>;
                 saveCookiesFile: (accountID: number) => Promise<void>;
                 deleteCookiesFile: (accountID: number) => Promise<void>;
-                savePage: (accountID: number, outputPath: string, urlsPath: string) => Promise<void>;
+                singleFile: (accountID: number, outputPath: string, urlsPath: string) => Promise<boolean>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
