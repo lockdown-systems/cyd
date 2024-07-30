@@ -270,7 +270,6 @@ export class AccountXViewModel extends BaseViewModel {
                             }
                         }
                         this.progress.tweetsArchived = this.progressCount;
-                        console.log("progress", this.progress.tweetsArchived, this.progress.totalTweetsToArchive, this.finishedFilenames);
                     }
 
                     // Display the next tweet
@@ -283,15 +282,14 @@ export class AccountXViewModel extends BaseViewModel {
                             break;
                         }
                     }
-                }, 1000)
+                }, 2000)
 
                 // Archive the tweets
                 if (this.archiveTweetsStartResponse) {
-                    console.log("singleFile: starting");
                     if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.urlsPath)) {
+                        // TODO: handle failure
                         console.log("singleFile: failed");
                     }
-                    console.log("singleFile: finished");
                 }
 
                 // Sleep 30 seconds

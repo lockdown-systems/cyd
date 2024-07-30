@@ -125,55 +125,61 @@ export const defineIPCArchive = () => {
             return false;
         }
 
-        const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
-        const args = [
-            '--browser-executable-path', chromiumBinPath,
-            '--browser-load-max-time', '30000',
-            '--browser-cookies-file', cookiesPath,
-            '--browser-wait-delay', '1000', // wait an extra second
-            '--compress-CSS', 'true',
-            '--compress-HTML', 'true',
-            '--output-directory', outputPath,
-            '--urls-file', urlsPath,
-            // URLs are like: https://x.com/{username}/status/{tweetID}
-            // So filenames will be like: {tweetID}.html
-            '--filename-template', '{url-last-segment}.{filename-extension}'
-        ]
-        console.log(`Running SingleFile: ${singlefileBinPath} ${args.join(' ')}`);
+        let tries = 0;
+        while (tries < 3) {
+            const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
+            const args = [
+                '--browser-executable-path', chromiumBinPath,
+                '--browser-load-max-time', '30000',
+                '--browser-cookies-file', cookiesPath,
+                '--browser-wait-delay', '1000', // wait an extra second
+                '--compress-CSS', 'true',
+                '--compress-HTML', 'true',
+                '--output-directory', outputPath,
+                '--urls-file', urlsPath,
+                // URLs are like: https://x.com/{username}/status/{tweetID}
+                // So filenames will be like: {tweetID}.html
+                '--filename-template', '{url-last-segment}.{filename-extension}',
+                // Skip if the file already exists  
+                '--filename-conflict-action', 'skip'
+            ]
+            console.log(`Running SingleFile (try #${tries}): ${singlefileBinPath} ${args.join(' ')}`);
 
-        const savePages = () => new Promise<void>((resolve, reject) => {
-            const child = spawn(singlefileBinPath, args);
+            const savePages = () => new Promise<void>((resolve, reject) => {
+                const child = spawn(singlefileBinPath, args);
 
-            child.stdout.on('data', (data) => {
-                console.log(`stdout: ${data}`);
+                child.stdout.on('data', (data) => {
+                    console.log(`stdout: ${data}`);
+                });
+
+                child.stderr.on('data', (data) => {
+                    console.error(`stderr: ${data}`);
+                });
+
+                child.on('close', (code) => {
+                    console.log(`child process exited with code ${code}`);
+                    if (code === 0) {
+                        resolve();
+                    } else {
+                        reject(new Error(`Child process exited with code ${code}`));
+                    }
+                });
+
+                child.on('error', (error) => {
+                    console.error(`Failed to start child process: ${error.message}`);
+                    reject(error);
+                });
             });
 
-            child.stderr.on('data', (data) => {
-                console.error(`stderr: ${data}`);
-            });
-
-            child.on('close', (code) => {
-                console.log(`child process exited with code ${code}`);
-                if (code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Child process exited with code ${code}`));
-                }
-            });
-
-            child.on('error', (error) => {
-                console.error(`Failed to start child process: ${error.message}`);
-                reject(error);
-            });
-        });
-
-        try {
-            await savePages();
-            console.log('SingleFile completed');
-            return true;
-        } catch (error) {
-            console.error(`Failed to save page: ${error.message}`);
-            return false;
+            try {
+                await savePages();
+                console.log('SingleFile completed');
+                return true;
+            } catch (error) {
+                console.error(`Failed to save page: ${error.message}`);
+                tries += 1;
+            }
         }
+        return false;
     });
 }
