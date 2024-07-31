@@ -79,8 +79,8 @@ async function createWindow() {
     // Create the browser window
     win = new BrowserWindow({
         show: false,
-        width: 1024,
-        height: 768,
+        width: 1280,
+        height: 900,
         webPreferences: {
             webviewTag: true,
             preload: join(__dirname, './preload.js'),
@@ -149,11 +149,11 @@ async function createWindow() {
         win.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     };
 
-    // If we're in local or staging, pre-open developer tools
-    if (semiphemeralEnv == "local" || semiphemeralEnv == "dev") {
-        win.webContents.openDevTools();
-        win.setSize(1400, 768);
-    }
+    // // If we're in local or staging, pre-open developer tools
+    // if (semiphemeralEnv == "local" || semiphemeralEnv == "dev") {
+    //     win.webContents.openDevTools();
+    //     win.setSize(1400, 768);
+    // }
 
     return win;
 }

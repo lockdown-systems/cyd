@@ -57,10 +57,10 @@ export class BaseViewModel {
     }
 
     async init() {
-        // Open dev tools in local or staging, but not in production
-        if (await window.electron.isDevMode()) {
-            this.getWebview()?.openDevTools();
-        }
+        // // Open dev tools in local or staging, but not in production
+        // if (await window.electron.isDevMode()) {
+        //     this.getWebview()?.openDevTools();
+        // }
     }
 
     destroy() {
