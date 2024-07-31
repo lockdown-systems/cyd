@@ -38,9 +38,9 @@ export class AccountXViewModel extends BaseViewModel {
                     this.actionString = "I'm archiving your tweets and direct messages.";
                 } else {
                     if (this.account.xAccount?.archiveDirectMessages) {
-                        this.actionString = "I'm archiving your tweets.";
-                    } else {
                         this.actionString = "I'm archiving your direct messages.";
+                    } else {
+                        this.actionString = "I'm archiving your tweets.";
                     }
                 }
                 break;
