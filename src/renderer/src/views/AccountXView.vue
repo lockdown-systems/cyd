@@ -81,6 +81,10 @@ const updateSettings = async () => {
 
 const startArchivingClicked = async () => {
     await updateSettings();
+    if (accountXViewModel.value) {
+        await accountXViewModel.value.startArchiving();
+        await startStateLoop();
+    }
 };
 
 const startDeletingClicked = async () => {
