@@ -1,6 +1,6 @@
 import os from 'os';
 import path from 'path';
-import { existsSync, writeFileSync, unlinkSync } from 'fs';
+import fs from 'fs';
 import { spawn } from 'child_process';
 
 import { ipcMain, session } from 'electron';
@@ -38,7 +38,7 @@ export const defineIPCArchive = () => {
         if (!binPath) {
             return false;
         }
-        return existsSync(binPath);
+        return fs.existsSync(binPath);
     });
 
     ipcMain.handle('archive:extractChromium', async (_): Promise<boolean> => {
@@ -66,7 +66,7 @@ export const defineIPCArchive = () => {
                 return false;
         }
 
-        if (!existsSync(zipPath)) {
+        if (!fs.existsSync(zipPath)) {
             console.error(`Chromium zip not found: ${zipPath}`);
             return false;
         }
@@ -110,21 +110,47 @@ export const defineIPCArchive = () => {
         });
         const cookiesJSON = JSON.stringify(cookies);
         const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
-        writeFileSync(cookiesPath, cookiesJSON);
+        fs.writeFileSync(cookiesPath, cookiesJSON);
     });
 
     ipcMain.handle('archive:deleteCookiesFile', async (_, accountID: number) => {
         const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
-        unlinkSync(cookiesPath);
+        fs.unlinkSync(cookiesPath);
     });
 
     ipcMain.handle('archive:singleFile', async (_, accountID: number, outputPath: string, urlsPath: string): Promise<boolean> => {
+        // Figure out the paths
         const chromiumBinPath = getChromiumBinPath();
         const singlefileBinPath = getSinglefileBinPath();
         if (!chromiumBinPath || !singlefileBinPath) {
             return false;
         }
 
+        // Find the tweetIDs that are already saved
+        let filenames: string[] = [];
+        try {
+            filenames = fs.readdirSync(outputPath);
+        } catch (error) {
+            return false;
+        }
+        const savedTweetIDs: string[] = [];
+        for (const filename of filenames) {
+            const tweetID = filename.split('.')[0];
+            savedTweetIDs.push(tweetID);
+        }
+
+        // Remove URLs from the file that are already saved
+        const urls = fs.readFileSync(urlsPath, 'utf8').split('\n');
+        const newUrls = urls.filter(url => {
+            const tweetID = url.split('/').pop();
+            if (!tweetID) {
+                return false;
+            }
+            return !savedTweetIDs.includes(tweetID);
+        });
+        fs.writeFileSync(urlsPath, newUrls.join('\n'));
+
+        // Try a few times
         let tries = 0;
         while (tries < 3) {
             const cookiesPath = path.join(getAccountTempPath(accountID), 'cookies.json');
