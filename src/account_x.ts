@@ -4,8 +4,8 @@ import fs from 'fs'
 import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
-import { getAccountDataPath, getAccountTempPath } from './helpers'
-import { XAccount, XJob, XProgress, XArchiveTweetsStartResponse } from './shared_types'
+import { getAccountDataPath } from './helpers'
+import { XAccount, XJob, XProgress, XArchiveTweetsTweet, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 
 import { IMITMController, getMITMController } from './mitm_proxy';
@@ -270,14 +270,14 @@ export class XAccountController {
         );
     }
 
-    async indexStartMonitoring() {
+    async indexStart() {
         const ses = session.fromPartition(`persist:account-${this.account?.id}`);
         await ses.clearCache();
         await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
         await this.mitmController.startMonitoring();
     }
 
-    async indexStopMonitoring() {
+    async indexStop() {
         await this.mitmController.stopMonitoring();
         const ses = session.fromPartition(`persist:account-${this.account?.id}`);
         await this.mitmController.stopMITM(ses);
@@ -429,21 +429,20 @@ export class XAccountController {
     // - Return the URLs path, output path, and all expected filenames
     async archiveTweetsStart(): Promise<XArchiveTweetsStartResponse | null> {
         if (this.account) {
-            // Select the tweets
-            const tweets = exec(
+            const tweetsResp = exec(
                 this.db,
                 'SELECT tweetID, path FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
                 [this.account.username, 0],
                 "all"
             );
 
-            // Write URLs to disk
-            const urlsPath = path.join(getAccountTempPath(this.account?.id), "tweet_urls.txt");
-            const urls: string[] = [];
-            for (let i = 0; i < tweets.length; i++) {
-                urls.push(`https://x.com/${tweets[i].path}`)
+            const tweets: XArchiveTweetsTweet[] = [];
+            for (let i = 0; i < tweetsResp.length; i++) {
+                tweets.push({
+                    url: `https://x.com/${tweetsResp[i].path}`,
+                    filename: `${tweetsResp[i].tweetID}.html`
+                })
             }
-            fs.writeFileSync(urlsPath, urls.join('\n'), 'utf-8');
 
             // Make sure the Archived Tweets folder exists
             const accountDataPath = getAccountDataPath("X", this.account.username);
@@ -452,16 +451,9 @@ export class XAccountController {
                 fs.mkdirSync(outputPath);
             }
 
-            // Calculate the expected filenames
-            const expectedFilenames: string[] = []
-            for (let i = 0; i < tweets.length; i++) {
-                expectedFilenames.push(`${tweets[i].tweetID}.html`)
-            }
-
             return {
-                urlsPath: urlsPath,
                 outputPath: outputPath,
-                expectedFilenames: expectedFilenames
+                tweets: tweets
             };
         }
         return null;
@@ -504,6 +496,48 @@ export class XAccountController {
             await shell.openPath(folderPath);
         }
     }
+
+    async isRateLimited(webContentsID: number, url: string): Promise<XIsRateLimitedResponse> {
+        const resp = {
+            isRateLimited: false,
+            rateLimitReset: 0
+        }
+
+        if (this.account) {
+            // Start monitoring
+            const ses = session.fromPartition(`persist:account-${this.account.id}`);
+            await ses.clearCache();
+            await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
+            await this.mitmController.startMonitoring();
+
+            // Load a URL that requires the API
+            const wc = webContents.fromId(webContentsID);
+            if (wc) {
+                await wc.loadURL(url);
+
+                // Wait for the URL to finish loading
+                while (wc?.isLoading()) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // See if we got rate limited
+            for (let i = 0; i < this.mitmController.responseData.length; i++) {
+                if (this.mitmController.responseData[i].status == 429) {
+                    resp.isRateLimited = true;
+                    resp.rateLimitReset = Number(this.mitmController.responseData[i].headers['x-rate-limit-reset']);
+                    break;
+                }
+            }
+
+            // Stop monitoring
+            await this.mitmController.stopMonitoring();
+            await this.mitmController.stopMITM(ses);
+        }
+
+        return resp;
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -534,13 +568,13 @@ export const defineIPCX = () => {
 
     ipcMain.handle('X:indexStart', async (_, accountID: number) => {
         const controller = getXAccountController(accountID);
-        await controller.indexStartMonitoring();
+        await controller.indexStart();
 
     });
 
     ipcMain.handle('X:indexStop', async (_, accountID: number) => {
         const controller = getXAccountController(accountID);
-        await controller.indexStopMonitoring();
+        await controller.indexStop();
     });
 
     ipcMain.handle('X:indexParse', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
@@ -571,5 +605,10 @@ export const defineIPCX = () => {
     ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {
         const controller = getXAccountController(accountID);
         await controller.openFolder(folderName);
+    });
+
+    ipcMain.handle('X:isRateLimited', async (_, accountID: number, webContentsID: number, url: string): Promise<XIsRateLimitedResponse> => {
+        const controller = getXAccountController(accountID);
+        return await controller.isRateLimited(webContentsID, url);
     });
 };

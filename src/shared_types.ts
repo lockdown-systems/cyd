@@ -96,8 +96,17 @@ export type XProgress = {
     rateLimitReset: null | number;
 }
 
+export type XArchiveTweetsTweet = {
+    url: string,
+    filename: string
+}
+
 export type XArchiveTweetsStartResponse = {
-    urlsPath: string,
     outputPath: string;
-    expectedFilenames: string[];
+    tweets: XArchiveTweetsTweet[]
+}
+
+export type XIsRateLimitedResponse = {
+    isRateLimited: boolean;
+    rateLimitReset: number;
 }

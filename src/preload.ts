@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveTweetsStartResponse } from './shared_types'
+import { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -56,8 +56,8 @@ contextBridge.exposeInMainWorld('electron', {
         deleteCookiesFile: (accountID: number) => {
             ipcRenderer.invoke('archive:deleteCookiesFile', accountID)
         },
-        singleFile: (accountID: number, outputPath: string, urlsPath: string): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:singleFile', accountID, outputPath, urlsPath)
+        singleFile: (accountID: number, outputPath: string, urls: string[]): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:singleFile', accountID, outputPath, urls)
         },
     },
     X: {
@@ -93,6 +93,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);
+        },
+        isRateLimited: (accountID: number, webContentsID: number, url: string): Promise<XIsRateLimitedResponse> => {
+            return ipcRenderer.invoke('X:isRateLimited', accountID, webContentsID, url);
         }
     }
 })

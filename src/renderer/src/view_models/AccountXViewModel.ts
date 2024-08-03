@@ -1,5 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress, XArchiveTweetsStartResponse } from '../../../shared_types';
+import type { XJob, XProgress, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -15,10 +15,13 @@ export class AccountXViewModel extends BaseViewModel {
     private isFirstRun: boolean = false;
 
     private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
+    private isRateLimitedResponse: XIsRateLimitedResponse | null = null;
     private progressInterval: number | null = null;
     private finishedFilenames: string[] = [];
     private displayedFilenames: string[] = [];
     private progressCount: number = 0;
+    private urlChunks: string[][] = [];
+    private chunkFinished: boolean = false;
 
     async init() {
         this.state = State.Login;
@@ -253,7 +256,7 @@ export class AccountXViewModel extends BaseViewModel {
                 // Start the progress
                 if (this.progress && this.archiveTweetsStartResponse) {
                     this.progress.currentJob = "archiveTweets";
-                    this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.expectedFilenames.length;
+                    this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.tweets.length;
                     this.progress.tweetsArchived = 0;
                 }
 
@@ -265,8 +268,11 @@ export class AccountXViewModel extends BaseViewModel {
                     this.progressCount = 0;
                     if (this.progress && this.archiveTweetsStartResponse) {
                         for (let i = 0; i < this.finishedFilenames.length; i++) {
-                            if (this.archiveTweetsStartResponse.expectedFilenames.includes(this.finishedFilenames[i])) {
-                                this.progressCount += 1;
+                            for (let j = 0; j < this.archiveTweetsStartResponse.tweets.length; j++) {
+                                if (this.finishedFilenames[i] == this.archiveTweetsStartResponse.tweets[j].filename) {
+                                    this.progressCount += 1;
+                                    break;
+                                }
                             }
                         }
                         this.progress.tweetsArchived = this.progressCount;
@@ -282,13 +288,53 @@ export class AccountXViewModel extends BaseViewModel {
                             break;
                         }
                     }
-                }, 2000)
+                }, 1000)
 
                 // Archive the tweets
                 if (this.archiveTweetsStartResponse) {
-                    if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.urlsPath)) {
-                        // TODO: handle failure
-                        console.log("singleFile: failed");
+                    // Split the URLs into chunks of 16
+                    for (let i = 0; i < Math.ceil(this.archiveTweetsStartResponse.tweets.length / 16); i++) {
+                        this.urlChunks[i] = [];
+                        for (let j = 0; j < 16; j++) {
+                            if (this.archiveTweetsStartResponse.tweets.length > i * 16 + j) {
+                                this.urlChunks[i].push(this.archiveTweetsStartResponse.tweets[i * 16 + j].url);
+                            }
+                        }
+                    }
+
+                    // Download each chunk
+                    for (let i = 0; i < this.urlChunks.length; i++) {
+                        this.chunkFinished = false;
+                        while (!this.chunkFinished) {
+                            // Download the chunk
+                            if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.urlChunks[i])) {
+                                // TODO: handle failure
+                                console.log("singleFile: failed");
+                            }
+
+                            // Check for rate limit
+                            if (this.webContentsID) {
+                                this.isRateLimitedResponse = await window.electron.X.isRateLimited(this.account.id, this.webContentsID, this.urlChunks[i][0]);
+                                if (this.isRateLimitedResponse.isRateLimited) {
+                                    // TODO: Delete the files in this chunk, so we can try again
+
+                                    // TODO: Also remove these filenames from this.finishedFilenames
+
+                                    // Wait for rate limit to finish
+                                    await new Promise(resolve => setTimeout(resolve, 1000));
+                                    if (this.progress) {
+                                        this.progress.isRateLimited = this.isRateLimitedResponse.isRateLimited;
+                                        this.progress.rateLimitReset = this.isRateLimitedResponse.rateLimitReset;
+                                    }
+                                    await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+                                } else {
+                                    // Chunk is finished, so break out of the while loop and continue to the next chunk
+                                    this.chunkFinished = true;
+                                }
+                            }
+                        }
+
+
                     }
                 }
 

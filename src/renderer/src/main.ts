@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XArchiveTweetsStartResponse } from "../../shared_types";
+import type { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -29,7 +29,7 @@ declare global {
                 extractChromium: () => Promise<boolean>;
                 saveCookiesFile: (accountID: number) => Promise<void>;
                 deleteCookiesFile: (accountID: number) => Promise<void>;
-                singleFile: (accountID: number, outputPath: string, urlsPath: string) => Promise<boolean>;
+                singleFile: (accountID: number, outputPath: string, urls: string[]) => Promise<boolean>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
@@ -43,6 +43,7 @@ declare global {
                 archiveTweetsGetProgress: (accountID: number) => Promise<string[]>;
                 archiveTweetsDisplayTweet: (accountID: number, webContentsID: number, filename: string) => void;
                 openFolder: (accountID: number, folderName: string) => void;
+                isRateLimited: (accountID: number, webContentsID: number, url: string) => Promise<XIsRateLimitedResponse>;
             };
         };
     }

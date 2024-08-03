@@ -118,7 +118,7 @@ export const defineIPCArchive = () => {
         fs.unlinkSync(cookiesPath);
     });
 
-    ipcMain.handle('archive:singleFile', async (_, accountID: number, outputPath: string, urlsPath: string): Promise<boolean> => {
+    ipcMain.handle('archive:singleFile', async (_, accountID: number, outputPath: string, urls: string[]): Promise<boolean> => {
         // Figure out the paths
         const chromiumBinPath = getChromiumBinPath();
         const singlefileBinPath = getSinglefileBinPath();
@@ -126,29 +126,37 @@ export const defineIPCArchive = () => {
             return false;
         }
 
-        // Find the tweetIDs that are already saved
+        // Find the IDs that are already saved
         let filenames: string[] = [];
         try {
             filenames = fs.readdirSync(outputPath);
         } catch (error) {
             return false;
         }
-        const savedTweetIDs: string[] = [];
+        const savedIDs: string[] = [];
         for (const filename of filenames) {
-            const tweetID = filename.split('.')[0];
-            savedTweetIDs.push(tweetID);
+            const id = filename.split('.')[0];
+            savedIDs.push(id);
         }
 
-        // Remove URLs from the file that are already saved
-        const urls = fs.readFileSync(urlsPath, 'utf8').split('\n');
-        const newUrls = urls.filter(url => {
-            const tweetID = url.split('/').pop();
-            if (!tweetID) {
+        // Remove URLs that are already saved
+        const urlsToSave = urls.filter(url => {
+            const urlLastSegment = url.split('/').pop();
+            if (!urlLastSegment) {
                 return false;
             }
-            return !savedTweetIDs.includes(tweetID);
+            return !savedIDs.includes(urlLastSegment);
         });
-        fs.writeFileSync(urlsPath, newUrls.join('\n'));
+
+        // Return early if all of these posts are already saved
+        if (urlsToSave.length == 0) {
+            return true;
+        }
+
+        // Save the URLs to disk
+        const urlsPath = path.join(getAccountTempPath(accountID), "urls.txt");
+        fs.writeFileSync(urlsPath, urlsToSave.join('\n'), 'utf-8');
+
 
         // Try a few times
         let tries = 0;
@@ -166,8 +174,8 @@ export const defineIPCArchive = () => {
                 // URLs are like: https://x.com/{username}/status/{tweetID}
                 // So filenames will be like: {tweetID}.html
                 '--filename-template', '{url-last-segment}.{filename-extension}',
-                // Skip if the file already exists  
-                '--filename-conflict-action', 'skip'
+                // Overwrite if the file already exists
+                '--filename-conflict-action', 'overwrite'
             ]
             console.log(`Running SingleFile (try #${tries}): ${singlefileBinPath} ${args.join(' ')}`);
 
