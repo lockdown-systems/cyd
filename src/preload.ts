@@ -5,8 +5,8 @@ contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
         return ipcRenderer.invoke('getApiUrl')
     },
-    isDevMode: (): Promise<boolean> => {
-        return ipcRenderer.invoke('isDevMode')
+    shouldOpenDevtools: (): Promise<boolean> => {
+        return ipcRenderer.invoke('shouldOpenDevtools')
     },
     showError: (message: string) => {
         ipcRenderer.invoke('showError', message)

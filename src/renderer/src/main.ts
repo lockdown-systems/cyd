@@ -10,7 +10,7 @@ declare global {
     interface Window {
         electron: {
             getApiUrl: () => Promise<string>;
-            isDevMode: () => Promise<boolean>;
+            shouldOpenDevtools: () => Promise<boolean>;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             openURL: (url: string) => void;

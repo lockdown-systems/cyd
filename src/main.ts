@@ -32,6 +32,7 @@ log.initialize();
 log.info('User data folder is at:', app.getPath('userData'));
 
 const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV;
+const semiphemeralDevtools = process.env.SEMIPHEMERAL_DEVTOOLS === "true";
 let win: BrowserWindow | null = null;
 
 async function initializeApp() {
@@ -105,11 +106,8 @@ async function createWindow() {
             return "https://api.semiphemeral.com/v1";
         });
 
-        ipcMain.handle('isDevMode', async (_) => {
-            if (semiphemeralEnv == "local" || semiphemeralEnv == "dev") {
-                return true;
-            }
-            return false;
+        ipcMain.handle('shouldOpenDevtools', async (_) => {
+            return semiphemeralDevtools;
         });
 
         ipcMain.handle('showError', async (_, message: string) => {
@@ -149,11 +147,11 @@ async function createWindow() {
         win.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     };
 
-    // // If we're in local or staging, pre-open developer tools
-    // if (semiphemeralEnv == "local" || semiphemeralEnv == "dev") {
-    //     win.webContents.openDevTools();
-    //     win.setSize(1400, 768);
-    // }
+    // Open dev tools?
+    if (semiphemeralDevtools) {
+        win.webContents.openDevTools();
+        win.setSize(1400, 768);
+    }
 
     return win;
 }
