@@ -70,6 +70,9 @@ contextBridge.exposeInMainWorld('electron', {
         updateJob: (accountID: number, jobJSON: XJob) => {
             ipcRenderer.invoke('X:updateJob', accountID, jobJSON)
         },
+        getUsername: (accountID: number, webContentsID: number): Promise<string | null> => {
+            return ipcRenderer.invoke('X:getUsername', accountID, webContentsID)
+        },
         indexStart: (accountID: number) => {
             ipcRenderer.invoke('X:indexStart', accountID)
         },

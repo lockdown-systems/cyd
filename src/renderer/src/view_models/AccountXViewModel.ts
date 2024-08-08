@@ -54,34 +54,6 @@ export class AccountXViewModel extends BaseViewModel {
         }
     }
 
-    async getUsername(): Promise<null | string> {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const clickResp = await this.scriptClickElement('[data-testid="AppTabBar_Profile_Link"]')
-        if (!clickResp) {
-            this.log("getUsername", "failed to click profile link")
-            return null;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const usernameInnerText = await this.scriptGetInnerText('[data-testid="UserName"]');
-        if (usernameInnerText === null) {
-            this.log("getUsername", "failed to get username innerText")
-            return null;
-        }
-
-        const parts = usernameInnerText.split("@");
-        if (parts.length !== 2) {
-            this.log("getUsername", `invalid innerText: ${usernameInnerText}`)
-            return null;
-        }
-
-        const username = parts[1];
-        this.log("getUsername", `got username: ${username}`);
-        return username;
-    }
-
     async startArchiving() {
         this.setAction("archive");
 
@@ -395,11 +367,14 @@ and direct messages, except for the ones you want to keep. **To start, login to 
                     this.log("run", "login succeeded");
 
                     // Get the username
-                    const username = await this.getUsername();
-                    if (username === null) {
-                        this.log("run", "failed to get username");
-
-                        // TODO: automation error
+                    let username = null;
+                    if (this.webContentsID) {
+                        username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
+                    }
+                    if (!username) {
+                        // TODO: Automation error
+                        console.log("run", "failed to get username, waiting 10s");
+                        await new Promise(resolve => setTimeout(resolve, 10000));
                         break;
                     }
 
@@ -422,11 +397,14 @@ Checking to see if you're still logged in to your X account...
                         this.log("run", "login succeeded");
 
                         // Get the username
-                        const username = await this.getUsername();
-                        if (username === null) {
-                            this.log("run", "failed to get username");
-
-                            // TODO: automation error
+                        let username = null;
+                        if (this.webContentsID) {
+                            username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
+                        }
+                        if (!username) {
+                            // TODO: Automation error
+                            console.log("run", "failed to get username, waiting 10s");
+                            await new Promise(resolve => setTimeout(resolve, 10000));
                             break;
                         }
 

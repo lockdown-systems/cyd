@@ -35,6 +35,7 @@ declare global {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
                 getLastFinishedJob: (accountID: number, jobType: string) => Promise<XJob | null>;
                 updateJob: (accountID: number, jobJSON: string) => void;
+                getUsername: (accountID: number, webContentsID: number) => Promise<string | null>;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParse: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
