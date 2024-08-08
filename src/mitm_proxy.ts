@@ -213,6 +213,9 @@ export class MITMController implements IMITMController {
                 callback(-3);
             }
         })
+
+        // Sleep 1 second, to give time to proxy to fully start
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     async stopMITM(ses: Electron.Session) {

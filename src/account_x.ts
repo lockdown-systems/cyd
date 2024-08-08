@@ -162,7 +162,7 @@ export class XAccountController {
     private accountDataPath: string;
 
     // Making this public so it can be accessed in tests
-    public db: Database.Database;
+    public db: Database.Database | null;
 
     private mitmController: IMITMController;
     private progress: XProgress = {
@@ -192,6 +192,13 @@ export class XAccountController {
         this.account = getXAccount(accountID);
         if (!this.account) {
             console.error(`XAccountController: account ${accountID} not found`);
+            return;
+        }
+    }
+
+    initDB() {
+        if (!this.account || !this.account.username) {
+            console.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found");
             return;
         }
 
@@ -237,6 +244,10 @@ export class XAccountController {
     }
 
     createJobs(jobTypes: string[]): XJob[] {
+        if (!this.db) {
+            this.initDB();
+        }
+
         // Cancel pending jobs
         exec(this.db, "UPDATE job SET status = ? WHERE status = ?", ["canceled", "pending"]);
 
@@ -254,6 +265,10 @@ export class XAccountController {
     }
 
     getLastFinishedJob(jobType: string): Promise<XJob | null> {
+        if (!this.db) {
+            this.initDB();
+        }
+
         return exec(
             this.db,
             'SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1',
@@ -263,6 +278,10 @@ export class XAccountController {
     }
 
     updateJob(job: XJob) {
+        if (!this.db) {
+            this.initDB();
+        }
+
         exec(
             this.db,
             'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
@@ -305,6 +324,8 @@ export class XAccountController {
             // Stop monitoring
             await this.mitmController.stopMonitoring();
             await this.mitmController.stopMITM(ses);
+        } else {
+            console.log("XAccountController.getUsername: account not found");
         }
 
         return username;
@@ -325,6 +346,10 @@ export class XAccountController {
 
     // Returns false if the loop should stop
     indexTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
+        if (!this.db) {
+            this.initDB();
+        }
+
         // Have we seen this tweet before?
         const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all");
         if (existing.length > 0) {
@@ -468,6 +493,10 @@ export class XAccountController {
     // - Write a list of tweet URLs to a file
     // - Return the URLs path, output path, and all expected filenames
     async archiveTweetsStart(): Promise<XArchiveTweetsStartResponse | null> {
+        if (!this.db) {
+            this.initDB();
+        }
+
         if (this.account) {
             const tweetsResp = exec(
                 this.db,
