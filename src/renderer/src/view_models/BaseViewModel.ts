@@ -124,7 +124,16 @@ export class BaseViewModel {
         console.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
         if (webview) {
-            await webview.loadURL(url);
+            const tries = 0;
+            while (tries < 3) {
+                try {
+                    await webview.loadURL(url);
+                    break;
+                } catch (error) {
+                    console.error(`Failed to load URL: ${error}`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
         }
         await this.waitForWebviewReady();
     }
