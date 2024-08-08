@@ -281,7 +281,13 @@ export class AccountXViewModel extends BaseViewModel {
                         this.shouldRetry = false;
                         while (!this.chunkFinished) {
                             // Download the chunk
-                            if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.urlChunks[i], this.shouldRetry)) {
+                            if (!await window.electron.archive.singleFile(
+                                this.account.id,
+                                this.archiveTweetsStartResponse.outputPath,
+                                // urlChunks is a Proxy(Array), and this will convert it to an Array
+                                JSON.parse(JSON.stringify(this.urlChunks[i])),
+                                this.shouldRetry
+                            )) {
                                 // TODO: handle failure
                                 console.log("singleFile: failed");
                             }

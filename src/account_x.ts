@@ -196,6 +196,16 @@ export class XAccountController {
         }
     }
 
+    refreshAccount() {
+        if (this.account) {
+            this.account = getXAccount(this.account.id);
+            if (!this.account) {
+                console.error(`XAccountController: error refreshing account`);
+                return;
+            }
+        }
+    }
+
     initDB() {
         if (!this.account || !this.account.username) {
             console.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found");
@@ -615,6 +625,7 @@ const getXAccountController = (accountID: number): XAccountController => {
     if (!controllers[accountID]) {
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
+    controllers[accountID].refreshAccount();
     return controllers[accountID];
 }
 
