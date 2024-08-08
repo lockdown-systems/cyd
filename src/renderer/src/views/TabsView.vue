@@ -15,10 +15,10 @@ const activeAccountId = ref<number | null>(null);
 const serverApi = inject('serverApi') as Ref<ServerAPI>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
+const refreshServerApi = inject('refreshServerApi') as () => Promise<void>;
+const showSignIn = inject('showSignIn') as () => void;
 const showSettings = inject('showSettings') as () => void;
 const showAccountSettings = inject('showAccountSettings') as (account: Account) => void;
-
-const emit = defineEmits(['onSignOut']);
 
 const accountClicked = async (account: Account) => {
   activeAccountId.value = account.id;
@@ -114,7 +114,7 @@ const settingsClicked = async () => {
 };
 
 const signInClicked = async () => {
-  console.log("Sign in clicked");
+  showSignIn();
 };
 
 const signOutClicked = async () => {
@@ -138,11 +138,9 @@ const signOutClicked = async () => {
   await window.electron.database.setConfig("deviceToken", "");
   await window.electron.database.setConfig("deviceUUID", "");
 
-  // Refresh the device info
+  // Refresh the device info and the server API
   await refreshDeviceInfo();
-
-  // Sign off
-  emit('onSignOut');
+  await refreshServerApi();
 };
 
 onMounted(async () => {

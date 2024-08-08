@@ -108,7 +108,7 @@ onUnmounted(() => {
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title">
-            Semiphemeral Settings
+            Settings
           </h4>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
         </div>
@@ -154,8 +154,4 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
-.modal-xl {
-  max-width: 90%;
-}
-</style>
+<style scoped></style>

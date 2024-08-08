@@ -7,6 +7,7 @@ import type { Account } from '../../shared_types';
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
+import SignInModal from "./modals/SignInModal.vue";
 import SettingsModal from './modals/SettingsModal.vue';
 import AccountSettingsModal from './modals/AccountSettingsModal.vue';
 
@@ -39,9 +40,24 @@ const refreshDeviceInfo = async () => {
 };
 provide('refreshDeviceInfo', refreshDeviceInfo);
 
+// Refresh server API
+const refreshServerApi = async () => {
+  serverApi.value = new ServerAPI();
+  await serverApi.value.initialize();
+  await refreshDeviceInfo();
+};
+provide('refreshServerApi', refreshServerApi);
+
 // User info
 const userEmail = ref('');
 provide('userEmail', userEmail);
+
+// Sign in
+const showSignInModal = ref(false);
+const showSignIn = () => {
+  showSignInModal.value = true;
+};
+provide('showSignIn', showSignIn);
 
 // Settings
 const showSettingsModal = ref(false);
@@ -58,15 +74,6 @@ const showAccountSettings = (account: Account) => {
   showAccountSettingsModal.value = true;
 };
 provide('showAccountSettings', showAccountSettings);
-
-const signOut = async () => {
-  isSignedIn.value = false;
-  isFirstLoad.value = true;
-  serverApi.value = new ServerAPI();
-  await serverApi.value.initialize();
-  await refreshDeviceInfo();
-  isFirstLoad.value = false;
-};
 
 onMounted(async () => {
   await serverApi.value.initialize();
@@ -107,12 +114,15 @@ onMounted(async () => {
         </div>
       </template>
       <template v-else>
-        <TabsView @on-sign-out="signOut" />
+        <TabsView />
       </template>
     </div>
 
     <!-- Settings modal -->
     <SettingsModal v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
+
+    <!-- Sign in modal -->
+    <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
 
     <!-- Account settings modal -->
     <AccountSettingsModal v-if="showAccountSettingsModal" :account="accountSettingsAccount"
