@@ -174,18 +174,21 @@ export const defineIPCArchive = () => {
                 '--browser-wait-delay', '1000', // wait an extra second
                 '--compress-CSS', 'true',
                 '--compress-HTML', 'true',
-                '--output-directory', outputPath,
                 '--urls-file', urlsPath,
                 // URLs are like: https://x.com/{username}/status/{tweetID}
                 // So filenames will be like: {tweetID}.html
                 '--filename-template', '{url-last-segment}.{filename-extension}',
                 // Overwrite if the file already exists
-                '--filename-conflict-action', 'overwrite'
+                '--filename-conflict-action', 'overwrite',
             ]
-            console.log(`Running SingleFile (try #${tries}): ${singlefileBinPath} ${args.join(' ')}`);
+            const quotedArgs = args.map(arg => (arg.includes(' ') ? `"${arg}"` : arg));
+            console.log(`Running SingleFile (try #${tries}): ${singlefileBinPath} ${quotedArgs.join(' ')}`);
 
             const savePages = () => new Promise<void>((resolve, reject) => {
-                const child = spawn(singlefileBinPath, args);
+                const child = spawn(singlefileBinPath, args, {
+                    // Set the working directory to outputPath instead of using --output-directory, since that doesn't seem to work
+                    cwd: outputPath,
+                });
 
                 child.stdout.on('data', (data) => {
                     console.log(`stdout: ${data}`);

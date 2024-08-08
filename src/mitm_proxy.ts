@@ -191,11 +191,6 @@ export class MITMController implements IMITMController {
 
         console.log(`MITMController: Account ${this.account?.id}, listening on port ${this.proxyPort}`);
 
-        // Make the webview use the proxy
-        ses.setProxy({
-            proxyRules: `127.0.0.1:${this.proxyPort}`
-        })
-
         // Verify SSL certificates
         ses.setCertificateVerifyProc((request, callback) => {
             const certPath = path.join(this.proxySSLCADir, 'certs', `${request.hostname}.pem`);
@@ -214,8 +209,13 @@ export class MITMController implements IMITMController {
             }
         })
 
-        // Sleep 1 second, to give time to proxy to fully start
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Make the webview use the proxy
+        ses.setProxy({
+            proxyRules: `127.0.0.1:${this.proxyPort}`
+        })
+
+        // Wait for proxy to be ready
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     async stopMITM(ses: Electron.Session) {
