@@ -22,6 +22,7 @@ export class AccountXViewModel extends BaseViewModel {
     private progressCount: number = 0;
     private urlChunks: string[][] = [];
     private chunkFinished: boolean = false;
+    private shouldRetry: boolean = false;
 
     async init() {
         this.state = State.Login;
@@ -305,9 +306,10 @@ export class AccountXViewModel extends BaseViewModel {
                     // Download each chunk
                     for (let i = 0; i < this.urlChunks.length; i++) {
                         this.chunkFinished = false;
+                        this.shouldRetry = false;
                         while (!this.chunkFinished) {
                             // Download the chunk
-                            if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.urlChunks[i])) {
+                            if (!await window.electron.archive.singleFile(this.account.id, this.archiveTweetsStartResponse.outputPath, this.urlChunks[i], this.shouldRetry)) {
                                 // TODO: handle failure
                                 console.log("singleFile: failed");
                             }
@@ -316,9 +318,13 @@ export class AccountXViewModel extends BaseViewModel {
                             if (this.webContentsID) {
                                 this.isRateLimitedResponse = await window.electron.X.isRateLimited(this.account.id, this.webContentsID, this.urlChunks[i][0]);
                                 if (this.isRateLimitedResponse.isRateLimited) {
-                                    // TODO: Delete the files in this chunk, so we can try again
+                                    // Retry the chunk
+                                    this.shouldRetry = true;
 
-                                    // TODO: Also remove these filenames from this.finishedFilenames
+                                    // Remove these filenames from this.finishedFilenames
+                                    for (let j = 0; j < this.urlChunks[i].length; j++) {
+                                        this.finishedFilenames = this.finishedFilenames.filter(filename => filename !== this.urlChunks[i][j].split('/').pop() + '.html');
+                                    }
 
                                     // Wait for rate limit to finish
                                     await new Promise(resolve => setTimeout(resolve, 1000));

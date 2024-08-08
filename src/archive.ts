@@ -118,7 +118,7 @@ export const defineIPCArchive = () => {
         fs.unlinkSync(cookiesPath);
     });
 
-    ipcMain.handle('archive:singleFile', async (_, accountID: number, outputPath: string, urls: string[]): Promise<boolean> => {
+    ipcMain.handle('archive:singleFile', async (_, accountID: number, outputPath: string, urls: string[], retry: boolean): Promise<boolean> => {
         // Figure out the paths
         const chromiumBinPath = getChromiumBinPath();
         const singlefileBinPath = getSinglefileBinPath();
@@ -139,18 +139,23 @@ export const defineIPCArchive = () => {
             savedIDs.push(id);
         }
 
-        // Remove URLs that are already saved
-        const urlsToSave = urls.filter(url => {
-            const urlLastSegment = url.split('/').pop();
-            if (!urlLastSegment) {
-                return false;
-            }
-            return !savedIDs.includes(urlLastSegment);
-        });
+        let urlsToSave: string[] = [];
+        if (retry) {
+            urlsToSave = urls;
+        } else {
+            // Remove URLs that are already saved
+            urlsToSave = urls.filter(url => {
+                const urlLastSegment = url.split('/').pop();
+                if (!urlLastSegment) {
+                    return false;
+                }
+                return !savedIDs.includes(urlLastSegment);
+            });
 
-        // Return early if all of these posts are already saved
-        if (urlsToSave.length == 0) {
-            return true;
+            // Return early if all of these posts are already saved
+            if (urlsToSave.length == 0) {
+                return true;
+            }
         }
 
         // Save the URLs to disk
