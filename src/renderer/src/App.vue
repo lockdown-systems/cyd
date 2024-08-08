@@ -10,10 +10,10 @@ import { getDeviceInfo } from './helpers';
 import SettingsModal from './modals/SettingsModal.vue';
 import AccountSettingsModal from './modals/AccountSettingsModal.vue';
 
-import SignInView from "./views/SignInView.vue";
 import TabsView from "./views/TabsView.vue";
 
 // Application state
+const isReady = ref(false);
 const isFirstLoad = ref(true);
 const isSignedIn = ref(false);
 
@@ -84,13 +84,15 @@ onMounted(async () => {
   if (deviceInfo.value?.valid) {
     isSignedIn.value = true;
   }
+
+  isReady.value = true;
 });
 </script>
 
 <template>
   <div class="d-flex flex-column vh-100">
     <div class="flex-grow-1">
-      <template v-if="isFirstLoad">
+      <template v-if="!isReady">
         <div class="container p-2 h-100">
           <div class="d-flex align-items-center h-100">
             <div class="w-100">
@@ -103,9 +105,6 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-      </template>
-      <template v-else-if="!isSignedIn">
-        <SignInView @on-sign-in="isSignedIn = true" />
       </template>
       <template v-else>
         <TabsView @on-sign-out="signOut" />

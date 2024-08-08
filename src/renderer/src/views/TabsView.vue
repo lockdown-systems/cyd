@@ -113,6 +113,10 @@ const settingsClicked = async () => {
   showSettings()
 };
 
+const signInClicked = async () => {
+  console.log("Sign in clicked");
+};
+
 const signOutClicked = async () => {
   if (deviceInfo.value === null) {
     window.electron.showError('Cannot sign out without device info');
@@ -187,23 +191,43 @@ onUnmounted(async () => {
               <i class="fa-solid fa-user-ninja" />
             </div>
             <div v-if="userBtnShowInfo" class="info-popup">
-              You are signed in as {{ deviceInfo?.userEmail }}
+              <template v-if="deviceInfo?.valid">
+                You are signed in as {{ deviceInfo?.userEmail }}
+              </template>
+              <template v-else>
+                You are not signed in
+              </template>
             </div>
             <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="menu-popup">
-              <ul>
-                <li class="menu-text">
-                  Signed in as {{ deviceInfo?.userEmail }}
-                </li>
-                <li class="menu-line">
-                  <hr>
-                </li>
-                <li class="menu-btn" @click="settingsClicked">
-                  Settings
-                </li>
-                <li class="menu-btn" @click="signOutClicked">
-                  Sign out
-                </li>
-              </ul>
+              <template v-if="deviceInfo?.valid">
+                <ul>
+                  <li class="menu-text">
+                    Signed in as {{ deviceInfo?.userEmail }}
+                  </li>
+                  <li class="menu-line">
+                    <hr>
+                  </li>
+                  <li class="menu-btn" @click="settingsClicked">
+                    Settings
+                  </li>
+                  <li class="menu-btn" @click="signOutClicked">
+                    Sign out
+                  </li>
+                </ul>
+              </template>
+              <template v-else>
+                <ul>
+                  <li class="menu-text">
+                    Not signed in
+                  </li>
+                  <li class="menu-line">
+                    <hr>
+                  </li>
+                  <li class="menu-btn" @click="signInClicked">
+                    Sign in
+                  </li>
+                </ul>
+              </template>
             </div>
           </div>
         </div>
