@@ -2,14 +2,12 @@
 import { ref, provide, onMounted } from "vue"
 
 import type { DeviceInfo } from './types';
-import type { Account } from '../../shared_types';
 
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
 import SignInModal from "./modals/SignInModal.vue";
 import SettingsModal from './modals/SettingsModal.vue';
-import AccountSettingsModal from './modals/AccountSettingsModal.vue';
 
 import TabsView from "./views/TabsView.vue";
 
@@ -66,15 +64,6 @@ const showSettings = () => {
 };
 provide('showSettings', showSettings);
 
-// Account settings
-const accountSettingsAccount = ref<Account | null>(null);
-const showAccountSettingsModal = ref(false);
-const showAccountSettings = (account: Account) => {
-  accountSettingsAccount.value = account;
-  showAccountSettingsModal.value = true;
-};
-provide('showAccountSettings', showAccountSettings);
-
 onMounted(async () => {
   await serverApi.value.initialize();
 
@@ -123,10 +112,6 @@ onMounted(async () => {
 
     <!-- Sign in modal -->
     <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
-
-    <!-- Account settings modal -->
-    <AccountSettingsModal v-if="showAccountSettingsModal" :account="accountSettingsAccount"
-      @hide="showAccountSettingsModal = false" @close="showAccountSettingsModal = false" />
   </div>
 </template>
 
