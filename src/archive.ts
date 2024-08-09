@@ -72,9 +72,11 @@ export const defineIPCArchive = () => {
     ipcMain.handle('archive:installSingleFileExtension', async (_, accountID: number): Promise<boolean> => {
         const ses = session.fromPartition(`persist:account-${accountID}`);
         try {
-            console.log('archive:installSingleFileExtension: accountID:', accountID);
-            const extension = await ses.loadExtension(path.join(getVendorPath(), 'SingleFile-1.2.0'), { allowFileAccess: false });
+            const extension = await ses.loadExtension(path.join(getVendorPath(), 'SingleFile-1.2.0'), { allowFileAccess: true });
             console.log('archive:installSingleFileExtension: installed extension', extension.name);
+
+            // Sleep for a bit to let the extension load
+            await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (err) {
             console.error('Failed to install SingleFile extension:', err);
             return false;

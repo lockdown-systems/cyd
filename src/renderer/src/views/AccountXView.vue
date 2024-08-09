@@ -105,6 +105,7 @@ const startDeletingClicked = async () => {
 };
 
 const startStateLoop = async () => {
+    console.log('State loop started');
     while (isWebviewMounted.value) {
         await runNextState();
 
@@ -114,9 +115,11 @@ const startStateLoop = async () => {
 
         await new Promise(resolve => setTimeout(resolve, 500));
     }
+    console.log('State loop ended');
 };
 
 const runNextState = async () => {
+    console.log('Running next state', accountXViewModel.value);
     if (accountXViewModel.value !== null) {
         await accountXViewModel.value.run();
     }
@@ -142,15 +145,6 @@ onMounted(async () => {
 
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
-
-        // Load the SingleFile extension
-        if (!await window.electron.archive.isSingleFileExtensionInstalled()) {
-            if (!await window.electron.archive.installSingleFileExtension()) {
-                window.electron.showError('Failed to install SingleFile extension');
-            }
-            console.log('SingleFile extension installed');
-            await window.electron.archive.isSingleFileExtensionInstalled();
-        }
 
         // Start the state loop
         if (props.account.xAccount !== null) {

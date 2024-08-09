@@ -52,6 +52,17 @@ export class BaseViewModel {
 
                 // Set the webContentsID
                 this.webContentsID = webview.getWebContentsId();
+
+                // Load the SingleFile extension
+                if (!await window.electron.archive.isSingleFileExtensionInstalled()) {
+                    if (!await window.electron.archive.installSingleFileExtension()) {
+                        window.electron.showError('Failed to install SingleFile extension');
+                    } else {
+                        console.log('SingleFile extension installed');
+                    }
+                } else {
+                    console.log('SingleFile extension already installed');
+                }
             }
         });
     }
@@ -78,6 +89,8 @@ export class BaseViewModel {
     }
 
     async waitForWebviewReady() {
+        console.log("AccountXViewModel.waitForWebviewReady");
+
         // Make sure dom-ready has been fired once
         while (!this.domReady) {
             await new Promise(resolve => setTimeout(resolve, 200));
@@ -94,6 +107,8 @@ export class BaseViewModel {
         while (!this.stoppedLoading) {
             await new Promise(resolve => setTimeout(resolve, 200));
         }
+
+        console.log("AccountXViewModel.waitForWebviewReady done");
     }
 
     async waitForLoadingToFinish() {

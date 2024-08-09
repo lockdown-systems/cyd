@@ -18,7 +18,6 @@ const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshServerApi = inject('refreshServerApi') as () => Promise<void>;
 const showSignIn = inject('showSignIn') as () => void;
 const showSettings = inject('showSettings') as () => void;
-const showAccountSettings = inject('showAccountSettings') as (account: Account) => void;
 
 const accountClicked = async (account: Account) => {
   activeAccountId.value = account.id;
@@ -168,7 +167,7 @@ onUnmounted(async () => {
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
           <AccountButton v-for="account in accounts" :key="account.id" :account="account"
             :active="account.id === activeAccountId" @click="accountClicked(account)"
-            @on-settings-clicked="showAccountSettings(account)" @on-delete-clicked="deleteAccount(account)" />
+            @on-delete-clicked="deleteAccount(account)" />
         </div>
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">

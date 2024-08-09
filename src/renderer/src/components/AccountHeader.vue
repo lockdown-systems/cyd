@@ -1,25 +1,18 @@
 <script setup lang="ts">
-import { ref, inject } from 'vue';
+import { ref } from 'vue';
 import { getAccountIcon } from '../helpers';
 import type { Account } from '../../../shared_types';
 
-const props = defineProps<{
+defineProps<{
     account: Account;
 }>();
 
 const emit = defineEmits(['onRefreshClicked']);
 
-const showAccountSettings = inject('showAccountSettings') as (account: Account) => void;
-
 const refreshBtnShowInfo = ref(false);
-const settingsBtnShowInfo = ref(false);
 
 const onRefreshClicked = () => {
     emit('onRefreshClicked');
-};
-
-const onSettingsClicked = () => {
-    showAccountSettings(props.account);
 };
 </script>
 
@@ -36,9 +29,6 @@ const onSettingsClicked = () => {
             </div>
         </div>
         <div class="label d-flex align-items-center">
-            <span class="logo">
-                <i :class="getAccountIcon(account.type)" />
-            </span>
             <template v-if="account.type == 'X'">
                 <template v-if="account.xAccount?.username == null">
                     <span class="label-text">not logged in</span>
@@ -47,16 +37,9 @@ const onSettingsClicked = () => {
                     <span class="label-text">@{{ account.xAccount?.username }}</span>
                 </template>
             </template>
-        </div>
-        <div class="btn-container">
-            <div class="settings-btn account-header-btn d-flex justify-content-center align-items-center"
-                @mouseover="settingsBtnShowInfo = true" @mouseleave="settingsBtnShowInfo = false"
-                @click="onSettingsClicked">
-                <i class="fa-solid fa-gear" />
-            </div>
-            <div v-if="settingsBtnShowInfo" class="info-popup info-popup-settings">
-                Settings
-            </div>
+            <span class="logo">
+                <i :class="getAccountIcon(account.type)" />
+            </span>
         </div>
     </div>
 </template>
@@ -100,7 +83,7 @@ const onSettingsClicked = () => {
 
 .label .logo {
     opacity: 0.5;
-    margin-right: 10px;
+    margin-left: 10px;
 }
 
 .label .label-text {

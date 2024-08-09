@@ -361,6 +361,7 @@ export class AccountXViewModel extends BaseViewModel {
             case State.Login:
                 // Never logged in before
                 if (this.account.xAccount?.username === null) {
+                    console.log("run", "never logged in before");
                     this.instructions = `
 I can help you automatically archive your tweets and/or direct messages, and then delete your tweets, likes,
 and direct messages, except for the ones you want to keep. **To start, login to your X account below.**
@@ -391,6 +392,7 @@ and direct messages, except for the ones you want to keep. **To start, login to 
                     this.state = State.Dashboard;
 
                 } else {
+                    console.log("run", "logged in before");
                     // We have logged in before. Are we currently logged in?
                     this.instructions = `
 Checking to see if you're still logged in to your X account...
