@@ -9,7 +9,7 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import path from 'path';
 import os from 'os';
 
-import { downloadChromium, downloadSingleFileCLI } from './scripts/download-deps';
+import { downloadChromium, downloadSingleFileCLI, downloadSingleFileExtension } from './scripts/download-deps';
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -21,6 +21,9 @@ const config: ForgeConfig = {
       async (_buildPath, _electronVersion, _platform, _arch, callback) => {
         const osPlatform = os.platform();
         const buildPath = path.resolve("./build");
+
+        // Download the SingleFile extension
+        await downloadSingleFileExtension(buildPath);
 
         // For macOS, download both the Intel and ARM versions
         if (osPlatform === 'darwin') {

@@ -60,11 +60,8 @@ interface GitHubRelease {
     tag_name: string;
 }
 
-const singleFileRepoOwner = 'gildas-lormeau';
-const singleFileRepoName = 'single-file-cli';
-
-async function getLatestReleaseTag(): Promise<string> {
-    const url = `https://api.github.com/repos/${singleFileRepoOwner}/${singleFileRepoName}/releases/latest`;
+async function getLatestReleaseTag(repoOwner: string, repoName: string): Promise<string> {
+    const url = `https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`;
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to fetch latest release: ${response.statusText}`);
@@ -75,9 +72,12 @@ async function getLatestReleaseTag(): Promise<string> {
 }
 
 export const downloadSingleFileCLI = async (platform: string, output_folder: string): Promise<string | null> => {
+    const repoOwner: string = 'gildas-lormeau';
+    const repoName: string = 'single-file-cli';
+
     createFolderIfNotExists(output_folder);
 
-    const releaseTag = await getLatestReleaseTag();
+    const releaseTag = await getLatestReleaseTag(repoOwner, repoName);
     let downloadFilename: string;
     switch (platform) {
         case "win-x64":
@@ -96,7 +96,7 @@ export const downloadSingleFileCLI = async (platform: string, output_folder: str
             console.error(`Unsupported platform: ${platform}`);
             return null;
     }
-    const downloadURL = `https://github.com/${singleFileRepoOwner}/${singleFileRepoName}/releases/download/${releaseTag}/${downloadFilename}`;
+    const downloadURL = `https://github.com/${repoOwner}/${repoName}/releases/download/${releaseTag}/${downloadFilename}`;
 
     const downloadPath = path.join(output_folder, downloadFilename);
     if (existsSync(downloadPath)) {
@@ -123,6 +123,47 @@ export const downloadSingleFileCLI = async (platform: string, output_folder: str
         if (platform !== "win-x64") {
             await chmodSync(downloadPath, '755');
         }
+
+        console.log(`Downloaded to: ${downloadPath}`);
+        return downloadPath;
+    } else {
+        console.error(`Failed to fetch download URL: ${downloadURL}`);
+        return null;
+    }
+};
+
+// SingleFile extension
+
+export const downloadSingleFileExtension = async (output_folder: string): Promise<string | null> => {
+    const repoOwner: string = 'gildas-lormeau';
+    const repoName: string = 'SingleFile';
+
+    createFolderIfNotExists(output_folder);
+
+    const releaseTag = await getLatestReleaseTag(repoOwner, repoName);
+    const downloadFilename = "SingleFile.zip";
+    const downloadURL = `https://github.com/${repoOwner}/${repoName}/archive/refs/tags/${releaseTag}.zip`;
+
+    const downloadPath = path.join(output_folder, downloadFilename);
+    if (existsSync(downloadPath)) {
+        console.log(`SingleFile CLI already downloaded: ${downloadPath}`);
+        return downloadPath;
+    }
+
+    console.log(`Downloading: ${downloadURL}`);
+
+    const resp = await fetch(downloadURL);
+    if (resp.ok && resp.body) {
+        const writer = createWriteStream(downloadPath);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const readableStream = resp.body as ReadableStream<any>;
+
+        await new Promise<void>((resolve, reject) => {
+            Readable.fromWeb(readableStream)
+                .pipe(writer)
+                .on('finish', resolve)
+                .on('error', reject);
+        });
 
         console.log(`Downloaded to: ${downloadPath}`);
         return downloadPath;
