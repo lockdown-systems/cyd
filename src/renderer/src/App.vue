@@ -73,6 +73,12 @@ onMounted(async () => {
     }
   }
 
+  if (!await window.electron.archive.isSingleFileExtracted()) {
+    if (!await window.electron.archive.extractSingleFile()) {
+      window.electron.showError('Failed to extract SingleFile');
+    }
+  }
+
   await refreshDeviceInfo();
   isFirstLoad.value = false;
 

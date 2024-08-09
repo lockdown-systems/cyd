@@ -44,6 +44,18 @@ contextBridge.exposeInMainWorld('electron', {
         },
     },
     archive: {
+        isSingleFileExtracted: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:isSingleFileExtracted')
+        },
+        extractSingleFile: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:extractSingleFile')
+        },
+        isSingleFileExtensionInstalled: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:isSingleFileExtensionInstalled')
+        },
+        installSingleFileExtension: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:installSingleFileExtension')
+        },
         isChromiumExtracted: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:isChromiumExtracted')
         },

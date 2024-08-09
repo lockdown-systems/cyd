@@ -7,7 +7,7 @@ import { ipcMain, session } from 'electron';
 import extract from 'extract-zip';
 import Database from 'better-sqlite3'
 
-import { getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
+import { getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath, getVendorPath } from './helpers';
 
 interface ChromiumCookie {
     creation_utc: number;
@@ -33,6 +33,56 @@ interface ChromiumCookie {
 }
 
 export const defineIPCArchive = () => {
+    ipcMain.handle('archive:isSingleFileExtracted', async (_): Promise<boolean> => {
+        const vendorPath = getVendorPath();
+        const singleFileExtensionPath = path.join(vendorPath, 'SingleFile-1.2.0');
+        return fs.existsSync(singleFileExtensionPath);
+    });
+
+    ipcMain.handle('archive:extractSingleFile', async (_): Promise<boolean> => {
+        const vendorPath = getVendorPath();
+        const resourcesPath = getResourcesPath();
+        const zipPath = path.join(resourcesPath, 'SingleFile-1.2.0.zip');
+
+        if (!fs.existsSync(zipPath)) {
+            console.error(`SingleFile zip not found: ${zipPath}`);
+            return false;
+        }
+
+        try {
+            await extract(zipPath, { dir: vendorPath });
+            return true;
+        } catch (err) {
+            console.error('Failed to extract SingleFile:', err);
+            return false;
+        }
+    });
+
+    ipcMain.handle('archive:isSingleFileExtensionInstalled', async (_, accountID: number): Promise<boolean> => {
+        const ses = session.fromPartition(`persist:account-${accountID}`);
+        const extensions = await ses.getAllExtensions();
+        for (const extension of extensions) {
+            if (extension.name === 'SingleFile') {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    ipcMain.handle('archive:installSingleFileExtension', async (_, accountID: number): Promise<boolean> => {
+        const ses = session.fromPartition(`persist:account-${accountID}`);
+        try {
+            console.log('archive:installSingleFileExtension: accountID:', accountID);
+            const extension = await ses.loadExtension(path.join(getVendorPath(), 'SingleFile-1.2.0'), { allowFileAccess: false });
+            console.log('archive:installSingleFileExtension: installed extension', extension.name);
+        } catch (err) {
+            console.error('Failed to install SingleFile extension:', err);
+            return false;
+        }
+
+        return true;
+    });
+
     ipcMain.handle('archive:isChromiumExtracted', async (_): Promise<boolean> => {
         const binPath = getChromiumBinPath();
         if (!binPath) {
@@ -161,7 +211,6 @@ export const defineIPCArchive = () => {
         // Save the URLs to disk
         const urlsPath = path.join(getAccountTempPath(accountID), "urls.txt");
         fs.writeFileSync(urlsPath, urlsToSave.join('\n'), 'utf-8');
-
 
         // Try a few times
         let tries = 0;

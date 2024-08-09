@@ -140,8 +140,13 @@ export const downloadSingleFileExtension = async (output_folder: string): Promis
 
     createFolderIfNotExists(output_folder);
 
-    const releaseTag = await getLatestReleaseTag(repoOwner, repoName);
-    const downloadFilename = "SingleFile.zip";
+    // const releaseTag = await getLatestReleaseTag(repoOwner, repoName);
+
+    // Hardcoding the release from March 20, 2024
+    // https://github.com/gildas-lormeau/SingleFile/releases/tag/v1.2.0
+    const releaseTag = 'v1.2.0';
+
+    const downloadFilename = "SingleFile-1.2.0.zip";
     const downloadURL = `https://github.com/${repoOwner}/${repoName}/archive/refs/tags/${releaseTag}.zip`;
 
     const downloadPath = path.join(output_folder, downloadFilename);

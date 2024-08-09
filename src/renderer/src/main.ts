@@ -25,6 +25,10 @@ declare global {
                 deleteAccount: (accountID: number) => void;
             },
             archive: {
+                isSingleFileExtracted: () => Promise<boolean>;
+                extractSingleFile: () => Promise<boolean>;
+                isSingleFileExtensionInstalled: () => Promise<boolean>;
+                installSingleFileExtension: () => Promise<boolean>;
                 isChromiumExtracted: () => Promise<boolean>;
                 extractChromium: () => Promise<boolean>;
                 saveCookiesFile: (accountID: number) => Promise<void>;

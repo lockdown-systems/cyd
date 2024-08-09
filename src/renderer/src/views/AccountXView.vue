@@ -143,6 +143,14 @@ onMounted(async () => {
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
+        // Load the SingleFile extension
+        if (!await window.electron.archive.isSingleFileExtensionInstalled()) {
+            if (!await window.electron.archive.installSingleFileExtension()) {
+                window.electron.showError('Failed to install SingleFile extension');
+            }
+            console.log('SingleFile extension installed');
+            await window.electron.archive.isSingleFileExtensionInstalled();
+        }
 
         // Start the state loop
         if (props.account.xAccount !== null) {
