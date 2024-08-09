@@ -4,8 +4,9 @@ import Electron from 'electron';
 
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
-import ProgressXComponent from '../components/ProgressXComponent.vue';
-import type { Account, XProgress } from '../../../shared_types';
+import XProgressComponent from '../components/XProgressComponent.vue';
+import XJobStatusComponent from '../components/XJobStatusComponent.vue';
+import type { Account, XProgress, XJob } from '../../../shared_types';
 
 import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
 
@@ -17,6 +18,7 @@ const emit = defineEmits(['onRefreshClicked']);
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 const progress = ref<XProgress | null>(null);
+const currentJobs = ref<XJob[]>([]);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
@@ -26,6 +28,13 @@ const isWebviewMounted = ref(true);
 watch(
     () => accountXViewModel.value?.progress,
     (newProgress) => { if (newProgress) progress.value = newProgress; },
+    { deep: true, }
+);
+
+// Keep jobs status updated
+watch(
+    () => accountXViewModel.value?.jobs,
+    (newJobs) => { if (newJobs) currentJobs.value = newJobs; },
     { deep: true, }
 );
 
@@ -155,12 +164,17 @@ onUnmounted(async () => {
     <div class="wrapper d-flex flex-column">
         <AccountHeader :account="account" @on-refresh-clicked="emit('onRefreshClicked')" />
 
-        <!-- Speech bubble -->
-        <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
-            class="speech-bubble" />
+        <div class="d-flex align-items-center">
+            <!-- Speech bubble -->
+            <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
+                class="speech-bubble" :class="{ 'full-width': currentJobs.length === 0 }" />
+
+            <!-- Job status -->
+            <XJobStatusComponent v-if="currentJobs.length > 0" :jobs="currentJobs" class="job-status-component" />
+        </div>
 
         <!-- Progress -->
-        <ProgressXComponent v-if="progress" :progress="progress" :account-i-d="account.id" />
+        <XProgressComponent v-if="progress" :progress="progress" :account-i-d="account.id" />
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
@@ -348,5 +362,13 @@ onUnmounted(async () => {
 
 .no-wrap {
     white-space: nowrap;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.job-status-component {
+    width: 300px;
 }
 </style>
