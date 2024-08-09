@@ -42,7 +42,7 @@ export type XAccount = {
 
 export type XJob = {
     id: number | null;
-    jobType: string; // "index", "archiveTweets", "archiveDirectMessages", "deleteTweets", "deleteLikes", "deleteDirectMessages"
+    jobType: string; // "login", "index", "archiveTweets", "archiveDirectMessages", "deleteTweets", "deleteLikes", "deleteDirectMessages"
     status: string; // "pending", "running", "finished", "failed", "canceled"
     scheduledAt: Date;
     startedAt: Date | null;

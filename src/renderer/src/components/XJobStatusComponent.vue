@@ -24,12 +24,13 @@ const getStatusIcon = (status: string) => {
 
 const getJobTypeText = (jobType: string) => {
     const jobTypeTexts: { [key: string]: string } = {
-        index: 'Index',
-        archiveTweets: 'Archive tweets',
-        archiveDirectMessages: 'Archive DMs',
-        deleteTweets: 'Delete tweets',
-        deleteLikes: 'Delete likes',
-        deleteDirectMessages: 'Delete DMs'
+        login: 'Logging in',
+        index: 'Indexing',
+        archiveTweets: 'Archiving tweets',
+        archiveDirectMessages: 'Archiving DMs',
+        deleteTweets: 'Deleting tweets',
+        deleteLikes: 'Deleting likes',
+        deleteDirectMessages: 'Deleting DMs'
     };
     return jobTypeTexts[jobType] || '';
 };
