@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
 
-import { ipcMain, session } from 'electron';
+import { ipcMain, session, Extension, BrowserWindow } from 'electron';
 import extract from 'extract-zip';
 import Database from 'better-sqlite3'
 
@@ -32,17 +32,28 @@ interface ChromiumCookie {
     has_cross_site_ancestor: number;
 }
 
+// const SINGLEFILE_FILENAME = 'SingleFile-MV3-main.zip';
+// const SINGLEFILE_PATH = 'SingleFile-MV3-main';
+const SINGLEFILE_FILENAME = 'SingleFile-1.2.0.zip';
+const SINGLEFILE_PATH = 'SingleFile-1.2.0';
+
+const singleFileExtensions: Record<number, Extension> = {};
+
+const getSingleFileExtension = (accountID: number): Extension => {
+    return singleFileExtensions[accountID];
+}
+
 export const defineIPCArchive = () => {
     ipcMain.handle('archive:isSingleFileExtracted', async (_): Promise<boolean> => {
         const vendorPath = getVendorPath();
-        const singleFileExtensionPath = path.join(vendorPath, 'SingleFile-1.2.0');
+        const singleFileExtensionPath = path.join(vendorPath, SINGLEFILE_PATH);
         return fs.existsSync(singleFileExtensionPath);
     });
 
     ipcMain.handle('archive:extractSingleFile', async (_): Promise<boolean> => {
         const vendorPath = getVendorPath();
         const resourcesPath = getResourcesPath();
-        const zipPath = path.join(resourcesPath, 'SingleFile-1.2.0.zip');
+        const zipPath = path.join(resourcesPath, SINGLEFILE_FILENAME);
 
         if (!fs.existsSync(zipPath)) {
             console.error(`SingleFile zip not found: ${zipPath}`);
@@ -74,9 +85,7 @@ export const defineIPCArchive = () => {
         try {
             const extension = await ses.loadExtension(path.join(getVendorPath(), 'SingleFile-1.2.0'), { allowFileAccess: true });
             console.log('archive:installSingleFileExtension: installed extension', extension.name);
-
-            // Sleep for a bit to let the extension load
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            singleFileExtensions[accountID] = extension;
         } catch (err) {
             console.error('Failed to install SingleFile extension:', err);
             return false;
@@ -84,6 +93,52 @@ export const defineIPCArchive = () => {
 
         return true;
     });
+
+    ipcMain.handle('archive:singleFileSavePage', async (_, accountID: number): Promise<boolean> => {
+        const ses = session.fromPartition(`persist:account-${accountID}`);
+        const extension = getSingleFileExtension(accountID);
+        const backgroundPageUrl = `chrome-extension://${extension.id}/${extension.manifest.background.page}`;
+
+        // Create a hidden BrowserWindow with the specified session
+        const backgroundWindow = new BrowserWindow({
+            show: true,
+            webPreferences: {
+                session: ses,
+                nodeIntegration: false,
+                contextIsolation: false,
+                sandbox: false,
+            },
+        });
+        backgroundWindow.webContents.openDevTools();
+
+        // Load the background page URL
+        console.log('Loading background page:', backgroundPageUrl);
+        await backgroundWindow.loadURL(backgroundPageUrl);
+
+        console.log('Background page loaded');
+
+        // Execute JavaScript in the background page context
+        const result = await backgroundWindow.webContents.executeJavaScript(`
+        (() => {
+            console.log('about to send a message');
+            chrome.runtime.sendMessage('downloads.download', response => {
+                console.log('response from extension:', response);
+            });
+            return chrome.runtime.getURL('test.html');
+        })()
+        `);
+
+        console.log('Result from background page:', result);
+
+        // Wait 10 seconds
+        await new Promise(resolve => setTimeout(resolve, 60000));
+
+        // Clean up the background window
+        backgroundWindow.close();
+
+        return true;
+    });
+
 
     ipcMain.handle('archive:isChromiumExtracted', async (_): Promise<boolean> => {
         const binPath = getChromiumBinPath();

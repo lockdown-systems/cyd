@@ -160,6 +160,10 @@ onMounted(async () => {
 onUnmounted(async () => {
     isWebviewMounted.value = false;
 });
+
+const debugClicked = async () => {
+    await window.electron.archive.singleFileSavePage();
+};
 </script>
 
 <template>
@@ -339,6 +343,12 @@ onUnmounted(async () => {
                         Start Deleting
                     </button>
                 </form>
+
+                <p>
+                    <button class="btn btn-primary" @click="debugClicked">
+                        Debug
+                    </button>
+                </p>
             </div>
         </div>
     </div>

@@ -56,6 +56,9 @@ contextBridge.exposeInMainWorld('electron', {
         installSingleFileExtension: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:installSingleFileExtension')
         },
+        singleFileSavePage: (): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:singleFileSavePage')
+        },
         isChromiumExtracted: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:isChromiumExtracted')
         },

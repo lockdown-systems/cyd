@@ -135,19 +135,16 @@ export const downloadSingleFileCLI = async (platform: string, output_folder: str
 // SingleFile extension
 
 export const downloadSingleFileExtension = async (output_folder: string): Promise<string | null> => {
-    const repoOwner: string = 'gildas-lormeau';
-    const repoName: string = 'SingleFile';
-
     createFolderIfNotExists(output_folder);
 
-    // const releaseTag = await getLatestReleaseTag(repoOwner, repoName);
-
-    // Hardcoding the release from March 20, 2024
-    // https://github.com/gildas-lormeau/SingleFile/releases/tag/v1.2.0
+    const repoOwner: string = 'gildas-lormeau';
+    const repoName: string = 'SingleFile';
     const releaseTag = 'v1.2.0';
-
     const downloadFilename = "SingleFile-1.2.0.zip";
     const downloadURL = `https://github.com/${repoOwner}/${repoName}/archive/refs/tags/${releaseTag}.zip`;
+
+    // const downloadFilename = "SingleFile-MV3-main.zip";
+    // const downloadURL = 'https://github.com/gildas-lormeau/SingleFile-MV3/archive/refs/heads/main.zip';
 
     const downloadPath = path.join(output_folder, downloadFilename);
     if (existsSync(downloadPath)) {
