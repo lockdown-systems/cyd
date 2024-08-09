@@ -11,7 +11,7 @@ export enum State {
 
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress | null = null;
-    private jobs: XJob[] = [];
+    public jobs: XJob[] = [];
     private isFirstRun: boolean = false;
 
     private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
