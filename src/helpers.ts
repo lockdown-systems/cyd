@@ -85,11 +85,6 @@ export const getChromiumBinPath = () => {
     }
 }
 
-export const getVendorPath = () => {
-    const vendorPath = path.join(app.getPath('userData'), "vendor");
-    return vendorPath;
-}
-
 export const getSinglefileBinPath = () => {
     const platform = os.platform();
     const arch = os.arch();

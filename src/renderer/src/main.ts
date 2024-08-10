@@ -30,6 +30,7 @@ declare global {
                 isSingleFileExtensionInstalled: () => Promise<boolean>;
                 installSingleFileExtension: () => Promise<boolean>;
                 singleFileSavePage: () => Promise<boolean>;
+                savePage: (webContentsID: number) => Promise<boolean>;
                 isChromiumExtracted: () => Promise<boolean>;
                 extractChromium: () => Promise<boolean>;
                 saveCookiesFile: (accountID: number) => Promise<void>;

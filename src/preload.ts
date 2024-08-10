@@ -59,6 +59,9 @@ contextBridge.exposeInMainWorld('electron', {
         singleFileSavePage: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:singleFileSavePage')
         },
+        savePage: (webContentsID: number): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:savePage', webContentsID)
+        },
         isChromiumExtracted: (): Promise<boolean> => {
             return ipcRenderer.invoke('archive:isChromiumExtracted')
         },

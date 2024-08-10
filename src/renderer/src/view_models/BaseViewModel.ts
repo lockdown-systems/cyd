@@ -52,17 +52,6 @@ export class BaseViewModel {
 
                 // Set the webContentsID
                 this.webContentsID = webview.getWebContentsId();
-
-                // Load the SingleFile extension
-                if (!await window.electron.archive.isSingleFileExtensionInstalled()) {
-                    if (!await window.electron.archive.installSingleFileExtension()) {
-                        window.electron.showError('Failed to install SingleFile extension');
-                    } else {
-                        console.log('SingleFile extension installed');
-                    }
-                } else {
-                    console.log('SingleFile extension already installed');
-                }
             }
         });
     }

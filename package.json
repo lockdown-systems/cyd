@@ -29,7 +29,9 @@
     "electron-squirrel-startup": "^1.0.1",
     "extract-zip": "^2.0.1",
     "http-mitm-proxy": "^1.1.0",
+    "jsdom": "^24.1.1",
     "marked": "^13.0.0",
+    "mhtml2html": "^3.0.0",
     "moment": "^2.30.1",
     "vue": "^3.4.21",
     "vue-router": "^4.3.2"

@@ -3,11 +3,13 @@ import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
 
-import { ipcMain, session, Extension, BrowserWindow } from 'electron';
+import { ipcMain, session, webContents } from 'electron';
 import extract from 'extract-zip';
 import Database from 'better-sqlite3'
+import mhtml2html from 'mhtml2html';
+import { JSDOM } from 'jsdom';
 
-import { getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath, getVendorPath } from './helpers';
+import { getAccountTempPath, getResourcesPath, getChromiumAppPath, getChromiumBinPath, getSinglefileBinPath } from './helpers';
 
 interface ChromiumCookie {
     creation_utc: number;
@@ -32,109 +34,23 @@ interface ChromiumCookie {
     has_cross_site_ancestor: number;
 }
 
-// const SINGLEFILE_FILENAME = 'SingleFile-MV3-main.zip';
-// const SINGLEFILE_PATH = 'SingleFile-MV3-main';
-const SINGLEFILE_FILENAME = 'SingleFile-1.2.0.zip';
-const SINGLEFILE_PATH = 'SingleFile-1.2.0';
-
-const singleFileExtensions: Record<number, Extension> = {};
-
-const getSingleFileExtension = (accountID: number): Extension => {
-    return singleFileExtensions[accountID];
-}
-
 export const defineIPCArchive = () => {
-    ipcMain.handle('archive:isSingleFileExtracted', async (_): Promise<boolean> => {
-        const vendorPath = getVendorPath();
-        const singleFileExtensionPath = path.join(vendorPath, SINGLEFILE_PATH);
-        return fs.existsSync(singleFileExtensionPath);
-    });
-
-    ipcMain.handle('archive:extractSingleFile', async (_): Promise<boolean> => {
-        const vendorPath = getVendorPath();
-        const resourcesPath = getResourcesPath();
-        const zipPath = path.join(resourcesPath, SINGLEFILE_FILENAME);
-
-        if (!fs.existsSync(zipPath)) {
-            console.error(`SingleFile zip not found: ${zipPath}`);
+    ipcMain.handle('archive:savePage', async (_, webContentsID: number): Promise<boolean> => {
+        const wc = webContents.fromId(webContentsID);
+        if (!wc) {
             return false;
         }
 
-        try {
-            await extract(zipPath, { dir: vendorPath });
-            return true;
-        } catch (err) {
-            console.error('Failed to extract SingleFile:', err);
-            return false;
-        }
-    });
+        await wc.savePage('/home/user/tmp/savepage/test.mhtml', 'MHTML');
 
-    ipcMain.handle('archive:isSingleFileExtensionInstalled', async (_, accountID: number): Promise<boolean> => {
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        const extensions = await ses.getAllExtensions();
-        for (const extension of extensions) {
-            if (extension.name === 'SingleFile') {
-                return true;
-            }
-        }
-        return false;
-    });
+        // Load test.mhtml as a string
+        const mhtmlPath = '/home/user/tmp/savepage/test.mhtml';
+        const mhtml = fs.readFileSync(mhtmlPath, 'utf-8');
+        const htmlDoc = mhtml2html.convert(mhtml, { parseDOM: (html) => new JSDOM(html) });
 
-    ipcMain.handle('archive:installSingleFileExtension', async (_, accountID: number): Promise<boolean> => {
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        try {
-            const extension = await ses.loadExtension(path.join(getVendorPath(), 'SingleFile-1.2.0'), { allowFileAccess: true });
-            console.log('archive:installSingleFileExtension: installed extension', extension.name);
-            singleFileExtensions[accountID] = extension;
-        } catch (err) {
-            console.error('Failed to install SingleFile extension:', err);
-            return false;
-        }
-
-        return true;
-    });
-
-    ipcMain.handle('archive:singleFileSavePage', async (_, accountID: number): Promise<boolean> => {
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        const extension = getSingleFileExtension(accountID);
-        const backgroundPageUrl = `chrome-extension://${extension.id}/${extension.manifest.background.page}`;
-
-        // Create a hidden BrowserWindow with the specified session
-        const backgroundWindow = new BrowserWindow({
-            show: true,
-            webPreferences: {
-                session: ses,
-                nodeIntegration: false,
-                contextIsolation: false,
-                sandbox: false,
-            },
-        });
-        backgroundWindow.webContents.openDevTools();
-
-        // Load the background page URL
-        console.log('Loading background page:', backgroundPageUrl);
-        await backgroundWindow.loadURL(backgroundPageUrl);
-
-        console.log('Background page loaded');
-
-        // Execute JavaScript in the background page context
-        const result = await backgroundWindow.webContents.executeJavaScript(`
-        (() => {
-            console.log('about to send a message');
-            chrome.runtime.sendMessage('downloads.download', response => {
-                console.log('response from extension:', response);
-            });
-            return chrome.runtime.getURL('test.html');
-        })()
-        `);
-
-        console.log('Result from background page:', result);
-
-        // Wait 10 seconds
-        await new Promise(resolve => setTimeout(resolve, 60000));
-
-        // Clean up the background window
-        backgroundWindow.close();
+        // Save the HTML to a file
+        const htmlPath = '/home/user/tmp/savepage/test.html';
+        fs.writeFileSync(htmlPath, htmlDoc.serialize(), 'utf-8');
 
         return true;
     });
