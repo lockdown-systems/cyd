@@ -169,7 +169,7 @@ onUnmounted(async () => {
         <div class="d-flex align-items-center">
             <!-- Speech bubble -->
             <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
-                class="speech-bubble" :class="{ 'full-width': currentJobs.length === 0 }" />
+                class="flex-grow-1" :class="{ 'w-100': currentJobs.length === 0 }" />
 
             <!-- Job status -->
             <XJobStatusComponent v-if="currentJobs.length > 0" :jobs="currentJobs" class="job-status-component" />
@@ -371,6 +371,6 @@ onUnmounted(async () => {
 }
 
 .job-status-component {
-    width: 300px;
+    width: 220px;
 }
 </style>
