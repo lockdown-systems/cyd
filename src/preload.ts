@@ -44,6 +44,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
     },
     archive: {
+        isPageAlreadySaved: (outputPath: string, basename: string): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:isPageAlreadySaved', outputPath, basename)
+        },
         savePage: (webContentsID: number, outputPath: string, basename: string): Promise<boolean> => {
             return ipcRenderer.invoke('archive:savePage', webContentsID, outputPath, basename)
         }

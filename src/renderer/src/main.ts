@@ -25,6 +25,7 @@ declare global {
                 deleteAccount: (accountID: number) => void;
             },
             archive: {
+                isPageAlreadySaved: (outputPath: string, basename: string) => Promise<boolean>;
                 savePage: (webContentsID: number, outputPath: string, basename: string) => Promise<boolean>;
             },
             X: {

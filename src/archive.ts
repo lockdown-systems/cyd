@@ -6,6 +6,11 @@ import mhtml2html from 'mhtml2html';
 import { JSDOM } from 'jsdom';
 
 export const defineIPCArchive = () => {
+    ipcMain.handle('archive:isPageAlreadySaved', async (_, outputPath: string, basename: string): Promise<boolean> => {
+        const htmlFilename = path.join(outputPath, `${basename}.html`);
+        return fs.existsSync(htmlFilename);
+    });
+
     ipcMain.handle('archive:savePage', async (_, webContentsID: number, outputPath: string, basename: string): Promise<boolean> => {
         const wc = webContents.fromId(webContentsID);
         if (!wc) {
