@@ -80,8 +80,8 @@ async function createWindow() {
     // Create the browser window
     win = new BrowserWindow({
         show: false,
-        width: 1024,
-        height: 768,
+        width: 1280,
+        height: 900,
         webPreferences: {
             webviewTag: true,
             preload: join(__dirname, './preload.js'),
@@ -150,7 +150,7 @@ async function createWindow() {
     // Open dev tools?
     if (semiphemeralDevtools) {
         win.webContents.openDevTools();
-        win.setSize(1400, 768);
+        win.setSize(1400, 900);
     }
 
     return win;

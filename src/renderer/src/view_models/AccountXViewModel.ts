@@ -1,7 +1,8 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from '../../../shared_types';
+import type { XJob, XProgress } from '../../../shared_types';
 
 export enum State {
+    Login = "login",
     Dashboard = "dashboard",
     DashboardDisplay = "dashboardDisplay",
     RunJobs = "runJobs",
@@ -13,18 +14,23 @@ export class AccountXViewModel extends BaseViewModel {
     public jobs: XJob[] = [];
     private isFirstRun: boolean = false;
 
-    private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
-    private isRateLimitedResponse: XIsRateLimitedResponse | null = null;
-    private progressInterval: number | null = null;
-    private finishedFilenames: string[] = [];
-    private displayedFilenames: string[] = [];
-    private progressCount: number = 0;
-    private urlChunks: string[][] = [];
-    private chunkFinished: boolean = false;
-    private shouldRetry: boolean = false;
+    // private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
+    // private isRateLimitedResponse: XIsRateLimitedResponse | null = null;
+    // private progressInterval: number | null = null;
+    // private finishedFilenames: string[] = [];
+    // private displayedFilenames: string[] = [];
+    // private progressCount: number = 0;
+    // private urlChunks: string[][] = [];
+    // private chunkFinished: boolean = false;
+    // private shouldRetry: boolean = false;
 
     async init() {
-        this.state = State.Dashboard;
+        if (this.account && this.account.xAccount && this.account.xAccount.username) {
+            this.state = State.Dashboard;
+        } else {
+            this.state = State.Login;
+        }
+
         this.progress = null;
         super.init();
     }
@@ -141,6 +147,41 @@ export class AccountXViewModel extends BaseViewModel {
         await this.getWebview()?.executeJavaScript(code);
     }
 
+    async login() {
+        const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
+
+        this.showBrowser = true;
+        await this.loadURL("https://x.com/login");
+        await this.waitForURL("https://x.com/home");
+
+        // We're logged in
+        this.log("runJob", "login succeeded");
+
+        // Get the username
+        let username = null;
+        if (this.webContentsID) {
+            username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
+        }
+        if (!username) {
+            // TODO: Automation error
+            this.log("runJob", "failed to get username, waiting 10s");
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            return;
+        }
+
+        if (originalUsername !== null && username != originalUsername) {
+            console.log(`Username changed from ${this.account.xAccount?.username} to ${username}`);
+            // TODO: username changed error
+            return;
+        }
+
+        // Save it
+        if (this.account && this.account.xAccount) {
+            this.account.xAccount.username = username;
+        }
+        await window.electron.database.saveAccount(JSON.stringify(this.account));
+    }
+
     async runJob(indexJob: number) {
         // Start the job
         this.jobs[indexJob].startedAt = new Date();
@@ -149,72 +190,10 @@ export class AccountXViewModel extends BaseViewModel {
 
         switch (this.jobs[indexJob].jobType) {
             case "login":
-                this.showBrowser = true;
-
-                // Never logged in before
-                if (this.account.xAccount?.username === null) {
-                    this.instructions = `
-**${this.actionString}** To start, login to your X account below.
-`;
-                    this.showBrowser = true;
-                    await this.loadURL("https://x.com/login");
-                    await this.waitForURL("https://x.com/home");
-
-                    // We're logged in
-                    this.log("runJob", "login succeeded");
-
-                    // Get the username
-                    let username = null;
-                    if (this.webContentsID) {
-                        username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
-                    }
-                    if (!username) {
-                        // TODO: Automation error
-                        this.log("runJob", "failed to get username, waiting 10s");
-                        await new Promise(resolve => setTimeout(resolve, 10000));
-                        break;
-                    }
-
-                    // Save it
-                    this.account.xAccount.username = username;
-                    await window.electron.database.saveAccount(JSON.stringify(this.account));
-
-                } else {
-                    // We have logged in before. Are we currently logged in?
-                    this.instructions = `
+                this.instructions = `
 **${this.actionString}** Checking to see if you're still logged in to your X account...
 `;
-                    this.showBrowser = true;
-                    await this.loadURL("https://x.com/login");
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    if (this.webview.getURL() == "https://x.com/home") {
-                        this.log("runJob", "login succeeded");
-
-                        // Get the username
-                        let username = null;
-                        if (this.webContentsID) {
-                            username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
-                        }
-                        if (!username) {
-                            // TODO: Automation error
-                            console.log("run", "failed to get username, waiting 10s");
-                            await new Promise(resolve => setTimeout(resolve, 10000));
-                            break;
-                        }
-
-                        if (this.account.xAccount?.username !== username) {
-                            console.log(`Username changed from ${this.account.xAccount?.username} to ${username}`);
-                            // TODO: username changed error
-                            break;
-                        }
-                    } else {
-                        this.instructions = `
-**${this.actionString}** You've been logged out. To continue, log back into your X account below.
-`;
-                        await this.waitForURL("https://x.com/home");
-                    }
-                }
+                await this.login();
 
                 // Job finished
                 this.jobs[indexJob].finishedAt = new Date();
@@ -439,6 +418,14 @@ export class AccountXViewModel extends BaseViewModel {
         await this.waitForWebviewReady();
 
         switch (this.state) {
+            case State.Login:
+                this.instructions = `
+Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, retweets, likes, and direct messages. To get started, log in to your X account below.
+`;
+                await this.login();
+                this.state = State.Dashboard;
+                break;
+
             case State.Dashboard:
                 this.showBrowser = false;
                 await this.loadURL("about:blank");

@@ -160,16 +160,6 @@ onMounted(async () => {
 onUnmounted(async () => {
     isWebviewMounted.value = false;
 });
-
-const debugClicked = async () => {
-    if (accountXViewModel.value !== null && accountXViewModel.value.webContentsID !== null) {
-        accountXViewModel.value.state = State.RunJobs;
-        accountXViewModel.value.showBrowser = true;
-        await accountXViewModel.value.webview.loadURL('https://en.wikipedia.org/wiki/Kamala_Harris');
-        await accountXViewModel.value.waitForLoadingToFinish();
-        await window.electron.archive.savePage(accountXViewModel.value.webContentsID);
-    }
-};
 </script>
 
 <template>
@@ -183,12 +173,6 @@ const debugClicked = async () => {
 
             <!-- Job status -->
             <XJobStatusComponent v-if="currentJobs.length > 0" :jobs="currentJobs" class="job-status-component" />
-
-            <p>
-                <button class="btn btn-primary" @click="debugClicked">
-                    Debug
-                </button>
-            </p>
         </div>
 
         <!-- Progress -->
