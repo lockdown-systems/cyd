@@ -1,5 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress } from '../../../shared_types';
+import type { XJob, XProgress, XArchiveTweetsStartResponse } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -14,15 +14,7 @@ export class AccountXViewModel extends BaseViewModel {
     public jobs: XJob[] = [];
     private isFirstRun: boolean = false;
 
-    // private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
-    // private isRateLimitedResponse: XIsRateLimitedResponse | null = null;
-    // private progressInterval: number | null = null;
-    // private finishedFilenames: string[] = [];
-    // private displayedFilenames: string[] = [];
-    // private progressCount: number = 0;
-    // private urlChunks: string[][] = [];
-    // private chunkFinished: boolean = false;
-    // private shouldRetry: boolean = false;
+    private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -191,7 +183,9 @@ export class AccountXViewModel extends BaseViewModel {
         switch (this.jobs[indexJob].jobType) {
             case "login":
                 this.instructions = `
-**${this.actionString}** Checking to see if you're still logged in to your X account...
+**${this.actionString}**
+
+Checking to see if you're still logged in to your X account...
 `;
                 await this.login();
 
@@ -206,7 +200,9 @@ export class AccountXViewModel extends BaseViewModel {
             case "index":
                 this.showBrowser = true;
                 this.instructions = `
-**${this.actionString}** To start, I need to index your tweets. Hang on while I scroll down to your earliest tweets that I've seen.
+**${this.actionString}**
+
+To start, I need to index your tweets. Hang on while I scroll down to your earliest tweets that I've seen.
 `;
 
                 // Check if this is the first time indexing has happened in this account
@@ -270,128 +266,43 @@ export class AccountXViewModel extends BaseViewModel {
             case "archiveTweets":
                 this.showBrowser = true;
                 this.instructions = `
-**${this.actionString}** I'm archiving your tweets, starting with the oldest. This may take a while...
+**${this.actionString}**
+
+I'm archiving your tweets, starting with the oldest. This may take a while...
 `;
 
-                // TODO: reimplement
+                // Initialize archiving of tweets
+                this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
+                console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
 
-                // // Start with a blank page
-                // await this.loadURL("about:blank");
+                if (this.progress && this.archiveTweetsStartResponse && this.webContentsID) {
 
-                // // Initialize archiving of tweets
-                // this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
-                // await window.electron.archive.saveCookiesFile(this.account.id);
-                // console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
+                    // Start the progress
+                    this.progress.currentJob = "archiveTweets";
+                    this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.tweets.length;
+                    this.progress.tweetsArchived = 0;
 
-                // // Start the progress
-                // if (this.progress && this.archiveTweetsStartResponse) {
-                //     this.progress.currentJob = "archiveTweets";
-                //     this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.tweets.length;
-                //     this.progress.tweetsArchived = 0;
-                // }
+                    // Archive the tweets
+                    for (let i = 0; i < this.archiveTweetsStartResponse.tweets.length; i++) {
+                        // Load the URL
+                        await this.loadURL(this.archiveTweetsStartResponse.tweets[i].url);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        await this.waitForLoadingToFinish();
 
-                // // Update progress every second, by counting the number of files that have been completed
-                // // @ts-expect-error intervalID is a NodeJS.Interval, not a number
-                // this.progressInterval = setInterval(async () => {
-                //     this.finishedFilenames = await window.electron.X.archiveTweetsGetProgress(this.account.id);
+                        // Save the page
+                        await window.electron.archive.savePage(this.webContentsID, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.tweets[i].basename);
 
-                //     this.progressCount = 0;
-                //     if (this.progress && this.archiveTweetsStartResponse) {
-                //         for (let i = 0; i < this.finishedFilenames.length; i++) {
-                //             for (let j = 0; j < this.archiveTweetsStartResponse.tweets.length; j++) {
-                //                 if (this.finishedFilenames[i] == this.archiveTweetsStartResponse.tweets[j].filename) {
-                //                     this.progressCount += 1;
-                //                     break;
-                //                 }
-                //             }
-                //         }
-                //         this.progress.tweetsArchived = this.progressCount;
-                //     }
+                        // Update progress
+                        this.progress.tweetsArchived += 1;
+                    }
+                }
 
-                //     // Display the next tweet
-                //     for (let i = 0; i < this.finishedFilenames.length; i++) {
-                //         if (!this.displayedFilenames.includes(this.finishedFilenames[i])) {
-                //             this.displayedFilenames.push(this.finishedFilenames[i]);
-                //             if (this.webContentsID) {
-                //                 window.electron.X.archiveTweetsDisplayTweet(this.account.id, this.webContentsID, this.finishedFilenames[i]);
-                //             }
-                //             break;
-                //         }
-                //     }
-                // }, 5000)
-
-                // // Archive the tweets
-                // if (this.archiveTweetsStartResponse) {
-                //     // Split the URLs into chunks of 16
-                //     for (let i = 0; i < Math.ceil(this.archiveTweetsStartResponse.tweets.length / 16); i++) {
-                //         this.urlChunks[i] = [];
-                //         for (let j = 0; j < 16; j++) {
-                //             if (this.archiveTweetsStartResponse.tweets.length > i * 16 + j) {
-                //                 this.urlChunks[i].push(this.archiveTweetsStartResponse.tweets[i * 16 + j].url);
-                //             }
-                //         }
-                //     }
-
-                //     // Download each chunk
-                //     for (let i = 0; i < this.urlChunks.length; i++) {
-                //         this.chunkFinished = false;
-                //         this.shouldRetry = false;
-                //         while (!this.chunkFinished) {
-                //             // Download the chunk
-                //             if (!await window.electron.archive.singleFile(
-                //                 this.account.id,
-                //                 this.archiveTweetsStartResponse.outputPath,
-                //                 // urlChunks is a Proxy(Array), and this will convert it to an Array
-                //                 JSON.parse(JSON.stringify(this.urlChunks[i])),
-                //                 this.shouldRetry
-                //             )) {
-                //                 // TODO: handle failure
-                //                 console.log("singleFile: failed");
-                //             }
-
-                //             // Check for rate limit
-                //             if (this.webContentsID) {
-                //                 this.isRateLimitedResponse = await window.electron.X.isRateLimited(this.account.id, this.webContentsID, this.urlChunks[i][0]);
-                //                 if (this.isRateLimitedResponse.isRateLimited) {
-                //                     // Retry the chunk
-                //                     this.shouldRetry = true;
-
-                //                     // Remove these filenames from this.finishedFilenames
-                //                     for (let j = 0; j < this.urlChunks[i].length; j++) {
-                //                         this.finishedFilenames = this.finishedFilenames.filter(filename => filename !== this.urlChunks[i][j].split('/').pop() + '.html');
-                //                     }
-
-                //                     // Wait for rate limit to finish
-                //                     await new Promise(resolve => setTimeout(resolve, 1000));
-                //                     if (this.progress) {
-                //                         this.progress.isRateLimited = this.isRateLimitedResponse.isRateLimited;
-                //                         this.progress.rateLimitReset = this.isRateLimitedResponse.rateLimitReset;
-                //                     }
-                //                     await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
-                //                 } else {
-                //                     // Chunk is finished, so break out of the while loop and continue to the next chunk
-                //                     this.chunkFinished = true;
-                //                 }
-                //             }
-                //         }
-
-
-                //     }
-                // }
-
-                // // Sleep 30 seconds
-                // await new Promise(resolve => setTimeout(resolve, 30000));
-
-                // // Stop the progress interval
-                // if (this.progressInterval) {
-                //     clearInterval(this.progressInterval);
-                // }
-
-                // // Delete the cookies file
-                // await window.electron.archive.deleteCookiesFile(this.account.id);
-
-                // Sleep 30 seconds
-                await new Promise(resolve => setTimeout(resolve, 30000));
+                // Job finished
+                this.jobs[indexJob].finishedAt = new Date();
+                this.jobs[indexJob].status = "finished";
+                this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                this.log("runJob", `archiveTweets job finished: ${this.progress}`);
 
                 break;
 

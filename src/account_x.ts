@@ -157,6 +157,14 @@ interface XAPIData {
     }
 }
 
+function formatDateToYYYYMMDD(dateString: string): string {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 export class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
@@ -500,7 +508,6 @@ export class XAccountController {
     }
 
     // When you start archiving tweets you:
-    // - Write a list of tweet URLs to a file
     // - Return the URLs path, output path, and all expected filenames
     async archiveTweetsStart(): Promise<XArchiveTweetsStartResponse | null> {
         if (!this.db) {
@@ -510,7 +517,7 @@ export class XAccountController {
         if (this.account) {
             const tweetsResp = exec(
                 this.db,
-                'SELECT tweetID, path FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
+                'SELECT tweetID, createdAt, path FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
                 [this.account.username, 0],
                 "all"
             );
@@ -519,7 +526,7 @@ export class XAccountController {
             for (let i = 0; i < tweetsResp.length; i++) {
                 tweets.push({
                     url: `https://x.com/${tweetsResp[i].path}`,
-                    filename: `${tweetsResp[i].tweetID}.html`
+                    basename: `${formatDateToYYYYMMDD(tweetsResp[i].createdAt)}_${tweetsResp[i].tweetID}`
                 })
             }
 

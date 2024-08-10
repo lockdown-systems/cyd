@@ -1,26 +1,32 @@
 import fs from 'fs';
+import path from 'path';
 
 import { ipcMain, webContents } from 'electron';
 import mhtml2html from 'mhtml2html';
 import { JSDOM } from 'jsdom';
 
 export const defineIPCArchive = () => {
-    ipcMain.handle('archive:savePage', async (_, webContentsID: number): Promise<boolean> => {
+    ipcMain.handle('archive:savePage', async (_, webContentsID: number, outputPath: string, basename: string): Promise<boolean> => {
         const wc = webContents.fromId(webContentsID);
         if (!wc) {
             return false;
         }
 
-        await wc.savePage('/home/user/tmp/savepage/test.mhtml', 'MHTML');
+        const mhtmlFilename = path.join(outputPath, `${basename}.mhtml`);
+        const htmlFilename = path.join(outputPath, `${basename}.html`);
 
-        // Load test.mhtml as a string
-        const mhtmlPath = '/home/user/tmp/savepage/test.mhtml';
-        const mhtml = fs.readFileSync(mhtmlPath, 'utf-8');
-        const htmlDoc = mhtml2html.convert(mhtml, { parseDOM: (html) => new JSDOM(html) });
+        // Save as MHTML
+        await wc.savePage(mhtmlFilename, 'MHTML');
 
-        // Save the HTML to a file
-        const htmlPath = '/home/user/tmp/savepage/test.html';
-        fs.writeFileSync(htmlPath, htmlDoc.serialize(), 'utf-8');
+        // Convert to HTML
+        const mhtml = fs.readFileSync(mhtmlFilename, 'utf-8');
+        const html = mhtml2html.convert(mhtml, { parseDOM: (html) => new JSDOM(html) });
+
+        // Save the HTML
+        fs.writeFileSync(htmlFilename, html.serialize(), 'utf-8');
+
+        // Delete the MHTML
+        fs.unlinkSync(mhtmlFilename);
 
         return true;
     });

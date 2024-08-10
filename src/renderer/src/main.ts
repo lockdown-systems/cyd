@@ -25,7 +25,7 @@ declare global {
                 deleteAccount: (accountID: number) => void;
             },
             archive: {
-                savePage: (webContentsID: number) => Promise<boolean>;
+                savePage: (webContentsID: number, outputPath: string, basename: string) => Promise<boolean>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;

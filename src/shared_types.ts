@@ -98,7 +98,7 @@ export type XProgress = {
 
 export type XArchiveTweetsTweet = {
     url: string,
-    filename: string
+    basename: string
 }
 
 export type XArchiveTweetsStartResponse = {

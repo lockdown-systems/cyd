@@ -44,8 +44,8 @@ contextBridge.exposeInMainWorld('electron', {
         },
     },
     archive: {
-        savePage: (webContentsID: number): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:savePage', webContentsID)
+        savePage: (webContentsID: number, outputPath: string, basename: string): Promise<boolean> => {
+            return ipcRenderer.invoke('archive:savePage', webContentsID, outputPath, basename)
         }
     },
     X: {
