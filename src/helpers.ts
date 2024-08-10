@@ -61,51 +61,6 @@ export const getAccountDataPath = (accountType: string, accountUsername: string)
     return accountUserDataPath;
 }
 
-export const getChromiumAppPath = () => {
-    const chromiumAppPath = path.join(app.getPath('userData'), "chromium-app");
-    if (!fs.existsSync(chromiumAppPath)) {
-        fs.mkdirSync(chromiumAppPath);
-    }
-    return chromiumAppPath;
-}
-
-export const getChromiumBinPath = () => {
-    const platform = os.platform();
-    const chromiumAppPath = getChromiumAppPath();
-
-    switch (platform) {
-        case 'darwin':
-            return path.join(chromiumAppPath, 'chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium');
-        case 'win32':
-            return path.join(chromiumAppPath, 'chrome-win', 'chrome.exe');
-        case 'linux':
-            return path.join(chromiumAppPath, 'chrome-linux', 'chrome');
-        default:
-            return null;
-    }
-}
-
-export const getSinglefileBinPath = () => {
-    const platform = os.platform();
-    const arch = os.arch();
-    const resourcePath = getResourcesPath();
-
-    switch (platform) {
-        case 'darwin':
-            if (arch == 'arm64') {
-                return path.join(resourcePath, 'single-file-aarch64-apple-darwin');
-            } else {
-                return path.join(resourcePath, 'single-file-x86_64-apple-darwin');
-            }
-        case 'win32':
-            return path.join(resourcePath, 'single-file.exe');
-        case 'linux':
-            return path.join(resourcePath, 'single-file-x86_64-linux');
-        default:
-            return null;
-    }
-}
-
 export async function findOpenPort(): Promise<number> {
     return new Promise((resolve, reject) => {
         const server = createServer();

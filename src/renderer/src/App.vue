@@ -67,12 +67,6 @@ provide('showSettings', showSettings);
 onMounted(async () => {
   await serverApi.value.initialize();
 
-  if (!await window.electron.archive.isChromiumExtracted()) {
-    if (!await window.electron.archive.extractChromium()) {
-      window.electron.showError('Failed to extract Chromium');
-    }
-  }
-
   await refreshDeviceInfo();
   isFirstLoad.value = false;
 

@@ -294,120 +294,125 @@ export class AccountXViewModel extends BaseViewModel {
 **${this.actionString}** I'm archiving your tweets, starting with the oldest. This may take a while...
 `;
 
-                // Start with a blank page
-                await this.loadURL("about:blank");
+                // TODO: reimplement
 
-                // Initialize archiving of tweets
-                this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
-                await window.electron.archive.saveCookiesFile(this.account.id);
-                console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
+                // // Start with a blank page
+                // await this.loadURL("about:blank");
 
-                // Start the progress
-                if (this.progress && this.archiveTweetsStartResponse) {
-                    this.progress.currentJob = "archiveTweets";
-                    this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.tweets.length;
-                    this.progress.tweetsArchived = 0;
-                }
+                // // Initialize archiving of tweets
+                // this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
+                // await window.electron.archive.saveCookiesFile(this.account.id);
+                // console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
 
-                // Update progress every second, by counting the number of files that have been completed
-                // @ts-expect-error intervalID is a NodeJS.Interval, not a number
-                this.progressInterval = setInterval(async () => {
-                    this.finishedFilenames = await window.electron.X.archiveTweetsGetProgress(this.account.id);
+                // // Start the progress
+                // if (this.progress && this.archiveTweetsStartResponse) {
+                //     this.progress.currentJob = "archiveTweets";
+                //     this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.tweets.length;
+                //     this.progress.tweetsArchived = 0;
+                // }
 
-                    this.progressCount = 0;
-                    if (this.progress && this.archiveTweetsStartResponse) {
-                        for (let i = 0; i < this.finishedFilenames.length; i++) {
-                            for (let j = 0; j < this.archiveTweetsStartResponse.tweets.length; j++) {
-                                if (this.finishedFilenames[i] == this.archiveTweetsStartResponse.tweets[j].filename) {
-                                    this.progressCount += 1;
-                                    break;
-                                }
-                            }
-                        }
-                        this.progress.tweetsArchived = this.progressCount;
-                    }
+                // // Update progress every second, by counting the number of files that have been completed
+                // // @ts-expect-error intervalID is a NodeJS.Interval, not a number
+                // this.progressInterval = setInterval(async () => {
+                //     this.finishedFilenames = await window.electron.X.archiveTweetsGetProgress(this.account.id);
 
-                    // Display the next tweet
-                    for (let i = 0; i < this.finishedFilenames.length; i++) {
-                        if (!this.displayedFilenames.includes(this.finishedFilenames[i])) {
-                            this.displayedFilenames.push(this.finishedFilenames[i]);
-                            if (this.webContentsID) {
-                                window.electron.X.archiveTweetsDisplayTweet(this.account.id, this.webContentsID, this.finishedFilenames[i]);
-                            }
-                            break;
-                        }
-                    }
-                }, 5000)
+                //     this.progressCount = 0;
+                //     if (this.progress && this.archiveTweetsStartResponse) {
+                //         for (let i = 0; i < this.finishedFilenames.length; i++) {
+                //             for (let j = 0; j < this.archiveTweetsStartResponse.tweets.length; j++) {
+                //                 if (this.finishedFilenames[i] == this.archiveTweetsStartResponse.tweets[j].filename) {
+                //                     this.progressCount += 1;
+                //                     break;
+                //                 }
+                //             }
+                //         }
+                //         this.progress.tweetsArchived = this.progressCount;
+                //     }
 
-                // Archive the tweets
-                if (this.archiveTweetsStartResponse) {
-                    // Split the URLs into chunks of 16
-                    for (let i = 0; i < Math.ceil(this.archiveTweetsStartResponse.tweets.length / 16); i++) {
-                        this.urlChunks[i] = [];
-                        for (let j = 0; j < 16; j++) {
-                            if (this.archiveTweetsStartResponse.tweets.length > i * 16 + j) {
-                                this.urlChunks[i].push(this.archiveTweetsStartResponse.tweets[i * 16 + j].url);
-                            }
-                        }
-                    }
+                //     // Display the next tweet
+                //     for (let i = 0; i < this.finishedFilenames.length; i++) {
+                //         if (!this.displayedFilenames.includes(this.finishedFilenames[i])) {
+                //             this.displayedFilenames.push(this.finishedFilenames[i]);
+                //             if (this.webContentsID) {
+                //                 window.electron.X.archiveTweetsDisplayTweet(this.account.id, this.webContentsID, this.finishedFilenames[i]);
+                //             }
+                //             break;
+                //         }
+                //     }
+                // }, 5000)
 
-                    // Download each chunk
-                    for (let i = 0; i < this.urlChunks.length; i++) {
-                        this.chunkFinished = false;
-                        this.shouldRetry = false;
-                        while (!this.chunkFinished) {
-                            // Download the chunk
-                            if (!await window.electron.archive.singleFile(
-                                this.account.id,
-                                this.archiveTweetsStartResponse.outputPath,
-                                // urlChunks is a Proxy(Array), and this will convert it to an Array
-                                JSON.parse(JSON.stringify(this.urlChunks[i])),
-                                this.shouldRetry
-                            )) {
-                                // TODO: handle failure
-                                console.log("singleFile: failed");
-                            }
+                // // Archive the tweets
+                // if (this.archiveTweetsStartResponse) {
+                //     // Split the URLs into chunks of 16
+                //     for (let i = 0; i < Math.ceil(this.archiveTweetsStartResponse.tweets.length / 16); i++) {
+                //         this.urlChunks[i] = [];
+                //         for (let j = 0; j < 16; j++) {
+                //             if (this.archiveTweetsStartResponse.tweets.length > i * 16 + j) {
+                //                 this.urlChunks[i].push(this.archiveTweetsStartResponse.tweets[i * 16 + j].url);
+                //             }
+                //         }
+                //     }
 
-                            // Check for rate limit
-                            if (this.webContentsID) {
-                                this.isRateLimitedResponse = await window.electron.X.isRateLimited(this.account.id, this.webContentsID, this.urlChunks[i][0]);
-                                if (this.isRateLimitedResponse.isRateLimited) {
-                                    // Retry the chunk
-                                    this.shouldRetry = true;
+                //     // Download each chunk
+                //     for (let i = 0; i < this.urlChunks.length; i++) {
+                //         this.chunkFinished = false;
+                //         this.shouldRetry = false;
+                //         while (!this.chunkFinished) {
+                //             // Download the chunk
+                //             if (!await window.electron.archive.singleFile(
+                //                 this.account.id,
+                //                 this.archiveTweetsStartResponse.outputPath,
+                //                 // urlChunks is a Proxy(Array), and this will convert it to an Array
+                //                 JSON.parse(JSON.stringify(this.urlChunks[i])),
+                //                 this.shouldRetry
+                //             )) {
+                //                 // TODO: handle failure
+                //                 console.log("singleFile: failed");
+                //             }
 
-                                    // Remove these filenames from this.finishedFilenames
-                                    for (let j = 0; j < this.urlChunks[i].length; j++) {
-                                        this.finishedFilenames = this.finishedFilenames.filter(filename => filename !== this.urlChunks[i][j].split('/').pop() + '.html');
-                                    }
+                //             // Check for rate limit
+                //             if (this.webContentsID) {
+                //                 this.isRateLimitedResponse = await window.electron.X.isRateLimited(this.account.id, this.webContentsID, this.urlChunks[i][0]);
+                //                 if (this.isRateLimitedResponse.isRateLimited) {
+                //                     // Retry the chunk
+                //                     this.shouldRetry = true;
 
-                                    // Wait for rate limit to finish
-                                    await new Promise(resolve => setTimeout(resolve, 1000));
-                                    if (this.progress) {
-                                        this.progress.isRateLimited = this.isRateLimitedResponse.isRateLimited;
-                                        this.progress.rateLimitReset = this.isRateLimitedResponse.rateLimitReset;
-                                    }
-                                    await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
-                                } else {
-                                    // Chunk is finished, so break out of the while loop and continue to the next chunk
-                                    this.chunkFinished = true;
-                                }
-                            }
-                        }
+                //                     // Remove these filenames from this.finishedFilenames
+                //                     for (let j = 0; j < this.urlChunks[i].length; j++) {
+                //                         this.finishedFilenames = this.finishedFilenames.filter(filename => filename !== this.urlChunks[i][j].split('/').pop() + '.html');
+                //                     }
+
+                //                     // Wait for rate limit to finish
+                //                     await new Promise(resolve => setTimeout(resolve, 1000));
+                //                     if (this.progress) {
+                //                         this.progress.isRateLimited = this.isRateLimitedResponse.isRateLimited;
+                //                         this.progress.rateLimitReset = this.isRateLimitedResponse.rateLimitReset;
+                //                     }
+                //                     await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+                //                 } else {
+                //                     // Chunk is finished, so break out of the while loop and continue to the next chunk
+                //                     this.chunkFinished = true;
+                //                 }
+                //             }
+                //         }
 
 
-                    }
-                }
+                //     }
+                // }
+
+                // // Sleep 30 seconds
+                // await new Promise(resolve => setTimeout(resolve, 30000));
+
+                // // Stop the progress interval
+                // if (this.progressInterval) {
+                //     clearInterval(this.progressInterval);
+                // }
+
+                // // Delete the cookies file
+                // await window.electron.archive.deleteCookiesFile(this.account.id);
 
                 // Sleep 30 seconds
                 await new Promise(resolve => setTimeout(resolve, 30000));
-
-                // Stop the progress interval
-                if (this.progressInterval) {
-                    clearInterval(this.progressInterval);
-                }
-
-                // Delete the cookies file
-                await window.electron.archive.deleteCookiesFile(this.account.id);
 
                 break;
 

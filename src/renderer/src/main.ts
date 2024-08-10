@@ -25,17 +25,7 @@ declare global {
                 deleteAccount: (accountID: number) => void;
             },
             archive: {
-                isSingleFileExtracted: () => Promise<boolean>;
-                extractSingleFile: () => Promise<boolean>;
-                isSingleFileExtensionInstalled: () => Promise<boolean>;
-                installSingleFileExtension: () => Promise<boolean>;
-                singleFileSavePage: () => Promise<boolean>;
                 savePage: (webContentsID: number) => Promise<boolean>;
-                isChromiumExtracted: () => Promise<boolean>;
-                extractChromium: () => Promise<boolean>;
-                saveCookiesFile: (accountID: number) => Promise<void>;
-                deleteCookiesFile: (accountID: number) => Promise<void>;
-                singleFile: (accountID: number, outputPath: string, urls: string[], retry: boolean) => Promise<boolean>;
             },
             X: {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;

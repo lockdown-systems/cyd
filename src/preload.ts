@@ -44,39 +44,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
     },
     archive: {
-        isSingleFileExtracted: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:isSingleFileExtracted')
-        },
-        extractSingleFile: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:extractSingleFile')
-        },
-        isSingleFileExtensionInstalled: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:isSingleFileExtensionInstalled')
-        },
-        installSingleFileExtension: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:installSingleFileExtension')
-        },
-        singleFileSavePage: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:singleFileSavePage')
-        },
         savePage: (webContentsID: number): Promise<boolean> => {
             return ipcRenderer.invoke('archive:savePage', webContentsID)
-        },
-        isChromiumExtracted: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:isChromiumExtracted')
-        },
-        extractChromium: (): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:extractChromium')
-        },
-        saveCookiesFile: (accountID: number) => {
-            ipcRenderer.invoke('archive:saveCookiesFile', accountID)
-        },
-        deleteCookiesFile: (accountID: number) => {
-            ipcRenderer.invoke('archive:deleteCookiesFile', accountID)
-        },
-        singleFile: (accountID: number, outputPath: string, urls: string[], retry: boolean): Promise<boolean> => {
-            return ipcRenderer.invoke('archive:singleFile', accountID, outputPath, urls, retry)
-        },
+        }
     },
     X: {
         createJobs: (accountID: number, jobTypes: string[]): Promise<XJob[]> => {

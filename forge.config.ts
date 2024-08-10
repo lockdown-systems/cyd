@@ -6,10 +6,6 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
-import path from 'path';
-import os from 'os';
-
-import { downloadChromium, downloadSingleFileCLI, downloadSingleFileExtension } from './scripts/download-deps';
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -17,69 +13,6 @@ const config: ForgeConfig = {
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     asar: true,
     icon: "assets/icon",
-    beforeCopyExtraResources: [
-      async (_buildPath, _electronVersion, _platform, _arch, callback) => {
-        const osPlatform = os.platform();
-        const buildPath = path.resolve("./build");
-
-        // Download the SingleFile extension
-        await downloadSingleFileExtension(buildPath);
-
-        // For macOS, download both the Intel and ARM versions
-        if (osPlatform === 'darwin') {
-          await downloadChromium("mac-arm64", buildPath);
-          await downloadChromium("mac-intel", buildPath);
-          await downloadSingleFileCLI("mac-arm64", buildPath);
-          await downloadSingleFileCLI("mac-intel", buildPath);
-        }
-        // We only have x64 builds for Windows and Linux
-        else {
-          let platformName: string;
-          if (osPlatform === 'win32') {
-            platformName = 'win-x64';
-          } else if (osPlatform === 'linux') {
-            platformName = 'linux-x64';
-          } else {
-            throw new Error(`Unsupported platform: ${osPlatform}`);
-          }
-          await downloadChromium(platformName, buildPath);
-          await downloadSingleFileCLI(platformName, buildPath);
-        }
-        callback();
-      }
-    ],
-    extraResource: function () {
-      const osPlatform = os.platform();
-      const buildPath = path.resolve("./build");
-
-      if (osPlatform === 'darwin') {
-        return [
-          "./assets/LICENSE.single-file-cli",
-          path.join(buildPath, "chromium-mac-arm64.zip"),
-          path.join(buildPath, "chromium-mac-intel.zip"),
-          path.join(buildPath, "single-file-aarch64-apple-darwin"),
-          path.join(buildPath, "single-file-x86_64-apple-darwin")
-        ];
-      } else {
-        let platformName: string;
-        if (osPlatform === 'win32') {
-          return [
-            "./assets/LICENSE.single-file-cli",
-            path.join(buildPath, "chromium-win-x64.zip"),
-            path.join(buildPath, "single-file.exe")
-          ];
-        } else if (osPlatform === 'linux') {
-          platformName = 'linux-x64';
-          return [
-            "./assets/LICENSE.single-file-cli",
-            path.join(buildPath, "chromium-linux-x64.zip"),
-            path.join(buildPath, "single-file-x86_64-linux")
-          ];
-        } else {
-          throw new Error(`Unsupported platform: ${osPlatform}`);
-        }
-      }
-    }(),
   },
   rebuildConfig: {},
   makers: [
