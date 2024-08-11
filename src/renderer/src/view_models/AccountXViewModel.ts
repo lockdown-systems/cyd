@@ -56,11 +56,12 @@ export class AccountXViewModel extends BaseViewModel {
 
         const jobTypes = [];
         jobTypes.push("login");
-        jobTypes.push("index");
         if (this.account.xAccount?.archiveTweets) {
+            jobTypes.push("indexTweets");
             jobTypes.push("archiveTweets");
         }
         if (this.account.xAccount?.archiveDirectMessages) {
+            jobTypes.push("indexDirectMessages");
             jobTypes.push("archiveDirectMessages");
         }
 
@@ -197,16 +198,16 @@ Checking to see if you're still logged in to your X account...
 
                 break;
 
-            case "index":
+            case "indexTweets":
                 this.showBrowser = true;
                 this.instructions = `
 **${this.actionString}**
 
-To start, I need to index your tweets. Hang on while I scroll down to your earliest tweets that I've seen.
+Hang on while I scroll down to your earliest tweets that I've seen.
 `;
 
-                // Check if this is the first time indexing has happened in this account
-                if (await window.electron.X.getLastFinishedJob(this.account.id, "index") == null) {
+                // Check if this is the first time indexing tweets has happened in this account
+                if (await window.electron.X.getLastFinishedJob(this.account.id, "indexTweets") == null) {
                     this.isFirstRun = true;
                 }
 
@@ -218,8 +219,8 @@ To start, I need to index your tweets. Hang on while I scroll down to your earli
                 try {
                     await this.waitForSelector('article');
                 } catch (e) {
-                    // Run indexParse so we can see if we were rate limited
-                    this.progress = await window.electron.X.indexParse(this.account.id, this.isFirstRun);
+                    // Run indexParseTweets so we can see if we were rate limited
+                    this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
                     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                     console.log("progress", this.progress);
@@ -234,7 +235,7 @@ To start, I need to index your tweets. Hang on while I scroll down to your earli
                     const moreToScroll = await this.scrollToBottom();
 
                     // Parse so far
-                    this.progress = await window.electron.X.indexParse(this.account.id, this.isFirstRun);
+                    this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
                     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                     console.log("progress", this.progress);
@@ -259,7 +260,7 @@ To start, I need to index your tweets. Hang on while I scroll down to your earli
                 this.jobs[indexJob].status = "finished";
                 this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                 await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
-                this.log("runJob", `index job finished: ${this.progress}`);
+                this.log("runJob", `indexTweets job finished: ${this.progress}`);
 
                 break;
 
@@ -309,6 +310,72 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                 await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                 this.log("runJob", `archiveTweets job finished: ${this.progress}`);
+
+                break;
+
+            case "indexDirectMessages":
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+Hang on while I scroll down to your earliest direct message conversations that I've seen.
+`;
+
+                // Check if this is the first time indexing DMs has happened in this account
+                if (await window.electron.X.getLastFinishedJob(this.account.id, "indexDirectMessages") == null) {
+                    this.isFirstRun = true;
+                }
+
+                // Start monitoring network requests
+                await window.electron.X.indexStart(this.account.id);
+
+                // Load the messages and wait for tweets to appear
+                await this.loadURL("https://x.com/messages");
+                try {
+                    await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+                } catch (e) {
+                    // // Run indexParseDirectMessages so we can see if we were rate limited
+                    // this.progress = await window.electron.X.indexParseDirectMessages(this.account.id, this.isFirstRun);
+                    // this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                    // await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                    // console.log("progress", this.progress);
+
+                    // if (this.progress.isRateLimited) {
+                    //     await this.handleRateLimit();
+                    // }
+                }
+
+                // while (this.progress === null || this.progress.isIndexFinished === false) {
+                //     // Scroll to bottom
+                //     const moreToScroll = await this.scrollToBottom();
+
+                //     // Parse so far
+                //     this.progress = await window.electron.X.indexParseDirectMessages(this.account.id, this.isFirstRun);
+                //     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                //     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                //     console.log("progress", this.progress);
+
+                //     // Check if we're done
+                //     if (!this.progress?.isRateLimited && !moreToScroll) {
+                //         this.progress = await window.electron.X.indexFinished(this.account.id);
+                //         break;
+                //     }
+
+                //     // Rate limited?
+                //     if (this.progress.isRateLimited) {
+                //         await this.handleRateLimit();
+                //     }
+                // }
+
+                // Stop monitoring network requests
+                await window.electron.X.indexStop(this.account.id);
+
+                // Job finished
+                this.jobs[indexJob].finishedAt = new Date();
+                this.jobs[indexJob].status = "finished";
+                this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                this.log("runJob", `indexDirectMessages job finished: ${this.progress}`);
 
                 break;
 

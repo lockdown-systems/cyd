@@ -70,8 +70,8 @@ contextBridge.exposeInMainWorld('electron', {
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
         },
-        indexParse: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParse', accountID, isFirstRun)
+        indexParseTweets: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseTweets', accountID, isFirstRun)
         },
         indexFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexFinished', accountID)

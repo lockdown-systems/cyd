@@ -25,7 +25,9 @@ const getStatusIcon = (status: string) => {
 const getJobTypeText = (jobType: string) => {
     const jobTypeTexts: { [key: string]: string } = {
         login: 'Logging in',
-        index: 'Indexing',
+        indexTweets: 'Indexing tweets',
+        indexLikes: 'Indexing likes',
+        indexDirectMessages: 'Indexing DMs',
         archiveTweets: 'Archiving tweets',
         archiveDirectMessages: 'Archiving DMs',
         deleteTweets: 'Deleting tweets',

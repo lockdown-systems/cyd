@@ -35,7 +35,7 @@ declare global {
                 getUsername: (accountID: number, webContentsID: number) => Promise<string | null>;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
-                indexParse: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
+                indexParseTweets: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveTweetsStartResponse | null>;
                 archiveTweetsGetProgress: (accountID: number) => Promise<string[]>;

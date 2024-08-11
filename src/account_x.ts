@@ -352,7 +352,7 @@ export class XAccountController {
     async indexStart() {
         const ses = session.fromPartition(`persist:account-${this.account?.id}`);
         await ses.clearCache();
-        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
+        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/dm"]);
         await this.mitmController.startMonitoring();
     }
 
@@ -410,7 +410,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexParseResponseData(indexResponse: number, isFirstRun: boolean): boolean {
+    indexParseTweetsResponseData(indexResponse: number, isFirstRun: boolean): boolean {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[indexResponse];
 
@@ -421,7 +421,7 @@ export class XAccountController {
 
         // Rate limited?
         if (responseData.status == 429) {
-            console.log('XAccountController.indexParse: RATE LIMITED');
+            console.log('XAccountController.indexParseTweetsResponseData: RATE LIMITED');
             this.progress.isRateLimited = true;
             this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[indexResponse].processed = true;
@@ -434,7 +434,7 @@ export class XAccountController {
             responseData.status == 200
         ) {
             const body: XAPIData = JSON.parse(responseData.body);
-            // console.log('XAccountController.indexParse: body', responseData.body);
+            // console.log('XAccountController.indexParseTweetsResponseData: body', responseData.body);
 
             // Loop through instructions
             body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
@@ -471,7 +471,7 @@ export class XAccountController {
             });
 
             this.mitmController.responseData[indexResponse].processed = true;
-            console.log('XAccountController.indexParse: processed', this.progress);
+            console.log('XAccountController.indexParseTweetsResponseData: processed', this.progress);
 
             if (shouldReturnFalse) {
                 return false;
@@ -486,14 +486,14 @@ export class XAccountController {
 
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
-    async indexParse(isFirstRun: boolean): Promise<XProgress> {
-        console.log(`XAccountController.indexParse: parsing ${this.mitmController.responseData.length} responses`);
+    async indexParseTweets(isFirstRun: boolean): Promise<XProgress> {
+        console.log(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "index";
         this.progress.isIndexFinished = false;
 
         this.mitmController.responseData.forEach((_response, indexResponse) => {
-            if (this.indexParseResponseData(indexResponse, isFirstRun)) {
+            if (this.indexParseTweetsResponseData(indexResponse, isFirstRun)) {
                 return this.progress;
             }
         });
@@ -669,9 +669,9 @@ export const defineIPCX = () => {
         await controller.indexStop();
     });
 
-    ipcMain.handle('X:indexParse', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseTweets', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
         const controller = getXAccountController(accountID);
-        return await controller.indexParse(isFirstRun);
+        return await controller.indexParseTweets(isFirstRun);
     });
 
     ipcMain.handle('X:indexFinished', async (_, accountID: number): Promise<XProgress> => {
