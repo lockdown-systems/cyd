@@ -212,11 +212,11 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
     expect(rows.length).toBe(1);
 })
 
-test("XAccountController.indexParsed() should add all the test tweets", async () => {
+test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
     const mitmController = new MockMITMController();
     const controller = new XAccountController(1, mitmController);
 
-    const progress: XProgress = await controller.indexParse(false)
+    const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.tweetsIndexed).toBe(20);
 
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
