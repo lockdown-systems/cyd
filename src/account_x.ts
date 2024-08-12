@@ -1,6 +1,8 @@
 import path from 'path'
 import fs from 'fs'
 
+import fetch from 'node-fetch';
+
 import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
@@ -383,13 +385,8 @@ export class XAccountController {
             if (!response.ok) {
                 return "";
             }
-            const blob = await response.blob();
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
+            const buffer = await response.buffer();
+            return `data:${response.headers.get('content-type')};base64,${buffer.toString('base64')}`;
         } catch {
             return "";
         }
