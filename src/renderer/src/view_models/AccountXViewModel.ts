@@ -175,13 +175,13 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.database.saveAccount(JSON.stringify(this.account));
     }
 
-    async runJob(indexJob: number) {
+    async runJob(iJob: number) {
         // Start the job
-        this.jobs[indexJob].startedAt = new Date();
-        this.jobs[indexJob].status = "running";
-        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+        this.jobs[iJob].startedAt = new Date();
+        this.jobs[iJob].status = "running";
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
-        switch (this.jobs[indexJob].jobType) {
+        switch (this.jobs[iJob].jobType) {
             case "login":
                 this.instructions = `
 **${this.actionString}**
@@ -191,9 +191,9 @@ Checking to see if you're still logged in to your X account...
                 await this.login();
 
                 // Job finished
-                this.jobs[indexJob].finishedAt = new Date();
-                this.jobs[indexJob].status = "finished";
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                this.jobs[iJob].finishedAt = new Date();
+                this.jobs[iJob].status = "finished";
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                 this.log("runJob", "login job finished");
 
                 break;
@@ -221,8 +221,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 } catch (e) {
                     // Run indexParseTweets so we can see if we were rate limited
                     this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
-                    this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                     console.log("progress", this.progress);
 
                     if (this.progress.isRateLimited) {
@@ -236,8 +236,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                     // Parse so far
                     this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
-                    this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                     console.log("progress", this.progress);
 
                     // Check if we're done
@@ -256,10 +256,10 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.indexStop(this.account.id);
 
                 // Job finished
-                this.jobs[indexJob].finishedAt = new Date();
-                this.jobs[indexJob].status = "finished";
-                this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                this.jobs[iJob].finishedAt = new Date();
+                this.jobs[iJob].status = "finished";
+                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                 this.log("runJob", `indexTweets job finished: ${this.progress}`);
 
                 break;
@@ -305,10 +305,10 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 }
 
                 // Job finished
-                this.jobs[indexJob].finishedAt = new Date();
-                this.jobs[indexJob].status = "finished";
-                this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                this.jobs[iJob].finishedAt = new Date();
+                this.jobs[iJob].status = "finished";
+                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                 this.log("runJob", `archiveTweets job finished: ${this.progress}`);
 
                 break;
@@ -336,8 +336,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 } catch (e) {
                     // // Run indexParseDMs so we can see if we were rate limited
                     // this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
-                    // this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                    // await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                    // this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    // await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                     // console.log("progress", this.progress);
 
                     // if (this.progress.isRateLimited) {
@@ -351,8 +351,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                 //     // Parse so far
                 //     this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
-                //     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                //     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                //     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                //     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                 //     console.log("progress", this.progress);
 
                 //     // Check if we're done
@@ -371,10 +371,10 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await window.electron.X.indexStop(this.account.id);
 
                 // Job finished
-                this.jobs[indexJob].finishedAt = new Date();
-                this.jobs[indexJob].status = "finished";
-                this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
+                this.jobs[iJob].finishedAt = new Date();
+                this.jobs[iJob].status = "finished";
+                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                 this.log("runJob", `indexDMs job finished: ${this.progress}`);
 
                 break;
