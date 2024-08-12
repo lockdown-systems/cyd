@@ -367,11 +367,11 @@ export class XAccountController {
         this.progress.currentJob = "indexTweets";
         this.progress.isIndexTweetsFinished = false;
 
-        this.mitmController.responseData.forEach((_response, iResponse) => {
-            if (this.indexParseTweetsResponseData(iResponse, isFirstRun)) {
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            if (this.indexParseTweetsResponseData(i, isFirstRun)) {
                 return this.progress;
             }
-        });
+        }
 
         return this.progress;
     }
