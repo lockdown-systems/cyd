@@ -116,20 +116,18 @@ export class XAccountController {
 );`, `CREATE TABLE user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userID TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
+    name TEXT,
     screenName TEXT NOT NULL,
     profileImageDataURI TEXT
 );`, `CREATE TABLE conversation (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversationID TEXT NOT NULL UNIQUE,
-    type TEXT NOT NULL,
-    sortTimestamp DATETIME NOT NULL
+    type TEXT,
+    sortTimestamp TEXT
 );`, `CREATE TABLE conversation_participant (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversationID TEXT NOT NULL,
-    userID TEXT NOT NULL,
-    FOREIGN KEY (conversationID) REFERENCES conversation(conversationID),
-    FOREIGN KEY (userID) REFERENCES user(userID)
+    userID TEXT NOT NULL
 );`
                 ]
             }
@@ -238,7 +236,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexTweet(indexResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
+    indexTweet(iResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
         if (!this.db) {
             this.initDB();
         }
@@ -251,7 +249,7 @@ export class XAccountController {
                 exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
             } else {
                 // We have seen this tweet, so return early
-                this.mitmController.responseData[indexResponse].processed = true;
+                this.mitmController.responseData[iResponse].processed = true;
                 this.progress.isIndexTweetsFinished = true;
                 return false;
             }
@@ -285,9 +283,9 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexParseTweetsResponseData(indexResponse: number, isFirstRun: boolean): boolean {
+    indexParseTweetsResponseData(iResponse: number, isFirstRun: boolean): boolean {
         let shouldReturnFalse = false;
-        const responseData = this.mitmController.responseData[indexResponse];
+        const responseData = this.mitmController.responseData[iResponse];
 
         // Already processed?
         if (responseData.processed) {
@@ -299,7 +297,7 @@ export class XAccountController {
             console.log('XAccountController.indexParseTweetsResponseData: RATE LIMITED');
             this.progress.isRateLimited = true;
             this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
-            this.mitmController.responseData[indexResponse].processed = true;
+            this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
 
@@ -323,7 +321,7 @@ export class XAccountController {
                         entries.content.items?.forEach((item) => {
                             const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
                             const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
-                            if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                            if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
@@ -331,7 +329,7 @@ export class XAccountController {
                     } else if (entries.content.entryType == "TimelineTimelineItem") {
                         const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
                         const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
-                        if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                        if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                             shouldReturnFalse = true;
                             return;
                         }
@@ -345,7 +343,7 @@ export class XAccountController {
                 }
             });
 
-            this.mitmController.responseData[indexResponse].processed = true;
+            this.mitmController.responseData[iResponse].processed = true;
             console.log('XAccountController.indexParseTweetsResponseData: processed', this.progress);
 
             if (shouldReturnFalse) {
@@ -353,7 +351,7 @@ export class XAccountController {
             }
         } else {
             // Skip response
-            this.mitmController.responseData[indexResponse].processed = true;
+            this.mitmController.responseData[iResponse].processed = true;
         }
 
         return true;
@@ -367,8 +365,8 @@ export class XAccountController {
         this.progress.currentJob = "indexTweets";
         this.progress.isIndexTweetsFinished = false;
 
-        this.mitmController.responseData.forEach((_response, indexResponse) => {
-            if (this.indexParseTweetsResponseData(indexResponse, isFirstRun)) {
+        this.mitmController.responseData.forEach((_response, iResponse) => {
+            if (this.indexParseTweetsResponseData(iResponse, isFirstRun)) {
                 return this.progress;
             }
         });
@@ -377,17 +375,24 @@ export class XAccountController {
     }
 
     async getProfileImageDataURI(user: XAPIUser): Promise<string> {
-        const response = await fetch(user.profile_image_url_https);
-        if (!response.ok) {
+        if (!user.profile_image_url_https) {
             return "";
         }
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+        try {
+            const response = await fetch(user.profile_image_url_https);
+            if (!response.ok) {
+                return "";
+            }
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch {
+            return "";
+        }
     }
 
     async indexDMUser(user: XAPIUser) {
@@ -432,7 +437,7 @@ export class XAccountController {
         if (existing.length > 0) {
             // Update the conversation
             exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ? WHERE conversationID = ?', [
-                new Date(conversation.sort_timestamp),
+                conversation.sort_timestamp,
                 conversation.type,
                 conversation.conversation_id,
             ]);
@@ -441,7 +446,7 @@ export class XAccountController {
             exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp) VALUES (?, ?, ?)', [
                 conversation.conversation_id,
                 conversation.type,
-                new Date(conversation.sort_timestamp),
+                conversation.sort_timestamp,
             ]);
         }
 
@@ -462,8 +467,8 @@ export class XAccountController {
         return true;
     }
 
-    async indexParseDMResponseData(indexResponse: number) {
-        const responseData = this.mitmController.responseData[indexResponse];
+    async indexParseDMResponseData(iResponse: number) {
+        const responseData = this.mitmController.responseData[iResponse];
 
         // Already processed?
         if (responseData.processed) {
@@ -475,7 +480,7 @@ export class XAccountController {
             console.log('XAccountController.indexParseDMResponseData: RATE LIMITED');
             this.progress.isRateLimited = true;
             this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
-            this.mitmController.responseData[indexResponse].processed = true;
+            this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
 
@@ -498,11 +503,11 @@ export class XAccountController {
                 await this.indexDMConversation(conversation);
             }
 
-            this.mitmController.responseData[indexResponse].processed = true;
+            this.mitmController.responseData[iResponse].processed = true;
             console.log('XAccountController.indexParseDMResponseData: processed', this.progress);
         } else {
             // Skip response
-            this.mitmController.responseData[indexResponse].processed = true;
+            this.mitmController.responseData[iResponse].processed = true;
         }
     }
 
@@ -511,11 +516,11 @@ export class XAccountController {
     async indexParseDMs(): Promise<XProgress> {
         console.log(`XAccountController.indexParseDMs: parsing ${this.mitmController.responseData.length} responses`);
 
-        this.progress.currentJob = "indexDirectMessages";
+        this.progress.currentJob = "indexDMs";
         this.progress.isIndexDMsFinished = false;
 
-        this.mitmController.responseData.forEach(async (_response, indexResponse) => {
-            if (await this.indexParseDMResponseData(indexResponse)) {
+        this.mitmController.responseData.forEach(async (_response, iResponse) => {
+            if (await this.indexParseDMResponseData(iResponse)) {
                 return this.progress;
             }
         });

@@ -149,17 +149,17 @@ export interface XAPIData {
 
 // Index direct messages
 
+export interface XAPIConversationParticipant {
+    user_id: string;
+    last_read_event_id: string;
+};
+
 export interface XAPIConversation {
     conversation_id: string;
     type: string; // "ONE_TO_ONE", etc.
     sort_event_id: string;
     sort_timestamp: string;
-    participants: [
-        {
-            user_id: string;
-            last_read_event_id: string;
-        }
-    ];
+    participants: XAPIConversationParticipant[];
     nsfw: boolean;
     notifications_disabled: boolean;
     mention_notifications_disabled: boolean;
@@ -173,7 +173,7 @@ export interface XAPIConversation {
 }
 
 export interface XAPIUser {
-    id: string,
+    id: number,
     id_str: string,
     name: string,
     screen_name: string,
@@ -203,17 +203,17 @@ export interface XAPIUser {
     contributors_enabled: boolean,
     is_translator: boolean,
     is_translation_enabled: boolean,
-    profile_background_color: string,
-    profile_background_image_url: string,
-    profile_background_image_url_https: string,
+    profile_background_color: string | null,
+    profile_background_image_url: string | null,
+    profile_background_image_url_https: string | null,
     profile_background_tile: boolean,
-    profile_image_url: string,
-    profile_image_url_https: string,
-    profile_banner_url: string,
-    profile_link_color: string,
-    profile_sidebar_border_color: string,
-    profile_sidebar_fill_color: string,
-    profile_text_color: string,
+    profile_image_url: string | null,
+    profile_image_url_https: string | null,
+    profile_banner_url: string | null,
+    profile_link_color: string | null,
+    profile_sidebar_border_color: string | null,
+    profile_sidebar_fill_color: string | null,
+    profile_text_color: string | null,
     profile_use_background_image: boolean,
     default_profile: boolean,
     default_profile_image: boolean,

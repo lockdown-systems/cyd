@@ -4,6 +4,8 @@ import path from 'path';
 import { beforeEach, afterEach, test, expect, vi } from 'vitest';
 import { Proxy } from "http-mitm-proxy"
 
+import { XAPILegacyUser, XAPILegacyTweet, XAPIConversation, XAPIUser } from './account_x_types';
+
 // Mock the helpers module
 vi.mock('./helpers', () => ({
     ...vi.importActual('./helpers'), // Import and spread the actual implementations
@@ -55,24 +57,46 @@ class MockMITMController implements IMITMController {
     private proxyFilter: string[];
     private isMonitoring: boolean;
     public responseData: ResponseData[];
-    constructor() {
-        // Load test data
-        this.responseData = [
-            {
-                host: 'x.com',
-                url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22cursor%22%3A%22DAABCgABGS0y9T___-0KAAIYtaJOPpth7ggAAwAAAAIAAA%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
-                status: 200,
-                headers: {},
-                body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
-                processed: false
-            }
-        ];
+    constructor(testdata: string) {
+        if (testdata == "indexTweets") {
+            this.responseData = [
+                {
+                    host: 'x.com',
+                    url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22cursor%22%3A%22DAABCgABGS0y9T___-0KAAIYtaJOPpth7ggAAwAAAAIAAA%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
+                    status: 200,
+                    headers: {},
+                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
+                    processed: false
+                }
+            ];
+        }
+
+        if (testdata == "indexDMs") {
+            this.responseData = [
+                {
+                    host: 'x.com',
+                    url: '/i/api/1.1/dm/inbox_timeline/trusted.json?',
+                    status: 200,
+                    headers: {},
+                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMInboxTimeline1.json'), 'utf8'),
+                    processed: false
+                }
+            ];
+        }
     }
     async startMITM(_ses: Electron.Session, _proxyFilter: string[]) { }
     async stopMITM(_ses: Electron.Session) { }
     async startMonitoring() { }
     async stopMonitoring() { }
 }
+
+const createController = (testdata: string): XAccountController => {
+    const mitmController = new MockMITMController(testdata);
+    const controller = new XAccountController(1, mitmController);
+    controller.initDB()
+    return controller;
+}
+
 
 beforeEach(() => {
     runMainMigrations();
@@ -97,7 +121,7 @@ afterEach(() => {
 
 // Fixtures
 
-const userLegacy = {
+const userLegacy: XAPILegacyUser = {
     "can_dm": true,
     "can_media_tag": true,
     "created_at": "Sun Mar 17 18:12:01 +0000 2024",
@@ -133,7 +157,7 @@ const userLegacy = {
     "want_retweets": false,
     "withheld_in_countries": []
 };
-const tweetLegacy = {
+const tweetLegacy: XAPILegacyTweet = {
     "bookmark_count": 0,
     "bookmarked": false,
     "created_at": "Wed Apr 17 17:36:00 +0000 2024",
@@ -174,13 +198,164 @@ const tweetLegacy = {
     "user_id_str": "1769426369526771712",
     "id_str": "1780651436629750204"
 };
+const dmUser1: XAPIUser = {
+    "id": 1209344563589992448,
+    "id_str": "1209344563589992448",
+    "name": "Semiphemeral",
+    "screen_name": "semiphemeral",
+    "location": null,
+    "description": "Claw back your data from Big Tech",
+    "url": "https://t.co/j0oVFIXVVe",
+    "entities": {
+        "url": {
+            "urls": [
+                {
+                    "url": "https://t.co/j0oVFIXVVe",
+                    "expanded_url": "https://semiphemeral.com",
+                    "display_url": "semiphemeral.com",
+                    "indices": [
+                        0,
+                        23
+                    ]
+                }
+            ]
+        },
+        "description": {
+            "urls": []
+        }
+    },
+    "protected": false,
+    "followers_count": 30615,
+    "friends_count": 1,
+    "listed_count": 62,
+    "created_at": "Tue Dec 24 05:26:49 +0000 2019",
+    "favourites_count": 14,
+    "utc_offset": null,
+    "time_zone": null,
+    "geo_enabled": false,
+    "verified": false,
+    "statuses_count": 5,
+    "lang": null,
+    "contributors_enabled": false,
+    "is_translator": false,
+    "is_translation_enabled": false,
+    "profile_background_color": "F5F8FA",
+    "profile_background_image_url": null,
+    "profile_background_image_url_https": null,
+    "profile_background_tile": false,
+    "profile_image_url": "http://pbs.twimg.com/profile_images/1221505863631769601/cfFGJZzY_normal.jpg",
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1221505863631769601/cfFGJZzY_normal.jpg",
+    "profile_banner_url": "https://pbs.twimg.com/profile_banners/1209344563589992448/1690903715",
+    "profile_link_color": "1DA1F2",
+    "profile_sidebar_border_color": "C0DEED",
+    "profile_sidebar_fill_color": "DDEEF6",
+    "profile_text_color": "333333",
+    "profile_use_background_image": true,
+    "default_profile": true,
+    "default_profile_image": false,
+    "can_dm": null,
+    "can_secret_dm": null,
+    "can_media_tag": false,
+    "following": false,
+    "follow_request_sent": false,
+    "notifications": false,
+    "blocking": false,
+    "subscribed_by": false,
+    "blocked_by": false,
+    "want_retweets": false,
+    "business_profile_state": "none",
+    "translator_type": "none",
+    "withheld_in_countries": [],
+    "followed_by": false
+};
+const dmUser2: XAPIUser = {
+    "id": 1700151216,
+    "id_str": "1700151216",
+    "name": "yakhoda",
+    "screen_name": "yakhoda498",
+    "location": null,
+    "description": null,
+    "url": null,
+    "entities": {
+        "description": {
+            "urls": []
+        }
+    },
+    "protected": false,
+    "followers_count": 136,
+    "friends_count": 171,
+    "listed_count": 0,
+    "created_at": "Sun Aug 25 21:11:52 +0000 2013",
+    "favourites_count": 2657,
+    "utc_offset": null,
+    "time_zone": null,
+    "geo_enabled": true,
+    "verified": false,
+    "statuses_count": 2935,
+    "lang": null,
+    "contributors_enabled": false,
+    "is_translator": false,
+    "is_translation_enabled": false,
+    "profile_background_color": "C0DEED",
+    "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+    "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme1/bg.png",
+    "profile_background_tile": false,
+    "profile_image_url": "http://pbs.twimg.com/profile_images/1801186042315194368/exOSSVRx_normal.jpg",
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1801186042315194368/exOSSVRx_normal.jpg",
+    "profile_banner_url": "https://pbs.twimg.com/profile_banners/1700151216/1718270871",
+    "profile_link_color": "1DA1F2",
+    "profile_sidebar_border_color": "C0DEED",
+    "profile_sidebar_fill_color": "DDEEF6",
+    "profile_text_color": "333333",
+    "profile_use_background_image": true,
+    "default_profile": true,
+    "default_profile_image": false,
+    "can_dm": null,
+    "can_secret_dm": null,
+    "can_media_tag": true,
+    "following": false,
+    "follow_request_sent": false,
+    "notifications": false,
+    "blocking": false,
+    "subscribed_by": false,
+    "blocked_by": false,
+    "want_retweets": false,
+    "business_profile_state": "none",
+    "translator_type": "regular",
+    "withheld_in_countries": [],
+    "followed_by": false
+};
+const dmConversation: XAPIConversation = {
+    "conversation_id": "1700151216-1209344563589992448",
+    "type": "ONE_TO_ONE",
+    "sort_event_id": "1700911936349602141",
+    "sort_timestamp": "1694363981698",
+    "participants": [
+        {
+            "user_id": "1700151216",
+            "last_read_event_id": "1700911936349602141"
+        },
+        {
+            "user_id": "1209344563589992448",
+            "last_read_event_id": "1540971592154497032"
+        }
+    ],
+    "nsfw": false,
+    "notifications_disabled": false,
+    "mention_notifications_disabled": false,
+    "last_read_event_id": "1540971592154497032",
+    "read_only": false,
+    "trusted": true,
+    "muted": false,
+    "status": "AT_END",
+    "min_entry_id": "1540971592154497032",
+    "max_entry_id": "1700911936349602141"
+};
 
 // XAccountController tests
 
 test('XAccountController.constructor() creates a database for the user', async () => {
-    const mitmController = new MockMITMController();
-    const controller = new XAccountController(1, mitmController);
-    controller.initDB()
+    createController("indexTweets")
 
     // There should be a file called data.sqlite3 in the account data directory
     const files = fs.readdirSync(getAccountDataPath("X", "test"));
@@ -188,8 +363,7 @@ test('XAccountController.constructor() creates a database for the user', async (
 })
 
 test('XAccountController.indexTweet() should add a tweet', async () => {
-    const mitmController = new MockMITMController();
-    const controller = new XAccountController(1, mitmController);
+    const controller = createController("indexTweets");
 
     controller.indexTweet(0, userLegacy, tweetLegacy, false)
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
@@ -198,8 +372,7 @@ test('XAccountController.indexTweet() should add a tweet', async () => {
 })
 
 test("XAccountController.indexTweet() should not add a tweet if it's already there", async () => {
-    const mitmController = new MockMITMController();
-    const controller = new XAccountController(1, mitmController);
+    const controller = createController("indexTweets");
 
     let ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
     expect(ret).toBe(true);
@@ -213,12 +386,79 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
 })
 
 test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
-    const mitmController = new MockMITMController();
-    const controller = new XAccountController(1, mitmController);
+    const controller = createController("indexTweets");
 
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.tweetsIndexed).toBe(20);
 
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
     expect(rows.length).toBe(20);
+})
+
+test('XAccountController.indexDMUser() should add a user', async () => {
+    const controller = createController("indexDMs");
+
+    await controller.indexDMUser(dmUser1)
+    const rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    expect(rows.length).toBe(1);
+    expect(rows[0].userID).toBe(dmUser1.id_str);
+    expect(rows[0].screenName).toBe(dmUser1.screen_name);
+})
+
+test('XAccountController.indexDMUser() should update a user if its already there', async () => {
+    const controller = createController("indexDMs");
+
+    await controller.indexDMUser(dmUser1)
+    let rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    expect(rows.length).toBe(1);
+    expect(rows[0].userID).toBe(dmUser1.id_str);
+    expect(rows[0].name).toBe(dmUser1.name);
+
+    const modifiedDMUser1 = dmUser1;
+    modifiedDMUser1.name = 'changed name';
+
+    await controller.indexDMUser(modifiedDMUser1)
+    rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    expect(rows.length).toBe(1);
+    expect(rows[0].userID).toBe(dmUser1.id_str);
+    expect(rows[0].name).toBe('changed name');
+})
+
+test('XAccountController.indexDMUser() with different users should add different users', async () => {
+    const controller = createController("indexDMs");
+
+    await controller.indexDMUser(dmUser1)
+    await controller.indexDMUser(dmUser2)
+    const rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    expect(rows.length).toBe(2);
+})
+
+test('XAccountController.indexDMConversation() should add a conversation and participants', async () => {
+    const controller = createController("indexDMs");
+
+    await controller.indexDMConversation(dmConversation)
+    let rows = exec(controller.db, "SELECT * FROM conversation", [], "all");
+    expect(rows.length).toBe(1);
+    expect(rows[0].conversationID).toBe(dmConversation.conversation_id);
+
+    rows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all");
+    expect(rows.length).toBe(2);
+
+})
+
+test("XAccountController.indexParsedDMs() should add all the conversations and users", async () => {
+    const controller = createController("indexDMs");
+
+    const progress: XProgress = await controller.indexParseDMs();
+    expect(progress.dmUsersIndexed).toBe(19);
+    expect(progress.dmConversationsIndexed).toBe(17);
+
+    let rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    expect(rows.length).toBe(19);
+
+    rows = exec(controller.db, "SELECT * FROM conversation", [], "all");
+    expect(rows.length).toBe(17);
+
+    rows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all");
+    expect(rows.length).toBe(34);
 })
