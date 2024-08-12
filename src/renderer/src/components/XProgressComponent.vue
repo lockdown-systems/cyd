@@ -50,13 +50,40 @@ onUnmounted(() => {
 <template>
     <template v-if="progress">
         <div class="progress-wrapper">
-            <!-- Index -->
-            <template v-if="progress.currentJob == 'index'">
+            <!-- Index tweets -->
+            <template v-if="progress.currentJob == 'indexTweets'">
                 <p>
                     Indexed
                     <b>{{ progress.tweetsIndexed.toLocaleString() }} tweets</b> and
                     <b>{{ progress.retweetsIndexed.toLocaleString() }} retweets</b>.
-                    <template v-if="progress.isIndexFinished">
+                    <template v-if="progress.isIndexTweetsFinished">
+                        Indexing complete!
+                    </template>
+                </p>
+                <p v-if="progress.isRateLimited" class="rate-limit">
+                    You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
+                </p>
+            </template>
+            <!-- Index direct messages -->
+            <template v-if="progress.currentJob == 'indexDirectMessages'">
+                <p>
+                    Indexed
+                    <b>{{ progress.dmUsersIndexed.toLocaleString() }} users</b> and
+                    <b>{{ progress.dmConversationsIndexed.toLocaleString() }} conversations</b>.
+                    <template v-if="progress.isIndexDirectMessagesFinished">
+                        Indexing complete!
+                    </template>
+                </p>
+                <p v-if="progress.isRateLimited" class="rate-limit">
+                    You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
+                </p>
+            </template>
+            <!-- Index likes -->
+            <template v-if="progress.currentJob == 'indexLikes'">
+                <p>
+                    Indexed
+                    <b>{{ progress.likesIndexed.toLocaleString() }} likes</b>.
+                    <template v-if="progress.isIndexLikesFinished">
                         Indexing complete!
                     </template>
                 </p>

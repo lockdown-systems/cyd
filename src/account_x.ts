@@ -8,7 +8,7 @@ import { getAccountDataPath } from './helpers'
 import { XAccount, XJob, XProgress, XArchiveTweetsTweet, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
-import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline } from './account_x_types'
+import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIConversation, XAPIUser } from './account_x_types'
 
 function formatDateToYYYYMMDD(dateString: string): string {
     const date = new Date(dateString);
@@ -28,20 +28,25 @@ export class XAccountController {
     private mitmController: IMITMController;
     private progress: XProgress = {
         currentJob: "indexTweets",
-        isIndexFinished: false,
+        isIndexTweetsFinished: false,
+        isIndexDirectMessagesFinished: false,
+        isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
         isArchiveDirectMessagesFinished: false,
         isDeleteFinished: false,
         tweetsIndexed: 0,
         retweetsIndexed: 0,
+        dmUsersIndexed: 0,
+        dmConversationsIndexed: 0,
+        likesIndexed: 0,
         totalTweetsToArchive: 0,
         tweetsArchived: 0,
-        totalDirectMessageConversationsToArchive: 0,
-        directMessageConversationsArchived: 0,
+        totalDMConversationsToArchive: 0,
+        dmConversationsArchived: 0,
         tweetsDeleted: 0,
         retweetsDeleted: 0,
         likesDeleted: 0,
-        directMessagesDeleted: 0,
+        dmConversationsDeleted: 0,
         isRateLimited: false,
         rateLimitReset: null,
     };
@@ -247,7 +252,7 @@ export class XAccountController {
             } else {
                 // We have seen this tweet, so return early
                 this.mitmController.responseData[indexResponse].processed = true;
-                this.progress.isIndexFinished = true;
+                this.progress.isIndexTweetsFinished = true;
                 return false;
             }
         }
@@ -360,7 +365,7 @@ export class XAccountController {
         console.log(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexTweets";
-        this.progress.isIndexFinished = false;
+        this.progress.isIndexTweetsFinished = false;
 
         this.mitmController.responseData.forEach((_response, indexResponse) => {
             if (this.indexParseTweetsResponseData(indexResponse, isFirstRun)) {
@@ -371,9 +376,93 @@ export class XAccountController {
         return this.progress;
     }
 
-    // Returns false if the loop should stop
-    indexParseDirectMessageResponseData(indexResponse: number, isFirstRun: boolean): boolean {
-        let shouldReturnFalse = false;
+    async getProfileImageDataURI(user: XAPIUser): Promise<string> {
+        const response = await fetch(user.profile_image_url_https);
+        if (!response.ok) {
+            return "";
+        }
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    async indexDMUser(user: XAPIUser) {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        // Download the profile image
+        const profileImageDataURI = await this.getProfileImageDataURI(user);
+
+        // Have we seen this user before?
+        const existing = exec(this.db, 'SELECT * FROM user WHERE userID = ?', [user.id_str], "all");
+        if (existing.length > 0) {
+            // Update the user
+            exec(this.db, 'UPDATE user SET name = ?, screenName = ?, profileImageDataURI = ? WHERE userID = ?', [
+                user.name,
+                user.screen_name,
+                profileImageDataURI,
+                user.id_str,
+            ]);
+        } else {
+            // Add the user
+            exec(this.db, 'INSERT INTO user (userID, name, screenName, profileImageDataURI) VALUES (?, ?, ?, ?)', [
+                user.id_str,
+                user.name,
+                user.screen_name,
+                profileImageDataURI,
+            ]);
+        }
+
+        // Update progress
+        this.progress.dmUsersIndexed++;
+    }
+
+    async indexDMConversation(conversation: XAPIConversation) {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        // Have we seen this conversation before?
+        const existing = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all");
+        if (existing.length > 0) {
+            // Update the conversation
+            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ? WHERE conversationID = ?', [
+                new Date(conversation.sort_timestamp),
+                conversation.type,
+                conversation.conversation_id,
+            ]);
+        } else {
+            // Add the conversation
+            exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp) VALUES (?, ?, ?)', [
+                conversation.conversation_id,
+                conversation.type,
+                new Date(conversation.sort_timestamp),
+            ]);
+        }
+
+        // Delete participants
+        exec(this.db, 'DELETE FROM conversation_participant WHERE conversationID = ?', [conversation.conversation_id]);
+
+        // Add the participants
+        conversation.participants.forEach((participant) => {
+            exec(this.db, 'INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)', [
+                conversation.conversation_id,
+                participant.user_id,
+            ]);
+        });
+
+        // Update progress
+        this.progress.dmConversationsIndexed++;
+
+        return true;
+    }
+
+    async indexParseDMResponseData(indexResponse: number) {
         const responseData = this.mitmController.responseData[indexResponse];
 
         // Already processed?
@@ -383,7 +472,7 @@ export class XAccountController {
 
         // Rate limited?
         if (responseData.status == 429) {
-            console.log('XAccountController.indexParseDirectMessageResponseData: RATE LIMITED');
+            console.log('XAccountController.indexParseDMResponseData: RATE LIMITED');
             this.progress.isRateLimited = true;
             this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[indexResponse].processed = true;
@@ -397,67 +486,36 @@ export class XAccountController {
         ) {
             const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
 
+            // Add the users
+            for (const userID in inbox_timeline.inbox_timeline.users) {
+                const user = inbox_timeline.inbox_timeline.users[userID];
+                await this.indexDMUser(user);
+            }
 
-
-
-            // // Loop through instructions
-            // body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
-            //     if (instructions["type"] != "TimelineAddEntries") {
-            //         return;
-            //     }
-
-            //     // Loop through the entries
-            //     instructions.entries?.forEach((entries) => {
-            //         if (entries.content.entryType == "TimelineTimelineModule") {
-            //             entries.content.items?.forEach((item) => {
-            //                 const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
-            //                 const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
-            //                 if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy, isFirstRun)) {
-            //                     shouldReturnFalse = true;
-            //                     return;
-            //                 }
-            //             });
-            //         } else if (entries.content.entryType == "TimelineTimelineItem") {
-            //             const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
-            //             const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
-            //             if (userLegacy && tweetLegacy && !this.indexTweet(indexResponse, userLegacy, tweetLegacy, isFirstRun)) {
-            //                 shouldReturnFalse = true;
-            //                 return;
-            //             }
-            //         }
-
-
-            //     });
-
-            //     if (shouldReturnFalse) {
-            //         return;
-            //     }
-            // });
+            // Add the conversations
+            for (const conversationID in inbox_timeline.inbox_timeline.conversations) {
+                const conversation = inbox_timeline.inbox_timeline.conversations[conversationID];
+                await this.indexDMConversation(conversation);
+            }
 
             this.mitmController.responseData[indexResponse].processed = true;
-            console.log('XAccountController.indexParseDirectMessageResponseData: processed', this.progress);
-
-            if (shouldReturnFalse) {
-                return false;
-            }
+            console.log('XAccountController.indexParseDMResponseData: processed', this.progress);
         } else {
             // Skip response
             this.mitmController.responseData[indexResponse].processed = true;
         }
-
-        return true;
     }
 
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
-    async indexParseConversations(isFirstRun: boolean): Promise<XProgress> {
-        console.log(`XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`);
+    async indexParseDMs(): Promise<XProgress> {
+        console.log(`XAccountController.indexParseDMs: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexDirectMessages";
-        this.progress.isIndexFinished = false;
+        this.progress.isIndexDirectMessagesFinished = false;
 
-        this.mitmController.responseData.forEach((_response, indexResponse) => {
-            if (this.indexParseDirectMessagesResponseData(indexResponse, isFirstRun)) {
+        this.mitmController.responseData.forEach(async (_response, indexResponse) => {
+            if (await this.indexParseDMResponseData(indexResponse)) {
                 return this.progress;
             }
         });

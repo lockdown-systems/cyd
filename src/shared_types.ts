@@ -76,23 +76,28 @@ export type XProgress = {
     // "deleteTweets", "deleteLikes", "deleteDirectMessages"
     currentJob: string;
 
-    isIndexFinished: boolean;
+    isIndexTweetsFinished: boolean;
+    isIndexDirectMessagesFinished: boolean;
+    isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
     isArchiveDirectMessagesFinished: boolean;
     isDeleteFinished: boolean;
 
     tweetsIndexed: number;
     retweetsIndexed: number;
+    dmUsersIndexed: number;
+    dmConversationsIndexed: number;
+    likesIndexed: number;
 
     totalTweetsToArchive: number;
     tweetsArchived: number;
-    totalDirectMessageConversationsToArchive: number;
-    directMessageConversationsArchived: number;
+    totalDMConversationsToArchive: number;
+    dmConversationsArchived: number;
 
     tweetsDeleted: number;
     retweetsDeleted: number;
     likesDeleted: number;
-    directMessagesDeleted: number;
+    dmConversationsDeleted: number;
 
     isRateLimited: boolean;
     rateLimitReset: null | number;

@@ -149,6 +149,93 @@ export interface XAPIData {
 
 // Index direct messages
 
+export interface XAPIConversation {
+    conversation_id: string;
+    type: string; // "ONE_TO_ONE", etc.
+    sort_event_id: string;
+    sort_timestamp: string;
+    participants: [
+        {
+            user_id: string;
+            last_read_event_id: string;
+        }
+    ];
+    nsfw: boolean;
+    notifications_disabled: boolean;
+    mention_notifications_disabled: boolean;
+    last_read_event_id: string;
+    read_only: boolean;
+    trusted: boolean;
+    muted: boolean;
+    status: string; // "HAS_MORE", "AT_END"
+    min_entry_id: string;
+    max_entry_id: string;
+}
+
+export interface XAPIUser {
+    id: string,
+    id_str: string,
+    name: string,
+    screen_name: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    location: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    description: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    url: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    entities: any,
+    protected: boolean,
+    followers_count: number,
+    friends_count: number,
+    listed_count: number,
+    created_at: string,
+    favourites_count: number,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    utc_offset: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    time_zone: any,
+    geo_enabled: boolean,
+    verified: boolean,
+    statuses_count: number,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    lang: any,
+    contributors_enabled: boolean,
+    is_translator: boolean,
+    is_translation_enabled: boolean,
+    profile_background_color: string,
+    profile_background_image_url: string,
+    profile_background_image_url_https: string,
+    profile_background_tile: boolean,
+    profile_image_url: string,
+    profile_image_url_https: string,
+    profile_banner_url: string,
+    profile_link_color: string,
+    profile_sidebar_border_color: string,
+    profile_sidebar_fill_color: string,
+    profile_text_color: string,
+    profile_use_background_image: boolean,
+    default_profile: boolean,
+    default_profile_image: boolean,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    can_dm: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    can_secret_dm: any,
+    can_media_tag: boolean,
+    following: boolean,
+    follow_request_sent: boolean,
+    notifications: boolean,
+    blocking: boolean,
+    subscribed_by: boolean,
+    blocked_by: boolean,
+    want_retweets: boolean,
+    business_profile_state: string,
+    translator_type: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    withheld_in_countries: any,
+    followed_by: boolean,
+}
+
 export interface XAPIInboxTimeline {
     inbox_timeline: {
         status: string,
@@ -156,96 +243,10 @@ export interface XAPIInboxTimeline {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entries: any,
         users: {
-            [key: string]: {
-                __typename: string,
-                user: {
-                    id: string,
-                    id_str: string,
-                    name: string,
-                    screen_name: string,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    location: any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    description: any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    url: any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    entities: any,
-                    protected: boolean,
-                    followers_count: number,
-                    friends_count: number,
-                    listed_count: number,
-                    created_at: string,
-                    favourites_count: number,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    utc_offset: any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    time_zone: any,
-                    geo_enabled: boolean,
-                    verified: boolean,
-                    statuses_count: number,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    lang: any,
-                    contributors_enabled: boolean,
-                    is_translator: boolean,
-                    is_translation_enabled: boolean,
-                    profile_background_color: string,
-                    profile_background_image_url: string,
-                    profile_background_image_url_https: string,
-                    profile_background_tile: boolean,
-                    profile_image_url: string,
-                    profile_image_url_https: string,
-                    profile_banner_url: string,
-                    profile_link_color: string,
-                    profile_sidebar_border_color: string,
-                    profile_sidebar_fill_color: string,
-                    profile_text_color: string,
-                    profile_use_background_image: boolean,
-                    default_profile: boolean,
-                    default_profile_image: boolean,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    can_dm: any,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    can_secret_dm: any,
-                    can_media_tag: boolean,
-                    following: boolean,
-                    follow_request_sent: boolean,
-                    notifications: boolean,
-                    blocking: boolean,
-                    subscribed_by: boolean,
-                    blocked_by: boolean,
-                    want_retweets: boolean,
-                    business_profile_state: string,
-                    translator_type: string,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    withheld_in_countries: any,
-                    followed_by: boolean,
-                }
-            }
+            [key: string]: XAPIUser
         },
         conversations: {
-            [key: string]: {
-                conversation_id: string;
-                type: string; // "ONE_TO_ONE", etc.
-                sort_event_id: string;
-                sort_timestamp: string;
-                participants: [
-                    {
-                        user_id: string;
-                        last_read_event_id: string;
-                    }
-                ];
-                nsfw: boolean;
-                notifications_disabled: boolean;
-                mention_notifications_disabled: boolean;
-                last_read_event_id: string;
-                read_only: boolean;
-                trusted: boolean;
-                muted: boolean;
-                status: string; // "HAS_MORE", "AT_END"
-                min_entry_id: string;
-                max_entry_id: string;
-            }
+            [key: string]: XAPIConversation
         },
     }
 }
