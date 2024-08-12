@@ -469,7 +469,7 @@ export class XAccountController {
 
         // Already processed?
         if (responseData.processed) {
-            return true;
+            return;
         }
 
         // Rate limited?
@@ -478,7 +478,7 @@ export class XAccountController {
             this.progress.isRateLimited = true;
             this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[iResponse].processed = true;
-            return false;
+            return;
         }
 
         // Process the next response
@@ -516,12 +516,9 @@ export class XAccountController {
         this.progress.currentJob = "indexDMs";
         this.progress.isIndexDMsFinished = false;
 
-        this.mitmController.responseData.forEach(async (_response, iResponse) => {
-            if (await this.indexParseDMResponseData(iResponse)) {
-                return this.progress;
-            }
-        });
-
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            await this.indexParseDMResponseData(i);
+        }
         return this.progress;
     }
 
