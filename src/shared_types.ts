@@ -23,7 +23,7 @@ export type XAccount = {
     accessedAt: Date;
     username: string;
     archiveTweets: boolean;
-    archiveDirectMessages: boolean;
+    archiveDMs: boolean;
     deleteTweets: boolean;
     deleteTweetsDaysOld: number;
     deleteTweetsLikesThresholdEnabled: boolean;
@@ -34,15 +34,15 @@ export type XAccount = {
     deleteRetweetsDaysOld: number;
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
-    deleteDirectMessages: boolean;
-    deleteDirectMessagesDaysOld: number;
+    deleteDMs: boolean;
+    deleteDMsDaysOld: number;
 };
 
 // X models
 
 export type XJob = {
     id: number | null;
-    jobType: string; // "login", "index", "archiveTweets", "archiveDirectMessages", "deleteTweets", "deleteLikes", "deleteDirectMessages"
+    jobType: string; // "login", "index", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs"
     status: string; // "pending", "running", "finished", "failed", "canceled"
     scheduledAt: Date;
     startedAt: Date | null;
@@ -72,15 +72,14 @@ export type XTweet = {
 // Other X types
 
 export type XProgress = {
-    // "indexTweets", "indexLikes", "indexDirectMessages", "archiveTweets", "archiveDirectMessages", 
-    // "deleteTweets", "deleteLikes", "deleteDirectMessages"
+    // "indexTweets", "indexLikes", "indexDMs", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs"
     currentJob: string;
 
     isIndexTweetsFinished: boolean;
-    isIndexDirectMessagesFinished: boolean;
+    isIndexDMsFinished: boolean;
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
-    isArchiveDirectMessagesFinished: boolean;
+    isArchiveDMsFinished: boolean;
     isDeleteFinished: boolean;
 
     tweetsIndexed: number;

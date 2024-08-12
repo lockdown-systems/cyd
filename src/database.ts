@@ -62,7 +62,7 @@ export const runMainMigrations = () => {
     accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     username TEXT,
     archiveTweets BOOLEAN DEFAULT 1,
-    archiveDirectMessages BOOLEAN DEFAULT 1,
+    archiveDMs BOOLEAN DEFAULT 1,
     deleteTweets BOOLEAN DEFAULT 0,
     deleteTweetsDaysOld INTEGER DEFAULT 30,
     deleteTweetsLikesThresholdEnabled BOOLEAN DEFAULT 1,
@@ -73,8 +73,8 @@ export const runMainMigrations = () => {
     deleteRetweetsDaysOld INTEGER DEFAULT 30,
     deleteLikes BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 60,
-    deleteDirectMessages BOOLEAN DEFAULT 0,
-    deleteDirectMessagesDaysOld INTEGER DEFAULT 30
+    deleteDMs BOOLEAN DEFAULT 0,
+    deleteDMsDaysOld INTEGER DEFAULT 30
 );`,
             ]
         }
@@ -125,7 +125,7 @@ export const getXAccount = (id: number): XAccount | null => {
         accessedAt: new Date(row.accessedAt),
         username: row.username,
         archiveTweets: !!row.archiveTweets,
-        archiveDirectMessages: !!row.archiveDirectMessages,
+        archiveDMs: !!row.archiveDMs,
         deleteTweets: !!row.deleteTweets,
         deleteTweetsDaysOld: row.deleteTweetsDaysOld,
         deleteTweetsRetweetsThresholdEnabled: !!row.deleteTweetsRetweetsThresholdEnabled,
@@ -136,8 +136,8 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
-        deleteDirectMessages: !!row.deleteDirectMessages,
-        deleteDirectMessagesDaysOld: row.deleteDirectMessagesDaysOld,
+        deleteDMs: !!row.deleteDMs,
+        deleteDMsDaysOld: row.deleteDMsDaysOld,
     };
 }
 
@@ -153,7 +153,7 @@ export const getXAccounts = (): XAccount[] => {
             accessedAt: new Date(row.accessedAt),
             username: row.username,
             archiveTweets: !!row.archiveTweets,
-            archiveDirectMessages: !!row.archiveDirectMessages,
+            archiveDMs: !!row.archiveDMs,
             deleteTweets: !!row.deleteTweets,
             deleteTweetsDaysOld: row.deleteTweetsDaysOld,
             deleteTweetsLikesThresholdEnabled: !!row.deleteTweetsLikesThresholdEnabled,
@@ -164,8 +164,8 @@ export const getXAccounts = (): XAccount[] => {
             deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
-            deleteDirectMessages: !!row.deleteDirectMessages,
-            deleteDirectMessagesDaysOld: row.deleteDirectMessagesDaysOld,
+            deleteDMs: !!row.deleteDMs,
+            deleteDMsDaysOld: row.deleteDMsDaysOld,
         });
     }
     return accounts;
@@ -188,7 +188,7 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             archiveTweets = ?,
-            archiveDirectMessages = ?,
+            archiveDMs = ?,
             deleteTweets = ?,
             deleteTweetsDaysOld = ?,
             deleteTweetsLikesThresholdEnabled = ?,
@@ -199,13 +199,13 @@ export const saveXAccount = (account: XAccount) => {
             deleteRetweetsDaysOld = ?,
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
-            deleteDirectMessages = ?,
-            deleteDirectMessagesDaysOld = ?
+            deleteDMs = ?,
+            deleteDMsDaysOld = ?
         WHERE id = ?
     `, [
         account.username,
         account.archiveTweets ? 1 : 0,
-        account.archiveDirectMessages ? 1 : 0,
+        account.archiveDMs ? 1 : 0,
         account.deleteTweets ? 1 : 0,
         account.deleteTweetsDaysOld,
         account.deleteTweetsLikesThresholdEnabled ? 1 : 0,
@@ -216,8 +216,8 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteRetweetsDaysOld,
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
-        account.deleteDirectMessages ? 1 : 0,
-        account.deleteDirectMessagesDaysOld,
+        account.deleteDMs ? 1 : 0,
+        account.deleteDMsDaysOld,
         account.id
     ]);
 }

@@ -35,10 +35,10 @@ export class AccountXViewModel extends BaseViewModel {
         this.action = action;
         switch (action) {
             case "archive":
-                if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDirectMessages) {
+                if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
                     this.actionString = "I'm archiving your tweets and direct messages.";
                 } else {
-                    if (this.account.xAccount?.archiveDirectMessages) {
+                    if (this.account.xAccount?.archiveDMs) {
                         this.actionString = "I'm archiving your direct messages.";
                     } else {
                         this.actionString = "I'm archiving your tweets.";
@@ -60,9 +60,9 @@ export class AccountXViewModel extends BaseViewModel {
             jobTypes.push("indexTweets");
             jobTypes.push("archiveTweets");
         }
-        if (this.account.xAccount?.archiveDirectMessages) {
-            jobTypes.push("indexDirectMessages");
-            jobTypes.push("archiveDirectMessages");
+        if (this.account.xAccount?.archiveDMs) {
+            jobTypes.push("indexDMs");
+            jobTypes.push("archiveDMs");
         }
 
         this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
@@ -230,7 +230,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     }
                 }
 
-                while (this.progress === null || this.progress.isIndexFinished === false) {
+                while (this.progress === null || this.progress.isIndexTweetsFinished === false) {
                     // Scroll to bottom
                     const moreToScroll = await this.scrollToBottom();
 
@@ -313,7 +313,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                 break;
 
-            case "indexDirectMessages":
+            case "indexDMs":
                 this.showBrowser = true;
                 this.instructions = `
 **${this.actionString}**
@@ -322,7 +322,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 `;
 
                 // Check if this is the first time indexing DMs has happened in this account
-                if (await window.electron.X.getLastFinishedJob(this.account.id, "indexDirectMessages") == null) {
+                if (await window.electron.X.getLastFinishedJob(this.account.id, "indexDMs") == null) {
                     this.isFirstRun = true;
                 }
 
@@ -334,8 +334,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 try {
                     await this.waitForSelector('div[aria-label="Timeline: Messages"]');
                 } catch (e) {
-                    // // Run indexParseDirectMessages so we can see if we were rate limited
-                    // this.progress = await window.electron.X.indexParseDirectMessages(this.account.id, this.isFirstRun);
+                    // // Run indexParseDMs so we can see if we were rate limited
+                    // this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
                     // this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                     // await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                     // console.log("progress", this.progress);
@@ -350,7 +350,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 //     const moreToScroll = await this.scrollToBottom();
 
                 //     // Parse so far
-                //     this.progress = await window.electron.X.indexParseDirectMessages(this.account.id, this.isFirstRun);
+                //     this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
                 //     this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                 //     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
                 //     console.log("progress", this.progress);
@@ -375,12 +375,12 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 this.jobs[indexJob].status = "finished";
                 this.jobs[indexJob].progressJSON = JSON.stringify(this.progress);
                 await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[indexJob]));
-                this.log("runJob", `indexDirectMessages job finished: ${this.progress}`);
+                this.log("runJob", `indexDMs job finished: ${this.progress}`);
 
                 break;
 
-            case "archiveDirectMessages":
-                console.log("archiveDirectMessages: NOT IMPLEMENTED");
+            case "archiveDMs":
+                console.log("archiveDMs: NOT IMPLEMENTED");
                 break;
 
             case "deleteTweets":
@@ -391,8 +391,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 console.log("deleteLikes: NOT IMPLEMENTED");
                 break;
 
-            case "deleteDirectMessages":
-                console.log("deleteDirectMessages: NOT IMPLEMENTED");
+            case "deleteDMs":
+                console.log("deleteDMs: NOT IMPLEMENTED");
                 break;
         }
     }

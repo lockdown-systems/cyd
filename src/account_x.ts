@@ -29,10 +29,10 @@ export class XAccountController {
     private progress: XProgress = {
         currentJob: "indexTweets",
         isIndexTweetsFinished: false,
-        isIndexDirectMessagesFinished: false,
+        isIndexDMsFinished: false,
         isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
-        isArchiveDirectMessagesFinished: false,
+        isArchiveDMsFinished: false,
         isDeleteFinished: false,
         tweetsIndexed: 0,
         retweetsIndexed: 0,
@@ -512,7 +512,7 @@ export class XAccountController {
         console.log(`XAccountController.indexParseDMs: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexDirectMessages";
-        this.progress.isIndexDirectMessagesFinished = false;
+        this.progress.isIndexDMsFinished = false;
 
         this.mitmController.responseData.forEach(async (_response, indexResponse) => {
             if (await this.indexParseDMResponseData(indexResponse)) {
@@ -523,9 +523,21 @@ export class XAccountController {
         return this.progress;
     }
 
-    async indexFinished(): Promise<XProgress> {
-        console.log('XAccountController.indexFinished');
-        this.progress.isIndexFinished = true;
+    async indexTweetsFinished(): Promise<XProgress> {
+        console.log('XAccountController.indexTweetsFinished');
+        this.progress.isIndexTweetsFinished = true;
+        return this.progress;
+    }
+
+    async indexDMsFinished(): Promise<XProgress> {
+        console.log('XAccountController.indexDMsFinished');
+        this.progress.isIndexDMsFinished = true;
+        return this.progress;
+    }
+
+    async indexLikesFinished(): Promise<XProgress> {
+        console.log('XAccountController.indexLikesFinished');
+        this.progress.isIndexLikesFinished = true;
         return this.progress;
     }
 
@@ -696,14 +708,34 @@ export const defineIPCX = () => {
         return await controller.indexParseTweets(isFirstRun);
     });
 
-    ipcMain.handle('X:indexParseDirectMessages', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseDMs', async (_, accountID: number): Promise<XProgress> => {
         const controller = getXAccountController(accountID);
-        return await controller.indexParseDirectMessages(isFirstRun);
+        return await controller.indexParseDMs();
     });
 
-    ipcMain.handle('X:indexFinished', async (_, accountID: number): Promise<XProgress> => {
+    ipcMain.handle('X:indexTweetsFinished', async (_, accountID: number): Promise<XProgress> => {
         const controller = getXAccountController(accountID);
-        return await controller.indexFinished();
+        return await controller.indexTweetsFinished();
+    });
+
+    ipcMain.handle('X:indexDMsFinished', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexDMsFinished();
+    });
+
+    ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexLikesFinished();
+    });
+
+    ipcMain.handle('X:indexDMsFinished', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexDMsFinished();
+    });
+
+    ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexLikesFinished();
     });
 
     ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
