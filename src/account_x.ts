@@ -727,16 +727,6 @@ export const defineIPCX = () => {
         return await controller.indexLikesFinished();
     });
 
-    ipcMain.handle('X:indexDMsFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexDMsFinished();
-    });
-
-    ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexLikesFinished();
-    });
-
     ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweetsStart();

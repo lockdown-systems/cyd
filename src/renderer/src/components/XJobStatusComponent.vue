@@ -27,12 +27,12 @@ const getJobTypeText = (jobType: string) => {
         login: 'Logging in',
         indexTweets: 'Indexing tweets',
         indexLikes: 'Indexing likes',
-        indexDirectMessages: 'Indexing DMs',
+        indexDMs: 'Indexing DMs',
         archiveTweets: 'Archiving tweets',
-        archiveDirectMessages: 'Archiving DMs',
+        archiveDMs: 'Archiving DMs',
         deleteTweets: 'Deleting tweets',
         deleteLikes: 'Deleting likes',
-        deleteDirectMessages: 'Deleting DMs'
+        deleteDMs: 'Deleting DMs'
     };
     return jobTypeTexts[jobType] || '';
 };

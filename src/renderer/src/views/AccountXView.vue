@@ -40,7 +40,7 @@ watch(
 
 // Settings
 const archiveTweets = ref(false);
-const archiveDirectMessages = ref(false);
+const archiveDMs = ref(false);
 const deleteTweets = ref(false);
 const deleteTweetsDaysOld = ref(0);
 const deleteTweetsLikesThresholdEnabled = ref(false);
@@ -51,8 +51,8 @@ const deleteRetweets = ref(false);
 const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
-const deleteDirectMessages = ref(false);
-const deleteDirectMessagesDaysOld = ref(0);
+const deleteDMs = ref(false);
+const deleteDMsDaysOld = ref(0);
 
 const updateSettings = async () => {
     console.log('Updating settings')
@@ -67,7 +67,7 @@ const updateSettings = async () => {
             accessedAt: new Date(),
             username: props.account.xAccount?.username || '',
             archiveTweets: archiveTweets.value,
-            archiveDirectMessages: archiveDirectMessages.value,
+            archiveDMs: archiveDMs.value,
             deleteTweets: deleteTweets.value,
             deleteTweetsDaysOld: deleteTweetsDaysOld.value,
             deleteTweetsLikesThresholdEnabled: deleteTweetsLikesThresholdEnabled.value,
@@ -78,8 +78,8 @@ const updateSettings = async () => {
             deleteRetweetsDaysOld: deleteRetweetsDaysOld.value,
             deleteLikes: deleteLikes.value,
             deleteLikesDaysOld: deleteLikesDaysOld.value,
-            deleteDirectMessages: deleteDirectMessages.value,
-            deleteDirectMessagesDaysOld: deleteDirectMessagesDaysOld.value
+            deleteDMs: deleteDMs.value,
+            deleteDMsDaysOld: deleteDMsDaysOld.value
         }
     };
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
@@ -128,7 +128,7 @@ const runNextState = async () => {
 onMounted(async () => {
     if (props.account.xAccount !== null) {
         archiveTweets.value = props.account.xAccount.archiveTweets;
-        archiveDirectMessages.value = props.account.xAccount.archiveDirectMessages;
+        archiveDMs.value = props.account.xAccount.archiveDMs;
         deleteTweets.value = props.account.xAccount.deleteTweets;
         deleteTweetsDaysOld.value = props.account.xAccount.deleteTweetsDaysOld;
         deleteTweetsLikesThresholdEnabled.value = props.account.xAccount.deleteTweetsLikesThresholdEnabled;
@@ -139,8 +139,8 @@ onMounted(async () => {
         deleteRetweetsDaysOld.value = props.account.xAccount.deleteRetweetsDaysOld;
         deleteLikes.value = props.account.xAccount.deleteLikes;
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
-        deleteDirectMessages.value = props.account.xAccount.deleteDirectMessages;
-        deleteDirectMessagesDaysOld.value = props.account.xAccount.deleteDirectMessagesDaysOld;
+        deleteDMs.value = props.account.xAccount.deleteDMs;
+        deleteDMsDaysOld.value = props.account.xAccount.deleteDMsDaysOld;
     }
 
     if (webviewComponent.value !== null) {
@@ -179,8 +179,8 @@ onUnmounted(async () => {
         <XProgressComponent v-if="progress" :progress="progress" :account-i-d="account.id" />
 
         <!-- Webview -->
-        <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
-            :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
+        <webview ref="webviewComponent" src="about:blank" class="webview mt-3"
+            :partition="`persist:account-${account.id}`" :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
 
         <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
@@ -192,9 +192,8 @@ onUnmounted(async () => {
                         <label class="form-check-label" for="archiveTweets">Archive tweets</label>
                     </div>
                     <div class="mb-3 form-check">
-                        <input id="archiveDirectMessages" v-model="archiveDirectMessages" type="checkbox"
-                            class="form-check-input">
-                        <label class="form-check-label" for="archiveDirectMessages">Archive direct messages</label>
+                        <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="archiveDMs">Archive direct messages</label>
                     </div>
                     <button type="submit" class="btn btn-primary" @click="startArchivingClicked">
                         Start Archiving
@@ -314,19 +313,18 @@ onUnmounted(async () => {
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="form-check mb-2">
-                            <input id="deleteDirectMessages" v-model="deleteDirectMessages" type="checkbox"
-                                class="form-check-input">
-                            <label class="form-check-label mr-1" for="deleteDirectMessages">
+                            <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
+                            <label class="form-check-label mr-1" for="deleteDMs">
                                 Delete direct messages
                             </label>
                         </div>
                         <div class="d-flex align-items-center mb-2">
-                            <label class="form-check-label mr-1 no-wrap" for="deleteDirectMessagesDaysOld">
+                            <label class="form-check-label mr-1 no-wrap" for="deleteDMsDaysOld">
                                 older than
                             </label>
                             <div class="input-group">
-                                <input id="deleteDirectMessagesDaysOld" v-model="deleteDirectMessagesDaysOld"
-                                    type="text" class="form-control form-short">
+                                <input id="deleteDMsDaysOld" v-model="deleteDMsDaysOld" type="text"
+                                    class="form-control form-short">
                                 <div class="input-group-append">
                                     <span class="input-group-text">days</span>
                                 </div>
@@ -334,7 +332,7 @@ onUnmounted(async () => {
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary"
-                        :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDirectMessages)"
+                        :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDMs)"
                         @click="startDeletingClicked">
                         Start Deleting
                     </button>

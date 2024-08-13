@@ -242,7 +242,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                     // Check if we're done
                     if (!this.progress?.isRateLimited && !moreToScroll) {
-                        this.progress = await window.electron.X.indexFinished(this.account.id);
+                        this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
                         break;
                     }
 
@@ -334,38 +334,41 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 try {
                     await this.waitForSelector('div[aria-label="Timeline: Messages"]');
                 } catch (e) {
-                    // // Run indexParseDMs so we can see if we were rate limited
-                    // this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
-                    // this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                    // await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                    // console.log("progress", this.progress);
+                    // Run indexParseDMs so we can see if we were rate limited
+                    this.progress = await window.electron.X.indexParseDMs(this.account.id);
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                    console.log("progress", this.progress);
 
-                    // if (this.progress.isRateLimited) {
-                    //     await this.handleRateLimit();
-                    // }
+                    if (this.progress.isRateLimited) {
+                        await this.handleRateLimit();
+                    }
                 }
 
-                // while (this.progress === null || this.progress.isIndexFinished === false) {
-                //     // Scroll to bottom
-                //     const moreToScroll = await this.scrollToBottom();
+                while (this.progress === null || this.progress.isIndexDMsFinished === false) {
+                    // Wait 30 seconds
+                    await new Promise(resolve => setTimeout(resolve, 30000));
 
-                //     // Parse so far
-                //     this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
-                //     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                //     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                //     console.log("progress", this.progress);
+                    // Scroll to bottom
+                    const moreToScroll = await this.scrollToBottom();
 
-                //     // Check if we're done
-                //     if (!this.progress?.isRateLimited && !moreToScroll) {
-                //         this.progress = await window.electron.X.indexFinished(this.account.id);
-                //         break;
-                //     }
+                    // Parse so far
+                    this.progress = await window.electron.X.indexParseDMs(this.account.id);
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                    console.log("progress", this.progress);
 
-                //     // Rate limited?
-                //     if (this.progress.isRateLimited) {
-                //         await this.handleRateLimit();
-                //     }
-                // }
+                    // Check if we're done
+                    if (!this.progress?.isRateLimited && !moreToScroll) {
+                        this.progress = await window.electron.X.indexDMsFinished(this.account.id);
+                        break;
+                    }
+
+                    // Rate limited?
+                    if (this.progress.isRateLimited) {
+                        await this.handleRateLimit();
+                    }
+                }
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
@@ -404,7 +407,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
         switch (this.state) {
             case State.Login:
                 this.instructions = `
-Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, retweets, likes, and direct messages. To get started, log in to your X account below.
+Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
+retweets, likes, and direct messages. **To get started, log in to your X account below.**
 `;
                 await this.login();
                 this.state = State.Dashboard;
