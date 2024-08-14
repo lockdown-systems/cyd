@@ -68,6 +68,7 @@ export class AccountXViewModel extends BaseViewModel {
             jobTypes.push("indexDMs");
             jobTypes.push("archiveDMs");
         }
+        jobTypes.push("archiveBuild");
 
         this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
         this.state = State.RunJobs;
@@ -402,6 +403,26 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
             case "archiveDMs":
                 console.log("archiveDMs: NOT IMPLEMENTED");
+                break;
+
+            case "archiveBuild":
+                this.showBrowser = false;
+                this.instructions = `
+**${this.actionString}**
+
+I'm building a searchable archive web page in HTML.
+`;
+
+                // Build the archive
+                await window.electron.X.archiveBuild(this.account.id);
+
+                // Job finished
+                this.jobs[iJob].finishedAt = new Date();
+                this.jobs[iJob].status = "finished";
+                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                this.log("runJob", `archiveBuild job finished: ${this.progress}`);
+
                 break;
 
             case "deleteTweets":

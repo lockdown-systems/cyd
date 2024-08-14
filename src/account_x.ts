@@ -580,35 +580,33 @@ export class XAccountController {
         return null;
     }
 
-    // This looks at output path, checks for all expected files, and returns a list of filenames that are there.
-    // The renderer will display another one it hasn't displayed before every second, to show the progress
-    async archiveTweetsGetProgress(): Promise<string[]> {
-        if (this.account) {
-            const accountDataPath = getAccountDataPath("X", this.account.username);
-            const outputPath = path.join(accountDataPath, "Archived Tweets");
-
-            try {
-                const files = fs.readdirSync(outputPath);
-                return files;
-            } catch (error) {
-                console.error(`Error reading directory ${outputPath}:`, error);
-                return [];
-            }
+    async archiveBuild(): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
         }
-        return [];
-    }
 
-    async archiveTweetsDisplayTweet(webContentsID: number, filename: string) {
+        // TODO: build the archive, but for now just place an index.html file there
         if (this.account) {
-            const accountDataPath = getAccountDataPath("X", this.account.username);
-            const outputPath = path.join(accountDataPath, "Archived Tweets");
-            const filePath = path.join(outputPath, filename);
-            const wc = webContents.fromId(webContentsID);
-            if (wc) {
-                await wc.loadFile(filePath);
-            }
+            const indexPath = path.join(getAccountDataPath("X", this.account.username), "index.html");
+            const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X archive placeholder</title>
+</head>
+<body>
+    <h1>X archive placeholder</h1>
+</body>
+</html>
+`;
 
+            // Write the HTML content to the file
+            fs.writeFileSync(indexPath, htmlContent);
         }
+
+        return true;
     }
 
     async openFolder(folderName: string) {
@@ -734,14 +732,9 @@ export const defineIPCX = () => {
         return await controller.archiveTweetsStart();
     });
 
-    ipcMain.handle('X:archiveTweetsGetProgress', async (_, accountID: number): Promise<string[]> => {
+    ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {
         const controller = getXAccountController(accountID);
-        return await controller.archiveTweetsGetProgress();
-    });
-
-    ipcMain.handle('X:archiveTweetsDisplayTweet', async (_, accountID: number, webContentsID: number, filename: string) => {
-        const controller = getXAccountController(accountID);
-        await controller.archiveTweetsDisplayTweet(webContentsID, filename);
+        return await controller.archiveBuild();
     });
 
     ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {

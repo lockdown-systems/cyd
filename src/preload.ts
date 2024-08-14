@@ -91,11 +91,8 @@ contextBridge.exposeInMainWorld('electron', {
         archiveTweetsStart: (accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
             return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
         },
-        archiveTweetsGetProgress: (accountID: number): Promise<string[]> => {
-            return ipcRenderer.invoke('X:archiveTweetsGetProgress', accountID)
-        },
-        archiveTweetsDisplayTweet: (accountID: number, webContentsID: number, filename: string) => {
-            ipcRenderer.invoke('X:archiveTweetsDisplayTweet', accountID, webContentsID, filename)
+        archiveBuild: (accountID: number): Promise<boolean> => {
+            return ipcRenderer.invoke('X:archiveBuild', accountID)
         },
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);

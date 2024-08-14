@@ -35,6 +35,7 @@ const getJobTypeText = (jobType: string) => {
         indexDMs: 'Indexing DMs',
         archiveTweets: 'Archiving tweets',
         archiveDMs: 'Archiving DMs',
+        archiveBuild: 'Building archive',
         deleteTweets: 'Deleting tweets',
         deleteLikes: 'Deleting likes',
         deleteDMs: 'Deleting DMs'
