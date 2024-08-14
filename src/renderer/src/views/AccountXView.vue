@@ -184,8 +184,8 @@ onUnmounted(async () => {
 
         <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
-            <h2>Archive my data</h2>
-            <div class="container mb-4">
+            <div class="container mb-4 mt-3">
+                <h2>Archive my data</h2>
                 <form @submit.prevent>
                     <div class=" mb-3 form-check">
                         <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
@@ -195,14 +195,15 @@ onUnmounted(async () => {
                         <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
                         <label class="form-check-label" for="archiveDMs">Archive direct messages</label>
                     </div>
-                    <button type="submit" class="btn btn-primary" @click="startArchivingClicked">
+                    <button type="submit" class="btn btn-primary" :disabled="!(archiveTweets || archiveDMs)"
+                        @click="startArchivingClicked">
                         Start Archiving
                     </button>
                 </form>
             </div>
 
-            <h2>Delete my data</h2>
             <div class="container mb-4">
+                <h2>Delete my data</h2>
                 <form @submit.prevent>
                     <div class="d-flex align-items-center">
                         <div class="form-check mb-2">
