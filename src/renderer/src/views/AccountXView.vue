@@ -147,6 +147,11 @@ const runNextState = async () => {
     }
 };
 
+const reset = async () => {
+    await accountXViewModel.value?.reset()
+    await startStateLoop();
+};
+
 onMounted(async () => {
     const path = await window.electron.getAccountDataPath(props.account.id, '');
     if (path) {
@@ -395,6 +400,10 @@ onUnmounted(async () => {
                         </a>
                     </p>
                     <p>
+                        If you want to download new versions of your tweets or DM conversations, delete the HTML files
+                        you want to re-archive and then archive your X data again.
+                    </p>
+                    <p>
                         You can browse your archive by loading <a href="#" class="filesystem-path"
                             @click.prevent="openArchive">index.html</a>.
                     </p>
@@ -405,7 +414,7 @@ onUnmounted(async () => {
             </div>
             <div>
                 <div class="container mt-3">
-                    <button class="btn btn-primary" @click="accountXViewModel?.reset()">
+                    <button class="btn btn-primary" @click="reset()">
                         Continue
                     </button>
                 </div>
