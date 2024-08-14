@@ -449,7 +449,7 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
                 this.state = State.FinishedRunningJobs;
                 this.showBrowser = false;
                 await this.loadURL("about:blank");
-                this.instructions = this.actionFinishedString;
+                this.instructions = `**${this.actionFinishedString}**`;
                 break;
         }
     }
