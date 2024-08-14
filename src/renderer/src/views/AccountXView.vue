@@ -129,7 +129,10 @@ const startStateLoop = async () => {
     while (isWebviewMounted.value) {
         await runNextState();
 
-        if (accountXViewModel.value?.state === State.DashboardDisplay) {
+        if (
+            accountXViewModel.value?.state === State.DashboardDisplay ||
+            accountXViewModel.value?.state === State.FinishedRunningJobs
+        ) {
             break;
         }
 
