@@ -1,5 +1,6 @@
 import process from 'process';
 import os from 'os';
+import path from 'path';
 import log from 'electron-log/main';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog, shell, webContents } from 'electron';
@@ -8,10 +9,13 @@ import {
     runMainMigrations,
     getConfig,
     setConfig,
-    defineIPCDatabase
+    defineIPCDatabase,
+    getAccount,
+    getAccountUsername,
 } from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
+import { getAccountDataPath } from './helpers';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -132,6 +136,24 @@ async function createWindow() {
             const wc = webContents.fromId(webContentsId);
             if (wc) {
                 await wc.loadFile(filename);
+            }
+        });
+
+        ipcMain.handle('getAccountDataPath', async (_, accountID: number, filename: string): Promise<string | null> => {
+            const account = getAccount(accountID);
+            if (!account) {
+                return null;
+            }
+            const username = await getAccountUsername(account);
+            if (!username) {
+                return null;
+            }
+
+            const archivePath = getAccountDataPath(account.type, username);
+            if (filename == '') {
+                return archivePath;
+            } else {
+                return path.join(archivePath, filename);
             }
         });
 

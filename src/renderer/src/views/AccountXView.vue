@@ -47,6 +47,17 @@ watch(
     { deep: true, }
 );
 
+// Paths
+const archivePath = ref('');
+
+const openArchiveFolder = async () => {
+    await window.electron.X.openFolder(props.account.id, "");
+};
+
+const openArchive = async () => {
+    await window.electron.X.openFolder(props.account.id, "index.html");
+};
+
 // Settings
 const archiveTweets = ref(false);
 const archiveDMs = ref(false);
@@ -128,13 +139,17 @@ const startStateLoop = async () => {
 };
 
 const runNextState = async () => {
-    console.log('Running next state', accountXViewModel.value);
     if (accountXViewModel.value !== null) {
         await accountXViewModel.value.run();
     }
 };
 
 onMounted(async () => {
+    const path = await window.electron.getAccountDataPath(props.account.id, '');
+    if (path) {
+        archivePath.value = path;
+    }
+
     if (props.account.xAccount !== null) {
         archiveTweets.value = props.account.xAccount.archiveTweets;
         archiveDMs.value = props.account.xAccount.archiveDMs;
@@ -181,13 +196,14 @@ onUnmounted(async () => {
                 class="flex-grow-1" :class="{ 'w-100': currentJobs.length === 0 }" />
 
             <!-- Job status -->
-            <XJobStatusComponent v-if="currentJobs.length > 0" :jobs="currentJobs" :is-paused="isPaused"
-                class="job-status-component" @on-pause="accountXViewModel?.pause()"
-                @on-resume="accountXViewModel?.resume()" />
+            <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
+                :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
+                @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()" />
         </div>
 
         <!-- Progress -->
-        <XProgressComponent v-if="progress" :progress="progress" :account-i-d="account.id" />
+        <XProgressComponent v-if="progress && accountXViewModel?.state == State.RunJobs" :progress="progress"
+            :account-i-d="account.id" />
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview mt-3"
@@ -351,6 +367,47 @@ onUnmounted(async () => {
                 </form>
             </div>
         </div>
+
+        <!-- Finished running jobs -->
+        <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
+            <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
+                <p v-if="account.xAccount?.archiveTweets && !account.xAccount?.archiveDMs">
+                    I have archived <b>{{ accountXViewModel.progress?.tweetsArchived.toLocaleString() }} tweets</b>.
+                </p>
+                <p v-if="account.xAccount?.archiveTweets && account.xAccount?.archiveDMs">
+                    I have archived <b>{{ accountXViewModel.progress?.tweetsArchived.toLocaleString() }} tweets</b> and
+                    <b>{{ accountXViewModel.progress?.dmConversationsArchived.toLocaleString() }} direct message
+                        conversations</b>.
+                </p>
+                <p v-if="!account.xAccount?.archiveTweets && account.xAccount?.archiveDMs">
+                    I have archived <b>{{ accountXViewModel.progress?.dmConversationsArchived.toLocaleString() }} direct
+                        message conversations</b>.
+                </p>
+
+                <div v-if="account.xAccount?.archiveTweets">
+                    <p>Your X archive is stored locally on your computer at:</p>
+                    <p>
+                        <a href="#" class="filesystem-path" @click.prevent="openArchiveFolder">
+                            {{ archivePath }}
+                        </a>
+                    </p>
+                    <p>
+                        You can browse your archive by loading <a href="#" class="filesystem-path"
+                            @click.prevent="openArchive">index.html</a>.
+                    </p>
+                </div>
+            </div>
+            <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
+                <p>DELETE NOT IMPLEMENTED YET</p>
+            </div>
+            <div>
+                <div class="container mt-3">
+                    <button class="btn btn-primary" @click="accountXViewModel?.reset()">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -382,5 +439,11 @@ onUnmounted(async () => {
 
 .job-status-component {
     width: 220px;
+}
+
+.filesystem-path {
+    font-family: monospace;
+    text-decoration: none;
+    font-weight: bold;
 }
 </style>

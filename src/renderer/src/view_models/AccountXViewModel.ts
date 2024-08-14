@@ -37,16 +37,20 @@ export class AccountXViewModel extends BaseViewModel {
             case "archive":
                 if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
                     this.actionString = "I'm archiving your tweets and direct messages.";
+                    this.actionFinishedString = "I've finished archiving your tweets and direct messages!";
                 } else {
                     if (this.account.xAccount?.archiveDMs) {
                         this.actionString = "I'm archiving your direct messages.";
+                        this.actionFinishedString = "I've finished archiving your direct messages!";
                     } else {
                         this.actionString = "I'm archiving your tweets.";
+                        this.actionFinishedString = "I've finished archiving your tweets!";
                     }
                 }
                 break;
             case "delete":
                 this.actionString = "I'm deleting your NOT IMPLEMENTED YET.";
+                this.actionFinishedString = "I've finished deleting your NOT IMPLEMENTED YET!";
                 break;
         }
     }
@@ -72,6 +76,14 @@ export class AccountXViewModel extends BaseViewModel {
     async startDeleting() {
         // TODO: implement
         console.log("startDeleting: NOT IMPLEMENTED");
+    }
+
+    async reset() {
+        this.progress = null;
+        this.jobs = [];
+        this.isFirstRun = false;
+        this.archiveTweetsStartResponse = null;
+        this.state = State.Dashboard;
     }
 
     rateLimitSecondsLeft() {
@@ -433,6 +445,11 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
                 for (let i = 0; i < this.jobs.length; i++) {
                     await this.runJob(i);
                 }
+
+                this.state = State.FinishedRunningJobs;
+                this.showBrowser = false;
+                await this.loadURL("about:blank");
+                this.instructions = this.actionFinishedString;
                 break;
         }
     }

@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electron', {
     loadFileInWebview: (webContentsId: number, filename: string) => {
         ipcRenderer.invoke('loadFileInWebview', webContentsId, filename)
     },
+    getAccountDataPath: (accountID: number, filename: string): Promise<string | null> => {
+        return ipcRenderer.invoke('getAccountDataPath', accountID, filename)
+    },
     database: {
         getConfig: (key: string): Promise<string> => {
             return ipcRenderer.invoke('database:getConfig', key);

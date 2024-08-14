@@ -10,6 +10,7 @@ export class BaseViewModel {
     public state: string;
     public action: string;
     public actionString: string;
+    public actionFinishedString: string;
     public domReady: boolean;
     public stoppedLoading: boolean;
     public isPaused: boolean;
@@ -26,6 +27,7 @@ export class BaseViewModel {
         this.state = "";
         this.action = "";
         this.actionString = "";
+        this.actionFinishedString = "";
         this.instructions = "";
         this.showBrowser = false;
         this.domReady = false;

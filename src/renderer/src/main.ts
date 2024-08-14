@@ -15,6 +15,7 @@ declare global {
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             openURL: (url: string) => void;
             loadFileInWebview: (webContentsId: number, filename: string) => void;
+            getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,
             database: {
                 getConfig: (key: string) => Promise<string>;
                 setConfig: (key: string, value: string) => void;
