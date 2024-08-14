@@ -12,6 +12,7 @@ export class BaseViewModel {
     public actionString: string;
     public domReady: boolean;
     public stoppedLoading: boolean;
+    public isPaused: boolean;
 
     public showBrowser: boolean;
     public instructions: string;
@@ -29,6 +30,7 @@ export class BaseViewModel {
         this.showBrowser = false;
         this.domReady = false;
         this.stoppedLoading = false;
+        this.isPaused = false;
 
         // Wait for the webview to finish loading
         this.getWebview()?.addEventListener("did-stop-loading", async () => {
@@ -168,6 +170,8 @@ export class BaseViewModel {
 
     // Return true if we scrolled, and false if we can't scroll anymore
     async scrollToBottom() {
+        await this.waitForPause();
+
         // Find the last scroll position
         const scrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
 
@@ -220,5 +224,23 @@ export class BaseViewModel {
         })()
         `;
         return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // Pause and resume the jobs
+
+    pause() {
+        this.isPaused = true;
+        this.log("pause", "paused");
+    }
+
+    resume() {
+        this.isPaused = false;
+        this.log("resume", "resumed");
+    }
+
+    async waitForPause() {
+        while (this.isPaused) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
     }
 }

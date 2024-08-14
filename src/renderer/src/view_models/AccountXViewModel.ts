@@ -150,6 +150,8 @@ export class AccountXViewModel extends BaseViewModel {
         // We're logged in
         this.log("runJob", "login succeeded");
 
+        await this.waitForPause();
+
         // Get the username
         let username = null;
         if (this.webContentsID) {
@@ -176,6 +178,8 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async runJob(iJob: number) {
+        await this.waitForPause();
+
         // Start the job
         this.jobs[iJob].startedAt = new Date();
         this.jobs[iJob].status = "running";
@@ -333,6 +337,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await this.loadURL("https://x.com/messages");
                 try {
                     await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+
+                    await new Promise(resolve => setTimeout(resolve, 300000));
                 } catch (e) {
                     // Run indexParseDMs so we can see if we were rate limited
                     this.progress = await window.electron.X.indexParseDMs(this.account.id);
@@ -417,7 +423,9 @@ retweets, likes, and direct messages. **To get started, log in to your X account
             case State.Dashboard:
                 this.showBrowser = false;
                 await this.loadURL("about:blank");
-                this.instructions = `What would you like to do?`;
+                this.instructions = `
+You're signed into **@${this.account.xAccount?.username}** on X. What would you like to do?
+`;
                 this.state = State.DashboardDisplay;
                 break;
 

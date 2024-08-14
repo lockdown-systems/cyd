@@ -17,8 +17,10 @@ const props = defineProps<{
 const emit = defineEmits(['onRefreshClicked']);
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
+
 const progress = ref<XProgress | null>(null);
 const currentJobs = ref<XJob[]>([]);
+const isPaused = ref<boolean>(false);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
@@ -35,6 +37,13 @@ watch(
 watch(
     () => accountXViewModel.value?.jobs,
     (newJobs) => { if (newJobs) currentJobs.value = newJobs; },
+    { deep: true, }
+);
+
+// Keep isPaused updated
+watch(
+    () => accountXViewModel.value?.isPaused,
+    (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
     { deep: true, }
 );
 
@@ -172,7 +181,9 @@ onUnmounted(async () => {
                 class="flex-grow-1" :class="{ 'w-100': currentJobs.length === 0 }" />
 
             <!-- Job status -->
-            <XJobStatusComponent v-if="currentJobs.length > 0" :jobs="currentJobs" class="job-status-component" />
+            <XJobStatusComponent v-if="currentJobs.length > 0" :jobs="currentJobs" :is-paused="isPaused"
+                class="job-status-component" @on-pause="accountXViewModel?.pause()"
+                @on-resume="accountXViewModel?.resume()" />
         </div>
 
         <!-- Progress -->

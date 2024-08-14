@@ -359,8 +359,8 @@ export class XAccountController {
         return true;
     }
 
-    // Returns true if more data needs to be indexed
-    // Returns false if we are caught up
+    // Parses the response data so far to index tweets that have been collected
+    // Returns the progress object
     async indexParseTweets(isFirstRun: boolean): Promise<XProgress> {
         console.log(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
@@ -368,11 +368,13 @@ export class XAccountController {
         this.progress.isIndexTweetsFinished = false;
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (this.indexParseTweetsResponseData(i, isFirstRun)) {
+            if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
+                console.log('XAccountController.indexParseTweets: progress:', this.progress);
                 return this.progress;
             }
         }
 
+        console.log('XAccountController.indexParseTweets: progress:', this.progress);
         return this.progress;
     }
 

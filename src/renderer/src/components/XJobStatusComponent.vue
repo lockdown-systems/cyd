@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, defineProps } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, defineProps, defineEmits } from 'vue';
 import type { XJob } from '../../../shared_types';
 
-defineProps<{ jobs: XJob[] }>();
+defineProps<{
+    jobs: XJob[],
+    isPaused: boolean
+}>();
+
+const emit = defineEmits(['onPause', 'onResume']);
 
 const runningIconIndex = ref(0);
 const runningIcons = [
@@ -63,6 +68,14 @@ onBeforeUnmount(() => {
             <div class="job-type">
                 {{ getJobTypeText(job.jobType) }}
             </div>
+        </div>
+        <div class="pause-resume">
+            <button v-if="!isPaused" class="btn btn-secondary btn-sm" @click="emit('onPause')">
+                <i class="fa-solid fa-pause" /> Pause
+            </button>
+            <button v-if="isPaused" class="btn btn-secondary btn-sm" @click="emit('onResume')">
+                <i class="fa-solid fa-play" /> Resume
+            </button>
         </div>
     </div>
 </template>
