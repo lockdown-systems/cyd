@@ -346,42 +346,46 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
 
-                // Load the messages and wait for tweets to appear
-                await this.loadURL("https://x.com/messages");
-                try {
-                    await this.waitForSelector('div[aria-label="Timeline: Messages"]');
-                } catch (e) {
-                    // Run indexParseDMs so we can see if we were rate limited
-                    this.progress = await window.electron.X.indexParseDMs(this.account.id);
-                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                    console.log("progress", this.progress);
+                for (const url of ["https://x.com/messages", "https://x.com/messages/requests"]) {
 
-                    if (this.progress.isRateLimited) {
-                        await this.handleRateLimit();
-                    }
-                }
+                    // Load the messages and wait for tweets to appear
+                    await this.loadURL(url);
+                    try {
+                        await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+                    } catch (e) {
+                        // Run indexParseDMs so we can see if we were rate limited
+                        this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
+                        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                        console.log("progress", this.progress);
 
-                while (this.progress === null || this.progress.isIndexDMsFinished === false) {
-                    // Scroll to bottom
-                    const moreToScroll = await this.scrollToBottom();
-
-                    // Parse so far
-                    this.progress = await window.electron.X.indexParseDMs(this.account.id);
-                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                    console.log("progress", this.progress);
-
-                    // Check if we're done
-                    if (!this.progress?.isRateLimited && !moreToScroll) {
-                        this.progress = await window.electron.X.indexDMsFinished(this.account.id);
-                        break;
+                        if (this.progress.isRateLimited) {
+                            await this.handleRateLimit();
+                        }
                     }
 
-                    // Rate limited?
-                    if (this.progress.isRateLimited) {
-                        await this.handleRateLimit();
+                    while (this.progress === null || this.progress.isIndexDMsFinished === false) {
+                        // Scroll to bottom
+                        const moreToScroll = await this.scrollToBottom();
+
+                        // Parse so far
+                        this.progress = await window.electron.X.indexParseDMs(this.account.id, this.isFirstRun);
+                        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                        console.log("progress", this.progress);
+
+                        // Check if we're done
+                        if (!this.progress?.isRateLimited && !moreToScroll) {
+                            this.progress = await window.electron.X.indexDMsFinished(this.account.id);
+                            break;
+                        }
+
+                        // Rate limited?
+                        if (this.progress.isRateLimited) {
+                            await this.handleRateLimit();
+                        }
                     }
+
                 }
 
                 // Stop monitoring network requests
@@ -397,6 +401,18 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 break;
 
             case "archiveDMs":
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+I'm archiving your direct messages, starting with the oldest. This may take a while...
+`;
+
+                // // Initialize archiving of tweets
+                // this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
+                // console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
+
+
                 console.log("archiveDMs: NOT IMPLEMENTED");
                 break;
 

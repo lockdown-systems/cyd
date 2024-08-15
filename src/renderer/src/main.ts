@@ -38,7 +38,7 @@ declare global {
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParseTweets: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
-                indexParseDMs: (accountID: number) => Promise<XProgress>;
+                indexParseDMs: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexTweetsFinished: (accountID: number) => Promise<XProgress>;
                 indexDMsFinished: (accountID: number) => Promise<XProgress>;
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;
