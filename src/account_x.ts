@@ -237,7 +237,7 @@ export class XAccountController {
     async indexStart() {
         const ses = session.fromPartition(`persist:account-${this.account?.id}`);
         await ses.clearCache();
-        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/dm"]);
+        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
         await this.mitmController.startMonitoring();
     }
 
@@ -405,6 +405,7 @@ export class XAccountController {
     }
 
     async indexDMUser(user: XAPIUser) {
+        console.log("XAccountController.indexDMUser", user);
         if (!this.db) {
             this.initDB();
         }
@@ -437,6 +438,7 @@ export class XAccountController {
     }
 
     async indexDMConversation(conversation: XAPIConversation) {
+        console.log("XAccountController.indexDMConversation", conversation);
         if (!this.db) {
             this.initDB();
         }
@@ -477,10 +479,12 @@ export class XAccountController {
     }
 
     async indexParseDMResponseData(iResponse: number) {
+        console.log("XAccountController.indexParseDMResponseData", iResponse);
         const responseData = this.mitmController.responseData[iResponse];
 
         // Already processed?
         if (responseData.processed) {
+            console.log('XAccountController.indexParseDMResponseData: already processed');
             return;
         }
 
@@ -493,7 +497,7 @@ export class XAccountController {
             return;
         }
 
-        // Process the next response
+        // Process the response
         if (
             responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") &&
             responseData.status == 200
@@ -501,12 +505,14 @@ export class XAccountController {
             const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
 
             // Add the users
+            console.log(`XAccountController.indexParseDMResponseData: adding ${inbox_timeline.inbox_timeline.users.length} users`);
             for (const userID in inbox_timeline.inbox_timeline.users) {
                 const user = inbox_timeline.inbox_timeline.users[userID];
                 await this.indexDMUser(user);
             }
 
             // Add the conversations
+            console.log(`XAccountController.indexParseDMResponseData: adding ${inbox_timeline.inbox_timeline.conversations.length} conversations`);
             for (const conversationID in inbox_timeline.inbox_timeline.conversations) {
                 const conversation = inbox_timeline.inbox_timeline.conversations[conversationID];
                 await this.indexDMConversation(conversation);
@@ -516,6 +522,7 @@ export class XAccountController {
             console.log('XAccountController.indexParseDMResponseData: processed', this.progress);
         } else {
             // Skip response
+            console.log('XAccountController.indexParseDMResponseData: skipping response', responseData.url);
             this.mitmController.responseData[iResponse].processed = true;
         }
     }

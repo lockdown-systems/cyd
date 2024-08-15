@@ -350,8 +350,6 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await this.loadURL("https://x.com/messages");
                 try {
                     await this.waitForSelector('div[aria-label="Timeline: Messages"]');
-
-                    await new Promise(resolve => setTimeout(resolve, 300000));
                 } catch (e) {
                     // Run indexParseDMs so we can see if we were rate limited
                     this.progress = await window.electron.X.indexParseDMs(this.account.id);
@@ -365,9 +363,6 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 }
 
                 while (this.progress === null || this.progress.isIndexDMsFinished === false) {
-                    // Wait 30 seconds
-                    await new Promise(resolve => setTimeout(resolve, 30000));
-
                     // Scroll to bottom
                     const moreToScroll = await this.scrollToBottom();
 
