@@ -441,6 +441,7 @@ I'm building a searchable archive web page in HTML.
 
     async run() {
         this.log("run", "running");
+        this.progress = await window.electron.X.resetProgress(this.account.id);
         await this.waitForWebviewReady();
 
         switch (this.state) {

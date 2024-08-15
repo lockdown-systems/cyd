@@ -30,6 +30,7 @@ declare global {
                 savePage: (webContentsID: number, outputPath: string, basename: string) => Promise<boolean>;
             },
             X: {
+                resetProgress: (accountID: number) => Promise<XProgress>;
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
                 getLastFinishedJob: (accountID: number, jobType: string) => Promise<XJob | null>;
                 updateJob: (accountID: number, jobJSON: string) => void;

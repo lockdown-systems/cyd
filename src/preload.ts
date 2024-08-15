@@ -55,6 +55,9 @@ contextBridge.exposeInMainWorld('electron', {
         }
     },
     X: {
+        resetProgress: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:resetProgress', accountID)
+        },
         createJobs: (accountID: number, jobTypes: string[]): Promise<XJob[]> => {
             return ipcRenderer.invoke('X:createJobs', accountID, jobTypes)
         },

@@ -20,16 +20,9 @@ function formatDateToYYYYMMDD(dateString: string): string {
     return `${year}-${month}-${day}`;
 }
 
-export class XAccountController {
-    private account: XAccount | null;
-    private accountDataPath: string;
-
-    // Making this public so it can be accessed in tests
-    public db: Database.Database | null;
-
-    private mitmController: IMITMController;
-    private progress: XProgress = {
-        currentJob: "indexTweets",
+function emptyProgress(): XProgress {
+    return {
+        currentJob: "",
         isIndexTweetsFinished: false,
         isIndexDMsFinished: false,
         isIndexLikesFinished: false,
@@ -51,7 +44,18 @@ export class XAccountController {
         dmConversationsDeleted: 0,
         isRateLimited: false,
         rateLimitReset: null,
-    };
+    }
+}
+
+export class XAccountController {
+    private account: XAccount | null;
+    private accountDataPath: string;
+
+    // Making this public so it can be accessed in tests
+    public db: Database.Database | null;
+
+    private mitmController: IMITMController;
+    private progress: XProgress = emptyProgress();
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
@@ -134,6 +138,12 @@ export class XAccountController {
                 ]
             }
         ])
+    }
+
+    resetProgress(): XProgress {
+        console.log("XAccountController.resetProgress");
+        this.progress = emptyProgress();
+        return this.progress;
     }
 
     createJobs(jobTypes: string[]): XJob[] {
@@ -670,6 +680,11 @@ const getXAccountController = (accountID: number): XAccountController => {
 }
 
 export const defineIPCX = () => {
+    ipcMain.handle('X:resetProgress', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getXAccountController(accountID);
+        return controller.resetProgress();
+    });
+
     ipcMain.handle('X:createJobs', async (_, accountID: number, jobTypes: string[]): Promise<XJob[]> => {
         const controller = getXAccountController(accountID);
         return controller.createJobs(jobTypes);
