@@ -471,7 +471,17 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
                 this.state = State.FinishedRunningJobs;
                 this.showBrowser = false;
                 await this.loadURL("about:blank");
-                this.instructions = `**${this.actionFinishedString}**`;
+                this.instructions = `
+**${this.actionFinishedString}**
+
+`;
+                if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
+                    this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets**.`
+                } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
+                    this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets** and **${this.progress?.dmConversationsArchived} direct message conversations**.`
+                } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
+                    this.instructions += `I have archived **${this.progress?.dmConversationsArchived} direct message conversations**.`
+                }
                 break;
         }
     }

@@ -379,35 +379,20 @@ onUnmounted(async () => {
         <!-- Finished running jobs -->
         <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
             <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
-                <p v-if="account.xAccount?.archiveTweets && !account.xAccount?.archiveDMs">
-                    I have archived <b>{{ accountXViewModel.progress?.tweetsArchived.toLocaleString() }} tweets</b>.
+                <p>Your X archive is stored locally on your computer at:</p>
+                <p>
+                    <a href="#" class="filesystem-path" @click.prevent="openArchiveFolder">
+                        {{ archivePath }}
+                    </a>
                 </p>
-                <p v-if="account.xAccount?.archiveTweets && account.xAccount?.archiveDMs">
-                    I have archived <b>{{ accountXViewModel.progress?.tweetsArchived.toLocaleString() }} tweets</b> and
-                    <b>{{ accountXViewModel.progress?.dmConversationsArchived.toLocaleString() }} direct message
-                        conversations</b>.
+                <p>
+                    If you want to download new versions of your tweets or DM conversations, delete the HTML files
+                    you want to re-archive and then archive your X data again.
                 </p>
-                <p v-if="!account.xAccount?.archiveTweets && account.xAccount?.archiveDMs">
-                    I have archived <b>{{ accountXViewModel.progress?.dmConversationsArchived.toLocaleString() }} direct
-                        message conversations</b>.
+                <p>
+                    You can browse your archive by loading <a href="#" class="filesystem-path"
+                        @click.prevent="openArchive">index.html</a>.
                 </p>
-
-                <div v-if="account.xAccount?.archiveTweets">
-                    <p>Your X archive is stored locally on your computer at:</p>
-                    <p>
-                        <a href="#" class="filesystem-path" @click.prevent="openArchiveFolder">
-                            {{ archivePath }}
-                        </a>
-                    </p>
-                    <p>
-                        If you want to download new versions of your tweets or DM conversations, delete the HTML files
-                        you want to re-archive and then archive your X data again.
-                    </p>
-                    <p>
-                        You can browse your archive by loading <a href="#" class="filesystem-path"
-                            @click.prevent="openArchive">index.html</a>.
-                    </p>
-                </div>
             </div>
             <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
                 <p>DELETE NOT IMPLEMENTED YET</p>
