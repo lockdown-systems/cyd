@@ -271,3 +271,42 @@ export interface XAPIInboxInitialState {
         key_registry_state: any;
     }
 }
+
+export interface XAPIMessage {
+    message?: {
+        id: string,
+        time: string,
+        request_id: string,
+        conversation_id: string,
+        message_data: {
+            id: string,
+            time: string,
+            conversation_id?: string,
+            recipient_id?: string,
+            sender_id: string,
+            text: string,
+            edit_count?: number,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            entities?: any;
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        message_reactions: any
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    join_conversation?: any
+}
+
+export interface XAPIConversationTimeline {
+    conversation_timeline: {
+        status: string,
+        min_entry_id: string,
+        max_entry_id: string,
+        entries: XAPIMessage[],
+        users: {
+            [key: string]: XAPIUser
+        },
+        conversations: {
+            [key: string]: XAPIConversation
+        },
+    }
+}

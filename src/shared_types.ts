@@ -76,6 +76,7 @@ export type XProgress = {
     currentJob: string;
 
     isIndexTweetsFinished: boolean;
+    isIndexDMConversationsFinished: boolean;
     isIndexDMsFinished: boolean;
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
@@ -86,6 +87,7 @@ export type XProgress = {
     retweetsIndexed: number;
     dmUsersIndexed: number;
     dmConversationsIndexed: number;
+    dmMessagesIndexed: number;
     likesIndexed: number;
 
     totalTweetsToArchive: number;
@@ -110,6 +112,10 @@ export type XArchiveTweetsTweet = {
 export type XArchiveTweetsStartResponse = {
     outputPath: string;
     tweets: XArchiveTweetsTweet[]
+}
+
+export type XIndexDMsStartResponse = {
+    conversationIDs: string[]
 }
 
 export type XIsRateLimitedResponse = {

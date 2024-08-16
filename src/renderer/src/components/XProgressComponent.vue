@@ -70,7 +70,7 @@ onUnmounted(() => {
                     Indexed
                     <b>{{ progress.dmUsersIndexed.toLocaleString() }} users</b> and
                     <b>{{ progress.dmConversationsIndexed.toLocaleString() }} conversations</b>.
-                    <template v-if="progress.isIndexDMsFinished">
+                    <template v-if="progress.isIndexDMConversationsFinished">
                         Indexing complete!
                     </template>
                 </p>

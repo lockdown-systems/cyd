@@ -194,6 +194,30 @@ export class BaseViewModel {
         return true;
     }
 
+    // Return true if we scrolled, and false if we can't scroll anymore
+    async scrollToTop() {
+        await this.waitForPause();
+
+        // Find the last scroll position
+        const scrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+
+        await this.waitForLoadingToFinish();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Scroll to the top
+        this.log("scrollToTop", "scrolling to top")
+        await this.getWebview()?.executeJavaScript("window.scrollTo(0, 0)");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.waitForLoadingToFinish();
+
+        // Have we scrolled?
+        const newScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+        if (newScrollTop === scrollTop) {
+            return false;
+        }
+        return true;
+    }
+
     async scriptClickElement(selector: string): Promise<boolean> {
         const code = `
         (() => {

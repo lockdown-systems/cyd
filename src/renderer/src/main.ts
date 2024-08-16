@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from "../../shared_types";
+import type { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIndexDMsStartResponse, XIsRateLimitedResponse } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -38,7 +38,9 @@ declare global {
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParseTweets: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
-                indexParseDMs: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
+                indexParseDMConversations: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
+                indexDMsStart: (accountID: number) => Promise<XIndexDMsStartResponse>;
+                indexParseDMs: (accountID: number) => Promise<XProgress>;
                 indexTweetsFinished: (accountID: number) => Promise<XProgress>;
                 indexDMsFinished: (accountID: number) => Promise<XProgress>;
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;

@@ -1,0 +1,403 @@
+{
+    "conversation_timeline": {
+        "status": "AT_END",
+        "min_entry_id": "1549342902249201669",
+        "max_entry_id": "1757901867919536298",
+        "entries": [
+            {
+                "message": {
+                    "id": "1757901867919536298",
+                    "time": "1707951440233",
+                    "request_id": "684079e0-cb8c-11ee-8749-3951dcee7824",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1757901867919536298",
+                        "time": "1707951440000",
+                        "recipient_id": "1209344563589992448",
+                        "sender_id": "96752784",
+                        "text": "Oh no! I see that you can't anymore. My sincere condolences. You were wonderful and much needed.",
+                        "edit_count": 0
+                    }
+                }
+            },
+            {
+                "message": {
+                    "id": "1757901680719417859",
+                    "time": "1707951395600",
+                    "request_id": "4d98e5f0-cb8c-11ee-8749-3951dcee7824",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1757901680719417859",
+                        "time": "1707951395000",
+                        "recipient_id": "1209344563589992448",
+                        "sender_id": "96752784",
+                        "text": "HI Semipheral, do you still work on my twitter stream?"
+                    }
+                }
+            },
+            {
+                "message": {
+                    "id": "1588670156598910980",
+                    "time": "1667603456100",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1588670156598910980",
+                        "time": "1667603456000",
+                        "recipient_id": "96752784",
+                        "sender_id": "1209344563589992448",
+                        "text": "Since you've been using Semiphemeral, I have deleted 1953 tweets, unretweeted 1218 tweets, and unliked 3271 tweets for you.\n\nJust since last month, I've deleted 18 tweets, unretweeted 1 tweets, and unliked 63 tweets.\n\nSemiphemeral is free, but running this service costs money. Care to chip in? Visit here if you'd like to give a tip: https:\/\/t.co\/dPvZQ4EWtn",
+                        "edit_count": 0,
+                        "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "user_mentions": [],
+                            "urls": [
+                                {
+                                    "url": "https:\/\/t.co\/dPvZQ4EWtn",
+                                    "expanded_url": "https:\/\/semiphemeral.com\/tip",
+                                    "display_url": "semiphemeral.com\/tip",
+                                    "indices": [
+                                        335,
+                                        358
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "message": {
+                    "id": "1571104074778411012",
+                    "time": "1663415375852",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1571104074778411012",
+                        "time": "1663415375000",
+                        "recipient_id": "96752784",
+                        "sender_id": "1209344563589992448",
+                        "text": "Since you've been using Semiphemeral, I have deleted 1935 tweets, unretweeted 1217 tweets, and unliked 3208 tweets for you.\n\nJust since last month, I've deleted 17 tweets, unretweeted 11 tweets, and unliked 22 tweets.\n\nSemiphemeral is free, but running this service costs money. Care to chip in? Visit here if you'd like to give a tip: https:\/\/t.co\/dPvZQ4EWtn",
+                        "edit_count": 0,
+                        "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "user_mentions": [],
+                            "urls": [
+                                {
+                                    "url": "https:\/\/t.co\/dPvZQ4EWtn",
+                                    "expanded_url": "https:\/\/semiphemeral.com\/tip",
+                                    "display_url": "semiphemeral.com\/tip",
+                                    "indices": [
+                                        336,
+                                        359
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "message": {
+                    "id": "1560219199531884555",
+                    "time": "1660820219348",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1560219199531884555",
+                        "time": "1660820219000",
+                        "recipient_id": "96752784",
+                        "sender_id": "1209344563589992448",
+                        "text": "Since you've been using Semiphemeral, I have deleted 1918 tweets, unretweeted 1206 tweets, and unliked 3186 tweets for you.\n\nJust since last month, I've deleted 7 tweets, unretweeted 10 tweets, and unliked 43 tweets.\n\nSemiphemeral is free, but running this service costs money. Care to chip in? Visit here if you'd like to give a tip: https:\/\/t.co\/dPvZQ4EWtn",
+                        "edit_count": 0,
+                        "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "user_mentions": [],
+                            "urls": [
+                                {
+                                    "url": "https:\/\/t.co\/dPvZQ4EWtn",
+                                    "expanded_url": "https:\/\/semiphemeral.com\/tip",
+                                    "display_url": "semiphemeral.com\/tip",
+                                    "indices": [
+                                        335,
+                                        358
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "message": {
+                    "id": "1549347434261774341",
+                    "time": "1658228188502",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1549347434261774341",
+                        "time": "1658228188000",
+                        "recipient_id": "96752784",
+                        "sender_id": "1209344563589992448",
+                        "text": "Semiphemeral is free, but running this service costs money. Care to chip in?\n\nIf you tip any amount, even just $1, I will stop nagging you for a year. Otherwise, I'll gently remind you once a month.\n\n(It's fine if you want to ignore these DMs. I won't care. I'm a bot, so I don't have feelings).\n\nVisit here if you'd like to give a tip: https:\/\/t.co\/dPvZQ4EWtn",
+                        "edit_count": 0,
+                        "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "user_mentions": [],
+                            "urls": [
+                                {
+                                    "url": "https:\/\/t.co\/dPvZQ4EWtn",
+                                    "expanded_url": "https:\/\/semiphemeral.com\/tip",
+                                    "display_url": "semiphemeral.com\/tip",
+                                    "indices": [
+                                        337,
+                                        360
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "message": {
+                    "id": "1549347172780474376",
+                    "time": "1658228126154",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1549347172780474376",
+                        "time": "1658228126000",
+                        "recipient_id": "96752784",
+                        "sender_id": "1209344563589992448",
+                        "text": "Congratulations! Semiphemeral has deleted 1911 tweets, unretweeted 1196 tweets, and unliked 3143 tweets. Doesn't that feel nice?\n\nEach day, I will download your latest tweets and likes and then delete the old ones based on your settings. You can sit back, relax, and enjoy the privacy.\n\nYou can always change your settings, mark new tweets to never delete, and pause Semiphemeral from the website https:\/\/t.co\/tOdxcPWFYf.",
+                        "edit_count": 0,
+                        "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "user_mentions": [],
+                            "urls": [
+                                {
+                                    "url": "https:\/\/t.co\/tOdxcPWFYf",
+                                    "expanded_url": "https:\/\/semiphemeral.com\/dashboard",
+                                    "display_url": "semiphemeral.com\/dashboard",
+                                    "indices": [
+                                        397,
+                                        420
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "message_reactions": [
+                        {
+                            "id": "1549347252031856640",
+                            "time": "1658228145035",
+                            "conversation_id": "96752784-1209344563589992448",
+                            "message_id": "1549347172780474376",
+                            "reaction_key": "like",
+                            "sender_id": "96752784"
+                        }
+                    ]
+                }
+            },
+            {
+                "message": {
+                    "id": "1549342902249201669",
+                    "time": "1658227107998",
+                    "conversation_id": "96752784-1209344563589992448",
+                    "message_data": {
+                        "id": "1549342902249201669",
+                        "time": "1658227107000",
+                        "recipient_id": "96752784",
+                        "sender_id": "1209344563589992448",
+                        "text": "Good news! Semiphemeral finished downloading a copy of all 3235 of your tweets and all 3159 of your likes.\n\nThe next step is look through your tweets and manually mark which ones you want to make sure never get deleted. Visit https:\/\/t.co\/0qxhYOCoM7 to finish.\n\nWhen you're done, you can start deleting your tweets from the dashboard.",
+                        "edit_count": 0,
+                        "entities": {
+                            "hashtags": [],
+                            "symbols": [],
+                            "user_mentions": [],
+                            "urls": [
+                                {
+                                    "url": "https:\/\/t.co\/0qxhYOCoM7",
+                                    "expanded_url": "https:\/\/semiphemeral.com\/tweets",
+                                    "display_url": "semiphemeral.com\/tweets",
+                                    "indices": [
+                                        226,
+                                        249
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ],
+        "users": {
+            "96752784": {
+                "id": 96752784,
+                "id_str": "96752784",
+                "name": "Malavika Raghavan",
+                "screen_name": "teninthemorning",
+                "location": null,
+                "description": "I study tech, law and institutional change. PhD-ing @LSELaw. Recovering lawyer, lapsed policy wonk, inept twittererer.",
+                "url": "https:\/\/t.co\/8JWsW0FX0I",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "url": "https:\/\/t.co\/8JWsW0FX0I",
+                                "expanded_url": "https:\/\/www.lse.ac.uk\/law\/people\/phd\/malavika-raghavan",
+                                "display_url": "lse.ac.uk\/law\/people\/phd\u2026",
+                                "indices": [
+                                    0,
+                                    23
+                                ]
+                            }
+                        ]
+                    },
+                    "description": {
+                        "urls": []
+                    }
+                },
+                "protected": false,
+                "followers_count": 4310,
+                "friends_count": 1873,
+                "listed_count": 65,
+                "created_at": "Mon Dec 14 12:34:37 +0000 2009",
+                "favourites_count": 4185,
+                "utc_offset": null,
+                "time_zone": null,
+                "geo_enabled": false,
+                "verified": false,
+                "statuses_count": 2232,
+                "lang": null,
+                "contributors_enabled": false,
+                "is_translator": false,
+                "is_translation_enabled": false,
+                "profile_background_color": "EBEBEB",
+                "profile_background_image_url": "http:\/\/abs.twimg.com\/images\/themes\/theme7\/bg.gif",
+                "profile_background_image_url_https": "https:\/\/abs.twimg.com\/images\/themes\/theme7\/bg.gif",
+                "profile_background_tile": false,
+                "profile_image_url": "http:\/\/pbs.twimg.com\/profile_images\/804653337119309825\/gAvawfvf_normal.jpg",
+                "profile_image_url_https": "https:\/\/pbs.twimg.com\/profile_images\/804653337119309825\/gAvawfvf_normal.jpg",
+                "profile_banner_url": "https:\/\/pbs.twimg.com\/profile_banners\/96752784\/1478939520",
+                "profile_link_color": "990000",
+                "profile_sidebar_border_color": "DFDFDF",
+                "profile_sidebar_fill_color": "F3F3F3",
+                "profile_text_color": "333333",
+                "profile_use_background_image": true,
+                "default_profile": false,
+                "default_profile_image": false,
+                "can_dm": null,
+                "can_secret_dm": null,
+                "can_media_tag": true,
+                "following": false,
+                "follow_request_sent": false,
+                "notifications": false,
+                "blocking": false,
+                "subscribed_by": false,
+                "blocked_by": false,
+                "want_retweets": false,
+                "business_profile_state": "none",
+                "translator_type": "none",
+                "withheld_in_countries": [],
+                "followed_by": true
+            },
+            "1209344563589992448": {
+                "id": 1209344563589992448,
+                "id_str": "1209344563589992448",
+                "name": "Semiphemeral",
+                "screen_name": "semiphemeral",
+                "location": null,
+                "description": "Claw back your data from Big Tech",
+                "url": "https:\/\/t.co\/j0oVFIXVVe",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "url": "https:\/\/t.co\/j0oVFIXVVe",
+                                "expanded_url": "https:\/\/semiphemeral.com",
+                                "display_url": "semiphemeral.com",
+                                "indices": [
+                                    0,
+                                    23
+                                ]
+                            }
+                        ]
+                    },
+                    "description": {
+                        "urls": []
+                    }
+                },
+                "protected": false,
+                "followers_count": 30615,
+                "friends_count": 1,
+                "listed_count": 62,
+                "created_at": "Tue Dec 24 05:26:49 +0000 2019",
+                "favourites_count": 15,
+                "utc_offset": null,
+                "time_zone": null,
+                "geo_enabled": false,
+                "verified": false,
+                "statuses_count": 6,
+                "lang": null,
+                "contributors_enabled": false,
+                "is_translator": false,
+                "is_translation_enabled": false,
+                "profile_background_color": "F5F8FA",
+                "profile_background_image_url": null,
+                "profile_background_image_url_https": null,
+                "profile_background_tile": false,
+                "profile_image_url": "http:\/\/pbs.twimg.com\/profile_images\/1221505863631769601\/cfFGJZzY_normal.jpg",
+                "profile_image_url_https": "https:\/\/pbs.twimg.com\/profile_images\/1221505863631769601\/cfFGJZzY_normal.jpg",
+                "profile_banner_url": "https:\/\/pbs.twimg.com\/profile_banners\/1209344563589992448\/1690903715",
+                "profile_link_color": "1DA1F2",
+                "profile_sidebar_border_color": "C0DEED",
+                "profile_sidebar_fill_color": "DDEEF6",
+                "profile_text_color": "333333",
+                "profile_use_background_image": true,
+                "default_profile": true,
+                "default_profile_image": false,
+                "can_dm": null,
+                "can_secret_dm": null,
+                "can_media_tag": false,
+                "following": false,
+                "follow_request_sent": false,
+                "notifications": false,
+                "blocking": false,
+                "subscribed_by": false,
+                "blocked_by": false,
+                "want_retweets": false,
+                "business_profile_state": "none",
+                "translator_type": "none",
+                "withheld_in_countries": [],
+                "followed_by": false
+            }
+        },
+        "conversations": {
+            "96752784-1209344563589992448": {
+                "conversation_id": "96752784-1209344563589992448",
+                "type": "ONE_TO_ONE",
+                "sort_event_id": "1757901867919536298",
+                "sort_timestamp": "1707951440206",
+                "participants": [
+                    {
+                        "user_id": "96752784"
+                    },
+                    {
+                        "user_id": "1209344563589992448",
+                        "last_read_event_id": "1757901867919536298"
+                    }
+                ],
+                "nsfw": false,
+                "notifications_disabled": false,
+                "mention_notifications_disabled": false,
+                "last_read_event_id": "1757901867919536298",
+                "read_only": false,
+                "trusted": true,
+                "low_quality": false,
+                "muted": false
+            }
+        }
+    }
+}

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from './shared_types'
+import { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIndexDMsStartResponse, XIsRateLimitedResponse } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -79,8 +79,14 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseTweets: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseTweets', accountID, isFirstRun)
         },
-        indexParseDMs: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseDMs', accountID, isFirstRun)
+        indexParseDMConversations: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseDMConversations', accountID, isFirstRun)
+        },
+        indexDMsStart: (accountID: number): Promise<XIndexDMsStartResponse> => {
+            return ipcRenderer.invoke('X:indexDMsStart', accountID);
+        },
+        indexParseDMs: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseDMs', accountID)
         },
         indexTweetsFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexTweetsFinished', accountID)
