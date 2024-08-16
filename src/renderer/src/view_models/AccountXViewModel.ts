@@ -407,25 +407,33 @@ Now I'm indexing the messages in each conversation.
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.waitForLoadingToFinish();
 
-                        // Scroll to top
-                        const moreToScroll = await this.scrollToTop();
+                        // TODO: remove this
+                        this.pause();
 
-                        // Parse so far
-                        this.progress = await window.electron.X.indexParseDMs(this.account.id);
-                        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                        console.log("progress", this.progress);
+                        while (this.progress === null || this.progress.isIndexDMsFinished === false) {
+                            // Scroll to top
+                            const moreToScroll = await this.scrollToTop();
 
-                        // Check if we're done
-                        if (!this.progress?.isRateLimited && !moreToScroll) {
-                            this.progress = await window.electron.X.indexDMsFinished(this.account.id);
-                            break;
+                            // Parse so far
+                            this.progress = await window.electron.X.indexParseDMs(this.account.id);
+                            this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                            console.log("progress", this.progress);
+
+                            // Check if we're done
+                            if (!this.progress?.isRateLimited && !moreToScroll) {
+                                this.progress = await window.electron.X.indexDMsFinished(this.account.id);
+                                break;
+                            }
+
+                            // Rate limited?
+                            if (this.progress.isRateLimited) {
+                                await this.handleRateLimit();
+                            }
                         }
 
-                        // Rate limited?
-                        if (this.progress.isRateLimited) {
-                            await this.handleRateLimit();
-                        }
+                        // Mark the conversation's shouldIndexMessages to false
+                        await window.electron.X.indexDMConversationFinished(this.account.id, this.indexDMsStartResponse.conversationIDs[i]);
                     }
                 }
 

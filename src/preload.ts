@@ -94,6 +94,9 @@ contextBridge.exposeInMainWorld('electron', {
         indexDMsFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexDMsFinished', accountID)
         },
+        indexDMConversationFinished: (accountID: number, conversationID: string): Promise<boolean> => {
+            return ipcRenderer.invoke('X:indexDMConversationFinished', accountID, conversationID)
+        },
         indexLikesFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexLikesFinished', accountID)
         },

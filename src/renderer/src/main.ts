@@ -43,6 +43,7 @@ declare global {
                 indexParseDMs: (accountID: number) => Promise<XProgress>;
                 indexTweetsFinished: (accountID: number) => Promise<XProgress>;
                 indexDMsFinished: (accountID: number) => Promise<XProgress>;
+                indexDMConversationFinished: (accountID: number, conversationID: string) => Promise<boolean>;
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveTweetsStartResponse | null>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<boolean>;

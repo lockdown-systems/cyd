@@ -646,6 +646,9 @@ export class XAccountController {
                 message.message.message_data.text,
                 null,
             ]);
+
+            // Mark the conversation as needing to be archived
+            exec(this.db, 'UPDATE conversation SET shouldArchive = ? WHERE conversationID = ?', [1, message.message.conversation_id]);
         }
 
         // Update progress
@@ -753,6 +756,16 @@ export class XAccountController {
         console.log('XAccountController.indexDMsFinished');
         this.progress.isIndexDMsFinished = true;
         return this.progress;
+    }
+
+    // Save the tconversation's shouldIndexMessages to false
+    async indexDMConversationFinished(conversationID: string): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        exec(this.db, 'UPDATE conversation SET shouldIndexMessages = ? WHERE conversationID = ?', [0, conversationID]);
+        return true;
     }
 
     async indexLikesFinished(): Promise<XProgress> {
@@ -964,6 +977,11 @@ export const defineIPCX = () => {
     ipcMain.handle('X:indexDMsFinished', async (_, accountID: number): Promise<XProgress> => {
         const controller = getXAccountController(accountID);
         return await controller.indexDMsFinished();
+    });
+
+    ipcMain.handle('X:indexDMConversationFinished', async (_, accountID: number, conversationID: string): Promise<boolean> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexDMConversationFinished(conversationID);
     });
 
     ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
