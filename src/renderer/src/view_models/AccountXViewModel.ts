@@ -316,6 +316,9 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                         // Save the page
                         await window.electron.archive.savePage(this.webContentsID, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.tweets[i].basename);
 
+                        // Update tweet's archivedAt date
+                        await window.electron.X.archiveTweet(this.account.id, this.archiveTweetsStartResponse.tweets[i].basename);
+
                         // Update progress
                         this.progress.tweetsArchived += 1;
                     }

@@ -118,7 +118,8 @@ export class XAccountController {
     text TEXT NOT NULL,
     path TEXT NOT NULL,
     addedToDatabaseAt DATETIME NOT NULL,
-    archivedAt DATETIME
+    archivedAt DATETIME,
+    deletedAt DATETIME
 );`, `CREATE TABLE user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userID TEXT NOT NULL UNIQUE,
@@ -132,7 +133,10 @@ export class XAccountController {
     sortTimestamp TEXT,
     minEntryID TEXT,
     maxEntryID TEXT,
-    isTrusted BOOLEAN
+    isTrusted BOOLEAN,
+    addedToDatabaseAt DATETIME NOT NULL,
+    archivedAt DATETIME,
+    deletedAt DATETIME
 );`, `CREATE TABLE conversation_participant (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversationID TEXT NOT NULL,
@@ -642,6 +646,16 @@ export class XAccountController {
         return null;
     }
 
+    // Save the tweet's archivedAt timestamp
+    async archiveTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        return true;
+    }
+
     async archiveBuild(): Promise<boolean> {
         if (!this.db) {
             this.initDB();
@@ -797,6 +811,11 @@ export const defineIPCX = () => {
     ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweetsStart();
+    });
+
+    ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+        const controller = getXAccountController(accountID);
+        return await controller.archiveTweet(tweetID);
     });
 
     ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {
