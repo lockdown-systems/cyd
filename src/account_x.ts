@@ -424,6 +424,8 @@ export class XAccountController {
                 profileImageDataURI,
                 user.id_str,
             ]);
+
+            // If we've seen this user before, don't add it to progress.dmUsersIndexed
         } else {
             // Add the user
             exec(this.db, 'INSERT INTO user (userID, name, screenName, profileImageDataURI) VALUES (?, ?, ?, ?)', [
@@ -432,10 +434,10 @@ export class XAccountController {
                 user.screen_name,
                 profileImageDataURI,
             ]);
-        }
 
-        // Update progress
-        this.progress.dmUsersIndexed++;
+            // Update progress
+            this.progress.dmUsersIndexed++;
+        }
     }
 
     // Returns false if the loop should stop

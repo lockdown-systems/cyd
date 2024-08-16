@@ -458,15 +458,15 @@ test("XAccountController.indexParsedDMs() should add all the conversations and u
     const controller = createController("indexDMs");
 
     const progress: XProgress = await controller.indexParseDMs(true);
-    expect(progress.dmUsersIndexed).toBe(19);
-    expect(progress.dmConversationsIndexed).toBe(17);
+    expect(progress.dmUsersIndexed).toBe(78);
+    expect(progress.dmConversationsIndexed).toBe(44);
 
     let rows = exec(controller.db, "SELECT * FROM user", [], "all");
-    expect(rows.length).toBe(19);
+    expect(rows.length).toBe(78);
 
     rows = exec(controller.db, "SELECT * FROM conversation", [], "all");
-    expect(rows.length).toBe(17);
+    expect(rows.length).toBe(44);
 
     rows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all");
-    expect(rows.length).toBe(34);
+    expect(rows.length).toBe(126);
 })
