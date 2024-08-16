@@ -10,7 +10,7 @@ import { getAccountDataPath } from './helpers'
 import { XAccount, XJob, XProgress, XArchiveTweetsTweet, XArchiveTweetsStartResponse, XIsRateLimitedResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
-import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIConversation, XAPIUser } from './account_x_types'
+import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIInboxInitialState, XAPIConversation, XAPIUser } from './account_x_types'
 
 function formatDateToYYYYMMDD(dateString: string): string {
     const date = new Date(dateString);
@@ -132,6 +132,7 @@ export class XAccountController {
     sortTimestamp TEXT,
     minEntryID TEXT,
     maxEntryID TEXT,
+    isTrusted BOOLEAN
 );`, `CREATE TABLE conversation_participant (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversationID TEXT NOT NULL,
@@ -381,12 +382,10 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
-                console.log('XAccountController.indexParseTweets: progress:', this.progress);
                 return this.progress;
             }
         }
 
-        console.log('XAccountController.indexParseTweets: progress:', this.progress);
         return this.progress;
     }
 
@@ -451,28 +450,30 @@ export class XAccountController {
         if (
             existing.length > 0) {
             // Have we seen this exact conversation before?
-            if (!isFirstRun && existing[0].minEntryID == conversation.min_entry_id && existing[0].maxEntryID == conversation.max_entry_id) {
+            if (!isFirstRun && existing[0].minEntryID == conversation.min_entry_id && existing[0].maxEntryID == conversation.max_entry_id && existing[0].isTrusted == conversation.trusted) {
                 this.mitmController.responseData[0].processed = true;
                 this.progress.isIndexDMsFinished = true;
                 return false;
             }
 
             // Update the conversation
-            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ? WHERE conversationID = ?', [
+            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ? WHERE conversationID = ?', [
                 conversation.sort_timestamp,
                 conversation.type,
                 conversation.min_entry_id,
                 conversation.max_entry_id,
                 conversation.conversation_id,
+                conversation.trusted ? 1 : 0,
             ]);
         } else {
             // Add the conversation
-            exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID) VALUES (?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted) VALUES (?, ?, ?, ?, ?, ?)', [
                 conversation.conversation_id,
                 conversation.type,
                 conversation.sort_timestamp,
                 conversation.min_entry_id,
                 conversation.max_entry_id,
+                conversation.trusted ? 1 : 0,
             ]);
         }
 
@@ -517,22 +518,34 @@ export class XAccountController {
 
         // Process the response
         if (
-            responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") &&
+            (responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") ||
+                responseData.url.includes("/i/api/1.1/dm/inbox_timeline/untrusted.json") ||
+                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json")) &&
             responseData.status == 200
         ) {
-            const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
+            let users: Record<string, XAPIUser>;
+            let conversations: Record<string, XAPIConversation>;
+            if (responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json")) {
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                users = inbox_initial_state.inbox_initial_state.users;
+                conversations = inbox_initial_state.inbox_initial_state.conversations
+            } else {
+                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
+                users = inbox_timeline.inbox_timeline.users;
+                conversations = inbox_timeline.inbox_timeline.conversations;
+            }
 
             // Add the users
-            console.log(`XAccountController.indexParseDMResponseData: adding ${inbox_timeline.inbox_timeline.users.length} users`);
-            for (const userID in inbox_timeline.inbox_timeline.users) {
-                const user = inbox_timeline.inbox_timeline.users[userID];
+            console.log(`XAccountController.indexParseDMResponseData: adding ${users.length} users`);
+            for (const userID in users) {
+                const user = users[userID];
                 await this.indexDMUser(user);
             }
 
             // Add the conversations
-            console.log(`XAccountController.indexParseDMResponseData: adding ${inbox_timeline.inbox_timeline.conversations.length} conversations`);
-            for (const conversationID in inbox_timeline.inbox_timeline.conversations) {
-                const conversation = inbox_timeline.inbox_timeline.conversations[conversationID];
+            console.log(`XAccountController.indexParseDMResponseData: adding ${conversations.length} conversations`);
+            for (const conversationID in conversations) {
+                const conversation = conversations[conversationID];
                 if (!this.indexDMConversation(conversation, isFirstRun)) {
                     shouldReturnFalse = true;
                     break;
@@ -564,12 +577,10 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!await this.indexParseDMResponseData(i, isFirstRun)) {
-                console.log('XAccountController.indexParseDMs: progress:', this.progress);
                 return this.progress;
             }
         }
 
-        console.log('XAccountController.indexParseDMs: progress:', this.progress);
         return this.progress;
     }
 

@@ -250,3 +250,24 @@ export interface XAPIInboxTimeline {
         },
     }
 }
+
+export interface XAPIInboxInitialState {
+    inbox_initial_state: {
+        last_seen_event_id: string,
+        trusted_last_seen_event_id: string,
+        untrusted_last_seen_event_id: string,
+        cursor: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inbox_timelines: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        entries: any,
+        users: {
+            [key: string]: XAPIUser
+        },
+        conversations: {
+            [key: string]: XAPIConversation
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        key_registry_state: any;
+    }
+}
