@@ -74,6 +74,10 @@ const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
 const deleteDMsDaysOld = ref(0);
 
+const isFirstIndex = ref(true);
+const archiveForceIndexEverything = ref(false);
+const deleteForceIndexEverything = ref(false);
+
 const updateSettings = async () => {
     console.log('Updating settings')
     const updatedAccount: Account = {
@@ -175,6 +179,12 @@ onMounted(async () => {
         deleteDMsDaysOld.value = props.account.xAccount.deleteDMsDaysOld;
     }
 
+    // Check if this is the first time indexing tweets/dms has happened in this account
+    isFirstIndex.value = (
+        await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null ||
+        await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
+    );
+
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
@@ -222,13 +232,19 @@ onUnmounted(async () => {
             <div class="container mb-4 mt-3">
                 <h2>Archive my data</h2>
                 <form @submit.prevent>
-                    <div class=" mb-3 form-check">
+                    <div class="mb-3 form-check">
                         <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
                         <label class="form-check-label" for="archiveTweets">Archive tweets</label>
                     </div>
                     <div class="mb-3 form-check">
                         <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
                         <label class="form-check-label" for="archiveDMs">Archive direct messages</label>
+                    </div>
+                    <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
+                        <input id="archiveForceIndexEverything" v-model="archiveForceIndexEverything" type="checkbox"
+                            class="form-check-input">
+                        <label class="form-check-label" for="archiveForceIndexEverything">Force Semiphemeral to
+                            re-index everything, instead of just the newest</label>
                     </div>
                     <button type="submit" class="btn btn-primary" :disabled="!(archiveTweets || archiveDMs)"
                         @click="startArchivingClicked">
@@ -367,6 +383,12 @@ onUnmounted(async () => {
                             </div>
                         </div>
                     </div>
+                    <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
+                        <input id="deleteForceIndexEverything" v-model="deleteForceIndexEverything" type="checkbox"
+                            class="form-check-input">
+                        <label class="form-check-label" for="deleteForceIndexEverything">Force Semiphemeral to
+                            re-index everything, instead of just the newest</label>
+                    </div>
                     <button type="submit" class="btn btn-primary"
                         :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDMs)"
                         @click="startDeletingClicked">
@@ -442,5 +464,10 @@ onUnmounted(async () => {
     font-family: monospace;
     text-decoration: none;
     font-weight: bold;
+}
+
+.force-reindex {
+    font-size: 0.9rem;
+    color: #333333;
 }
 </style>
