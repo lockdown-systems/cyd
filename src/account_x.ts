@@ -659,14 +659,11 @@ export class XAccountController {
 
     // Returns false if the loop should stop
     async indexParseDMsResponseData(iResponse: number): Promise<boolean> {
-        console.log("XAccountController.indexParseDMsResponseData", iResponse);
-
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[iResponse];
 
         // Already processed?
         if (responseData.processed) {
-            console.log('XAccountController.indexParseDMsResponseData: already processed');
             return true;
         }
 
@@ -684,6 +681,7 @@ export class XAccountController {
             responseData.url.includes("/i/api/1.1/dm/conversation/") &&
             responseData.status == 200
         ) {
+            console.log("XAccountController.indexParseDMsResponseData", iResponse);
             const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
             const users = conversationTimeline.conversation_timeline.users;
             const conversations = conversationTimeline.conversation_timeline.conversations;

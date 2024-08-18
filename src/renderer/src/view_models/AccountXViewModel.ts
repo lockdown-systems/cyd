@@ -191,6 +191,14 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.database.saveAccount(JSON.stringify(this.account));
     }
 
+    async finishJob(iJob: number) {
+        this.jobs[iJob].finishedAt = new Date();
+        this.jobs[iJob].status = "finished";
+        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+        this.log("finishJob", `${this.jobs[iJob].jobType}: ${this.progress}`);
+    }
+
     async runJob(iJob: number) {
         await this.waitForPause();
 
@@ -207,13 +215,7 @@ export class AccountXViewModel extends BaseViewModel {
 Checking to see if you're still logged in to your X account...
 `;
                 await this.login();
-
-                // Job finished
-                this.jobs[iJob].finishedAt = new Date();
-                this.jobs[iJob].status = "finished";
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                this.log("runJob", "login job finished");
-
+                await this.finishJob(iJob);
                 break;
 
             case "indexTweets":
@@ -273,13 +275,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
 
-                // Job finished
-                this.jobs[iJob].finishedAt = new Date();
-                this.jobs[iJob].status = "finished";
-                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                this.log("runJob", `indexTweets job finished: ${this.progress}`);
-
+                await this.finishJob(iJob);
                 break;
 
             case "archiveTweets":
@@ -325,13 +321,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                     }
                 }
 
-                // Job finished
-                this.jobs[iJob].finishedAt = new Date();
-                this.jobs[iJob].status = "finished";
-                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                this.log("runJob", `archiveTweets job finished: ${this.progress}`);
-
+                await this.finishJob(iJob);
                 break;
 
             case "indexDMs":
@@ -407,9 +397,6 @@ Now I'm indexing the messages in each conversation.
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.waitForLoadingToFinish();
 
-                        // TODO: remove this
-                        this.pause();
-
                         while (this.progress === null || this.progress.isIndexDMsFinished === false) {
                             // Scroll to top
                             const moreToScroll = await this.scrollToTop();
@@ -422,7 +409,6 @@ Now I'm indexing the messages in each conversation.
 
                             // Check if we're done
                             if (!this.progress?.isRateLimited && !moreToScroll) {
-                                this.progress = await window.electron.X.indexDMsFinished(this.account.id);
                                 break;
                             }
 
@@ -440,13 +426,7 @@ Now I'm indexing the messages in each conversation.
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
 
-                // Job finished
-                this.jobs[iJob].finishedAt = new Date();
-                this.jobs[iJob].status = "finished";
-                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                this.log("runJob", `indexDMs job finished: ${this.progress}`);
-
+                await this.finishJob(iJob);
                 break;
 
             case "archiveDMs":
@@ -457,12 +437,9 @@ Now I'm indexing the messages in each conversation.
 I'm archiving your direct messages, starting with the oldest. This may take a while...
 `;
 
-                // // Initialize archiving of tweets
-                // this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
-                // console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
+                // TODO: implement
 
-
-                console.log("archiveDMs: NOT IMPLEMENTED");
+                await this.finishJob(iJob);
                 break;
 
             case "archiveBuild":
@@ -476,25 +453,22 @@ I'm building a searchable archive web page in HTML.
                 // Build the archive
                 await window.electron.X.archiveBuild(this.account.id);
 
-                // Job finished
-                this.jobs[iJob].finishedAt = new Date();
-                this.jobs[iJob].status = "finished";
-                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                this.log("runJob", `archiveBuild job finished: ${this.progress}`);
-
+                await this.finishJob(iJob);
                 break;
 
             case "deleteTweets":
                 console.log("deleteTweets: NOT IMPLEMENTED");
+                await this.finishJob(iJob);
                 break;
 
             case "deleteLikes":
                 console.log("deleteLikes: NOT IMPLEMENTED");
+                await this.finishJob(iJob);
                 break;
 
             case "deleteDMs":
                 console.log("deleteDMs: NOT IMPLEMENTED");
+                await this.finishJob(iJob);
                 break;
         }
     }
