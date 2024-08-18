@@ -218,8 +218,8 @@ export class XAccountController {
             // Start monitoring
             const ses = session.fromPartition(`persist:account-${this.account.id}`);
             await ses.clearCache();
-            await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
             await this.mitmController.startMonitoring();
+            await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
 
             // Load settings page
             const wc = webContents.fromId(webContentsID);
@@ -256,8 +256,8 @@ export class XAccountController {
     async indexStart() {
         const ses = session.fromPartition(`persist:account-${this.account?.id}`);
         await ses.clearCache();
-        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
         await this.mitmController.startMonitoring();
+        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
     }
 
     async indexStop() {
@@ -375,7 +375,7 @@ export class XAccountController {
             });
 
             this.mitmController.responseData[iResponse].processed = true;
-            console.log('XAccountController.indexParseTweetsResponseData: processed', this.progress);
+            console.log('XAccountController.indexParseTweetsResponseData: processed', iResponse);
 
             if (shouldReturnFalse) {
                 return false;
@@ -517,14 +517,11 @@ export class XAccountController {
 
     // Returns false if the loop should stop
     async indexParseDMConversationsResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
-        console.log("XAccountController.indexParseDMConversationsResponseData", iResponse);
-
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[iResponse];
 
         // Already processed?
         if (responseData.processed) {
-            console.log('XAccountController.indexParseDMConversationsResponseData: already processed');
             return true;
         }
 
@@ -574,14 +571,13 @@ export class XAccountController {
             }
 
             this.mitmController.responseData[iResponse].processed = true;
-            console.log('XAccountController.indexParseDMConversationsResponseData: processed', this.progress);
+            console.log('XAccountController.indexParseDMConversationsResponseData: processed', iResponse);
 
             if (shouldReturnFalse) {
                 return false;
             }
         } else {
             // Skip response
-            console.log('XAccountController.indexParseDMConversationsResponseData: skipping response', responseData.url);
             this.mitmController.responseData[iResponse].processed = true;
         }
 
@@ -712,7 +708,7 @@ export class XAccountController {
             }
 
             this.mitmController.responseData[iResponse].processed = true;
-            console.log('XAccountController.indexParseDMsResponseData: processed', this.progress);
+            console.log('XAccountController.indexParseDMsResponseData: processed', iResponse);
 
             if (shouldReturnFalse) {
                 return false;
@@ -866,8 +862,8 @@ export class XAccountController {
             // Start monitoring
             const ses = session.fromPartition(`persist:account-${this.account.id}`);
             await ses.clearCache();
-            await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
             await this.mitmController.startMonitoring();
+            await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
 
             // Load a URL that requires the API
             const wc = webContents.fromId(webContentsID);
