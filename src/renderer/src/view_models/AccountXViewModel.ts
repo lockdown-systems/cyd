@@ -340,7 +340,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
 
-                for (const url of ["https://x.com/messages", "https://x.com/messages/requests"]) {
+                for (const url of ["https://x.com/messages"]) {
                     // Load the messages and wait for tweets to appear
                     await this.loadURL(url);
                     try {
