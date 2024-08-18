@@ -337,48 +337,57 @@ export class XAccountController {
             responseData.url.includes("/UserTweetsAndReplies?") &&
             responseData.status == 200
         ) {
-            const body: XAPIData = JSON.parse(responseData.body);
-            // console.log('XAccountController.indexParseTweetsResponseData: body', responseData.body);
+            try {
+                const body: XAPIData = JSON.parse(responseData.body);
+                // console.log('XAccountController.indexParseTweetsResponseData: body', responseData.body);
 
-            // Loop through instructions
-            body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
-                if (instructions["type"] != "TimelineAddEntries") {
-                    return;
-                }
+                // Loop through instructions
+                body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+                    if (instructions["type"] != "TimelineAddEntries") {
+                        return;
+                    }
 
-                // Loop through the entries
-                instructions.entries?.forEach((entries) => {
-                    if (entries.content.entryType == "TimelineTimelineModule") {
-                        entries.content.items?.forEach((item) => {
-                            const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
-                            const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
+                    // Loop through the entries
+                    instructions.entries?.forEach((entries) => {
+                        if (entries.content.entryType == "TimelineTimelineModule") {
+                            entries.content.items?.forEach((item) => {
+                                const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
+                                const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
+                                if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                                    shouldReturnFalse = true;
+                                    return;
+                                }
+                            });
+                        } else if (entries.content.entryType == "TimelineTimelineItem") {
+                            const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                            const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
                             if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
-                        });
-                    } else if (entries.content.entryType == "TimelineTimelineItem") {
-                        const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
-                        const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
-                        if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
-                            shouldReturnFalse = true;
-                            return;
                         }
+
+
+                    });
+
+                    if (shouldReturnFalse) {
+                        return;
                     }
-
-
                 });
 
+                this.mitmController.responseData[iResponse].processed = true;
+                console.log('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+
                 if (shouldReturnFalse) {
-                    return;
+                    return false;
                 }
-            });
+            } catch (error) {
+                // TODO: automation error
+                console.error('XAccountController.indexParseTweetsResponseData: error', error);
+                console.log(responseData.body)
 
-            this.mitmController.responseData[iResponse].processed = true;
-            console.log('XAccountController.indexParseTweetsResponseData: processed', iResponse);
-
-            if (shouldReturnFalse) {
-                return false;
+                // Throw an exception
+                throw error;
             }
         } else {
             // Skip response
