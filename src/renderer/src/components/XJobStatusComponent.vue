@@ -74,7 +74,7 @@ onBeforeUnmount(() => {
             <button v-if="!isPaused" class="btn btn-secondary btn-sm" @click="emit('onPause')">
                 <i class="fa-solid fa-pause" /> Pause
             </button>
-            <button v-if="isPaused" class="btn btn-secondary btn-sm" @click="emit('onResume')">
+            <button v-if="isPaused" class="btn btn-primary btn-sm" @click="emit('onResume')">
                 <i class="fa-solid fa-play" /> Resume
             </button>
         </div>

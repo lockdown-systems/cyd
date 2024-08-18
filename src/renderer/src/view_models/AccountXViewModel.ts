@@ -300,6 +300,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                     // Archive the tweets
                     for (let i = 0; i < this.archiveTweetsStartResponse.tweets.length; i++) {
+                        await this.waitForPause();
+
                         // Already saved?
                         if (await window.electron.archive.isPageAlreadySaved(this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.tweets[i].basename)) {
                             this.progress.tweetsArchived += 1;
