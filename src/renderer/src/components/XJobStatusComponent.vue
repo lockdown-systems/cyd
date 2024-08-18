@@ -7,7 +7,7 @@ defineProps<{
     isPaused: boolean
 }>();
 
-const emit = defineEmits(['onPause', 'onResume']);
+const emit = defineEmits(['onPause', 'onResume', 'onCancel']);
 
 const runningIconIndex = ref(0);
 const runningIcons = [
@@ -70,12 +70,15 @@ onBeforeUnmount(() => {
                 {{ getJobTypeText(job.jobType) }}
             </div>
         </div>
-        <div class="pause-resume">
+        <div class="d-flex justify-content-center">
             <button v-if="!isPaused" class="btn btn-secondary btn-sm" @click="emit('onPause')">
                 <i class="fa-solid fa-pause" /> Pause
             </button>
             <button v-if="isPaused" class="btn btn-primary btn-sm" @click="emit('onResume')">
                 <i class="fa-solid fa-play" /> Resume
+            </button>
+            <button class="btn btn-danger btn-sm btn-cancel" @click="emit('onCancel')">
+                <i class="fa-regular fa-circle-xmark" /> Cancel
             </button>
         </div>
     </div>
@@ -101,5 +104,9 @@ onBeforeUnmount(() => {
 
 .job-type {
     font-size: 16px;
+}
+
+.btn-cancel {
+    margin-left: 5px;
 }
 </style>

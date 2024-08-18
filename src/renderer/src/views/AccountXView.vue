@@ -219,7 +219,8 @@ onUnmounted(async () => {
             <!-- Job status -->
             <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
                 :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
-                @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()" />
+                @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()"
+                @on-cancel="emit('onRefreshClicked')" />
         </div>
 
         <!-- Progress -->
