@@ -12,6 +12,7 @@ export enum State {
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress | null = null;
     public jobs: XJob[] = [];
+    public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
 
     private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
@@ -227,7 +228,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 `;
 
                 // Check if this is the first time indexing tweets has happened in this account
-                if (await window.electron.X.getLastFinishedJob(this.account.id, "indexTweets") == null) {
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexTweets") == null) {
                     this.isFirstRun = true;
                 }
 
@@ -333,7 +334,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 `;
 
                 // Check if this is the first time indexing DMs has happened in this account
-                if (await window.electron.X.getLastFinishedJob(this.account.id, "indexDMs") == null) {
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexDMs") == null) {
                     this.isFirstRun = true;
                 }
 

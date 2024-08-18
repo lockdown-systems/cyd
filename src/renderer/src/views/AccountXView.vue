@@ -74,6 +74,7 @@ const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
 const deleteDMsDaysOld = ref(0);
 
+// Force re-index everything options
 const isFirstIndex = ref(true);
 const archiveForceIndexEverything = ref(false);
 const deleteForceIndexEverything = ref(false);
@@ -115,6 +116,7 @@ const updateSettings = async () => {
 const startArchivingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value) {
+        accountXViewModel.value.forceIndexEverything = archiveForceIndexEverything.value;
         await accountXViewModel.value.startArchiving();
         await startStateLoop();
     }
@@ -123,6 +125,7 @@ const startArchivingClicked = async () => {
 const startDeletingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
+        accountXViewModel.value.forceIndexEverything = deleteForceIndexEverything.value;
         await accountXViewModel.value.startDeleting();
         await startStateLoop();
     }
@@ -181,7 +184,7 @@ onMounted(async () => {
 
     // Check if this is the first time indexing tweets/dms has happened in this account
     isFirstIndex.value = (
-        await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null ||
+        await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null &&
         await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
     );
 
