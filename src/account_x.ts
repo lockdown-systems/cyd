@@ -28,7 +28,6 @@ function emptyProgress(): XProgress {
         isIndexDMsFinished: false,
         isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
-        isArchiveDMsFinished: false,
         isDeleteFinished: false,
         tweetsIndexed: 0,
         retweetsIndexed: 0,
@@ -38,8 +37,6 @@ function emptyProgress(): XProgress {
         likesIndexed: 0,
         totalTweetsToArchive: 0,
         tweetsArchived: 0,
-        totalDMConversationsToArchive: 0,
-        dmConversationsArchived: 0,
         tweetsDeleted: 0,
         retweetsDeleted: 0,
         likesDeleted: 0,
@@ -137,9 +134,7 @@ export class XAccountController {
     maxEntryID TEXT,
     isTrusted BOOLEAN,
     shouldIndexMessages BOOLEAN,
-    shouldArchive BOOLEAN,
     addedToDatabaseAt DATETIME NOT NULL,
-    archivedAt DATETIME,
     deletedAt DATETIME
 );`, `CREATE TABLE conversation_participant (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -186,7 +181,11 @@ export class XAccountController {
         return exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all");
     }
 
-    getLastFinishedJob(jobType: string): Promise<XJob | null> {
+    async getLastFinishedJob(jobType: string): Promise<XJob | null> {
+        if (!this.account || !this.account.username) {
+            return null;
+        }
+
         if (!this.db) {
             this.initDB();
         }
@@ -844,55 +843,6 @@ export class XAccountController {
         return true;
     }
 
-    // When you start archiving tweets you:
-    // - Return the URLs path, output path, and all expected filenames
-    async archiveDMConversationsStart(): Promise<XArchiveStartResponse | null> {
-        if (!this.db) {
-            this.initDB();
-        }
-
-        if (this.account) {
-            const conversationsResp = exec(
-                this.db,
-                'SELECT conversationID FROM conversation WHERE shouldArchive = ? ORDER BY sortTimestamp',
-                [1],
-                "all"
-            );
-
-            const items: XArchiveItem[] = [];
-            for (let i = 0; i < conversationsResp.length; i++) {
-                items.push({
-                    url: `https://x.com/messages/${conversationsResp[i].conversationID}`,
-                    basename: `${conversationsResp[i].conversationID}`
-                })
-            }
-
-            // Make sure the Archived Tweets folder exists
-            const accountDataPath = getAccountDataPath("X", this.account.username);
-            const outputPath = path.join(accountDataPath, "Archived DMs");
-            if (!fs.existsSync(outputPath)) {
-                fs.mkdirSync(outputPath);
-            }
-
-            return {
-                outputPath: outputPath,
-                items: items
-            };
-        }
-        return null;
-    }
-
-    // Save the tweet's archivedAt timestamp
-    async archiveDMConversation(conversationID: string): Promise<boolean> {
-        if (!this.db) {
-            this.initDB();
-        }
-
-        exec(this.db, 'UPDATE conversation SET shouldArchive = ?, archivedAt = ? WHERE conversationID = ?', [0, new Date(), conversationID]);
-        return true;
-    }
-
-
     async archiveBuild(): Promise<boolean> {
         if (!this.db) {
             this.initDB();
@@ -1073,16 +1023,6 @@ export const defineIPCX = () => {
     ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweet(tweetID);
-    });
-
-    ipcMain.handle('X:archiveDMConversationsStart', async (_, accountID: number): Promise<XArchiveStartResponse | null> => {
-        const controller = getXAccountController(accountID);
-        return await controller.archiveDMConversationsStart();
-    });
-
-    ipcMain.handle('X:archiveDMConversation', async (_, accountID: number, conversationID: string): Promise<boolean> => {
-        const controller = getXAccountController(accountID);
-        return await controller.archiveDMConversation(conversationID);
     });
 
     ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {

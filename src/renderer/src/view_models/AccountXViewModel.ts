@@ -68,7 +68,6 @@ export class AccountXViewModel extends BaseViewModel {
         }
         if (this.account.xAccount?.archiveDMs) {
             jobTypes.push("indexDMs");
-            jobTypes.push("archiveDMs");
         }
         jobTypes.push("archiveBuild");
 
@@ -429,66 +428,6 @@ Now I'm indexing the messages in each conversation.
                 await this.finishJob(iJob);
                 break;
 
-            case "archiveDMs":
-                this.showBrowser = true;
-                this.instructions = `
-**${this.actionString}**
-
-I'm archiving your direct messages, starting with the oldest. This may take a while...
-`;
-
-                // Initialize archiving of tweets
-                this.archiveStartResponse = await window.electron.X.archiveDMConversationsStart(this.account.id);
-                console.log('archiveStartResponse', this.archiveStartResponse);
-
-                if (this.progress && this.archiveStartResponse && this.webContentsID) {
-
-                    // Start the progress
-                    this.progress.currentJob = "archiveDMs";
-                    this.progress.totalDMConversationsToArchive = this.archiveStartResponse.items.length;
-                    this.progress.dmConversationsArchived = 0;
-
-                    // Archive the conversations
-                    for (let i = 0; i < this.archiveStartResponse.items.length; i++) {
-                        await this.waitForPause();
-
-                        // Already saved?
-                        if (await window.electron.archive.isPageAlreadySaved(this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename)) {
-                            this.progress.dmConversationsArchived += 1;
-                            continue;
-                        }
-
-                        // Load the URL
-                        await this.loadURL(this.archiveStartResponse.items[i].url);
-                        await new Promise(resolve => setTimeout(resolve, 3000));
-                        await this.waitForLoadingToFinish();
-
-                        // Scroll to top
-                        // eslint-disable-next-line no-constant-condition
-                        while (true) {
-                            // Scroll to top
-                            const moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
-
-                            // Check if we're done
-                            if (!moreToScroll) {
-                                break;
-                            }
-                        }
-
-                        // Save the page
-                        await window.electron.archive.savePage(this.webContentsID, this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename);
-
-                        // Update conversation's archivedAt date
-                        await window.electron.X.archiveDMConversation(this.account.id, this.archiveStartResponse.items[i].basename);
-
-                        // Update progress
-                        this.progress.dmConversationsArchived += 1;
-                    }
-                }
-
-                await this.finishJob(iJob);
-                break;
-
             case "archiveBuild":
                 this.showBrowser = false;
                 this.instructions = `
@@ -558,9 +497,9 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
                 if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
                     this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets**.`
                 } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets** and **${this.progress?.dmConversationsArchived} direct message conversations**.`
+                    this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets** and indexed **${this.progress?.dmConversationsIndexed} direct message conversations**.`
                 } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have archived **${this.progress?.dmConversationsArchived} direct message conversations**.`
+                    this.instructions += `I have indexed **${this.progress?.dmConversationsIndexed} direct message conversations**.`
                 }
                 break;
         }

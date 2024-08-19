@@ -48,8 +48,6 @@ declare global {
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveStartResponse | null>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<boolean>;
-                archiveDMConversationsStart: (accountID: number) => Promise<XArchiveStartResponse | null>;
-                archiveDMConversation: (accountID: number, conversationID: string) => Promise<boolean>;
                 archiveBuild: (accountID: number) => Promise<boolean>;
                 openFolder: (accountID: number, folderName: string) => void;
                 isRateLimited: (accountID: number, webContentsID: number, url: string) => Promise<XIsRateLimitedResponse>;

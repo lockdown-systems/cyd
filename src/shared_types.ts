@@ -80,7 +80,6 @@ export type XProgress = {
     isIndexDMsFinished: boolean;
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
-    isArchiveDMsFinished: boolean;
     isDeleteFinished: boolean;
 
     tweetsIndexed: number;
@@ -92,8 +91,6 @@ export type XProgress = {
 
     totalTweetsToArchive: number;
     tweetsArchived: number;
-    totalDMConversationsToArchive: number;
-    dmConversationsArchived: number;
 
     tweetsDeleted: number;
     retweetsDeleted: number;
