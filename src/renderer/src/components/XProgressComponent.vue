@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import type { XProgress } from '../../../shared_types';
+import type { XProgress, XRateLimitInfo } from '../../../shared_types';
 
 const intervalID = ref<number | null>(null);
 const rateLimitSecondsLeft = ref<number | null>(null);
 
 const props = defineProps<{
     progress: XProgress | null;
+    rateLimitInfo: XRateLimitInfo | null;
     accountID: number;
 }>();
 
@@ -29,8 +30,8 @@ const archivedTweetsOpenFolder = async () => {
 onMounted(() => {
     // @ts-expect-error intervalID is a NodeJS.Interval, not a number
     intervalID.value = setInterval(() => {
-        if (props.progress && props.progress.isRateLimited && props.progress.rateLimitReset) {
-            const rateLimitReset = props.progress?.rateLimitReset;
+        if (props.rateLimitInfo && props.rateLimitInfo.isRateLimited && props.rateLimitInfo.rateLimitReset) {
+            const rateLimitReset = props.rateLimitInfo.rateLimitReset;
             const currentUTCTimestamp = Math.floor(Date.now() / 1000);
             rateLimitSecondsLeft.value = rateLimitReset - currentUTCTimestamp;
             if (rateLimitSecondsLeft.value <= 0) {
@@ -60,9 +61,6 @@ onUnmounted(() => {
                         Indexing complete!
                     </template>
                 </p>
-                <p v-if="progress.isRateLimited" class="rate-limit">
-                    You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
-                </p>
             </template>
             <!-- Index direct messages -->
             <template v-if="progress.currentJob == 'indexDMs'">
@@ -74,9 +72,6 @@ onUnmounted(() => {
                         Indexing complete!
                     </template>
                 </p>
-                <p v-if="progress.isRateLimited" class="rate-limit">
-                    You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
-                </p>
             </template>
             <!-- Index likes -->
             <template v-if="progress.currentJob == 'indexLikes'">
@@ -86,9 +81,6 @@ onUnmounted(() => {
                     <template v-if="progress.isIndexLikesFinished">
                         Indexing complete!
                     </template>
-                </p>
-                <p v-if="progress.isRateLimited" class="rate-limit">
-                    You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
                 </p>
             </template>
             <!-- Archive Tweets -->
@@ -110,11 +102,14 @@ onUnmounted(() => {
                             {{ Math.round((progress.tweetsArchived / progress.totalTweetsToArchive) * 100) }}%
                         </div>
                     </div>
-                    <button class="btn btn-primary" @click="archivedTweetsOpenFolder">
+                    <button class="btn btn-primary btn-sm" @click="archivedTweetsOpenFolder">
                         Open Folder
                     </button>
                 </div>
             </template>
+            <p v-if="rateLimitInfo?.isRateLimited" class="rate-limit">
+                You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
+            </p>
         </div>
     </template>
 </template>
@@ -131,7 +126,7 @@ onUnmounted(() => {
 }
 
 .progress {
-    height: 30px;
+    height: 20px;
 }
 
 .rate-limit {

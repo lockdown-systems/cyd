@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveStartResponse, XIndexDMsStartResponse, XIsRateLimitedResponse } from './shared_types'
+import { Account, XProgress, XJob, XArchiveStartResponse, XIndexDMsStartResponse, XRateLimitInfo } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -115,8 +115,11 @@ contextBridge.exposeInMainWorld('electron', {
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);
         },
-        isRateLimited: (accountID: number, webContentsID: number, url: string): Promise<XIsRateLimitedResponse> => {
-            return ipcRenderer.invoke('X:isRateLimited', accountID, webContentsID, url);
+        resetRateLimitInfo: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('X:resetRateLimitInfo', accountID);
+        },
+        isRateLimited: (accountID: number): Promise<XRateLimitInfo> => {
+            return ipcRenderer.invoke('X:isRateLimited', accountID);
         }
     }
 })

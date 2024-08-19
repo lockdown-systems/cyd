@@ -7,7 +7,7 @@ import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount, XJob, XProgress, XArchiveItem, XArchiveStartResponse, XIsRateLimitedResponse, XIndexDMsStartResponse } from './shared_types'
+import { XAccount, XJob, XProgress, XArchiveItem, XArchiveStartResponse, XRateLimitInfo, XIndexDMsStartResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
 import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIInboxInitialState, XAPIConversation, XAPIConversationTimeline, XAPIMessage, XAPIUser } from './account_x_types'
@@ -46,9 +46,17 @@ function emptyProgress(): XProgress {
     }
 }
 
+function emptyRateLimitInfo(): XRateLimitInfo {
+    return {
+        isRateLimited: false,
+        rateLimitReset: 0,
+    }
+}
+
 export class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
+    private rateLimitInfo: XRateLimitInfo = emptyRateLimitInfo();
 
     // Making this public so it can be accessed in tests
     public db: Database.Database | null;
@@ -65,6 +73,20 @@ export class XAccountController {
             console.error(`XAccountController: account ${accountID} not found`);
             return;
         }
+
+        // Monitor for rate limits
+        const ses = session.fromPartition(`persist:account-${this.account.id}`);
+        ses.webRequest.onCompleted((details) => {
+            if (details.statusCode == 429) {
+                this.rateLimitInfo.isRateLimited = true;
+                if (details.responseHeaders) {
+                    this.rateLimitInfo.rateLimitReset = Number(details.responseHeaders['x-rate-limit-reset']);
+                } else {
+                    // If we can't get it from the headers, set it to 15 minutes from now
+                    this.rateLimitInfo.rateLimitReset = Math.floor(Date.now() / 1000) + 900;
+                }
+            }
+        });
     }
 
     refreshAccount() {
@@ -892,46 +914,12 @@ export class XAccountController {
         }
     }
 
-    async isRateLimited(webContentsID: number, url: string): Promise<XIsRateLimitedResponse> {
-        const resp = {
-            isRateLimited: false,
-            rateLimitReset: 0
-        }
+    async resetRateLimitInfo(): Promise<void> {
+        this.rateLimitInfo = emptyRateLimitInfo();
+    }
 
-        if (this.account) {
-            // Start monitoring
-            const ses = session.fromPartition(`persist:account-${this.account.id}`);
-            await ses.clearCache();
-            await this.mitmController.startMonitoring();
-            await this.mitmController.startMITM(ses, ["x.com/i/api/graphql"]);
-
-            // Load a URL that requires the API
-            const wc = webContents.fromId(webContentsID);
-            if (wc) {
-                await wc.loadURL(url);
-
-                // Wait for the URL to finish loading
-                while (wc?.isLoading()) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-            // See if we got rate limited
-            for (let i = 0; i < this.mitmController.responseData.length; i++) {
-                if (this.mitmController.responseData[i].status == 429) {
-                    resp.isRateLimited = true;
-                    resp.rateLimitReset = Number(this.mitmController.responseData[i].headers['x-rate-limit-reset']);
-                    break;
-                }
-            }
-
-            // Stop monitoring
-            await this.mitmController.stopMonitoring();
-            await this.mitmController.stopMITM(ses);
-        }
-
-        return resp;
+    async isRateLimited(): Promise<XRateLimitInfo> {
+        return this.rateLimitInfo;
     }
 }
 
@@ -1048,8 +1036,13 @@ export const defineIPCX = () => {
         await controller.openFolder(folderName);
     });
 
-    ipcMain.handle('X:isRateLimited', async (_, accountID: number, webContentsID: number, url: string): Promise<XIsRateLimitedResponse> => {
+    ipcMain.handle('X:resetRateLimitInfo', async (_, accountID: number): Promise<void> => {
         const controller = getXAccountController(accountID);
-        return await controller.isRateLimited(webContentsID, url);
+        return await controller.resetRateLimitInfo();
     });
-};
+
+    ipcMain.handle('X:isRateLimited', async (_, accountID: number): Promise<XRateLimitInfo> => {
+        const controller = getXAccountController(accountID);
+        return await controller.isRateLimited();
+    });
+}; emptyRateLimitInfo

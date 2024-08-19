@@ -6,7 +6,7 @@ import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
-import type { Account, XProgress, XJob } from '../../../shared_types';
+import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 
 import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
 
@@ -19,6 +19,7 @@ const emit = defineEmits(['onRefreshClicked']);
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 
 const progress = ref<XProgress | null>(null);
+const rateLimitInfo = ref<XRateLimitInfo | null>(null);
 const currentJobs = ref<XJob[]>([]);
 const isPaused = ref<boolean>(false);
 
@@ -30,6 +31,13 @@ const isWebviewMounted = ref(true);
 watch(
     () => accountXViewModel.value?.progress,
     (newProgress) => { if (newProgress) progress.value = newProgress; },
+    { deep: true, }
+);
+
+// Keep rateLimitInfo updated
+watch(
+    () => accountXViewModel.value?.rateLimitInfo,
+    (newRateLimitInfo) => { if (newRateLimitInfo) rateLimitInfo.value = newRateLimitInfo; },
     { deep: true, }
 );
 
@@ -224,8 +232,9 @@ onUnmounted(async () => {
         </div>
 
         <!-- Progress -->
-        <XProgressComponent v-if="progress && accountXViewModel?.state == State.RunJobs" :progress="progress"
-            :account-i-d="account.id" />
+        <XProgressComponent
+            v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && accountXViewModel?.state == State.RunJobs"
+            :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview mt-3"

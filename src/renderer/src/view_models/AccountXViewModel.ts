@@ -1,5 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress, XArchiveStartResponse, XIndexDMsStartResponse } from '../../../shared_types';
+import type { XJob, XProgress, XArchiveStartResponse, XIndexDMsStartResponse, XRateLimitInfo } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -11,6 +11,7 @@ export enum State {
 
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress | null = null;
+    public rateLimitInfo: XRateLimitInfo | null = null;
     public jobs: XJob[] = [];
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
@@ -88,14 +89,37 @@ export class AccountXViewModel extends BaseViewModel {
         this.state = State.Dashboard;
     }
 
+    async loadURLWithRateLimit(url: string) {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            // Reset the rate limit checker
+            await window.electron.X.resetRateLimitInfo(this.account.id);
+
+            // Load the URL
+            await this.loadURL(url);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            await this.waitForLoadingToFinish();
+
+            // Were we rate limited?
+            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+            if (this.rateLimitInfo.isRateLimited) {
+                console.log("rate limited", this.rateLimitInfo);
+                // Wait until the rate limit is done, then try again
+                await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+            } else {
+                break;
+            }
+        }
+    }
+
     rateLimitSecondsLeft() {
-        if (this.progress && this.progress.rateLimitReset) {
-            return this.progress.rateLimitReset - Math.floor(Date.now() / 1000);
+        if (this.rateLimitInfo && this.rateLimitInfo.rateLimitReset) {
+            return this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
         }
         return 0;
     }
 
-    async handleRateLimit() {
+    async indexHandleRateLimit() {
         console.log("rate limited", this.progress);
         await new Promise(resolve => setTimeout(resolve, 1000));
         await this.scrollToBottom();
@@ -158,7 +182,7 @@ export class AccountXViewModel extends BaseViewModel {
         const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
 
         this.showBrowser = true;
-        await this.loadURL("https://x.com/login");
+        await this.loadURLWithRateLimit("https://x.com/login");
         await this.waitForURL("https://x.com/home");
 
         // We're logged in
@@ -245,7 +269,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                     if (this.progress.isRateLimited) {
-                        await this.handleRateLimit();
+                        await this.indexHandleRateLimit();
                     }
                 }
 
@@ -266,7 +290,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                     // Rate limited?
                     if (this.progress.isRateLimited) {
-                        await this.handleRateLimit();
+                        await this.indexHandleRateLimit();
                     }
                 }
 
@@ -306,9 +330,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                         }
 
                         // Load the URL
-                        await this.loadURL(this.archiveStartResponse.items[i].url);
-                        await new Promise(resolve => setTimeout(resolve, 3000));
-                        await this.waitForLoadingToFinish();
+                        await this.loadURLWithRateLimit(this.archiveStartResponse.items[i].url);
 
                         // Save the page
                         await window.electron.archive.savePage(this.webContentsID, this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename);
@@ -353,7 +375,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                         console.log("progress", this.progress);
 
                         if (this.progress.isRateLimited) {
-                            await this.handleRateLimit();
+                            await this.indexHandleRateLimit();
                         }
                     }
 
@@ -375,7 +397,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                         // Rate limited?
                         if (this.progress.isRateLimited) {
-                            await this.handleRateLimit();
+                            await this.indexHandleRateLimit();
                         }
                     }
                 }
@@ -413,7 +435,7 @@ Now I'm indexing the messages in each conversation.
 
                             // Rate limited?
                             if (this.progress.isRateLimited) {
-                                await this.handleRateLimit();
+                                await this.indexHandleRateLimit();
                             }
                         }
 

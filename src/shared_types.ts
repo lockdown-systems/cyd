@@ -115,7 +115,7 @@ export type XIndexDMsStartResponse = {
     conversationIDs: string[]
 }
 
-export type XIsRateLimitedResponse = {
+export type XRateLimitInfo = {
     isRateLimited: boolean;
     rateLimitReset: number;
 }
