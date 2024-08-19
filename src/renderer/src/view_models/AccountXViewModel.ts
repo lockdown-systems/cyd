@@ -383,6 +383,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     }
                 }
 
+                this.pause();
+
                 // Index the conversation messages
                 this.instructions = `
 **${this.actionString}**

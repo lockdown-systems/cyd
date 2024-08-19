@@ -545,14 +545,23 @@ export class XAccountController {
 
         // Process the response
         if (
-            (responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") ||
+            (
+                // XAPIInboxTimeline
+                responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") ||
                 responseData.url.includes("/i/api/1.1/dm/inbox_timeline/untrusted.json") ||
-                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json")) &&
+
+                // XAPIInboxInitialState
+                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
+                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
+            ) &&
             responseData.status == 200
         ) {
             let users: Record<string, XAPIUser>;
             let conversations: Record<string, XAPIConversation>;
-            if (responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json")) {
+            if (
+                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
+                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
+            ) {
                 const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
                 users = inbox_initial_state.inbox_initial_state.users;
                 conversations = inbox_initial_state.inbox_initial_state.conversations;
