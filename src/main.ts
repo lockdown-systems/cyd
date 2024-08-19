@@ -164,7 +164,7 @@ async function createWindow() {
     // Open dev tools?
     if (semiphemeralDevtools) {
         win.webContents.openDevTools();
-        win.setSize(1400, 900);
+        win.setSize(1500, 900);
     }
 
     return win;

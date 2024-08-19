@@ -449,8 +449,6 @@ export class XAccountController {
                 profileImageDataURI,
                 user.id_str,
             ]);
-
-            // If we've seen this user before, don't add it to progress.dmUsersIndexed
         } else {
             // Add the user
             exec(this.db, 'INSERT INTO user (userID, name, screenName, profileImageDataURI) VALUES (?, ?, ?, ?)', [
@@ -459,10 +457,10 @@ export class XAccountController {
                 user.screen_name,
                 profileImageDataURI,
             ]);
-
-            // Update progress
-            this.progress.dmUsersIndexed++;
         }
+
+        // Update progress
+        this.progress.dmUsersIndexed++;
     }
 
     // Returns false if the loop should stop
@@ -572,14 +570,14 @@ export class XAccountController {
             }
 
             // Add the users
-            console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${users.length} users`);
+            console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${Object.keys(users).length} users`);
             for (const userID in users) {
                 const user = users[userID];
                 await this.indexDMUser(user);
             }
 
             // Add the conversations
-            console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${conversations.length} conversations`);
+            console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
             for (const conversationID in conversations) {
                 const conversation = conversations[conversationID];
                 if (!this.indexDMConversation(conversation, isFirstRun)) {
@@ -620,12 +618,20 @@ export class XAccountController {
     }
 
     // When you start indexing DMs, return a list of DM conversationIDs to index
-    async indexDMsStart(): Promise<XIndexDMsStartResponse> {
+    async indexDMsStart(isFirstRun: boolean): Promise<XIndexDMsStartResponse> {
         if (!this.db) {
             this.initDB();
         }
 
-        // Select conversations that need to be indexed
+        // On first run, we need to index all conversations
+        if (isFirstRun) {
+            const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all");
+            return {
+                conversationIDs: conversationIDs.map((row) => row.conversationID)
+            };
+        }
+
+        // Select just the conversations that need to be indexed
         const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE shouldIndexMessages = ? AND deletedAt IS NULL', [1], "all");
         return {
             conversationIDs: conversationIDs.map((row) => row.conversationID)
@@ -633,7 +639,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexDMMessage(message: XAPIMessage): boolean {
+    indexDMMessage(message: XAPIMessage, isFirstRun: boolean): boolean {
         console.log("XAccountController.indexDMMessage", message);
         if (!this.db) {
             this.initDB();
@@ -647,23 +653,28 @@ export class XAccountController {
         // Have we seen this message before?
         const existing = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.message.id], "all");
         if (existing.length > 0) {
-            this.mitmController.responseData[0].processed = true;
-            this.progress.isIndexDMsFinished = true;
-            return false;
-        } else {
-            // Add the message
-            exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)', [
-                message.message.id,
-                message.message.conversation_id,
-                new Date(Number(message.message.time)),
-                message.message.message_data.sender_id,
-                message.message.message_data.text,
-                null,
-            ]);
-
-            // Mark the conversation as needing to be archived
-            exec(this.db, 'UPDATE conversation SET shouldArchive = ? WHERE conversationID = ?', [1, message.message.conversation_id]);
+            if (isFirstRun) {
+                // Delete the message so we can re-add it
+                exec(this.db, 'DELETE FROM message WHERE messageID = ?', [message.message.id]);
+            } else {
+                // We have seen this message, so return early
+                this.mitmController.responseData[0].processed = true;
+                return false;
+            }
         }
+
+        // Add the message
+        exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)', [
+            message.message.id,
+            message.message.conversation_id,
+            new Date(Number(message.message.time)),
+            message.message.message_data.sender_id,
+            message.message.message_data.text,
+            null,
+        ]);
+
+        // Mark the conversation as needing to be archived
+        exec(this.db, 'UPDATE conversation SET shouldArchive = ? WHERE conversationID = ?', [1, message.message.conversation_id]);
 
         // Update progress
         this.progress.dmMessagesIndexed++;
@@ -672,7 +683,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    async indexParseDMsResponseData(iResponse: number): Promise<boolean> {
+    async indexParseDMsResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[iResponse];
 
@@ -692,34 +703,53 @@ export class XAccountController {
 
         // Process the response
         if (
-            responseData.url.includes("/i/api/1.1/dm/conversation/") &&
+            (
+                // XAPIConversationTimeline
+                responseData.url.includes("/i/api/1.1/dm/conversation/") ||
+
+                // XAPIInboxInitialState
+                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json")
+            ) &&
             responseData.status == 200
         ) {
             console.log("XAccountController.indexParseDMsResponseData", iResponse);
-            const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
-            const users = conversationTimeline.conversation_timeline.users;
-            const conversations = conversationTimeline.conversation_timeline.conversations;
-            const entries = conversationTimeline.conversation_timeline.entries;
+            let users: Record<string, XAPIUser>;
+            let conversations: Record<string, XAPIConversation>;
+            let entries: XAPIMessage[];
+
+            if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
+                // XAPIConversationTimeline
+                const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
+                users = conversationTimeline.conversation_timeline.users;
+                conversations = conversationTimeline.conversation_timeline.conversations;
+                entries = conversationTimeline.conversation_timeline.entries;
+            } else {
+                // XAPIInboxInitialState
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                users = inbox_initial_state.inbox_initial_state.users;
+                conversations = inbox_initial_state.inbox_initial_state.conversations;
+                entries = inbox_initial_state.inbox_initial_state.entries;
+            }
 
             // Add the users
-            console.log(`XAccountController.indexParseDMsResponseData: adding ${users.length} users`);
+            console.log(`XAccountController.indexParseDMsResponseData: adding ${Object.keys(users).length} users`);
             for (const userID in users) {
                 const user = users[userID];
                 await this.indexDMUser(user);
             }
 
             // Add the conversations
-            console.log(`XAccountController.indexParseDMsResponseData: adding ${conversations.length} conversations`);
+            console.log(`XAccountController.indexParseDMsResponseData: adding ${Object.keys(conversations).length} conversations`);
             for (const conversationID in conversations) {
                 const conversation = conversations[conversationID];
-                this.indexDMConversation(conversation, false);
+                this.indexDMConversation(conversation, isFirstRun);
             }
 
             // Add the messages
             console.log(`XAccountController.indexParseDMsResponseData: adding ${entries.length} messages`);
             for (let i = 0; i < entries.length; i++) {
                 const message = entries[i];
-                if (!this.indexDMMessage(message)) {
+                if (!this.indexDMMessage(message, isFirstRun)) {
                     shouldReturnFalse = true;
                     break;
                 }
@@ -743,14 +773,14 @@ export class XAccountController {
 
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
-    async indexParseDMs(): Promise<XProgress> {
+    async indexParseDMs(isFirstRun: boolean): Promise<XProgress> {
         console.log(`XAccountController.indexParseDMs: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexDMs";
         this.progress.isIndexDMsFinished = false;
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.indexParseDMsResponseData(i)) {
+            if (!await this.indexParseDMsResponseData(i, isFirstRun)) {
                 return this.progress;
             }
         }
@@ -761,6 +791,12 @@ export class XAccountController {
     async indexTweetsFinished(): Promise<XProgress> {
         console.log('XAccountController.indexTweetsFinished');
         this.progress.isIndexTweetsFinished = true;
+        return this.progress;
+    }
+
+    async indexDMConversationsFinished(): Promise<XProgress> {
+        console.log('XAccountController.indexDMConversationsFinished');
+        this.progress.isIndexDMConversationsFinished = true;
         return this.progress;
     }
 
@@ -976,14 +1012,19 @@ export const defineIPCX = () => {
         return await controller.indexParseDMConversations(isFirstRun);
     });
 
-    ipcMain.handle('X:indexDMsStart', async (_, accountID: number): Promise<XIndexDMsStartResponse> => {
+    ipcMain.handle('X:indexDMsStart', async (_, accountID: number, isFirstRun: boolean): Promise<XIndexDMsStartResponse> => {
         const controller = getXAccountController(accountID);
-        return await controller.indexDMsStart();
+        return await controller.indexDMsStart(isFirstRun);
     });
 
-    ipcMain.handle('X:indexParseDMs', async (_, accountID: number): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseDMs', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
         const controller = getXAccountController(accountID);
-        return await controller.indexParseDMs();
+        return await controller.indexParseDMs(isFirstRun);
+    });
+
+    ipcMain.handle('X:indexDMConversationsFinished', async (_, accountID: number): Promise<XProgress> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexDMConversationsFinished();
     });
 
     ipcMain.handle('X:indexDMsFinished', async (_, accountID: number): Promise<XProgress> => {

@@ -158,23 +158,39 @@ export class BaseViewModel {
     }
 
     // Return true if we scrolled, and false if we can't scroll anymore
-    async scrollToTop() {
-        await this.waitForPause();
-
+    async scrollToTop(selector: string) {
         // Find the last scroll position
-        const scrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+        const scrollTop = await this.getWebview()?.executeJavaScript(`
+        (() => {
+            let el = document.querySelector('${selector}');
+            if(el === null) { return false; }
+            return el.scrollTop;
+        })()
+        `);
 
         await this.waitForLoadingToFinish();
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Scroll to the top
         this.log("scrollToTop", "scrolling to top")
-        await this.getWebview()?.executeJavaScript("window.scrollTo(0, 0)");
+        await this.getWebview()?.executeJavaScript(`
+        (() => {
+            let el = document.querySelector('${selector}');
+            if(el === null) { return false; }
+            el.scrollTo(0,0);
+        })()
+        `);
         await new Promise(resolve => setTimeout(resolve, 1000));
         await this.waitForLoadingToFinish();
 
         // Have we scrolled?
-        const newScrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
+        const newScrollTop = await this.getWebview()?.executeJavaScript(`
+            (() => {
+                let el = document.querySelector('${selector}');
+                if(el === null) { return false; }
+                return el.scrollTop;
+            })()
+        `);
         if (newScrollTop === scrollTop) {
             return false;
         }

@@ -197,7 +197,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.jobs[iJob].status = "finished";
         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-        this.log("finishJob", `${this.jobs[iJob].jobType}: ${this.progress}`);
+        this.log("finishJob", this.jobs[iJob].jobType);
     }
 
     async runJob(iJob: number) {
@@ -244,7 +244,6 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                    console.log("progress", this.progress);
 
                     if (this.progress.isRateLimited) {
                         await this.handleRateLimit();
@@ -259,7 +258,6 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                    console.log("progress", this.progress);
 
                     // Check if we're done
                     if (!this.progress?.isRateLimited && !moreToScroll) {
@@ -372,7 +370,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                         // Check if we're done
                         if (!this.progress?.isRateLimited && !moreToScroll) {
-                            this.progress = await window.electron.X.indexDMsFinished(this.account.id);
+                            this.progress = await window.electron.X.indexDMConversationsFinished(this.account.id);
                             break;
                         }
 
@@ -383,15 +381,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     }
                 }
 
-                this.pause();
-
                 // Index the conversation messages
                 this.instructions = `
 **${this.actionString}**
 
 Now I'm indexing the messages in each conversation.
 `;
-                this.indexDMsStartResponse = await window.electron.X.indexDMsStart(this.account.id);
+                this.indexDMsStartResponse = await window.electron.X.indexDMsStart(this.account.id, this.isFirstRun);
                 console.log('indexDMsStartResponse', this.indexDMsStartResponse);
 
                 if (this.indexDMsStartResponse) {
@@ -404,13 +400,12 @@ Now I'm indexing the messages in each conversation.
 
                         while (this.progress === null || this.progress.isIndexDMsFinished === false) {
                             // Scroll to top
-                            const moreToScroll = await this.scrollToTop();
+                            const moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
 
                             // Parse so far
                             this.progress = await window.electron.X.indexParseDMs(this.account.id);
                             this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                             await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                            console.log("progress", this.progress);
 
                             // Check if we're done
                             if (!this.progress?.isRateLimited && !moreToScroll) {

@@ -39,9 +39,10 @@ declare global {
                 indexStop: (accountID: number) => void;
                 indexParseTweets: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexParseDMConversations: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
-                indexDMsStart: (accountID: number) => Promise<XIndexDMsStartResponse>;
+                indexDMsStart: (accountID: number, isFirstRun: boolean) => Promise<XIndexDMsStartResponse>;
                 indexParseDMs: (accountID: number) => Promise<XProgress>;
                 indexTweetsFinished: (accountID: number) => Promise<XProgress>;
+                indexDMConversationsFinished: (accountID: number) => Promise<XProgress>;
                 indexDMsFinished: (accountID: number) => Promise<XProgress>;
                 indexDMConversationFinished: (accountID: number, conversationID: string) => Promise<boolean>;
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;

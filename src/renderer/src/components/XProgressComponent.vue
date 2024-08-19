@@ -68,9 +68,9 @@ onUnmounted(() => {
             <template v-if="progress.currentJob == 'indexDMs'">
                 <p>
                     Indexed
-                    <b>{{ progress.dmUsersIndexed.toLocaleString() }} users</b> and
-                    <b>{{ progress.dmConversationsIndexed.toLocaleString() }} conversations</b>.
-                    <template v-if="progress.isIndexDMConversationsFinished">
+                    <b>{{ progress.dmConversationsIndexed.toLocaleString() }} conversations</b> and
+                    <b>{{ progress.dmMessagesIndexed.toLocaleString() }} messages</b>.
+                    <template v-if="progress.isIndexDMsFinished">
                         Indexing complete!
                     </template>
                 </p>
