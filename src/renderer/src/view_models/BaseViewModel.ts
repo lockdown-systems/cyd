@@ -12,11 +12,12 @@ export class BaseViewModel {
     public actionString: string;
     public actionFinishedString: string;
     public domReady: boolean;
-    public stoppedLoading: boolean;
     public isPaused: boolean;
 
     public showBrowser: boolean;
     public instructions: string;
+
+    private domReadyHandler: () => void;
 
     constructor(account: Account, webview: WebviewTag) {
         this.account = account;
@@ -31,38 +32,36 @@ export class BaseViewModel {
         this.instructions = "";
         this.showBrowser = false;
         this.domReady = false;
-        this.stoppedLoading = false;
         this.isPaused = false;
 
-        // Wait for the webview to finish loading
-        this.getWebview()?.addEventListener("did-stop-loading", async () => {
-            const url = this.getWebview()?.getURL();
-            this.log("did-stop-loading", url ?? "");
+        this.domReadyHandler = async () => {
+            this.log("domReadyHandler", "dom-ready");
             await new Promise(resolve => setTimeout(resolve, 200));
-            this.stoppedLoading = true;
-        });
 
-        // Figure out the first dom-ready
-        this.getWebview()?.addEventListener("dom-ready", async () => {
-            const url = this.getWebview()?.getURL();
-            this.log("dom-ready", url ?? "");
-            await new Promise(resolve => setTimeout(resolve, 200));
+            // dom-ready has been fired
             this.domReady = true;
 
             const webview = this.getWebview();
             if (webview) {
-                // Remove the event listener
-                webview.removeEventListener("dom-ready", () => { });
-
                 // Set the webContentsID
                 this.webContentsID = webview.getWebContentsId();
+
+                // Remove the event listener
+                webview.removeEventListener("dom-ready", this.domReadyHandler);
             }
-        });
+        }
+        this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
     }
 
     async init() {
+        // Open devtools if needed
         if (await window.electron.shouldOpenDevtools()) {
             this.getWebview()?.openDevTools();
+        }
+
+        // Wait for dom-ready
+        while (!this.domReady) {
+            await new Promise(resolve => setTimeout(resolve, 200));
         }
     }
 
@@ -81,35 +80,10 @@ export class BaseViewModel {
         console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
     }
 
-    async waitForWebviewReady() {
-        console.log("AccountXViewModel.waitForWebviewReady");
-
-        // Make sure dom-ready has been fired once
-        while (!this.domReady) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        // Not loading? Then we're done
-        if (!this.getWebview()?.isLoading()) {
-            this.stoppedLoading = true;
-            return;
-        }
-
-        // Wait for the loading to finish
-        this.stoppedLoading = false;
-        while (!this.stoppedLoading) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        console.log("AccountXViewModel.waitForWebviewReady done");
-    }
-
     async waitForLoadingToFinish() {
         do {
-            this.log("waitForLoadingToFinish", "waiting...")
             await new Promise(resolve => setTimeout(resolve, 200));
         } while (this.getWebview()?.isLoading());
-        this.log("waitForLoadingToFinish", "done");
     }
 
     async waitForSelector(selector: string, timeout: number = 10000) {
@@ -143,18 +117,7 @@ export class BaseViewModel {
                 }
             }
         }
-        await this.waitForWebviewReady();
-    }
-
-    async loadFile(filename: string) {
-        console.log("AccountXViewModel.loadFile", filename);
-        const webview = this.getWebview();
-        if (webview) {
-            const contentsID = webview.getWebContentsId();
-            await window.electron.loadFileInWebview(contentsID, filename);
-
-        }
-        await this.waitForWebviewReady();
+        await this.waitForLoadingToFinish();
     }
 
     async waitForURL(url: string) {

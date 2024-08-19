@@ -7,6 +7,8 @@ export enum State {
     DashboardDisplay = "dashboardDisplay",
     RunJobs = "runJobs",
     FinishedRunningJobs = "finishedRunningJobs",
+    // // debug
+    // Debug = "debug"
 }
 
 export class AccountXViewModel extends BaseViewModel {
@@ -24,6 +26,9 @@ export class AccountXViewModel extends BaseViewModel {
         } else {
             this.state = State.Login;
         }
+
+        // // debug
+        // this.state = State.Debug;
 
         this.progress = null;
         super.init();
@@ -479,7 +484,6 @@ I'm building a searchable archive web page in HTML.
     async run() {
         this.log("run", "running");
         this.progress = await window.electron.X.resetProgress(this.account.id);
-        await this.waitForWebviewReady();
 
         switch (this.state) {
             case State.Login:
@@ -520,6 +524,48 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
                     this.instructions += `I have archived **${this.progress?.dmConversationsArchived} direct message conversations**.`
                 }
                 break;
+
+            // case State.Debug:
+            //     this.showBrowser = true;
+            //     this.instructions = "I'm debugging...";
+
+            //     // eslint-disable-next-line no-constant-condition
+            //     while (true) {
+            //         for (const url of [
+            //             'https://simple.wikipedia.org/wiki/Amateur_radio',
+            //             'https://simple.wikipedia.org/wiki/Audiophile',
+            //             'https://simple.wikipedia.org/wiki/Aquarium',
+            //             'https://simple.wikipedia.org/wiki/Baking',
+            //             'https://simple.wikipedia.org/wiki/Bonsai',
+            //             'https://simple.wikipedia.org/wiki/Computer_programming',
+            //             'https://simple.wikipedia.org/wiki/Cooking',
+            //             'https://simple.wikipedia.org/wiki/Creative_writing',
+            //             'https://simple.wikipedia.org/wiki/Dance',
+            //             'https://simple.wikipedia.org/wiki/Drawing',
+            //             'https://simple.wikipedia.org/wiki/Basketball',
+            //             'https://simple.wikipedia.org/wiki/Gardening',
+            //             'https://simple.wikipedia.org/wiki/Genealogy',
+            //             'https://simple.wikipedia.org/wiki/Jewelry',
+            //             'https://simple.wikipedia.org/wiki/Knapping',
+            //             'https://simple.wikipedia.org/wiki/Lapidary',
+            //             'https://simple.wikipedia.org/wiki/Musical_instrument',
+            //             'https://simple.wikipedia.org/wiki/Painting',
+            //             'https://simple.wikipedia.org/wiki/Knitting',
+            //             'https://simple.wikipedia.org/wiki/Reading',
+            //             'https://simple.wikipedia.org/wiki/Scrapbooking',
+            //             'https://simple.wikipedia.org/wiki/Sculpting',
+            //             'https://simple.wikipedia.org/wiki/Sewing',
+            //             'https://simple.wikipedia.org/wiki/Singing',
+            //             'https://simple.wikipedia.org/wiki/Movie',
+            //             'https://simple.wikipedia.org/wiki/Television_program',
+            //             'https://simple.wikipedia.org/wiki/Woodworking'
+            //         ]) {
+            //             await this.loadURL(url);
+            //             await new Promise(resolve => setTimeout(resolve, 2000));
+            //         }
+            //     }
+
+            //     break;
         }
     }
 }
