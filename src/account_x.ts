@@ -355,11 +355,13 @@ export class XAccountController {
                             entries.content.items?.forEach((item) => {
                                 if (item.item.itemContent.tweet_results?.result.core) {
                                     userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
+                                    tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
                                 }
                                 if (item.item.itemContent.tweet_results?.result.tweet) {
                                     userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                                    tweetLegacy = item.item.itemContent.tweet_results?.result.tweet.legacy;
                                 }
-                                tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
+
                                 if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                     shouldReturnFalse = true;
                                     return;
@@ -368,11 +370,13 @@ export class XAccountController {
                         } else if (entries.content.entryType == "TimelineTimelineItem") {
                             if (entries.content.itemContent?.tweet_results?.result.core) {
                                 userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                                tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
                             }
                             if (entries.content.itemContent?.tweet_results?.result.tweet) {
                                 userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                                tweetLegacy = entries.content.itemContent?.tweet_results?.result.tweet.legacy;
                             }
-                            const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
+
                             if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
