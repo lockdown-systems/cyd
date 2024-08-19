@@ -259,7 +259,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.indexStart(this.account.id);
 
                 // Load the timeline and wait for tweets to appear
-                await this.loadURL("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+                await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
                 try {
                     await this.waitForSelector('article');
                 } catch (e) {
@@ -364,7 +364,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                 for (const url of ["https://x.com/messages"]) {
                     // Load the messages and wait for tweets to appear
-                    await this.loadURL(url);
+                    await this.loadURLWithRateLimit(url);
                     try {
                         await this.waitForSelector('div[aria-label="Timeline: Messages"]');
                     } catch (e) {
@@ -414,7 +414,7 @@ Now I'm indexing the messages in each conversation.
                 if (this.indexDMsStartResponse) {
                     for (let i = 0; i < this.indexDMsStartResponse.conversationIDs.length; i++) {
                         // Load the URL
-                        await this.loadURL("https://x.com/messages/" + this.indexDMsStartResponse.conversationIDs[i]);
+                        await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexDMsStartResponse.conversationIDs[i]);
                         await this.waitForSelector('div[data-testid="DmActivityContainer"]');
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.waitForLoadingToFinish();
