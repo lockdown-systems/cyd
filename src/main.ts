@@ -25,8 +25,7 @@ if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
-const isSingleInstance = app.requestSingleInstanceLock();
-if (!isSingleInstance) {
+if (!app.requestSingleInstanceLock()) {
     app.quit();
     process.exit(0);
 }
@@ -37,7 +36,6 @@ log.info('User data folder is at:', app.getPath('userData'));
 
 const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV;
 const semiphemeralDevtools = process.env.SEMIPHEMERAL_DEVTOOLS === "true";
-let win: BrowserWindow | null = null;
 
 async function initializeApp() {
     // Run database migrations
@@ -82,20 +80,14 @@ async function createWindow() {
     }
 
     // Create the browser window
-    win = new BrowserWindow({
-        show: false,
+    const win = new BrowserWindow({
         width: 1280,
         height: 900,
         webPreferences: {
             webviewTag: true,
-            preload: join(__dirname, './preload.js'),
-            nodeIntegration: false
+            preload: join(__dirname, './preload.js')
         },
         icon: icon
-    });
-
-    win.on('ready-to-show', () => {
-        win?.show();
     });
 
     // IPC events
@@ -178,13 +170,8 @@ async function createWindow() {
     return win;
 }
 
-app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
-    // Someone tried to run a second instance, we should focus our window.
-    if (win) {
-        if (win.isMinimized()) win.restore();
-        win.focus();
-    }
-});
+app.enableSandbox();
+app.on('ready', initializeApp);
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -199,9 +186,3 @@ app.on('activate', () => {
         createWindow();
     }
 });
-
-app.enableSandbox();
-app
-    .whenReady()
-    .then(initializeApp)
-    .catch((e) => log.error('Failed to initialize app and create window:', e));
