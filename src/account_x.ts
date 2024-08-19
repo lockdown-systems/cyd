@@ -639,7 +639,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexDMMessage(message: XAPIMessage, isFirstRun: boolean): boolean {
+    indexDMMessage(message: XAPIMessage, _isFirstRun: boolean): boolean {
         console.log("XAccountController.indexDMMessage", message);
         if (!this.db) {
             this.initDB();
@@ -653,14 +653,8 @@ export class XAccountController {
         // Have we seen this message before?
         const existing = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.message.id], "all");
         if (existing.length > 0) {
-            if (isFirstRun) {
-                // Delete the message so we can re-add it
-                exec(this.db, 'DELETE FROM message WHERE messageID = ?', [message.message.id]);
-            } else {
-                // We have seen this message, so return early
-                this.mitmController.responseData[0].processed = true;
-                return false;
-            }
+            // Delete the message so we can re-add it
+            exec(this.db, 'DELETE FROM message WHERE messageID = ?', [message.message.id]);
         }
 
         // Add the message
@@ -713,36 +707,16 @@ export class XAccountController {
             responseData.status == 200
         ) {
             console.log("XAccountController.indexParseDMsResponseData", iResponse);
-            let users: Record<string, XAPIUser>;
-            let conversations: Record<string, XAPIConversation>;
             let entries: XAPIMessage[];
 
             if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
                 // XAPIConversationTimeline
                 const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
-                users = conversationTimeline.conversation_timeline.users;
-                conversations = conversationTimeline.conversation_timeline.conversations;
                 entries = conversationTimeline.conversation_timeline.entries;
             } else {
                 // XAPIInboxInitialState
                 const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                users = inbox_initial_state.inbox_initial_state.users;
-                conversations = inbox_initial_state.inbox_initial_state.conversations;
                 entries = inbox_initial_state.inbox_initial_state.entries;
-            }
-
-            // Add the users
-            console.log(`XAccountController.indexParseDMsResponseData: adding ${Object.keys(users).length} users`);
-            for (const userID in users) {
-                const user = users[userID];
-                await this.indexDMUser(user);
-            }
-
-            // Add the conversations
-            console.log(`XAccountController.indexParseDMsResponseData: adding ${Object.keys(conversations).length} conversations`);
-            for (const conversationID in conversations) {
-                const conversation = conversations[conversationID];
-                this.indexDMConversation(conversation, isFirstRun);
             }
 
             // Add the messages
