@@ -62,8 +62,9 @@ export interface XAPILegacyUser {
 
 export interface XAPITweetResults {
     result: {
-        __typename?: string; // "Tweet"
-        core: {
+        __typename?: string; // "Tweet", "TweetWithVisibilityResults"
+        // __typename == "Tweet"
+        core?: {
             user_results: {
                 result?: {
                     __typename?: string;
@@ -79,6 +80,38 @@ export interface XAPITweetResults {
                     affiliates_highlighted_label?: any;
                 }
             }
+        };
+        // __typename == "TweetWithVisibilityResults"
+        tweet?: {
+            rest_id: string;
+            core: {
+                user_results: {
+                    result?: {
+                        __typename?: string;
+                        has_graduated_access?: boolean;
+                        id?: string;
+                        is_blue_verified?: boolean;
+                        legacy: XAPILegacyUser;
+                        profile_image_shape?: string;
+                        rest_id?: string;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        tipjar_settings?: any;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        affiliates_highlighted_label?: any;
+                    }
+                }
+            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            unmention_data?: any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            edit_control?: any,
+            is_translatable?: boolean,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            views?: any,
+            source?: string,
+            legacy?: XAPILegacyTweet;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            limitedActionResults?: any;
         };
         is_translatable?: boolean;
         legacy?: XAPILegacyTweet;

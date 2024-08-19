@@ -67,6 +67,14 @@ class MockMITMController implements IMITMController {
                     headers: {},
                     body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
                     processed: false
+                },
+                {
+                    host: 'x.com',
+                    url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22cursor%22%3A%22DAABCgABGS0y9T___-0KAAIYtaJOPpth7ggAAwAAAAIAAA%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
+                    status: 200,
+                    headers: {},
+                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies2.json'), 'utf8'),
+                    processed: false
                 }
             ];
         }
@@ -405,10 +413,10 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
     const controller = createController("indexTweets");
 
     const progress: XProgress = await controller.indexParseTweets(false)
-    expect(progress.tweetsIndexed).toBe(20);
+    expect(progress.tweetsIndexed).toBe(39);
 
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
-    expect(rows.length).toBe(20);
+    expect(rows.length).toBe(43);
 })
 
 test('XAccountController.indexDMUser() should add a user', async () => {
@@ -466,7 +474,7 @@ test("XAccountController.indexParseDMConversations() should add all the conversa
     const controller = createController("indexDMs");
 
     const progress: XProgress = await controller.indexParseDMConversations(true);
-    expect(progress.dmUsersIndexed).toBe(78);
+    expect(progress.dmUsersIndexed).toBe(79);
     expect(progress.dmConversationsIndexed).toBe(44);
 
     let rows = exec(controller.db, "SELECT * FROM user", [], "all");
@@ -482,9 +490,9 @@ test("XAccountController.indexParseDMConversations() should add all the conversa
 test("XAccountController.indexParseDMs() should add all the messages", async () => {
     const controller = createController("indexDMs");
 
-    const progress: XProgress = await controller.indexParseDMs();
-    expect(progress.dmMessagesIndexed).toBe(8);
+    const progress: XProgress = await controller.indexParseDMs(true);
+    expect(progress.dmMessagesIndexed).toBe(124);
 
     const rows = exec(controller.db, "SELECT * FROM message", [], "all");
-    expect(rows.length).toBe(8);
+    expect(rows.length).toBe(116);
 })

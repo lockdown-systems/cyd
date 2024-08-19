@@ -348,17 +348,30 @@ export class XAccountController {
 
                     // Loop through the entries
                     instructions.entries?.forEach((entries) => {
+                        let userLegacy: XAPILegacyUser | undefined;
+                        let tweetLegacy: XAPILegacyTweet | undefined;
+
                         if (entries.content.entryType == "TimelineTimelineModule") {
                             entries.content.items?.forEach((item) => {
-                                const userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
-                                const tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
+                                if (item.item.itemContent.tweet_results?.result.core) {
+                                    userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
+                                }
+                                if (item.item.itemContent.tweet_results?.result.tweet) {
+                                    userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                                }
+                                tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
                                 if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                     shouldReturnFalse = true;
                                     return;
                                 }
                             });
                         } else if (entries.content.entryType == "TimelineTimelineItem") {
-                            const userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                            if (entries.content.itemContent?.tweet_results?.result.core) {
+                                userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                            }
+                            if (entries.content.itemContent?.tweet_results?.result.tweet) {
+                                userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                            }
                             const tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
                             if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
@@ -491,7 +504,7 @@ export class XAccountController {
             ]);
         } else {
             // Add the conversation
-            exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted, addedToDatabaseAt, shouldIndexMessages, shouldArchive) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted, addedToDatabaseAt, shouldIndexMessages) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
                 conversation.conversation_id,
                 conversation.type,
                 conversation.sort_timestamp,
@@ -499,7 +512,6 @@ export class XAccountController {
                 conversation.max_entry_id,
                 conversation.trusted ? 1 : 0,
                 new Date(),
-                1,
                 1
             ]);
         }
@@ -665,9 +677,6 @@ export class XAccountController {
             message.message.message_data.text,
             null,
         ]);
-
-        // Mark the conversation as needing to be archived
-        exec(this.db, 'UPDATE conversation SET shouldArchive = ? WHERE conversationID = ?', [1, message.message.conversation_id]);
 
         // Update progress
         this.progress.dmMessagesIndexed++;
