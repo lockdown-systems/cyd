@@ -7,7 +7,7 @@ import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount, XJob, XProgress, XArchiveTweetsTweet, XArchiveTweetsStartResponse, XIsRateLimitedResponse, XIndexDMsStartResponse } from './shared_types'
+import { XAccount, XJob, XProgress, XArchiveItem, XArchiveStartResponse, XIsRateLimitedResponse, XIndexDMsStartResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
 import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIInboxInitialState, XAPIConversation, XAPIConversationTimeline, XAPIMessage, XAPIUser } from './account_x_types'
@@ -798,7 +798,7 @@ export class XAccountController {
 
     // When you start archiving tweets you:
     // - Return the URLs path, output path, and all expected filenames
-    async archiveTweetsStart(): Promise<XArchiveTweetsStartResponse | null> {
+    async archiveTweetsStart(): Promise<XArchiveStartResponse | null> {
         if (!this.db) {
             this.initDB();
         }
@@ -811,9 +811,9 @@ export class XAccountController {
                 "all"
             );
 
-            const tweets: XArchiveTweetsTweet[] = [];
+            const items: XArchiveItem[] = [];
             for (let i = 0; i < tweetsResp.length; i++) {
-                tweets.push({
+                items.push({
                     url: `https://x.com/${tweetsResp[i].path}`,
                     basename: `${formatDateToYYYYMMDD(tweetsResp[i].createdAt)}_${tweetsResp[i].tweetID}`
                 })
@@ -828,7 +828,7 @@ export class XAccountController {
 
             return {
                 outputPath: outputPath,
-                tweets: tweets
+                items: items
             };
         }
         return null;
@@ -843,6 +843,55 @@ export class XAccountController {
         exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
         return true;
     }
+
+    // When you start archiving tweets you:
+    // - Return the URLs path, output path, and all expected filenames
+    async archiveDMConversationsStart(): Promise<XArchiveStartResponse | null> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (this.account) {
+            const conversationsResp = exec(
+                this.db,
+                'SELECT conversationID FROM conversation WHERE shouldArchive = ? ORDER BY sortTimestamp',
+                [1],
+                "all"
+            );
+
+            const items: XArchiveItem[] = [];
+            for (let i = 0; i < conversationsResp.length; i++) {
+                items.push({
+                    url: `https://x.com/messages/${conversationsResp[i].conversationID}`,
+                    basename: `${conversationsResp[i].conversationID}`
+                })
+            }
+
+            // Make sure the Archived Tweets folder exists
+            const accountDataPath = getAccountDataPath("X", this.account.username);
+            const outputPath = path.join(accountDataPath, "Archived DMs");
+            if (!fs.existsSync(outputPath)) {
+                fs.mkdirSync(outputPath);
+            }
+
+            return {
+                outputPath: outputPath,
+                items: items
+            };
+        }
+        return null;
+    }
+
+    // Save the tweet's archivedAt timestamp
+    async archiveDMConversation(conversationID: string): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        exec(this.db, 'UPDATE conversation SET shouldArchive = ?, archivedAt = ? WHERE conversationID = ?', [0, new Date(), conversationID]);
+        return true;
+    }
+
 
     async archiveBuild(): Promise<boolean> {
         if (!this.db) {
@@ -1016,7 +1065,7 @@ export const defineIPCX = () => {
         return await controller.indexLikesFinished();
     });
 
-    ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
+    ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveStartResponse | null> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweetsStart();
     });
@@ -1024,6 +1073,16 @@ export const defineIPCX = () => {
     ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweet(tweetID);
+    });
+
+    ipcMain.handle('X:archiveDMConversationsStart', async (_, accountID: number): Promise<XArchiveStartResponse | null> => {
+        const controller = getXAccountController(accountID);
+        return await controller.archiveDMConversationsStart();
+    });
+
+    ipcMain.handle('X:archiveDMConversation', async (_, accountID: number, conversationID: string): Promise<boolean> => {
+        const controller = getXAccountController(accountID);
+        return await controller.archiveDMConversation(conversationID);
     });
 
     ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {

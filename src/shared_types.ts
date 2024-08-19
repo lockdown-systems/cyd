@@ -104,14 +104,14 @@ export type XProgress = {
     rateLimitReset: null | number;
 }
 
-export type XArchiveTweetsTweet = {
+export type XArchiveItem = {
     url: string,
     basename: string
 }
 
-export type XArchiveTweetsStartResponse = {
+export type XArchiveStartResponse = {
     outputPath: string;
-    tweets: XArchiveTweetsTweet[]
+    items: XArchiveItem[]
 }
 
 export type XIndexDMsStartResponse = {

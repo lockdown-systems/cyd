@@ -26,6 +26,10 @@ const archivedTweetsOpenFolder = async () => {
     await window.electron.X.openFolder(props.accountID, "Archived Tweets");
 };
 
+const archivedDMsOpenFolder = async () => {
+    await window.electron.X.openFolder(props.accountID, "Archived DMs");
+};
+
 onMounted(() => {
     // @ts-expect-error intervalID is a NodeJS.Interval, not a number
     intervalID.value = setInterval(() => {
@@ -111,6 +115,31 @@ onUnmounted(() => {
                         </div>
                     </div>
                     <button class="btn btn-primary" @click="archivedTweetsOpenFolder">
+                        Open Folder
+                    </button>
+                </div>
+            </template>
+            <!-- Archive DMs -->
+            <template v-if="progress.currentJob == 'archiveDMs'">
+                <p>
+                    Archived
+                    <b>{{ progress.dmConversationsArchived.toLocaleString() }} out of
+                        {{ progress.totalDMConversationsToArchive.toLocaleString() }} DM conversations</b>.
+                    <template v-if="progress.isArchiveDMsFinished">
+                        Finished archiving direct messages!
+                    </template>
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.dmConversationsArchived / progress.totalDMConversationsToArchive) * 100}%` }"
+                            :aria-valuenow="(progress.dmConversationsArchived / progress.totalDMConversationsToArchive) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.dmConversationsArchived / progress.totalDMConversationsToArchive) *
+                                100) }}%
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" @click="archivedDMsOpenFolder">
                         Open Folder
                     </button>
                 </div>

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveTweetsStartResponse, XIndexDMsStartResponse, XIsRateLimitedResponse } from './shared_types'
+import { Account, XProgress, XJob, XArchiveStartResponse, XIndexDMsStartResponse, XIsRateLimitedResponse } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -103,11 +103,17 @@ contextBridge.exposeInMainWorld('electron', {
         indexLikesFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexLikesFinished', accountID)
         },
-        archiveTweetsStart: (accountID: number): Promise<XArchiveTweetsStartResponse | null> => {
+        archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse | null> => {
             return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
         },
         archiveTweet: (accountID: number, tweetID: string): Promise<boolean> => {
             return ipcRenderer.invoke('X:archiveTweet', accountID, tweetID)
+        },
+        archiveDMConversationsStart: (accountID: number): Promise<XArchiveStartResponse | null> => {
+            return ipcRenderer.invoke('X:archiveDMConversationsStart', accountID)
+        },
+        archiveDMConversation: (accountID: number, conversatinID: string): Promise<boolean> => {
+            return ipcRenderer.invoke('X:archiveDMConversation', accountID, conversatinID)
         },
         archiveBuild: (accountID: number): Promise<boolean> => {
             return ipcRenderer.invoke('X:archiveBuild', accountID)

@@ -1,5 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
-import type { XJob, XProgress, XArchiveTweetsStartResponse, XIndexDMsStartResponse } from '../../../shared_types';
+import type { XJob, XProgress, XArchiveStartResponse, XIndexDMsStartResponse } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -15,7 +15,7 @@ export class AccountXViewModel extends BaseViewModel {
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
 
-    private archiveTweetsStartResponse: XArchiveTweetsStartResponse | null = null;
+    private archiveStartResponse: XArchiveStartResponse | null = null;
     private indexDMsStartResponse: XIndexDMsStartResponse | null = null;
 
     async init() {
@@ -85,7 +85,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.progress = null;
         this.jobs = [];
         this.isFirstRun = false;
-        this.archiveTweetsStartResponse = null;
+        this.archiveStartResponse = null;
         this.state = State.Dashboard;
     }
 
@@ -286,36 +286,36 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 `;
 
                 // Initialize archiving of tweets
-                this.archiveTweetsStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
-                console.log('archiveTweetsStartResponse', this.archiveTweetsStartResponse);
+                this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
+                console.log('archiveStartResponse', this.archiveStartResponse);
 
-                if (this.progress && this.archiveTweetsStartResponse && this.webContentsID) {
+                if (this.progress && this.archiveStartResponse && this.webContentsID) {
 
                     // Start the progress
                     this.progress.currentJob = "archiveTweets";
-                    this.progress.totalTweetsToArchive = this.archiveTweetsStartResponse.tweets.length;
+                    this.progress.totalTweetsToArchive = this.archiveStartResponse.items.length;
                     this.progress.tweetsArchived = 0;
 
                     // Archive the tweets
-                    for (let i = 0; i < this.archiveTweetsStartResponse.tweets.length; i++) {
+                    for (let i = 0; i < this.archiveStartResponse.items.length; i++) {
                         await this.waitForPause();
 
                         // Already saved?
-                        if (await window.electron.archive.isPageAlreadySaved(this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.tweets[i].basename)) {
+                        if (await window.electron.archive.isPageAlreadySaved(this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename)) {
                             this.progress.tweetsArchived += 1;
                             continue;
                         }
 
                         // Load the URL
-                        await this.loadURL(this.archiveTweetsStartResponse.tweets[i].url);
+                        await this.loadURL(this.archiveStartResponse.items[i].url);
                         await new Promise(resolve => setTimeout(resolve, 3000));
                         await this.waitForLoadingToFinish();
 
                         // Save the page
-                        await window.electron.archive.savePage(this.webContentsID, this.archiveTweetsStartResponse.outputPath, this.archiveTweetsStartResponse.tweets[i].basename);
+                        await window.electron.archive.savePage(this.webContentsID, this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename);
 
                         // Update tweet's archivedAt date
-                        await window.electron.X.archiveTweet(this.account.id, this.archiveTweetsStartResponse.tweets[i].basename);
+                        await window.electron.X.archiveTweet(this.account.id, this.archiveStartResponse.items[i].basename);
 
                         // Update progress
                         this.progress.tweetsArchived += 1;
@@ -437,7 +437,54 @@ Now I'm indexing the messages in each conversation.
 I'm archiving your direct messages, starting with the oldest. This may take a while...
 `;
 
-                // TODO: implement
+                // Initialize archiving of tweets
+                this.archiveStartResponse = await window.electron.X.archiveDMConversationsStart(this.account.id);
+                console.log('archiveStartResponse', this.archiveStartResponse);
+
+                if (this.progress && this.archiveStartResponse && this.webContentsID) {
+
+                    // Start the progress
+                    this.progress.currentJob = "archiveDMs";
+                    this.progress.totalDMConversationsToArchive = this.archiveStartResponse.items.length;
+                    this.progress.dmConversationsArchived = 0;
+
+                    // Archive the conversations
+                    for (let i = 0; i < this.archiveStartResponse.items.length; i++) {
+                        await this.waitForPause();
+
+                        // Already saved?
+                        if (await window.electron.archive.isPageAlreadySaved(this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename)) {
+                            this.progress.dmConversationsArchived += 1;
+                            continue;
+                        }
+
+                        // Load the URL
+                        await this.loadURL(this.archiveStartResponse.items[i].url);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        await this.waitForLoadingToFinish();
+
+                        // Scroll to top
+                        // eslint-disable-next-line no-constant-condition
+                        while (true) {
+                            // Scroll to top
+                            const moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
+
+                            // Check if we're done
+                            if (!moreToScroll) {
+                                break;
+                            }
+                        }
+
+                        // Save the page
+                        await window.electron.archive.savePage(this.webContentsID, this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename);
+
+                        // Update conversation's archivedAt date
+                        await window.electron.X.archiveDMConversation(this.account.id, this.archiveStartResponse.items[i].basename);
+
+                        // Update progress
+                        this.progress.dmConversationsArchived += 1;
+                    }
+                }
 
                 await this.finishJob(iJob);
                 break;
