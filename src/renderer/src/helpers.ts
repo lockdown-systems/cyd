@@ -61,3 +61,8 @@ export function getAccountIcon(accountType: string): string {
             return "fa-solid fa-gears";
     }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function logObj(obj: any) {
+    return JSON.parse(JSON.stringify(obj));
+}

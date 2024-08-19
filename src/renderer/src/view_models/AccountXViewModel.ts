@@ -1,4 +1,5 @@
 import { BaseViewModel } from './BaseViewModel';
+import { logObj } from '../helpers';
 import type { XJob, XProgress, XArchiveStartResponse, XIndexDMsStartResponse, XRateLimitInfo } from '../../../shared_types';
 
 export enum State {
@@ -30,8 +31,12 @@ export class AccountXViewModel extends BaseViewModel {
         super.init();
     }
 
-    log(func: string, message: string) {
-        console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
+    log(func: string, message?: string) {
+        if (message === undefined) {
+            console.log(`AccountXViewModel.${func} (${this.state}):`);
+        } else {
+            console.log(`AccountXViewModel.${func} (${this.state}):`, logObj(message));
+        }
     }
 
     async setAction(action: string) {
@@ -103,7 +108,7 @@ export class AccountXViewModel extends BaseViewModel {
             // Were we rate limited?
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
             if (this.rateLimitInfo.isRateLimited) {
-                console.log("rate limited", this.rateLimitInfo);
+                this.log("rate limited", this.rateLimitInfo);
                 // Wait until the rate limit is done, then try again
                 await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
             } else {
@@ -120,7 +125,7 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async indexHandleRateLimit() {
-        console.log("rate limited", this.progress);
+        this.log("indexHandleRateLimit", this.progress);
         await new Promise(resolve => setTimeout(resolve, 1000));
         await this.scrollToBottom();
 
@@ -203,7 +208,7 @@ export class AccountXViewModel extends BaseViewModel {
         }
 
         if (originalUsername !== null && username != originalUsername) {
-            console.log(`Username changed from ${this.account.xAccount?.username} to ${username}`);
+            this.log(`Username changed from ${this.account.xAccount?.username} to ${username}`);
             // TODO: username changed error
             return;
         }
@@ -310,7 +315,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                 // Initialize archiving of tweets
                 this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
-                console.log('archiveStartResponse', this.archiveStartResponse);
+                this.log('archiveStartResponse', this.archiveStartResponse);
 
                 if (this.progress && this.archiveStartResponse && this.webContentsID) {
 
@@ -372,7 +377,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                         this.progress = await window.electron.X.indexParseDMConversations(this.account.id, this.isFirstRun);
                         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                        console.log("progress", this.progress);
+                        this.log("progress", this.progress);
 
                         if (this.progress.isRateLimited) {
                             await this.indexHandleRateLimit();
@@ -387,7 +392,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                         this.progress = await window.electron.X.indexParseDMConversations(this.account.id, this.isFirstRun);
                         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                        console.log("progress", this.progress);
+                        this.log("progress", this.progress);
 
                         // Check if we're done
                         if (!this.progress?.isRateLimited && !moreToScroll) {
@@ -409,7 +414,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 Now I'm indexing the messages in each conversation.
 `;
                 this.indexDMsStartResponse = await window.electron.X.indexDMsStart(this.account.id, this.isFirstRun);
-                console.log('indexDMsStartResponse', this.indexDMsStartResponse);
+                this.log('indexDMsStartResponse', this.indexDMsStartResponse);
 
                 if (this.indexDMsStartResponse) {
                     for (let i = 0; i < this.indexDMsStartResponse.conversationIDs.length; i++) {
@@ -465,17 +470,17 @@ I'm building a searchable archive web page in HTML.
                 break;
 
             case "deleteTweets":
-                console.log("deleteTweets: NOT IMPLEMENTED");
+                this.log("deleteTweets: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
 
             case "deleteLikes":
-                console.log("deleteLikes: NOT IMPLEMENTED");
+                this.log("deleteLikes: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
 
             case "deleteDMs":
-                console.log("deleteDMs: NOT IMPLEMENTED");
+                this.log("deleteDMs: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
         }
