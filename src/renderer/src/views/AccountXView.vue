@@ -219,22 +219,26 @@ onUnmounted(async () => {
     <div class="wrapper d-flex flex-column">
         <AccountHeader :account="account" @on-refresh-clicked="emit('onRefreshClicked')" />
 
-        <div class="d-flex align-items-center">
-            <!-- Speech bubble -->
-            <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''"
-                class="flex-grow-1" :class="{ 'w-100': currentJobs.length === 0 }" />
+        <div class="d-flex">
+            <div class="d-flex flex-column flex-grow-1">
+                <!-- Speech bubble -->
+                <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''" class="mb-2"
+                    :class="{ 'w-100': currentJobs.length === 0 }" />
 
-            <!-- Job status -->
-            <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
-                :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
-                @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()"
-                @on-cancel="emit('onRefreshClicked')" />
+                <!-- Progress -->
+                <XProgressComponent
+                    v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && accountXViewModel?.state == State.RunJobs"
+                    :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
+            </div>
+
+            <div class="d-flex align-items-center">
+                <!-- Job status -->
+                <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
+                    :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
+                    @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()"
+                    @on-cancel="emit('onRefreshClicked')" />
+            </div>
         </div>
-
-        <!-- Progress -->
-        <XProgressComponent
-            v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && accountXViewModel?.state == State.RunJobs"
-            :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview mt-3"

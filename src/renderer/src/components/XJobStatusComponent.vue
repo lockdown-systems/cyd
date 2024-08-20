@@ -61,7 +61,7 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="job-status-list">
-        <div v-for="job in jobs" :key="job.id ?? 0" class="job-status-item d-flex align-items-center mb-2">
+        <div v-for="job in jobs" :key="job.id ?? 0" class="job-status-item d-flex align-items-center">
             <div class="status-icon me-2">
                 <i v-if="job.status !== 'running'" :class="getStatusIcon(job.status)" />
                 <i v-else :class="runningIcon" />
@@ -70,7 +70,7 @@ onBeforeUnmount(() => {
                 {{ getJobTypeText(job.jobType) }}
             </div>
         </div>
-        <div class="d-flex justify-content-center">
+        <div class="d-flex justify-content-center mt-2">
             <button v-if="!isPaused" class="btn btn-secondary btn-sm" @click="emit('onPause')">
                 <i class="fa-solid fa-pause" /> Pause
             </button>

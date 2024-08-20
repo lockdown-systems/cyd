@@ -10,7 +10,7 @@ const parsedMessage = computed(() => marked.parse(props.message));
 </script>
 
 <template>
-  <div class="row align-items-center pt-2">
+  <div class="row pt-2">
     <div class="col-auto">
       <img src="/logo.png" class="bird img-fluid" alt="Semiphemeral Bird">
     </div>
