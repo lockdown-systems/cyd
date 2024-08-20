@@ -95,6 +95,15 @@ export class AccountXViewModel extends BaseViewModel {
         this.state = State.Dashboard;
     }
 
+    async waitForRateLimit() {
+        this.log("waitForRateLimit", this.rateLimitInfo);
+        let seconds = 0;
+        if (this.rateLimitInfo && this.rateLimitInfo.rateLimitReset) {
+            seconds = this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
+        }
+        await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    }
+
     async loadURLWithRateLimit(url: string) {
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -109,20 +118,11 @@ export class AccountXViewModel extends BaseViewModel {
             // Were we rate limited?
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
             if (this.rateLimitInfo.isRateLimited) {
-                this.log("rate limited", this.rateLimitInfo);
-                // Wait until the rate limit is done, then try again
-                await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+                await this.waitForRateLimit();
             } else {
                 break;
             }
         }
-    }
-
-    rateLimitSecondsLeft() {
-        if (this.rateLimitInfo && this.rateLimitInfo.rateLimitReset) {
-            return this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
-        }
-        return 0;
     }
 
     async indexHandleRateLimit() {
@@ -131,7 +131,7 @@ export class AccountXViewModel extends BaseViewModel {
         await this.scrollToBottom();
 
         // Wait until the rate limit is done
-        await new Promise(resolve => setTimeout(resolve, this.rateLimitSecondsLeft() * 1000));
+        await this.waitForRateLimit();
 
         // Click retry.
         /*
@@ -203,8 +203,7 @@ export class AccountXViewModel extends BaseViewModel {
         }
         if (!username) {
             // TODO: Automation error
-            this.log("runJob", "failed to get username, waiting 10s");
-            await new Promise(resolve => setTimeout(resolve, 10000));
+            this.log("runJob", "failed to get username");
             return;
         }
 
@@ -265,23 +264,31 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.indexStart(this.account.id);
 
                 // Load the timeline and wait for tweets to appear
-                await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
-                try {
-                    await this.waitForSelector('article');
-                } catch (e) {
-                    // Run indexParseTweets so we can see if we were rate limited
-                    this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
-                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-
-                    if (this.progress.isRateLimited) {
-                        await this.indexHandleRateLimit();
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+                    try {
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                        await this.waitForSelector('article');
+                        break;
+                    } catch (e) {
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
+                        }
                     }
                 }
 
                 while (this.progress === null || this.progress.isIndexTweetsFinished === false) {
                     // Scroll to bottom
-                    const moreToScroll = await this.scrollToBottom();
+                    await window.electron.X.resetRateLimitInfo(this.account.id);
+                    let moreToScroll = await this.scrollToBottom();
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        await this.indexHandleRateLimit();
+                        moreToScroll = true;
+                    }
 
                     // Parse so far
                     this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
@@ -289,14 +296,9 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                     // Check if we're done
-                    if (!this.progress?.isRateLimited && !moreToScroll) {
+                    if (!moreToScroll) {
                         this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
                         break;
-                    }
-
-                    // Rate limited?
-                    if (this.progress.isRateLimited) {
-                        await this.indexHandleRateLimit();
                     }
                 }
 
@@ -368,43 +370,45 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
 
-                for (const url of ["https://x.com/messages"]) {
-                    // Load the messages and wait for tweets to appear
-                    await this.loadURLWithRateLimit(url);
+                // Load the messages and wait for tweets to appear
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await this.loadURLWithRateLimit("https://x.com/messages");
                     try {
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
                         await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+                        break;
                     } catch (e) {
-                        // Run indexParseDMConversations so we can see if we were rate limited
-                        this.progress = await window.electron.X.indexParseDMConversations(this.account.id, this.isFirstRun);
-                        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                        this.log("progress", this.progress);
-
-                        if (this.progress.isRateLimited) {
-                            await this.indexHandleRateLimit();
-                        }
-                    }
-
-                    while (this.progress === null || this.progress.isIndexDMConversationsFinished === false) {
-                        // Scroll to bottom
-                        const moreToScroll = await this.scrollToBottom();
-
-                        // Parse so far
-                        this.progress = await window.electron.X.indexParseDMConversations(this.account.id, this.isFirstRun);
-                        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                        this.log("progress", this.progress);
-
-                        // Check if we're done
-                        if (!this.progress?.isRateLimited && !moreToScroll) {
-                            this.progress = await window.electron.X.indexDMConversationsFinished(this.account.id);
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
                             break;
                         }
+                    }
+                }
 
-                        // Rate limited?
-                        if (this.progress.isRateLimited) {
-                            await this.indexHandleRateLimit();
-                        }
+
+                while (this.progress === null || this.progress.isIndexDMConversationsFinished === false) {
+                    // Scroll to bottom
+                    await window.electron.X.resetRateLimitInfo(this.account.id);
+                    let moreToScroll = await this.scrollToBottom();
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        await this.indexHandleRateLimit();
+                        moreToScroll = true;
+                    }
+
+                    // Parse so far
+                    this.progress = await window.electron.X.indexParseDMConversations(this.account.id, this.isFirstRun);
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                    this.log("progress", this.progress);
+
+                    // Check if we're done
+                    if (!moreToScroll) {
+                        this.progress = await window.electron.X.indexDMConversationsFinished(this.account.id);
+                        break;
                     }
                 }
 
@@ -427,7 +431,14 @@ Now I'm indexing the messages in each conversation.
 
                         while (this.progress === null || this.progress.isIndexDMsFinished === false) {
                             // Scroll to top
-                            const moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
+                            await window.electron.X.resetRateLimitInfo(this.account.id);
+                            let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                                await this.indexHandleRateLimit();
+                                moreToScroll = true;
+                            }
 
                             // Parse so far
                             this.progress = await window.electron.X.indexParseDMs(this.account.id);
@@ -435,13 +446,8 @@ Now I'm indexing the messages in each conversation.
                             await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                             // Check if we're done
-                            if (!this.progress?.isRateLimited && !moreToScroll) {
+                            if (!moreToScroll) {
                                 break;
-                            }
-
-                            // Rate limited?
-                            if (this.progress.isRateLimited) {
-                                await this.indexHandleRateLimit();
                             }
                         }
 

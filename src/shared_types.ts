@@ -96,9 +96,6 @@ export type XProgress = {
     retweetsDeleted: number;
     likesDeleted: number;
     dmConversationsDeleted: number;
-
-    isRateLimited: boolean;
-    rateLimitReset: null | number;
 }
 
 export type XArchiveItem = {

@@ -40,9 +40,7 @@ function emptyProgress(): XProgress {
         tweetsDeleted: 0,
         retweetsDeleted: 0,
         likesDeleted: 0,
-        dmConversationsDeleted: 0,
-        isRateLimited: false,
-        rateLimitReset: null,
+        dmConversationsDeleted: 0
     }
 }
 
@@ -347,8 +345,6 @@ export class XAccountController {
         // Rate limited?
         if (responseData.status == 429) {
             console.log('XAccountController.indexParseTweetsResponseData: RATE LIMITED');
-            this.progress.isRateLimited = true;
-            this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
@@ -572,8 +568,6 @@ export class XAccountController {
         // Rate limited?
         if (responseData.status == 429) {
             console.log('XAccountController.indexParseDMConversationsResponseData: RATE LIMITED');
-            this.progress.isRateLimited = true;
-            this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
@@ -723,8 +717,6 @@ export class XAccountController {
         // Rate limited?
         if (responseData.status == 429) {
             console.log('XAccountController.indexParseDMsResponseData: RATE LIMITED');
-            this.progress.isRateLimited = true;
-            this.progress.rateLimitReset = Number(responseData.headers['x-rate-limit-reset']);
             this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
