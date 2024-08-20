@@ -31,7 +31,8 @@ export class AccountXViewModel extends BaseViewModel {
         super.init();
     }
 
-    log(func: string, message?: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    log(func: string, message?: any) {
         if (message === undefined) {
             console.log(`AccountXViewModel.${func} (${this.state}):`);
         } else {
