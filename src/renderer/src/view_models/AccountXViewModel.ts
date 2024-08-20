@@ -127,7 +127,6 @@ export class AccountXViewModel extends BaseViewModel {
 
     async indexTweetsHandleRateLimit(): Promise<boolean> {
         this.log("indexTweetsHandleRateLimit", this.progress);
-        this.pause();
 
         // Click retry.
         /*
@@ -183,6 +182,7 @@ export class AccountXViewModel extends BaseViewModel {
     async indexDMConversationsHandleRateLimit(): Promise<boolean> {
         this.log("indexDMConversationsHandleRateLimit", this.progress);
         this.pause();
+        await this.waitForPause();
 
         const code = `
         (() => {
@@ -213,6 +213,7 @@ export class AccountXViewModel extends BaseViewModel {
     async indexDMsHandleRateLimit(): Promise<boolean> {
         this.log("indexDMsHandleRateLimit", this.progress);
         this.pause();
+        await this.waitForPause();
 
         const code = `
         (() => {
@@ -347,6 +348,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         if (!await this.indexTweetsHandleRateLimit()) {
                             // TODO: Automation error
                         }
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                         moreToScroll = true;
                     }
 
@@ -454,10 +456,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     let moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexDMConversationsHandleRateLimit()) {
                             // TODO: Automation error
                         }
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                         moreToScroll = true;
                     }
 
@@ -497,10 +502,13 @@ Now I'm indexing the messages in each conversation.
                             let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                             if (this.rateLimitInfo.isRateLimited) {
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                                 await this.waitForRateLimit();
                                 if (!await this.indexDMsHandleRateLimit()) {
                                     // TODO: Automation error
                                 }
+                                await new Promise(resolve => setTimeout(resolve, 1000));
                                 moreToScroll = true;
                             }
 
