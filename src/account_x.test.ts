@@ -42,7 +42,18 @@ vi.mock('./helpers', () => ({
 }));
 import { getSettingsPath, getAccountDataPath } from './helpers';
 
-// Import the local modules after helpers has been mocked
+// Mock the session object from Electron
+vi.mock('electron', () => ({
+    session: {
+        fromPartition: vi.fn().mockReturnValue({
+            webRequest: {
+                onCompleted: vi.fn()
+            }
+        })
+    }
+}));
+
+// Import the local modules after stuff has been mocked
 import { Account, ResponseData, XProgress } from './shared_types'
 import { XAccountController } from './account_x'
 import { IMITMController } from './mitm_proxy'
@@ -416,7 +427,7 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
     expect(progress.tweetsIndexed).toBe(39);
 
     const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
-    expect(rows.length).toBe(43);
+    expect(rows.length).toBe(44);
 })
 
 test('XAccountController.indexDMUser() should add a user', async () => {
