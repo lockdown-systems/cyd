@@ -285,7 +285,7 @@ export interface XAPIInboxTimeline {
 }
 
 export interface XAPIInboxInitialState {
-    inbox_initial_state: {
+    inbox_initial_state?: {
         last_seen_event_id: string,
         trusted_last_seen_event_id: string,
         untrusted_last_seen_event_id: string,
@@ -302,7 +302,9 @@ export interface XAPIInboxInitialState {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         key_registry_state: any;
-    }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    user_events: any
 }
 
 export interface XAPIMessage {

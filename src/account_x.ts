@@ -585,43 +585,56 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            let users: Record<string, XAPIUser>;
-            let conversations: Record<string, XAPIConversation>;
-            if (
-                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
-            ) {
-                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                users = inbox_initial_state.inbox_initial_state.users;
-                conversations = inbox_initial_state.inbox_initial_state.conversations;
-            } else {
-                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
-                users = inbox_timeline.inbox_timeline.users;
-                conversations = inbox_timeline.inbox_timeline.conversations;
-            }
-
-            // Add the users
-            console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${Object.keys(users).length} users`);
-            for (const userID in users) {
-                const user = users[userID];
-                await this.indexDMUser(user);
-            }
-
-            // Add the conversations
-            console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
-            for (const conversationID in conversations) {
-                const conversation = conversations[conversationID];
-                if (!this.indexDMConversation(conversation, isFirstRun)) {
-                    shouldReturnFalse = true;
-                    break;
+            try {
+                let users: Record<string, XAPIUser>;
+                let conversations: Record<string, XAPIConversation>;
+                if (
+                    responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
+                    responseData.url.includes("/i/api/1.1/dm/user_updates.json")
+                ) {
+                    const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                    if (!inbox_initial_state.inbox_initial_state) {
+                        // Skip this response
+                        return true;
+                    }
+                    users = inbox_initial_state.inbox_initial_state.users;
+                    conversations = inbox_initial_state.inbox_initial_state.conversations;
+                } else {
+                    const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
+                    users = inbox_timeline.inbox_timeline.users;
+                    conversations = inbox_timeline.inbox_timeline.conversations;
                 }
-            }
 
-            this.mitmController.responseData[iResponse].processed = true;
-            console.log('XAccountController.indexParseDMConversationsResponseData: processed', iResponse);
+                // Add the users
+                console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${Object.keys(users).length} users`);
+                for (const userID in users) {
+                    const user = users[userID];
+                    await this.indexDMUser(user);
+                }
 
-            if (shouldReturnFalse) {
-                return false;
+                // Add the conversations
+                console.log(`XAccountController.indexParseDMConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
+                for (const conversationID in conversations) {
+                    const conversation = conversations[conversationID];
+                    if (!this.indexDMConversation(conversation, isFirstRun)) {
+                        shouldReturnFalse = true;
+                        break;
+                    }
+                }
+
+                this.mitmController.responseData[iResponse].processed = true;
+                console.log('XAccountController.indexParseDMConversationsResponseData: processed', iResponse);
+
+                if (shouldReturnFalse) {
+                    return false;
+                }
+            } catch (error) {
+                // TODO: automation error
+                console.error('XAccountController.indexParseDMConversationsResponseData: error', error);
+                console.log(responseData.body)
+
+                // Throw an exception
+                throw error;
             }
         } else {
             // Skip response
@@ -732,36 +745,48 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            console.log("XAccountController.indexParseDMsResponseData", iResponse);
-            let entries: XAPIMessage[];
+            try {
+                console.log("XAccountController.indexParseDMsResponseData", iResponse);
+                let entries: XAPIMessage[];
 
-            if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
-                // XAPIConversationTimeline
-                const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
-                entries = conversationTimeline.conversation_timeline.entries;
-            } else {
-                // XAPIInboxInitialState
-                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                entries = inbox_initial_state.inbox_initial_state.entries;
-            }
-
-            // Add the messages
-            console.log(`XAccountController.indexParseDMsResponseData: adding ${entries.length} messages`);
-            for (let i = 0; i < entries.length; i++) {
-                const message = entries[i];
-                if (!this.indexDMMessage(message, isFirstRun)) {
-                    shouldReturnFalse = true;
-                    break;
+                if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
+                    // XAPIConversationTimeline
+                    const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
+                    entries = conversationTimeline.conversation_timeline.entries;
+                } else {
+                    // XAPIInboxInitialState
+                    const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                    if (!inbox_initial_state.inbox_initial_state) {
+                        // Skip this response
+                        return true;
+                    }
+                    entries = inbox_initial_state.inbox_initial_state.entries;
                 }
+
+                // Add the messages
+                console.log(`XAccountController.indexParseDMsResponseData: adding ${entries.length} messages`);
+                for (let i = 0; i < entries.length; i++) {
+                    const message = entries[i];
+                    if (!this.indexDMMessage(message, isFirstRun)) {
+                        shouldReturnFalse = true;
+                        break;
+                    }
+                }
+
+                this.mitmController.responseData[iResponse].processed = true;
+                console.log('XAccountController.indexParseDMsResponseData: processed', iResponse);
+
+                if (shouldReturnFalse) {
+                    return false;
+                }
+            } catch (error) {
+                // TODO: automation error
+                console.error('XAccountController.indexParseDMConversationsResponseData: error', error);
+                console.log(responseData.body)
+
+                // Throw an exception
+                throw error;
             }
-
-            this.mitmController.responseData[iResponse].processed = true;
-            console.log('XAccountController.indexParseDMsResponseData: processed', iResponse);
-
-            if (shouldReturnFalse) {
-                return false;
-            }
-
         } else {
             // Skip response
             console.log('XAccountController.indexParseDMsResponseData: skipping response', responseData.url);
