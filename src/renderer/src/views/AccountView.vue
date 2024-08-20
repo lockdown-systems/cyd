@@ -29,7 +29,10 @@ const accountClicked = (accountType: string) => {
 <template>
   <div v-if="!isRefreshing">
     <template v-if="account.type == 'unknown'">
-      <div class="mt-3 bt-3 br-3">
+      <div class="container mt-5">
+        <div class="text-center">
+          <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird" style="width: 120px;">
+        </div>
         <p class="lead">
           With Semiphemeral, you can automatically delete your data in tech platforms, except for
           what you want to keep.
