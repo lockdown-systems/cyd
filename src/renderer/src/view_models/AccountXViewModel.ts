@@ -125,13 +125,9 @@ export class AccountXViewModel extends BaseViewModel {
         }
     }
 
-    async indexHandleRateLimit() {
-        this.log("indexHandleRateLimit", this.progress);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await this.scrollToBottom();
-
-        // Wait until the rate limit is done
-        await this.waitForRateLimit();
+    async indexTweetsHandleRateLimit(): Promise<boolean> {
+        this.log("indexTweetsHandleRateLimit", this.progress);
+        this.pause();
 
         // Click retry.
         /*
@@ -160,10 +156,10 @@ export class AccountXViewModel extends BaseViewModel {
         */
         const code = `
         (() => {
-            let el = document.querySelectorAll('[data-testid="cellInnerDiv"]');
-            if(el.length === 0) {
+            let els = document.querySelectorAll('[data-testid="cellInnerDiv"]');
+            if(els.length === 0) {
                 // no tweets have loaded yet
-                el = document.querySelector('[aria-label="Profile timelines"]');
+                let el = document.querySelector('[aria-label="Profile timelines"]');
                 if(el === null) { return false; }
                 el = el.parentNode.children[el.parentNode.children.length - 1];
                 if(el === null) { return false; }
@@ -172,16 +168,76 @@ export class AccountXViewModel extends BaseViewModel {
                 el.click();
             } else {
                 // tweets have loaded
-                el = els[els.length - 1];
+                let el = els[els.length - 1];
                 if(el === null) { return false; }
-                let el = el.querySelector('button');
+                el = el.querySelector('button');
                 if(el === null) { return false; }
                 el.click();
             }
             return true;
         })()
         `;
-        await this.getWebview()?.executeJavaScript(code);
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    async indexDMConversationsHandleRateLimit(): Promise<boolean> {
+        this.log("indexDMConversationsHandleRateLimit", this.progress);
+        this.pause();
+
+        const code = `
+        (() => {
+            let els = document.querySelectorAll('[data-testid="cellInnerDiv"]');
+            if(els.length === 0) {
+                // no tweets have loaded yet
+                let el = document.querySelector('[aria-label="Profile timelines"]');
+                if(el === null) { return false; }
+                el = el.parentNode.children[el.parentNode.children.length - 1];
+                if(el === null) { return false; }
+                el = el.querySelector('button');
+                if(el === null) { return false; }
+                el.click();
+            } else {
+                // tweets have loaded
+                let el = els[els.length - 1];
+                if(el === null) { return false; }
+                el = el.querySelector('button');
+                if(el === null) { return false; }
+                el.click();
+            }
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    async indexDMsHandleRateLimit(): Promise<boolean> {
+        this.log("indexDMsHandleRateLimit", this.progress);
+        this.pause();
+
+        const code = `
+        (() => {
+            let els = document.querySelectorAll('[data-testid="cellInnerDiv"]');
+            if(els.length === 0) {
+                // no tweets have loaded yet
+                let el = document.querySelector('[aria-label="Profile timelines"]');
+                if(el === null) { return false; }
+                el = el.parentNode.children[el.parentNode.children.length - 1];
+                if(el === null) { return false; }
+                el = el.querySelector('button');
+                if(el === null) { return false; }
+                el.click();
+            } else {
+                // tweets have loaded
+                let el = els[els.length - 1];
+                if(el === null) { return false; }
+                el = el.querySelector('button');
+                if(el === null) { return false; }
+                el.click();
+            }
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
     }
 
     async login() {
@@ -285,8 +341,12 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     let moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await this.scrollToBottom();
                         await this.waitForRateLimit();
-                        await this.indexHandleRateLimit();
+                        if (!await this.indexTweetsHandleRateLimit()) {
+                            // TODO: Automation error
+                        }
                         moreToScroll = true;
                     }
 
@@ -395,7 +455,9 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.waitForRateLimit();
-                        await this.indexHandleRateLimit();
+                        if (!await this.indexDMConversationsHandleRateLimit()) {
+                            // TODO: Automation error
+                        }
                         moreToScroll = true;
                     }
 
@@ -436,7 +498,9 @@ Now I'm indexing the messages in each conversation.
                             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                             if (this.rateLimitInfo.isRateLimited) {
                                 await this.waitForRateLimit();
-                                await this.indexHandleRateLimit();
+                                if (!await this.indexDMsHandleRateLimit()) {
+                                    // TODO: Automation error
+                                }
                                 moreToScroll = true;
                             }
 
@@ -529,11 +593,11 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
 
 `;
                 if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets**.`
+                    this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets**.`
                 } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have archived **${this.progress?.tweetsArchived.toLocaleString()} tweets** and indexed **${this.progress?.dmConversationsIndexed} direct message conversations**.`
+                    this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.dmConversationsIndexed} direct message conversations**.`
                 } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have indexed **${this.progress?.dmConversationsIndexed} direct message conversations**.`
+                    this.instructions += `I have **indexed ${this.progress?.dmConversationsIndexed} direct message conversations**.`
                 }
                 break;
         }
