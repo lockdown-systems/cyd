@@ -183,8 +183,8 @@ export class AccountXViewModel extends BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
-    async indexDMConversationsHandleRateLimit(): Promise<boolean> {
-        this.log("indexDMConversationsHandleRateLimit", this.progress);
+    async indexConversationsHandleRateLimit(): Promise<boolean> {
+        this.log("indexConversationsHandleRateLimit", this.progress);
 
         const code = `
         (() => {
@@ -212,8 +212,8 @@ export class AccountXViewModel extends BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
-    async indexDMsHandleRateLimit(): Promise<boolean> {
-        this.log("indexDMsHandleRateLimit", this.progress);
+    async indexMessagesHandleRateLimit(): Promise<boolean> {
+        this.log("indexMessagesHandleRateLimit", this.progress);
         this.pause();
         await this.waitForPause();
 
@@ -460,7 +460,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
-                        if (!await this.indexDMConversationsHandleRateLimit()) {
+                        if (!await this.indexConversationsHandleRateLimit()) {
                             // TODO: Automation error
                         }
                         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -513,7 +513,7 @@ Please wait while I index all of the messages from each conversation.
                     this.progress.conversationsIndexed = this.totalConversations;
                     this.progress.conversationMessagesIndexed = 0;
                 }
-                this.log('indexDMsStartResponse', this.indexMessagesStartResponse);
+                this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
 
                 if (this.indexMessagesStartResponse) {
                     for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
@@ -549,7 +549,7 @@ Please wait while I index all of the messages from each conversation.
                                 await new Promise(resolve => setTimeout(resolve, 1000));
                                 await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                                 await this.waitForRateLimit();
-                                if (!await this.indexDMsHandleRateLimit()) {
+                                if (!await this.indexMessagesHandleRateLimit()) {
                                     // TODO: Automation error
                                 }
                                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -606,8 +606,8 @@ I'm building a searchable archive web page in HTML.
                 await this.finishJob(iJob);
                 break;
 
-            case "deleteDMs":
-                this.log("deleteDMs: NOT IMPLEMENTED");
+            case "deleteMessages":
+                this.log("deleteMessages: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
         }

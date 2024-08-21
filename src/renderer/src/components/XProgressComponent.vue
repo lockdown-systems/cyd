@@ -74,7 +74,7 @@ onUnmounted(() => {
             </template>
             <!-- Index messages -->
             <template v-if="progress.currentJob == 'indexMessages'">
-                <p>
+                <p v-if="progress.totalConversations">
                     Indexed <b>{{ progress.messagesIndexed.toLocaleString() }} messages</b> from <b>{{
                         progress.conversationMessagesIndexed.toLocaleString() }} out of {{
                             progress.totalConversations.toLocaleString() }} conversations</b>.
@@ -82,7 +82,7 @@ onUnmounted(() => {
                         Indexing complete!
                     </template>
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalConversations" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${(progress.conversationMessagesIndexed / progress.totalConversations) * 100}%` }"
