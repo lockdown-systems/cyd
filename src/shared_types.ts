@@ -72,25 +72,27 @@ export type XTweet = {
 // Other X types
 
 export type XProgress = {
-    // "indexTweets", "indexLikes", "indexDMs", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs"
     currentJob: string;
 
     isIndexTweetsFinished: boolean;
-    isIndexDMConversationsFinished: boolean;
-    isIndexDMsFinished: boolean;
+    isIndexConversationsFinished: boolean;
+    isIndexMessagesFinished: boolean;
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
     isDeleteFinished: boolean;
 
     tweetsIndexed: number;
     retweetsIndexed: number;
-    dmUsersIndexed: number;
-    dmConversationsIndexed: number;
-    dmMessagesIndexed: number;
+    usersIndexed: number;
+    conversationsIndexed: number;
+    messagesIndexed: number;
     likesIndexed: number;
 
     totalTweetsToArchive: number;
     tweetsArchived: number;
+
+    totalConversations: number;
+    conversationMessagesIndexed: number;
 
     tweetsDeleted: number;
     retweetsDeleted: number;
@@ -108,7 +110,7 @@ export type XArchiveStartResponse = {
     items: XArchiveItem[]
 }
 
-export type XIndexDMsStartResponse = {
+export type XIndexMessagesStartResponse = {
     conversationIDs: string[]
 }
 

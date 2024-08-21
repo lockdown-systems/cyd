@@ -1,6 +1,6 @@
 import { BaseViewModel } from './BaseViewModel';
 import { logObj } from '../helpers';
-import type { XJob, XProgress, XArchiveStartResponse, XIndexDMsStartResponse, XRateLimitInfo } from '../../../shared_types';
+import type { XJob, XProgress, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -18,7 +18,10 @@ export class AccountXViewModel extends BaseViewModel {
     private isFirstRun: boolean = false;
 
     private archiveStartResponse: XArchiveStartResponse | null = null;
-    private indexDMsStartResponse: XIndexDMsStartResponse | null = null;
+    private indexMessagesStartResponse: XIndexMessagesStartResponse | null = null;
+
+    private conversationMessagesIndexed: number = 0;
+    private totalConversations: number = 0;
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -74,7 +77,8 @@ export class AccountXViewModel extends BaseViewModel {
             jobTypes.push("archiveTweets");
         }
         if (this.account.xAccount?.archiveDMs) {
-            jobTypes.push("indexDMs");
+            jobTypes.push("indexConversations");
+            jobTypes.push("indexMessages");
         }
         jobTypes.push("archiveBuild");
 
@@ -181,8 +185,6 @@ export class AccountXViewModel extends BaseViewModel {
 
     async indexDMConversationsHandleRateLimit(): Promise<boolean> {
         this.log("indexDMConversationsHandleRateLimit", this.progress);
-        this.pause();
-        await this.waitForPause();
 
         const code = `
         (() => {
@@ -416,7 +418,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 await this.finishJob(iJob);
                 break;
 
-            case "indexDMs":
+            case "indexConversations":
                 this.showBrowser = true;
                 this.instructions = `
 **${this.actionString}**
@@ -449,8 +451,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     }
                 }
 
-
-                while (this.progress === null || this.progress.isIndexDMConversationsFinished === false) {
+                while (this.progress === null || this.progress.isIndexConversationsFinished === false) {
                     // Scroll to bottom
                     await window.electron.X.resetRateLimitInfo(this.account.id);
                     let moreToScroll = await this.scrollToBottom();
@@ -467,36 +468,62 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     }
 
                     // Parse so far
-                    this.progress = await window.electron.X.indexParseDMConversations(this.account.id, this.isFirstRun);
+                    this.progress = await window.electron.X.indexParseConversations(this.account.id, this.isFirstRun);
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
                     this.log("progress", this.progress);
 
                     // Check if we're done
                     if (!moreToScroll) {
-                        this.progress = await window.electron.X.indexDMConversationsFinished(this.account.id);
+                        this.progress = await window.electron.X.indexConversationsFinished(this.account.id);
                         break;
                     }
                 }
 
-                // Index the conversation messages
+                // Stop monitoring network requests
+                await window.electron.X.indexStop(this.account.id);
+
+                await this.finishJob(iJob);
+                break;
+
+            case "indexMessages":
+                this.showBrowser = true;
                 this.instructions = `
 **${this.actionString}**
 
-Now I'm indexing the messages in each conversation.
+Please wait while I index all of the messages from each conversation.
 `;
-                this.indexDMsStartResponse = await window.electron.X.indexDMsStart(this.account.id, this.isFirstRun);
-                this.log('indexDMsStartResponse', this.indexDMsStartResponse);
 
-                if (this.indexDMsStartResponse) {
-                    for (let i = 0; i < this.indexDMsStartResponse.conversationIDs.length; i++) {
+                // Check if this is the first time indexing DMs has happened in this account
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexDMs") == null) {
+                    this.isFirstRun = true;
+                }
+
+                // Start monitoring network requests
+                await window.electron.X.indexStart(this.account.id);
+
+                // Load the conversations
+                this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
+                if (this.progress) {
+                    this.progress.currentJob = "indexMessages";
+
+                    this.conversationMessagesIndexed = 0;
+                    this.totalConversations = this.indexMessagesStartResponse?.conversationIDs.length;
+
+                    this.progress.conversationsIndexed = this.totalConversations;
+                    this.progress.conversationMessagesIndexed = 0;
+                }
+                this.log('indexDMsStartResponse', this.indexMessagesStartResponse);
+
+                if (this.indexMessagesStartResponse) {
+                    for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
                         // Load the URL
-                        await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexDMsStartResponse.conversationIDs[i]);
+                        await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
                         await this.waitForSelector('div[data-testid="DmActivityContainer"]');
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.waitForLoadingToFinish();
 
-                        while (this.progress === null || this.progress.isIndexDMsFinished === false) {
+                        while (this.progress === null || this.progress.isIndexMessagesFinished === false) {
                             // Scroll to top
                             await window.electron.X.resetRateLimitInfo(this.account.id);
                             let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
@@ -513,18 +540,22 @@ Now I'm indexing the messages in each conversation.
                             }
 
                             // Parse so far
-                            this.progress = await window.electron.X.indexParseDMs(this.account.id);
+                            this.progress = await window.electron.X.indexParseMessages(this.account.id);
+                            this.progress.conversationMessagesIndexed = this.conversationMessagesIndexed;
+                            this.progress.totalConversations = this.totalConversations;
                             this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                             await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                             // Check if we're done
                             if (!moreToScroll) {
+                                this.conversationMessagesIndexed += 1;
+                                this.progress.conversationMessagesIndexed = this.conversationMessagesIndexed;
                                 break;
                             }
                         }
 
                         // Mark the conversation's shouldIndexMessages to false
-                        await window.electron.X.indexDMConversationFinished(this.account.id, this.indexDMsStartResponse.conversationIDs[i]);
+                        await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
                     }
                 }
 
@@ -603,9 +634,9 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
                 if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
                     this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets**.`
                 } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.dmConversationsIndexed} direct message conversations**.`
+                    this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
                 } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **indexed ${this.progress?.dmConversationsIndexed} direct message conversations**.`
+                    this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
                 }
                 break;
         }

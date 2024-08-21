@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexDMsStartResponse, XRateLimitInfo } from "../../shared_types";
+import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -38,13 +38,13 @@ declare global {
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParseTweets: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
-                indexParseDMConversations: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
-                indexDMsStart: (accountID: number, isFirstRun: boolean) => Promise<XIndexDMsStartResponse>;
-                indexParseDMs: (accountID: number) => Promise<XProgress>;
+                indexParseConversations: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
+                indexMessagesStart: (accountID: number, isFirstRun: boolean) => Promise<XIndexMessagesStartResponse>;
+                indexParseMessages: (accountID: number) => Promise<XProgress>;
                 indexTweetsFinished: (accountID: number) => Promise<XProgress>;
-                indexDMConversationsFinished: (accountID: number) => Promise<XProgress>;
-                indexDMsFinished: (accountID: number) => Promise<XProgress>;
-                indexDMConversationFinished: (accountID: number, conversationID: string) => Promise<boolean>;
+                indexConversationsFinished: (accountID: number) => Promise<XProgress>;
+                indexMessagesFinished: (accountID: number) => Promise<XProgress>;
+                indexConversationFinished: (accountID: number, conversationID: string) => Promise<boolean>;
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveStartResponse | null>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<boolean>;

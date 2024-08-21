@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveStartResponse, XIndexDMsStartResponse, XRateLimitInfo } from './shared_types'
+import { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getApiUrl: (): Promise<string> => {
@@ -79,26 +79,26 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseTweets: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseTweets', accountID, isFirstRun)
         },
-        indexParseDMConversations: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseDMConversations', accountID, isFirstRun)
+        indexParseConversations: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseConversations', accountID, isFirstRun)
         },
-        indexDMsStart: (accountID: number, isFirstRun: boolean): Promise<XIndexDMsStartResponse> => {
-            return ipcRenderer.invoke('X:indexDMsStart', accountID, isFirstRun);
+        indexMessagesStart: (accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {
+            return ipcRenderer.invoke('X:indexMessagesStart', accountID, isFirstRun);
         },
-        indexParseDMs: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseDMs', accountID)
+        indexParseMessages: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseMessages', accountID)
         },
         indexTweetsFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexTweetsFinished', accountID)
         },
-        indexDMConversationsFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexDMConversationsFinished', accountID)
+        indexConversationsFinished: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexConversationsFinished', accountID)
         },
-        indexDMsFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexDMsFinished', accountID)
+        indexMessagesFinished: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexMessagesFinished', accountID)
         },
-        indexDMConversationFinished: (accountID: number, conversationID: string): Promise<boolean> => {
-            return ipcRenderer.invoke('X:indexDMConversationFinished', accountID, conversationID)
+        indexConversationFinished: (accountID: number, conversationID: string): Promise<boolean> => {
+            return ipcRenderer.invoke('X:indexConversationFinished', accountID, conversationID)
         },
         indexLikesFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexLikesFinished', accountID)

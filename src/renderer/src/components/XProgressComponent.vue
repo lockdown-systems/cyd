@@ -62,16 +62,37 @@ onUnmounted(() => {
                     </template>
                 </p>
             </template>
-            <!-- Index direct messages -->
-            <template v-if="progress.currentJob == 'indexDMs'">
+            <!-- Index conversations -->
+            <template v-if="progress.currentJob == 'indexConversations'">
                 <p>
                     Indexed
-                    <b>{{ progress.dmConversationsIndexed.toLocaleString() }} conversations</b> and
-                    <b>{{ progress.dmMessagesIndexed.toLocaleString() }} messages</b>.
-                    <template v-if="progress.isIndexDMsFinished">
+                    <b>{{ progress.conversationsIndexed.toLocaleString() }} conversations</b>.
+                    <template v-if="progress.isIndexConversationsFinished">
                         Indexing complete!
                     </template>
                 </p>
+            </template>
+            <!-- Index messages -->
+            <template v-if="progress.currentJob == 'indexMessages'">
+                <p>
+                    Indexed <b>{{ progress.messagesIndexed.toLocaleString() }} messages</b> from <b>{{
+                        progress.conversationMessagesIndexed.toLocaleString() }} out of {{
+                            progress.totalConversations.toLocaleString() }} conversations</b>.
+                    <template v-if="progress.isIndexMessagesFinished">
+                        Indexing complete!
+                    </template>
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.conversationMessagesIndexed / progress.totalConversations) * 100}%` }"
+                            :aria-valuenow="(progress.conversationMessagesIndexed / progress.totalConversations) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.conversationMessagesIndexed / progress.totalConversations) * 100)
+                            }}%
+                        </div>
+                    </div>
+                </div>
             </template>
             <!-- Index likes -->
             <template v-if="progress.currentJob == 'indexLikes'">
