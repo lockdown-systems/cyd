@@ -109,7 +109,7 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.rateLimitInfo.rateLimitReset) {
             seconds = this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
         }
-        await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+        await this.sleep(seconds * 1000);
     }
 
     async loadURLWithRateLimit(url: string) {
@@ -120,7 +120,7 @@ export class AccountXViewModel extends BaseViewModel {
 
             // Load the URL
             await this.loadURL(url);
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await this.sleep(3000);
             await this.waitForLoadingToFinish();
 
             // Were we rate limited?
@@ -356,13 +356,13 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     let moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await this.sleep(1000);
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
                             // TODO: Automation error
                         }
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await this.sleep(1000);
                         moreToScroll = true;
                     }
 
@@ -472,13 +472,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     let moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await this.sleep(1000);
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexConversationsHandleRateLimit()) {
                             // TODO: Automation error
                         }
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await this.sleep(1000);
                         moreToScroll = true;
                     }
 
@@ -544,7 +544,7 @@ Please wait while I index all of the messages from each conversation.
                         }
                     }
 
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await this.sleep(1000);
                     await this.waitForLoadingToFinish();
 
                     while (this.progress.isIndexMessagesFinished === false) {
@@ -553,13 +553,13 @@ Please wait while I index all of the messages from each conversation.
                         let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                         this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                         if (this.rateLimitInfo.isRateLimited) {
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await this.sleep(1000);
                             await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                             await this.waitForRateLimit();
                             if (!await this.indexMessagesHandleRateLimit()) {
                                 // TODO: Automation error
                             }
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await this.sleep(1000);
                             moreToScroll = true;
                         }
 

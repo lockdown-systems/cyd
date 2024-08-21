@@ -86,6 +86,10 @@ export class BaseViewModel {
         } while (this.getWebview()?.isLoading());
     }
 
+    async sleep(ms: number) {
+        await new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     async waitForSelector(selector: string, timeout: number = 10000) {
         const startTime = Date.now();
         // eslint-disable-next-line no-constant-condition
@@ -98,7 +102,7 @@ export class BaseViewModel {
                 console.log("waitForSelector", `found: ${selector}`);
                 break;
             }
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await this.sleep(200);
         }
     }
 
@@ -113,7 +117,7 @@ export class BaseViewModel {
                     break;
                 } catch (error) {
                     console.error(`Failed to load URL: ${error}`);
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await this.sleep(500);
                 }
             }
         }
@@ -129,7 +133,7 @@ export class BaseViewModel {
             if (newURL == url) {
                 break;
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await this.sleep(1000);
         }
     }
 
@@ -139,14 +143,14 @@ export class BaseViewModel {
 
         // Find the last scroll position
         const scrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
-
-        await this.waitForLoadingToFinish();
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.sleep(1000);
 
         // Scroll to the bottom
         this.log("scrollToBottom", "scrolling to bottom")
         await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.sleep(1000);
+        await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
+        await this.sleep(1000);
         await this.waitForLoadingToFinish();
 
         // Have we scrolled?
@@ -169,7 +173,7 @@ export class BaseViewModel {
         `);
 
         await this.waitForLoadingToFinish();
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.sleep(1000);
 
         // Scroll to the top
         this.log("scrollToTop", "scrolling to top")
@@ -180,7 +184,7 @@ export class BaseViewModel {
             el.scrollTo(0,0);
         })()
         `);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.sleep(1000);
         await this.waitForLoadingToFinish();
 
         // Have we scrolled?
