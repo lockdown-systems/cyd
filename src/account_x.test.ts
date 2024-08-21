@@ -493,7 +493,7 @@ test("XAccountController.indexParseConversations() should add all the conversati
     const controller = createController("indexDMs");
 
     const progress: XProgress = await controller.indexParseConversations(true);
-    expect(progress.usersIndexed).toBe(79);
+    expect(progress.usersIndexed).toBe(78);
     expect(progress.conversationsIndexed).toBe(44);
 
     let rows = exec(controller.db, "SELECT * FROM user", [], "all");
@@ -510,7 +510,7 @@ test("XAccountController.indexParseMessages() should add all the messages", asyn
     const controller = createController("indexDMs");
 
     const progress: XProgress = await controller.indexParseMessages(true);
-    expect(progress.messagesIndexed).toBe(124);
+    expect(progress.messagesIndexed).toBe(116);
 
     const rows = exec(controller.db, "SELECT * FROM message", [], "all");
     expect(rows.length).toBe(116);

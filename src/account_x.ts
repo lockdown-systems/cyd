@@ -325,10 +325,12 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (tweetLegacy["retweeted"]) {
-            this.progress.retweetsIndexed++;
-        } else {
-            this.progress.tweetsIndexed++;
+        if (existing.length == 0) {
+            if (tweetLegacy["retweeted"]) {
+                this.progress.retweetsIndexed++;
+            } else {
+                this.progress.tweetsIndexed++;
+            }
         }
 
         return true;
@@ -496,7 +498,9 @@ export class XAccountController {
         }
 
         // Update progress
-        this.progress.usersIndexed++;
+        if (existing.length == 0) {
+            this.progress.usersIndexed++;
+        }
     }
 
     // Returns false if the loop should stop
@@ -506,16 +510,19 @@ export class XAccountController {
             this.initDB();
         }
 
+        let newProgress = false;
+
         // Have we seen this conversation before?
         const existing = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all");
-        if (
-            existing.length > 0) {
+        if (existing.length > 0) {
             // Have we seen this exact conversation before?
             if (!isFirstRun && existing[0].minEntryID == conversation.min_entry_id && existing[0].maxEntryID == conversation.max_entry_id && existing[0].isTrusted == conversation.trusted) {
                 this.mitmController.responseData[0].processed = true;
                 this.progress.isIndexConversationsFinished = true;
                 return false;
             }
+
+            newProgress = true;
 
             // Update the conversation
             exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ? WHERE conversationID = ?', [
@@ -527,6 +534,8 @@ export class XAccountController {
                 conversation.trusted ? 1 : 0,
             ]);
         } else {
+            newProgress = true;
+
             // Add the conversation
             exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted, addedToDatabaseAt, shouldIndexMessages) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
                 conversation.conversation_id,
@@ -552,7 +561,9 @@ export class XAccountController {
         });
 
         // Update progress
-        this.progress.conversationsIndexed++;
+        if (newProgress) {
+            this.progress.conversationsIndexed++;
+        }
 
         return true;
     }
@@ -715,7 +726,9 @@ export class XAccountController {
         ]);
 
         // Update progress
-        this.progress.messagesIndexed++;
+        if (existing.length == 0) {
+            this.progress.messagesIndexed++;
+        }
 
         return true;
     }
