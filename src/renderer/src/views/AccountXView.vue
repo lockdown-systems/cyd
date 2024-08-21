@@ -87,6 +87,13 @@ const isFirstIndex = ref(true);
 const archiveForceIndexEverything = ref(false);
 const deleteForceIndexEverything = ref(false);
 
+const checkIfIsFirstIndex = async () => {
+    isFirstIndex.value = (
+        await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null &&
+        await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
+    );
+}
+
 const updateSettings = async () => {
     console.log('Updating settings')
     const updatedAccount: Account = {
@@ -163,6 +170,7 @@ const runNextState = async () => {
 };
 
 const reset = async () => {
+    await checkIfIsFirstIndex();
     await accountXViewModel.value?.reset()
     await startStateLoop();
 };
@@ -190,11 +198,7 @@ onMounted(async () => {
         deleteDMsDaysOld.value = props.account.xAccount.deleteDMsDaysOld;
     }
 
-    // Check if this is the first time indexing tweets/dms has happened in this account
-    isFirstIndex.value = (
-        await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null &&
-        await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
-    );
+    await checkIfIsFirstIndex();
 
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;

@@ -123,7 +123,6 @@ export class XAccountController {
     text TEXT NOT NULL,
     path TEXT NOT NULL,
     addedToDatabaseAt DATETIME NOT NULL,
-    updatedInDatabaseAt DATETIME,
     archivedAt DATETIME,
     deletedAt DATETIME
 );`, `CREATE TABLE user (
@@ -142,6 +141,7 @@ export class XAccountController {
     isTrusted BOOLEAN,
     shouldIndexMessages BOOLEAN,
     addedToDatabaseAt DATETIME NOT NULL,
+    updatedInDatabaseAt DATETIME,
     deletedAt DATETIME
 );`, `CREATE TABLE conversation_participant (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
