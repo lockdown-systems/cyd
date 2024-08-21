@@ -519,7 +519,24 @@ Please wait while I index all of the messages from each conversation.
                     for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
                         // Load the URL
                         await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
-                        await this.waitForSelector('div[data-testid="DmActivityContainer"]');
+                        try {
+                            await this.waitForSelector('div[data-testid="DmActivityContainer"]');
+                        } catch (e) {
+                            // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
+                            // This is a page that says: "Get X Premium to message this user"
+                            if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
+                                this.log("runJob", "Conversation is inaccessible, so skipping it");
+                                if (this.progress) {
+                                    this.conversationMessagesIndexed += 1;
+                                    this.progress.conversationMessagesIndexed = this.conversationMessagesIndexed;
+                                }
+                                continue;
+                            } else {
+                                // TODO: automation error
+                                throw e;
+                            }
+                        }
+
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.waitForLoadingToFinish();
 
