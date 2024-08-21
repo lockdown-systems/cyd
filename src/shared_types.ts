@@ -90,6 +90,7 @@ export type XProgress = {
 
     totalTweetsToArchive: number;
     tweetsArchived: number;
+    newTweetsArchived: number;
 
     totalConversations: number;
     conversationMessagesIndexed: number;
@@ -98,6 +99,33 @@ export type XProgress = {
     retweetsDeleted: number;
     likesDeleted: number;
     dmConversationsDeleted: number;
+}
+
+export function emptyXProgress(): XProgress {
+    return {
+        currentJob: "",
+        isIndexTweetsFinished: false,
+        isIndexConversationsFinished: false,
+        isIndexMessagesFinished: false,
+        isIndexLikesFinished: false,
+        isArchiveTweetsFinished: false,
+        isDeleteFinished: false,
+        tweetsIndexed: 0,
+        retweetsIndexed: 0,
+        usersIndexed: 0,
+        conversationsIndexed: 0,
+        messagesIndexed: 0,
+        likesIndexed: 0,
+        totalTweetsToArchive: 0,
+        tweetsArchived: 0,
+        newTweetsArchived: 0,
+        totalConversations: 0,
+        conversationMessagesIndexed: 0,
+        tweetsDeleted: 0,
+        retweetsDeleted: 0,
+        likesDeleted: 0,
+        dmConversationsDeleted: 0
+    }
 }
 
 export type XArchiveItem = {
@@ -117,4 +145,11 @@ export type XIndexMessagesStartResponse = {
 export type XRateLimitInfo = {
     isRateLimited: boolean;
     rateLimitReset: number;
+}
+
+export function emptyXRateLimitInfo(): XRateLimitInfo {
+    return {
+        isRateLimited: false,
+        rateLimitReset: 0,
+    }
 }

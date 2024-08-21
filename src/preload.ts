@@ -112,6 +112,9 @@ contextBridge.exposeInMainWorld('electron', {
         archiveBuild: (accountID: number): Promise<boolean> => {
             return ipcRenderer.invoke('X:archiveBuild', accountID)
         },
+        syncProgress: (accountID: number, progressJSON: string) => {
+            ipcRenderer.invoke('X:syncProgress', accountID, progressJSON)
+        },
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);
         },

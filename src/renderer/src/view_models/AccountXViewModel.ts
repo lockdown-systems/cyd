@@ -1,6 +1,6 @@
 import { BaseViewModel } from './BaseViewModel';
 import { logObj } from '../helpers';
-import type { XJob, XProgress, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from '../../../shared_types';
+import { XJob, XProgress, emptyXProgress, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, emptyXRateLimitInfo } from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -11,17 +11,14 @@ export enum State {
 }
 
 export class AccountXViewModel extends BaseViewModel {
-    public progress: XProgress | null = null;
-    public rateLimitInfo: XRateLimitInfo | null = null;
+    public progress: XProgress = emptyXProgress();
+    public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public jobs: XJob[] = [];
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
 
     private archiveStartResponse: XArchiveStartResponse | null = null;
     private indexMessagesStartResponse: XIndexMessagesStartResponse | null = null;
-
-    private conversationMessagesIndexed: number = 0;
-    private totalConversations: number = 0;
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -30,7 +27,6 @@ export class AccountXViewModel extends BaseViewModel {
             this.state = State.Login;
         }
 
-        this.progress = null;
         super.init();
     }
 
@@ -92,7 +88,8 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async reset() {
-        this.progress = null;
+        this.progress = emptyXProgress();
+        this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
         this.isFirstRun = false;
         this.archiveStartResponse = null;
@@ -102,7 +99,7 @@ export class AccountXViewModel extends BaseViewModel {
     async waitForRateLimit() {
         this.log("waitForRateLimit", this.rateLimitInfo);
         let seconds = 0;
-        if (this.rateLimitInfo && this.rateLimitInfo.rateLimitReset) {
+        if (this.rateLimitInfo.rateLimitReset) {
             seconds = this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
         }
         await new Promise(resolve => setTimeout(resolve, seconds * 1000));
@@ -127,6 +124,10 @@ export class AccountXViewModel extends BaseViewModel {
                 break;
             }
         }
+    }
+
+    async syncProgress() {
+        await window.electron.X.syncProgress(this.account.id, JSON.stringify(this.progress));
     }
 
     async indexTweetsHandleRateLimit(): Promise<boolean> {
@@ -338,7 +339,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     }
                 }
 
-                while (this.progress === null || this.progress.isIndexTweetsFinished === false) {
+                while (this.progress.isIndexTweetsFinished === false) {
                     // Scroll to bottom
                     await window.electron.X.resetRateLimitInfo(this.account.id);
                     let moreToScroll = await this.scrollToBottom();
@@ -384,12 +385,13 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
                 this.log('archiveStartResponse', this.archiveStartResponse);
 
-                if (this.progress && this.archiveStartResponse && this.webContentsID) {
+                if (this.archiveStartResponse && this.webContentsID) {
 
                     // Start the progress
                     this.progress.currentJob = "archiveTweets";
                     this.progress.totalTweetsToArchive = this.archiveStartResponse.items.length;
                     this.progress.tweetsArchived = 0;
+                    this.progress.newTweetsArchived = 0;
 
                     // Archive the tweets
                     for (let i = 0; i < this.archiveStartResponse.items.length; i++) {
@@ -412,9 +414,11 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                         // Update progress
                         this.progress.tweetsArchived += 1;
+                        this.progress.newTweetsArchived += 1;
                     }
                 }
 
+                await this.syncProgress();
                 await this.finishJob(iJob);
                 break;
 
@@ -451,7 +455,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     }
                 }
 
-                while (this.progress === null || this.progress.isIndexConversationsFinished === false) {
+                while (this.progress.isIndexConversationsFinished === false) {
                     // Scroll to bottom
                     await window.electron.X.resetRateLimitInfo(this.account.id);
                     let moreToScroll = await this.scrollToBottom();
@@ -504,15 +508,10 @@ Please wait while I index all of the messages from each conversation.
 
                 // Load the conversations
                 this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
-                if (this.progress) {
-                    this.progress.currentJob = "indexMessages";
-
-                    this.conversationMessagesIndexed = 0;
-                    this.totalConversations = this.indexMessagesStartResponse?.conversationIDs.length;
-
-                    this.progress.conversationsIndexed = this.totalConversations;
-                    this.progress.conversationMessagesIndexed = 0;
-                }
+                this.progress.currentJob = "indexMessages";
+                this.progress.conversationsIndexed = this.indexMessagesStartResponse?.conversationIDs.length;
+                this.progress.conversationMessagesIndexed = 0;
+                await this.syncProgress();
                 this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
 
                 if (this.indexMessagesStartResponse) {
@@ -526,10 +525,8 @@ Please wait while I index all of the messages from each conversation.
                             // This is a page that says: "Get X Premium to message this user"
                             if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
                                 this.log("runJob", "Conversation is inaccessible, so skipping it");
-                                if (this.progress) {
-                                    this.conversationMessagesIndexed += 1;
-                                    this.progress.conversationMessagesIndexed = this.conversationMessagesIndexed;
-                                }
+                                this.progress.conversationMessagesIndexed += 1;
+                                await this.syncProgress();
                                 continue;
                             } else {
                                 // TODO: automation error
@@ -540,7 +537,7 @@ Please wait while I index all of the messages from each conversation.
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await this.waitForLoadingToFinish();
 
-                        while (this.progress === null || this.progress.isIndexMessagesFinished === false) {
+                        while (this.progress.isIndexMessagesFinished === false) {
                             // Scroll to top
                             await window.electron.X.resetRateLimitInfo(this.account.id);
                             let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
@@ -558,15 +555,13 @@ Please wait while I index all of the messages from each conversation.
 
                             // Parse so far
                             this.progress = await window.electron.X.indexParseMessages(this.account.id);
-                            this.progress.conversationMessagesIndexed = this.conversationMessagesIndexed;
-                            this.progress.totalConversations = this.totalConversations;
                             this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                             await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                             // Check if we're done
                             if (!moreToScroll) {
-                                this.conversationMessagesIndexed += 1;
-                                this.progress.conversationMessagesIndexed = this.conversationMessagesIndexed;
+                                this.progress.conversationMessagesIndexed += 1;
+                                await this.syncProgress();
                                 break;
                             }
                         }
@@ -649,9 +644,9 @@ You're signed into **@${this.account.xAccount?.username}** on X. What would you 
 
 `;
                 if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets**.`
+                    this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
                 } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.tweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
+                    this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
                 } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
                     this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
                 }

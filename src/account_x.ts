@@ -7,7 +7,7 @@ import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount, XJob, XProgress, XArchiveItem, XArchiveStartResponse, XRateLimitInfo, XIndexMessagesStartResponse } from './shared_types'
+import { XAccount, XJob, XProgress, emptyXProgress, XArchiveItem, XArchiveStartResponse, XRateLimitInfo, emptyXRateLimitInfo, XIndexMessagesStartResponse } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
 import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIInboxInitialState, XAPIConversation, XAPIConversationTimeline, XAPIMessage, XAPIUser } from './account_x_types'
@@ -19,50 +19,16 @@ function formatDateToYYYYMMDD(dateString: string): string {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
-
-function emptyProgress(): XProgress {
-    return {
-        currentJob: "",
-        isIndexTweetsFinished: false,
-        isIndexConversationsFinished: false,
-        isIndexMessagesFinished: false,
-        isIndexLikesFinished: false,
-        isArchiveTweetsFinished: false,
-        isDeleteFinished: false,
-        tweetsIndexed: 0,
-        retweetsIndexed: 0,
-        usersIndexed: 0,
-        conversationsIndexed: 0,
-        messagesIndexed: 0,
-        likesIndexed: 0,
-        totalTweetsToArchive: 0,
-        tweetsArchived: 0,
-        totalConversations: 0,
-        conversationMessagesIndexed: 0,
-        tweetsDeleted: 0,
-        retweetsDeleted: 0,
-        likesDeleted: 0,
-        dmConversationsDeleted: 0
-    }
-}
-
-function emptyRateLimitInfo(): XRateLimitInfo {
-    return {
-        isRateLimited: false,
-        rateLimitReset: 0,
-    }
-}
-
 export class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
-    private rateLimitInfo: XRateLimitInfo = emptyRateLimitInfo();
+    private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
 
     // Making this public so it can be accessed in tests
     public db: Database.Database | null;
 
     private mitmController: IMITMController;
-    private progress: XProgress = emptyProgress();
+    private progress: XProgress = emptyXProgress();
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
@@ -178,7 +144,7 @@ export class XAccountController {
 
     resetProgress(): XProgress {
         console.log("XAccountController.resetProgress");
-        this.progress = emptyProgress();
+        this.progress = emptyXProgress();
         return this.progress;
     }
 
@@ -945,6 +911,10 @@ export class XAccountController {
         return true;
     }
 
+    async syncProgress(progressJSON: string) {
+        this.progress = JSON.parse(progressJSON);
+    }
+
     async openFolder(folderName: string) {
         if (this.account) {
             const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
@@ -953,7 +923,7 @@ export class XAccountController {
     }
 
     async resetRateLimitInfo(): Promise<void> {
-        this.rateLimitInfo = emptyRateLimitInfo();
+        this.rateLimitInfo = emptyXRateLimitInfo();
     }
 
     async isRateLimited(): Promise<XRateLimitInfo> {
@@ -1069,6 +1039,11 @@ export const defineIPCX = () => {
         return await controller.archiveBuild();
     });
 
+    ipcMain.handle('X:syncProgress', async (_, accountID: number, progressJSON: string) => {
+        const controller = getXAccountController(accountID);
+        await controller.syncProgress(progressJSON);
+    });
+
     ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {
         const controller = getXAccountController(accountID);
         await controller.openFolder(folderName);
@@ -1083,4 +1058,4 @@ export const defineIPCX = () => {
         const controller = getXAccountController(accountID);
         return await controller.isRateLimited();
     });
-}; emptyRateLimitInfo
+};

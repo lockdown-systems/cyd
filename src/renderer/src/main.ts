@@ -49,6 +49,7 @@ declare global {
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveStartResponse | null>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<boolean>;
                 archiveBuild: (accountID: number) => Promise<boolean>;
+                syncProgress: (accountID: number, progressJSON: string) => void;
                 openFolder: (accountID: number, folderName: string) => void;
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
