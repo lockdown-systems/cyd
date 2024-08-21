@@ -81,7 +81,7 @@ async function createWindow() {
 
     // Create the browser window
     const win = new BrowserWindow({
-        width: 1280,
+        width: 1000,
         height: 800,
         webPreferences: {
             webviewTag: true,

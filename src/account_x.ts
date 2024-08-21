@@ -418,6 +418,7 @@ export class XAccountController {
             } catch (error) {
                 // TODO: automation error
                 console.error('XAccountController.indexParseTweetsResponseData: error', error);
+                console.log(responseData.url)
                 console.log(responseData.body)
 
                 // Throw an exception
@@ -631,6 +632,7 @@ export class XAccountController {
             } catch (error) {
                 // TODO: automation error
                 console.error('XAccountController.indexParseDMConversationsResponseData: error', error);
+                console.log(responseData.url)
                 console.log(responseData.body)
 
                 // Throw an exception
@@ -752,6 +754,10 @@ export class XAccountController {
                 if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
                     // XAPIConversationTimeline
                     const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
+                    if (!conversationTimeline.conversation_timeline.entries) {
+                        // Skip this response
+                        return true;
+                    }
                     entries = conversationTimeline.conversation_timeline.entries;
                 } else {
                     // XAPIInboxInitialState
@@ -781,7 +787,8 @@ export class XAccountController {
                 }
             } catch (error) {
                 // TODO: automation error
-                console.error('XAccountController.indexParseDMConversationsResponseData: error', error);
+                console.error('XAccountController.indexParseDMsResponseData: error', error);
+                console.log(responseData.url)
                 console.log(responseData.body)
 
                 // Throw an exception

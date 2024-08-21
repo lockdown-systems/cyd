@@ -336,11 +336,11 @@ export interface XAPIConversationTimeline {
         status: string,
         min_entry_id: string,
         max_entry_id: string,
-        entries: XAPIMessage[],
-        users: {
+        entries?: XAPIMessage[],
+        users?: {
             [key: string]: XAPIUser
         },
-        conversations: {
+        conversations?: {
             [key: string]: XAPIConversation
         },
     }

@@ -1,0 +1,159 @@
+{
+    "conversation_timeline": {
+        "status": "AT_END",
+        "users": {
+            "1209344563589992448": {
+                "id": 1209344563589992448,
+                "id_str": "1209344563589992448",
+                "name": "Semiphemeral",
+                "screen_name": "semiphemeral",
+                "location": null,
+                "description": "Claw back your data from Big Tech",
+                "url": "https:\/\/t.co\/j0oVFIXVVe",
+                "entities": {
+                    "url": {
+                        "urls": [
+                            {
+                                "url": "https:\/\/t.co\/j0oVFIXVVe",
+                                "expanded_url": "https:\/\/semiphemeral.com",
+                                "display_url": "semiphemeral.com",
+                                "indices": [
+                                    0,
+                                    23
+                                ]
+                            }
+                        ]
+                    },
+                    "description": {
+                        "urls": []
+                    }
+                },
+                "protected": false,
+                "followers_count": 30584,
+                "friends_count": 1,
+                "listed_count": 62,
+                "created_at": "Tue Dec 24 05:26:49 +0000 2019",
+                "favourites_count": 15,
+                "utc_offset": null,
+                "time_zone": null,
+                "geo_enabled": false,
+                "verified": false,
+                "statuses_count": 6,
+                "lang": null,
+                "contributors_enabled": false,
+                "is_translator": false,
+                "is_translation_enabled": false,
+                "profile_background_color": "F5F8FA",
+                "profile_background_image_url": null,
+                "profile_background_image_url_https": null,
+                "profile_background_tile": false,
+                "profile_image_url": "http:\/\/pbs.twimg.com\/profile_images\/1221505863631769601\/cfFGJZzY_normal.jpg",
+                "profile_image_url_https": "https:\/\/pbs.twimg.com\/profile_images\/1221505863631769601\/cfFGJZzY_normal.jpg",
+                "profile_banner_url": "https:\/\/pbs.twimg.com\/profile_banners\/1209344563589992448\/1690903715",
+                "profile_link_color": "1DA1F2",
+                "profile_sidebar_border_color": "C0DEED",
+                "profile_sidebar_fill_color": "DDEEF6",
+                "profile_text_color": "333333",
+                "profile_use_background_image": true,
+                "default_profile": true,
+                "default_profile_image": false,
+                "can_dm": null,
+                "can_secret_dm": null,
+                "can_media_tag": false,
+                "following": false,
+                "follow_request_sent": false,
+                "notifications": false,
+                "blocking": false,
+                "subscribed_by": false,
+                "blocked_by": false,
+                "want_retweets": false,
+                "business_profile_state": "none",
+                "translator_type": "none",
+                "withheld_in_countries": [],
+                "followed_by": false
+            },
+            "1404125638131212290": {
+                "id": 1404125638131212290,
+                "id_str": "1404125638131212290",
+                "name": "Veer Patni",
+                "screen_name": "01veer1008",
+                "location": null,
+                "description": "Just A Digambar Against Digambar Jih@d",
+                "url": null,
+                "entities": {
+                    "description": {
+                        "urls": []
+                    }
+                },
+                "protected": true,
+                "followers_count": 0,
+                "friends_count": 87,
+                "listed_count": 0,
+                "created_at": "Sun Jun 13 17:17:05 +0000 2021",
+                "favourites_count": 399,
+                "utc_offset": null,
+                "time_zone": null,
+                "geo_enabled": false,
+                "verified": false,
+                "statuses_count": 251,
+                "lang": null,
+                "contributors_enabled": false,
+                "is_translator": false,
+                "is_translation_enabled": false,
+                "profile_background_color": "F5F8FA",
+                "profile_background_image_url": null,
+                "profile_background_image_url_https": null,
+                "profile_background_tile": false,
+                "profile_image_url": "http:\/\/pbs.twimg.com\/profile_images\/1404270637279965188\/N7i0fa6j_normal.jpg",
+                "profile_image_url_https": "https:\/\/pbs.twimg.com\/profile_images\/1404270637279965188\/N7i0fa6j_normal.jpg",
+                "profile_link_color": "1DA1F2",
+                "profile_sidebar_border_color": "C0DEED",
+                "profile_sidebar_fill_color": "DDEEF6",
+                "profile_text_color": "333333",
+                "profile_use_background_image": true,
+                "default_profile": true,
+                "default_profile_image": false,
+                "can_dm": null,
+                "can_secret_dm": null,
+                "can_media_tag": false,
+                "following": false,
+                "follow_request_sent": false,
+                "notifications": false,
+                "blocking": false,
+                "subscribed_by": false,
+                "blocked_by": false,
+                "want_retweets": false,
+                "business_profile_state": "none",
+                "translator_type": "none",
+                "withheld_in_countries": [],
+                "followed_by": true
+            }
+        },
+        "conversations": {
+            "1209344563589992448-1404125638131212290": {
+                "conversation_id": "1209344563589992448-1404125638131212290",
+                "type": "ONE_TO_ONE",
+                "sort_event_id": "1799022634048659805",
+                "sort_timestamp": "1717755394838",
+                "participants": [
+                    {
+                        "user_id": "1209344563589992448",
+                        "last_read_event_id": "1799022634048659805"
+                    },
+                    {
+                        "user_id": "1404125638131212290",
+                        "last_read_event_id": "1799022634048659805"
+                    }
+                ],
+                "nsfw": false,
+                "notifications_disabled": false,
+                "mention_notifications_disabled": false,
+                "last_read_event_id": "1799022634048659805",
+                "read_only": false,
+                "trusted": true,
+                "low_quality": false,
+                "muted": false
+            }
+        }
+    }
+}
