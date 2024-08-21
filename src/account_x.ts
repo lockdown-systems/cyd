@@ -18,7 +18,17 @@ import {
 } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
-import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIInboxInitialState, XAPIConversation, XAPIConversationTimeline, XAPIMessage, XAPIUser } from './account_x_types'
+import {
+    XAPILegacyUser,
+    XAPILegacyTweet,
+    XAPIData,
+    XAPIInboxTimeline,
+    XAPIInboxInitialState,
+    XAPIConversation,
+    XAPIConversationTimeline,
+    XAPIMessage,
+    XAPIUser
+} from './account_x_types'
 
 function formatDateToYYYYMMDD(dateString: string): string {
     const date = new Date(dateString);
@@ -113,6 +123,7 @@ export class XAccountController {
     text TEXT NOT NULL,
     path TEXT NOT NULL,
     addedToDatabaseAt DATETIME NOT NULL,
+    updatedInDatabaseAt DATETIME,
     archivedAt DATETIME,
     deletedAt DATETIME
 );`, `CREATE TABLE user (
@@ -499,13 +510,15 @@ export class XAccountController {
             newProgress = true;
 
             // Update the conversation
-            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ? WHERE conversationID = ?', [
+            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ?, updatedInDatabaseAt = ?, shouldIndexMessages = ? WHERE conversationID = ?', [
                 conversation.sort_timestamp,
                 conversation.type,
                 conversation.min_entry_id,
                 conversation.max_entry_id,
                 conversation.conversation_id,
                 conversation.trusted ? 1 : 0,
+                new Date(),
+                1,
             ]);
         } else {
             newProgress = true;
