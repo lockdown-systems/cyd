@@ -94,6 +94,7 @@ export type XProgress = {
 
     totalConversations: number;
     conversationMessagesIndexed: number;
+    shouldStopEarly: boolean;
 
     tweetsDeleted: number;
     retweetsDeleted: number;
@@ -121,6 +122,7 @@ export function emptyXProgress(): XProgress {
         newTweetsArchived: 0,
         totalConversations: 0,
         conversationMessagesIndexed: 0,
+        shouldStopEarly: false,
         tweetsDeleted: 0,
         retweetsDeleted: 0,
         likesDeleted: 0,

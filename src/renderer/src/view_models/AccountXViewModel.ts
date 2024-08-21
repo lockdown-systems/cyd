@@ -303,6 +303,10 @@ export class AccountXViewModel extends BaseViewModel {
         this.jobs[iJob].status = "running";
         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
+        // Set the current job immediately
+        this.progress.currentJob = this.jobs[iJob].jobType;
+        await this.syncProgress();
+
         switch (this.jobs[iJob].jobType) {
             case "login":
                 this.instructions = `
@@ -438,7 +442,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 `;
 
                 // Check if this is the first time indexing DMs has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexDMs") == null) {
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexConversations") == null) {
                     this.isFirstRun = true;
                 }
 
@@ -506,7 +510,7 @@ Please wait while I index all of the messages from each conversation.
 `;
 
                 // Check if this is the first time indexing DMs has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexDMs") == null) {
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexMessages") == null) {
                     this.isFirstRun = true;
                 }
 
@@ -516,7 +520,7 @@ Please wait while I index all of the messages from each conversation.
                 // Load the conversations
                 this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
                 this.progress.currentJob = "indexMessages";
-                this.progress.conversationsIndexed = this.indexMessagesStartResponse?.conversationIDs.length;
+                this.progress.totalConversations = this.indexMessagesStartResponse?.conversationIDs.length;
                 this.progress.conversationMessagesIndexed = 0;
                 await this.syncProgress();
                 this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
@@ -565,7 +569,11 @@ Please wait while I index all of the messages from each conversation.
                         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                         // Check if we're done
-                        if (!moreToScroll) {
+                        if (!moreToScroll || this.progress.shouldStopEarly) {
+                            if (this.progress.shouldStopEarly) {
+                                this.progress.shouldStopEarly = false;
+                            }
+
                             this.progress.conversationMessagesIndexed += 1;
                             await this.syncProgress();
                             break;

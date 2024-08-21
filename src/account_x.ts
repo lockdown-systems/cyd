@@ -498,14 +498,26 @@ export class XAccountController {
         let newProgress = false;
 
         // Have we seen this conversation before?
-        const existing = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all");
+        const existing = exec(this.db, 'SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all");
         if (existing.length > 0) {
             // Have we seen this exact conversation before?
-            if (!isFirstRun && existing[0].minEntryID == conversation.min_entry_id && existing[0].maxEntryID == conversation.max_entry_id && existing[0].isTrusted == conversation.trusted) {
+            if (
+                !isFirstRun &&
+                existing[0].minEntryID == conversation.min_entry_id &&
+                existing[0].maxEntryID == conversation.max_entry_id
+            ) {
+                console.log("XAccountController.indexConversation: conversation already indexed", conversation.conversation_id);
                 this.mitmController.responseData[0].processed = true;
                 this.progress.isIndexConversationsFinished = true;
                 return false;
             }
+
+            console.log("XAccountController.indexConversation: conversation already indexed, but needs to be updated", {
+                oldMinEntryID: existing[0].minEntryID,
+                oldMaxEntryID: existing[0].maxEntryID,
+                newMinEntryID: conversation.min_entry_id,
+                newMaxEntryID: conversation.max_entry_id,
+            });
 
             newProgress = true;
 
@@ -515,10 +527,10 @@ export class XAccountController {
                 conversation.type,
                 conversation.min_entry_id,
                 conversation.max_entry_id,
-                conversation.conversation_id,
                 conversation.trusted ? 1 : 0,
                 new Date(),
                 1,
+                conversation.conversation_id,
             ]);
         } else {
             newProgress = true;
@@ -814,6 +826,7 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!await this.indexParseMessagesResponseData(i, isFirstRun)) {
+                this.progress.shouldStopEarly = true;
                 return this.progress;
             }
         }
