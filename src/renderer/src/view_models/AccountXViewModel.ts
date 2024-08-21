@@ -91,6 +91,7 @@ export class AccountXViewModel extends BaseViewModel {
     async startDeleting() {
         // TODO: implement
         console.log("startDeleting: NOT IMPLEMENTED");
+        await window.electron.showMessage("Deleting content from X is not implemented yet.");
     }
 
     async reset() {

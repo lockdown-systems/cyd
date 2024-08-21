@@ -11,6 +11,7 @@ declare global {
         electron: {
             getApiUrl: () => Promise<string>;
             shouldOpenDevtools: () => Promise<boolean>;
+            showMessage: (message: string) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             openURL: (url: string) => void;

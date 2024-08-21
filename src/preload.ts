@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('electron', {
     shouldOpenDevtools: (): Promise<boolean> => {
         return ipcRenderer.invoke('shouldOpenDevtools')
     },
+    showMessage: (message: string) => {
+        ipcRenderer.invoke('showMessage', message)
+    },
     showError: (message: string) => {
         ipcRenderer.invoke('showError', message)
     },

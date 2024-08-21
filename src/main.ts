@@ -104,6 +104,13 @@ async function createWindow() {
             return semiphemeralDevtools;
         });
 
+        ipcMain.handle('showMessage', async (_, message: string) => {
+            dialog.showMessageBoxSync({
+                message: message,
+                type: 'info',
+            });
+        });
+
         ipcMain.handle('showError', async (_, message: string) => {
             dialog.showErrorBox('Semiphemeral Error', message);
         });
