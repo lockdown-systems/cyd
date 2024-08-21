@@ -7,7 +7,15 @@ import { ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
-import { XAccount, XJob, XProgress, emptyXProgress, XArchiveItem, XArchiveStartResponse, XRateLimitInfo, emptyXRateLimitInfo, XIndexMessagesStartResponse } from './shared_types'
+import {
+    XAccount,
+    XJob,
+    XProgress, emptyXProgress,
+    XArchiveItem,
+    XArchiveStartResponse, emptyXArchiveStartResponse,
+    XRateLimitInfo, emptyXRateLimitInfo,
+    XIndexMessagesStartResponse
+} from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm_proxy';
 import { XAPILegacyUser, XAPILegacyTweet, XAPIData, XAPIInboxTimeline, XAPIInboxInitialState, XAPIConversation, XAPIConversationTimeline, XAPIMessage, XAPIUser } from './account_x_types'
@@ -836,7 +844,7 @@ export class XAccountController {
 
     // When you start archiving tweets you:
     // - Return the URLs path, output path, and all expected filenames
-    async archiveTweetsStart(): Promise<XArchiveStartResponse | null> {
+    async archiveTweetsStart(): Promise<XArchiveStartResponse> {
         if (!this.db) {
             this.initDB();
         }
@@ -869,7 +877,7 @@ export class XAccountController {
                 items: items
             };
         }
-        return null;
+        return emptyXArchiveStartResponse();
     }
 
     // Save the tweet's archivedAt timestamp
@@ -1024,7 +1032,7 @@ export const defineIPCX = () => {
         return await controller.indexLikesFinished();
     });
 
-    ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveStartResponse | null> => {
+    ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveStartResponse> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweetsStart();
     });

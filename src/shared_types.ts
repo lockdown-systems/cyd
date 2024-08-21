@@ -138,8 +138,21 @@ export type XArchiveStartResponse = {
     items: XArchiveItem[]
 }
 
+export function emptyXArchiveStartResponse(): XArchiveStartResponse {
+    return {
+        outputPath: "",
+        items: []
+    }
+}
+
 export type XIndexMessagesStartResponse = {
     conversationIDs: string[]
+}
+
+export function emptyXIndexMessagesStartResponse(): XIndexMessagesStartResponse {
+    return {
+        conversationIDs: []
+    }
 }
 
 export type XRateLimitInfo = {

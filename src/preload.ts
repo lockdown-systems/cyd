@@ -103,7 +103,7 @@ contextBridge.exposeInMainWorld('electron', {
         indexLikesFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexLikesFinished', accountID)
         },
-        archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse | null> => {
+        archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
             return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
         },
         archiveTweet: (accountID: number, tweetID: string): Promise<boolean> => {

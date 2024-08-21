@@ -1,6 +1,12 @@
 import { BaseViewModel } from './BaseViewModel';
 import { logObj } from '../helpers';
-import { XJob, XProgress, emptyXProgress, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, emptyXRateLimitInfo } from '../../../shared_types';
+import {
+    XJob,
+    XProgress, emptyXProgress,
+    XArchiveStartResponse, emptyXArchiveStartResponse,
+    XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
+    XRateLimitInfo, emptyXRateLimitInfo
+} from '../../../shared_types';
 
 export enum State {
     Login = "login",
@@ -17,8 +23,8 @@ export class AccountXViewModel extends BaseViewModel {
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
 
-    private archiveStartResponse: XArchiveStartResponse | null = null;
-    private indexMessagesStartResponse: XIndexMessagesStartResponse | null = null;
+    private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
+    private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -92,7 +98,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
         this.isFirstRun = false;
-        this.archiveStartResponse = null;
+        this.archiveStartResponse = emptyXArchiveStartResponse();
         this.state = State.Dashboard;
     }
 
@@ -385,7 +391,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
                 this.log('archiveStartResponse', this.archiveStartResponse);
 
-                if (this.archiveStartResponse && this.webContentsID) {
+                if (this.webContentsID) {
 
                     // Start the progress
                     this.progress.currentJob = "archiveTweets";
@@ -514,61 +520,59 @@ Please wait while I index all of the messages from each conversation.
                 await this.syncProgress();
                 this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
 
-                if (this.indexMessagesStartResponse) {
-                    for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
-                        // Load the URL
-                        await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
-                        try {
-                            await this.waitForSelector('div[data-testid="DmActivityContainer"]');
-                        } catch (e) {
-                            // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
-                            // This is a page that says: "Get X Premium to message this user"
-                            if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
-                                this.log("runJob", "Conversation is inaccessible, so skipping it");
-                                this.progress.conversationMessagesIndexed += 1;
-                                await this.syncProgress();
-                                continue;
-                            } else {
-                                // TODO: automation error
-                                throw e;
-                            }
+                for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
+                    // Load the URL
+                    await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
+                    try {
+                        await this.waitForSelector('div[data-testid="DmActivityContainer"]');
+                    } catch (e) {
+                        // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
+                        // This is a page that says: "Get X Premium to message this user"
+                        if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
+                            this.log("runJob", "Conversation is inaccessible, so skipping it");
+                            this.progress.conversationMessagesIndexed += 1;
+                            await this.syncProgress();
+                            continue;
+                        } else {
+                            // TODO: automation error
+                            throw e;
                         }
-
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        await this.waitForLoadingToFinish();
-
-                        while (this.progress.isIndexMessagesFinished === false) {
-                            // Scroll to top
-                            await window.electron.X.resetRateLimitInfo(this.account.id);
-                            let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
-                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                            if (this.rateLimitInfo.isRateLimited) {
-                                await new Promise(resolve => setTimeout(resolve, 1000));
-                                await this.scrollToTop('div[data-testid="DmActivityViewport"]');
-                                await this.waitForRateLimit();
-                                if (!await this.indexMessagesHandleRateLimit()) {
-                                    // TODO: Automation error
-                                }
-                                await new Promise(resolve => setTimeout(resolve, 1000));
-                                moreToScroll = true;
-                            }
-
-                            // Parse so far
-                            this.progress = await window.electron.X.indexParseMessages(this.account.id);
-                            this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-
-                            // Check if we're done
-                            if (!moreToScroll) {
-                                this.progress.conversationMessagesIndexed += 1;
-                                await this.syncProgress();
-                                break;
-                            }
-                        }
-
-                        // Mark the conversation's shouldIndexMessages to false
-                        await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
                     }
+
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await this.waitForLoadingToFinish();
+
+                    while (this.progress.isIndexMessagesFinished === false) {
+                        // Scroll to top
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                        let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            await this.scrollToTop('div[data-testid="DmActivityViewport"]');
+                            await this.waitForRateLimit();
+                            if (!await this.indexMessagesHandleRateLimit()) {
+                                // TODO: Automation error
+                            }
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            moreToScroll = true;
+                        }
+
+                        // Parse so far
+                        this.progress = await window.electron.X.indexParseMessages(this.account.id);
+                        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+
+                        // Check if we're done
+                        if (!moreToScroll) {
+                            this.progress.conversationMessagesIndexed += 1;
+                            await this.syncProgress();
+                            break;
+                        }
+                    }
+
+                    // Mark the conversation's shouldIndexMessages to false
+                    await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
                 }
 
                 // Stop monitoring network requests
