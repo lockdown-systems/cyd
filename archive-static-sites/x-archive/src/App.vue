@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
+import { formattedDate } from './helpers'
 import { XArchive } from './types'
 
 const archiveDataFound = ref(false);
 const archiveData = ref<XArchive>(window.archiveData);
-
-const formattedDate = (date: string) => {
-  return new Date(date).toLocaleString();
-}
+provide('archiveData', archiveData);
 
 onMounted(() => {
   // Make sure the archive data is there
@@ -47,7 +45,7 @@ onMounted(() => {
           </div>
         </div>
       </nav>
-      <div class="container">
+      <div class="container mt-2 mb-2">
         <router-view />
       </div>
       <footer class="mt-auto bg-light py-3">

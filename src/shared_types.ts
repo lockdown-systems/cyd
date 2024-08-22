@@ -132,6 +132,7 @@ export function emptyXProgress(): XProgress {
 
 export type XArchiveItem = {
     url: string,
+    id: string,
     basename: string
 }
 

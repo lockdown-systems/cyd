@@ -410,6 +410,9 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                         // Already saved?
                         if (await window.electron.archive.isPageAlreadySaved(this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename)) {
+                            // Ensure the tweet has an archivedAt date
+                            await window.electron.X.archiveTweetCheckDate(this.account.id, this.archiveStartResponse.items[i].id);
+
                             this.progress.tweetsArchived += 1;
                             continue;
                         }
@@ -421,7 +424,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                         await window.electron.archive.savePage(this.webContentsID, this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename);
 
                         // Update tweet's archivedAt date
-                        await window.electron.X.archiveTweet(this.account.id, this.archiveStartResponse.items[i].basename);
+                        await window.electron.X.archiveTweet(this.account.id, this.archiveStartResponse.items[i].id);
 
                         // Update progress
                         this.progress.tweetsArchived += 1;

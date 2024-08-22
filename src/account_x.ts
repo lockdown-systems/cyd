@@ -888,6 +888,7 @@ export class XAccountController {
             for (let i = 0; i < tweetsResp.length; i++) {
                 items.push({
                     url: `https://x.com/${tweetsResp[i].path}`,
+                    id: tweetsResp[i].tweetID,
                     basename: `${formatDateToYYYYMMDD(tweetsResp[i].createdAt)}_${tweetsResp[i].tweetID}`
                 })
             }
@@ -914,6 +915,20 @@ export class XAccountController {
         }
 
         exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        return true;
+    }
+
+    // If the tweet doesn't have an archivedAt timestamp, set one
+    async archiveTweetCheckDate(tweetID: string): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        const tweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetID], "get");
+        console.log(tweet);
+        if (!tweet.archivedAt) {
+            exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        }
         return true;
     }
 
@@ -1124,6 +1139,11 @@ export const defineIPCX = () => {
     ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
         const controller = getXAccountController(accountID);
         return await controller.archiveTweet(tweetID);
+    });
+
+    ipcMain.handle('X:archiveTweetCheckDate', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+        const controller = getXAccountController(accountID);
+        return await controller.archiveTweetCheckDate(tweetID);
     });
 
     ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {

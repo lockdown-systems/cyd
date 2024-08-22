@@ -49,6 +49,7 @@ declare global {
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveStartResponse>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<boolean>;
+                archiveTweetCheckDate: (accountID: number, tweetID: string) => Promise<boolean>;
                 archiveBuild: (accountID: number) => Promise<boolean>;
                 syncProgress: (accountID: number, progressJSON: string) => void;
                 openFolder: (accountID: number, folderName: string) => void;
