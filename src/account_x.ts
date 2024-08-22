@@ -29,6 +29,7 @@ import {
     XAPIMessage,
     XAPIUser
 } from './account_x_types'
+import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
 function formatDateToYYYYMMDD(dateString: string): string {
     const date = new Date(dateString);
@@ -921,26 +922,82 @@ export class XAccountController {
             this.initDB();
         }
 
-        // TODO: build the archive, but for now just place an index.html file there
-        if (this.account) {
-            const indexPath = path.join(getAccountDataPath("X", this.account.username), "index.html");
-            const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X archive placeholder</title>
-</head>
-<body>
-    <h1>X archive placeholder</h1>
-</body>
-</html>
-`;
-
-            // Write the HTML content to the file
-            fs.writeFileSync(indexPath, htmlContent);
+        if (!this.account) {
+            return false;
         }
+
+        // Select everything from database
+        const tweets = exec(this.db, 'SELECT * FROM tweet', [], "all");
+        const users = exec(this.db, 'SELECT * FROM user', [], "all");
+        const conversations = exec(this.db, 'SELECT * FROM conversation', [], "all");
+        const conversationParticipants = exec(this.db, 'SELECT * FROM conversation_participant', [], "all");
+        const messages = exec(this.db, 'SELECT * FROM message', [], "all");
+
+        // Build the archive object
+        const formattedTweets: XArchiveTypes.Tweet[] = tweets.map((tweet) => {
+            return {
+                tweetID: tweet.tweetID,
+                username: tweet.username,
+                createdAt: tweet.createdAt,
+                likeCount: tweet.likeCount,
+                quoteCount: tweet.quoteCount,
+                replyCount: tweet.replyCount,
+                retweetCount: tweet.retweetCount,
+                isLiked: tweet.isLiked,
+                isRetweeted: tweet.isRetweeted,
+                text: tweet.text,
+                path: tweet.path,
+                archivedAt: tweet.archivedAt,
+                deletedAt: tweet.deletedAt,
+            }
+        });
+        const formattedUsers: XArchiveTypes.User[] = users.map((user) => {
+            return {
+                userID: user.userID,
+                name: user.name,
+                username: user.screenName,
+                profileImageDataURI: user.profileImageDataURI,
+            }
+        });
+        const formattedConversations: XArchiveTypes.Conversation[] = conversations.map((conversation) => {
+            return {
+                conversationID: conversation.conversationID,
+                type: conversation.type,
+                sortTimestamp: conversation.sortTimestamp,
+                participants: conversationParticipants.filter(
+                    (participant) => participant.conversationID == conversation.conversationID
+                ).map((participant) => participant.userID),
+                deletedAt: conversation.deletedAt,
+            }
+        });
+        const formattedMessages: XArchiveTypes.Message[] = messages.map((message) => {
+            return {
+                messageID: message.messageID,
+                conversationID: message.conversationID,
+                createdAt: message.createdAt,
+                senderID: message.senderID,
+                text: message.text,
+                deletedAt: message.deletedAt,
+            }
+        });
+
+        const archive: XArchiveTypes.XArchive = {
+            username: this.account.username,
+            tweets: formattedTweets,
+            users: formattedUsers,
+            conversations: formattedConversations,
+            messages: formattedMessages,
+        }
+
+        // Save the archive object to a file
+        const assetsPath = path.join(getAccountDataPath("X", this.account.username), "assets");
+        if (!fs.existsSync(assetsPath)) {
+            fs.mkdirSync(assetsPath);
+        }
+        const archivePath = path.join(assetsPath, "archive.js");
+        fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive)};`);
+
+        // TODO: copy the archive files
 
         return true;
     }

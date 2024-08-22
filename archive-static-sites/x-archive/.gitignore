@@ -22,4 +22,4 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-public/data.sqlite3
+public/assets
