@@ -11,3 +11,10 @@ const archiveData = inject('archiveData') as Ref<XArchive>;
     <TweetComponent v-for="tweet in archiveData.tweets" :key="tweet.id" :tweet="tweet" />
   </div>
 </template>
+
+<style scoped>
+.tweets {
+  max-width: 600px;
+  margin: 0 auto;
+}
+</style>

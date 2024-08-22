@@ -942,7 +942,7 @@ export class XAccountController {
         }
 
         // Select everything from database
-        const tweets = exec(this.db, 'SELECT * FROM tweet', [], "all");
+        const tweets = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ?", [this.account.username, 0], "all");
         const users = exec(this.db, 'SELECT * FROM user', [], "all");
         const conversations = exec(this.db, 'SELECT * FROM conversation', [], "all");
         const conversationParticipants = exec(this.db, 'SELECT * FROM conversation_participant', [], "all");
