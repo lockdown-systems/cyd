@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { XArchive } from './types'
 
 const archiveDataFound = ref(false);
+const archiveData = ref<XArchive>(window.archiveData);
+
+const formattedDate = (date: string) => {
+  return new Date(date).toLocaleString();
+}
 
 onMounted(() => {
   // Make sure the archive data is there
@@ -16,12 +22,41 @@ onMounted(() => {
 
 <template>
   <template v-if="archiveDataFound">
-    <nav>
-      <img src="./assets/logo.png" alt="Semiphemeral" class="img-fluid mb-4">
-      <router-link to="/">Tweets</router-link> |
-      <router-link to="/messages">Messages</router-link>
-    </nav>
-    <router-view />
+    <div class="d-flex flex-column min-vh-100">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="https://semiphemeral.com" target="_blank">
+            <img src="./assets/logo.png" alt="Semiphemeral" class="logo" style="height: 40px;">
+          </a>
+          <span class="navbar-text">
+            <i class="fa-brands fa-x-twitter"></i> Archive: <b>@{{ archiveData.username }}</b>
+          </span>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item">
+                <router-link to="/" class="nav-link">Tweets</router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/messages" class="nav-link">Messages</router-link>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <div class="container">
+        <router-view />
+      </div>
+      <footer class="mt-auto bg-light py-3">
+        <div class="container">
+          <p class="text-center mb-0">Archive created by <a href="https://semiphemeral.com/">Semiphemeral</a>: {{
+            formattedDate(archiveData.createdAt) }}</p>
+        </div>
+      </footer>
+    </div>
   </template>
   <template v-else>
     <div class="archive-data-missing d-flex justify-content-center align-items-center vh-100">
@@ -40,6 +75,20 @@ onMounted(() => {
 </template>
 
 <style>
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+footer p {
+  font-size: 0.8rem;
+  color: #666666;
+}
+
 .archive-data-missing {
   font-size: 1.5rem;
 }

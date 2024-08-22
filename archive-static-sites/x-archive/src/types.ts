@@ -40,6 +40,7 @@ export type Message = {
 
 export type XArchive = {
     username: string;
+    createdAt: Date;
     tweets: Tweet[];
     users: User[];
     conversations: Conversation[];

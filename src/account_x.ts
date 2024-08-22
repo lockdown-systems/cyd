@@ -983,6 +983,7 @@ export class XAccountController {
 
         const archive: XArchiveTypes.XArchive = {
             username: this.account.username,
+            createdAt: new Date(),
             tweets: formattedTweets,
             users: formattedUsers,
             conversations: formattedConversations,
