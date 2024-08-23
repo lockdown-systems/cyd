@@ -21,6 +21,9 @@ const archiveData = inject('archiveData') as Ref<XArchive>;
                     <span class="name fw-bold">{{ archiveData.users[message.senderID].name }}</span>
                     <span class="date text-muted ms-2">{{ formattedDate(message.createdAt) }}</span>
                 </div>
+                <div v-if="message.deletedAt" class="details">
+                    <span class="date text-muted ms-2">Deleted {{ formattedDate(message.deletedAt) }}</span>
+                </div>
             </div>
             <div class="avatar">
                 <img :src="archiveData.users[message.senderID].profileImageDataURI" alt="Avatar">
@@ -39,6 +42,9 @@ const archiveData = inject('archiveData') as Ref<XArchive>;
                 <div class="details">
                     <span class="name fw-bold">{{ archiveData.users[message.senderID].name }}</span>
                     <span class="date text-muted ms-2">{{ formattedDate(message.createdAt) }}</span>
+                </div>
+                <div v-if="message.deletedAt" class="details">
+                    <span class="date text-muted ms-2">Deleted {{ formattedDate(message.deletedAt) }}</span>
                 </div>
             </div>
         </div>
