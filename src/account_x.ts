@@ -948,6 +948,10 @@ export class XAccountController {
         const conversationParticipants = exec(this.db, 'SELECT * FROM conversation_participant', [], "all");
         const messages = exec(this.db, 'SELECT * FROM message', [], "all");
 
+        // Get the current account's userID
+        const accountUser = users.find((user) => user.screenName == this.account?.username);
+        const accountUserID = accountUser?.userID;
+
         // Build the archive object
         const formattedTweets: XArchiveTypes.Tweet[] = tweets.map((tweet) => {
             return {
@@ -976,9 +980,11 @@ export class XAccountController {
             return acc;
         }, {} as Record<string, XArchiveTypes.User>);
         const formattedConversations: XArchiveTypes.Conversation[] = conversations.map((conversation) => {
-            const participants = conversationParticipants.filter(
+            let participants = conversationParticipants.filter(
                 (participant) => participant.conversationID == conversation.conversationID
             ).map((participant) => participant.userID);
+            // Delete accountUserID from participants
+            participants = participants.filter((participant) => participant != accountUserID);
             let participantSearchString = "";
             for (let i = 0; i < participants.length; i++) {
                 const user = formattedUsers[participants[i]];

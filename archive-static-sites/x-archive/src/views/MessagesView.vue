@@ -2,10 +2,11 @@
 import { Ref, inject, ref, computed } from 'vue'
 import { XArchive } from '../types'
 import ConversationComponent from '../components/ConversationComponent.vue'
+import MessageComponent from '../components/MessageComponent.vue'
 
 const archiveData = inject('archiveData') as Ref<XArchive>;
 
-const selectedConversationID = ref(null);
+const selectedConversationID = ref<string | null>(null);
 const conversationFilterText = ref('');
 const messageFilterText = ref('');
 
@@ -20,6 +21,15 @@ const filteredMessages = computed(() => {
     message.text.toLowerCase().includes(messageFilterText.value.toLowerCase()) && message.conversationID === selectedConversationID.value ? selectedConversationID.value : ''
   );
 });
+
+const selectConversation = (conversationID: string) => {
+  // If it's already selected, deselect it
+  if (selectedConversationID.value === conversationID) {
+    selectedConversationID.value = null;
+    return;
+  }
+  selectedConversationID.value = conversationID;
+};
 </script>
 
 <template>
@@ -35,7 +45,8 @@ const filteredMessages = computed(() => {
           <p>Showing {{ filteredConversations.length.toLocaleString() }} conversations</p>
 
           <ConversationComponent v-for="conversation in filteredConversations" :key="conversation.conversationID"
-            :conversation="conversation" />
+            :conversation="conversation" :is-selected="selectedConversationID == conversation.conversationID"
+            @click="selectConversation(conversation.conversationID)" />
         </div>
       </div>
 
@@ -46,6 +57,8 @@ const filteredMessages = computed(() => {
           </div>
 
           <p>Showing {{ filteredMessages.length.toLocaleString() }} messages</p>
+
+          <MessageComponent v-for="message in filteredMessages" :key="message.messageID" :message="message" />
         </div>
       </div>
     </div>
