@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 import { formattedDate, formatDateToYYYYMMDD } from '../helpers'
-import { Tweet } from './types'
+import { Tweet } from '../types'
 
 defineProps<{
     tweet: Tweet;
@@ -23,13 +23,13 @@ defineProps<{
         </div>
         <div class="d-flex mt-2 gap-3">
             <div>
-                <i class="fa-solid fa-comment" /> {{ tweet.replyCount }} replies
+                <i class="fa-solid fa-comment" /> {{ tweet.replyCount.toLocaleString() }} replies
             </div>
             <div>
-                <i class="fa-solid fa-retweet" /> {{ tweet.retweetCount }} retweets
+                <i class="fa-solid fa-retweet" /> {{ tweet.retweetCount.toLocaleString() }} retweets
             </div>
             <div>
-                <i class="fa-solid fa-heart" /> {{ tweet.likeCount }} likes
+                <i class="fa-solid fa-heart" /> {{ tweet.likeCount.toLocaleString() }} likes
             </div>
         </div>
     </div>

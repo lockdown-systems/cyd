@@ -4,17 +4,13 @@ import { formattedDate } from './helpers'
 import { XArchive } from './types'
 
 const archiveDataFound = ref(false);
-const archiveData = ref<XArchive>(window.archiveData);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const archiveData = ref<XArchive>((window as any).archiveData);
 provide('archiveData', archiveData);
 
 onMounted(() => {
   // Make sure the archive data is there
-  if (window.archiveData) {
-    archiveDataFound.value = true;
-  } else {
-    archiveDataFound.value = false;
-    return;
-  }
+  archiveDataFound.value = 'archiveData' in window;
 })
 </script>
 

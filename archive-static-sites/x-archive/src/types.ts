@@ -1,7 +1,7 @@
 export type Tweet = {
     tweetID: string;
     username: string;
-    createdAt: Date;
+    createdAt: string;
     likeCount: number;
     quoteCount: number;
     replyCount: number;
@@ -10,8 +10,8 @@ export type Tweet = {
     isRetweeted: boolean;
     text: string;
     path: string;
-    archivedAt: Date | null;
-    deletedAt: Date | null;
+    archivedAt: string | null;
+    deletedAt: string | null;
 };
 
 export type User = {
@@ -24,23 +24,23 @@ export type User = {
 export type Conversation = {
     conversationID: string;
     type: string;
-    sortTimestamp: Date;
+    sortTimestamp: string;
     participants: string[];
-    deletedAt: Date | null;
+    deletedAt: string | null;
 };
 
 export type Message = {
     messageID: string;
     conversationID: string;
-    createdAt: Date;
+    createdAt: string;
     senderID: string;
     text: string;
-    deletedAt: Date | null;
+    deletedAt: string | null;
 };
 
 export type XArchive = {
     username: string;
-    createdAt: Date;
+    createdAt: string;
     tweets: Tweet[];
     users: User[];
     conversations: Conversation[];
