@@ -944,7 +944,7 @@ export class XAccountController {
         // Select everything from database
         const tweets = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ?", [this.account.username, 0], "all");
         const users = exec(this.db, 'SELECT * FROM user', [], "all");
-        const conversations = exec(this.db, 'SELECT * FROM conversation', [], "all");
+        const conversations = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all");
         const conversationParticipants = exec(this.db, 'SELECT * FROM conversation_participant', [], "all");
         const messages = exec(this.db, 'SELECT * FROM message', [], "all");
 
@@ -966,22 +966,31 @@ export class XAccountController {
                 deletedAt: tweet.deletedAt,
             }
         });
-        const formattedUsers: XArchiveTypes.User[] = users.map((user) => {
-            return {
+        const formattedUsers: Record<string, XArchiveTypes.User> = users.reduce((acc, user) => {
+            acc[user.userID] = {
                 userID: user.userID,
                 name: user.name,
                 username: user.screenName,
                 profileImageDataURI: user.profileImageDataURI,
-            }
-        });
+            };
+            return acc;
+        }, {} as Record<string, XArchiveTypes.User>);
         const formattedConversations: XArchiveTypes.Conversation[] = conversations.map((conversation) => {
+            const participants = conversationParticipants.filter(
+                (participant) => participant.conversationID == conversation.conversationID
+            ).map((participant) => participant.userID);
+            let participantSearchString = "";
+            for (let i = 0; i < participants.length; i++) {
+                const user = formattedUsers[participants[i]];
+                participantSearchString += user.name + " ";
+                participantSearchString += user.username + " ";
+            }
             return {
                 conversationID: conversation.conversationID,
                 type: conversation.type,
                 sortTimestamp: conversation.sortTimestamp,
-                participants: conversationParticipants.filter(
-                    (participant) => participant.conversationID == conversation.conversationID
-                ).map((participant) => participant.userID),
+                participants: participants,
+                participantSearchString: participantSearchString,
                 deletedAt: conversation.deletedAt,
             }
         });
@@ -998,7 +1007,7 @@ export class XAccountController {
 
         const archive: XArchiveTypes.XArchive = {
             username: this.account.username,
-            createdAt: new Date(),
+            createdAt: new Date().toLocaleString(),
             tweets: formattedTweets,
             users: formattedUsers,
             conversations: formattedConversations,

@@ -26,6 +26,7 @@ export type Conversation = {
     type: string;
     sortTimestamp: string;
     participants: string[];
+    participantSearchString: string;
     deletedAt: string | null;
 };
 
@@ -42,7 +43,7 @@ export type XArchive = {
     username: string;
     createdAt: string;
     tweets: Tweet[];
-    users: User[];
+    users: Record<string, User>;
     conversations: Conversation[];
     messages: Message[];
 };

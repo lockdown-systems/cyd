@@ -51,6 +51,11 @@ onUnmounted(() => {
 <template>
     <template v-if="progress">
         <div class="progress-wrapper">
+            <!-- Login -->
+            <template v-if="progress.currentJob == 'login'">
+                <p>Logging in</p>
+            </template>
+
             <!-- Index tweets -->
             <template v-if="progress.currentJob == 'indexTweets'">
                 <p>
@@ -62,6 +67,7 @@ onUnmounted(() => {
                     </template>
                 </p>
             </template>
+
             <!-- Index conversations -->
             <template v-if="progress.currentJob == 'indexConversations'">
                 <p>
@@ -72,6 +78,7 @@ onUnmounted(() => {
                     </template>
                 </p>
             </template>
+
             <!-- Index messages -->
             <template v-if="progress.currentJob == 'indexMessages'">
                 <p v-if="progress.totalConversations">
@@ -94,6 +101,7 @@ onUnmounted(() => {
                     </div>
                 </div>
             </template>
+
             <!-- Index likes -->
             <template v-if="progress.currentJob == 'indexLikes'">
                 <p>
@@ -104,6 +112,7 @@ onUnmounted(() => {
                     </template>
                 </p>
             </template>
+
             <!-- Archive Tweets -->
             <template v-if="progress.currentJob == 'archiveTweets'">
                 <p>
@@ -128,6 +137,13 @@ onUnmounted(() => {
                     </button>
                 </div>
             </template>
+
+            <!-- Build archive -->
+            <template v-if="progress.currentJob == 'archiveBuild'">
+                <p>Building archive website</p>
+            </template>
+
+            <!-- Rate Limit -->
             <p v-if="rateLimitInfo?.isRateLimited" class="rate-limit">
                 You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
             </p>
