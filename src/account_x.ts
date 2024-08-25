@@ -2,11 +2,12 @@ import path from 'path'
 import fs from 'fs'
 
 import fetch from 'node-fetch';
+import unzipper from 'unzipper';
 
 import { app, ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
-import { getAccountDataPath } from './helpers'
+import { getResourcesPath, getAccountDataPath } from './helpers'
 import {
     XAccount,
     XJob,
@@ -1029,7 +1030,10 @@ export class XAccountController {
         const archivePath = path.join(assetsPath, "archive.js");
         fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive)};`);
 
-        // TODO: copy the archive files
+        // Unzip x-archive.zip to the account data folder using unzipper
+        const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        await archiveZip.extract({ path: getAccountDataPath("X", this.account.username) });
 
         return true;
     }
