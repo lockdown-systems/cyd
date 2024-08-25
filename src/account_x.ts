@@ -18,7 +18,7 @@ import {
     XIndexMessagesStartResponse
 } from './shared_types'
 import { runMigrations, getXAccount, exec } from './database'
-import { IMITMController, getMITMController } from './mitm_proxy';
+import { IMITMController, getMITMController } from './mitm';
 import {
     XAPILegacyUser,
     XAPILegacyTweet,
@@ -43,6 +43,7 @@ export class XAccountController {
     private account: XAccount | null;
     private accountDataPath: string;
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
+    private thereIsMore: boolean = false;
 
     // Making this public so it can be accessed in tests
     public db: Database.Database | null;
@@ -266,6 +267,7 @@ export class XAccountController {
         await ses.clearCache();
         await this.mitmController.startMonitoring();
         await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
+        this.thereIsMore = true;
     }
 
     async indexStop() {
@@ -429,6 +431,8 @@ export class XAccountController {
 
         this.progress.currentJob = "indexTweets";
         this.progress.isIndexTweetsFinished = false;
+
+        await this.mitmController.clearProcessed();
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
@@ -613,10 +617,12 @@ export class XAccountController {
                     }
                     users = inbox_initial_state.inbox_initial_state.users;
                     conversations = inbox_initial_state.inbox_initial_state.conversations;
+                    this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
                 } else {
                     const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
                     users = inbox_timeline.inbox_timeline.users;
                     conversations = inbox_timeline.inbox_timeline.conversations;
+                    this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
                 }
 
                 // Add the users
@@ -667,13 +673,23 @@ export class XAccountController {
         this.progress.currentJob = "indexConversations";
         this.progress.isIndexMessagesFinished = false;
 
+        await this.mitmController.clearProcessed();
+
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!await this.indexParseConversationsResponseData(i, isFirstRun)) {
                 return this.progress;
             }
         }
 
+        if (!this.thereIsMore) {
+            console.log(JSON.stringify(this.mitmController.responseData));
+        }
+
         return this.progress;
+    }
+
+    async indexIsThereMore(): Promise<boolean> {
+        return this.thereIsMore;
     }
 
     // When you start indexing DMs, return a list of DM conversationIDs to index
@@ -1119,6 +1135,11 @@ export const defineIPCX = () => {
     ipcMain.handle('X:indexParseConversations', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
         const controller = getXAccountController(accountID);
         return await controller.indexParseConversations(isFirstRun);
+    });
+
+    ipcMain.handle('X:indexIsThereMore', async (_, accountID: number): Promise<boolean> => {
+        const controller = getXAccountController(accountID);
+        return await controller.indexIsThereMore();
     });
 
     ipcMain.handle('X:indexMessagesStart', async (_, accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {

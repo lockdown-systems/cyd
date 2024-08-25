@@ -23,10 +23,6 @@ const formatSeconds = (seconds: number | null) => {
     return `${minutes} minutes, ${remainingSeconds} seconds`;
 };
 
-const archivedTweetsOpenFolder = async () => {
-    await window.electron.X.openFolder(props.accountID, "Archived Tweets");
-};
-
 onMounted(() => {
     // @ts-expect-error intervalID is a NodeJS.Interval, not a number
     intervalID.value = setInterval(() => {
@@ -132,9 +128,6 @@ onUnmounted(() => {
                             {{ Math.round((progress.tweetsArchived / progress.totalTweetsToArchive) * 100) }}%
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-sm" @click="archivedTweetsOpenFolder">
-                        Open Folder
-                    </button>
                 </div>
             </template>
 

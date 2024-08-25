@@ -91,7 +91,7 @@ export class AccountXViewModel extends BaseViewModel {
     async startDeleting() {
         // TODO: implement
         console.log("startDeleting: NOT IMPLEMENTED");
-        await window.electron.showMessage("Deleting content from X is not implemented yet.");
+        await window.electron.showMessage("Deleting data from X is not implemented yet.");
     }
 
     async reset() {
@@ -472,7 +472,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 while (this.progress.isIndexConversationsFinished === false) {
                     // Scroll to bottom
                     await window.electron.X.resetRateLimitInfo(this.account.id);
-                    let moreToScroll = await this.scrollToBottom();
+                    const moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.sleep(1000);
@@ -482,24 +482,31 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             // TODO: Automation error
                         }
                         await this.sleep(1000);
-                        moreToScroll = true;
                     }
 
                     // Parse so far
                     this.progress = await window.electron.X.indexParseConversations(this.account.id, this.isFirstRun);
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-                    this.log("progress", this.progress);
 
                     // Check if we're done
-                    if (!moreToScroll) {
+                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
                         this.progress = await window.electron.X.indexConversationsFinished(this.account.id);
                         break;
+                    } else {
+                        if (!moreToScroll) {
+                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                            await this.sleep(1000);
+                            await this.scrollUp(1000);
+                        }
                     }
                 }
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                this.pause();
+                await this.syncProgress();
 
                 await this.finishJob(iJob);
                 break;
@@ -642,7 +649,9 @@ retweets, likes, and direct messages. **To get started, log in to your X account
                 this.showBrowser = false;
                 await this.loadURL("about:blank");
                 this.instructions = `
-You're signed into **@${this.account.xAccount?.username}** on X. What would you like to do?
+You're signed into **@${this.account.xAccount?.username}** on X.
+
+You can make a local archive of your data, or you delete exactly what you choose to. What would you like to do?
 `;
                 this.state = State.DashboardDisplay;
                 break;

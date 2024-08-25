@@ -284,6 +284,11 @@ export interface XAPIInboxTimeline {
     }
 }
 
+export interface XAPIInboxInitialStateInboxTimeline {
+    status: string,
+    min_entry_id: string,
+}
+
 export interface XAPIInboxInitialState {
     inbox_initial_state?: {
         last_seen_event_id: string,
@@ -291,7 +296,11 @@ export interface XAPIInboxInitialState {
         untrusted_last_seen_event_id: string,
         cursor: string,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        inbox_timelines: any;
+        inbox_timelines: {
+            trusted?: XAPIInboxInitialStateInboxTimeline,
+            untrusted?: XAPIInboxInitialStateInboxTimeline,
+            untrusted_low_quality?: XAPIInboxInitialStateInboxTimeline,
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entries: any,
         users: {

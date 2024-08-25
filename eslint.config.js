@@ -14,6 +14,7 @@ module.exports = tseslint.config(
             'src/renderer/vite.config.ts',
             'src/renderer/cypress.config.cjs',
             'src/renderer/cypress/',
+            'archive-static-sites/',
         ],
     },
     eslint.configs.recommended,

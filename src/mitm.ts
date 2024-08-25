@@ -33,6 +33,7 @@ export interface IMITMController {
     stopMITM(ses: Electron.Session): Promise<void>;
     startMonitoring(): Promise<void>;
     stopMonitoring(): Promise<void>;
+    clearProcessed(): Promise<void>;
 }
 
 export class MITMController implements IMITMController {
@@ -242,6 +243,10 @@ export class MITMController implements IMITMController {
 
     async stopMonitoring() {
         this.isMonitoring = false;
+    }
+
+    async clearProcessed() {
+        this.responseData = this.responseData.filter((data) => !data.processed);
     }
 }
 

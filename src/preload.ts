@@ -85,6 +85,9 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseConversations: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseConversations', accountID, isFirstRun)
         },
+        indexIsThereMore: (accountID: number): Promise<boolean> => {
+            return ipcRenderer.invoke('X:indexIsThereMore', accountID)
+        },
         indexMessagesStart: (accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {
             return ipcRenderer.invoke('X:indexMessagesStart', accountID, isFirstRun);
         },

@@ -143,12 +143,9 @@ export class BaseViewModel {
 
         // Find the last scroll position
         const scrollTop = await this.getWebview()?.executeJavaScript("document.documentElement.scrollTop || document.body.scrollTop");
-        await this.sleep(1000);
 
         // Scroll to the bottom
         this.log("scrollToBottom", "scrolling to bottom")
-        await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
-        await this.sleep(1000);
         await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
         await this.sleep(1000);
         await this.waitForLoadingToFinish();
@@ -199,6 +196,12 @@ export class BaseViewModel {
             return false;
         }
         return true;
+    }
+
+    async scrollUp(height: number) {
+        await this.getWebview()?.executeJavaScript(`window.scrollBy(0, -${height})`);
+        await this.sleep(1000);
+        await this.waitForLoadingToFinish();
     }
 
     async scriptClickElement(selector: string): Promise<boolean> {
