@@ -191,35 +191,6 @@ export class AccountXViewModel extends BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
-    async indexConversationsHandleRateLimit(): Promise<boolean> {
-        this.log("indexConversationsHandleRateLimit", this.progress);
-
-        const code = `
-        (() => {
-            let els = document.querySelectorAll('[data-testid="cellInnerDiv"]');
-            if(els.length === 0) {
-                // no tweets have loaded yet
-                let el = document.querySelector('[aria-label="Profile timelines"]');
-                if(el === null) { return false; }
-                el = el.parentNode.children[el.parentNode.children.length - 1];
-                if(el === null) { return false; }
-                el = el.querySelector('button');
-                if(el === null) { return false; }
-                el.click();
-            } else {
-                // tweets have loaded
-                let el = els[els.length - 1];
-                if(el === null) { return false; }
-                el = el.querySelector('button');
-                if(el === null) { return false; }
-                el.click();
-            }
-            return true;
-        })()
-        `;
-        return await this.getWebview()?.executeJavaScript(code);
-    }
-
     async indexMessagesHandleRateLimit(): Promise<boolean> {
         this.log("indexMessagesHandleRateLimit", this.progress);
         this.pause();
@@ -475,13 +446,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     const moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
-                        await this.sleep(1000);
-                        await this.scrollToBottom();
                         await this.waitForRateLimit();
-                        if (!await this.indexConversationsHandleRateLimit()) {
-                            // TODO: Automation error
-                        }
-                        await this.sleep(1000);
                     }
 
                     // Parse so far
@@ -504,9 +469,6 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
-
-                this.pause();
-                await this.syncProgress();
 
                 await this.finishJob(iJob);
                 break;
@@ -536,22 +498,39 @@ Please wait while I index all of the messages from each conversation.
                 this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
 
                 for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
-                    // Load the URL
-                    await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
-                    try {
-                        await this.waitForSelector('div[data-testid="DmActivityContainer"]');
-                    } catch (e) {
-                        // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
-                        // This is a page that says: "Get X Premium to message this user"
-                        if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
-                            this.log("runJob", "Conversation is inaccessible, so skipping it");
-                            this.progress.conversationMessagesIndexed += 1;
-                            await this.syncProgress();
-                            continue;
-                        } else {
-                            // TODO: automation error
-                            throw e;
+                    // Load the URL (in 3 tries)
+                    let tries = 0;
+                    let shouldSkip = false;
+                    // eslint-disable-next-line no-constant-condition
+                    while (true) {
+                        await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
+                        try {
+                            await this.waitForSelector('div[data-testid="DmActivityContainer"]');
+                            break;
+                        } catch (e) {
+                            // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
+                            // This is a page that says: "Get X Premium to message this user"
+                            if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
+                                this.log("runJob", "Conversation is inaccessible, so skipping it");
+                                this.progress.conversationMessagesIndexed += 1;
+                                await this.syncProgress();
+                                shouldSkip = true;
+                                break;
+                            } else {
+                                if (tries == 3) {
+                                    // TODO: automation error
+                                    throw e;
+                                }
+
+                                // Try again
+                                tries += 1;
+                                await this.sleep(1000);
+                            }
                         }
+                    }
+
+                    if (shouldSkip) {
+                        continue;
                     }
 
                     await this.sleep(1000);

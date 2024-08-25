@@ -56,7 +56,7 @@ vi.mock('electron', () => ({
 // Import the local modules after stuff has been mocked
 import { Account, ResponseData, XProgress } from './shared_types'
 import { XAccountController } from './account_x'
-import { IMITMController } from './mitm_proxy'
+import { IMITMController } from './mitm'
 import { runMainMigrations, createAccount, selectNewAccount, saveAccount, exec } from './database';
 
 // Mock a MITMController
@@ -131,6 +131,7 @@ class MockMITMController implements IMITMController {
     async stopMITM(_ses: Electron.Session) { }
     async startMonitoring() { }
     async stopMonitoring() { }
+    async clearProcessed(): Promise<void> { }
 }
 
 const createController = (testdata: string): XAccountController => {
