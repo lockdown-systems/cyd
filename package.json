@@ -22,7 +22,7 @@
     "@rushstack/eslint-patch": "^1.10.3",
     "@types/bootstrap": "^5.2.10",
     "@types/cheerio": "^0.22.35",
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^11.2.1",
     "bootstrap": "^5.3.3",
     "cheerio": "^1.0.0-rc.12",
     "electron-log": "^5.1.4",
