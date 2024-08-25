@@ -46,8 +46,9 @@ onMounted(() => {
       </div>
       <footer class="mt-auto bg-light py-3">
         <div class="container">
-          <p class="text-center mb-0">Archive created by <a href="https://semiphemeral.com/">Semiphemeral</a>: {{
-            formattedDate(archiveData.createdAt) }}</p>
+          <p class="text-center mb-0">Archive created with <a href="https://semiphemeral.com/">Semiphemeral</a> v{{
+            archiveData.semipheralVersion }} | Exported {{
+              formattedDate(archiveData.createdAt) }}</p>
         </div>
       </footer>
     </div>

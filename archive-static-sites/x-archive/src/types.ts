@@ -40,6 +40,7 @@ export type Message = {
 };
 
 export type XArchive = {
+    semipheralVersion: string;
     username: string;
     createdAt: string;
     tweets: Tweet[];

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Ref, defineProps, inject } from 'vue'
 import { XArchive, Message } from '../types'
-import { formattedDate } from '../helpers'
+import { formattedDate, formattedDatetime } from '../helpers'
 
 defineProps<{
     message: Message;
@@ -19,7 +19,7 @@ const archiveData = inject('archiveData') as Ref<XArchive>;
                 </div>
                 <div class="details">
                     <span class="name fw-bold">{{ archiveData.users[message.senderID].name }}</span>
-                    <span class="date text-muted ms-2">{{ formattedDate(message.createdAt) }}</span>
+                    <span class="date text-muted ms-2">{{ formattedDatetime(message.createdAt) }}</span>
                 </div>
                 <div v-if="message.deletedAt" class="details">
                     <span class="date text-muted ms-2">Deleted {{ formattedDate(message.deletedAt) }}</span>
@@ -41,7 +41,7 @@ const archiveData = inject('archiveData') as Ref<XArchive>;
                 </div>
                 <div class="details">
                     <span class="name fw-bold">{{ archiveData.users[message.senderID].name }}</span>
-                    <span class="date text-muted ms-2">{{ formattedDate(message.createdAt) }}</span>
+                    <span class="date text-muted ms-2">{{ formattedDatetime(message.createdAt) }}</span>
                 </div>
                 <div v-if="message.deletedAt" class="details">
                     <span class="date text-muted ms-2">Deleted {{ formattedDate(message.deletedAt) }}</span>

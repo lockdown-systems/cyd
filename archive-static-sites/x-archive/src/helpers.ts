@@ -1,5 +1,22 @@
 export const formattedDate = (date: string): string => {
-    return new Date(date).toLocaleString();
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    };
+    return new Date(date).toLocaleString('en-US', options);
+}
+
+export const formattedDatetime = (date: string): string => {
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    };
+    return new Date(date).toLocaleString('en-US', options);
 }
 
 export const formatDateToYYYYMMDD = (dateString: string): string => {

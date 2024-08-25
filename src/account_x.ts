@@ -3,7 +3,7 @@ import fs from 'fs'
 
 import fetch from 'node-fetch';
 
-import { ipcMain, session, shell, webContents } from 'electron'
+import { app, ipcMain, session, shell, webContents } from 'electron'
 import Database from 'better-sqlite3'
 
 import { getAccountDataPath } from './helpers'
@@ -1012,6 +1012,7 @@ export class XAccountController {
         });
 
         const archive: XArchiveTypes.XArchive = {
+            semipheralVersion: app.getVersion(),
             username: this.account.username,
             createdAt: new Date().toLocaleString(),
             tweets: formattedTweets,
