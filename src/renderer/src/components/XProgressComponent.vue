@@ -155,9 +155,9 @@ onUnmounted(() => {
 .progress-wrapper {
     text-align: center;
     font-size: 0.8em;
-    border: 1px solid #d0d0d0;
-    margin: 5px;
-    padding: 8px;
+    border-top: 1px solid #d0d0d0;
+    margin-top: 5px;
+    padding-top: 8px;
 }
 
 .progress-wrapper p {

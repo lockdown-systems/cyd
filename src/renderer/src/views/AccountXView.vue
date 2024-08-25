@@ -251,190 +251,207 @@ onUnmounted(async () => {
         <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
             <div class="container mb-4 mt-3">
-                <h2>Archive my data</h2>
-                <form @submit.prevent>
-                    <div class="mb-3 form-check">
-                        <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
-                        <label class="form-check-label" for="archiveTweets">Archive tweets</label>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h2>Archive my data</h2>
+                        <form @submit.prevent>
+                            <div class="mb-3 form-check">
+                                <input id="archiveTweets" v-model="archiveTweets" type="checkbox"
+                                    class="form-check-input">
+                                <label class="form-check-label" for="archiveTweets">Archive tweets</label>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
+                                <label class="form-check-label" for="archiveDMs">Archive direct messages</label>
+                            </div>
+                            <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
+                                <input id="archiveForceIndexEverything" v-model="archiveForceIndexEverything"
+                                    type="checkbox" class="form-check-input">
+                                <label class="form-check-label" for="archiveForceIndexEverything">Force Semiphemeral to
+                                    re-index everything, instead of just the newest</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary" :disabled="!(archiveTweets || archiveDMs)"
+                                @click="startArchivingClicked">
+                                <i class="fa-solid fa-floppy-disk mr-2" />
+                                Start Archiving
+                            </button>
+                        </form>
                     </div>
-                    <div class="mb-3 form-check">
-                        <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
-                        <label class="form-check-label" for="archiveDMs">Archive direct messages</label>
-                    </div>
-                    <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
-                        <input id="archiveForceIndexEverything" v-model="archiveForceIndexEverything" type="checkbox"
-                            class="form-check-input">
-                        <label class="form-check-label" for="archiveForceIndexEverything">Force Semiphemeral to
-                            re-index everything, instead of just the newest</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary" :disabled="!(archiveTweets || archiveDMs)"
-                        @click="startArchivingClicked">
-                        Start Archiving
-                    </button>
-                </form>
-            </div>
 
-            <div class="container mb-4">
-                <h2>Delete my data</h2>
-                <form @submit.prevent>
-                    <div class="d-flex align-items-center">
-                        <div class="form-check mb-2">
-                            <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input">
-                            <label class="form-check-label mr-1" for="deleteTweets">
-                                Delete tweets
-                            </label>
-                        </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <label class="form-check-label mr-1 no-wrap" for="deleteTweetsDaysOld">
-                                older than
-                            </label>
-                            <div class="input-group">
-                                <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
-                                    class="form-control form-short">
-                                <div class="input-group-append">
-                                    <span class="input-group-text">days</span>
+                    <div class="col-md-6 mb-4">
+                        <h2>Delete my data <span class="premium badge badge-primary">Premium</span></h2>
+                        <form @submit.prevent>
+                            <div class="d-flex align-items-center">
+                                <div class="form-check mb-2">
+                                    <input id="deleteTweets" v-model="deleteTweets" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
+                                        Delete tweets
+                                    </label>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="d-flex align-items-center">
-                            <div class="form-check mb-2">
-                                <input id="deleteTweetsRetweetsThresholdEnabled"
-                                    v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
-                                    class="form-check-input" :disabled="!deleteTweets">
-                                <label class="form-check-label mr-1" for="deleteTweetsRetweetsThresholdEnabled">
-                                    Unless they have at least
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center mb-2">
-                                <label class="form-check-label mr-1 sr-only" for="deleteTweetsRetweetsThreshold">
-                                    retweets
-                                </label>
-                                <div class="input-group">
-                                    <input id="deleteTweetsRetweetsThreshold" v-model="deleteTweetsRetweetsThreshold"
-                                        type="text" class="form-control form-short" :disabled="!deleteTweets">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text">retweets</span>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteTweetsDaysOld">
+                                        older than
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
+                                            class="form-control form-short">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">days</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <div class="form-check mb-2">
-                                <input id="deleteTweetsLikesThresholdEnabled"
-                                    v-model="deleteTweetsLikesThresholdEnabled" type="checkbox" class="form-check-input"
-                                    :disabled="!deleteTweets">
-                                <label class="form-check-label mr-1" for="deleteTweetsLikesThresholdEnabled">
-                                    Or at least
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center mb-2">
-                                <label class="form-check-label mr-1 sr-only" for="deleteTweetsLikesThreshold">
-                                    likes
-                                </label>
-                                <div class="input-group">
-                                    <input id="deleteTweetsLikesThreshold" v-model="deleteTweetsLikesThreshold"
-                                        type="text" class="form-control form-short" :disabled="!deleteTweets">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text">likes</span>
+                            <div class="container">
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check mb-2">
+                                        <input id="deleteTweetsRetweetsThresholdEnabled"
+                                            v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
+                                            class="form-check-input" :disabled="!deleteTweets">
+                                        <label class="form-check-label mr-1 text-nowrap"
+                                            for="deleteTweetsRetweetsThresholdEnabled">
+                                            Unless they have at least
+                                        </label>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label class="form-check-label mr-1 sr-only"
+                                            for="deleteTweetsRetweetsThreshold">
+                                            retweets
+                                        </label>
+                                        <div class="input-group flex-nowrap">
+                                            <input id="deleteTweetsRetweetsThreshold"
+                                                v-model="deleteTweetsRetweetsThreshold" type="text"
+                                                class="form-control form-short" :disabled="!deleteTweets">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">retweets</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check mb-2">
+                                        <input id="deleteTweetsLikesThresholdEnabled"
+                                            v-model="deleteTweetsLikesThresholdEnabled" type="checkbox"
+                                            class="form-check-input" :disabled="!deleteTweets">
+                                        <label class="form-check-label mr-1 text-nowrap"
+                                            for="deleteTweetsLikesThresholdEnabled">
+                                            Or at least
+                                        </label>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label class="form-check-label mr-1 sr-only" for="deleteTweetsLikesThreshold">
+                                            likes
+                                        </label>
+                                        <div class="input-group flex-nowrap">
+                                            <input id="deleteTweetsLikesThreshold" v-model="deleteTweetsLikesThreshold"
+                                                type="text" class="form-control form-short" :disabled="!deleteTweets">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">likes</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="form-check mb-2">
-                            <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox"
-                                class="form-check-input">
-                            <label class="form-check-label mr-1" for="deleteRetweets">
-                                Unretweet tweets
-                            </label>
-                        </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <label class="form-check-label mr-1 no-wrap" for="deleteRetweetsDaysOld">
-                                older than
-                            </label>
-                            <div class="input-group">
-                                <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld" type="text"
-                                    class="form-control form-short">
-                                <div class="input-group-append">
-                                    <span class="input-group-text">days</span>
+                            <div class="d-flex align-items-center">
+                                <div class="form-check mb-2">
+                                    <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
+                                        Unretweet tweets
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="form-check-label mr-1 no-wrap text-nowrap"
+                                        for="deleteRetweetsDaysOld">
+                                        older than
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld" type="text"
+                                            class="form-control form-short">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">days</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="form-check mb-2">
-                            <input id="deleteLikes" v-model="deleteLikes" type="checkbox" class="form-check-input">
-                            <label class="form-check-label mr-1" for="deleteLikes">
-                                Unlike tweets
-                            </label>
-                        </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <label class="form-check-label mr-1 no-wrap" for="deleteLikesDaysOld">
-                                older than
-                            </label>
-                            <div class="input-group">
-                                <input id="deleteLikesDaysOld" v-model="deleteLikesDaysOld" type="text"
-                                    class="form-control form-short">
-                                <div class="input-group-append">
-                                    <span class="input-group-text">days</span>
+                            <div class="d-flex align-items-center">
+                                <div class="form-check mb-2">
+                                    <input id="deleteLikes" v-model="deleteLikes" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
+                                        Unlike tweets
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteLikesDaysOld">
+                                        older than
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteLikesDaysOld" v-model="deleteLikesDaysOld" type="text"
+                                            class="form-control form-short">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">days</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="form-check mb-2">
-                            <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
-                            <label class="form-check-label mr-1" for="deleteDMs">
-                                Delete direct messages
-                            </label>
-                        </div>
-                        <div class="d-flex align-items-center mb-2">
-                            <label class="form-check-label mr-1 no-wrap" for="deleteDMsDaysOld">
-                                older than
-                            </label>
-                            <div class="input-group">
-                                <input id="deleteDMsDaysOld" v-model="deleteDMsDaysOld" type="text"
-                                    class="form-control form-short">
-                                <div class="input-group-append">
-                                    <span class="input-group-text">days</span>
+                            <div class="d-flex align-items-center">
+                                <div class="form-check mb-2">
+                                    <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
+                                        Delete direct messages
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteDMsDaysOld">
+                                        older than
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteDMsDaysOld" v-model="deleteDMsDaysOld" type="text"
+                                            class="form-control form-short">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">days</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
+                                <input id="deleteForceIndexEverything" v-model="deleteForceIndexEverything"
+                                    type="checkbox" class="form-check-input">
+                                <label class="form-check-label" for="deleteForceIndexEverything">Force Semiphemeral to
+                                    re-index everything, instead of just the newest</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary"
+                                :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDMs)"
+                                @click="startDeletingClicked">
+                                <i class="fa-solid fa-fire mr-2 delete-icon" />
+                                Start Deleting
+                            </button>
+                        </form>
                     </div>
-                    <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
-                        <input id="deleteForceIndexEverything" v-model="deleteForceIndexEverything" type="checkbox"
-                            class="form-check-input">
-                        <label class="form-check-label" for="deleteForceIndexEverything">Force Semiphemeral to
-                            re-index everything, instead of just the newest</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary"
-                        :disabled="!(deleteTweets || deleteRetweets || deleteLikes || deleteDMs)"
-                        @click="startDeletingClicked">
-                        Start Deleting
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Finished running jobs -->
         <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
             <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
-                <p>Your X archive is stored locally on your computer at:</p>
-                <p>
-                    <a href="#" class="filesystem-path" @click.prevent="openArchiveFolder">
-                        {{ archivePath }}
-                    </a>
+                <p>Your X archive is stored locally on your computer at <code>{{ archivePath }}</code>.</p>
+
+                <p class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" @click="openArchive">
+                        Browse Archive
+                    </button>
+
+                    <button class="btn btn-secondary btn-sm" @click="openArchiveFolder">
+                        Open Folder
+                    </button>
                 </p>
+
                 <p>
-                    If you want to download new versions of your tweets or DM conversations, delete the HTML files
-                    you want to re-archive and then archive your X data again.
-                </p>
-                <p>
-                    You can browse your archive by loading <a href="#" class="filesystem-path"
-                        @click.prevent="openArchive">index.html</a>.
+                    Every time you want to archive new tweets or DM conversations, just archive your X data again.
+                    If
+                    you want to recreate an archive of a tweet, delete its HTML file first.
                 </p>
             </div>
             <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
@@ -443,7 +460,7 @@ onUnmounted(async () => {
             <div>
                 <div class="container mt-3">
                     <button class="btn btn-primary" @click="reset()">
-                        Continue
+                        I'm done archiving
                     </button>
                 </div>
             </div>
@@ -490,5 +507,19 @@ onUnmounted(async () => {
 .force-reindex {
     font-size: 0.9rem;
     color: #333333;
+}
+
+.delete-icon {
+    color: rgb(250, 190, 79);
+}
+
+.premium {
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin-left: 5px;
+    padding: 0.2em 0.5em;
+    background-color: #50a4ff;
+    color: white;
+    border-radius: 0.25rem;
 }
 </style>
