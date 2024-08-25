@@ -7,12 +7,69 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
+import { spawnSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+
+import archiver from 'archiver';
+
+// Make sure build path exists
+const buildPath = path.join(__dirname, 'build');
+if (!fs.existsSync(buildPath)) {
+  fs.mkdirSync(buildPath);
+}
+
 const config: ForgeConfig = {
   packagerConfig: {
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     asar: true,
     icon: "assets/icon",
+    beforeAsar: [
+      (_buildPath, _electronVersion, _platform, _arch, callback) => {
+        // Build X archive site
+        const xArchiveSitePath = path.join(__dirname, 'archive-static-sites', 'x-archive', 'dist');
+        const p = spawnSync('npm', ['run', 'build'], {
+          cwd: xArchiveSitePath,
+          stdio: 'inherit'
+        });
+
+        // Delete archive.js if it exists, since we don't want to be shipping test data
+        const archiveJsPath = path.join(xArchiveSitePath, 'assets', 'archive.js');
+        if (fs.existsSync(archiveJsPath)) {
+          fs.unlinkSync(archiveJsPath);
+        }
+
+        // Zip it up
+        const output = fs.createWriteStream(path.join(buildPath, 'x-archive.zip'));
+        const archive = archiver('zip');
+
+        output.on('close', function () {
+          console.log(archive.pointer() + ' total bytes');
+          callback();
+        });
+
+        archive.on('warning', function (err: any) {
+          if (err.code === 'ENOENT') {
+            console.log(err);
+          } else {
+            // throw error
+            throw err;
+          }
+        });
+
+        archive.on('error', function (err: any) {
+          throw err;
+        });
+
+        archive.pipe(output);
+        archive.directory(xArchiveSitePath, false);
+        archive.finalize();
+      },
+    ],
+    extraResource: [
+      path.join(buildPath, 'x-archive.zip'),
+    ],
   },
   rebuildConfig: {},
   makers: [
