@@ -90,7 +90,9 @@ export class BaseViewModel {
         await new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async waitForSelector(selector: string, timeout: number = 10000) {
+    async waitForSelector(selector: string, timeout: number = 3000) {
+        const startingURL = this.webview.getURL();
+
         const startTime = Date.now();
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -103,6 +105,12 @@ export class BaseViewModel {
                 break;
             }
             await this.sleep(200);
+
+            // Check if the URL has changed
+            if (this.webview.getURL() !== startingURL) {
+                console.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
+                throw new Error("URL changed while waiting for selector");
+            }
         }
     }
 
@@ -133,7 +141,7 @@ export class BaseViewModel {
             if (newURL == url) {
                 break;
             }
-            await this.sleep(1000);
+            await this.sleep(500);
         }
     }
 
@@ -147,7 +155,7 @@ export class BaseViewModel {
         // Scroll to the bottom
         this.log("scrollToBottom", "scrolling to bottom")
         await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
-        await this.sleep(1000);
+        await this.sleep(500);
         await this.waitForLoadingToFinish();
 
         // Have we scrolled?
@@ -170,7 +178,7 @@ export class BaseViewModel {
         `);
 
         await this.waitForLoadingToFinish();
-        await this.sleep(1000);
+        await this.sleep(500);
 
         // Scroll to the top
         this.log("scrollToTop", "scrolling to top")
@@ -181,7 +189,7 @@ export class BaseViewModel {
             el.scrollTo(0,0);
         })()
         `);
-        await this.sleep(1000);
+        await this.sleep(500);
         await this.waitForLoadingToFinish();
 
         // Have we scrolled?
@@ -200,7 +208,7 @@ export class BaseViewModel {
 
     async scrollUp(height: number) {
         await this.getWebview()?.executeJavaScript(`window.scrollBy(0, -${height})`);
-        await this.sleep(1000);
+        await this.sleep(500);
         await this.waitForLoadingToFinish();
     }
 

@@ -222,42 +222,42 @@ export class XAccountController {
 
     async getUsername(webContentsID: number): Promise<string | null> {
         let username = null;
-
-        if (this.account) {
-            // Start monitoring
-            const ses = session.fromPartition(`persist:account-${this.account.id}`);
-            await ses.clearCache();
-            await this.mitmController.startMonitoring();
-            await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
-
-            // Load settings page
-            const wc = webContents.fromId(webContentsID);
-            if (wc) {
-                await wc.loadURL("https://x.com/settings");
-
-                // Wait for the URL to finish loading
-                while (wc?.isLoading()) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-            // See if we got settings.json
-            for (let i = 0; i < this.mitmController.responseData.length; i++) {
-                // If URL starts with /1.1/account/settings.json
-                if (this.mitmController.responseData[i].url.includes("/1.1/account/settings.json") && this.mitmController.responseData[i].status == 200) {
-                    const body = JSON.parse(this.mitmController.responseData[i].body);
-                    username = body.screen_name;
-                    break;
-                }
-            }
-
-            // Stop monitoring
-            await this.mitmController.stopMonitoring();
-            await this.mitmController.stopMITM(ses);
-        } else {
+        if (!this.account) {
             console.log("XAccountController.getUsername: account not found");
+            return username;
         }
+
+        // Start monitoring
+        const ses = session.fromPartition(`persist:account-${this.account.id}`);
+        await ses.clearCache();
+        await this.mitmController.startMonitoring();
+        await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
+
+        // Load settings page
+        const wc = webContents.fromId(webContentsID);
+        if (wc) {
+            await wc.loadURL("https://x.com/settings");
+
+            // Wait for the URL to finish loading
+            while (wc?.isLoading()) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // See if we got settings.json
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            // If URL starts with /1.1/account/settings.json
+            if (this.mitmController.responseData[i].url.includes("/1.1/account/settings.json") && this.mitmController.responseData[i].status == 200) {
+                const body = JSON.parse(this.mitmController.responseData[i].body);
+                username = body.screen_name;
+                break;
+            }
+        }
+
+        // Stop monitoring
+        await this.mitmController.stopMonitoring();
+        await this.mitmController.stopMITM(ses);
 
         return username;
     }
