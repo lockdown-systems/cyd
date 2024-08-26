@@ -702,14 +702,18 @@ export class XAccountController {
         if (isFirstRun) {
             const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all");
             return {
-                conversationIDs: conversationIDs.map((row) => row.conversationID)
+                conversationIDs: conversationIDs.map((row) => row.conversationID),
+                totalConversations: conversationIDs.length
             };
         }
 
         // Select just the conversations that need to be indexed
         const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE shouldIndexMessages = ? AND deletedAt IS NULL', [1], "all");
+        const totalConversations = exec(this.db, 'SELECT count(*) FROM conversation WHERE deletedAt IS NULL', [], "get");
+        console.log("XAccountController.indexMessagesStart", conversationIDs, totalConversations);
         return {
-            conversationIDs: conversationIDs.map((row) => row.conversationID)
+            conversationIDs: conversationIDs.map((row) => row.conversationID),
+            totalConversations: totalConversations["count(*)"]
         };
     }
 
@@ -870,7 +874,7 @@ export class XAccountController {
         return this.progress;
     }
 
-    // Save the tconversation's shouldIndexMessages to false
+    // Set the conversation's shouldIndexMessages to false
     async indexConversationFinished(conversationID: string): Promise<boolean> {
         if (!this.db) {
             this.initDB();

@@ -450,8 +450,9 @@ Hang on while I scroll down to your earliest direct message conversations that I
 Please wait while I index all of the messages from each conversation.
 `;
 
-                // Check if this is the first time indexing DMs has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexMessages") == null) {
+                // Only set isFirstRun to true if we're forcing everything to be indexed
+                // Because even if idnexMessages has never completed, we want to resume where we left off
+                if (this.forceIndexEverything) {
                     this.isFirstRun = true;
                 }
 
@@ -461,8 +462,8 @@ Please wait while I index all of the messages from each conversation.
                 // Load the conversations
                 this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
                 this.progress.currentJob = "indexMessages";
-                this.progress.totalConversations = this.indexMessagesStartResponse?.conversationIDs.length;
-                this.progress.conversationMessagesIndexed = 0;
+                this.progress.totalConversations = this.indexMessagesStartResponse?.totalConversations;
+                this.progress.conversationMessagesIndexed = this.progress.totalConversations - this.indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
                 this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
 

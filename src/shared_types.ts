@@ -149,12 +149,14 @@ export function emptyXArchiveStartResponse(): XArchiveStartResponse {
 }
 
 export type XIndexMessagesStartResponse = {
-    conversationIDs: string[]
+    conversationIDs: string[];
+    totalConversations: number;
 }
 
 export function emptyXIndexMessagesStartResponse(): XIndexMessagesStartResponse {
     return {
-        conversationIDs: []
+        conversationIDs: [],
+        totalConversations: 0
     }
 }
 
