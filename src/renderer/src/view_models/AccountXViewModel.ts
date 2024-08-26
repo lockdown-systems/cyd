@@ -485,6 +485,9 @@ Please wait while I index all of the messages from each conversation.
                                 this.progress.conversationMessagesIndexed += 1;
                                 await this.syncProgress();
                                 shouldSkip = true;
+
+                                // Mark the conversation's shouldIndexMessages to false
+                                await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
                                 break;
                             } else {
                                 if (tries == 3) {
