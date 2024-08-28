@@ -191,37 +191,6 @@ export class AccountXViewModel extends BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
-    async indexMessagesHandleRateLimit(): Promise<boolean> {
-        this.log("indexMessagesHandleRateLimit", this.progress);
-        this.pause();
-        await this.waitForPause();
-
-        const code = `
-        (() => {
-            let els = document.querySelectorAll('[data-testid="cellInnerDiv"]');
-            if(els.length === 0) {
-                // no tweets have loaded yet
-                let el = document.querySelector('[aria-label="Profile timelines"]');
-                if(el === null) { return false; }
-                el = el.parentNode.children[el.parentNode.children.length - 1];
-                if(el === null) { return false; }
-                el = el.querySelector('button');
-                if(el === null) { return false; }
-                el.click();
-            } else {
-                // tweets have loaded
-                let el = els[els.length - 1];
-                if(el === null) { return false; }
-                el = el.querySelector('button');
-                if(el === null) { return false; }
-                el.click();
-            }
-            return true;
-        })()
-        `;
-        return await this.getWebview()?.executeJavaScript(code);
-    }
-
     async login() {
         const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
 
@@ -327,13 +296,13 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     let moreToScroll = await this.scrollToBottom();
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
-                        await this.sleep(1000);
+                        await this.sleep(500);
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
                             // TODO: Automation error
                         }
-                        await this.sleep(1000);
+                        await this.sleep(500);
                         moreToScroll = true;
                     }
 
@@ -461,7 +430,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     } else {
                         if (!moreToScroll) {
                             // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
-                            await this.sleep(1000);
+                            await this.sleep(500);
                             await this.scrollUp(1000);
                         }
                     }
@@ -481,8 +450,9 @@ Hang on while I scroll down to your earliest direct message conversations that I
 Please wait while I index all of the messages from each conversation.
 `;
 
-                // Check if this is the first time indexing DMs has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexMessages") == null) {
+                // Only set isFirstRun to true if we're forcing everything to be indexed
+                // Because even if idnexMessages has never completed, we want to resume where we left off
+                if (this.forceIndexEverything) {
                     this.isFirstRun = true;
                 }
 
@@ -492,8 +462,8 @@ Please wait while I index all of the messages from each conversation.
                 // Load the conversations
                 this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
                 this.progress.currentJob = "indexMessages";
-                this.progress.totalConversations = this.indexMessagesStartResponse?.conversationIDs.length;
-                this.progress.conversationMessagesIndexed = 0;
+                this.progress.totalConversations = this.indexMessagesStartResponse?.totalConversations;
+                this.progress.conversationMessagesIndexed = this.progress.totalConversations - this.indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
                 this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
 
@@ -515,6 +485,9 @@ Please wait while I index all of the messages from each conversation.
                                 this.progress.conversationMessagesIndexed += 1;
                                 await this.syncProgress();
                                 shouldSkip = true;
+
+                                // Mark the conversation's shouldIndexMessages to false
+                                await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
                                 break;
                             } else {
                                 if (tries == 3) {
@@ -524,7 +497,7 @@ Please wait while I index all of the messages from each conversation.
 
                                 // Try again
                                 tries += 1;
-                                await this.sleep(1000);
+                                await this.sleep(500);
                             }
                         }
                     }
@@ -533,7 +506,7 @@ Please wait while I index all of the messages from each conversation.
                         continue;
                     }
 
-                    await this.sleep(1000);
+                    await this.sleep(500);
                     await this.waitForLoadingToFinish();
 
                     while (this.progress.isIndexMessagesFinished === false) {
@@ -542,13 +515,7 @@ Please wait while I index all of the messages from each conversation.
                         let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                         this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                         if (this.rateLimitInfo.isRateLimited) {
-                            await this.sleep(1000);
-                            await this.scrollToTop('div[data-testid="DmActivityViewport"]');
                             await this.waitForRateLimit();
-                            if (!await this.indexMessagesHandleRateLimit()) {
-                                // TODO: Automation error
-                            }
-                            await this.sleep(1000);
                             moreToScroll = true;
                         }
 
