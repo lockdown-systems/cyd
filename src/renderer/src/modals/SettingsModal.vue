@@ -133,7 +133,7 @@ onUnmounted(() => {
                   <template v-else>
                     <h6 class="card-subtitle mb-2 text-muted">
                       last accessed {{
-                        relativeTime(device.lastAccessedAt) }}
+                        relativeTime(device.last_accessed_at) }}
                     </h6>
                     <button class="btn btn-danger" @click="revokeDevice(device.uuid)">
                       Revoke

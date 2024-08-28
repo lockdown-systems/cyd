@@ -4,7 +4,7 @@ import ServerAPI from './ServerAPI'
 // Mock the electron IPC API
 vi.stubGlobal('window', {
     electron: {
-        getApiUrl: vi.fn(() => 'https://mock/api/v1')
+        getApiUrl: vi.fn(() => 'https://mock/api')
     }
 });
 
@@ -13,8 +13,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 type FetchResponseData = {
-    expiration?: Date;
-    token?: string;
+    api_token?: string;
     email?: string;
     message?: string;
 };
@@ -39,8 +38,8 @@ test('ServerAPI.fetch() should set method and headers', async () => {
     const serverApi = new ServerAPI();
     await serverApi.initialize();
 
-    await serverApi.fetch("DELETE", 'https://mock/api/v1/test', { test: 'data' });
-    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/v1/test', {
+    await serverApi.fetch("DELETE", 'https://mock/api/test', { test: 'data' });
+    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/test', {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
@@ -64,8 +63,7 @@ test('ServerAPI.fetchAuthenticated() should send API token in headers', async ()
 
     // Get an API token
     mockFetch.mockResolvedValue(createFetchResponse(200, {
-        expiration: new Date(),
-        token: 'this-is-a-new-api-token',
+        api_token: 'this-is-a-new-api-token',
         email: userEmail
     }))
 
@@ -73,8 +71,8 @@ test('ServerAPI.fetchAuthenticated() should send API token in headers', async ()
     expect(result).toBe(true);
 
     // Make an authenticated response
-    await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/v1/test', { test: 'data' });
-    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/v1/test', {
+    await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/test', { test: 'data' });
+    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/test', {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
@@ -103,14 +101,13 @@ test('ServerAPI.fetchAuthenticated() with good device token but not API token sh
     }));
     // The second time we try to fetch, we will get a 200 response with an API token
     mockFetch.mockResolvedValueOnce(createFetchResponse(200, {
-        expiration: new Date(),
-        token: 'this-is-a-new-api-token',
+        api_token: 'this-is-a-new-api-token',
         email: userEmail
     }));
     // Set the default response to 200 OK
     mockFetch.mockResolvedValue(createFetchResponse(200, {}));
 
-    const response = await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/v1/test', { test: 'data' });
+    const response = await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/test', { test: 'data' });
     expect(response.status).toBe(200);
     expect(mockFetch).toHaveBeenCalledTimes(3);
 });
@@ -131,7 +128,7 @@ test('ServerAPI.fetchAuthenticated() with bad device token and no API token shou
         message: 'Authentication failed'
     }));
 
-    const response = await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/v1/test', { test: 'data' });
+    const response = await serverApi.fetchAuthenticated("DELETE", 'https://mock/api/test', { test: 'data' });
     expect(response.status).toBe(401);
     expect(mockFetch).toHaveBeenCalledTimes(2);
 });
@@ -148,20 +145,19 @@ test('ServerAPI.getNewApiToken() returns true on valid device token', async () =
     serverApi.setDeviceToken(deviceToken);
 
     mockFetch.mockResolvedValue(createFetchResponse(200, {
-        expiration: new Date(),
-        token: 'this-is-a-new-api-token',
+        api_token: 'this-is-a-new-api-token',
         email: userEmail
     }));
 
     const result = await serverApi.getNewApiToken();
-    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/v1/token', {
+    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/token', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             email: userEmail,
-            deviceToken: deviceToken
+            device_token: deviceToken
         })
     });
 
@@ -184,14 +180,14 @@ test('ServerAPI.getNewApiToken() returns false on invalid device token', async (
     }))
 
     const result = await serverApi.getNewApiToken();
-    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/v1/token', {
+    expect(mockFetch).toHaveBeenCalledWith('https://mock/api/token', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
             email: userEmail,
-            deviceToken: deviceToken
+            device_token: deviceToken
         })
     });
 

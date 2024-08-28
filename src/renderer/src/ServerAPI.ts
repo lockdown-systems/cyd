@@ -1,13 +1,12 @@
 import {
     ApiErrorResponse,
     AuthApiRequest,
-    AuthApiResponse,
     RegisterDeviceApiRequest,
     RegisterDeviceApiResponse,
     TokenApiRequest,
     TokenApiResponse,
-    LogoutApiResponse,
     DeleteDeviceApiRequest,
+    GetDevicesApiResponse,
     GetDevicesApiResponseArray
 } from "./types";
 
@@ -94,13 +93,13 @@ export default class ServerAPI {
         if (typeof this.userEmail === 'string' && typeof this.deviceToken === 'string') {
             const getTokenResp = await this.getToken({
                 email: this.userEmail,
-                deviceToken: this.deviceToken
+                device_token: this.deviceToken
             });
             if ("error" in getTokenResp) {
                 console.log("Failed to get a new API token", getTokenResp.message);
                 return false;
             }
-            this.apiToken = getTokenResp.token;
+            this.apiToken = getTokenResp.api_token;
             return true;
         }
         return false;
@@ -115,15 +114,14 @@ export default class ServerAPI {
 
     // Auth API (not authenticated)
 
-    async authenticate(request: AuthApiRequest): Promise<AuthApiResponse | ApiErrorResponse> {
+    async authenticate(request: AuthApiRequest): Promise<boolean | ApiErrorResponse> {
         console.log("POST /authenticate");
         try {
             const response = await this.fetch("POST", `${this.apiUrl}/authenticate`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to authenticate with the server. Got status code " + response.status + ".")
             }
-            const data: AuthApiResponse = await response.json();
-            return data;
+            return true;
         } catch {
             return this.returnError("Failed to authenticate with the server. Maybe the server is down?")
         }
@@ -153,7 +151,7 @@ export default class ServerAPI {
             }
             const data: TokenApiResponse = await response.json();
 
-            this.apiToken = data.token;
+            this.apiToken = data.api_token;
             return data;
         } catch {
             return this.returnError("Failed to get token with the server. Maybe the server is down?")
@@ -161,25 +159,6 @@ export default class ServerAPI {
     }
 
     // Auth API (authenticated)
-
-    async logout(): Promise<LogoutApiResponse | ApiErrorResponse> {
-        console.log("POST /logout");
-        if (!await this.validateApiToken()) {
-            return this.returnError("Failed to get a new API token.")
-        }
-        try {
-            const response = await this.fetchAuthenticated("POST", `${this.apiUrl}/logout`, null);
-            if (response.status != 200) {
-                return this.returnError("Failed to logout with the server. Got status code " + response.status + ".")
-            }
-
-            this.apiToken = null;
-            const data: LogoutApiResponse = await response.json();
-            return data;
-        } catch {
-            return this.returnError("Failed to logout with the server. Maybe the server is down?")
-        }
-    }
 
     async deleteDevice(request: DeleteDeviceApiRequest): Promise<void | ApiErrorResponse> {
         console.log("DELETE /device");
@@ -197,19 +176,17 @@ export default class ServerAPI {
     }
 
     async getDevices(): Promise<GetDevicesApiResponseArray | ApiErrorResponse> {
-        console.log("GET /devices");
+        console.log("GET /device");
         if (!await this.validateApiToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
-            const response = await this.fetchAuthenticated("GET", `${this.apiUrl}/devices`, null);
+            const response = await this.fetchAuthenticated("GET", `${this.apiUrl}/device`, null);
             if (response.status != 200) {
                 return this.returnError("Failed to get devices. Got status code " + response.status + ".")
             }
-            const data: GetDevicesApiResponseArray = {
-                devices: await response.json()
-            };
-            return data;
+            const data: GetDevicesApiResponse[] = await response.json();
+            return { devices: data };
         } catch {
             return this.returnError("Failed to get devices. Maybe the server is down?")
         }

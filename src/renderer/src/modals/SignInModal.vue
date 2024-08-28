@@ -58,7 +58,7 @@ async function authenticate() {
     const resp = await serverApi.value.authenticate({
         email: userEmail.value
     });
-    if ("error" in resp && resp.error) {
+    if (typeof resp !== 'boolean' && resp.error) {
         window.electron.showError(resp.message);
         enableStartFields();
         return;
@@ -82,7 +82,7 @@ async function registerDevice() {
     // Register the device
     const registerDeviceResp = await serverApi.value.registerDevice({
         email: userEmail.value,
-        verificationCode: verificationCode.value,
+        verification_code: verificationCode.value,
         description: deviceInfo.value?.deviceDescription,
     });
     if ("error" in registerDeviceResp) {
@@ -91,7 +91,7 @@ async function registerDevice() {
         window.electron.showError('Invalid verification code.');
         return;
     }
-    if (!registerDeviceResp.deviceToken) {
+    if (!registerDeviceResp.device_token) {
         window.electron.showError('Failed to register device. Please try again later.');
         await goBack();
         return;
@@ -101,8 +101,8 @@ async function registerDevice() {
     await window.electron.database.setConfig("deviceUUID", registerDeviceResp.uuid);
 
     // Save the device token
-    await window.electron.database.setConfig("deviceToken", registerDeviceResp.deviceToken);
-    serverApi.value.setDeviceToken(registerDeviceResp.deviceToken);
+    await window.electron.database.setConfig("deviceToken", registerDeviceResp.device_token);
+    serverApi.value.setDeviceToken(registerDeviceResp.device_token);
 
     // Get a new API token
     const pingResp = await serverApi.value.ping();

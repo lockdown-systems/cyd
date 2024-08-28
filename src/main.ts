@@ -97,9 +97,9 @@ async function createWindow() {
     if (!global.ipcHandlersRegistered) {
         ipcMain.handle('getApiUrl', async () => {
             if (semiphemeralEnv == "dev") {
-                return "https://dev-api.semiphemeral.com/v1";
+                return "https://dev-api.semiphemeral.com";
             }
-            return "https://api.semiphemeral.com/v1";
+            return "https://api.semiphemeral.com";
         });
 
         ipcMain.handle('shouldOpenDevtools', async (_) => {

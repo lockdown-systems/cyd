@@ -20,27 +20,23 @@ export type AuthApiRequest = {
     email: string;
 };
 
-export type AuthApiResponse = {
-    message: string;
-};
-
 // API models for POST /api/v1/device
 export type RegisterDeviceApiRequest = {
     email: string;
-    verificationCode: string;
+    verification_code: string;
     description: string;
 };
 
 export type RegisterDeviceApiResponse = {
     uuid: string;
-    deviceToken: string;
+    device_token: string;
 };
 
 // API models for GET /api/v1/devices (an array of these)
 export type GetDevicesApiResponse = {
     uuid: string;
     description: string;
-    lastAccessedAt: Date;
+    last_accessed_at: Date;
 };
 
 export type GetDevicesApiResponseArray = {
@@ -50,18 +46,12 @@ export type GetDevicesApiResponseArray = {
 // API models for POST /api/v1/token
 export type TokenApiRequest = {
     email: string;
-    deviceToken: string;
+    device_token: string;
 };
 
 export type TokenApiResponse = {
-    expiration: Date;
-    token: string;
+    api_token: string;
     email: string;
-};
-
-// API models for POST /api/v1/logout
-export type LogoutApiResponse = {
-    message: string;
 };
 
 // API models for DELETE /api/v1/device
