@@ -5,7 +5,7 @@ import ServerAPI from '../ServerAPI';
 
 const stubElectron = () => {
   return {
-    getApiUrl: async (): Promise<string> => { return 'https://mock/api/v1' },
+    getApiUrl: async (): Promise<string> => { return 'https://mock/api' },
     isDevMode: cy.stub(),
     showError: cy.stub(),
     showQuestion: cy.stub(),
@@ -106,7 +106,7 @@ describe('<Login />', () => {
         }
       });
 
-      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+      cy.intercept('POST', 'https://mock/api/authenticate', {
         statusCode: 200,
         body: {
           message: 'Verification code sent to email'
@@ -146,7 +146,7 @@ describe('<Login />', () => {
       });
 
       // Click through to the verification code page
-      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+      cy.intercept('POST', 'https://mock/api/authenticate', {
         statusCode: 200,
         body: {
           message: 'Verification code sent to email'
@@ -199,10 +199,10 @@ describe('<Login />', () => {
       });
 
       // Click through to the verification code page
-      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+      cy.intercept('POST', 'https://mock/api/authenticate', {
         statusCode: 200,
         body: {
-          message: 'Verification code sent to email'
+          message: 'verification code sent to email'
         }
       });
 
@@ -211,13 +211,13 @@ describe('<Login />', () => {
 
       cy.vueRef('verificationCodeInputEl').should('be.visible');
 
-      cy.intercept('POST', 'https://mock/api/v1/device', {
+      cy.intercept('POST', 'https://mock/api/device', {
         statusCode: 200,
         body: {
-          deviceToken: 'this-is-a-device-token'
+          device_token: 'this-is-a-device-token'
         }
       });
-      cy.intercept('GET', 'https://mock/api/v1/ping', {
+      cy.intercept('GET', 'https://mock/api/ping', {
         statusCode: 200
       });
 
@@ -258,7 +258,7 @@ describe('<Login />', () => {
       });
 
       // Click through to the verification code page
-      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+      cy.intercept('POST', 'https://mock/api/authenticate', {
         statusCode: 200,
         body: {
           message: 'Verification code sent to email'
@@ -270,7 +270,7 @@ describe('<Login />', () => {
 
       cy.vueRef('verificationCodeInputEl').should('be.visible');
 
-      cy.intercept('POST', 'https://mock/api/v1/device', {
+      cy.intercept('POST', 'https://mock/api/device', {
         statusCode: 401,
         body: {
           message: 'Authentication failed'
@@ -309,7 +309,7 @@ describe('<Login />', () => {
       });
 
       // Click through to the verification code page
-      cy.intercept('POST', 'https://mock/api/v1/authenticate', {
+      cy.intercept('POST', 'https://mock/api/authenticate', {
         statusCode: 200,
         body: {
           message: 'Verification code sent to email'
