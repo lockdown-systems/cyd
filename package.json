@@ -9,7 +9,8 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make-dev": "SEMIPHEMERAL_ENV=dev electron-forge make",
+    "make-prod": "SEMIPHEMERAL_ENV=prod electron-forge make",
     "publish": "electron-forge publish",
     "tests": "vitest run .",
     "tests:components": "cd src/renderer && cypress run --component",

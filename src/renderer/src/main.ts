@@ -9,7 +9,7 @@ import App from "./App.vue";
 declare global {
     interface Window {
         electron: {
-            getApiUrl: () => Promise<string>;
+            getAPIURL: () => Promise<string>;
             shouldOpenDevtools: () => Promise<boolean>;
             showMessage: (message: string) => void;
             showError: (message: string) => void;

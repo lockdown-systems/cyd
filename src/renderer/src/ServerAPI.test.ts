@@ -4,7 +4,7 @@ import ServerAPI from './ServerAPI'
 // Mock the electron IPC API
 vi.stubGlobal('window', {
     electron: {
-        getApiUrl: vi.fn(() => 'https://mock/api')
+        getAPIURL: vi.fn(() => 'https://mock/api')
     }
 });
 
@@ -31,7 +31,7 @@ function createFetchResponse(status: number, data: FetchResponseData) {
 test('ServerAPI.initialize() sets apiUrl', async () => {
     const serverApi = new ServerAPI();
     await serverApi.initialize();
-    expect(window.electron.getApiUrl).toHaveBeenCalled();
+    expect(window.electron.getAPIURL).toHaveBeenCalled();
 })
 
 test('ServerAPI.fetch() should set method and headers', async () => {

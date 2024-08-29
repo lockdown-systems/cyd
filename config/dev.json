@@ -1,0 +1,5 @@
+{
+    "mode": "dev",
+    "apiURL": "https://dev-api.semiphemeral.com",
+    "plausibleSite": "dev-app.semiphemeral.com"
+}

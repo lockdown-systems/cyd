@@ -19,7 +19,7 @@ export default class ServerAPI {
     constructor() { }
 
     async initialize(): Promise<void> {
-        this.apiUrl = await window.electron.getApiUrl();
+        this.apiUrl = await window.electron.getAPIURL();
     }
 
     setUserEmail(userEmail: string) {
