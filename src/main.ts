@@ -116,8 +116,8 @@ async function createWindow() {
             return config.apiURL;
         });
 
-        ipcMain.handle('trackEvent', async (_, eventName: string) => {
-            trackEvent(eventName, config.plausibleDomain);
+        ipcMain.handle('trackEvent', async (_, eventName: string, userAgent: string) => {
+            trackEvent(eventName, userAgent, config.plausibleDomain);
         });
 
         ipcMain.handle('shouldOpenDevtools', async (_) => {

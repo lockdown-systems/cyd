@@ -5,8 +5,8 @@ contextBridge.exposeInMainWorld('electron', {
     getAPIURL: (): Promise<string> => {
         return ipcRenderer.invoke('getAPIURL')
     },
-    trackEvent: (eventName: string): Promise<string> => {
-        return ipcRenderer.invoke('trackEvent', eventName)
+    trackEvent: (eventName: string, userAgent: string): Promise<string> => {
+        return ipcRenderer.invoke('trackEvent', eventName, userAgent)
     },
     shouldOpenDevtools: (): Promise<boolean> => {
         return ipcRenderer.invoke('shouldOpenDevtools')

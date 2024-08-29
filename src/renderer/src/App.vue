@@ -63,7 +63,7 @@ const showSettings = () => {
 provide('showSettings', showSettings);
 
 onMounted(async () => {
-  await window.electron.trackEvent(PlausibleEvents.APP_OPENED);
+  await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
   await serverApi.value.initialize();
 
