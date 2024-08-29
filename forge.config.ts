@@ -18,7 +18,8 @@ const buildPath = path.join(__dirname, 'build');
 if (!fs.existsSync(buildPath)) {
   fs.mkdirSync(buildPath);
 }
-const iconPath = path.join(__dirname, 'src', 'renderer', 'public', 'icon.png');
+const assetsPath = path.join(__dirname, 'assets');
+
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -82,7 +83,7 @@ const config: ForgeConfig = {
     extraResource: [
       path.join(buildPath, 'x-archive.zip'),
       path.join(buildPath, 'config.json'),
-      iconPath,
+      path.join(assetsPath, 'icon.png'),
     ],
   },
   rebuildConfig: {},

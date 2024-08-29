@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 
 import log from 'electron-log/main';
-import { app, BrowserWindow, ipcMain, dialog, shell, webContents } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage } from 'electron';
 
 import {
     runMainMigrations,
@@ -90,13 +90,8 @@ async function createWindow() {
         });
     }
 
-    // Set the icon in Linux (in macOS and Windows it's set in forge.config.ts)
-    let icon: string | undefined = undefined;
-    if (os.platform() === 'linux') {
-        icon = path.join(getResourcesPath(), 'icon.png');
-    }
-
     // Create the browser window
+    const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
     const win = new BrowserWindow({
         width: 1000,
         height: 800,
