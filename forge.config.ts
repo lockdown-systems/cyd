@@ -18,6 +18,7 @@ const buildPath = path.join(__dirname, 'build');
 if (!fs.existsSync(buildPath)) {
   fs.mkdirSync(buildPath);
 }
+const iconPath = path.join(__dirname, 'src', 'renderer', 'public', 'icon.png');
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -33,6 +34,7 @@ const config: ForgeConfig = {
         const semiphemeralConfigPath = path.join(__dirname, 'config', `${semiphemeralEnv}.json`);
         const semiphemeralConfigDestPath = path.join(buildPath, 'config.json');
         fs.copyFileSync(semiphemeralConfigPath, semiphemeralConfigDestPath);
+        callback();
       },
 
       // Build X archive site
@@ -79,6 +81,8 @@ const config: ForgeConfig = {
     ],
     extraResource: [
       path.join(buildPath, 'x-archive.zip'),
+      path.join(buildPath, 'config.json'),
+      iconPath,
     ],
   },
   rebuildConfig: {},

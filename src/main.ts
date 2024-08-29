@@ -93,7 +93,7 @@ async function createWindow() {
     // Set the icon in Linux (in macOS and Windows it's set in forge.config.ts)
     let icon: string | undefined = undefined;
     if (os.platform() === 'linux') {
-        icon = path.join(__dirname, '../renderer/main_window/icon.png');
+        icon = path.join(getResourcesPath(), 'icon.png');
     }
 
     // Create the browser window

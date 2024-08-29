@@ -11,7 +11,6 @@
     "package": "electron-forge package",
     "make-dev": "SEMIPHEMERAL_ENV=dev electron-forge make",
     "make-prod": "SEMIPHEMERAL_ENV=prod electron-forge make",
-    "publish": "electron-forge publish",
     "tests": "vitest run .",
     "tests:components": "cd src/renderer && cypress run --component",
     "open-cypress": "cd src/renderer && cypress open",
