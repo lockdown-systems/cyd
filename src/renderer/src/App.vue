@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { ref, provide, onMounted } from "vue"
 
-import type { DeviceInfo } from './types';
-
+import { DeviceInfo, PlausibleEvents } from './types';
 import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
 
 import SignInModal from "./modals/SignInModal.vue";
 import SettingsModal from './modals/SettingsModal.vue';
-
 import TabsView from "./views/TabsView.vue";
 
 // Application state
@@ -65,6 +63,8 @@ const showSettings = () => {
 provide('showSettings', showSettings);
 
 onMounted(async () => {
+  await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
+
   await serverApi.value.initialize();
 
   await refreshDeviceInfo();

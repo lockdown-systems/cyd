@@ -10,6 +10,7 @@ declare global {
     interface Window {
         electron: {
             getAPIURL: () => Promise<string>;
+            trackEvent: (eventName: string, userAgent: string) => Promise<string>;
             shouldOpenDevtools: () => Promise<boolean>;
             showMessage: (message: string) => void;
             showError: (message: string) => void;
