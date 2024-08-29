@@ -7,6 +7,7 @@ import {
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo
 } from '../../../shared_types';
+import { PlausibleEvents } from "../types";
 
 export enum State {
     Login = "login",
@@ -86,12 +87,16 @@ export class AccountXViewModel extends BaseViewModel {
 
         this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
         this.state = State.RunJobs;
+
+        await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_STARTED, navigator.userAgent);
     }
 
     async startDeleting() {
         // TODO: implement
         console.log("startDeleting: NOT IMPLEMENTED");
         await window.electron.showMessage("Deleting data from X is not implemented yet.");
+
+        await window.electron.trackEvent(PlausibleEvents.X_DELETE_STARTED, navigator.userAgent);
     }
 
     async reset() {
@@ -200,6 +205,11 @@ export class AccountXViewModel extends BaseViewModel {
 
         // We're logged in
         this.log("runJob", "login succeeded");
+
+        // If this is the first time we're logging in, track it
+        if (this.state === State.Login) {
+            await window.electron.trackEvent(PlausibleEvents.X_USER_SIGNED_IN, navigator.userAgent);
+        }
 
         await this.waitForPause();
 
@@ -556,6 +566,8 @@ I'm building a searchable archive web page in HTML.
 
                 // Build the archive
                 await window.electron.X.archiveBuild(this.account.id);
+
+                await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_COMPLETED, navigator.userAgent);
 
                 await this.finishJob(iJob);
                 break;
