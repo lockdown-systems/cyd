@@ -98,10 +98,8 @@ export const trackEvent = (eventName: string, userAgent: string, plausibleDomain
                     domain: plausibleDomain,
                 }),
             });
-            console.log(`Tracked event: ${eventName}`);
         } catch (error) {
             // Fail silently
-            console.log(`Failed to track event: ${eventName}`);
         }
     }, 0);
 };

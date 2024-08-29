@@ -26,7 +26,7 @@ const config: ForgeConfig = {
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     asar: true,
-    icon: "assets/icon",
+    icon: path.join(assetsPath, 'icon'),
     beforeAsar: [
 
       // Copy the config.json file to the resources path
@@ -91,7 +91,11 @@ const config: ForgeConfig = {
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
     new MakerRpm({}),
-    new MakerDeb({})
+    new MakerDeb({
+      options: {
+        icon: path.join(assetsPath, 'icon.png'),
+      }
+    })
   ],
   plugins: [
     new VitePlugin({
