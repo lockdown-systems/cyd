@@ -78,3 +78,28 @@ export async function findOpenPort(): Promise<number> {
         });
     });
 }
+
+export const trackEvent = (eventName: string, plausibleDomain: string) => {
+    // Track an event using Plausible
+    // https://plausible.io/docs/events-api
+
+    // Run the fetch request asynchronously without blocking
+    setTimeout(async () => {
+        try {
+            await fetch(`https://${plausibleDomain}/api/event`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'User-Agent': `Semiphemeral/${app.getVersion()} (${os.platform()})`,
+                },
+                body: JSON.stringify({
+                    name: `${eventName} - ${os.platform()}`,
+                    url: `https://${plausibleDomain}/`,
+                    domain: plausibleDomain,
+                }),
+            });
+        } catch (error) {
+            // Fail silently
+        }
+    }, 0);
+};

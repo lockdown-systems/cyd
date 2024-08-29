@@ -7,6 +7,10 @@ export type DeviceInfo = {
     valid: boolean;
 };
 
+export const PlausibleEvents = Object.freeze({
+    APP_OPENED: 'App Opened',
+});
+
 // API types below
 
 // API error response

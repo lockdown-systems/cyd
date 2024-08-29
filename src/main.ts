@@ -2,8 +2,8 @@ import process from 'process';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
+
 import log from 'electron-log/main';
-import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog, shell, webContents } from 'electron';
 
 import {
@@ -16,7 +16,7 @@ import {
 } from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
-import { getAccountDataPath, getResourcesPath } from './helpers';
+import { getAccountDataPath, getResourcesPath, trackEvent } from './helpers';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -73,7 +73,7 @@ async function initializeApp() {
 }
 
 async function createWindow() {
-    // Get the config
+    // Load the config
     const configPath = path.join(getResourcesPath(), 'config.json');
     if (!fs.existsSync(configPath)) {
         dialog.showErrorBox('Semiphemeral Error', 'Cannot find config.json!');
@@ -82,6 +82,7 @@ async function createWindow() {
     }
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+    // Display message in dev mode
     if (config.mode == "dev") {
         dialog.showMessageBoxSync({
             message: `You're running Semiphemeral ${app.getVersion()} in dev mode.\n\nThis version uses the dev server and it might contain bugs.`,
@@ -92,7 +93,7 @@ async function createWindow() {
     // Set the icon in Linux (in macOS and Windows it's set in forge.config.ts)
     let icon: string | undefined = undefined;
     if (os.platform() === 'linux') {
-        icon = join(__dirname, '../renderer/main_window/icon.png');
+        icon = path.join(__dirname, '../renderer/main_window/icon.png');
     }
 
     // Create the browser window
@@ -103,7 +104,7 @@ async function createWindow() {
         minHeight: 400,
         webPreferences: {
             webviewTag: true,
-            preload: join(__dirname, './preload.js')
+            preload: path.join(__dirname, './preload.js')
         },
         icon: icon
     });
@@ -113,6 +114,10 @@ async function createWindow() {
     if (!global.ipcHandlersRegistered) {
         ipcMain.handle('getAPIURL', async () => {
             return config.apiURL;
+        });
+
+        ipcMain.handle('trackEvent', async (_, eventName: string) => {
+            trackEvent(eventName, config.plausibleDomain);
         });
 
         ipcMain.handle('shouldOpenDevtools', async (_) => {
@@ -178,7 +183,7 @@ async function createWindow() {
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
         win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-        win.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+        win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     };
 
     // Open dev tools?
