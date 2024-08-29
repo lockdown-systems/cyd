@@ -2,8 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
-    getApiUrl: (): Promise<string> => {
-        return ipcRenderer.invoke('getApiUrl')
+    getAPIURL: (): Promise<string> => {
+        return ipcRenderer.invoke('getAPIURL')
     },
     shouldOpenDevtools: (): Promise<boolean> => {
         return ipcRenderer.invoke('shouldOpenDevtools')

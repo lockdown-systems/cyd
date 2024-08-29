@@ -1,6 +1,7 @@
 import process from 'process';
 import os from 'os';
 import path from 'path';
+import fs from 'fs';
 import log from 'electron-log/main';
 import { join } from 'node:path';
 import { app, BrowserWindow, ipcMain, dialog, shell, webContents } from 'electron';
@@ -15,7 +16,7 @@ import {
 } from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
-import { getAccountDataPath } from './helpers';
+import { getAccountDataPath, getResourcesPath } from './helpers';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -34,7 +35,6 @@ if (!app.requestSingleInstanceLock()) {
 log.initialize();
 log.info('User data folder is at:', app.getPath('userData'));
 
-const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV;
 const semiphemeralDevtools = process.env.SEMIPHEMERAL_DEVTOOLS === "1";
 
 async function initializeApp() {
@@ -73,6 +73,22 @@ async function initializeApp() {
 }
 
 async function createWindow() {
+    // Get the config
+    const configPath = path.join(getResourcesPath(), 'config.json');
+    if (!fs.existsSync(configPath)) {
+        dialog.showErrorBox('Semiphemeral Error', 'Cannot find config.json!');
+        app.quit();
+        return
+    }
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
+    if (config.mode == "dev") {
+        dialog.showMessageBoxSync({
+            message: `You're running Semiphemeral ${app.getVersion()} in dev mode.\n\nThis version uses the dev server and it might contain bugs.`,
+            type: 'info',
+        });
+    }
+
     // Set the icon in Linux (in macOS and Windows it's set in forge.config.ts)
     let icon: string | undefined = undefined;
     if (os.platform() === 'linux') {
@@ -95,11 +111,8 @@ async function createWindow() {
     // IPC events
 
     if (!global.ipcHandlersRegistered) {
-        ipcMain.handle('getApiUrl', async () => {
-            if (semiphemeralEnv == "dev") {
-                return "https://dev-api.semiphemeral.com";
-            }
-            return "https://api.semiphemeral.com";
+        ipcMain.handle('getAPIURL', async () => {
+            return config.apiURL;
         });
 
         ipcMain.handle('shouldOpenDevtools', async (_) => {

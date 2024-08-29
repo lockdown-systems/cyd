@@ -26,8 +26,17 @@ const config: ForgeConfig = {
     asar: true,
     icon: "assets/icon",
     beforeAsar: [
+
+      // Copy the config.json file to the resources path
       (_buildPath, _electronVersion, _platform, _arch, callback) => {
-        // Build X archive site
+        const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV || 'prod';
+        const semiphemeralConfigPath = path.join(__dirname, 'config', `${semiphemeralEnv}.json`);
+        const semiphemeralConfigDestPath = path.join(buildPath, 'config.json');
+        fs.copyFileSync(semiphemeralConfigPath, semiphemeralConfigDestPath);
+      },
+
+      // Build X archive site
+      (_buildPath, _electronVersion, _platform, _arch, callback) => {
         const xArchiveSitePath = path.join(__dirname, 'archive-static-sites', 'x-archive', 'dist');
         const p = spawnSync('npm', ['run', 'build'], {
           cwd: xArchiveSitePath,
@@ -66,6 +75,7 @@ const config: ForgeConfig = {
         archive.directory(xArchiveSitePath, false);
         archive.finalize();
       },
+
     ],
     extraResource: [
       path.join(buildPath, 'x-archive.zip'),

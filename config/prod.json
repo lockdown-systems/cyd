@@ -1,0 +1,5 @@
+{
+    "mode": "prod",
+    "apiURL": "https://api.semiphemeral.com",
+    "plausibleSite": "app.semiphemeral.com"
+}

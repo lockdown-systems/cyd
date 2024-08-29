@@ -13,10 +13,20 @@ Run in development mode:
 npm run start
 ```
 
-## Creating archives
+## Initializing resources
 
-When you create an archive of data from an account, it needs to unzip an archive static site. To do this, you need to build the static site first and zip it up. This happens automatically when creating a build, but if you're running in development mode, just create a build first to do this:
+Semiphemeral requires resources to be created before you run it.
+
+When you create an archive of data from an account, it needs to unzip an archive static site. To do this, you need to build the static site first and zip it up. This happens automatically when creating a build.
+
+There's also a `config.json` file that defines different resources (like the API URL) depending on if you're using a dev or prod version.
+
+If you're running in development mode, just create a build first to do this:
 
 ```sh
-npm run make
+# Make resources for dev mode
+npm run make-dev
+
+# Make resources for prod mode
+npm run make-prod
 ```

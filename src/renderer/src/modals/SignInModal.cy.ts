@@ -5,7 +5,7 @@ import ServerAPI from '../ServerAPI';
 
 const stubElectron = () => {
   return {
-    getApiUrl: async (): Promise<string> => { return 'https://mock/api' },
+    getAPIURL: async (): Promise<string> => { return 'https://mock/api' },
     isDevMode: cy.stub(),
     showError: cy.stub(),
     showQuestion: cy.stub(),
