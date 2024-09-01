@@ -86,7 +86,7 @@ async function createWindow() {
     if (config.mode == "dev") {
         dialog.showMessageBoxSync({
             title: `Semiphemeral ${app.getVersion()}`,
-            message: `You're running a dev version of Semiphemeral. It uses the dev server and it might contain bugs.`,
+            message: `You're running Semiphemeral ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
             type: 'info',
         });
     }
