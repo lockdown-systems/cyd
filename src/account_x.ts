@@ -152,7 +152,7 @@ export class XAccountController {
     userID TEXT NOT NULL
 );`, `CREATE TABLE message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    messageID TEXT NOT NULL,
+    messageID TEXT NOT NULL UNIQUE,
     conversationID TEXT NOT NULL,
     createdAt DATETIME NOT NULL,
     senderID TEXT NOT NULL,
@@ -730,14 +730,12 @@ export class XAccountController {
         }
 
         // Have we seen this message before?
-        const existing = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.message.id], "all");
-        if (existing.length > 0) {
-            // Delete the message so we can re-add it
-            exec(this.db, 'DELETE FROM message WHERE messageID = ?', [message.message.id]);
-        }
+        const existingCount = exec(this.db, 'SELECT COUNT(*) as count FROM message WHERE messageID = ?', [message.message.id], "get");
+        console.log("XAccountController.indexMessage: existingCount", existingCount);
+        const isInsert = existingCount.count === 0;
 
-        // Add the message
-        exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)', [
+        // Insert of replace message
+        exec(this.db, 'INSERT OR REPLACE INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)', [
             message.message.id,
             message.message.conversation_id,
             new Date(Number(message.message.time)),
@@ -747,7 +745,7 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (existing.length == 0) {
+        if (isInsert) {
             this.progress.messagesIndexed++;
         }
 
