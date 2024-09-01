@@ -40,14 +40,22 @@ const config: ForgeConfig = {
 
       // Build X archive site
       (_buildPath, _electronVersion, _platform, _arch, callback) => {
-        const xArchiveSitePath = path.join(__dirname, 'archive-static-sites', 'x-archive', 'dist');
-        const p = spawnSync('npm', ['run', 'build'], {
+        const xArchiveSitePath = path.join(__dirname, 'archive-static-sites', 'x-archive');
+
+        // Run `npm install`
+        spawnSync('npm', ['install'], {
+          cwd: xArchiveSitePath,
+          stdio: 'inherit'
+        });
+
+        // Run `npm run build`
+        spawnSync('npm', ['run', 'build'], {
           cwd: xArchiveSitePath,
           stdio: 'inherit'
         });
 
         // Delete archive.js if it exists, since we don't want to be shipping test data
-        const archiveJsPath = path.join(xArchiveSitePath, 'assets', 'archive.js');
+        const archiveJsPath = path.join(xArchiveSitePath, 'dist', 'assets', 'archive.js');
         if (fs.existsSync(archiveJsPath)) {
           fs.unlinkSync(archiveJsPath);
         }
@@ -75,7 +83,7 @@ const config: ForgeConfig = {
         });
 
         archive.pipe(output);
-        archive.directory(xArchiveSitePath, false);
+        archive.directory(path.join(xArchiveSitePath, 'dist'), false);
         archive.finalize();
       },
 
