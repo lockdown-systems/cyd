@@ -3,6 +3,7 @@ import path from "path"
 
 import { Proxy, IContext } from "http-mitm-proxy"
 import * as zlib from "zlib"
+import log from 'electron-log/main';
 
 import { findOpenPort, getAccountSettingsPath } from "./helpers"
 import { ResponseData, Account } from './shared_types'
@@ -56,7 +57,7 @@ export class MITMController implements IMITMController {
         // Load the account
         this.account = getAccount(accountID);
         if (!this.account) {
-            console.error(`MITMController: account ${accountID} not found`);
+            log.error(`MITMController: account ${accountID} not found`);
             return;
         }
 
@@ -89,7 +90,6 @@ export class MITMController implements IMITMController {
                         const chunks: Buffer[] = [];
 
                         ctx.onResponseData((ctx, chunk, callback) => {
-                            // console.log(`MITMController: response chunk (${chunk.length} bytes)`);
                             chunks.push(chunk);
                             return callback(null, chunk);
                         });
@@ -102,16 +102,15 @@ export class MITMController implements IMITMController {
 
                             if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'gzip') {
                                 // Response is gzip-compressed
-                                // console.log(`MITMController: response is gzip-compressed`);
                                 zlib.gunzip(buffer, (err, decompressed) => {
                                     if (!err) {
                                         responseData.body = decompressed.toString();
                                     } else {
-                                        console.error("Error decompressing gzip response:", err);
+                                        log.error("Error decompressing gzip response:", err);
                                         responseData.body = buffer.toString();
                                     }
 
-                                    console.log(`MITMController: got response`, {
+                                    log.debug(`MITMController: got response`, {
                                         host: ctx.clientToProxyRequest.headers.host,
                                         url: ctx.clientToProxyRequest.url,
                                         status: responseData.status,
@@ -122,16 +121,15 @@ export class MITMController implements IMITMController {
                                 });
                             } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'br') {
                                 // Response is brotli-compressed
-                                // console.log(`MITMController: response is brotli-compressed`);
                                 zlib.brotliDecompress(buffer, (err, decompressed) => {
                                     if (!err) {
                                         responseData.body = decompressed.toString();
                                     } else {
-                                        console.error("Error decompressing brotli response:", err);
+                                        log.error("Error decompressing brotli response:", err);
                                         responseData.body = buffer.toString();
                                     }
 
-                                    console.log(`MITMController: got response`, {
+                                    log.debug(`MITMController: got response`, {
                                         host: ctx.clientToProxyRequest.headers.host,
                                         url: ctx.clientToProxyRequest.url,
                                         status: responseData.status,
@@ -142,16 +140,15 @@ export class MITMController implements IMITMController {
                                 });
                             } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'deflate') {
                                 // Response is deflate-compressed
-                                // console.log(`MITMController: response is deflate-compressed`);
                                 zlib.inflate(buffer, (err, decompressed) => {
                                     if (!err) {
                                         responseData.body = decompressed.toString();
                                     } else {
-                                        console.error("Error decompressing deflate response:", err);
+                                        log.error("Error decompressing deflate response:", err);
                                         responseData.body = buffer.toString();
                                     }
 
-                                    console.log(`MITMController: got response`, {
+                                    log.debug(`MITMController: got response`, {
                                         host: ctx.clientToProxyRequest.headers.host,
                                         url: ctx.clientToProxyRequest.url,
                                         status: responseData.status,
@@ -162,10 +159,9 @@ export class MITMController implements IMITMController {
                                 });
                             } else {
                                 // If not compressed, just convert buffer to string
-                                // console.log(`MITMController: response is not compressed`);
                                 responseData.body = buffer.toString();
 
-                                console.log(`MITMController: got response`, {
+                                log.debug(`MITMController: got response`, {
                                     host: ctx.clientToProxyRequest.headers.host,
                                     url: ctx.clientToProxyRequest.url,
                                     status: responseData.status,
@@ -182,15 +178,13 @@ export class MITMController implements IMITMController {
         });
 
         // Start the proxy
-        console.log(`MITMController: Account ${this.account?.id}, starting MITM`);
         this.proxyPort = await findOpenPort()
         this.proxy.listen({
             host: "127.0.0.1",
             port: this.proxyPort,
             sslCaDir: this.proxySSLCADir,
         });
-
-        console.log(`MITMController: Account ${this.account?.id}, listening on port ${this.proxyPort}`);
+        log.info(`MITMController: Account ${this.account?.id}, proxy listening on port ${this.proxyPort}`);
 
         // Verify SSL certificates
         ses.setCertificateVerifyProc((request, callback) => {
@@ -220,7 +214,7 @@ export class MITMController implements IMITMController {
     }
 
     async stopMITM(ses: Electron.Session) {
-        console.log(`MITMController: Account ${this.account?.id}, stopping MITM`);
+        log.info(`MITMController: Account ${this.account?.id}, stopping proxy`);
         if (this.proxy) {
             this.proxy.close();
             this.proxy = null;

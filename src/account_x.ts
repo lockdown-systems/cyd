@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import unzipper from 'unzipper';
 
 import { app, ipcMain, session, shell, webContents } from 'electron'
+import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
 import { getResourcesPath, getAccountDataPath } from './helpers'
@@ -57,7 +58,7 @@ export class XAccountController {
         // Load the account
         this.account = getXAccount(accountID);
         if (!this.account) {
-            console.error(`XAccountController: account ${accountID} not found`);
+            log.error(`XAccountController: account ${accountID} not found`);
             return;
         }
 
@@ -80,7 +81,7 @@ export class XAccountController {
         if (this.account) {
             this.account = getXAccount(this.account.id);
             if (!this.account) {
-                console.error(`XAccountController: error refreshing account`);
+                log.error(`XAccountController: error refreshing account`);
                 return;
             }
         }
@@ -88,7 +89,7 @@ export class XAccountController {
 
     initDB() {
         if (!this.account || !this.account.username) {
-            console.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found");
+            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found");
             return;
         }
 
@@ -165,7 +166,7 @@ export class XAccountController {
     }
 
     resetProgress(): XProgress {
-        console.log("XAccountController.resetProgress");
+        log.debug("XAccountController.resetProgress");
         this.progress = emptyXProgress();
         return this.progress;
     }
@@ -223,7 +224,7 @@ export class XAccountController {
     async getUsername(webContentsID: number): Promise<string | null> {
         let username = null;
         if (!this.account) {
-            console.log("XAccountController.getUsername: account not found");
+            log.error("XAccountController.getUsername: account not found");
             return username;
         }
 
@@ -337,7 +338,7 @@ export class XAccountController {
 
         // Rate limited?
         if (responseData.status == 429) {
-            console.log('XAccountController.indexParseTweetsResponseData: RATE LIMITED');
+            log.warn('XAccountController.indexParseTweetsResponseData: RATE LIMITED');
             this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
@@ -402,16 +403,16 @@ export class XAccountController {
                 });
 
                 this.mitmController.responseData[iResponse].processed = true;
-                console.log('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+                log.debug('XAccountController.indexParseTweetsResponseData: processed', iResponse);
 
                 if (shouldReturnFalse) {
                     return false;
                 }
             } catch (error) {
                 // TODO: automation error
-                console.error('XAccountController.indexParseTweetsResponseData: error', error);
-                console.log(responseData.url)
-                console.log(responseData.body)
+                log.error('XAccountController.indexParseTweetsResponseData: error', error);
+                log.debug(responseData.url)
+                log.debug(responseData.body)
 
                 // Throw an exception
                 throw error;
@@ -427,7 +428,7 @@ export class XAccountController {
     // Parses the response data so far to index tweets that have been collected
     // Returns the progress object
     async indexParseTweets(isFirstRun: boolean): Promise<XProgress> {
-        console.log(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
+        log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexTweets";
         this.progress.isIndexTweetsFinished = false;
@@ -460,7 +461,7 @@ export class XAccountController {
     }
 
     async indexUser(user: XAPIUser) {
-        console.log("XAccountController.indexUser", user);
+        log.debug("XAccountController.indexUser", user);
         if (!this.db) {
             this.initDB();
         }
@@ -496,7 +497,7 @@ export class XAccountController {
 
     // Returns false if the loop should stop
     indexConversation(conversation: XAPIConversation, isFirstRun: boolean): boolean {
-        console.log("XAccountController.indexConversation", conversation);
+        log.debug("XAccountController.indexConversation", conversation);
         if (!this.db) {
             this.initDB();
         }
@@ -512,13 +513,13 @@ export class XAccountController {
                 existing[0].minEntryID == conversation.min_entry_id &&
                 existing[0].maxEntryID == conversation.max_entry_id
             ) {
-                console.log("XAccountController.indexConversation: conversation already indexed", conversation.conversation_id);
+                log.debug("XAccountController.indexConversation: conversation already indexed", conversation.conversation_id);
                 this.mitmController.responseData[0].processed = true;
                 this.progress.isIndexConversationsFinished = true;
                 return false;
             }
 
-            console.log("XAccountController.indexConversation: conversation already indexed, but needs to be updated", {
+            log.debug("XAccountController.indexConversation: conversation already indexed, but needs to be updated", {
                 oldMinEntryID: existing[0].minEntryID,
                 oldMaxEntryID: existing[0].maxEntryID,
                 newMinEntryID: conversation.min_entry_id,
@@ -585,7 +586,7 @@ export class XAccountController {
 
         // Rate limited?
         if (responseData.status == 429) {
-            console.log('XAccountController.indexParseConversationsResponseData: RATE LIMITED');
+            log.warn('XAccountController.indexParseConversationsResponseData: RATE LIMITED');
             this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
@@ -626,14 +627,14 @@ export class XAccountController {
                 }
 
                 // Add the users
-                console.log(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
+                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
                 for (const userID in users) {
                     const user = users[userID];
                     await this.indexUser(user);
                 }
 
                 // Add the conversations
-                console.log(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
+                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
                 for (const conversationID in conversations) {
                     const conversation = conversations[conversationID];
                     if (!this.indexConversation(conversation, isFirstRun)) {
@@ -643,16 +644,16 @@ export class XAccountController {
                 }
 
                 this.mitmController.responseData[iResponse].processed = true;
-                console.log('XAccountController.indexParseConversationsResponseData: processed', iResponse);
+                log.debug('XAccountController.indexParseConversationsResponseData: processed', iResponse);
 
                 if (shouldReturnFalse) {
                     return false;
                 }
             } catch (error) {
                 // TODO: automation error
-                console.error('XAccountController.indexParseConversationsResponseData: error', error);
-                console.log(responseData.url)
-                console.log(responseData.body)
+                log.error('XAccountController.indexParseConversationsResponseData: error', error);
+                log.debug(responseData.url)
+                log.debug(responseData.body)
 
                 // Throw an exception
                 throw error;
@@ -668,7 +669,7 @@ export class XAccountController {
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
     async indexParseConversations(isFirstRun: boolean): Promise<XProgress> {
-        console.log(`XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`);
+        log.info(`XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexConversations";
         this.progress.isIndexMessagesFinished = false;
@@ -679,10 +680,6 @@ export class XAccountController {
             if (!await this.indexParseConversationsResponseData(i, isFirstRun)) {
                 return this.progress;
             }
-        }
-
-        if (!this.thereIsMore) {
-            console.log(JSON.stringify(this.mitmController.responseData));
         }
 
         return this.progress;
@@ -710,7 +707,7 @@ export class XAccountController {
         // Select just the conversations that need to be indexed
         const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE shouldIndexMessages = ? AND deletedAt IS NULL', [1], "all");
         const totalConversations = exec(this.db, 'SELECT count(*) FROM conversation WHERE deletedAt IS NULL', [], "get");
-        console.log("XAccountController.indexMessagesStart", conversationIDs, totalConversations);
+        log.debug("XAccountController.indexMessagesStart", conversationIDs, totalConversations);
         return {
             conversationIDs: conversationIDs.map((row) => row.conversationID),
             totalConversations: totalConversations["count(*)"]
@@ -719,7 +716,7 @@ export class XAccountController {
 
     // Returns false if the loop should stop
     indexMessage(message: XAPIMessage, _isFirstRun: boolean): boolean {
-        console.log("XAccountController.indexMessage", message);
+        log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
         }
@@ -731,7 +728,7 @@ export class XAccountController {
 
         // Have we seen this message before?
         const existingCount = exec(this.db, 'SELECT COUNT(*) as count FROM message WHERE messageID = ?', [message.message.id], "get");
-        console.log("XAccountController.indexMessage: existingCount", existingCount);
+        log.debug("XAccountController.indexMessage: existingCount", existingCount);
         const isInsert = existingCount.count === 0;
 
         // Insert of replace message
@@ -764,7 +761,7 @@ export class XAccountController {
 
         // Rate limited?
         if (responseData.status == 429) {
-            console.log('XAccountController.indexParseMessagesResponseData: RATE LIMITED');
+            log.warn('XAccountController.indexParseMessagesResponseData: RATE LIMITED');
             this.mitmController.responseData[iResponse].processed = true;
             return false;
         }
@@ -781,7 +778,7 @@ export class XAccountController {
             responseData.status == 200
         ) {
             try {
-                console.log("XAccountController.indexParseMessagesResponseData", iResponse);
+                log.debug("XAccountController.indexParseMessagesResponseData", iResponse);
                 let entries: XAPIMessage[];
 
                 if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
@@ -803,7 +800,7 @@ export class XAccountController {
                 }
 
                 // Add the messages
-                console.log(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
+                log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
                 for (let i = 0; i < entries.length; i++) {
                     const message = entries[i];
                     if (!this.indexMessage(message, isFirstRun)) {
@@ -813,23 +810,23 @@ export class XAccountController {
                 }
 
                 this.mitmController.responseData[iResponse].processed = true;
-                console.log('XAccountController.indexParseMessagesResponseData: processed', iResponse);
+                log.debug('XAccountController.indexParseMessagesResponseData: processed', iResponse);
 
                 if (shouldReturnFalse) {
                     return false;
                 }
             } catch (error) {
                 // TODO: automation error
-                console.error('XAccountController.indexParseMessagesResponseData: error', error);
-                console.log(responseData.url)
-                console.log(responseData.body)
+                log.error('XAccountController.indexParseMessagesResponseData: error', error);
+                log.debug(responseData.url)
+                log.debug(responseData.body)
 
                 // Throw an exception
                 throw error;
             }
         } else {
             // Skip response
-            console.log('XAccountController.indexParseMessagesResponseData: skipping response', responseData.url);
+            log.debug('XAccountController.indexParseMessagesResponseData: skipping response', responseData.url);
             this.mitmController.responseData[iResponse].processed = true;
         }
 
@@ -839,7 +836,7 @@ export class XAccountController {
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
     async indexParseMessages(isFirstRun: boolean): Promise<XProgress> {
-        console.log(`XAccountController.indexParseMessages: parsing ${this.mitmController.responseData.length} responses`);
+        log.info(`XAccountController.indexParseMessages: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexMessages";
         this.progress.isIndexMessagesFinished = false;
@@ -855,19 +852,19 @@ export class XAccountController {
     }
 
     async indexTweetsFinished(): Promise<XProgress> {
-        console.log('XAccountController.indexTweetsFinished');
+        log.info('XAccountController.indexTweetsFinished');
         this.progress.isIndexTweetsFinished = true;
         return this.progress;
     }
 
     async indexConversationsFinished(): Promise<XProgress> {
-        console.log('XAccountController.indexConversationsFinished');
+        log.info('XAccountController.indexConversationsFinished');
         this.progress.isIndexConversationsFinished = true;
         return this.progress;
     }
 
     async indexMessagesFinished(): Promise<XProgress> {
-        console.log('XAccountController.indexMessagesFinished');
+        log.info('XAccountController.indexMessagesFinished');
         this.progress.isIndexMessagesFinished = true;
         return this.progress;
     }
@@ -883,7 +880,7 @@ export class XAccountController {
     }
 
     async indexLikesFinished(): Promise<XProgress> {
-        console.log('XAccountController.indexLikesFinished');
+        log.info('XAccountController.indexLikesFinished');
         this.progress.isIndexLikesFinished = true;
         return this.progress;
     }
@@ -944,7 +941,6 @@ export class XAccountController {
         }
 
         const tweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetID], "get");
-        console.log(tweet);
         if (!tweet.archivedAt) {
             exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
         }

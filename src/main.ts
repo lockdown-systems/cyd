@@ -21,6 +21,20 @@ import { getAccountDataPath, getResourcesPath, trackEvent } from './helpers';
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+interface Config {
+    mode: string;
+    apiURL: string;
+    plausibleDomain: string;
+}
+
+// Load the config
+const configPath = path.join(getResourcesPath(), 'config.json');
+if (!fs.existsSync(configPath)) {
+    dialog.showErrorBox('Semiphemeral Error', 'Cannot find config.json!');
+    app.quit();
+}
+const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
     app.quit();
@@ -33,16 +47,34 @@ if (!app.requestSingleInstanceLock()) {
 
 // Initialize the logger
 log.initialize();
+log.transports.file.level = false; // Disable file logging
 log.info('User data folder is at:', app.getPath('userData'));
 
 const semiphemeralDevtools = process.env.SEMIPHEMERAL_DEVTOOLS === "1";
 
 async function initializeApp() {
+    // Display message in dev mode
+    if (config.mode == "dev") {
+        dialog.showMessageBoxSync({
+            title: `Semiphemeral ${app.getVersion()}`,
+            message: `You're running Semiphemeral ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
+            type: 'info',
+        });
+    }
+
+    // Set the log level
+    if (config.mode == "dev") {
+        log.transports.console.level = "debug";
+    } else {
+        log.transports.console.level = "info";
+    }
+    log.info(`Started with log level ${log.transports.console.level}`);
+
     // Run database migrations
     try {
         runMainMigrations();
     } catch (error) {
-        console.error("Failed to run migrations:", error);
+        log.error("Failed to run migrations:", error);
         dialog.showErrorBox('Semiphemeral Error', 'Failed to run database migrations. The application will now exit.');
         app.quit();
         return;
@@ -73,24 +105,6 @@ async function initializeApp() {
 }
 
 async function createWindow() {
-    // Load the config
-    const configPath = path.join(getResourcesPath(), 'config.json');
-    if (!fs.existsSync(configPath)) {
-        dialog.showErrorBox('Semiphemeral Error', 'Cannot find config.json!');
-        app.quit();
-        return
-    }
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-
-    // Display message in dev mode
-    if (config.mode == "dev") {
-        dialog.showMessageBoxSync({
-            title: `Semiphemeral ${app.getVersion()}`,
-            message: `You're running Semiphemeral ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
-            type: 'info',
-        });
-    }
-
     // Create the browser window
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
     const win = new BrowserWindow({

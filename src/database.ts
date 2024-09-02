@@ -1,5 +1,6 @@
 import path from "path"
 import { ipcMain, session } from 'electron'
+import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
 import { getSettingsPath } from "./helpers"
@@ -20,7 +21,7 @@ export const runMigrations = (db: Database.Database, migrations: Migration[]) =>
     const migrationsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='migrations'").get();
     if (!migrationsTable) {
         // Create the migrations table
-        console.info("Creating migrations table");
+        log.debug("Creating migrations table");
         db.prepare(`CREATE TABLE  migrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     name TEXT NOT NULL, 
@@ -32,7 +33,7 @@ export const runMigrations = (db: Database.Database, migrations: Migration[]) =>
     for (const migration of migrations) {
         const migrationRecord = db.prepare("SELECT * FROM migrations WHERE name = ?").get(migration.name);
         if (!migrationRecord) {
-            console.info(`Running migration: ${migration.name}`);
+            log.info(`Running migration: ${migration.name}`);
             for (const sql of migration.sql) {
                 db.exec(sql);
             }
@@ -95,7 +96,7 @@ export const exec = (db: Database.Database, sql: string, params: Array<number | 
     }
 
     // Execute the query
-    console.info("Executing SQL:", sql, "Params:", paramsConverted);
+    log.debug("Executing SQL:", sql, "Params:", paramsConverted);
     const stmt = db.prepare(sql);
     return stmt[cmd](...paramsConverted);
 }
