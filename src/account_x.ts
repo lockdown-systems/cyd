@@ -71,6 +71,7 @@ export class XAccountController {
             return;
         }
         this.accountUUID = account.uuid;
+        log.debug(`XAccountController: accountUUID=${this.accountUUID}`);
 
         // Monitor for rate limits
         const ses = session.fromPartition(`persist:account-${this.account.id}`);
@@ -1082,15 +1083,14 @@ export class XAccountController {
     }
 
     async getProgressInfo(): Promise<XProgressInfo> {
+        const totalTweetsArchived = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get");
+        const totalMessagesIndexed = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get");
+        const totalTweetsDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE deletedAt IS NOT NULL", [], "get");
+        const totalRetweetsDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get");
+        const totalMessagesDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get");
+
         const progressInfo = emptyXProgressInfo();
         progressInfo.accountUUID = this.accountUUID;
-
-        const totalTweetsArchived = exec(this.db, "SELECT COUNT(*) FROM tweet WHERE archivedAt IS NOT NULL", [], "get");
-        const totalMessagesIndexed = exec(this.db, "SELECT COUNT(*) FROM message", [], "get");
-        const totalTweetsDeleted = exec(this.db, "SELECT COUNT(*) FROM tweet WHERE deletedAt IS NOT NULL", [], "get");
-        const totalRetweetsDeleted = exec(this.db, "SELECT COUNT(*) FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get");
-        const totalMessagesDeleted = exec(this.db, "SELECT COUNT(*) FROM message WHERE deletedAt IS NOT NULL", [], "get");
-
         progressInfo.totalTweetsArchived = totalTweetsArchived.count;
         progressInfo.totalMessagesIndexed = totalMessagesIndexed.count;
         progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;

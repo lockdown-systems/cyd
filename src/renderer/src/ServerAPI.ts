@@ -91,6 +91,7 @@ export default class ServerAPI {
     }
 
     async getNewApiToken(): Promise<boolean> {
+        console.log("Getting a new API token");
         if (typeof this.userEmail === 'string' && typeof this.deviceToken === 'string') {
             const getTokenResp = await this.getToken({
                 email: this.userEmail,
@@ -101,8 +102,10 @@ export default class ServerAPI {
                 return false;
             }
             this.apiToken = getTokenResp.api_token;
+            console.log("Got a new API token");
             return true;
         }
+        console.log("Failed to get a new API token. Missing user email or device token");
         return false;
     }
 
@@ -209,12 +212,15 @@ export default class ServerAPI {
 
     // Submit progress
 
-    async postXProgress(request: PostXProgressApiRequest): Promise<boolean | ApiErrorResponse> {
-        console.log("POST /x-progress");
+    async postXProgress(request: PostXProgressApiRequest, authenticated: boolean): Promise<boolean | ApiErrorResponse> {
+        console.log("POST /x-progress", request);
 
         // Use the unauthenticated fetch function if we don't have an API token
         let fetchFunc = this.fetch;
-        if (await this.validateApiToken()) {
+        if(authenticated) {
+            if (!await this.validateApiToken()) {
+                return this.returnError("Failed to get a new API token.")
+            }
             fetchFunc = this.fetchAuthenticated;
         }
 
@@ -223,8 +229,17 @@ export default class ServerAPI {
             if (response.status != 200) {
                 return this.returnError("Failed to post XProgress with the server. Got status code " + response.status + ".")
             }
-        } catch {
-            return this.returnError("Failed to post XProgress with the server. Maybe the server is down?")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            if (error.response) {
+                const statusCode = error.response.status;
+                const responseBody = error.response.data;
+                return this.returnError(`Failed to post XProgress with the server. Status code: ${statusCode}, Response body: ${JSON.stringify(responseBody)}`);
+            } else if (error.request) {
+                return this.returnError("Failed to post XProgress with the server. No response received.");
+            } else {
+                return this.returnError(`Failed to post XProgress with the server. Error: ${error.message}`);
+            }
         }
 
         return true;

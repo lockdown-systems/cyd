@@ -8,7 +8,7 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
-import { PlausibleEvents } from "../types";
+import { PlausibleEvents, ApiErrorResponse } from "../types";
 
 export enum State {
     Login = "login",
@@ -22,6 +22,7 @@ export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
+    public postXProgresResp: boolean | ApiErrorResponse = false;
     public jobs: XJob[] = [];
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
@@ -574,8 +575,8 @@ I'm building a searchable archive web page in HTML.
 
                 // Submit progress to the API
                 this.progressInfo = await window.electron.X.getProgressInfo(this.account?.id);
-                console.log("XProgressInfo", this.progressInfo)
-                await this.api.postXProgress({
+                this.log("progressInfo", JSON.parse(JSON.stringify(this.progressInfo)));
+                this.postXProgresResp = await this.api.postXProgress({
                     account_uuid: this.progressInfo.accountUUID,
                     total_tweets_archived: this.progressInfo.totalTweetsArchived,
                     total_messages_indexed: this.progressInfo.totalMessagesIndexed,
@@ -583,7 +584,11 @@ I'm building a searchable archive web page in HTML.
                     total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
                     total_likes_deleted: this.progressInfo.totalLikesDeleted,
                     total_messages_deleted: this.progressInfo.totalMessagesIndexed
-                })
+                }, this.deviceInfo?.valid ? true : false)
+                if(this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
+                    // Silently log the error and continue
+                    this.log("Failed to post progress to the API", this.postXProgresResp.message);
+                }
 
                 await this.finishJob(iJob);
                 break;

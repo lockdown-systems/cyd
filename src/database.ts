@@ -287,7 +287,7 @@ export const createAccount = (): Account => {
 
     // Insert it
     const accountUUID = uuid.v4();
-    const info = exec(db, 'INSERT INTO account (sortOrder, uuid) VALUES (?)', [sortOrder, accountUUID]);
+    const info = exec(db, 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]);
 
     // Return it
     const account = getAccount(info.lastInsertRowid);
