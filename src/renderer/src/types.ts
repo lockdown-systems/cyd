@@ -24,12 +24,12 @@ export type ApiErrorResponse = {
     message: string;
 };
 
-// API models for POST /api/v1/authenticate
+// API models for POST /authenticate
 export type AuthApiRequest = {
     email: string;
 };
 
-// API models for POST /api/v1/device
+// API models for POST /device
 export type RegisterDeviceApiRequest = {
     email: string;
     verification_code: string;
@@ -41,7 +41,7 @@ export type RegisterDeviceApiResponse = {
     device_token: string;
 };
 
-// API models for GET /api/v1/devices (an array of these)
+// API models for GET /device (an array of these)
 export type GetDevicesApiResponse = {
     uuid: string;
     description: string;
@@ -52,7 +52,7 @@ export type GetDevicesApiResponseArray = {
     devices: GetDevicesApiResponse[];
 };
 
-// API models for POST /api/v1/token
+// API models for POST /token
 export type TokenApiRequest = {
     email: string;
     device_token: string;
@@ -63,7 +63,18 @@ export type TokenApiResponse = {
     email: string;
 };
 
-// API models for DELETE /api/v1/device
+// API models for DELETE /device
 export type DeleteDeviceApiRequest = {
     uuid: string;
+};
+
+// API models for POST /x-progress
+export type PostXProgressApiRequest = {
+    account_uuid: string;
+    total_tweets_archived: number;
+    total_messages_indexed: number;
+    total_tweets_deleted: number;
+    total_retweets_deleted: number;
+    total_likes_deleted: number;
+    total_messages_deleted: number;
 };

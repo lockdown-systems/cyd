@@ -5,7 +5,8 @@ import {
     XProgress, emptyXProgress,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
-    XRateLimitInfo, emptyXRateLimitInfo
+    XRateLimitInfo, emptyXRateLimitInfo,
+    XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 
@@ -20,6 +21,7 @@ export enum State {
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
+    public progressInfo: XProgressInfo = emptyXProgressInfo();
     public jobs: XJob[] = [];
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
@@ -567,7 +569,21 @@ I'm building a searchable archive web page in HTML.
                 // Build the archive
                 await window.electron.X.archiveBuild(this.account.id);
 
+                // Archiving complete
                 await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_COMPLETED, navigator.userAgent);
+
+                // Submit progress to the API
+                this.progressInfo = await window.electron.X.getProgressInfo(this.account?.id);
+                console.log("XProgressInfo", this.progressInfo)
+                await this.api.postXProgress({
+                    account_uuid: this.progressInfo.accountUUID,
+                    total_tweets_archived: this.progressInfo.totalTweetsArchived,
+                    total_messages_indexed: this.progressInfo.totalMessagesIndexed,
+                    total_tweets_deleted: this.progressInfo.totalTweetsDeleted,
+                    total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
+                    total_likes_deleted: this.progressInfo.totalLikesDeleted,
+                    total_messages_deleted: this.progressInfo.totalMessagesIndexed
+                })
 
                 await this.finishJob(iJob);
                 break;

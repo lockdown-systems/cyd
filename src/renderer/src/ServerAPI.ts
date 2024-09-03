@@ -7,7 +7,8 @@ import {
     TokenApiResponse,
     DeleteDeviceApiRequest,
     GetDevicesApiResponse,
-    GetDevicesApiResponseArray
+    GetDevicesApiResponseArray,
+    PostXProgressApiRequest
 } from "./types";
 
 export default class ServerAPI {
@@ -204,5 +205,28 @@ export default class ServerAPI {
         } catch {
             return false;
         }
+    }
+
+    // Submit progress
+
+    async postXProgress(request: PostXProgressApiRequest): Promise<boolean | ApiErrorResponse> {
+        console.log("POST /x-progress");
+
+        // Use the unauthenticated fetch function if we don't have an API token
+        let fetchFunc = this.fetch;
+        if (await this.validateApiToken()) {
+            fetchFunc = this.fetchAuthenticated;
+        }
+
+        try {
+            const response = await fetchFunc("POST", `${this.apiUrl}/x-progress`, request);
+            if (response.status != 200) {
+                return this.returnError("Failed to post XProgress with the server. Got status code " + response.status + ".")
+            }
+        } catch {
+            return this.returnError("Failed to post XProgress with the server. Maybe the server is down?")
+        }
+
+        return true;
     }
 }

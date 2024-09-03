@@ -1,9 +1,11 @@
 import { WebviewTag } from 'electron';
 import type { Account } from '../../../shared_types';
+import ServerAPI from '../ServerAPI';
 
 export class BaseViewModel {
     public account: Account;
     public webview: WebviewTag;
+    public api: ServerAPI;
     public webContentsID: number | null;
     public isWebviewDestroyed: boolean;
 
@@ -19,9 +21,10 @@ export class BaseViewModel {
 
     private domReadyHandler: () => void;
 
-    constructor(account: Account, webview: WebviewTag) {
+    constructor(account: Account, webview: WebviewTag, api: ServerAPI) {
         this.account = account;
         this.webview = webview;
+        this.api = api;
         this.webContentsID = null;
         this.isWebviewDestroyed = false;
 
