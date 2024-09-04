@@ -58,7 +58,6 @@
     "@typescript-eslint/parser": "^7.13.1",
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/eslint-config-typescript": "^13.0.0",
-    "appdmg": "^0.6.6",
     "archiver": "^7.0.1",
     "cross-env": "^7.0.3",
     "cypress": "^13.11.0",
@@ -74,5 +73,8 @@
     "vitest": "^1.6.0",
     "vue-eslint-parser": "^9.4.3",
     "vue-tsc": "^2.0.6"
+  },
+  "optionalDependencies": {
+    "appdmg": "^0.6.6"
   }
 }
