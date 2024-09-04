@@ -1,4 +1,5 @@
 import path from "path"
+import { v4 as uuidv4 } from 'uuid';
 import { ipcMain, session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
@@ -55,7 +56,8 @@ export const runMainMigrations = () => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL DEFAULT 'unknown',
     sortOrder INTEGER NOT NULL DEFAULT 0,
-    xAccountId INTEGER DEFAULT NULL
+    xAccountId INTEGER DEFAULT NULL,
+    uuid TEXT NOT NULL
 );`, `CREATE TABLE xAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -242,7 +244,8 @@ export const getAccount = (id: number): Account | null => {
         id: row.id,
         type: row.type,
         sortOrder: row.sortOrder,
-        xAccount: xAccount
+        xAccount: xAccount,
+        uuid: row.uuid
     };
 }
 
@@ -271,6 +274,7 @@ export const getAccounts = (): Account[] => {
             type: row.type,
             sortOrder: row.sortOrder,
             xAccount: xAccount,
+            uuid: row.uuid
         });
     }
     return accounts;
@@ -282,7 +286,8 @@ export const createAccount = (): Account => {
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
-    const info = exec(db, 'INSERT INTO account (sortOrder) VALUES (?)', [sortOrder]);
+    const accountUUID = uuidv4();
+    const info = exec(db, 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]);
 
     // Return it
     const account = getAccount(info.lastInsertRowid);

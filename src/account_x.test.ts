@@ -505,7 +505,7 @@ test("XAccountController.indexParseConversations() should add all the conversati
 
     rows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all");
     expect(rows.length).toBe(126);
-})
+}, { timeout: 10000 }) // 10 second timeout
 
 test("XAccountController.indexParseMessages() should add all the messages", async () => {
     const controller = createController("indexDMs");

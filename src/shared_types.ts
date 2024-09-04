@@ -14,6 +14,7 @@ export type Account = {
     type: string; // "X"
     sortOrder: number;
     xAccount: XAccount | null;
+    uuid: string;
 }
 
 export type XAccount = {
@@ -169,5 +170,27 @@ export function emptyXRateLimitInfo(): XRateLimitInfo {
     return {
         isRateLimited: false,
         rateLimitReset: 0,
+    }
+}
+
+export type XProgressInfo = {
+    accountUUID: string;
+    totalTweetsArchived: number;
+    totalMessagesIndexed: number;
+    totalTweetsDeleted: number;
+    totalRetweetsDeleted: number;
+    totalLikesDeleted: number;
+    totalMessagesDeleted: number;
+}
+
+export function emptyXProgressInfo(): XProgressInfo {
+    return {
+        accountUUID: "",
+        totalTweetsArchived: 0,
+        totalMessagesIndexed: 0,
+        totalTweetsDeleted: 0,
+        totalRetweetsDeleted: 0,
+        totalLikesDeleted: 0,
+        totalMessagesDeleted: 0
     }
 }

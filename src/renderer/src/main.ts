@@ -3,7 +3,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from "../../shared_types";
+import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -57,6 +57,7 @@ declare global {
                 openFolder: (accountID: number, folderName: string) => void;
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
+                getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
             };
         };
     }

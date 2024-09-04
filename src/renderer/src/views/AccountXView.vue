@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { Ref, ref, watch, onMounted, onUnmounted, inject } from 'vue'
 import Electron from 'electron';
 
+import ServerAPI from '../ServerAPI';
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
+import type { DeviceInfo } from '../types';
 
 import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
 
@@ -15,6 +17,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['onRefreshClicked']);
+
+const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 
@@ -100,6 +105,7 @@ const updateSettings = async () => {
         id: props.account.id,
         type: props.account.type,
         sortOrder: props.account.sortOrder,
+        uuid: props.account.uuid,
         xAccount: {
             id: props.account.xAccount?.id || 0,
             createdAt: props.account.xAccount?.createdAt || new Date(),
@@ -205,7 +211,7 @@ onMounted(async () => {
 
         // Start the state loop
         if (props.account.xAccount !== null) {
-            accountXViewModel.value = new AccountXViewModel(props.account, webview);
+            accountXViewModel.value = new AccountXViewModel(props.account, webview, serverApi.value, deviceInfo.value);
             await accountXViewModel.value.init();
             await startStateLoop();
         }

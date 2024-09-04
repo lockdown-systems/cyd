@@ -39,7 +39,7 @@ export interface IMITMController {
 
 export class MITMController implements IMITMController {
     private account: Account | null;
-    private proxy: Proxy | null;
+    private proxy: CustomProxy | null;
     private proxyPort: number;
     private proxySSLCADir: string;
     private proxyFilter: string[];
@@ -216,7 +216,12 @@ export class MITMController implements IMITMController {
     async stopMITM(ses: Electron.Session) {
         log.info(`MITMController: Account ${this.account?.id}, stopping proxy`);
         if (this.proxy) {
-            this.proxy.close();
+            log.debug("Stopping proxy")
+            try {
+                this.proxy.close();
+            } catch (e) {
+                log.error("Error stopping proxy:", e);
+            }
             this.proxy = null;
         }
         this.proxyFilter = [];

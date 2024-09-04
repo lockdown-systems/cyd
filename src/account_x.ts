@@ -16,9 +16,10 @@ import {
     XArchiveItem,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
-    XIndexMessagesStartResponse
+    XIndexMessagesStartResponse,
+    XProgressInfo, emptyXProgressInfo
 } from './shared_types'
-import { runMigrations, getXAccount, exec } from './database'
+import { runMigrations, getAccount, getXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm';
 import {
     XAPILegacyUser,
@@ -41,6 +42,7 @@ function formatDateToYYYYMMDD(dateString: string): string {
     return `${year}-${month}-${day}`;
 }
 export class XAccountController {
+    private accountUUID: string;
     private account: XAccount | null;
     private accountDataPath: string;
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
@@ -55,12 +57,21 @@ export class XAccountController {
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
 
-        // Load the account
+        // Load the X account
         this.account = getXAccount(accountID);
         if (!this.account) {
             log.error(`XAccountController: account ${accountID} not found`);
             return;
         }
+
+        // Load the account to get the UUID
+        const account = getAccount(accountID);
+        if (!account) {
+            log.error(`XAccountController: account ${accountID} not found`);
+            return;
+        }
+        this.accountUUID = account.uuid;
+        log.debug(`XAccountController: accountUUID=${this.accountUUID}`);
 
         // Monitor for rate limits
         const ses = session.fromPartition(`persist:account-${this.account.id}`);
@@ -1070,6 +1081,24 @@ export class XAccountController {
     async isRateLimited(): Promise<XRateLimitInfo> {
         return this.rateLimitInfo;
     }
+
+    async getProgressInfo(): Promise<XProgressInfo> {
+        const totalTweetsArchived = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get");
+        const totalMessagesIndexed = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get");
+        const totalTweetsDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE deletedAt IS NOT NULL", [], "get");
+        const totalRetweetsDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get");
+        const totalMessagesDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get");
+
+        const progressInfo = emptyXProgressInfo();
+        progressInfo.accountUUID = this.accountUUID;
+        progressInfo.totalTweetsArchived = totalTweetsArchived.count;
+        progressInfo.totalMessagesIndexed = totalMessagesIndexed.count;
+        progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
+        progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
+        progressInfo.totalLikesDeleted = 0;
+        progressInfo.totalMessagesDeleted = totalMessagesDeleted.count;
+        return progressInfo;
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -1208,5 +1237,10 @@ export const defineIPCX = () => {
     ipcMain.handle('X:isRateLimited', async (_, accountID: number): Promise<XRateLimitInfo> => {
         const controller = getXAccountController(accountID);
         return await controller.isRateLimited();
+    });
+
+    ipcMain.handle('X:getProgressInfo', async (_, accountID: number): Promise<XProgressInfo> => {
+        const controller = getXAccountController(accountID);
+        return await controller.getProgressInfo();
     });
 };

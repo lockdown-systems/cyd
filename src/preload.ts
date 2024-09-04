@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo } from './shared_types'
+import { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getAPIURL: (): Promise<string> => {
@@ -135,6 +135,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         isRateLimited: (accountID: number): Promise<XRateLimitInfo> => {
             return ipcRenderer.invoke('X:isRateLimited', accountID);
+        },
+        getProgressInfo: (accountID: number): Promise<XProgressInfo> => {
+            return ipcRenderer.invoke('X:getProgressInfo', accountID);
         }
     }
 })
