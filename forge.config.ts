@@ -23,6 +23,7 @@ const assetsPath = path.join(__dirname, 'assets');
 
 const config: ForgeConfig = {
   packagerConfig: {
+    name: 'Semiphemeral',
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: 'Copyright 2024 Lockdown Systems LLC',
     asar: true,
