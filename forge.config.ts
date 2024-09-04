@@ -1,6 +1,6 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
+import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
@@ -10,6 +10,7 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { spawnSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 import archiver from 'archiver';
 
@@ -98,7 +99,25 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
-    new MakerZIP({}, ['darwin']),
+    new MakerDMG({
+      name: `Install Semiphemeral`,
+      background: path.join(assetsPath, 'dmg-background.png'),
+      iconSize: 110,
+      icon: path.join(assetsPath, 'installer-icon.icns'),
+      overwrite: true,
+      contents: [
+        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Semiphemeral-darwin-${os.arch()}/Semiphemeral.app` },
+        { "x": 430, "y": 80, "type": "link", "path": "/Applications" }
+      ],
+      additionalDMGOptions: {
+        window: {
+          size: {
+            width: 540,
+            height: 200,
+          },
+        }
+      },
+    }),
     new MakerRpm({}),
     new MakerDeb({
       options: {

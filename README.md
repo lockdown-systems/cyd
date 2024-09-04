@@ -30,3 +30,6 @@ npm run make-dev
 # Make resources for prod mode
 npm run make-prod
 ```
+
+## Making releases
+
