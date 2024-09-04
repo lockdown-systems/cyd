@@ -583,9 +583,9 @@ I'm building a searchable archive web page in HTML.
                     total_tweets_deleted: this.progressInfo.totalTweetsDeleted,
                     total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
                     total_likes_deleted: this.progressInfo.totalLikesDeleted,
-                    total_messages_deleted: this.progressInfo.totalMessagesIndexed
+                    total_messages_deleted: this.progressInfo.totalMessagesDeleted
                 }, this.deviceInfo?.valid ? true : false)
-                if(this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
+                if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
                     // Silently log the error and continue
                     this.log("Failed to post progress to the API", this.postXProgresResp.message);
                 }
