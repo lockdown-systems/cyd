@@ -20,7 +20,6 @@ if (!fs.existsSync(buildPath)) {
 const assetsPath = path.join(__dirname, 'assets');
 
 // Build the X archive site
-const archivePath = path.join(buildPath, 'x-archive.zip');
 execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
 
 const config: ForgeConfig = {
@@ -45,78 +44,6 @@ const config: ForgeConfig = {
       path.join(buildPath, 'x-archive.zip'),
       path.join(buildPath, 'config.json'),
       path.join(assetsPath, 'icon.png'),
-    ],
-    afterComplete: [
-
-      // macOS codesign here because osxSign seems totally broken
-      (_buildPath, _electronVersion, _platform, _arch, callback) => {
-        if (_platform !== 'darwin') {
-          callback();
-          return;
-        }
-
-        const appPath = path.join(_buildPath, "Semiphemeral.app");
-        const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
-        const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
-        const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
-        const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
-        const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
-
-        // Make a list of Mach-O binaries to sign
-        const filesToSign: string[] = [];
-
-        const findMachOBinaries = (dir: string) => {
-          const files = fs.readdirSync(dir);
-          files.forEach(file => {
-            const filePath = path.join(dir, file);
-            const stat = fs.statSync(filePath);
-            if (stat.isDirectory()) {
-              findMachOBinaries(filePath);
-            } else {
-              try {
-                const fileType = execSync(`file "${filePath}"`).toString();
-                if (fileType.includes('Mach-O')) {
-                  filesToSign.push(filePath);
-                }
-              } catch (error) {
-                console.error(`Error checking file type for ${filePath}:`, error);
-              }
-            }
-          });
-        };
-
-        findMachOBinaries(appPath);
-
-        // Add the app bundle itself to the list
-        filesToSign.push(appPath);
-
-        // Code sign each file in filesToSign
-        filesToSign.forEach(file => {
-          let options = 'runtime';
-          if (file.includes('Frameworks') || file.includes('.dylib')) {
-            options = 'runtime,library';
-          }
-
-          let entitlements = entitlementDefault;
-          if (file.includes('(Plugin).app')) {
-            entitlements = entitlementPlugin;
-          } else if (file.includes('(GPU).app')) {
-            entitlements = entitlementGpu;
-          } else if (file.includes('(Renderer).app')) {
-            entitlements = entitlementRenderer;
-          }
-
-          try {
-            const relativePath = path.relative(appPath, file);
-            console.log(`👉 Signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
-            execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
-          } catch (error) {
-            console.error(`Error signing ${file}:`, error);
-          }
-        });
-
-        callback();
-      },
     ],
   },
   rebuildConfig: {},
@@ -149,11 +76,85 @@ const config: ForgeConfig = {
     })
   ],
   hooks: {
+    // macOS codesign here because osxSign seems totally broken
+    preMake: async (forgeConfig) => {
+      if (os.platform() !== 'darwin') {
+        return;
+      }
+
+      console.log('🍎 Preparing to codesign macOS app bundle');
+
+      const universalBuildPath = path.join(__dirname, 'out', 'Semiphemeral-darwin-universal');
+      const appPath = path.join(universalBuildPath, "Semiphemeral.app");
+      const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
+      const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
+      const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
+      const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
+      const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
+
+      // Make a list of Mach-O binaries to sign
+      const filesToSign: string[] = [];
+
+      const findMachOBinaries = (dir: string) => {
+        const files = fs.readdirSync(dir);
+        files.forEach(file => {
+          const filePath = path.join(dir, file);
+          const stat = fs.statSync(filePath);
+          if (stat.isDirectory()) {
+            findMachOBinaries(filePath);
+          } else {
+            try {
+              const fileType = execSync(`file "${filePath}"`).toString();
+              if (fileType.includes('Mach-O')) {
+                filesToSign.push(filePath);
+              }
+            } catch (error) {
+              console.error(`Error checking file type for ${filePath}:`, error);
+            }
+          }
+        });
+      };
+
+      findMachOBinaries(appPath);
+
+      // Add the app bundle itself to the list
+      filesToSign.push(appPath);
+
+      // Code sign each file in filesToSign
+      filesToSign.forEach(file => {
+        let options = 'runtime';
+        if (file.includes('Frameworks') || file.includes('.dylib')) {
+          options = 'runtime,library';
+        }
+
+        let entitlements = entitlementDefault;
+        if (file.includes('(Plugin).app')) {
+          entitlements = entitlementPlugin;
+        } else if (file.includes('(GPU).app')) {
+          entitlements = entitlementGpu;
+        } else if (file.includes('(Renderer).app')) {
+          entitlements = entitlementRenderer;
+        }
+
+        try {
+          const relativePath = path.relative(appPath, file);
+          console.log(`👉 Signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
+          execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
+        } catch (error) {
+          console.error(`Error signing ${file}:`, error);
+        }
+      });
+
+      console.log('🍎 Finished codesigning macOS app bundle');
+    },
+
     // macOS notarize here because osxNotarize is broken without using osxSign
     postMake: async (forgeConfig, makeResults) => {
       if (makeResults[0].platform !== 'darwin') {
         return makeResults;
       }
+
+      console.log('🍎 Preparing to notarize macOS DMG package');
 
       const dmgPath = makeResults[0].artifacts[0];
       const appleId = process.env.APPLE_ID ? process.env.APPLE_ID : '';
@@ -167,6 +168,8 @@ const config: ForgeConfig = {
       // Staple the notarization ticket to the DMG
       console.log('Stapling notarization ticket to macOS DMG package');
       execSync(`xcrun stapler staple "${dmgPath}"`);
+
+      console.log('🍎 Finished notarizing macOS DMG package');
 
       return makeResults;
     },
