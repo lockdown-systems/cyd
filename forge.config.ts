@@ -22,6 +22,25 @@ const assetsPath = path.join(__dirname, 'assets');
 // Build the X archive site
 execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
 
+function removeCodeSignatures(dir: string) {
+  if (!fs.existsSync(dir)) return;
+
+  const files = fs.readdirSync(dir);
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      if (file === '_CodeSignature') {
+        fs.rmSync(filePath, { recursive: true, force: true });
+        console.log(`Removed: ${filePath}`);
+      } else {
+        removeCodeSignatures(filePath);
+      }
+    }
+  });
+}
+
 const config: ForgeConfig = {
   packagerConfig: {
     name: 'Semiphemeral',
@@ -30,7 +49,6 @@ const config: ForgeConfig = {
     asar: true,
     icon: path.join(assetsPath, 'icon'),
     beforeAsar: [
-
       // Copy the config.json file to the resources path
       (_buildPath, _electronVersion, _platform, _arch, callback) => {
         const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV || 'prod';
@@ -56,7 +74,7 @@ const config: ForgeConfig = {
       icon: path.join(assetsPath, 'installer-icon.icns'),
       overwrite: true,
       contents: [
-        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Semiphemeral-darwin-${os.arch()}/Semiphemeral.app` },
+        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Semiphemeral-darwin-universal/Semiphemeral.app` },
         { "x": 430, "y": 80, "type": "link", "path": "/Applications" }
       ],
       additionalDMGOptions: {
@@ -76,6 +94,18 @@ const config: ForgeConfig = {
     })
   ],
   hooks: {
+    // Delete pre-existing code signatures from the app bundle, as this prevents the unversal binary from building
+    // We will codesign it later
+    packageAfterPrune: async (forgeConfig, buildPath, electronVersion, platform, arch) => {
+      if (platform !== 'darwin') {
+        return;
+      }
+
+      console.log("🍎 Deleting pre-existing code signatures from app bundle");
+      const appPath = path.join(buildPath, '..', '..', '..');
+      removeCodeSignatures(appPath);
+    },
+
     // macOS codesign here because osxSign seems totally broken
     preMake: async (forgeConfig) => {
       if (os.platform() !== 'darwin') {
@@ -138,7 +168,7 @@ const config: ForgeConfig = {
 
         try {
           const relativePath = path.relative(appPath, file);
-          console.log(`👉 Signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
+          // console.log(`🔒 code signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
           execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
         } catch (error) {
           console.error(`Error signing ${file}:`, error);
