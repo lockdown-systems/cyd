@@ -7,7 +7,7 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
-import { spawnSync } from 'child_process';
+import { spawnSync, execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -95,12 +95,78 @@ const config: ForgeConfig = {
       path.join(buildPath, 'config.json'),
       path.join(assetsPath, 'icon.png'),
     ],
-    osxSign: {},
-    osxNotarize: {
-      appleId: process.env.APPLE_ID ? process.env.APPLE_ID : '',
-      appleIdPassword: process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '',
-      teamId: process.env.APPLE_TEAM_ID ? process.env.APPLE_TEAM_ID : '',
-    }
+    afterComplete: [
+
+      // macOS codesign here because osxSign seems totally broken
+      (_buildPath, _electronVersion, _platform, _arch, callback) => {
+        if (_platform !== 'darwin') {
+          callback();
+          return;
+        }
+
+        const appPath = path.join(_buildPath, "Semiphemeral.app");
+        const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
+        const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
+        const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
+        const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
+        const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
+
+        // Make a list of Mach-O binaries to sign
+        const filesToSign: string[] = [];
+
+        const findMachOBinaries = (dir: string) => {
+          const files = fs.readdirSync(dir);
+          files.forEach(file => {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+            if (stat.isDirectory()) {
+              findMachOBinaries(filePath);
+            } else {
+              try {
+                const fileType = execSync(`file "${filePath}"`).toString();
+                if (fileType.includes('Mach-O')) {
+                  filesToSign.push(filePath);
+                }
+              } catch (error) {
+                console.error(`Error checking file type for ${filePath}:`, error);
+              }
+            }
+          });
+        };
+
+        findMachOBinaries(appPath);
+
+        // Add the app bundle itself to the list
+        filesToSign.push(appPath);
+
+        // Code sign each file in filesToSign
+        filesToSign.forEach(file => {
+          let options = 'runtime';
+          if (file.includes('Frameworks') || file.includes('.dylib')) {
+            options = 'runtime,library';
+          }
+
+          let entitlements = entitlementDefault;
+          if (file.includes('(Plugin).app')) {
+            entitlements = entitlementPlugin;
+          } else if (file.includes('(GPU).app')) {
+            entitlements = entitlementGpu;
+          } else if (file.includes('(Renderer).app')) {
+            entitlements = entitlementRenderer;
+          }
+
+          try {
+            const relativePath = path.relative(appPath, file);
+            console.log(`👉 Signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
+            execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
+          } catch (error) {
+            console.error(`Error signing ${file}:`, error);
+          }
+        });
+
+        callback();
+      },
+    ],
   },
   rebuildConfig: {},
   makers: [
@@ -131,6 +197,29 @@ const config: ForgeConfig = {
       }
     })
   ],
+  hooks: {
+    // macOS notarize here because osxNotarize is broken without using osxSign
+    postMake: async (forgeConfig, makeResults) => {
+      if (makeResults[0].platform !== 'darwin') {
+        return makeResults;
+      }
+
+      const dmgPath = makeResults[0].artifacts[0];
+      const appleId = process.env.APPLE_ID ? process.env.APPLE_ID : '';
+      const appleIdPassword = process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '';
+      const teamId = "G762K6CH36";
+
+      // Notarize the DMG
+      console.log('Notarizing macOS DMG package');
+      execSync(`xcrun notarytool submit "${dmgPath}" --wait --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}" --progress`);
+
+      // Staple the notarization ticket to the DMG
+      console.log('Stapling notarization ticket to macOS DMG package');
+      execSync(`xcrun stapler staple "${dmgPath}"`);
+
+      return makeResults;
+    },
+  },
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
