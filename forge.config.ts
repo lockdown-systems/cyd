@@ -106,7 +106,10 @@ const config: ForgeConfig = {
 
         const appPath = path.join(_buildPath, "Semiphemeral.app");
         const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
-        const entitlements = path.join(assetsPath, 'entitlements.plist');
+        const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
+        const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
+        const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
+        const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
 
         // Make a list of Mach-O binaries to sign
         const filesToSign: string[] = [];
@@ -138,9 +141,24 @@ const config: ForgeConfig = {
 
         // Code sign each file in filesToSign
         filesToSign.forEach(file => {
+          let options = 'runtime';
+          if (file.includes('Frameworks') || file.includes('.dylib')) {
+            options = 'runtime,library';
+          }
+
+          let entitlements = entitlementDefault;
+          if (file.includes('(Plugin).app')) {
+            entitlements = entitlementPlugin;
+          } else if (file.includes('(GPU).app')) {
+            entitlements = entitlementGpu;
+          } else if (file.includes('(Renderer).app')) {
+            entitlements = entitlementRenderer;
+          }
+
           try {
-            console.log(`Signing ${file}`);
-            execSync(`codesign --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options runtime,library "${file}"`);
+            const relativePath = path.relative(appPath, file);
+            console.log(`👉 Signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
+            execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
           } catch (error) {
             console.error(`Error signing ${file}:`, error);
           }
