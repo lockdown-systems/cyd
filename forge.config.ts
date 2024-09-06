@@ -7,12 +7,10 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
-import { spawnSync, execSync } from 'child_process';
+import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-
-import archiver from 'archiver';
 
 // Make sure build path exists
 const buildPath = path.join(__dirname, 'build');
@@ -21,12 +19,15 @@ if (!fs.existsSync(buildPath)) {
 }
 const assetsPath = path.join(__dirname, 'assets');
 
+// Build the X archive site
+const archivePath = path.join(buildPath, 'x-archive.zip');
+execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
 
 const config: ForgeConfig = {
   packagerConfig: {
     name: 'Semiphemeral',
     appBundleId: 'systems.lockdown.semiphemeral',
-    appCopyright: 'Copyright 2024 Lockdown Systems LLC',
+    appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
     icon: path.join(assetsPath, 'icon'),
     beforeAsar: [
@@ -39,56 +40,6 @@ const config: ForgeConfig = {
         fs.copyFileSync(semiphemeralConfigPath, semiphemeralConfigDestPath);
         callback();
       },
-
-      // Build X archive site
-      (_buildPath, _electronVersion, _platform, _arch, callback) => {
-        const xArchiveSitePath = path.join(__dirname, 'archive-static-sites', 'x-archive');
-
-        // Run `npm install`
-        spawnSync('npm', ['install'], {
-          cwd: xArchiveSitePath,
-          stdio: 'inherit'
-        });
-
-        // Run `npm run build`
-        spawnSync('npm', ['run', 'build'], {
-          cwd: xArchiveSitePath,
-          stdio: 'inherit'
-        });
-
-        // Delete archive.js if it exists, since we don't want to be shipping test data
-        const archiveJsPath = path.join(xArchiveSitePath, 'dist', 'assets', 'archive.js');
-        if (fs.existsSync(archiveJsPath)) {
-          fs.unlinkSync(archiveJsPath);
-        }
-
-        // Zip it up
-        const output = fs.createWriteStream(path.join(buildPath, 'x-archive.zip'));
-        const archive = archiver('zip');
-
-        output.on('close', function () {
-          console.log(archive.pointer() + ' total bytes');
-          callback();
-        });
-
-        archive.on('warning', function (err: any) {
-          if (err.code === 'ENOENT') {
-            console.log(err);
-          } else {
-            // throw error
-            throw err;
-          }
-        });
-
-        archive.on('error', function (err: any) {
-          throw err;
-        });
-
-        archive.pipe(output);
-        archive.directory(path.join(xArchiveSitePath, 'dist'), false);
-        archive.finalize();
-      },
-
     ],
     extraResource: [
       path.join(buildPath, 'x-archive.zip'),
