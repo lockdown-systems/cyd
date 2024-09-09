@@ -60,6 +60,12 @@ async function initializeApp() {
             message: `You're running Semiphemeral ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
             type: 'info',
         });
+    } else if (config.mode == "local") {
+        dialog.showMessageBoxSync({
+            title: `Semiphemeral ${app.getVersion()}`,
+            message: `You're running Semiphemeral ${app.getVersion()} in local mode.`,
+            type: 'info',
+        });
     }
 
     // Set the log level
