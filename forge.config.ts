@@ -44,6 +44,7 @@ function removeCodeSignatures(dir: string) {
 const config: ForgeConfig = {
   packagerConfig: {
     name: 'Semiphemeral',
+    executableName: 'semiphemeral',
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
@@ -96,7 +97,7 @@ const config: ForgeConfig = {
   hooks: {
     // Delete pre-existing code signatures from the app bundle, as this prevents the unversal binary from building
     // We will codesign it later
-    packageAfterPrune: async (forgeConfig, buildPath, electronVersion, platform, arch) => {
+    packageAfterPrune: async (forgeConfig, buildPath, electronVersion, platform, _arch) => {
       if (platform !== 'darwin') {
         return;
       }
@@ -107,7 +108,7 @@ const config: ForgeConfig = {
     },
 
     // macOS codesign here because osxSign seems totally broken
-    preMake: async (forgeConfig) => {
+    preMake: async (_forgeConfig) => {
       if (os.platform() !== 'darwin') {
         return;
       }
@@ -167,8 +168,6 @@ const config: ForgeConfig = {
         }
 
         try {
-          const relativePath = path.relative(appPath, file);
-          // console.log(`🔒 code signing ${relativePath} with ${path.basename(entitlements)}, --options=${options}`);
           execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
         } catch (error) {
           console.error(`Error signing ${file}:`, error);
