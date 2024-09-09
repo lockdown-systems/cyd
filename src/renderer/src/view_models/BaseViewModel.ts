@@ -1,6 +1,6 @@
 import { WebviewTag } from 'electron';
 import type { Account } from '../../../shared_types';
-import SemiphemeralAPIClient from 'semiphemeral-api-client';
+import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 
 export class BaseViewModel {
