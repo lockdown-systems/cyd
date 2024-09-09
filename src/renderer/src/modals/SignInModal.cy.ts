@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 import SignInModal from './SignInModal.vue'
-import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 
 describe('<Login />', () => {
   it('starts with the email field visible and the value blank', () => {

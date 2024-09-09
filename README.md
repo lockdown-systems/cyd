@@ -7,6 +7,16 @@ The environment variable `SEMIPHEMERAL_ENV` is used to determine the API URL. Th
 
 If you want devtools to open up, set `SEMIPHEMERAL_DEVTOOLS=1`.
 
+You must clone the submodule and build the API client first:
+
+```sh
+git submodule init
+git submodule update
+cd semiphemeral-api-client/
+npm install
+npm run build
+```
+
 Run in development mode:
 
 ```sh
@@ -32,4 +42,3 @@ npm run make-prod
 ```
 
 ## Making releases
-

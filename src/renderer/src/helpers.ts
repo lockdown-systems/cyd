@@ -1,4 +1,4 @@
-import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 import type { DeviceInfo } from './types';
 
 // This function checks to see if there's a userEmail and deviceToken, and if so if the
@@ -14,7 +14,7 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
     };
 
     const apiClient = new SemiphemeralAPIClient();
-    await apiClient.value.initialize(await window.electron.getAPIURL());
+    await apiClient.initialize(await window.electron.getAPIURL());
 
     const deviceDescription = await window.electron.database.getConfig("deviceDescription");
     if (!deviceDescription) {

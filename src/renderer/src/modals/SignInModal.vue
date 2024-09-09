@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, watch } from 'vue';
 import type { DeviceInfo } from '../types';
-import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);

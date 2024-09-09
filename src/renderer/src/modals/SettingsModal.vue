@@ -3,7 +3,7 @@ import { inject, ref, Ref, onMounted, onUnmounted } from 'vue';
 import Modal from 'bootstrap/js/dist/modal';
 import moment from 'moment';
 
-import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 import type { DeviceInfo, GetDevicesApiResponse } from '../types';
 
 const emit = defineEmits(['hide']);
