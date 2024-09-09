@@ -2,7 +2,7 @@
 import { inject, Ref, ref, onMounted, onUnmounted } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
-import ServerAPI from '../ServerAPI';
+import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 
@@ -12,10 +12,10 @@ const userBtnShowMenu = ref(false);
 const accounts = ref<Account[]>([]);
 const activeAccountId = ref<number | null>(null);
 
-const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
-const refreshServerApi = inject('refreshServerApi') as () => Promise<void>;
+const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 const showSignIn = inject('showSignIn') as () => void;
 const showSettings = inject('showSettings') as () => void;
 
@@ -123,7 +123,7 @@ const signOutClicked = async () => {
   }
 
   // Delete the logged in device
-  const deleteDeviceResp = await serverApi.value.deleteDevice({
+  const deleteDeviceResp = await apiClient.value.deleteDevice({
     // this API route takes either a UUID or a device token
     uuid: deviceInfo.value.deviceToken
   });
@@ -137,9 +137,9 @@ const signOutClicked = async () => {
   await window.electron.database.setConfig("deviceToken", "");
   await window.electron.database.setConfig("deviceUUID", "");
 
-  // Refresh the device info and the server API
+  // Refresh the device info and the API client
   await refreshDeviceInfo();
-  await refreshServerApi();
+  await refreshAPIClient();
 };
 
 onMounted(async () => {

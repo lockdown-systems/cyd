@@ -1,4 +1,4 @@
-import ServerAPI from './ServerAPI';
+import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
 import type { DeviceInfo } from './types';
 
 // This function checks to see if there's a userEmail and deviceToken, and if so if the
@@ -13,8 +13,8 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
         "valid": false
     };
 
-    const serverApi = new ServerAPI();
-    await serverApi.initialize();
+    const apiClient = new SemiphemeralAPIClient();
+    await apiClient.value.initialize(await window.electron.getAPIURL());
 
     const deviceDescription = await window.electron.database.getConfig("deviceDescription");
     if (!deviceDescription) {
@@ -37,9 +37,9 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
                 deviceInfo["deviceUUID"] = deviceUUID;
             }
 
-            serverApi.setUserEmail(userEmail);
-            serverApi.setDeviceToken(deviceToken);
-            const pingResp = await serverApi.ping();
+            apiClient.setUserEmail(userEmail);
+            apiClient.setDeviceToken(deviceToken);
+            const pingResp = await apiClient.ping();
             if (pingResp) {
                 deviceInfo["valid"] = true;
                 console.log("Device is valid");

@@ -1,30 +1,7 @@
 import { ref } from 'vue';
 
 import SignInModal from './SignInModal.vue'
-import ServerAPI from '../ServerAPI';
-
-const stubElectron = () => {
-  return {
-    getAPIURL: async (): Promise<string> => { return 'https://mock/api' },
-    isDevMode: cy.stub(),
-    showError: cy.stub(),
-    showQuestion: cy.stub(),
-    database: {
-      getConfig: cy.stub(),
-      setConfig: cy.stub(),
-      getAccounts: cy.stub(),
-      createAccount: cy.stub(),
-      selectAccountType: cy.stub(),
-      saveAccount: cy.stub(),
-      deleteAccount: cy.stub(),
-    },
-    X: {
-      fetchStart: cy.stub(),
-      fetchStop: cy.stub(),
-      fetchParse: cy.stub(),
-    }
-  };
-}
+import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
 
 describe('<Login />', () => {
   it('starts with the email field visible and the value blank', () => {
@@ -50,8 +27,6 @@ describe('<Login />', () => {
   })
 
   it('shows an error message if the email field is blank', () => {
-    window.electron = stubElectron();
-
     cy.mount(SignInModal, {
       global: {
         plugins: [(app) => {
@@ -67,14 +42,12 @@ describe('<Login />', () => {
   })
 
   it('shows an error message if the server is unreachable', () => {
-    window.electron = stubElectron();
-
     const testEmail = 'test@lockdown.systems';
 
     cy.mount(SignInModal, {
       global: {
         plugins: [(app) => {
-          app.provide('serverApi', ref(new ServerAPI()));
+          app.provide('apiClient', ref(new SemiphemeralAPIClient()));
           app.provide('userEmail', ref(testEmail));
         }]
       }
@@ -91,16 +64,14 @@ describe('<Login />', () => {
   it('moves to verification code page after entering an email', () => {
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
           }]
         }
@@ -126,20 +97,16 @@ describe('<Login />', () => {
   })
 
   it('should only allow digits in the verification code field', () => {
-    window.electron = stubElectron();
-
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
           }]
         }
@@ -172,19 +139,16 @@ describe('<Login />', () => {
   })
 
   it('should auto-submit verification code after 6 digits', () => {
-    window.electron = stubElectron();
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
             app.provide('deviceInfo', ref({
               userEmail: testEmail,
@@ -230,20 +194,16 @@ describe('<Login />', () => {
   })
 
   it('should show an error on wrong verification code guess but let you keep guessing', () => {
-    window.electron = stubElectron();
-
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
             app.provide('deviceInfo', ref({
               userEmail: testEmail,
@@ -289,20 +249,16 @@ describe('<Login />', () => {
   })
 
   it('verification code back button should go back to start', () => {
-    window.electron = stubElectron();
-
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
           }]
         }

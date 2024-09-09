@@ -3,7 +3,7 @@ import { inject, ref, Ref, onMounted, onUnmounted } from 'vue';
 import Modal from 'bootstrap/js/dist/modal';
 import moment from 'moment';
 
-import ServerAPI from '../ServerAPI';
+import { SemiphemeralAPIClient } from 'semiphemeral-api-client';
 import type { DeviceInfo, GetDevicesApiResponse } from '../types';
 
 const emit = defineEmits(['hide']);
@@ -16,7 +16,7 @@ let modalInstance: Modal | null = null;
 
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
-const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 
 const devices = ref<GetDevicesApiResponse[]>([]);
 
@@ -50,7 +50,7 @@ const relativeTime = (timestamp: Date) => {
 
 const revokeDevice = async (uuid: string) => {
   console.log('Revoking device with UUID:', uuid);
-  await serverApi.value.deleteDevice({
+  await apiClient.value.deleteDevice({
     uuid: uuid
   });
   await getDevices();
@@ -66,7 +66,7 @@ const revokeAll = async () => {
 }
 
 const getDevices = async () => {
-  const resp = await serverApi.value.getDevices();
+  const resp = await apiClient.value.getDevices();
   if ("error" in resp && resp.error) {
     window.electron.showError(resp.message);
     return;
