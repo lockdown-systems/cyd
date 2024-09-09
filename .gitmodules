@@ -1,3 +1,0 @@
-[submodule "semiphemeral-api-client"]
-	path = semiphemeral-api-client
-	url = git@github.com:Lockdown-Systems/semiphemeral-api-client.git
