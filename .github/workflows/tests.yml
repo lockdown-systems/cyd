@@ -11,15 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install the SSH deploy key
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: true
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install the SSH deploy key
-        run: |
-          eval $(ssh-agent -s)
-          ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
       - name: Install node
         uses: actions/setup-node@v4
         with:
