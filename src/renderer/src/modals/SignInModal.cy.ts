@@ -3,6 +3,29 @@ import { ref } from 'vue';
 import SignInModal from './SignInModal.vue'
 import SemiphemeralAPIClient from 'semiphemeral-api-client';
 
+const stubElectron = () => {
+  return {
+    getAPIURL: async (): Promise<string> => { return 'https://mock/api' },
+    isDevMode: cy.stub(),
+    showError: cy.stub(),
+    showQuestion: cy.stub(),
+    database: {
+      getConfig: cy.stub(),
+      setConfig: cy.stub(),
+      getAccounts: cy.stub(),
+      createAccount: cy.stub(),
+      selectAccountType: cy.stub(),
+      saveAccount: cy.stub(),
+      deleteAccount: cy.stub(),
+    },
+    X: {
+      fetchStart: cy.stub(),
+      fetchStop: cy.stub(),
+      fetchParse: cy.stub(),
+    }
+  };
+}
+
 describe('<Login />', () => {
   it('starts with the email field visible and the value blank', () => {
     cy.mount(SignInModal);
@@ -27,6 +50,8 @@ describe('<Login />', () => {
   })
 
   it('shows an error message if the email field is blank', () => {
+    window.electron = stubElectron();
+
     cy.mount(SignInModal, {
       global: {
         plugins: [(app) => {
@@ -42,6 +67,8 @@ describe('<Login />', () => {
   })
 
   it('shows an error message if the server is unreachable', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.mount(SignInModal, {
@@ -62,6 +89,8 @@ describe('<Login />', () => {
   })
 
   it('moves to verification code page after entering an email', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
@@ -97,6 +126,8 @@ describe('<Login />', () => {
   })
 
   it('should only allow digits in the verification code field', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
@@ -139,6 +170,8 @@ describe('<Login />', () => {
   })
 
   it('should auto-submit verification code after 6 digits', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
@@ -194,6 +227,8 @@ describe('<Login />', () => {
   })
 
   it('should show an error on wrong verification code guess but let you keep guessing', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
@@ -249,6 +284,8 @@ describe('<Login />', () => {
   })
 
   it('verification code back button should go back to start', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
