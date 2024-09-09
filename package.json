@@ -9,6 +9,7 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
+    "make-local": "SEMIPHEMERAL_ENV=local DEBUG=electron-packager,electron-universal,electron-forge* electron-forge make",
     "make-dev": "SEMIPHEMERAL_ENV=dev DEBUG=electron-packager,electron-universal,electron-forge* electron-forge make",
     "make-dev-macos": "SEMIPHEMERAL_ENV=dev DEBUG=electron-packager,electron-universal,electron-forge* electron-forge make --arch universal",
     "make-prod": "SEMIPHEMERAL_ENV=prod DEBUG=electron-packager,electron-universal,electron-forge* electron-forge make",

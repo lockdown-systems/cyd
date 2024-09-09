@@ -1,0 +1,5 @@
+{
+    "mode": "local",
+    "apiURL": "http:/localhost:5000",
+    "plausibleDomain": "localhost"
+}
