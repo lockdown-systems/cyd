@@ -1,12 +1,12 @@
 import { WebviewTag } from 'electron';
 import type { Account } from '../../../shared_types';
-import ServerAPI from '../ServerAPI';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 
 export class BaseViewModel {
     public account: Account;
     public webview: WebviewTag;
-    public api: ServerAPI;
+    public api: SemiphemeralAPIClient;
     public deviceInfo: DeviceInfo | null;
     public webContentsID: number | null;
     public isWebviewDestroyed: boolean;
@@ -23,7 +23,7 @@ export class BaseViewModel {
 
     private domReadyHandler: () => void;
 
-    constructor(account: Account, webview: WebviewTag, api: ServerAPI, deviceInfo: DeviceInfo | null) {
+    constructor(account: Account, webview: WebviewTag, api: SemiphemeralAPIClient, deviceInfo: DeviceInfo | null) {
         this.account = account;
         this.webview = webview;
         this.api = api;

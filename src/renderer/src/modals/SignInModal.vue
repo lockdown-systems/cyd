@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, watch } from 'vue';
 import type { DeviceInfo } from '../types';
-import ServerAPI from '../ServerAPI';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
@@ -13,7 +13,7 @@ const signInModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
 const userEmail = inject('userEmail') as Ref<string>;
-const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
@@ -55,7 +55,7 @@ async function authenticate() {
 
     disableStartFields();
 
-    const resp = await serverApi.value.authenticate({
+    const resp = await apiClient.value.authenticate({
         email: userEmail.value
     });
     if (typeof resp !== 'boolean' && resp.error) {
@@ -67,7 +67,7 @@ async function authenticate() {
     await window.electron.database.setConfig("userEmail", userEmail.value);
     enableStartFields();
 
-    serverApi.value.setUserEmail(userEmail.value);
+    apiClient.value.setUserEmail(userEmail.value);
 
     signInState.value = "registerDevice";
 }
@@ -80,7 +80,7 @@ async function registerDevice() {
     }
 
     // Register the device
-    const registerDeviceResp = await serverApi.value.registerDevice({
+    const registerDeviceResp = await apiClient.value.registerDevice({
         email: userEmail.value,
         verification_code: verificationCode.value,
         description: deviceInfo.value?.deviceDescription,
@@ -102,10 +102,10 @@ async function registerDevice() {
 
     // Save the device token
     await window.electron.database.setConfig("deviceToken", registerDeviceResp.device_token);
-    serverApi.value.setDeviceToken(registerDeviceResp.device_token);
+    apiClient.value.setDeviceToken(registerDeviceResp.device_token);
 
     // Get a new API token
-    const pingResp = await serverApi.value.ping();
+    const pingResp = await apiClient.value.ping();
     if (!pingResp) {
         window.electron.showError('Failed to register new device. Please try again later.');
     }

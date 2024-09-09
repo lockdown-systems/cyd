@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 import SignInModal from './SignInModal.vue'
-import ServerAPI from '../ServerAPI';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 
 const stubElectron = () => {
   return {
@@ -74,7 +74,7 @@ describe('<Login />', () => {
     cy.mount(SignInModal, {
       global: {
         plugins: [(app) => {
-          app.provide('serverApi', ref(new ServerAPI()));
+          app.provide('apiClient', ref(new SemiphemeralAPIClient()));
           app.provide('userEmail', ref(testEmail));
         }]
       }
@@ -89,18 +89,18 @@ describe('<Login />', () => {
   })
 
   it('moves to verification code page after entering an email', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
           }]
         }
@@ -130,16 +130,14 @@ describe('<Login />', () => {
 
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
           }]
         }
@@ -173,18 +171,17 @@ describe('<Login />', () => {
 
   it('should auto-submit verification code after 6 digits', () => {
     window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
             app.provide('deviceInfo', ref({
               userEmail: testEmail,
@@ -234,16 +231,14 @@ describe('<Login />', () => {
 
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
             app.provide('deviceInfo', ref({
               userEmail: testEmail,
@@ -293,16 +288,14 @@ describe('<Login />', () => {
 
     const testEmail = 'test@lockdown.systems';
 
-    cy.window().then(async (win) => {
-      win.electron = stubElectron();
-
-      const serverApi = new ServerAPI();
-      await serverApi.initialize();
+    cy.window().then(async (_win) => {
+      const apiClient = new SemiphemeralAPIClient();
+      await apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
           plugins: [(app) => {
-            app.provide('serverApi', ref(serverApi));
+            app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
           }]
         }

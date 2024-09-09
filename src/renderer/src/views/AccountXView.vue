@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Ref, ref, watch, onMounted, onUnmounted, inject } from 'vue'
 import Electron from 'electron';
-
-import ServerAPI from '../ServerAPI';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
@@ -18,7 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['onRefreshClicked']);
 
-const serverApi = inject('serverApi') as Ref<ServerAPI>;
+const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
@@ -211,7 +210,7 @@ onMounted(async () => {
 
         // Start the state loop
         if (props.account.xAccount !== null) {
-            accountXViewModel.value = new AccountXViewModel(props.account, webview, serverApi.value, deviceInfo.value);
+            accountXViewModel.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value);
             await accountXViewModel.value.init();
             await startStateLoop();
         }

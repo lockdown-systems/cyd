@@ -2,8 +2,8 @@
 import { ref, provide, onMounted } from "vue"
 
 import { DeviceInfo, PlausibleEvents } from './types';
-import ServerAPI from './ServerAPI';
 import { getDeviceInfo } from './helpers';
+import SemiphemeralAPIClient from 'semiphemeral-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
 import SettingsModal from './modals/SettingsModal.vue';
@@ -14,9 +14,9 @@ const isReady = ref(false);
 const isFirstLoad = ref(true);
 const isSignedIn = ref(false);
 
-// Server API
-const serverApi = ref(new ServerAPI());
-provide('serverApi', serverApi);
+// API client
+const apiClient = ref(new SemiphemeralAPIClient());
+provide('apiClient', apiClient);
 
 // Device info
 const deviceInfo = ref<DeviceInfo | null>(null);
@@ -27,8 +27,8 @@ const refreshDeviceInfo = async () => {
     deviceInfo.value = await getDeviceInfo();
     if (deviceInfo.value) {
       userEmail.value = deviceInfo.value.userEmail;
-      serverApi.value.setUserEmail(deviceInfo.value.userEmail);
-      serverApi.value.setDeviceToken(deviceInfo.value.deviceToken);
+      apiClient.value.setUserEmail(deviceInfo.value.userEmail);
+      apiClient.value.setDeviceToken(deviceInfo.value.deviceToken);
     }
   } catch {
     window.electron.showError("Failed to get saved device info.");
@@ -36,13 +36,13 @@ const refreshDeviceInfo = async () => {
 };
 provide('refreshDeviceInfo', refreshDeviceInfo);
 
-// Refresh server API
-const refreshServerApi = async () => {
-  serverApi.value = new ServerAPI();
-  await serverApi.value.initialize();
+// Refresh API client
+const refreshAPIClient = async () => {
+  apiClient.value = new SemiphemeralAPIClient();
+  await apiClient.value.initialize(await window.electron.getAPIURL());
   await refreshDeviceInfo();
 };
-provide('refreshServerApi', refreshServerApi);
+provide('refreshAPIClient', refreshAPIClient);
 
 // User info
 const userEmail = ref('');
@@ -65,7 +65,7 @@ provide('showSettings', showSettings);
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
-  await serverApi.value.initialize();
+  await apiClient.value.initialize(await window.electron.getAPIURL());
 
   await refreshDeviceInfo();
   isFirstLoad.value = false;
