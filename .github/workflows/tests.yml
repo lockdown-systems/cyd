@@ -13,13 +13,17 @@ jobs:
     steps:
       - name: Install the SSH deploy key
         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
           eval $(ssh-agent -s)
-          ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY }}'
+          ssh-add ~/.ssh/id_ed25519
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ssh-key: ${{ secrets.PRIVATE_SSH_KEY }}
       - name: Install node
         uses: actions/setup-node@v4
         with:
