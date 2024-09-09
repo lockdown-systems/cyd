@@ -16,8 +16,8 @@
     "tests": "vitest run .",
     "tests:components": "cd src/renderer && cypress run --component",
     "open-cypress": "cd src/renderer && cypress open",
-    "lint": "eslint .",
-    "lint-fix": "eslint . --fix"
+    "lint": "eslint ./src",
+    "lint-fix": "eslint ./src --fix"
   },
   "dependencies": {
     "@electron-forge/maker-dmg": "^7.4.0",
