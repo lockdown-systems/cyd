@@ -39,7 +39,7 @@ provide('refreshDeviceInfo', refreshDeviceInfo);
 // Refresh API client
 const refreshAPIClient = async () => {
   apiClient.value = new SemiphemeralAPIClient();
-  await apiClient.value.initialize(await window.electron.getAPIURL());
+  apiClient.value.initialize(await window.electron.getAPIURL());
   await refreshDeviceInfo();
 };
 provide('refreshAPIClient', refreshAPIClient);
@@ -65,7 +65,7 @@ provide('showSettings', showSettings);
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
-  await apiClient.value.initialize(await window.electron.getAPIURL());
+  apiClient.value.initialize(await window.electron.getAPIURL());
 
   await refreshDeviceInfo();
   isFirstLoad.value = false;

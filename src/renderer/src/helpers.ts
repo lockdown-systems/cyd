@@ -14,7 +14,7 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
     };
 
     const apiClient = new SemiphemeralAPIClient();
-    await apiClient.initialize(await window.electron.getAPIURL());
+    apiClient.initialize(await window.electron.getAPIURL());
 
     const deviceDescription = await window.electron.database.getConfig("deviceDescription");
     if (!deviceDescription) {

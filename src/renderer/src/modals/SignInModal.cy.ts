@@ -95,7 +95,7 @@ describe('<Login />', () => {
 
     cy.window().then(async (_win) => {
       const apiClient = new SemiphemeralAPIClient();
-      await apiClient.initialize('https://mock/api');
+      apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
@@ -132,7 +132,7 @@ describe('<Login />', () => {
 
     cy.window().then(async (_win) => {
       const apiClient = new SemiphemeralAPIClient();
-      await apiClient.initialize('https://mock/api');
+      apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
@@ -176,7 +176,7 @@ describe('<Login />', () => {
 
     cy.window().then(async (_win) => {
       const apiClient = new SemiphemeralAPIClient();
-      await apiClient.initialize('https://mock/api');
+      apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
@@ -233,7 +233,7 @@ describe('<Login />', () => {
 
     cy.window().then(async (_win) => {
       const apiClient = new SemiphemeralAPIClient();
-      await apiClient.initialize('https://mock/api');
+      apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
@@ -290,7 +290,7 @@ describe('<Login />', () => {
 
     cy.window().then(async (_win) => {
       const apiClient = new SemiphemeralAPIClient();
-      await apiClient.initialize('https://mock/api');
+      apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
         global: {
