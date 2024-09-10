@@ -30,10 +30,7 @@ const onRefreshClicked = () => {
         </div>
         <div class="label d-flex align-items-center">
             <template v-if="account.type == 'X'">
-                <template v-if="account.xAccount?.username == null">
-                    <span class="label-text">not logged in</span>
-                </template>
-                <template v-else>
+                <template v-if="account.xAccount?.username != null">
                     <span class="label-text">@{{ account.xAccount?.username }}</span>
                 </template>
             </template>
@@ -84,10 +81,6 @@ const onRefreshClicked = () => {
 .label .logo {
     opacity: 0.5;
     margin-left: 10px;
-}
-
-.label .label-text {
-    font-weight: bold;
 }
 
 .info-popup {
