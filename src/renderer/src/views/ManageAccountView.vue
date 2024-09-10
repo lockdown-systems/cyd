@@ -12,7 +12,6 @@ onMounted(async () => {
     if (webviewComponent.value !== null) {
         const dashURL = await window.electron.getDashURL();
         const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}`;
-        console.log('Loading native login URL:', nativeLoginURL);
 
         const webview = webviewComponent.value;
         await webview.loadURL(nativeLoginURL);
