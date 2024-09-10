@@ -10,12 +10,12 @@ const parsedMessage = computed(() => marked.parse(props.message));
 </script>
 
 <template>
-  <div class="row pt-2">
+  <div class="row pt-2 g-1">
     <div class="col-auto">
       <img src="/logo.png" class="bird img-fluid" alt="Semiphemeral Bird">
     </div>
     <div class="col">
-      <div class="bubble p-3 text-black rounded-5">
+      <div class="bubble p-3 text-black">
         <div class="bubble-inner" v-html="parsedMessage" />
       </div>
     </div>
@@ -30,6 +30,10 @@ img.bird {
 .bubble {
   background-color: #c1fac4;
   border: 1px solid #7ba57d;
+  border-top-right-radius: 2rem;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  border-top-left-radius: 0;
 }
 
 .bubble-inner {
