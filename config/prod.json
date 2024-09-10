@@ -1,5 +1,6 @@
 {
     "mode": "prod",
     "apiURL": "https://api.semiphemeral.com",
+    "dashURL": "https://dash.semiphemeral.com",
     "plausibleDomain": "app.semiphemeral.com"
 }

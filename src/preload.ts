@@ -5,6 +5,9 @@ contextBridge.exposeInMainWorld('electron', {
     getAPIURL: (): Promise<string> => {
         return ipcRenderer.invoke('getAPIURL')
     },
+    getDashURL: (): Promise<string> => {
+        return ipcRenderer.invoke('getDashURL')
+    },
     trackEvent: (eventName: string, userAgent: string): Promise<string> => {
         return ipcRenderer.invoke('trackEvent', eventName, userAgent)
     },

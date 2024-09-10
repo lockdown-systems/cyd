@@ -24,6 +24,7 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 interface Config {
     mode: string;
     apiURL: string;
+    dashURL: string;
     plausibleDomain: string;
 }
 
@@ -130,6 +131,10 @@ async function createWindow() {
     if (!global.ipcHandlersRegistered) {
         ipcMain.handle('getAPIURL', async () => {
             return config.apiURL;
+        });
+
+        ipcMain.handle('getDashURL', async () => {
+            return config.dashURL;
         });
 
         ipcMain.handle('trackEvent', async (_, eventName: string, userAgent: string) => {

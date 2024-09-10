@@ -5,6 +5,7 @@ import AccountView from './AccountView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
+import ManageAccountView from './ManageAccountView.vue';
 
 const addAccountBtnShowInfo = ref(false);
 const userBtnShowInfo = ref(false);
@@ -17,9 +18,11 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 const showSignIn = inject('showSignIn') as () => void;
-const showSettings = inject('showSettings') as () => void;
+
+const showManageAccount = ref(false);
 
 const accountClicked = async (account: Account) => {
+  showManageAccount.value = false;
   activeAccountId.value = account.id;
 
   // If we clicked out of an unknown account, remove the unknown account
@@ -107,9 +110,10 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
   }
 };
 
-const settingsClicked = async () => {
+const manageAccountClicked = async () => {
   userBtnShowMenu.value = false;
-  showSettings()
+  showManageAccount.value = true;
+  // showSettings()
 };
 
 const signInClicked = async () => {
@@ -204,8 +208,8 @@ onUnmounted(async () => {
                   <li class="menu-line">
                     <hr>
                   </li>
-                  <li class="menu-btn" @click="settingsClicked">
-                    Settings
+                  <li class="menu-btn" @click="manageAccountClicked">
+                    Manage my account
                   </li>
                   <li class="menu-btn" @click="signOutClicked">
                     Sign out
@@ -231,8 +235,13 @@ onUnmounted(async () => {
       </div>
 
       <div class="main-content col">
-        <AccountView v-for="account in accounts" :key="account.id" :account="account"
-          :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected" />
+        <template v-if="showManageAccount">
+          <ManageAccountView />
+        </template>
+        <template v-else>
+          <AccountView v-for="account in accounts" :key="account.id" :account="account"
+            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected" />
+        </template>
       </div>
     </div>
   </div>
