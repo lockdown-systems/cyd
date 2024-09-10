@@ -209,10 +209,10 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="manageAccountClicked">
-                    Manage my account
+                    Manage my Semiphemeral account
                   </li>
                   <li class="menu-btn" @click="signOutClicked">
-                    Sign out
+                    Sign out of my Semiphemeral account
                   </li>
                 </ul>
               </template>
@@ -225,7 +225,7 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="signInClicked">
-                    Sign in
+                    Sign in to Semiphemeral to access paid features
                   </li>
                 </ul>
               </template>
