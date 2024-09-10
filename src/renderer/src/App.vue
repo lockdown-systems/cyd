@@ -217,6 +217,10 @@ body {
   height: 100vh;
 }
 
+.webview-borderless {
+  height: 100vh;
+}
+
 /* Headers */
 h1 {
   font-size: 1.5rem;

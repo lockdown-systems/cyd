@@ -27,7 +27,8 @@ onUnmounted(async () => {
 
 <template>
     <div class="wrapper d-flex flex-column">
-        <webview ref="webviewComponent" src="about:blank" class="webview mt-3" :partition="`persist:account-manage`" />
+        <webview ref="webviewComponent" src="about:blank" class="webview-borderless mt-3"
+            :partition="`persist:account-manage`" />
     </div>
 </template>
 
