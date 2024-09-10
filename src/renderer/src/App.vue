@@ -208,6 +208,28 @@ body {
 
 /* Webview styles */
 
+.automation-notice {
+  font-size: 0.8em;
+  padding: 0.3em 0.5em 0.5em 0.5em;
+  margin: 0;
+  background-color: #ffea9b;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ready-for-input {
+  font-size: 0.8em;
+  padding: 0.3em 0.5em 0.5em 0.5em;
+  margin: 0;
+  background-color: #c1fac4;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .wrapper {
   height: calc(100vh - 10px);
 }

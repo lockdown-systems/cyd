@@ -160,6 +160,7 @@ const startStateLoop = async () => {
             accountXViewModel.value?.state === State.DashboardDisplay ||
             accountXViewModel.value?.state === State.FinishedRunningJobs
         ) {
+            await updateArchivePath();
             break;
         }
 
@@ -180,11 +181,13 @@ const reset = async () => {
     await startStateLoop();
 };
 
-onMounted(async () => {
+const updateArchivePath = async () => {
     const path = await window.electron.getAccountDataPath(props.account.id, '');
-    if (path) {
-        archivePath.value = path;
-    }
+    archivePath.value = path ? path : '';
+};
+
+onMounted(async () => {
+    await updateArchivePath();
 
     if (props.account.xAccount !== null) {
         archiveTweets.value = props.account.xAccount.archiveTweets;
@@ -254,6 +257,12 @@ onUnmounted(async () => {
             class="text-muted text-center automation-notice">
             <i class="fa-solid fa-robot" /> Automation in Progress: Feel free to switch windows and use your computer
             for other things.
+        </p>
+
+        <!-- Ready for input -->
+        <p v-if="(accountXViewModel?.showBrowser && !accountXViewModel?.showAutomationNotice)"
+            class="text-muted text-center ready-for-input">
+            <i class="fa-solid fa-computer-mouse" /> Ready for input.
         </p>
 
         <!-- Webview -->
@@ -544,16 +553,5 @@ onUnmounted(async () => {
     background-color: #50a4ff;
     color: white;
     border-radius: 0.25rem;
-}
-
-.automation-notice {
-    font-size: 0.8em;
-    padding: 0.3em 0.5em 0.5em 0.5em;
-    margin: 0;
-    background-color: #ffea9b;
-    font-family: monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 </style>
