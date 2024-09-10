@@ -141,6 +141,9 @@ onUnmounted(() => {
                 You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
             </p>
         </div>
+        <p class="text-muted text-center notice">
+            Feel free to switch windows and use your computer for other things. I'll just be chugging along.
+        </p>
     </template>
 </template>
 
@@ -149,8 +152,9 @@ onUnmounted(() => {
     text-align: center;
     font-size: 0.8em;
     border-top: 1px solid #d0d0d0;
-    margin-top: 5px;
-    padding-top: 8px;
+    border-bottom: 1px solid #d0d0d0;
+    margin: 5px 0;
+    padding: 8px 0;
 }
 
 .progress-wrapper p {
@@ -159,6 +163,10 @@ onUnmounted(() => {
 
 .progress {
     height: 20px;
+}
+
+.notice {
+    font-size: 0.8em;
 }
 
 .rate-limit {
