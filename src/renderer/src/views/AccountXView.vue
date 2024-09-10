@@ -259,6 +259,10 @@ onUnmounted(async () => {
                 <div class="row">
                     <div class="col-md-6 mb-4">
                         <h2>Archive my data</h2>
+                        <p class="text-muted small">
+                            Download a local archive of your X data to the <code>Documents</code> folder on your
+                            computer.
+                        </p>
                         <form @submit.prevent>
                             <div class="mb-3 form-check">
                                 <input id="archiveTweets" v-model="archiveTweets" type="checkbox"
@@ -285,6 +289,9 @@ onUnmounted(async () => {
 
                     <div class="col-md-6 mb-4">
                         <h2>Delete my data <span class="premium badge badge-primary">Premium</span></h2>
+                        <p class="text-muted small">
+                            Delete your data from X, except for what you want to keep.
+                        </p>
                         <form @submit.prevent>
                             <div class="d-flex align-items-center">
                                 <div class="form-check mb-2">
