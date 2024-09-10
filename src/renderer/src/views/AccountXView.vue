@@ -249,9 +249,20 @@ onUnmounted(async () => {
             </div>
         </div>
 
+        <!-- Automation notice -->
+        <p v-if="(accountXViewModel?.showBrowser && accountXViewModel?.showAutomationNotice)"
+            class="text-muted text-center automation-notice">
+            <i class="fa-solid fa-robot" /> Automation in Progress: Feel free to switch windows and use your computer
+            for other things.
+        </p>
+
         <!-- Webview -->
-        <webview ref="webviewComponent" src="about:blank" class="webview mt-3"
-            :partition="`persist:account-${account.id}`" :class="{ 'hidden': !accountXViewModel?.showBrowser }" />
+        <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
+            :class="{
+                'hidden': !accountXViewModel?.showBrowser,
+                'webview-automation-border': accountXViewModel?.showAutomationNotice,
+                'webview-input-border': !accountXViewModel?.showAutomationNotice
+            }" />
 
         <!-- Dashboard -->
         <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
@@ -533,5 +544,16 @@ onUnmounted(async () => {
     background-color: #50a4ff;
     color: white;
     border-radius: 0.25rem;
+}
+
+.automation-notice {
+    font-size: 0.8em;
+    padding: 0.3em 0.5em 0.5em 0.5em;
+    margin: 0;
+    background-color: #ffea9b;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>

@@ -267,6 +267,7 @@ export class AccountXViewModel extends BaseViewModel {
 
 Checking to see if you're still logged in to your X account...
 `;
+                this.showAutomationNotice = true;
                 await this.login();
                 await this.finishJob(iJob);
                 break;
@@ -278,6 +279,7 @@ Checking to see if you're still logged in to your X account...
 
 Hang on while I scroll down to your earliest tweets that I've seen.
 `;
+                this.showAutomationNotice = true;
 
                 // Check if this is the first time indexing tweets has happened in this account
                 if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexTweets") == null) {
@@ -344,6 +346,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
 I'm archiving your tweets, starting with the oldest. This may take a while...
 `;
+                this.showAutomationNotice = true;
 
                 // Initialize archiving of tweets
                 this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
@@ -396,6 +399,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
 Hang on while I scroll down to your earliest direct message conversations that I've seen.
 `;
+                this.showAutomationNotice = true;
 
                 // Check if this is the first time indexing DMs has happened in this account
                 if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexConversations") == null) {
@@ -462,6 +466,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
 Please wait while I index all of the messages from each conversation.
 `;
+                this.showAutomationNotice = true;
 
                 // Only set isFirstRun to true if we're forcing everything to be indexed
                 // Because even if idnexMessages has never completed, we want to resume where we left off
@@ -566,6 +571,7 @@ Please wait while I index all of the messages from each conversation.
 
 I'm building a searchable archive web page in HTML.
 `;
+                this.showAutomationNotice = true;
 
                 // Build the archive
                 await window.electron.X.archiveBuild(this.account.id);
@@ -620,6 +626,8 @@ I'm building a searchable archive web page in HTML.
 Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
 retweets, likes, and direct messages. **To get started, log in to your X account below.**
 `;
+                this.showBrowser = true;
+                this.showAutomationNotice = false;
                 await this.login();
                 this.state = State.Dashboard;
                 break;

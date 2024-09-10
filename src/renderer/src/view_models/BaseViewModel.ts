@@ -19,6 +19,7 @@ export class BaseViewModel {
     public isPaused: boolean;
 
     public showBrowser: boolean;
+    public showAutomationNotice: boolean;
     public instructions: string;
 
     private domReadyHandler: () => void;
@@ -37,6 +38,7 @@ export class BaseViewModel {
         this.actionFinishedString = "";
         this.instructions = "";
         this.showBrowser = false;
+        this.showAutomationNotice = false;
         this.domReady = false;
         this.isPaused = false;
 

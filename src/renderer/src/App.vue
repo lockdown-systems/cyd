@@ -213,12 +213,15 @@ body {
 }
 
 .webview {
-  border: 5px solid black;
   height: 100vh;
 }
 
-.webview-borderless {
-  height: 100vh;
+.webview-automation-border {
+  border: 5px solid #ffea9b;
+}
+
+.webview-input-border {
+  border: 5px solid #c1fac4;
 }
 
 /* Headers */
