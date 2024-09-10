@@ -6,7 +6,6 @@ import { getDeviceInfo } from './helpers';
 import SemiphemeralAPIClient from './semiphemeral-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
-import SettingsModal from './modals/SettingsModal.vue';
 import TabsView from "./views/TabsView.vue";
 
 // Application state
@@ -55,13 +54,6 @@ const showSignIn = () => {
 };
 provide('showSignIn', showSignIn);
 
-// Settings
-const showSettingsModal = ref(false);
-const showSettings = () => {
-  showSettingsModal.value = true;
-};
-provide('showSettings', showSettings);
-
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
@@ -100,9 +92,6 @@ onMounted(async () => {
         <TabsView />
       </template>
     </div>
-
-    <!-- Settings modal -->
-    <SettingsModal v-if="showSettingsModal" @hide="showSettingsModal = false" @close="showSettingsModal = false" />
 
     <!-- Sign in modal -->
     <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
