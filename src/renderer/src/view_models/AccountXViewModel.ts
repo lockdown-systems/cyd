@@ -221,11 +221,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the username
         this.log("login", "getting username");
-        this.instructions = `
-**${this.actionString}**
-
-Scraping your username...
-`;
+        this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
 
         let username = null;
         if (this.webContentsID) {
@@ -252,11 +248,7 @@ Scraping your username...
 
         // Get the profile image
         this.log("login", "getting profile image");
-        this.instructions = `
-**${this.actionString}**
-
-Scraping your profile image...
-`;
+        this.instructions = `You're logged in as **@${username}**. Now I'm scraping your profile image...`;
 
         await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
         await this.waitForSelector('div[aria-label="Image"]');
@@ -651,10 +643,11 @@ I'm building a searchable archive web page in HTML.
 
         switch (this.state) {
             case State.Login:
-                this.instructions = `
-Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
-retweets, likes, and direct messages. **To get started, log in to your X account below.**
-`;
+                this.actionString = `Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
+retweets, likes, and direct messages.`;
+                this.instructions = `${this.actionString}
+
+**To get started, log in to your X account below.**`;
                 this.showBrowser = true;
                 this.showAutomationNotice = false;
                 await this.login();
