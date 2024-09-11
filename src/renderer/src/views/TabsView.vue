@@ -113,7 +113,6 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
 const manageAccountClicked = async () => {
   userBtnShowMenu.value = false;
   showManageAccount.value = true;
-  // showSettings()
 };
 
 const signInClicked = async () => {
@@ -144,6 +143,9 @@ const signOutClicked = async () => {
   // Refresh the device info and the API client
   await refreshDeviceInfo();
   await refreshAPIClient();
+
+  showManageAccount.value = false;
+  userBtnShowMenu.value = false;
 };
 
 const reloadAccounts = async () => {
