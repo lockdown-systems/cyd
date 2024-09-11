@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, provide, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
+import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
