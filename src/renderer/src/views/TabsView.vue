@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { inject, provide, Ref, ref, onMounted, onUnmounted } from 'vue';
+import { inject, provide, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 import ManageAccountView from './ManageAccountView.vue';
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 const addAccountBtnShowInfo = ref(false);
 const userBtnShowInfo = ref(false);
@@ -164,6 +168,8 @@ onMounted(async () => {
 
   document.addEventListener('click', outsideUserMenuClicked);
   document.addEventListener('auxclick', outsideUserMenuClicked);
+
+  emitter?.on('signed-in', manageAccountClicked);
 });
 
 onUnmounted(async () => {
