@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { inject, provide, Ref, ref, onMounted, onUnmounted } from 'vue';
+import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 import ManageAccountView from './ManageAccountView.vue';
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 const addAccountBtnShowInfo = ref(false);
 const userBtnShowInfo = ref(false);
@@ -113,7 +117,6 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
 const manageAccountClicked = async () => {
   userBtnShowMenu.value = false;
   showManageAccount.value = true;
-  // showSettings()
 };
 
 const signInClicked = async () => {
@@ -144,13 +147,15 @@ const signOutClicked = async () => {
   // Refresh the device info and the API client
   await refreshDeviceInfo();
   await refreshAPIClient();
+
+  showManageAccount.value = false;
+  userBtnShowMenu.value = false;
 };
 
 const reloadAccounts = async () => {
   console.log('Reloading accounts');
   accounts.value = await window.electron.database.getAccounts();
 };
-provide('reloadAccounts', reloadAccounts);
 
 onMounted(async () => {
   await reloadAccounts();
@@ -162,6 +167,9 @@ onMounted(async () => {
 
   document.addEventListener('click', outsideUserMenuClicked);
   document.addEventListener('auxclick', outsideUserMenuClicked);
+
+  emitter?.on('signed-in', manageAccountClicked);
+  emitter?.on('account-updated', reloadAccounts);
 });
 
 onUnmounted(async () => {

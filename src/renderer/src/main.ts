@@ -2,6 +2,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "@fortawesome/fontawesome-free/css/all.css";
 
+import mitt from 'mitt';
+
 import { createApp } from "vue";
 import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from "../../shared_types";
 import App from "./App.vue";
@@ -65,5 +67,8 @@ declare global {
     }
 }
 
-createApp(App)
-    .mount("#app");
+const emitter = mitt();
+const app = createApp(App);
+
+app.config.globalProperties.emitter = emitter;
+app.mount('#app');

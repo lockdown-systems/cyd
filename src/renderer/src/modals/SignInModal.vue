@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, inject, Ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, inject, Ref, watch, getCurrentInstance } from 'vue';
 import type { DeviceInfo } from '../types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
@@ -8,6 +8,10 @@ const emit = defineEmits(['hide']);
 const hide = () => {
     emit('hide');
 };
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 const signInModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
@@ -116,6 +120,9 @@ async function registerDevice() {
     // Success
     signInState.value = 'token';
     hide();
+
+    // Emit the signed-in event
+    emitter?.emit('signed-in');
 }
 
 async function goBack() {
