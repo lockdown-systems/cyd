@@ -59,6 +59,7 @@ declare global {
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
+                saveProfileImage: (accountID: number, url: string) => Promise<void>;
             };
         };
     }

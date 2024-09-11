@@ -111,6 +111,7 @@ const updateSettings = async () => {
             updatedAt: new Date(),
             accessedAt: new Date(),
             username: props.account.xAccount?.username || '',
+            profileImageDataURI: props.account.xAccount?.profileImageDataURI || '',
             archiveTweets: archiveTweets.value,
             archiveDMs: archiveDMs.value,
             deleteTweets: deleteTweets.value,

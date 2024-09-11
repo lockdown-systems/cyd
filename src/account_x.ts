@@ -19,7 +19,7 @@ import {
     XIndexMessagesStartResponse,
     XProgressInfo, emptyXProgressInfo
 } from './shared_types'
-import { runMigrations, getAccount, getXAccount, exec } from './database'
+import { runMigrations, getAccount, getXAccount, saveXAccount, exec } from './database'
 import { IMITMController, getMITMController } from './mitm';
 import {
     XAPILegacyUser,
@@ -248,10 +248,19 @@ export class XAccountController {
         // Load settings page
         const wc = webContents.fromId(webContentsID);
         if (wc) {
-            await wc.loadURL("https://x.com/settings");
+            const tries = 0;
+            while (tries < 3) {
+                try {
+                    await wc.loadURL("https://x.com/settings/account");
+                    break;
+                } catch (error) {
+                    log.info(`Failed to load URL: ${error}`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
 
             // Wait for the URL to finish loading
-            while (wc?.isLoading()) {
+            while (wc.isLoading()) {
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -1099,6 +1108,26 @@ export class XAccountController {
         progressInfo.totalMessagesDeleted = totalMessagesDeleted.count;
         return progressInfo;
     }
+
+    async saveProfileImage(url: string): Promise<void> {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                log.warn('XAccountController.saveProfileImage: response not ok', response.status);
+                return;
+            }
+            const buffer = await response.buffer();
+            const dataURI = `data:${response.headers.get('content-type')};base64,${buffer.toString('base64')}`;
+            log.info('XAccountController.saveProfileImage: got profile image!');
+
+            if (this.account) {
+                this.account.profileImageDataURI = dataURI;
+                saveXAccount(this.account);
+            }
+        } catch {
+            return;
+        }
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -1242,5 +1271,10 @@ export const defineIPCX = () => {
     ipcMain.handle('X:getProgressInfo', async (_, accountID: number): Promise<XProgressInfo> => {
         const controller = getXAccountController(accountID);
         return await controller.getProgressInfo();
+    });
+
+    ipcMain.handle('X:saveProfileImage', async (_, accountID: number, url: string): Promise<void> => {
+        const controller = getXAccountController(accountID);
+        return await controller.saveProfileImage(url);
     });
 };

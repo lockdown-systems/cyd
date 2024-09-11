@@ -70,7 +70,7 @@ async function initializeApp() {
     }
 
     // Set the log level
-    if (config.mode == "dev") {
+    if (config.mode == "dev" || config.mode == "local") {
         log.transports.console.level = "debug";
     } else {
         log.transports.console.level = "info";

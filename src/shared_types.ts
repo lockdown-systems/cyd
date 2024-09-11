@@ -23,6 +23,7 @@ export type XAccount = {
     updatedAt: Date;
     accessedAt: Date;
     username: string;
+    profileImageDataURI: string;
     archiveTweets: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;

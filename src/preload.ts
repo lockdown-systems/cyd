@@ -141,6 +141,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         getProgressInfo: (accountID: number): Promise<XProgressInfo> => {
             return ipcRenderer.invoke('X:getProgressInfo', accountID);
+        },
+        saveProfileImage: (accountID: number, url: string): Promise<void> => {
+            return ipcRenderer.invoke('X:saveProfileImage', accountID, url);
         }
     }
 })

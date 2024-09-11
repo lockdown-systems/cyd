@@ -203,11 +203,14 @@ export class AccountXViewModel extends BaseViewModel {
         const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
 
         this.showBrowser = true;
+
+        this.log("login", "logging in");
         await this.loadURLWithRateLimit("https://x.com/login");
         await this.waitForURL("https://x.com/home");
 
         // We're logged in
-        this.log("runJob", "login succeeded");
+        this.log("login", "login succeeded");
+        this.showAutomationNotice = true;
 
         // If this is the first time we're logging in, track it
         if (this.state === State.Login) {
@@ -217,27 +220,40 @@ export class AccountXViewModel extends BaseViewModel {
         await this.waitForPause();
 
         // Get the username
+        this.log("login", "getting username");
         let username = null;
         if (this.webContentsID) {
             username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
         }
         if (!username) {
             // TODO: Automation error
-            this.log("runJob", "failed to get username");
+            this.log("login", "failed to get username");
             return;
         }
 
         if (originalUsername !== null && username != originalUsername) {
-            this.log(`Username changed from ${this.account.xAccount?.username} to ${username}`);
+            this.log("login", `username changed from ${this.account.xAccount?.username} to ${username}`);
             // TODO: username changed error
             return;
         }
 
-        // Save it
+        // Save the username
         if (this.account && this.account.xAccount) {
             this.account.xAccount.username = username;
         }
         await window.electron.database.saveAccount(JSON.stringify(this.account));
+        this.log("login", "saved username");
+
+        // Get the profile image
+        this.log("login", "getting profile image");
+        await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
+        await this.waitForSelector('div[aria-label="Image"]');
+
+        const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[aria-label="Image"]').querySelector('img').src`);
+        await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
+        this.log("login", `saved profile image: ${profileImageURL}`);
+
+        await this.waitForPause();
     }
 
     async finishJob(iJob: number) {
