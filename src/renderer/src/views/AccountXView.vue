@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ref, ref, watch, onMounted, onUnmounted, inject } from 'vue'
+import { Ref, ref, watch, onMounted, onUnmounted, inject, getCurrentInstance } from 'vue'
 import Electron from 'electron';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import AccountHeader from '../components/AccountHeader.vue';
@@ -11,6 +11,10 @@ import type { DeviceInfo } from '../types';
 
 import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
 
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
+
 const props = defineProps<{
     account: Account;
 }>();
@@ -19,7 +23,6 @@ const emit = defineEmits(['onRefreshClicked']);
 
 const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
-const reloadAccounts = inject('reloadAccounts') as () => Promise<void>;
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 
@@ -57,20 +60,6 @@ watch(
 watch(
     () => accountXViewModel.value?.isPaused,
     (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
-    { deep: true, }
-);
-
-// Reload accounts if profile image changes
-watch(
-    () => accountXViewModel.value?.shouldReloadAccounts,
-    async (newShouldReloadAccounts) => {
-        if (newShouldReloadAccounts) {
-            await reloadAccounts();
-            if (accountXViewModel.value) {
-                accountXViewModel.value.shouldReloadAccounts = false;
-            }
-        }
-    },
     { deep: true, }
 );
 
@@ -229,7 +218,7 @@ onMounted(async () => {
 
         // Start the state loop
         if (props.account.xAccount !== null) {
-            accountXViewModel.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value);
+            accountXViewModel.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value, emitter);
             await accountXViewModel.value.init();
             await startStateLoop();
         }

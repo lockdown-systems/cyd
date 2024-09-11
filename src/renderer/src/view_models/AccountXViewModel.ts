@@ -256,7 +256,8 @@ export class AccountXViewModel extends BaseViewModel {
         const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[aria-label="Image"]').querySelector('img').src`);
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
         this.log("login", `saved profile image: ${profileImageURL}`);
-        this.shouldReloadAccounts = true;
+
+        this.emitter?.emit("account-updated", this.account);
 
         await this.waitForPause();
     }

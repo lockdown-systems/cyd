@@ -1,4 +1,5 @@
 import { WebviewTag } from 'electron';
+import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
@@ -22,11 +23,11 @@ export class BaseViewModel {
     public showAutomationNotice: boolean;
     public instructions: string;
 
-    public shouldReloadAccounts: boolean;
+    public emitter: Emitter<Record<EventType, unknown>> | null;
 
     private domReadyHandler: () => void;
 
-    constructor(account: Account, webview: WebviewTag, api: SemiphemeralAPIClient, deviceInfo: DeviceInfo | null) {
+    constructor(account: Account, webview: WebviewTag, api: SemiphemeralAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
         this.account = account;
         this.webview = webview;
         this.api = api;
@@ -44,7 +45,7 @@ export class BaseViewModel {
         this.domReady = false;
         this.isPaused = false;
 
-        this.shouldReloadAccounts = false;
+        this.emitter = emitter;
 
         this.domReadyHandler = async () => {
             this.log("domReadyHandler", "dom-ready");

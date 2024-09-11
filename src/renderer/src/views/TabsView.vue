@@ -156,7 +156,6 @@ const reloadAccounts = async () => {
   console.log('Reloading accounts');
   accounts.value = await window.electron.database.getAccounts();
 };
-provide('reloadAccounts', reloadAccounts);
 
 onMounted(async () => {
   await reloadAccounts();
@@ -170,6 +169,7 @@ onMounted(async () => {
   document.addEventListener('auxclick', outsideUserMenuClicked);
 
   emitter?.on('signed-in', manageAccountClicked);
+  emitter?.on('account-updated', reloadAccounts);
 });
 
 onUnmounted(async () => {
