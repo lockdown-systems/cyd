@@ -69,6 +69,7 @@ onUnmounted(async () => {
                     Login to your X account
                 </template>
                 <template v-else>
+                    <i :class="getAccountIcon(account.type)" />
                     @{{ props.account.xAccount?.username }}
                 </template>
             </template>
