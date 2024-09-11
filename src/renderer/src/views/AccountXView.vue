@@ -19,6 +19,7 @@ const emit = defineEmits(['onRefreshClicked']);
 
 const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
+const reloadAccounts = inject('reloadAccounts') as () => Promise<void>;
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 
@@ -56,6 +57,20 @@ watch(
 watch(
     () => accountXViewModel.value?.isPaused,
     (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
+    { deep: true, }
+);
+
+// Reload accounts if profile image changes
+watch(
+    () => accountXViewModel.value?.shouldReloadAccounts,
+    async (newShouldReloadAccounts) => {
+        if (newShouldReloadAccounts) {
+            await reloadAccounts();
+            if (accountXViewModel.value) {
+                accountXViewModel.value.shouldReloadAccounts = false;
+            }
+        }
+    },
     { deep: true, }
 );
 

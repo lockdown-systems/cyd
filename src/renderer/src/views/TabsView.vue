@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, Ref, ref, onMounted, onUnmounted } from 'vue';
+import { inject, provide, Ref, ref, onMounted, onUnmounted } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
@@ -146,8 +146,14 @@ const signOutClicked = async () => {
   await refreshAPIClient();
 };
 
-onMounted(async () => {
+const reloadAccounts = async () => {
+  console.log('Reloading accounts');
   accounts.value = await window.electron.database.getAccounts();
+};
+provide('reloadAccounts', reloadAccounts);
+
+onMounted(async () => {
+  await reloadAccounts();
   if (accounts.value.length === 0) {
     await addAccountClicked();
   } else {

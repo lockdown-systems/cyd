@@ -56,11 +56,13 @@ onUnmounted(async () => {
     <div class="btn-container" :class="{ 'active': active }">
         <div ref="menuBtnEl" class="account-btn d-flex justify-content-center align-items-center"
             @mouseover="showInfo = true" @mouseleave="showInfo = false" @auxclick="menuAuxClicked">
-            <i :class="getAccountIcon(account.type)" />
+            <img v-if="props.account.type == 'X' && props.account.xAccount?.profileImageDataURI != '' && props.account.xAccount?.profileImageDataURI != null"
+                :src="props.account.xAccount?.profileImageDataURI">
+            <i v-else :class="getAccountIcon(account.type)" />
         </div>
         <div v-if="showInfo" class="info-popup">
             <template v-if="props.account.type == 'unknown'">
-                Delete data from a new account
+                Add a new account
             </template>
             <template v-else-if="props.account.type == 'X'">
                 <template v-if="props.account.xAccount?.username == null">
@@ -101,6 +103,12 @@ onUnmounted(async () => {
     cursor: pointer;
     color: white;
     background-color: black;
+}
+
+.account-btn img {
+    width: 100%;
+    height: 100%;
+    border-radius: 30%;
 }
 
 .info-popup {

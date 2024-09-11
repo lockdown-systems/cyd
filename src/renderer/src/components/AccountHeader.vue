@@ -30,6 +30,12 @@ const onRefreshClicked = () => {
         </div>
         <div class="label d-flex align-items-center">
             <template v-if="account.type == 'X'">
+                <template
+                    v-if="account.xAccount?.profileImageDataURI != '' && account.xAccount?.profileImageDataURI != null">
+                    <span class="profile-image">
+                        <img alt="Profile Image" :src="account.xAccount?.profileImageDataURI">
+                    </span>
+                </template>
                 <template v-if="account.xAccount?.username != null">
                     <span class="label-text">@{{ account.xAccount?.username }}</span>
                 </template>
@@ -81,6 +87,14 @@ const onRefreshClicked = () => {
 .label .logo {
     opacity: 0.5;
     margin-left: 10px;
+}
+
+.profile-image img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 10px;
 }
 
 .info-popup {

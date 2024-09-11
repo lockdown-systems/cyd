@@ -22,6 +22,8 @@ export class BaseViewModel {
     public showAutomationNotice: boolean;
     public instructions: string;
 
+    public shouldReloadAccounts: boolean;
+
     private domReadyHandler: () => void;
 
     constructor(account: Account, webview: WebviewTag, api: SemiphemeralAPIClient, deviceInfo: DeviceInfo | null) {
@@ -41,6 +43,8 @@ export class BaseViewModel {
         this.showAutomationNotice = false;
         this.domReady = false;
         this.isPaused = false;
+
+        this.shouldReloadAccounts = false;
 
         this.domReadyHandler = async () => {
             this.log("domReadyHandler", "dom-ready");

@@ -221,6 +221,12 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the username
         this.log("login", "getting username");
+        this.instructions = `
+**${this.actionString}**
+
+Scraping your username...
+`;
+
         let username = null;
         if (this.webContentsID) {
             username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
@@ -246,12 +252,19 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the profile image
         this.log("login", "getting profile image");
+        this.instructions = `
+**${this.actionString}**
+
+Scraping your profile image...
+`;
+
         await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
         await this.waitForSelector('div[aria-label="Image"]');
 
         const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[aria-label="Image"]').querySelector('img').src`);
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
         this.log("login", `saved profile image: ${profileImageURL}`);
+        this.shouldReloadAccounts = true;
 
         await this.waitForPause();
     }
