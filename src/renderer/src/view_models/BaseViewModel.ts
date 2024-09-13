@@ -4,6 +4,20 @@ import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 
+export class TimeoutError extends Error {
+    constructor(selector: string) {
+        super(`Timeout waiting for selector: ${selector}`);
+        this.name = "TimeoutError";
+    }
+}
+
+export class URLChangedError extends Error {
+    constructor(oldURL: string, newURL: string) {
+        super(`URL changed from ${oldURL} to ${newURL} while waiting for selector`);
+        this.name = "URLChangedError";
+    }
+}
+
 export class BaseViewModel {
     public account: Account;
     public webview: WebviewTag;
@@ -110,7 +124,7 @@ export class BaseViewModel {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             if (Date.now() - startTime > timeout) {
-                throw new Error(`Timeout waiting for selector: ${selector}`);
+                throw new TimeoutError(selector);
             }
             const found = await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
             if (found) {
@@ -122,7 +136,7 @@ export class BaseViewModel {
             // Check if the URL has changed
             if (this.webview.getURL() !== startingURL) {
                 console.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
-                throw new Error("URL changed while waiting for selector");
+                throw new URLChangedError(startingURL, this.webview.getURL());
             }
         }
     }

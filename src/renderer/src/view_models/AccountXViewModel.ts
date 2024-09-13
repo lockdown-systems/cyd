@@ -1,4 +1,4 @@
-import { BaseViewModel } from './BaseViewModel';
+import { BaseViewModel, TimeoutError, URLChangedError } from './BaseViewModel';
 import { logObj } from '../helpers';
 import {
     XJob,
@@ -320,9 +320,29 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.waitForSelector('article');
                         break;
                     } catch (e) {
-                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                        if (this.rateLimitInfo.isRateLimited) {
-                            await this.waitForRateLimit();
+                        if (e instanceof TimeoutError) {
+                            // Were we rate limited?
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                            } else {
+                                // If there's no `article` but there is a `div` with the `aria-label` of "Profile timelines",
+                                // then we assume that the user has no tweets yet
+                                const hasNoTweets = await this.getWebview()?.executeJavaScript(`document.querySelector('[aria-label="Profile timelines"]') !== null`);
+                                if (hasNoTweets) {
+                                    this.progress.isIndexTweetsFinished = true;
+                                    this.progress.tweetsIndexed = 0;
+                                    await this.syncProgress();
+                                    break;
+                                }
+
+
+                            }
+                        } else if (e instanceof URLChangedError) {
+                            // TODO: automation error
+                        } else {
+                            // Some other error
+                            // TODO: automation error
                         }
                     }
                 }
