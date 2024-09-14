@@ -108,9 +108,9 @@ export class BaseViewModel {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log(func: string, message?: any) {
         if (message === undefined) {
-            console.log(`AccountXViewModel.${func} (${this.state})`);
+            console.log(`${this.constructor.name}.${func} (${this.state})`);
         } else {
-            console.log(`AccountXViewModel.${func} (${this.state}):`, logObj(message));
+            console.log(`${this.constructor.name}.${func} (${this.state}):`, logObj(message));
         }
     }
 
@@ -171,16 +171,26 @@ export class BaseViewModel {
         await this.waitForLoadingToFinish();
     }
 
-    async waitForURL(url: string) {
+    async waitForURL(startingURLs: string[], waitingForURL: string) {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const newURL = this.getWebview()?.getURL();
             this.log("waitForURL", {
-                waitingForURL: url,
+                waitingForURL: waitingForURL,
                 currentURL: newURL,
             });
-            if (newURL == url) {
+            if (newURL?.startsWith(waitingForURL)) {
                 break;
+            }
+            let isStartingURL = false;
+            for (const startingURL of startingURLs) {
+                if (newURL?.startsWith(startingURL)) {
+                    isStartingURL = true;
+                    break;
+                }
+            }
+            if (!isStartingURL) {
+                throw new URLChangedError("", newURL ? newURL : "unknown");
             }
             await this.sleep(500);
         }

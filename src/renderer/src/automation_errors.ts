@@ -1,5 +1,7 @@
 export enum AutomationErrorType {
     X_login_FailedToGetUsername = "X_login_FailedToGetUsername",
+    X_login_URLChanged = "X_login_URLChanged",
+    X_login_WaitingForURLFailed = "X_login_WaitingForURLFailed",
     x_runJob_indexTweets_Timeout = "x_runJob_indexTweets_Timeout",
     x_runJob_indexTweets_URLChanged = "x_runJob_indexTweets_URLChanged",
     x_runJob_indexTweets_OtherError = "x_runJob_indexTweets_OtherError",

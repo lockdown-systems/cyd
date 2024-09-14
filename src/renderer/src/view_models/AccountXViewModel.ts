@@ -197,7 +197,15 @@ export class AccountXViewModel extends BaseViewModel {
 
         this.log("login", "logging in");
         await this.loadURLWithRateLimit("https://x.com/login");
-        await this.waitForURL("https://x.com/home");
+        try {
+            await this.waitForURL(["https://x.com/login", "https://x.com/i/flow/login"], "https://x.com/home");
+        } catch (e) {
+            if (e instanceof URLChangedError) {
+                this.error(AutomationErrorType.X_login_URLChanged, { error: e });
+            } else {
+                this.error(AutomationErrorType.X_login_WaitingForURLFailed, { error: e });
+            }
+        }
 
         // We're logged in
         this.log("login", "login succeeded");
