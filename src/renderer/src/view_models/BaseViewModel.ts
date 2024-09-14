@@ -3,6 +3,8 @@ import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
+import { AutomationErrorType } from '../automation_errors';
+import { logObj } from '../helpers';
 
 export class TimeoutError extends Error {
     constructor(selector: string) {
@@ -103,8 +105,18 @@ export class BaseViewModel {
         return this.webview;
     }
 
-    log(func: string, message: string) {
-        console.log(`AccountXViewModel.${func} (${this.state}): ${message}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    log(func: string, message?: any) {
+        if (message === undefined) {
+            console.log(`AccountXViewModel.${func} (${this.state})`);
+        } else {
+            console.log(`AccountXViewModel.${func} (${this.state}):`, logObj(message));
+        }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    error(automationErrorType: AutomationErrorType, error: any = null) {
+        console.error(`Automation Error: ${automationErrorType}`, error);
     }
 
     async waitForLoadingToFinish() {

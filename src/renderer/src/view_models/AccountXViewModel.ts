@@ -1,5 +1,4 @@
 import { BaseViewModel, TimeoutError, URLChangedError } from './BaseViewModel';
-import { logObj } from '../helpers';
 import {
     XJob,
     XProgress, emptyXProgress,
@@ -9,6 +8,7 @@ import {
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
 import { PlausibleEvents, ApiErrorResponse } from "../types";
+import { AutomationErrorType } from '../automation_errors';
 
 export enum State {
     Login = "login",
@@ -38,15 +38,6 @@ export class AccountXViewModel extends BaseViewModel {
         }
 
         super.init();
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    log(func: string, message?: any) {
-        if (message === undefined) {
-            console.log(`AccountXViewModel.${func} (${this.state}):`);
-        } else {
-            console.log(`AccountXViewModel.${func} (${this.state}):`, logObj(message));
-        }
     }
 
     async setAction(action: string) {
@@ -228,8 +219,7 @@ export class AccountXViewModel extends BaseViewModel {
             username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
         }
         if (!username) {
-            // TODO: Automation error
-            this.log("login", "failed to get username");
+            this.error(AutomationErrorType.X_login_FailedToGetUsername);
             return;
         }
 
@@ -255,7 +245,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[aria-label="Image"]').querySelector('img').src`);
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
-        this.log("login", `saved profile image: ${profileImageURL}`);
+        this.log("login", ["saved profile image", profileImageURL]);
 
         this.emitter?.emit("account-updated", this.account);
 
@@ -320,6 +310,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.waitForSelector('article');
                         break;
                     } catch (e) {
+                        this.log("runJob", ["jobType=indexTweets", "selector never appeared", e]);
                         if (e instanceof TimeoutError) {
                             // Were we rate limited?
                             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -334,15 +325,22 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                                     this.progress.tweetsIndexed = 0;
                                     await this.syncProgress();
                                     break;
+                                } else {
+                                    this.error(AutomationErrorType.x_runJob_indexTweets_Timeout, {
+                                        error: e
+                                    });
                                 }
-
-
                             }
                         } else if (e instanceof URLChangedError) {
-                            // TODO: automation error
+                            const newURL = this.webview.getURL();
+                            this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
+                                newURL: newURL,
+                                error: e
+                            })
                         } else {
-                            // Some other error
-                            // TODO: automation error
+                            this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
+                                error: e
+                            })
                         }
                     }
                 }
@@ -357,7 +355,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
-                            // TODO: Automation error
+                            this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit);
                         }
                         await this.sleep(500);
                         moreToScroll = true;
@@ -392,7 +390,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                 // Initialize archiving of tweets
                 this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
-                this.log('archiveStartResponse', this.archiveStartResponse);
+                this.log('runJob', ["jobType=archiveTweets", "archiveStartResponse", this.archiveStartResponse]);
 
                 if (this.webContentsID) {
 
@@ -460,10 +458,39 @@ Hang on while I scroll down to your earliest direct message conversations that I
                         await this.waitForSelector('div[aria-label="Timeline: Messages"]');
                         break;
                     } catch (e) {
-                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                        if (this.rateLimitInfo.isRateLimited) {
-                            await this.waitForRateLimit();
-                            break;
+                        this.log("runJob", ["jobType=indexConversations", "selector never appeared", e]);
+                        if (e instanceof TimeoutError) {
+                            // Were we rate limited?
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                            } else {
+                                // If there's no `div[aria-label="Timeline: Messages"]` but there is a `section` with the `aria-label` of "Section navigation",
+                                // then we assume that the user has no conversations yet
+                                const hasNoConversations = await this.getWebview()?.executeJavaScript(`document.querySelector('[aria-label="Section navigation"]') !== null`);
+                                if (hasNoConversations) {
+                                    this.progress.isIndexConversationsFinished = true;
+                                    this.progress.conversationsIndexed = 0;
+                                    await this.syncProgress();
+                                    break;
+                                } else {
+                                    this.error(AutomationErrorType.x_runJob_indexConversations_Timeout, {
+                                        error: e
+                                    });
+                                }
+
+
+                            }
+                        } else if (e instanceof URLChangedError) {
+                            const newURL = this.webview.getURL();
+                            this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
+                                newURL: newURL,
+                                error: e
+                            })
+                        } else {
+                            this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
+                                error: e
+                            })
                         }
                     }
                 }
@@ -525,7 +552,7 @@ Please wait while I index all of the messages from each conversation.
                 this.progress.totalConversations = this.indexMessagesStartResponse?.totalConversations;
                 this.progress.conversationMessagesIndexed = this.progress.totalConversations - this.indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
-                this.log('indexMessagesStartResponse', this.indexMessagesStartResponse);
+                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
 
                 for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
                     // Load the URL (in 3 tries)
@@ -538,26 +565,46 @@ Please wait while I index all of the messages from each conversation.
                             await this.waitForSelector('div[data-testid="DmActivityContainer"]');
                             break;
                         } catch (e) {
-                            // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
-                            // This is a page that says: "Get X Premium to message this user"
-                            if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
-                                this.log("runJob", "Conversation is inaccessible, so skipping it");
-                                this.progress.conversationMessagesIndexed += 1;
-                                await this.syncProgress();
-                                shouldSkip = true;
-
-                                // Mark the conversation's shouldIndexMessages to false
-                                await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
-                                break;
-                            } else {
-                                if (tries == 3) {
-                                    // TODO: automation error
-                                    throw e;
+                            this.log("runJob", ["jobType=indexMessages", "selector never appeared", e]);
+                            if (e instanceof TimeoutError) {
+                                // Were we rate limited?
+                                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                                if (this.rateLimitInfo.isRateLimited) {
+                                    await this.waitForRateLimit();
+                                } else {
+                                    this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
+                                        error: e
+                                    });
                                 }
+                            } else if (e instanceof URLChangedError) {
+                                // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
+                                // This is a page that says: "Get X Premium to message this user"
+                                if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
+                                    this.log("runJob", ["jobType=indexMessages", "conversation is inaccessible, so skipping it"]);
+                                    this.progress.conversationMessagesIndexed += 1;
+                                    await this.syncProgress();
+                                    shouldSkip = true;
 
-                                // Try again
-                                tries += 1;
-                                await this.sleep(500);
+                                    // Mark the conversation's shouldIndexMessages to false
+                                    await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
+                                    break;
+                                } else {
+                                    this.error(AutomationErrorType.x_runJob_indexConversations_URLChangedButDidnt, {
+                                        error: e
+                                    })
+                                }
+                            } else {
+                                this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
+                                    error: e
+                                });
+                            }
+
+                            tries += 1;
+                            if (tries >= 3) {
+                                this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
+                                    error: e
+                                });
+                                break;
                             }
                         }
                     }
@@ -623,7 +670,7 @@ I'm building a searchable archive web page in HTML.
 
                 // Submit progress to the API
                 this.progressInfo = await window.electron.X.getProgressInfo(this.account?.id);
-                this.log("progressInfo", JSON.parse(JSON.stringify(this.progressInfo)));
+                this.log("runJob", ["jobType=archiveBuild", "progressInfo", JSON.parse(JSON.stringify(this.progressInfo))]);
                 this.postXProgresResp = await this.api.postXProgress({
                     account_uuid: this.progressInfo.accountUUID,
                     total_tweets_archived: this.progressInfo.totalTweetsArchived,
@@ -635,24 +682,24 @@ I'm building a searchable archive web page in HTML.
                 }, this.deviceInfo?.valid ? true : false)
                 if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
                     // Silently log the error and continue
-                    this.log("Failed to post progress to the API", this.postXProgresResp.message);
+                    this.log("runJob", ["jobType=archiveBuild", "failed to post progress to the API", this.postXProgresResp.message]);
                 }
 
                 await this.finishJob(iJob);
                 break;
 
             case "deleteTweets":
-                this.log("deleteTweets: NOT IMPLEMENTED");
+                this.log("runJob", "deleteTweets: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
 
             case "deleteLikes":
-                this.log("deleteLikes: NOT IMPLEMENTED");
+                this.log("runJob", "deleteLikes: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
 
             case "deleteMessages":
-                this.log("deleteMessages: NOT IMPLEMENTED");
+                this.log("runJob", "deleteMessages: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
         }
