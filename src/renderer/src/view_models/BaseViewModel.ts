@@ -172,11 +172,13 @@ export class BaseViewModel {
     }
 
     async waitForURL(url: string) {
-        console.log("waitForURL", url);
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const newURL = this.getWebview()?.getURL();
-            this.log("waitForURL", `waiting... currently: ${newURL}`);
+            this.log("waitForURL", {
+                waitingForURL: url,
+                currentURL: newURL,
+            });
             if (newURL == url) {
                 break;
             }

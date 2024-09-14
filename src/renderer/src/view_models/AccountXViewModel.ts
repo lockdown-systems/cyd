@@ -320,19 +320,12 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             if (this.rateLimitInfo.isRateLimited) {
                                 await this.waitForRateLimit();
                             } else {
-                                // If there's no `article` but there is a `div` with the `aria-label` of "Profile timelines",
-                                // then we assume that the user has no tweets yet
-                                const hasNoTweets = await this.getWebview()?.executeJavaScript(`document.querySelector('[aria-label="Profile timelines"]') !== null`);
-                                if (hasNoTweets) {
-                                    this.progress.isIndexTweetsFinished = true;
-                                    this.progress.tweetsIndexed = 0;
-                                    await this.syncProgress();
-                                    break;
-                                } else {
-                                    this.error(AutomationErrorType.x_runJob_indexTweets_Timeout, {
-                                        error: e
-                                    });
-                                }
+                                // If the page isn't loading, we assume the user has no conversations yet
+                                await this.waitForLoadingToFinish();
+                                this.progress.isIndexTweetsFinished = true;
+                                this.progress.tweetsIndexed = 0;
+                                await this.syncProgress();
+                                break;
                             }
                         } else if (e instanceof URLChangedError) {
                             const newURL = this.webview.getURL();
@@ -471,21 +464,11 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             if (this.rateLimitInfo.isRateLimited) {
                                 await this.waitForRateLimit();
                             } else {
-                                // If there's no `div[aria-label="Timeline: Messages"]` but there is a `section` with the `aria-label` of "Section navigation",
-                                // then we assume that the user has no conversations yet
-                                const hasNoConversations = await this.getWebview()?.executeJavaScript(`document.querySelector('[aria-label="Section navigation"]') !== null`);
-                                if (hasNoConversations) {
-                                    this.progress.isIndexConversationsFinished = true;
-                                    this.progress.conversationsIndexed = 0;
-                                    await this.syncProgress();
-                                    break;
-                                } else {
-                                    this.error(AutomationErrorType.x_runJob_indexConversations_Timeout, {
-                                        error: e
-                                    });
-                                }
-
-
+                                await this.waitForLoadingToFinish();
+                                this.progress.isIndexConversationsFinished = true;
+                                this.progress.conversationsIndexed = 0;
+                                await this.syncProgress();
+                                break;
                             }
                         } else if (e instanceof URLChangedError) {
                             const newURL = this.webview.getURL();
