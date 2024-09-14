@@ -236,6 +236,8 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.database.saveAccount(JSON.stringify(this.account));
         this.log("login", "saved username");
 
+        await this.waitForPause();
+
         // Get the profile image
         this.log("login", "getting profile image");
         this.instructions = `You're logged in as **@${username}**. Now I'm scraping your profile image...`;
@@ -304,6 +306,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 // Load the timeline and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
+                    await this.waitForPause();
                     await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
                     try {
                         await window.electron.X.resetRateLimitInfo(this.account.id);
@@ -346,6 +349,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 }
 
                 while (this.progress.isIndexTweetsFinished === false) {
+                    await this.waitForPause();
+
                     // Scroll to bottom
                     await window.electron.X.resetRateLimitInfo(this.account.id);
                     let moreToScroll = await this.scrollToBottom();
@@ -452,6 +457,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 // Load the messages and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
+                    await this.waitForPause();
                     await this.loadURLWithRateLimit("https://x.com/messages");
                     try {
                         await window.electron.X.resetRateLimitInfo(this.account.id);
@@ -496,6 +502,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 }
 
                 while (this.progress.isIndexConversationsFinished === false) {
+                    await this.waitForPause();
+
                     // Scroll to bottom
                     await window.electron.X.resetRateLimitInfo(this.account.id);
                     const moreToScroll = await this.scrollToBottom();
@@ -555,11 +563,15 @@ Please wait while I index all of the messages from each conversation.
                 this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
 
                 for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
+                    await this.waitForPause();
+
                     // Load the URL (in 3 tries)
                     let tries = 0;
                     let shouldSkip = false;
                     // eslint-disable-next-line no-constant-condition
                     while (true) {
+                        await this.waitForPause();
+
                         await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
                         try {
                             await this.waitForSelector('div[data-testid="DmActivityContainer"]');
@@ -617,6 +629,8 @@ Please wait while I index all of the messages from each conversation.
                     await this.waitForLoadingToFinish();
 
                     while (this.progress.isIndexMessagesFinished === false) {
+                        await this.waitForPause();
+
                         // Scroll to top
                         await window.electron.X.resetRateLimitInfo(this.account.id);
                         let moreToScroll = await this.scrollToTop('div[data-testid="DmActivityViewport"]');

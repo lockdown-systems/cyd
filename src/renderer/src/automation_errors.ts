@@ -7,4 +7,7 @@ export enum AutomationErrorType {
     x_runJob_indexConversations_Timeout = "x_runJob_indexConversations_Timeout",
     x_runJob_indexConversations_URLChanged = "x_runJob_indexConversations_URLChanged",
     x_runJob_indexConversations_OtherError = "x_runJob_indexConversations_OtherError",
+    x_runJob_indexMessages_Timeout = "x_runJob_indexMessages_Timeout",
+    x_runJob_indexConversations_URLChangedButDidnt = "x_runJob_indexConversations_URLChangedButDidnt",
+    x_runJob_indexMessages_OtherError = "x_runJob_indexMessages_OtherError",
 }
