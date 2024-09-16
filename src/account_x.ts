@@ -8,7 +8,7 @@ import { app, ipcMain, session, shell, webContents } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
-import { getResourcesPath, getAccountDataPath } from './helpers'
+import { getResourcesPath, getAccountDataPath } from './util'
 import {
     XAccount,
     XJob,
@@ -575,7 +575,7 @@ export class XAccountController {
             return "";
         }
         try {
-            const response = await fetch(user.profile_image_url_https);
+            const response = await fetch(user.profile_image_url_https, {});
             if (!response.ok) {
                 return "";
             }
@@ -1217,7 +1217,7 @@ export class XAccountController {
 
     async saveProfileImage(url: string): Promise<void> {
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, {});
             if (!response.ok) {
                 log.warn('XAccountController.saveProfileImage: response not ok', response.status);
                 return;

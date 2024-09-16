@@ -1,10 +1,9 @@
 import path from "path"
 import { v4 as uuidv4 } from 'uuid';
-import { ipcMain, session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
-import { getSettingsPath } from "./helpers"
+import { getSettingsPath } from "./util"
 import { Account, XAccount } from './shared_types'
 
 export type Migration = {
@@ -12,10 +11,12 @@ export type Migration = {
     sql: string[];
 };
 
-const dbPath = path.join(getSettingsPath(), 'db.sqlite');
-
-export const db = new Database(dbPath, {});
-db.pragma('journal_mode = WAL');
+export const getMainDatabase = () => {
+    const dbPath = path.join(getSettingsPath(), 'db.sqlite');
+    const db = new Database(dbPath, {});
+    db.pragma('journal_mode = WAL');
+    return db;
+}
 
 export const runMigrations = (db: Database.Database, migrations: Migration[]) => {
     // Create a migrations table if necessary
@@ -44,7 +45,7 @@ export const runMigrations = (db: Database.Database, migrations: Migration[]) =>
 }
 
 export const runMainMigrations = () => {
-    runMigrations(db, [
+    runMigrations(getMainDatabase(), [
         {
             name: "initial",
             sql: [
@@ -156,18 +157,18 @@ export const exec = (db: Database.Database | null, sql: string, params: Array<nu
 // Config
 
 export const getConfig = (key: string): string | null => {
-    const row: ConfigRow | undefined = exec(db, 'SELECT value FROM config WHERE key = ?', [key], 'get') as ConfigRow | undefined;
+    const row: ConfigRow | undefined = exec(getMainDatabase(), 'SELECT value FROM config WHERE key = ?', [key], 'get') as ConfigRow | undefined;
     return row ? row.value : null;
 }
 
 export const setConfig = (key: string, value: string) => {
-    exec(db, 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
+    exec(getMainDatabase(), 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
 }
 
 // X accounts
 
 export const getXAccount = (id: number): XAccount | null => {
-    const row: XAccountRow | undefined = exec(db, 'SELECT * FROM xAccount WHERE id = ?', [id], 'get') as XAccountRow | undefined;
+    const row: XAccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM xAccount WHERE id = ?', [id], 'get') as XAccountRow | undefined;
     if (!row) {
         return null;
     }
@@ -196,7 +197,7 @@ export const getXAccount = (id: number): XAccount | null => {
 }
 
 export const getXAccounts = (): XAccount[] => {
-    const rows: XAccountRow[] = exec(db, 'SELECT * FROM xAccount', [], 'all') as XAccountRow[];
+    const rows: XAccountRow[] = exec(getMainDatabase(), 'SELECT * FROM xAccount', [], 'all') as XAccountRow[];
 
     const accounts: XAccount[] = [];
     for (const row of rows) {
@@ -227,7 +228,7 @@ export const getXAccounts = (): XAccount[] => {
 }
 
 export const createXAccount = (): XAccount => {
-    const info: Sqlite3Info = exec(db, 'INSERT INTO xAccount DEFAULT VALUES') as Sqlite3Info;
+    const info: Sqlite3Info = exec(getMainDatabase(), 'INSERT INTO xAccount DEFAULT VALUES') as Sqlite3Info;
     const account = getXAccount(info.lastInsertRowid);
     if (!account) {
         throw new Error("Failed to create account");
@@ -236,7 +237,7 @@ export const createXAccount = (): XAccount => {
 }
 
 export const saveXAccount = (account: XAccount) => {
-    exec(db, `
+    exec(getMainDatabase(), `
         UPDATE xAccount
         SET
             updatedAt = CURRENT_TIMESTAMP,
@@ -282,7 +283,7 @@ export const saveXAccount = (account: XAccount) => {
 // Accounts, which contain all others
 
 export const getAccount = (id: number): Account | null => {
-    const row: AccountRow | undefined = exec(db, 'SELECT * FROM account WHERE id = ?', [id], 'get') as AccountRow | undefined;
+    const row: AccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM account WHERE id = ?', [id], 'get') as AccountRow | undefined;
     if (!row) {
         return null;
     }
@@ -314,7 +315,7 @@ export async function getAccountUsername(account: Account): Promise<string | nul
 }
 
 export const getAccounts = (): Account[] => {
-    const rows: AccountRow[] = exec(db, 'SELECT * FROM account', [], 'all') as AccountRow[];
+    const rows: AccountRow[] = exec(getMainDatabase(), 'SELECT * FROM account', [], 'all') as AccountRow[];
 
     const accounts: Account[] = [];
     for (const row of rows) {
@@ -340,12 +341,12 @@ export const getAccounts = (): Account[] => {
 
 export const createAccount = (): Account => {
     // Figure out the sortOrder for the new account
-    const row: { maxSortOrder: number } = exec(db, 'SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get') as { maxSortOrder: number };
+    const row: { maxSortOrder: number } = exec(getMainDatabase(), 'SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get') as { maxSortOrder: number };
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
     const accountUUID = uuidv4();
-    const info: Sqlite3Info = exec(db, 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]) as Sqlite3Info;
+    const info: Sqlite3Info = exec(getMainDatabase(), 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]) as Sqlite3Info;
 
     // Return it
     const account = getAccount(info.lastInsertRowid);
@@ -375,7 +376,7 @@ export const selectAccountType = (accountID: number, type: string): Account => {
     }
 
     // Update the account
-    exec(db, `
+    exec(getMainDatabase(), `
         UPDATE account
         SET
             type = ?,
@@ -396,7 +397,7 @@ export const saveAccount = (account: Account) => {
         saveXAccount(account.xAccount);
     }
 
-    exec(db, `
+    exec(getMainDatabase(), `
         UPDATE account
         SET
             type = ?,
@@ -420,45 +421,11 @@ export const deleteAccount = (accountID: number) => {
     switch (account.type) {
         case "X":
             if (account.xAccount) {
-                exec(db, 'DELETE FROM xAccount WHERE id = ?', [account.xAccount.id]);
+                exec(getMainDatabase(), 'DELETE FROM xAccount WHERE id = ?', [account.xAccount.id]);
             }
             break;
     }
 
     // Delete the account
-    exec(db, 'DELETE FROM account WHERE id = ?', [accountID]);
+    exec(getMainDatabase(), 'DELETE FROM account WHERE id = ?', [accountID]);
 }
-
-export const defineIPCDatabase = () => {
-    ipcMain.handle('database:getConfig', async (_, key) => {
-        return getConfig(key);
-    });
-
-    ipcMain.handle('database:setConfig', async (_, key, value) => {
-        setConfig(key, value);
-    });
-
-    ipcMain.handle('database:getAccounts', async (_) => {
-        return getAccounts();
-    });
-
-    ipcMain.handle('database:createAccount', async (_) => {
-        return createAccount();
-    });
-
-    ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
-        return selectAccountType(accountID, type);
-    });
-
-    ipcMain.handle('database:saveAccount', async (_, accountJson) => {
-        const account = JSON.parse(accountJson);
-        return saveAccount(account);
-    });
-
-    ipcMain.handle('database:deleteAccount', async (_, accountID) => {
-        const ses = session.fromPartition(`persist:account-${accountID}`);
-        await ses.closeAllConnections();
-        await ses.clearStorageData();
-        deleteAccount(accountID);
-    });
-};

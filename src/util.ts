@@ -3,16 +3,20 @@ import fs from 'fs'
 import path from "path"
 import os from 'os'
 
-import { app } from 'electron'
+import { app } from 'electron';
 
 export const getResourcesPath = () => {
     if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
         return process.resourcesPath;
     }
-    return path.join(__dirname, "..", "..", "build");
+    return "build";
 }
 
 export const getSettingsPath = () => {
+    if (process.env.TEST_MODE === '1' && process.env.TEST_SETTINGS_PATH) {
+        return process.env.TEST_SETTINGS_PATH;
+    }
+
     const settingsPath = path.join(app.getPath('userData'), "settings");
     if (!fs.existsSync(settingsPath)) {
         fs.mkdirSync(settingsPath);
@@ -39,8 +43,11 @@ export const getAccountTempPath = (accountID: number) => {
     return accountTempPath;
 }
 
-
 export const getDataPath = () => {
+    if (process.env.TEST_MODE === '1' && process.env.TEST_DATA_PATH) {
+        return process.env.TEST_DATA_PATH;
+    }
+
     const dataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
     if (!fs.existsSync(dataPath)) {
         fs.mkdirSync(dataPath);

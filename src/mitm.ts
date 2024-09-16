@@ -5,7 +5,7 @@ import { Proxy, IContext } from "http-mitm-proxy"
 import * as zlib from "zlib"
 import log from 'electron-log/main';
 
-import { findOpenPort, getAccountSettingsPath } from "./helpers"
+import { findOpenPort, getAccountSettingsPath } from "./util"
 import { ResponseData, Account } from './shared_types'
 import { getAccount } from './database'
 

@@ -4,19 +4,12 @@ import path from 'path';
 import fs from 'fs';
 
 import log from 'electron-log/main';
-import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage, session } from 'electron';
 
-import {
-    runMainMigrations,
-    getConfig,
-    setConfig,
-    defineIPCDatabase,
-    getAccount,
-    getAccountUsername,
-} from './database';
+import * as database from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
-import { getAccountDataPath, getResourcesPath, trackEvent } from './helpers';
+import { getAccountDataPath, getResourcesPath, trackEvent } from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -79,7 +72,7 @@ async function initializeApp() {
 
     // Run database migrations
     try {
-        runMainMigrations();
+        database.runMainMigrations();
     } catch (error) {
         log.error("Failed to run migrations:", error);
         dialog.showErrorBox('Semiphemeral Error', 'Failed to run database migrations. The application will now exit.');
@@ -88,7 +81,7 @@ async function initializeApp() {
     }
 
     // If a device description has not been created yet, make one now
-    const deviceDescription = getConfig("deviceDescription");
+    const deviceDescription = database.getConfig("deviceDescription");
     if (!deviceDescription) {
         let description = "";
         switch (os.platform()) {
@@ -105,7 +98,7 @@ async function initializeApp() {
                 description += 'Unknown OS: ';
         }
         description += os.hostname();
-        setConfig("deviceDescription", description);
+        database.setConfig("deviceDescription", description);
     }
 
     await createWindow();
@@ -121,7 +114,7 @@ async function createWindow() {
         minHeight: 400,
         webPreferences: {
             webviewTag: true,
-            preload: path.join(__dirname, './preload.js')
+            preload: "./preload.js"
         },
         icon: icon
     });
@@ -129,6 +122,9 @@ async function createWindow() {
     // IPC events
 
     if (!global.ipcHandlersRegistered) {
+
+        // Main IPC events
+
         ipcMain.handle('getAPIURL', async () => {
             return config.apiURL;
         });
@@ -178,11 +174,11 @@ async function createWindow() {
         });
 
         ipcMain.handle('getAccountDataPath', async (_, accountID: number, filename: string): Promise<string | null> => {
-            const account = getAccount(accountID);
+            const account = database.getAccount(accountID);
             if (!account) {
                 return null;
             }
-            const username = await getAccountUsername(account);
+            const username = await database.getAccountUsername(account);
             if (!username) {
                 return null;
             }
@@ -195,7 +191,42 @@ async function createWindow() {
             }
         });
 
-        defineIPCDatabase();
+        // Database IPC events
+
+        ipcMain.handle('database:getConfig', async (_, key) => {
+            return database.getConfig(key);
+        });
+
+        ipcMain.handle('database:setConfig', async (_, key, value) => {
+            database.setConfig(key, value);
+        });
+
+        ipcMain.handle('database:getAccounts', async (_) => {
+            return database.getAccounts();
+        });
+
+        ipcMain.handle('database:createAccount', async (_) => {
+            return database.createAccount();
+        });
+
+        ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
+            return database.selectAccountType(accountID, type);
+        });
+
+        ipcMain.handle('database:saveAccount', async (_, accountJson) => {
+            const account = JSON.parse(accountJson);
+            return database.saveAccount(account);
+        });
+
+        ipcMain.handle('database:deleteAccount', async (_, accountID) => {
+            const ses = session.fromPartition(`persist:account-${accountID}`);
+            await ses.closeAllConnections();
+            await ses.clearStorageData();
+            database.deleteAccount(accountID);
+        });
+
+        // Other IPC events
+
         defineIPCX();
         defineIPCArchive();
     }
@@ -204,7 +235,7 @@ async function createWindow() {
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
         win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-        win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+        win.loadFile(path.join("..", "renderer", MAIN_WINDOW_VITE_NAME, "index.html"));
     };
 
     // Open dev tools?

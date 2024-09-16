@@ -2,10 +2,12 @@ import { v4 as uuidv4 } from 'uuid';
 import TabsView from './TabsView.vue';
 import * as database from '../../../database';
 
-import { stubElectron } from '../test_types';
+import { stubElectron, initTestEnvironment, cleanupTestEnvironment } from '../test_util';
 
 describe('<TabsView />', () => {
     beforeEach(() => {
+        initTestEnvironment();
+
         // Stub the window.electron object
         window.electron = stubElectron();
         window.electron.showQuestion = cy.stub().resolves(true);
@@ -32,6 +34,10 @@ describe('<TabsView />', () => {
         window.electron.database.deleteAccount = async (accountID) => {
             return database.deleteAccount(accountID);
         };
+    });
+
+    afterEach(() => {
+        cleanupTestEnvironment();
     });
 
     it('starts with no accounts and signed out', () => {

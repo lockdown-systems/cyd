@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import SignInModal from './SignInModal.vue'
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 
-import { stubElectron } from '../test_types';
+import { stubElectron } from '../test_util';
 
 describe('<SignInModal />', () => {
   it('starts with the email field visible and the value blank', () => {

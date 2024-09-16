@@ -41,7 +41,7 @@ vi.mock('./helpers', () => ({
         return accountDataPath
     }),
 }));
-import { getSettingsPath, getAccountDataPath } from './helpers';
+import { getSettingsPath, getAccountDataPath } from './util';
 
 // Mock the session object from Electron
 vi.mock('electron', () => ({
