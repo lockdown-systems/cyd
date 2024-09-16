@@ -8,19 +8,14 @@ const props = defineProps<{
     active: boolean;
 }>();
 
-const emit = defineEmits(['onSettingsClicked', 'onDeleteClicked']);
+const emit = defineEmits(['onDeleteClicked']);
 
 const showInfo = ref(false);
 const showMenu = ref(false);
 const menuBtnEl = ref<HTMLDivElement | null>(null);
 const menuPopupEl = ref<HTMLDivElement | null>(null);
 
-const settingsClicked = () => {
-    showMenu.value = false;
-    emit('onSettingsClicked', props.account);
-};
-
-const deleteClicked = () => {
+const removeClicked = () => {
     showMenu.value = false;
     emit('onDeleteClicked', props.account);
 };
@@ -76,10 +71,7 @@ onUnmounted(async () => {
         </div>
         <div v-if="showMenu" ref="menuPopupEl" class="menu-popup">
             <ul>
-                <li v-if="account.type != 'unknown'" class="menu-btn" @click="settingsClicked">
-                    Settings
-                </li>
-                <li class="menu-btn" @click="deleteClicked">
+                <li class="menu-btn remove-button" @click="removeClicked">
                     Remove
                 </li>
             </ul>
