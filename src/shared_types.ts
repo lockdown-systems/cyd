@@ -56,8 +56,8 @@ export type XJob = {
 export type XTweet = {
     id: number | null;
     username: string;
-    tweetId: string; // id_str
-    conversationId: string; // conversation_id_str
+    tweetID: string; // id_str
+    conversationID: string; // conversation_id_str
     createdAt: Date; // created_at
     likeCount: number; // favorite_count
     quoteCount: number; // quote_count
@@ -66,9 +66,10 @@ export type XTweet = {
     isLiked: boolean; // favorited
     isRetweeted: boolean; // retweeted
     text: string; // full_text
-    path: string; // "{username}/status/{tweetId}"
+    path: string; // "{username}/status/{tweetID}"
     addedToDatabaseAt: Date;
     archivedAt: Date | null;
+    deletedAt: Date | null;
 };
 
 // Other X types

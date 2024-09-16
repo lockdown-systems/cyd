@@ -17,9 +17,10 @@ import {
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
-    XProgressInfo, emptyXProgressInfo
+    XProgressInfo, emptyXProgressInfo,
+    // XTweet
 } from './shared_types'
-import { runMigrations, getAccount, getXAccount, saveXAccount, exec } from './database'
+import { runMigrations, getAccount, getXAccount, saveXAccount, exec, Sqlite3Count } from './database'
 import { IMITMController, getMITMController } from './mitm';
 import {
     XAPILegacyUser,
@@ -41,6 +42,109 @@ function formatDateToYYYYMMDD(dateString: string): string {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+export interface XJobRow {
+    id: number;
+    jobType: string;
+    status: string;
+    scheduledAt: string;
+    startedAt: string | null;
+    finishedAt: string | null;
+    progressJSON: string | null;
+    error: string | null;
+}
+
+export interface XTweetRow {
+    id: number;
+    username: string;
+    tweetID: string;
+    conversationID: string;
+    createdAt: string;
+    likeCount: number;
+    quoteCount: number;
+    replyCount: number;
+    retweetCount: number;
+    isLiked: boolean;
+    isRetweeted: boolean;
+    text: string;
+    path: string;
+    addedToDatabaseAt: string;
+    archivedAt: string | null;
+    deletedAt: string | null;
+}
+
+export interface XUserRow {
+    id: number;
+    userID: string;
+    name: string | null;
+    screenName: string;
+    profileImageDataURI: string | null;
+}
+
+export interface XConversationRow {
+    id: number;
+    conversationID: string;
+    type: string;
+    sortTimestamp: string | null;
+    minEntryID: string | null;
+    maxEntryID: string | null;
+    isTrusted: boolean | null;
+    shouldIndexMessages: boolean | null;
+    addedToDatabaseAt: string;
+    updatedInDatabaseAt: string | null;
+    deletedAt: string | null;
+}
+
+export interface XConversationParticipantRow {
+    id: number;
+    conversationID: string;
+    userID: string;
+}
+
+export interface XMessageRow {
+    id: number;
+    messageID: string;
+    conversationID: string;
+    createdAt: string;
+    senderID: string;
+    text: string;
+    deletedAt: string | null;
+}
+
+function convertXJobRowToXJob(row: XJobRow): XJob {
+    return {
+        id: row.id,
+        jobType: row.jobType,
+        status: row.status,
+        scheduledAt: new Date(row.scheduledAt),
+        startedAt: row.startedAt ? new Date(row.startedAt) : null,
+        finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
+        progressJSON: row.progressJSON ? JSON.parse(row.progressJSON) : null,
+        error: row.error,
+    };
+}
+
+// function convertXTweetRowToXTweet(row: XTweetRow): XTweet {
+//     return {
+//         id: row.id,
+//         username: row.username,
+//         tweetID: row.tweetID,
+//         conversationID: row.conversationID,
+//         createdAt: new Date(row.createdAt),
+//         likeCount: row.likeCount,
+//         quoteCount: row.quoteCount,
+//         replyCount: row.replyCount,
+//         retweetCount: row.retweetCount,
+//         isLiked: row.isLiked,
+//         isRetweeted: row.isRetweeted,
+//         text: row.text,
+//         path: row.path,
+//         addedToDatabaseAt: new Date(row.addedToDatabaseAt),
+//         archivedAt: row.archivedAt ? new Date(row.archivedAt) : null,
+//         deletedAt: row.deletedAt ? new Date(row.deletedAt) : null,
+//     };
+// }
+
 export class XAccountController {
     private accountUUID: string;
     private account: XAccount | null;
@@ -149,7 +253,7 @@ export class XAccountController {
 );`, `CREATE TABLE conversation (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversationID TEXT NOT NULL UNIQUE,
-    type TEXT,
+    type TEXT NOT NULL,
     sortTimestamp TEXT,
     minEntryID TEXT,
     maxEntryID TEXT,
@@ -200,7 +304,8 @@ export class XAccountController {
         });
 
         // Select pending jobs
-        return exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all");
+        const jobs: XJobRow[] = exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all") as XJobRow[];
+        return jobs.map(convertXJobRowToXJob);
     }
 
     async getLastFinishedJob(jobType: string): Promise<XJob | null> {
@@ -212,12 +317,13 @@ export class XAccountController {
             this.initDB();
         }
 
-        return exec(
+        const job: XJobRow = exec(
             this.db,
             'SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1',
             [jobType, "finished"],
             "get"
-        );
+        ) as XJobRow;
+        return convertXJobRowToXJob(job);
     }
 
     updateJob(job: XJob) {
@@ -304,7 +410,7 @@ export class XAccountController {
         }
 
         // Have we seen this tweet before?
-        const existing = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all");
+        const existing: XTweetRow[] = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all") as XTweetRow[];
         if (existing.length > 0) {
             if (isFirstRun) {
                 // Delete it, so we can re-add it
@@ -490,7 +596,7 @@ export class XAccountController {
         const profileImageDataURI = await this.getProfileImageDataURI(user);
 
         // Have we seen this user before?
-        const existing = exec(this.db, 'SELECT * FROM user WHERE userID = ?', [user.id_str], "all");
+        const existing: XUserRow[] = exec(this.db, 'SELECT * FROM user WHERE userID = ?', [user.id_str], "all") as XUserRow[];
         if (existing.length > 0) {
             // Update the user
             exec(this.db, 'UPDATE user SET name = ?, screenName = ?, profileImageDataURI = ? WHERE userID = ?', [
@@ -525,7 +631,7 @@ export class XAccountController {
         let newProgress = false;
 
         // Have we seen this conversation before?
-        const existing = exec(this.db, 'SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all");
+        const existing: XConversationRow[] = exec(this.db, 'SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all") as XConversationRow[];
         if (existing.length > 0) {
             // Have we seen this exact conversation before?
             if (
@@ -717,7 +823,7 @@ export class XAccountController {
 
         // On first run, we need to index all conversations
         if (isFirstRun) {
-            const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all");
+            const conversationIDs: XConversationRow[] = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all") as XConversationRow[];
             return {
                 conversationIDs: conversationIDs.map((row) => row.conversationID),
                 totalConversations: conversationIDs.length
@@ -725,12 +831,12 @@ export class XAccountController {
         }
 
         // Select just the conversations that need to be indexed
-        const conversationIDs = exec(this.db, 'SELECT conversationID FROM conversation WHERE shouldIndexMessages = ? AND deletedAt IS NULL', [1], "all");
-        const totalConversations = exec(this.db, 'SELECT count(*) FROM conversation WHERE deletedAt IS NULL', [], "get");
+        const conversationIDs: XConversationRow[] = exec(this.db, 'SELECT conversationID FROM conversation WHERE shouldIndexMessages = ? AND deletedAt IS NULL', [1], "all") as XConversationRow[];
+        const totalConversations: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NULL', [], "get") as Sqlite3Count;
         log.debug("XAccountController.indexMessagesStart", conversationIDs, totalConversations);
         return {
             conversationIDs: conversationIDs.map((row) => row.conversationID),
-            totalConversations: totalConversations["count(*)"]
+            totalConversations: totalConversations.count
         };
     }
 
@@ -747,7 +853,7 @@ export class XAccountController {
         }
 
         // Have we seen this message before?
-        const existingCount = exec(this.db, 'SELECT COUNT(*) as count FROM message WHERE messageID = ?', [message.message.id], "get");
+        const existingCount: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM message WHERE messageID = ?', [message.message.id], "get") as Sqlite3Count;
         log.debug("XAccountController.indexMessage: existingCount", existingCount);
         const isInsert = existingCount.count === 0;
 
@@ -913,12 +1019,12 @@ export class XAccountController {
         }
 
         if (this.account) {
-            const tweetsResp = exec(
+            const tweetsResp: XTweetRow[] = exec(
                 this.db,
                 'SELECT tweetID, createdAt, path FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
                 [this.account.username, 0],
                 "all"
-            );
+            ) as XTweetRow[];
 
             const items: XArchiveItem[] = [];
             for (let i = 0; i < tweetsResp.length; i++) {
@@ -960,7 +1066,7 @@ export class XAccountController {
             this.initDB();
         }
 
-        const tweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetID], "get");
+        const tweet: XTweetRow = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetID], "get") as XTweetRow;
         if (!tweet.archivedAt) {
             exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
         }
@@ -977,11 +1083,11 @@ export class XAccountController {
         }
 
         // Select everything from database
-        const tweets = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ?", [this.account.username, 0], "all");
-        const users = exec(this.db, 'SELECT * FROM user', [], "all");
-        const conversations = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all");
-        const conversationParticipants = exec(this.db, 'SELECT * FROM conversation_participant', [], "all");
-        const messages = exec(this.db, 'SELECT * FROM message', [], "all");
+        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ?", [this.account.username, 0], "all") as XTweetRow[];
+        const users: XUserRow[] = exec(this.db, 'SELECT * FROM user', [], "all") as XUserRow[];
+        const conversations: XConversationRow[] = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all") as XConversationRow[];
+        const conversationParticipants: XConversationParticipantRow[] = exec(this.db, 'SELECT * FROM conversation_participant', [], "all") as XConversationParticipantRow[];
+        const messages: XMessageRow[] = exec(this.db, 'SELECT * FROM message', [], "all") as XMessageRow[];
 
         // Get the current account's userID
         const accountUser = users.find((user) => user.screenName == this.account?.username);
@@ -1008,9 +1114,9 @@ export class XAccountController {
         const formattedUsers: Record<string, XArchiveTypes.User> = users.reduce((acc, user) => {
             acc[user.userID] = {
                 userID: user.userID,
-                name: user.name,
+                name: user.name ? user.name : "",
                 username: user.screenName,
-                profileImageDataURI: user.profileImageDataURI,
+                profileImageDataURI: user.profileImageDataURI ? user.profileImageDataURI : "",
             };
             return acc;
         }, {} as Record<string, XArchiveTypes.User>);
@@ -1092,11 +1198,11 @@ export class XAccountController {
     }
 
     async getProgressInfo(): Promise<XProgressInfo> {
-        const totalTweetsArchived = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get");
-        const totalMessagesIndexed = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get");
-        const totalTweetsDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE deletedAt IS NOT NULL", [], "get");
-        const totalRetweetsDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get");
-        const totalMessagesDeleted = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get");
+        const totalTweetsArchived: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get") as Sqlite3Count;
+        const totalMessagesIndexed: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
+        const totalTweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
+        const totalRetweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
+        const totalMessagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
 
         const progressInfo = emptyXProgressInfo();
         progressInfo.accountUUID = this.accountUUID;

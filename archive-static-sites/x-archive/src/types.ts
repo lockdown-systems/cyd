@@ -24,7 +24,7 @@ export type User = {
 export type Conversation = {
     conversationID: string;
     type: string;
-    sortTimestamp: string;
+    sortTimestamp: string | null;
     participants: string[];
     participantSearchString: string;
     deletedAt: string | null;

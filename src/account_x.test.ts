@@ -5,6 +5,7 @@ import { beforeEach, afterEach, test, expect, vi } from 'vitest';
 import { Proxy } from "http-mitm-proxy"
 
 import { XAPILegacyUser, XAPILegacyTweet, XAPIConversation, XAPIUser } from './account_x_types';
+import { XTweetRow, XUserRow, XConversationRow, XConversationParticipantRow, XMessageRow } from './account_x';
 
 // Mock the helpers module
 vi.mock('./helpers', () => ({
@@ -410,7 +411,7 @@ test('XAccountController.indexTweet() should add a tweet', async () => {
     const controller = createController("indexTweets");
 
     controller.indexTweet(0, userLegacy, tweetLegacy, false)
-    const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    const rows: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].text).toBe(tweetLegacy.full_text);
 })
@@ -420,13 +421,13 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
 
     let ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
     expect(ret).toBe(true);
-    let rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    const rows: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
 
     ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
     expect(ret).toBe(false);
-    rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
-    expect(rows.length).toBe(1);
+    const rows2: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
+    expect(rows2.length).toBe(1);
 })
 
 test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
@@ -435,7 +436,7 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.tweetsIndexed).toBe(39);
 
-    const rows = exec(controller.db, "SELECT * FROM tweet", [], "all");
+    const rows: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(44);
 })
 
@@ -443,7 +444,7 @@ test('XAccountController.indexUser() should add a user', async () => {
     const controller = createController("indexDMs");
 
     await controller.indexUser(dmUser1)
-    const rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    const rows: XUserRow[] = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].screenName).toBe(dmUser1.screen_name);
@@ -453,7 +454,7 @@ test('XAccountController.indexUser() should update a user if its already there',
     const controller = createController("indexDMs");
 
     await controller.indexUser(dmUser1)
-    let rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    let rows: XUserRow[] = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].name).toBe(dmUser1.name);
@@ -462,7 +463,7 @@ test('XAccountController.indexUser() should update a user if its already there',
     modifiedDMUser1.name = 'changed name';
 
     await controller.indexUser(modifiedDMUser1)
-    rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    rows = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].name).toBe('changed name');
@@ -473,7 +474,7 @@ test('XAccountController.indexUser() with different users should add different u
 
     await controller.indexUser(dmUser1)
     await controller.indexUser(dmUser2)
-    const rows = exec(controller.db, "SELECT * FROM user", [], "all");
+    const rows: XUserRow[] = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(2);
 })
 
@@ -481,12 +482,12 @@ test('XAccountController.indexConversation() should add a conversation and parti
     const controller = createController("indexDMs");
 
     await controller.indexConversation(dmConversation, true)
-    let rows = exec(controller.db, "SELECT * FROM conversation", [], "all");
+    const rows: XConversationRow[] = exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].conversationID).toBe(dmConversation.conversation_id);
 
-    rows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all");
-    expect(rows.length).toBe(2);
+    const participantRows: XConversationParticipantRow[] = exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
+    expect(participantRows.length).toBe(2);
 
 })
 
@@ -497,14 +498,14 @@ test("XAccountController.indexParseConversations() should add all the conversati
     expect(progress.usersIndexed).toBe(78);
     expect(progress.conversationsIndexed).toBe(44);
 
-    let rows = exec(controller.db, "SELECT * FROM user", [], "all");
-    expect(rows.length).toBe(78);
+    const userRows = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
+    expect(userRows.length).toBe(78);
 
-    rows = exec(controller.db, "SELECT * FROM conversation", [], "all");
-    expect(rows.length).toBe(44);
+    const conversationRows = exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
+    expect(conversationRows.length).toBe(44);
 
-    rows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all");
-    expect(rows.length).toBe(126);
+    const participantRows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
+    expect(participantRows.length).toBe(126);
 }, { timeout: 10000 }) // 10 second timeout
 
 test("XAccountController.indexParseMessages() should add all the messages", async () => {
@@ -513,6 +514,6 @@ test("XAccountController.indexParseMessages() should add all the messages", asyn
     const progress: XProgress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 
-    const rows = exec(controller.db, "SELECT * FROM message", [], "all");
+    const rows: XMessageRow[] = exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
 })

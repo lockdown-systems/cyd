@@ -85,9 +85,13 @@ export const runMainMigrations = () => {
     ]);
 }
 
-interface Sqlite3Info {
+export interface Sqlite3Info {
     lastInsertRowid: number;
     changes: number;
+}
+
+export interface Sqlite3Count {
+    count: number;
 }
 
 interface ConfigRow {
@@ -128,7 +132,11 @@ interface XAccountRow {
 
 // Helpers
 
-export const exec = (db: Database.Database, sql: string, params: Array<number | string | bigint | Buffer | Date | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
+export const exec = (db: Database.Database | null, sql: string, params: Array<number | string | bigint | Buffer | Date | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
+    if (!db) {
+        throw new Error("Database not initialized");
+    }
+
     // Convert Date objects to ISO strings
     const paramsConverted: Array<number | string | bigint | Buffer | null> = [];
     for (const param of params) {
