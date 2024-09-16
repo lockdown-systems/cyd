@@ -1,43 +1,66 @@
 import { v4 as uuidv4 } from 'uuid';
 import TabsView from './TabsView.vue';
-import * as database from '../../../database';
 
-import { stubElectron, initTestEnvironment, cleanupTestEnvironment } from '../test_util';
+import { stubElectron } from '../test_util';
+import { Account } from '../../../shared_types';
+
+const testDatabase = {
+    accounts: [] as Account[],
+    config: {} as Record<string, string>,
+};
 
 describe('<TabsView />', () => {
     beforeEach(() => {
-        initTestEnvironment();
+        testDatabase.accounts = [];
+        testDatabase.config = {};
 
         // Stub the window.electron object
         window.electron = stubElectron();
         window.electron.showQuestion = cy.stub().resolves(true);
 
-        window.electron.database.getConfig = async (key) => {
-            return database.getConfig(key);
+        window.electron.database.getConfig = async (key: string) => {
+            return testDatabase.config[key];
         };
-        window.electron.database.setConfig = async (key, value) => {
-            return database.setConfig(key, value);
+        window.electron.database.setConfig = async (key: string, value: string) => {
+            testDatabase.config[key] = value;
         };
         window.electron.database.getAccounts = async () => {
-            return database.getAccounts();
+            return testDatabase.accounts;
         };
         window.electron.database.createAccount = async () => {
-            return database.createAccount();
+            const accountUUID = uuidv4();
+            const newAccount: Account = {
+                id: testDatabase.accounts.length + 1,
+                type: 'unknown',
+                sortOrder: testDatabase.accounts.length,
+                xAccount: null,
+                uuid: accountUUID,
+            };
+            testDatabase.accounts.push(newAccount);
+            return newAccount;
         };
         window.electron.database.selectAccountType = async (accountID, type) => {
-            return database.selectAccountType(accountID, type);
+            const index = testDatabase.accounts.findIndex(acc => acc.id === accountID);
+            if (index !== -1) {
+                testDatabase.accounts[index].type = type;
+            }
+            return testDatabase.accounts[index];
         };
         window.electron.database.saveAccount = async (accountJson) => {
             const account = JSON.parse(accountJson);
-            return database.saveAccount(account);
+            const index = testDatabase.accounts.findIndex(acc => acc.id === account.id);
+            if (index !== -1) {
+                testDatabase.accounts[index] = account;
+            }
         };
         window.electron.database.deleteAccount = async (accountID) => {
-            return database.deleteAccount(accountID);
+            testDatabase.accounts = testDatabase.accounts.filter(acc => acc.id !== accountID);
         };
     });
 
     afterEach(() => {
-        cleanupTestEnvironment();
+        testDatabase.accounts = [];
+        testDatabase.config = {};
     });
 
     it('starts with no accounts and signed out', () => {

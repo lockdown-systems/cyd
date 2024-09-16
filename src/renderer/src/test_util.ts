@@ -1,8 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import * as database from '../../database';
-
 export const stubElectron = () => {
     return {
         getAPIURL: cy.stub(),
@@ -58,21 +53,4 @@ export const stubElectron = () => {
             saveProfileImage: cy.stub(),
         }
     };
-}
-
-export const initTestEnvironment = () => {
-    process.env.TEST_MODE = "1";
-    process.env.TEST_SETTINGS_PATH = fs.mkdtempSync(path.join(os.tmpdir(), 'test-settings-'));
-    process.env.TEST_DATA_PATH = fs.mkdtempSync(path.join(os.tmpdir(), 'test-data-'));
-
-    database.runMainMigrations();
-}
-
-export const cleanupTestEnvironment = () => {
-    if (process.env.TEST_SETTINGS_PATH) {
-        fs.rmdirSync(process.env.TEST_SETTINGS_PATH, { recursive: true });
-    }
-    if (process.env.TEST_DATA_PATH) {
-        fs.rmdirSync(process.env.TEST_DATA_PATH, { recursive: true });
-    }
 }
