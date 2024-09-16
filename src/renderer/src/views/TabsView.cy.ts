@@ -64,6 +64,7 @@ describe('<TabsView />', () => {
     afterEach(() => {
         testDatabase.accounts = [];
         testDatabase.config = {};
+        accountID = 1;
     });
 
     it('starts with one unknown accounts and signed out', () => {
@@ -82,6 +83,9 @@ describe('<TabsView />', () => {
 
         // Check that there is exactly 1 AccountButton component (a new unknown one)
         cy.get('.accounts-list .account-button').should('have.length', 1);
+
+        // Make sure that .account-button-1 exists
+        cy.get('.account-button-1').should('exist');
     })
 
     it('if you add another unknown account, it uses the existing one', () => {
@@ -92,6 +96,9 @@ describe('<TabsView />', () => {
 
         // Check that there is still only 1 AccountButton component
         cy.get('.accounts-list .account-button').should('have.length', 1);
+
+        // Make sure that .account-button-1 exists
+        cy.get('.account-button-1').should('exist');
     });
 
     it('if you select X, you can then add another unknown account', () => {
@@ -106,5 +113,38 @@ describe('<TabsView />', () => {
 
         // Check that there are now 2 AccountButton components
         cy.get('.accounts-list .account-button').should('have.length', 2);
+
+        // Make sure that .account-button-1 and .account-button-2 exists
+        cy.get('.account-button-1').should('exist');
+        cy.get('.account-button-2').should('exist');
+    });
+
+    it('add 3 accounts, delete the 2nd, add a 4th, and make sure the IDs are correct', () => {
+        cy.mount(TabsView);
+        cy.get('.add-account-btn').trigger('mouseover');
+
+        // Add 3 accounts
+        for (let i = 0; i < 3; i++) {
+            cy.get('.select-account-x').click();
+            cy.get('.add-account-btn').click();
+        }
+
+        cy.get('.account-button-1').should('exist');
+        cy.get('.account-button-2').should('exist');
+        cy.get('.account-button-3').should('exist');
+
+        // Delete the second account
+        cy.get('.account-button-2 .account-btn').trigger('auxclick');
+        cy.get('.account-button-2 .remove-button').should('exist');
+        cy.get('.account-button-2 .remove-button').click();
+
+        // Add a new account
+        cy.get('.add-account-btn').click();
+
+        // Check that the IDs are correct
+        cy.get('.account-button-1').should('exist');
+        cy.get('.account-button-2').should('not.exist');
+        cy.get('.account-button-3').should('exist');
+        cy.get('.account-button-4').should('exist');
     });
 });

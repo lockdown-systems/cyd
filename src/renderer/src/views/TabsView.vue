@@ -183,7 +183,8 @@ onUnmounted(async () => {
     <div class="row">
       <div class="sidebar col-auto d-flex flex-column gap-2">
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
-          <AccountButton v-for="account in accounts" :key="account.id" class="account-button" :account="account"
+          <AccountButton v-for="account in accounts" :key="account.id"
+            :class="['account-button', `account-button-${account.id}`]" :account="account"
             :active="account.id === activeAccountId" @click="accountClicked(account)"
             @on-delete-clicked="deleteAccount(account)" />
         </div>
