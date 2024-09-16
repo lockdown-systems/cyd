@@ -26,6 +26,7 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);
 
+const currentState = ref<State>(State.Login);
 const progress = ref<XProgress | null>(null);
 const rateLimitInfo = ref<XRateLimitInfo | null>(null);
 const currentJobs = ref<XJob[]>([]);
@@ -34,6 +35,18 @@ const isPaused = ref<boolean>(false);
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const isWebviewMounted = ref(true);
+
+// Keep currentState in sync
+watch(
+    () => accountXViewModel.value?.state,
+    (newState) => {
+        if (newState) {
+            currentState.value = newState as State;
+            console.log('Current state:', currentState.value);
+        }
+    },
+    { deep: true, }
+);
 
 // Keep progress updated
 watch(
@@ -234,7 +247,8 @@ onUnmounted(async () => {
 
 <template>
     <div class="wrapper d-flex flex-column">
-        <AccountHeader :account="account" @on-refresh-clicked="emit('onRefreshClicked')" />
+        <AccountHeader :account="account" :show-dashboard-button="currentState != State.DashboardDisplay"
+            @on-dashboard-clicked="emit('onRefreshClicked')" />
 
         <div class="d-flex">
             <div class="d-flex flex-column flex-grow-1">

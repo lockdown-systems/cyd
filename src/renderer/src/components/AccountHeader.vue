@@ -5,29 +5,27 @@ import type { Account } from '../../../shared_types';
 
 defineProps<{
     account: Account;
+    showDashboardButton: boolean;
 }>();
 
-const emit = defineEmits(['onRefreshClicked']);
+const emit = defineEmits([
+    'onDashboardClicked',
+    'onRemoveClicked'
+]);
 
-const refreshBtnShowInfo = ref(false);
+const dashboardBtnShowInfo = ref(false);
+const onDashboardClicked = () => {
+    emit('onDashboardClicked');
+};
 
-const onRefreshClicked = () => {
-    emit('onRefreshClicked');
+const removeBtnShowInfo = ref(false);
+const onRemoveClicked = () => {
+    emit('onRemoveClicked');
 };
 </script>
 
 <template>
     <div class="account-header d-flex align-items-center justify-content-between">
-        <div class="btn-container">
-            <div class="refresh-btn account-header-btn d-flex justify-content-center align-items-center"
-                @mouseover="refreshBtnShowInfo = true" @mouseleave="refreshBtnShowInfo = false"
-                @click="onRefreshClicked">
-                <i class="fa-solid fa-rotate-right" />
-            </div>
-            <div v-if="refreshBtnShowInfo" class="info-popup info-popup-refresh">
-                Refresh
-            </div>
-        </div>
         <div class="label d-flex align-items-center">
             <template v-if="account.type == 'X'">
                 <template
@@ -43,6 +41,28 @@ const onRefreshClicked = () => {
             <span class="logo">
                 <i :class="getAccountIcon(account.type)" />
             </span>
+        </div>
+        <div class="d-flex">
+            <div v-if="showDashboardButton" class="btn-container">
+                <div class="dashboard-btn account-header-btn d-flex justify-content-center align-items-center"
+                    @mouseover="dashboardBtnShowInfo = true" @mouseleave="dashboardBtnShowInfo = false"
+                    @click="onDashboardClicked">
+                    <i class="fa-solid fa-gauge" />
+                </div>
+                <div v-if="dashboardBtnShowInfo" class="info-popup info-popup-dashboard">
+                    Back to dashboard
+                </div>
+            </div>
+            <div class="btn-container">
+                <div class="remove-btn account-header-btn d-flex justify-content-center align-items-center"
+                    @mouseover="removeBtnShowInfo = true" @mouseleave="removeBtnShowInfo = false"
+                    @click="onRemoveClicked">
+                    <i class="fa-solid fa-trash" />
+                </div>
+                <div v-if="removeBtnShowInfo" class="info-popup info-popup-remove">
+                    Remove account
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -104,14 +124,6 @@ const onRefreshClicked = () => {
     padding: 3px 6px;
     border-radius: 4px;
     white-space: nowrap;
-}
-
-.info-popup-refresh {
-    top: 35px;
-    left: 0px;
-}
-
-.info-popup-settings {
     top: 35px;
     right: 0px;
 }
