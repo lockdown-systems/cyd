@@ -7,7 +7,7 @@ import { beforeEach, afterEach, test, expect, vi } from 'vitest';
 vi.mock('./util', () => ({
     ...vi.importActual('./util'), // Import and spread the actual implementations
     getSettingsPath: vi.fn(() => {
-        const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath');
+        const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath-database');
         if (!fs.existsSync(settingsPath)) {
             fs.mkdirSync(settingsPath, { recursive: true });
         }

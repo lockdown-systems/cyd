@@ -11,14 +11,14 @@ import { XTweetRow, XUserRow, XConversationRow, XConversationParticipantRow, XMe
 vi.mock('./util', () => ({
     ...vi.importActual('./util'), // Import and spread the actual implementations
     getSettingsPath: vi.fn(() => {
-        const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath');
+        const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath-account_x');
         if (!fs.existsSync(settingsPath)) {
             fs.mkdirSync(settingsPath, { recursive: true });
         }
         return settingsPath
     }),
     getAccountSettingsPath: vi.fn((accountID: number) => {
-        const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath');
+        const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath-account_x');
         const accountSettingsPath = path.join(settingsPath, `account-${accountID}`);
         if (!fs.existsSync(accountSettingsPath)) {
             fs.mkdirSync(accountSettingsPath, { recursive: true });
@@ -26,7 +26,7 @@ vi.mock('./util', () => ({
         return accountSettingsPath
     }),
     getDataPath: vi.fn(() => {
-        const dataPath = path.join(__dirname, '..', 'testdata', 'dataPath');
+        const dataPath = path.join(__dirname, '..', 'testdata', 'dataPath-account_x');
         if (!fs.existsSync(dataPath)) {
             fs.mkdirSync(dataPath, { recursive: true });
         }
@@ -58,7 +58,7 @@ vi.mock('electron', () => ({
 import { Account, ResponseData, XProgress } from './shared_types'
 import { XAccountController } from './account_x'
 import { IMITMController } from './mitm'
-import { runMainMigrations, createAccount, selectAccountType, saveAccount, exec } from './database';
+import * as database from './database';
 
 // Mock a MITMController
 class MockMITMController implements IMITMController {
@@ -144,15 +144,15 @@ const createController = (testdata: string): XAccountController => {
 
 
 beforeEach(() => {
-    runMainMigrations();
+    database.runMainMigrations();
 
     // Create an X account, which should have an id of 1
-    let account = createAccount()
-    account = selectAccountType(account.id, "X");
+    let account = database.createAccount()
+    account = database.selectAccountType(account.id, "X");
     if (account.xAccount) {
         account.xAccount.username = "test";
     }
-    saveAccount(account);
+    database.saveAccount(account);
 });
 
 afterEach(() => {
@@ -411,7 +411,7 @@ test('XAccountController.indexTweet() should add a tweet', async () => {
     const controller = createController("indexTweets");
 
     controller.indexTweet(0, userLegacy, tweetLegacy, false)
-    const rows: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
+    const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].text).toBe(tweetLegacy.full_text);
 })
@@ -421,12 +421,12 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
 
     let ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
     expect(ret).toBe(true);
-    const rows: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
+    const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
 
     ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
     expect(ret).toBe(false);
-    const rows2: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
+    const rows2: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows2.length).toBe(1);
 })
 
@@ -436,7 +436,7 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.tweetsIndexed).toBe(39);
 
-    const rows: XTweetRow[] = exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
+    const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(44);
 })
 
@@ -444,7 +444,7 @@ test('XAccountController.indexUser() should add a user', async () => {
     const controller = createController("indexDMs");
 
     await controller.indexUser(dmUser1)
-    const rows: XUserRow[] = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
+    const rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].screenName).toBe(dmUser1.screen_name);
@@ -454,7 +454,7 @@ test('XAccountController.indexUser() should update a user if its already there',
     const controller = createController("indexDMs");
 
     await controller.indexUser(dmUser1)
-    let rows: XUserRow[] = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
+    let rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].name).toBe(dmUser1.name);
@@ -463,7 +463,7 @@ test('XAccountController.indexUser() should update a user if its already there',
     modifiedDMUser1.name = 'changed name';
 
     await controller.indexUser(modifiedDMUser1)
-    rows = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
+    rows = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].name).toBe('changed name');
@@ -474,7 +474,7 @@ test('XAccountController.indexUser() with different users should add different u
 
     await controller.indexUser(dmUser1)
     await controller.indexUser(dmUser2)
-    const rows: XUserRow[] = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
+    const rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(2);
 })
 
@@ -482,31 +482,34 @@ test('XAccountController.indexConversation() should add a conversation and parti
     const controller = createController("indexDMs");
 
     await controller.indexConversation(dmConversation, true)
-    const rows: XConversationRow[] = exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
+    const rows: XConversationRow[] = database.exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].conversationID).toBe(dmConversation.conversation_id);
 
-    const participantRows: XConversationParticipantRow[] = exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
+    const participantRows: XConversationParticipantRow[] = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
     expect(participantRows.length).toBe(2);
 
 })
 
-test("XAccountController.indexParseConversations() should add all the conversations and users", async () => {
-    const controller = createController("indexDMs");
+test(
+    "XAccountController.indexParseConversations() should add all the conversations and users",
+    { timeout: 10000 },
+    async () => {
+        const controller = createController("indexDMs");
 
-    const progress: XProgress = await controller.indexParseConversations(true);
-    expect(progress.usersIndexed).toBe(78);
-    expect(progress.conversationsIndexed).toBe(44);
+        const progress: XProgress = await controller.indexParseConversations(true);
+        expect(progress.usersIndexed).toBe(78);
+        expect(progress.conversationsIndexed).toBe(44);
 
-    const userRows = exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
-    expect(userRows.length).toBe(78);
+        const userRows = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
+        expect(userRows.length).toBe(78);
 
-    const conversationRows = exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
-    expect(conversationRows.length).toBe(44);
+        const conversationRows = database.exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
+        expect(conversationRows.length).toBe(44);
 
-    const participantRows = exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
-    expect(participantRows.length).toBe(126);
-}, { timeout: 10000 }) // 10 second timeout
+        const participantRows = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
+        expect(participantRows.length).toBe(126);
+    })
 
 test("XAccountController.indexParseMessages() should add all the messages", async () => {
     const controller = createController("indexDMs");
@@ -514,6 +517,6 @@ test("XAccountController.indexParseMessages() should add all the messages", asyn
     const progress: XProgress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 
-    const rows: XMessageRow[] = exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
+    const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
 })
