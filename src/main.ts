@@ -114,7 +114,7 @@ async function createWindow() {
         minHeight: 400,
         webPreferences: {
             webviewTag: true,
-            preload: "./preload.js"
+            preload: path.join(__dirname, './preload.js')
         },
         icon: icon
     });
@@ -235,7 +235,7 @@ async function createWindow() {
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
         win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-        win.loadFile(path.join("..", "renderer", MAIN_WINDOW_VITE_NAME, "index.html"));
+        win.loadFile(path.join(__dirname, "..", "renderer", MAIN_WINDOW_VITE_NAME, "index.html"));
     };
 
     // Open dev tools?
