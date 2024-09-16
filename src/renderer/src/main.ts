@@ -22,7 +22,7 @@ declare global {
             loadFileInWebview: (webContentsId: number, filename: string) => void;
             getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,
             database: {
-                getConfig: (key: string) => Promise<string>;
+                getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
                 getAccounts: () => Promise<Account[]>;
                 createAccount: () => Promise<Account>;

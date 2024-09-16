@@ -32,5 +32,5 @@ build
 
 # Tests
 src/renderer/cypress/screenshots/
-testdata/settingsPath/
-testdata/dataPath/
+testdata/settingsPath*
+testdata/dataPath*

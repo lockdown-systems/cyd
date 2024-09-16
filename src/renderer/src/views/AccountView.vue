@@ -9,7 +9,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  accountSelected: [account: Account, accountType: string]
+  accountSelected: [account: Account, accountType: string],
+  onRemoveClicked: []
 }>()
 
 const isRefreshing = ref(false);
@@ -41,8 +42,8 @@ const accountClicked = (accountType: string) => {
           Ready to get started? Choose a platform.
         </p>
 
-        <div class="select-account d-flex flex-wrap">
-          <div class="card m-2" @click="accountClicked('X')">
+        <div class="select-account select-account-x d-flex flex-wrap" @click="accountClicked('X')">
+          <div class="card m-2">
             <div class="card-body d-flex align-items-center">
               <div class="logo mr-2">
                 <i :class="getAccountIcon('X')" />
@@ -61,7 +62,7 @@ const accountClicked = (accountType: string) => {
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <AccountXView :account="account" @on-refresh-clicked="refresh" />
+      <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
     </template>
 
     <template v-else>

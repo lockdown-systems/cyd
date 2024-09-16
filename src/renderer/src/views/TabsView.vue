@@ -46,6 +46,7 @@ const addAccountClicked = async () => {
   // Do we already have an unknown account?
   const unknownAccount = accounts.value.find((account) => account.type === 'unknown');
   if (unknownAccount) {
+    console.log('Already have an unknown account, setting it as active');
     activeAccountId.value = unknownAccount.id;
     return;
   }
@@ -54,25 +55,30 @@ const addAccountClicked = async () => {
   const account = await window.electron.database.createAccount();
   accounts.value = await window.electron.database.getAccounts();
   activeAccountId.value = account.id;
+  console.log('Added new account', account);
 };
 
-const deleteAccount = async (account: Account) => {
+const removeAccount = async (accountID: number) => {
   if (await window.electron.showQuestion(
     'Are you sure you want to remove this account from Semiphemeral?',
     'Yes, remove it',
     'No, keep it'
   )) {
-    const accountIDToDelete = account.id;
-    await window.electron.database.deleteAccount(accountIDToDelete);
+    console.log(`Removing account ${accountID}`);
+    await window.electron.database.deleteAccount(accountID);
     accounts.value = await window.electron.database.getAccounts();
 
     if (accounts.value.length === 0) {
+      console.log('No accounts left, adding an unknown account');
       await addAccountClicked();
     } else {
-      if (activeAccountId.value == accountIDToDelete) {
+      console.log(`Setting active account to first account`);
+      if (activeAccountId.value == accountID) {
         activeAccountId.value = accounts.value[0].id;
       }
     }
+
+    console.log('Accounts after removing', JSON.parse(JSON.stringify(accounts.value)));
   }
 }
 
@@ -153,8 +159,8 @@ const signOutClicked = async () => {
 };
 
 const reloadAccounts = async () => {
-  console.log('Reloading accounts');
   accounts.value = await window.electron.database.getAccounts();
+  console.log('Reloading accounts', JSON.parse(JSON.stringify(accounts.value)));
 };
 
 onMounted(async () => {
@@ -183,9 +189,10 @@ onUnmounted(async () => {
     <div class="row">
       <div class="sidebar col-auto d-flex flex-column gap-2">
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
-          <AccountButton v-for="account in accounts" :key="account.id" :account="account"
+          <AccountButton v-for="account in accounts" :key="account.id"
+            :class="['account-button', `account-button-${account.id}`]" :account="account"
             :active="account.id === activeAccountId" @click="accountClicked(account)"
-            @on-delete-clicked="deleteAccount(account)" />
+            @on-remove-clicked="removeAccount(account.id)" />
         </div>
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">
@@ -254,7 +261,8 @@ onUnmounted(async () => {
         </template>
         <template v-else>
           <AccountView v-for="account in accounts" :key="account.id" :account="account"
-            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected" />
+            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected"
+            @on-remove-clicked="removeAccount(account.id)" />
         </template>
       </div>
     </div>

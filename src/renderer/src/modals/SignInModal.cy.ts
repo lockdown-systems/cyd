@@ -3,30 +3,9 @@ import { ref } from 'vue';
 import SignInModal from './SignInModal.vue'
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 
-const stubElectron = () => {
-  return {
-    getAPIURL: async (): Promise<string> => { return 'https://mock/api' },
-    isDevMode: cy.stub(),
-    showError: cy.stub(),
-    showQuestion: cy.stub(),
-    database: {
-      getConfig: cy.stub(),
-      setConfig: cy.stub(),
-      getAccounts: cy.stub(),
-      createAccount: cy.stub(),
-      selectAccountType: cy.stub(),
-      saveAccount: cy.stub(),
-      deleteAccount: cy.stub(),
-    },
-    X: {
-      fetchStart: cy.stub(),
-      fetchStop: cy.stub(),
-      fetchParse: cy.stub(),
-    }
-  };
-}
+import { stubElectron } from '../test_util';
 
-describe('<Login />', () => {
+describe('<SignInModal />', () => {
   it('starts with the email field visible and the value blank', () => {
     cy.mount(SignInModal);
 
@@ -39,6 +18,7 @@ describe('<Login />', () => {
 
     cy.mount(SignInModal, {
       global: {
+        // @ts-expect-error app is type 'any'
         plugins: [(app) => {
           app.provide('userEmail', ref(testEmail));
         }]
@@ -54,6 +34,7 @@ describe('<Login />', () => {
 
     cy.mount(SignInModal, {
       global: {
+        // @ts-expect-error app is type 'any'
         plugins: [(app) => {
           app.provide('userEmail', '');
         }]
@@ -73,6 +54,7 @@ describe('<Login />', () => {
 
     cy.mount(SignInModal, {
       global: {
+        // @ts-expect-error app is type 'any'
         plugins: [(app) => {
           app.provide('apiClient', ref(new SemiphemeralAPIClient()));
           app.provide('userEmail', ref(testEmail));
@@ -99,6 +81,7 @@ describe('<Login />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -136,6 +119,7 @@ describe('<Login />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -180,6 +164,7 @@ describe('<Login />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -237,6 +222,7 @@ describe('<Login />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -294,6 +280,7 @@ describe('<Login />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
