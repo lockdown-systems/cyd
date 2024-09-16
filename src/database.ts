@@ -236,6 +236,7 @@ export const createXAccount = (): XAccount => {
     return account;
 }
 
+// Update the account based on account.id
 export const saveXAccount = (account: XAccount) => {
     exec(getMainDatabase(), `
         UPDATE xAccount
@@ -356,6 +357,7 @@ export const createAccount = (): Account => {
     return account;
 }
 
+// Set account.type to type, create a new account of that type (right now, just xAccount), and return the account
 export const selectAccountType = (accountID: number, type: string): Account => {
     // Get the account
     const account = getAccount(accountID);
@@ -392,6 +394,7 @@ export const selectAccountType = (accountID: number, type: string): Account => {
     return account;
 }
 
+// Update the account based on account.id
 export const saveAccount = (account: Account) => {
     if (account.xAccount) {
         saveXAccount(account.xAccount);
