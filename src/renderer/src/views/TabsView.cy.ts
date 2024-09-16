@@ -4,6 +4,7 @@ import TabsView from './TabsView.vue';
 import { stubElectron } from '../test_util';
 import { Account } from '../../../shared_types';
 
+let accountID = 1;
 const testDatabase = {
     accounts: [] as Account[],
     config: {} as Record<string, string>,
@@ -30,13 +31,15 @@ describe('<TabsView />', () => {
         window.electron.database.createAccount = async () => {
             const accountUUID = uuidv4();
             const newAccount: Account = {
-                id: testDatabase.accounts.length + 1,
+                id: accountID,
                 type: 'unknown',
                 sortOrder: testDatabase.accounts.length,
                 xAccount: null,
                 uuid: accountUUID,
             };
             testDatabase.accounts.push(newAccount);
+            // autoincrement the id for the next account    
+            accountID += 1;
             return newAccount;
         };
         window.electron.database.selectAccountType = async (accountID, type) => {
@@ -63,24 +66,45 @@ describe('<TabsView />', () => {
         testDatabase.config = {};
     });
 
-    it('starts with no accounts and signed out', () => {
-        // Stub responses
-        window.electron.database.getAccounts = cy.stub().resolves([]);
-        window.electron.database.createAccount = cy.stub().resolves({
-            id: 1,
-            type: 'unknown',
-            sortOrder: 0,
-            xAccount: null,
-            uuid: uuidv4(),
-        });
-
+    it('starts with one unknown accounts and signed out', () => {
         cy.mount(TabsView);
 
-        // Check that no AccountButton components are displayed
-        cy.get('.accounts-list .account-button').should('not.exist');
-
         // Move the mouse over userMenuBtnEl, .info-popup should appear and say you're not signed in
-        cy.get('.user-menu-btn').trigger('mouseover');
+        cy.get('.user-btn').trigger('mouseover');
         cy.get('.info-popup').should('be.visible').contains("You are not signed in");
+
+        // Click it and the menu should appear
+        cy.get('.user-btn').click();
+        cy.get('.menu-popup').should('be.visible');
+
+        // Click to disappear
+        cy.get('.user-btn').click();
+
+        // Check that there is exactly 1 AccountButton component (a new unknown one)
+        cy.get('.accounts-list .account-button').should('have.length', 1);
     })
+
+    it('if you add another unknown account, it uses the existing one', () => {
+        cy.mount(TabsView);
+
+        // Add a new account
+        cy.get('.add-account-btn').click();
+
+        // Check that there is still only 1 AccountButton component
+        cy.get('.accounts-list .account-button').should('have.length', 1);
+    });
+
+    it('if you select X, you can then add another unknown account', () => {
+        cy.mount(TabsView);
+        cy.get('.add-account-btn').trigger('mouseover');
+
+        // Select X
+        cy.get('.select-account-x').click();
+
+        // Add a new account
+        cy.get('.add-account-btn').click();
+
+        // Check that there are now 2 AccountButton components
+        cy.get('.accounts-list .account-button').should('have.length', 2);
+    });
 });
