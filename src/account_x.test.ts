@@ -7,9 +7,9 @@ import { Proxy } from "http-mitm-proxy"
 import { XAPILegacyUser, XAPILegacyTweet, XAPIConversation, XAPIUser } from './account_x_types';
 import { XTweetRow, XUserRow, XConversationRow, XConversationParticipantRow, XMessageRow } from './account_x';
 
-// Mock the helpers module
-vi.mock('./helpers', () => ({
-    ...vi.importActual('./helpers'), // Import and spread the actual implementations
+// Mock the util module
+vi.mock('./util', () => ({
+    ...vi.importActual('./util'), // Import and spread the actual implementations
     getSettingsPath: vi.fn(() => {
         const settingsPath = path.join(__dirname, '..', 'testdata', 'settingsPath');
         if (!fs.existsSync(settingsPath)) {

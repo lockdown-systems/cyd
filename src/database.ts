@@ -131,7 +131,7 @@ interface XAccountRow {
     deleteDMsDaysOld: number;
 }
 
-// Helpers
+// Utils
 
 export const exec = (db: Database.Database | null, sql: string, params: Array<number | string | bigint | Buffer | Date | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
     if (!db) {
