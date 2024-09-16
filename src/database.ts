@@ -302,7 +302,7 @@ export const createAccount = (): Account => {
     return account;
 }
 
-export const selectNewAccount = (accountID: number, type: string): Account => {
+export const selectAccountType = (accountID: number, type: string): Account => {
     // Get the account
     const account = getAccount(accountID);
     if (!account) {
@@ -393,8 +393,8 @@ export const defineIPCDatabase = () => {
         return createAccount();
     });
 
-    ipcMain.handle('database:selectNewAccount', async (_, accountID, type) => {
-        return selectNewAccount(accountID, type);
+    ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
+        return selectAccountType(accountID, type);
     });
 
     ipcMain.handle('database:saveAccount', async (_, accountJson) => {

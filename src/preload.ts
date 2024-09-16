@@ -33,7 +33,7 @@ contextBridge.exposeInMainWorld('electron', {
         return ipcRenderer.invoke('getAccountDataPath', accountID, filename)
     },
     database: {
-        getConfig: (key: string): Promise<string> => {
+        getConfig: (key: string): Promise<string | null> => {
             return ipcRenderer.invoke('database:getConfig', key);
         },
         setConfig: (key: string, value: string) => {
@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('database:createAccount')
         },
         selectAccountType: (accountID: number, type: string): Promise<Account> => {
-            return ipcRenderer.invoke('database:selectNewAccount', accountID, type)
+            return ipcRenderer.invoke('database:selectAccountType', accountID, type)
         },
         saveAccount: (accountJSON: string) => {
             ipcRenderer.invoke('database:saveAccount', accountJSON)

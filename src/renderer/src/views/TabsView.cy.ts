@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import TabsView from './TabsView.vue'
+import TabsView from './TabsView.vue';
+import * as database from '../../../database';
 
 import { stubElectron } from '../test_types';
 
@@ -7,6 +8,30 @@ describe('<TabsView />', () => {
     beforeEach(() => {
         // Stub the window.electron object
         window.electron = stubElectron();
+        window.electron.showQuestion = cy.stub().resolves(true);
+
+        window.electron.database.getConfig = async (key) => {
+            return database.getConfig(key);
+        };
+        window.electron.database.setConfig = async (key, value) => {
+            return database.setConfig(key, value);
+        };
+        window.electron.database.getAccounts = async () => {
+            return database.getAccounts();
+        };
+        window.electron.database.createAccount = async () => {
+            return database.createAccount();
+        };
+        window.electron.database.selectAccountType = async (accountID, type) => {
+            return database.selectAccountType(accountID, type);
+        };
+        window.electron.database.saveAccount = async (accountJson) => {
+            const account = JSON.parse(accountJson);
+            return database.saveAccount(account);
+        };
+        window.electron.database.deleteAccount = async (accountID) => {
+            return database.deleteAccount(accountID);
+        };
     });
 
     it('starts with no accounts and signed out', () => {
