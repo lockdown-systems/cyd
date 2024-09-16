@@ -8,7 +8,7 @@ const props = defineProps<{
     active: boolean;
 }>();
 
-const emit = defineEmits(['onDeleteClicked']);
+const emit = defineEmits(['onRemoveClicked']);
 
 const showInfo = ref(false);
 const showMenu = ref(false);
@@ -17,7 +17,7 @@ const menuPopupEl = ref<HTMLDivElement | null>(null);
 
 const removeClicked = () => {
     showMenu.value = false;
-    emit('onDeleteClicked', props.account);
+    emit('onRemoveClicked');
 };
 
 const menuAuxClicked = () => {

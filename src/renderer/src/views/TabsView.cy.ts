@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import TabsView from './TabsView.vue';
+import SemiphemeralAPIClient from '../semiphemeral-api-client';
+
+import { ref } from 'vue';
 
 import { stubElectron } from '../test_util';
 import { Account } from '../../../shared_types';
@@ -33,7 +36,7 @@ describe('<TabsView />', () => {
             const newAccount: Account = {
                 id: accountID,
                 type: 'unknown',
-                sortOrder: testDatabase.accounts.length,
+                sortOrder: 0,
                 xAccount: null,
                 uuid: accountUUID,
             };
@@ -59,6 +62,26 @@ describe('<TabsView />', () => {
         window.electron.database.deleteAccount = async (accountID) => {
             testDatabase.accounts = testDatabase.accounts.filter(acc => acc.id !== accountID);
         };
+
+        cy.mount(TabsView, {
+            global: {
+                // @ts-expect-error app is type 'any'
+                plugins: [(app) => {
+                    app.provide('apiClient', ref(new SemiphemeralAPIClient()));
+                    app.provide('deviceInfo', ref({
+                        userEmail: "test@lockdown.systems",
+                        deviceDescription: "Test Device",
+                        deviceToken: "",
+                        deviceUUID: "",
+                        apiToken: "",
+                        valid: false
+                    }));
+                }]
+            }
+        });
+
+        cy.get('.add-account-btn').trigger('mouseover');
+        cy.get('.add-account-btn').trigger('mouseleave');
     });
 
     afterEach(() => {
@@ -68,8 +91,6 @@ describe('<TabsView />', () => {
     });
 
     it('starts with one unknown accounts and signed out', () => {
-        cy.mount(TabsView);
-
         // Move the mouse over userMenuBtnEl, .info-popup should appear and say you're not signed in
         cy.get('.user-btn').trigger('mouseover');
         cy.get('.info-popup').should('be.visible').contains("You are not signed in");
@@ -89,8 +110,6 @@ describe('<TabsView />', () => {
     })
 
     it('if you add another unknown account, it uses the existing one', () => {
-        cy.mount(TabsView);
-
         // Add a new account
         cy.get('.add-account-btn').click();
 
@@ -102,9 +121,6 @@ describe('<TabsView />', () => {
     });
 
     it('if you select X, you can then add another unknown account', () => {
-        cy.mount(TabsView);
-        cy.get('.add-account-btn').trigger('mouseover');
-
         // Select X
         cy.get('.select-account-x').click();
 
@@ -120,23 +136,36 @@ describe('<TabsView />', () => {
     });
 
     it('add 3 accounts, delete the 2nd, add a 4th, and make sure the IDs are correct', () => {
-        cy.mount(TabsView);
-        cy.get('.add-account-btn').trigger('mouseover');
-
         // Add 3 accounts
-        for (let i = 0; i < 3; i++) {
-            cy.get('.select-account-x').click();
-            cy.get('.add-account-btn').click();
-        }
+        cy.get('.select-account-x').click();
+        cy.get('.add-account-btn').click();
+        cy.get('.select-account-x').click();
+        cy.get('.add-account-btn').click();
+        cy.get('.select-account-x').click();
 
         cy.get('.account-button-1').should('exist');
         cy.get('.account-button-2').should('exist');
         cy.get('.account-button-3').should('exist');
+        cy.get('.account-button-4').should('not.exist');
+
+        // Disable the outsideMenuClicked function
+        cy.window().then((win) => {
+            // @ts-expect-error outsideMenuClicked is a function on TabsView
+            win.document.removeEventListener('click', win.outsideMenuClicked);
+            // @ts-expect-error outsideMenuClicked is a function on TabsView
+            win.document.removeEventListener('auxclick', win.outsideMenuClicked);
+        });
 
         // Delete the second account
         cy.get('.account-button-2 .account-btn').trigger('auxclick');
-        cy.get('.account-button-2 .remove-button').should('exist');
-        cy.get('.account-button-2 .remove-button').click();
+        cy.get('.account-button-2 .menu-popup').should('be.visible');
+        cy.get('.account-button-2 .menu-popup .remove-button').click();
+
+        cy.get('.account-button-1').should('exist');
+        cy.get('.account-button-2').should('not.exist');
+        cy.get('.account-button-3').should('exist');
+        cy.get('.account-button-4').should('not.exist');
+        cy.get('.account-button-5').should('not.exist');
 
         // Add a new account
         cy.get('.add-account-btn').click();
@@ -146,5 +175,6 @@ describe('<TabsView />', () => {
         cy.get('.account-button-2').should('not.exist');
         cy.get('.account-button-3').should('exist');
         cy.get('.account-button-4').should('exist');
+        cy.get('.account-button-5').should('not.exist');
     });
 });

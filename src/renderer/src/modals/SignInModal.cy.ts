@@ -18,6 +18,7 @@ describe('<SignInModal />', () => {
 
     cy.mount(SignInModal, {
       global: {
+        // @ts-expect-error app is type 'any'
         plugins: [(app) => {
           app.provide('userEmail', ref(testEmail));
         }]
@@ -33,6 +34,7 @@ describe('<SignInModal />', () => {
 
     cy.mount(SignInModal, {
       global: {
+        // @ts-expect-error app is type 'any'
         plugins: [(app) => {
           app.provide('userEmail', '');
         }]
@@ -52,6 +54,7 @@ describe('<SignInModal />', () => {
 
     cy.mount(SignInModal, {
       global: {
+        // @ts-expect-error app is type 'any'
         plugins: [(app) => {
           app.provide('apiClient', ref(new SemiphemeralAPIClient()));
           app.provide('userEmail', ref(testEmail));
@@ -78,6 +81,7 @@ describe('<SignInModal />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -115,6 +119,7 @@ describe('<SignInModal />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -159,6 +164,7 @@ describe('<SignInModal />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -216,6 +222,7 @@ describe('<SignInModal />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
@@ -273,6 +280,7 @@ describe('<SignInModal />', () => {
 
       cy.mount(SignInModal, {
         global: {
+          // @ts-expect-error app is type 'any'
           plugins: [(app) => {
             app.provide('apiClient', ref(apiClient));
             app.provide('userEmail', ref(testEmail));
