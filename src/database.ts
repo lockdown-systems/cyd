@@ -85,6 +85,47 @@ export const runMainMigrations = () => {
     ]);
 }
 
+interface Sqlite3Info {
+    lastInsertRowid: number;
+    changes: number;
+}
+
+interface ConfigRow {
+    key: string;
+    value: string;
+}
+
+interface AccountRow {
+    id: number;
+    type: string;
+    sortOrder: number;
+    xAccountId: number | null;
+    uuid: string;
+}
+
+interface XAccountRow {
+    id: number;
+    createdAt: string;
+    updatedAt: string;
+    accessedAt: string;
+    username: string;
+    profileImageDataURI: string;
+    archiveTweets: number;
+    archiveDMs: number;
+    deleteTweets: number;
+    deleteTweetsDaysOld: number;
+    deleteTweetsLikesThresholdEnabled: number;
+    deleteTweetsLikesThreshold: number;
+    deleteTweetsRetweetsThresholdEnabled: number;
+    deleteTweetsRetweetsThreshold: number;
+    deleteRetweets: number;
+    deleteRetweetsDaysOld: number;
+    deleteLikes: number;
+    deleteLikesDaysOld: number;
+    deleteDMs: number;
+    deleteDMsDaysOld: number;
+}
+
 // Helpers
 
 export const exec = (db: Database.Database, sql: string, params: Array<number | string | bigint | Buffer | Date | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
@@ -107,7 +148,7 @@ export const exec = (db: Database.Database, sql: string, params: Array<number | 
 // Config
 
 export const getConfig = (key: string): string | null => {
-    const row = exec(db, 'SELECT value FROM config WHERE key = ?', [key], 'get');
+    const row: ConfigRow | undefined = exec(db, 'SELECT value FROM config WHERE key = ?', [key], 'get') as ConfigRow | undefined;
     return row ? row.value : null;
 }
 
@@ -118,7 +159,7 @@ export const setConfig = (key: string, value: string) => {
 // X accounts
 
 export const getXAccount = (id: number): XAccount | null => {
-    const row = exec(db, 'SELECT * FROM xAccount WHERE id = ?', [id], 'get');
+    const row: XAccountRow | undefined = exec(db, 'SELECT * FROM xAccount WHERE id = ?', [id], 'get') as XAccountRow | undefined;
     if (!row) {
         return null;
     }
@@ -147,7 +188,7 @@ export const getXAccount = (id: number): XAccount | null => {
 }
 
 export const getXAccounts = (): XAccount[] => {
-    const rows = exec(db, 'SELECT * FROM xAccount', [], 'all');
+    const rows: XAccountRow[] = exec(db, 'SELECT * FROM xAccount', [], 'all') as XAccountRow[];
 
     const accounts: XAccount[] = [];
     for (const row of rows) {
@@ -178,7 +219,7 @@ export const getXAccounts = (): XAccount[] => {
 }
 
 export const createXAccount = (): XAccount => {
-    const info = exec(db, 'INSERT INTO xAccount DEFAULT VALUES');
+    const info: Sqlite3Info = exec(db, 'INSERT INTO xAccount DEFAULT VALUES') as Sqlite3Info;
     const account = getXAccount(info.lastInsertRowid);
     if (!account) {
         throw new Error("Failed to create account");
@@ -233,7 +274,7 @@ export const saveXAccount = (account: XAccount) => {
 // Accounts, which contain all others
 
 export const getAccount = (id: number): Account | null => {
-    const row = exec(db, 'SELECT * FROM account WHERE id = ?', [id], 'get');
+    const row: AccountRow | undefined = exec(db, 'SELECT * FROM account WHERE id = ?', [id], 'get') as AccountRow | undefined;
     if (!row) {
         return null;
     }
@@ -241,7 +282,9 @@ export const getAccount = (id: number): Account | null => {
     let xAccount: XAccount | null = null;
     switch (row.type) {
         case "X":
-            xAccount = getXAccount(row.xAccountId);
+            if (row.xAccountId) {
+                xAccount = getXAccount(row.xAccountId);
+            }
             break;
     }
 
@@ -263,14 +306,16 @@ export async function getAccountUsername(account: Account): Promise<string | nul
 }
 
 export const getAccounts = (): Account[] => {
-    const rows = exec(db, 'SELECT * FROM account', [], 'all');
+    const rows: AccountRow[] = exec(db, 'SELECT * FROM account', [], 'all') as AccountRow[];
 
     const accounts: Account[] = [];
     for (const row of rows) {
         let xAccount: XAccount | null = null;
         switch (row.type) {
             case "X":
-                xAccount = getXAccount(row.xAccountId);
+                if (row.xAccountId) {
+                    xAccount = getXAccount(row.xAccountId);
+                }
                 break;
         }
 
@@ -287,12 +332,12 @@ export const getAccounts = (): Account[] => {
 
 export const createAccount = (): Account => {
     // Figure out the sortOrder for the new account
-    const row = exec(db, 'SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get');
+    const row: { maxSortOrder: number } = exec(db, 'SELECT MAX(sortOrder) as maxSortOrder FROM account', [], 'get') as { maxSortOrder: number };
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
     const accountUUID = uuidv4();
-    const info = exec(db, 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]);
+    const info: Sqlite3Info = exec(db, 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]) as Sqlite3Info;
 
     // Return it
     const account = getAccount(info.lastInsertRowid);

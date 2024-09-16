@@ -57,7 +57,7 @@ vi.mock('electron', () => ({
 import { Account, ResponseData, XProgress } from './shared_types'
 import { XAccountController } from './account_x'
 import { IMITMController } from './mitm'
-import { runMainMigrations, createAccount, selectNewAccount, saveAccount, exec } from './database';
+import { runMainMigrations, createAccount, selectAccountType, saveAccount, exec } from './database';
 
 // Mock a MITMController
 class MockMITMController implements IMITMController {
@@ -147,7 +147,7 @@ beforeEach(() => {
 
     // Create an X account, which should have an id of 1
     let account = createAccount()
-    account = selectNewAccount(account.id, "X");
+    account = selectAccountType(account.id, "X");
     if (account.xAccount) {
         account.xAccount.username = "test";
     }
