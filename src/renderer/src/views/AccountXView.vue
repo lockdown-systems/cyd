@@ -19,7 +19,7 @@ const props = defineProps<{
     account: Account;
 }>();
 
-const emit = defineEmits(['onRefreshClicked']);
+const emit = defineEmits(['onRefreshClicked', 'onRemoveClicked']);
 
 const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
@@ -246,9 +246,9 @@ onUnmounted(async () => {
 </script>
 
 <template>
-    <div class="wrapper d-flex flex-column">
+    <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
         <AccountHeader :account="account" :show-dashboard-button="currentState != State.DashboardDisplay"
-            @on-dashboard-clicked="emit('onRefreshClicked')" />
+            @on-dashboard-clicked="emit('onRefreshClicked')" @on-remove-clicked="emit('onRemoveClicked')" />
 
         <div class="d-flex">
             <div class="d-flex flex-column flex-grow-1">

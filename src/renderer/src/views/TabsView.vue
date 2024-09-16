@@ -261,7 +261,8 @@ onUnmounted(async () => {
         </template>
         <template v-else>
           <AccountView v-for="account in accounts" :key="account.id" :account="account"
-            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected" />
+            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected"
+            @on-remove-clicked="removeAccount(account.id)" />
         </template>
       </div>
     </div>

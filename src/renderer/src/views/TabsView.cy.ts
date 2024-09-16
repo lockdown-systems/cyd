@@ -65,7 +65,6 @@ describe('<TabsView />', () => {
 
         cy.mount(TabsView, {
             global: {
-                // @ts-expect-error app is type 'any'
                 plugins: [(app) => {
                     app.provide('apiClient', ref(new SemiphemeralAPIClient()));
                     app.provide('deviceInfo', ref({
@@ -148,18 +147,9 @@ describe('<TabsView />', () => {
         cy.get('.account-button-3').should('exist');
         cy.get('.account-button-4').should('not.exist');
 
-        // Disable the outsideMenuClicked function
-        cy.window().then((win) => {
-            // @ts-expect-error outsideMenuClicked is a function on TabsView
-            win.document.removeEventListener('click', win.outsideMenuClicked);
-            // @ts-expect-error outsideMenuClicked is a function on TabsView
-            win.document.removeEventListener('auxclick', win.outsideMenuClicked);
-        });
-
         // Delete the second account
-        cy.get('.account-button-2 .account-btn').trigger('auxclick');
-        cy.get('.account-button-2 .menu-popup').should('be.visible');
-        cy.get('.account-button-2 .menu-popup .remove-button').click();
+        cy.get('.account-button-2 .account-btn').click();
+        cy.get('.account-2 .remove-btn').click();
 
         cy.get('.account-button-1').should('exist');
         cy.get('.account-button-2').should('not.exist');

@@ -9,7 +9,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  accountSelected: [account: Account, accountType: string]
+  accountSelected: [account: Account, accountType: string],
+  onRemoveClicked: []
 }>()
 
 const isRefreshing = ref(false);
@@ -61,7 +62,7 @@ const accountClicked = (accountType: string) => {
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <AccountXView :account="account" @on-refresh-clicked="refresh" />
+      <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
     </template>
 
     <template v-else>
