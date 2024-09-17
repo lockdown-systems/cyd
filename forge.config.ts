@@ -27,6 +27,42 @@ if(os.platform() == 'win32') {
   execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
 }
 
+// Find the latest signtool.exe path
+function findLatestSigntoolPath(): string {
+  const baseDir = 'C:\\Program Files (x86)\\Windows Kits\\10\\bin';
+  const versionPrefix = '10.';
+
+  try {
+    // Read the directories in the base directory
+    const directories = fs.readdirSync(baseDir, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory() && dirent.name.startsWith(versionPrefix))
+      .map(dirent => dirent.name);
+
+    if (directories.length === 0) {
+      throw new Error('No version directories found');
+    }
+
+    // Sort the directories to find the largest version
+    directories.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+    // Get the largest version directory
+    const latestVersionDir = directories[0];
+
+    // Construct the path to signtool.exe
+    const signtoolPath = path.join(baseDir, latestVersionDir, 'x64', 'signtool.exe');
+
+    // Check if signtool.exe exists
+    if (!fs.existsSync(signtoolPath)) {
+      throw new Error(`signtool.exe not found in ${signtoolPath}`);
+    }
+
+    return signtoolPath;
+  } catch (error) {
+    console.error('Error finding signtool.exe:', error);
+    return "";
+  }
+}
+
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;
 
@@ -77,12 +113,7 @@ const config: ForgeConfig = {
       name: "Semiphemeral",
       setupIcon: path.join(assetsPath, "icon.ico"),
       windowsSign: {
-        automaticallySelectCertificate: false,
-        debug: false,
-        description: "Semiphemeral",
-        signToolPath: `"${path.join(__dirname, 'node_modules', '@electron', 'windows-sign', 'vendor', 'signtool.exe')}"`,
-        signWithParams: ["/v", "/n", "Lockdown Systems LLC", "/fd", "sha256", "/td", "sha256"],
-        timestampServer: "http://timestamp.digicert.com",
+        signToolPath: findLatestSigntoolPath()
       }
     }),
     new MakerDMG({

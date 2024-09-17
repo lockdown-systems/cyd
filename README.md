@@ -7,15 +7,7 @@ The environment variable `SEMIPHEMERAL_ENV` is used to determine the API URL. Th
 
 If you want devtools to open up, set `SEMIPHEMERAL_DEVTOOLS=1`.
 
-You must clone the submodule and build the API client first:
-
-```sh
-git submodule init
-git submodule update
-cd semiphemeral-api-client/
-npm install
-npm run build
-```
+Before you can run in development mode, you must create a build (either `npm run build-local`, `npm run build-dev`, etc.), in order to define the mode (local, dev, or prod).
 
 Run in development mode:
 
@@ -47,20 +39,22 @@ npm run make-prod
 
 To set up Windows:
 
-- Make sure the Windows user does not have spaces in the filename (e.g., not "Micah Lee")!
+- **Make sure the Windows user does not have spaces in the filename (e.g., "user", not "Micah Lee")!**
 - Install [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/), and add `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64` to the PATH
   - Example code signing: `signtool.exe sign /v /d "Calculator" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://timestamp.digicert.com .\calc.exe`
 - Install [git](https://git-scm.com/download/win) (and make sure the Semiphemeral repo has a deploy key for Windows)
 - Install [Node.js LTS](https://nodejs.org/en)
 - Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
 - Set PowerShell execution policy, in an administrator PowerShell: `Set-ExecutionPolicy -ExecutionPolicy Bypass`
-- Clone the Semiphemeral repo to `C:\code\Semiphemeral` (to avoid spaces in the path problems)
+- Clone the Semiphemeral repo (to a folder with no spaces!)
 
 Build Semiphemeral
 
 ```powershell
-cd C:\code\Semiphemeral
+cd .\code\Semiphemeral
 npm install
+npm run make-dev-windows
+npm run start
 ```
 
 ### Linux
