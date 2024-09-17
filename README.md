@@ -59,7 +59,17 @@ npm run start
 
 ### Linux
 
-To set up Ubuntu:
+To set up Debian 12:
 
-- `sudo apt install -y curl git`
+- `sudo apt install -y build-essential curl git rpm zip`
 - Install [Node.js LTS](https://nodejs.org/en/download/package-manager) on Linux using nvm
+- Clone the Semiphemeral repo
+
+Build Semiphemeral
+
+```sh
+cd code/Semiphemeral
+npm install
+npm run make-dev
+npm run start
+```
