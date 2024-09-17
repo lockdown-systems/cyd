@@ -42,3 +42,27 @@ npm run make-prod
 ```
 
 ## Making releases
+
+### Windows
+
+To set up Windows:
+
+- Install [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
+- Install [git](https://git-scm.com/download/win) (and make sure the Semiphemeral repo has a deploy key for Windows)
+- Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
+- Install [Node.js LTS](https://nodejs.org/en)
+- Clone the Semiphemeral repo to `~\code\Semiphemeral`
+
+Build Semiphemeral
+
+```powershell
+cd .code\Semiphemeral
+npm install
+```
+
+### Linux
+
+To set up Ubuntu:
+
+- `sudo apt install -y curl git`
+- Install [Node.js LTS](https://nodejs.org/en/download/package-manager) on Linux using nvm
