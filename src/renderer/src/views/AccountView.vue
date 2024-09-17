@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AccountXView from './AccountXView.vue';
-import { getAccountIcon } from '../helpers';
+import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
 const props = defineProps<{

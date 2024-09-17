@@ -4,7 +4,7 @@ import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
 import { AutomationErrorType } from '../automation_errors';
-import { logObj } from '../helpers';
+import { logObj } from '../util';
 
 export class TimeoutError extends Error {
     constructor(selector: string) {
