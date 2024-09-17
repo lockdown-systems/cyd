@@ -72,7 +72,19 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      iconUrl: "https://raw.githubusercontent.com/Lockdown-Systems/Semiphemeral-Releases/main/icon.ico",
+      name: "Semiphemeral",
+      setupIcon: path.join(assetsPath, "icon.ico"),
+      windowsSign: {
+        automaticallySelectCertificate: false,
+        debug: false,
+        description: "Semiphemeral",
+        signToolPath: `"${path.join(__dirname, 'node_modules', '@electron', 'windows-sign', 'vendor', 'signtool.exe')}"`,
+        signWithParams: ["/v", "/n", "Lockdown Systems LLC", "/fd", "sha256", "/td", "sha256"],
+        timestampServer: "http://timestamp.digicert.com",
+      }
+    }),
     new MakerDMG({
       name: `Install Semiphemeral`,
       background: path.join(assetsPath, 'dmg-background.png'),
