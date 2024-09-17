@@ -20,7 +20,12 @@ if (!fs.existsSync(buildPath)) {
 const assetsPath = path.join(__dirname, 'assets');
 
 // Build the X archive site
-execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
+if(os.platform() == 'win32') {
+  const scriptPath = path.join(__dirname, 'archive-static-sites', 'build.ps1');
+  execSync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, { stdio: 'inherit' });
+} else {
+  execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
+}
 
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;

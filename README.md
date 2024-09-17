@@ -49,8 +49,9 @@ To set up Windows:
 
 - Install [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
 - Install [git](https://git-scm.com/download/win) (and make sure the Semiphemeral repo has a deploy key for Windows)
-- Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
 - Install [Node.js LTS](https://nodejs.org/en)
+- Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
+- Set PowerShell execution policy, in an administrator PowerShell: `Set-ExecutionPolicy -ExecutionPolicy Bypass`
 - Clone the Semiphemeral repo to `~\code\Semiphemeral`
 
 Build Semiphemeral
