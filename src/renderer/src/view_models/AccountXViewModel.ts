@@ -304,7 +304,6 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 this.showAutomationNotice = true;
 
                 // Check if this is the first time indexing tweets has happened in this account
-                console.log("account", this.account);
                 if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexTweets") == null) {
                     this.isFirstRun = true;
                 }
