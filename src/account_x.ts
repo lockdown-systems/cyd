@@ -317,13 +317,16 @@ export class XAccountController {
             this.initDB();
         }
 
-        const job: XJobRow = exec(
+        const job: XJobRow | null = exec(
             this.db,
             'SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1',
             [jobType, "finished"],
             "get"
-        ) as XJobRow;
-        return convertXJobRowToXJob(job);
+        ) as XJobRow | null;
+        if (job) {
+            return convertXJobRowToXJob(job);
+        }
+        return null;
     }
 
     updateJob(job: XJob) {

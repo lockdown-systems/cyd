@@ -2,7 +2,7 @@
 import { ref, provide, onMounted } from "vue"
 
 import { DeviceInfo, PlausibleEvents } from './types';
-import { getDeviceInfo } from './helpers';
+import { getDeviceInfo } from './util';
 import SemiphemeralAPIClient from './semiphemeral-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";

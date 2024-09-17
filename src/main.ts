@@ -110,8 +110,8 @@ async function createWindow() {
     const win = new BrowserWindow({
         width: 1000,
         height: 800,
-        minWidth: 600,
-        minHeight: 400,
+        minWidth: 900,
+        minHeight: 700,
         webPreferences: {
             webviewTag: true,
             preload: path.join(__dirname, './preload.js')

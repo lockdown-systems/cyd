@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { getAccountIcon } from '../helpers';
+import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
 const props = defineProps<{
