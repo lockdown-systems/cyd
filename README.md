@@ -47,7 +47,8 @@ npm run make-prod
 
 To set up Windows:
 
-- Install [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
+- Install [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/), and add `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64` to the PATH
+  - Example code signing: `signtool.exe sign /v /d "Calculator" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://timestamp.digicert.com .\calc.exe`
 - Install [git](https://git-scm.com/download/win) (and make sure the Semiphemeral repo has a deploy key for Windows)
 - Install [Node.js LTS](https://nodejs.org/en)
 - Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
