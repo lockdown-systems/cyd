@@ -264,17 +264,20 @@ export default class SemiphemeralAPIClient {
     async postXProgress(request: PostXProgressApiRequest, authenticated: boolean): Promise<boolean | ApiErrorResponse> {
         console.log("POST /x-progress", request);
 
-        // Use the unauthenticated fetch function if we don't have an API token
-        let fetchFunc = this.fetch;
-        if (authenticated) {
-            if (!await this.validateApiToken()) {
-                return this.returnError("Failed to get a new API token.")
-            }
-            fetchFunc = this.fetchAuthenticated;
-        }
-
         try {
-            const response = await fetchFunc("POST", `${this.apiURL}/x-progress`, request);
+            let response: Response;
+            if (authenticated) {
+                // Use the authenticated fetch function
+                if (!await this.validateApiToken()) {
+                    return this.returnError("Failed to get a new API token.")
+                }
+
+                response = await this.fetchAuthenticated("POST", `${this.apiURL}/x-progress`, request);
+            } else {
+                // Use the unauthenticated fetch function if we don't have an API token
+                response = await this.fetch("POST", `${this.apiURL}/x-progress`, request);
+            }
+
             if (response.status != 200) {
                 return this.returnError("Failed to post XProgress with the server. Got status code " + response.status + ".")
             }

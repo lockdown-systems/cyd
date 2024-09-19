@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, watch, getCurrentInstance } from 'vue';
 import type { DeviceInfo } from '../types';
+import { Account, XProgressInfo } from '../../../shared_types'
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
@@ -116,6 +117,27 @@ async function registerDevice() {
 
     // Refresh the device info
     await refreshDeviceInfo();
+
+    // Submit progress to the API
+    const accounts: Account[] = await window.electron.database.getAccounts();
+    for (let i = 0; i < accounts.length; i++) {
+        if (accounts[i].type == 'X') {
+            const progressInfo: XProgressInfo = await window.electron.X.getProgressInfo(accounts[i].id);
+            const postXProgresResp = await apiClient.value.postXProgress({
+                account_uuid: progressInfo.accountUUID,
+                total_tweets_archived: progressInfo.totalTweetsArchived,
+                total_messages_indexed: progressInfo.totalMessagesIndexed,
+                total_tweets_deleted: progressInfo.totalTweetsDeleted,
+                total_retweets_deleted: progressInfo.totalRetweetsDeleted,
+                total_likes_deleted: progressInfo.totalLikesDeleted,
+                total_messages_deleted: progressInfo.totalMessagesDeleted
+            }, true);
+            if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
+                // Silently log the error and continue
+                console.log("Error posting X progress:", postXProgresResp.message);
+            }
+        }
+    }
 
     // Success
     signInState.value = 'token';
