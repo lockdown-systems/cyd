@@ -20,12 +20,16 @@ if (!fs.existsSync(buildPath)) {
 const assetsPath = path.join(__dirname, 'assets');
 
 // Build the X archive site
-if(os.platform() == 'win32') {
+if (os.platform() == 'win32') {
   const scriptPath = path.join(__dirname, 'archive-static-sites', 'build.ps1');
   execSync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, { stdio: 'inherit' });
 } else {
   execSync(path.join(__dirname, 'archive-static-sites', 'build.sh'));
 }
+
+// Load the version from package.json
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const version = packageJson.version;
 
 // Find the latest signtool.exe path
 function findLatestSigntoolPath(): string {
@@ -85,7 +89,7 @@ function removeCodeSignatures(dir: string) {
 const config: ForgeConfig = {
   packagerConfig: {
     name: 'Semiphemeral',
-    executableName: 'semiphemeral',
+    executableName: os.platform() == 'linux' ? 'semiphemeral' : 'Semiphemeral',
     appBundleId: 'systems.lockdown.semiphemeral',
     appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
@@ -117,7 +121,7 @@ const config: ForgeConfig = {
       }
     }),
     new MakerDMG({
-      name: `Install Semiphemeral`,
+      name: `Semiphemeral ${version}`,
       background: path.join(assetsPath, 'dmg-background.png'),
       iconSize: 110,
       icon: path.join(assetsPath, 'installer-icon.icns'),
