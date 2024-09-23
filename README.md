@@ -54,7 +54,7 @@ Build Semiphemeral
 cd .\code\Semiphemeral
 npm install
 npm run make-dev-windows
-npm run start
+npm run make-prod-windows
 ```
 
 ### Linux
@@ -71,5 +71,16 @@ Build Semiphemeral
 cd code/Semiphemeral
 npm install
 npm run make-dev
-npm run start
+npm run make-prod
 ```
+
+### macOS
+
+To set up macOS:
+
+- Install a [macOS VM](https://docs.getutm.app/guest-support/macos/) with [UTM](https://docs.getutm.app/installation/macos/) on an Apple Silicon Mac. Give it at least 8GB RAM, 128GB disk.
+- Login to Lockdown Systems iCloud account, enable Lockdown Mode.
+- Install Xxode. (I had trouble logging into the App Store, so I got it from [here](https://developer.apple.com/download/applications)).
+- Add signing certificates:
+  - Open Xcode > Settings > Accounts
+  - I'm hitting issues, I'll continue this later...
