@@ -324,6 +324,19 @@ onUnmounted(async () => {
                                 Start Archiving
                             </button>
                         </form>
+
+                        <div v-if="!isFirstIndex" class="mt-5">
+                            <h2>Explore my data</h2>
+                            <p class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm" @click="openArchive">
+                                    Browse Archive
+                                </button>
+
+                                <button class="btn btn-secondary btn-sm" @click="openArchiveFolder">
+                                    Open Folder
+                                </button>
+                            </p>
+                        </div>
                     </div>
 
                     <div class="col-md-6 mb-4">
@@ -500,9 +513,12 @@ onUnmounted(async () => {
                 </p>
 
                 <p>
-                    Every time you want to archive new tweets or DM conversations, just archive your X data again.
-                    If
-                    you want to recreate an archive of a tweet, delete its HTML file first.
+                    Every time you have new tweets or DMs to archive, run this tool again and it will resume from last
+                    time you performed an archive.
+                </p>
+
+                <p>
+                    If you want to recreate an archive of an individual tweet, delete its HTML file first.
                 </p>
             </div>
             <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
