@@ -64,6 +64,11 @@ export class MITMController implements IMITMController {
         // Set the proxy SSL dir
         const accountSettingsPath = getAccountSettingsPath(accountID);
         this.proxySSLCADir = path.join(accountSettingsPath, 'ca');
+
+        // Delete the old certificates
+        if (fs.existsSync(this.proxySSLCADir)) {
+            fs.rmdirSync(this.proxySSLCADir, { recursive: true });
+        }
     }
 
     async startMITM(ses: Electron.Session, proxyFilter: string[]) {
