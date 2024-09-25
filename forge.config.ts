@@ -33,6 +33,10 @@ const version = packageJson.version;
 
 // Find the latest signtool.exe path
 function findLatestSigntoolPath(): string {
+  if (os.platform() !== 'win32') {
+    return '';
+  }
+
   const baseDir = 'C:\\Program Files (x86)\\Windows Kits\\10\\bin';
   const versionPrefix = '10.';
 
