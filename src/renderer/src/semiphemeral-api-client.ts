@@ -2,6 +2,7 @@
 export type ApiErrorResponse = {
     error: boolean;
     message: string;
+    status?: number;
 };
 
 // API models for POST /authenticate
@@ -40,6 +41,7 @@ export type TokenApiRequest = {
 
 export type TokenApiResponse = {
     api_token: string;
+    device_uuid: string;
     email: string;
 };
 
@@ -59,13 +61,49 @@ export type PostXProgressApiRequest = {
     total_messages_deleted: number;
 };
 
+// API models for GET /user/premium
+export type UserPremiumApiResponse = {
+    premium_price_cents: number;
+    premium_business_price_cents: number;
+    premium_access: boolean;
+    has_individual_subscription: boolean;
+    subscription_cancel_at_period_end: boolean;
+    subscription_current_period_end: string;
+    has_business_subscription: boolean;
+    business_organizations: string[];
+};
+
+// API models for POST /user/premium
+export type PostUserPremiumApiResponse = {
+    redirect_url: string;
+};
+
+// API models for GET /user/stats
+export type UserStatsApiResponse = {
+    total_tweets_archived: number;
+    total_messages_indexed: number;
+    total_tweets_deleted: number;
+    total_retweets_deleted: number;
+    total_likes_deleted: number;
+    total_messages_deleted: number;
+};
+
+
+// The API client
 export default class SemiphemeralAPIClient {
     public apiURL: string | null = null;
     private userEmail: string | null = null;
     private deviceToken: string | null = null;
     private apiToken: string | null = null;
+    private deviceUUID: string | null = null;
 
-    constructor() { }
+    constructor() {
+        this.apiURL = null;
+        this.userEmail = null;
+        this.deviceToken = null;
+        this.apiToken = null;
+        this.deviceUUID = null;
+    }
 
     initialize(APIURL: string): void {
         this.apiURL = APIURL;
@@ -79,10 +117,15 @@ export default class SemiphemeralAPIClient {
         this.deviceToken = deviceToken;
     }
 
-    returnError(message: string) {
+    getDeviceUUID(): string | null {
+        return this.deviceUUID;
+    }
+
+    returnError(message: string, status?: number): ApiErrorResponse {
         const apiErrorResponse: ApiErrorResponse = {
             error: true,
-            message: message
+            message: message,
+            status: status
         }
         return apiErrorResponse
     }
@@ -172,7 +215,7 @@ export default class SemiphemeralAPIClient {
         try {
             const response = await this.fetch("POST", `${this.apiURL}/authenticate`, request);
             if (response.status != 200) {
-                return this.returnError("Failed to authenticate with the server. Got status code " + response.status + ".")
+                return this.returnError("Failed to authenticate with the server.", response.status)
             }
             return true;
         } catch {
@@ -185,7 +228,7 @@ export default class SemiphemeralAPIClient {
         try {
             const response = await this.fetch("POST", `${this.apiURL}/device`, request);
             if (response.status != 200) {
-                return this.returnError("Failed to register device with the server. Got status code " + response.status + ".")
+                return this.returnError("Failed to register device with the server.", response.status)
             }
             const data: RegisterDeviceApiResponse = await response.json();
             return data;
@@ -200,11 +243,14 @@ export default class SemiphemeralAPIClient {
         try {
             const response = await this.fetch("POST", `${this.apiURL}/token`, request);
             if (response.status != 200) {
-                return this.returnError("Failed to get token with the server. Got status code " + response.status + ".")
+                return this.returnError("Failed to get token with the server.", response.status)
             }
             const data: TokenApiResponse = await response.json();
 
             this.apiToken = data.api_token;
+
+            // Set the device UUID
+            this.deviceUUID = data.device_uuid;
             return data;
         } catch {
             return this.returnError("Failed to get token with the server. Maybe the server is down?")
@@ -221,7 +267,7 @@ export default class SemiphemeralAPIClient {
         try {
             const response = await this.fetchAuthenticated("DELETE", `${this.apiURL}/device`, request);
             if (response.status != 200) {
-                return this.returnError("Failed to delete device with the server. Got status code " + response.status + ".")
+                return this.returnError("Failed to delete device with the server.", response.status)
             }
         } catch {
             return this.returnError("Failed to delete device with the server. Maybe the server is down?")
@@ -236,7 +282,7 @@ export default class SemiphemeralAPIClient {
         try {
             const response = await this.fetchAuthenticated("GET", `${this.apiURL}/device`, null);
             if (response.status != 200) {
-                return this.returnError("Failed to get devices. Got status code " + response.status + ".")
+                return this.returnError("Failed to get devices.", response.status)
             }
             const data: GetDevicesApiResponse[] = await response.json();
             return { devices: data };
@@ -264,22 +310,19 @@ export default class SemiphemeralAPIClient {
     async postXProgress(request: PostXProgressApiRequest, authenticated: boolean): Promise<boolean | ApiErrorResponse> {
         console.log("POST /x-progress", request);
 
-        try {
-            let response: Response;
-            if (authenticated) {
-                // Use the authenticated fetch function
-                if (!await this.validateApiToken()) {
-                    return this.returnError("Failed to get a new API token.")
-                }
-
-                response = await this.fetchAuthenticated("POST", `${this.apiURL}/x-progress`, request);
-            } else {
-                // Use the unauthenticated fetch function if we don't have an API token
-                response = await this.fetch("POST", `${this.apiURL}/x-progress`, request);
+        // Use the unauthenticated fetch function if we don't have an API token
+        let fetchFunc = this.fetch;
+        if (authenticated) {
+            if (!await this.validateApiToken()) {
+                return this.returnError("Failed to get a new API token.")
             }
+            fetchFunc = this.fetchAuthenticated;
+        }
 
+        try {
+            const response = await fetchFunc("POST", `${this.apiURL}/x-progress`, request);
             if (response.status != 200) {
-                return this.returnError("Failed to post XProgress with the server. Got status code " + response.status + ".")
+                return this.returnError("Failed to post XProgress with the server.", response.status)
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
@@ -295,5 +338,90 @@ export default class SemiphemeralAPIClient {
         }
 
         return true;
+    }
+
+    // User API (authenticated)
+
+    async getUserPremium(): Promise<UserPremiumApiResponse | ApiErrorResponse> {
+        console.log("GET /user/premium");
+        if (!await this.validateApiToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("GET", `${this.apiURL}/user/premium`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to get user premium status.", response.status)
+            }
+            const data: UserPremiumApiResponse = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to get user premium status. Maybe the server is down?")
+        }
+    }
+
+    async postUserPremium(): Promise<PostUserPremiumApiResponse | ApiErrorResponse> {
+        console.log("POST /user/premium");
+        if (!await this.validateApiToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("POST", `${this.apiURL}/user/premium`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to upgrade user to premium.", response.status)
+            }
+            const data: PostUserPremiumApiResponse = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to upgrade user to premium. Maybe the server is down?")
+        }
+    }
+
+    async putUserPremium(action: string): Promise<boolean | ApiErrorResponse> {
+        console.log("PUT /user/premium");
+        if (!await this.validateApiToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("PUT", `${this.apiURL}/user/premium`, { action: action });
+            if (response.status != 200) {
+                return this.returnError("Failed to update subscription.", response.status)
+            }
+            return true;
+        } catch {
+            return this.returnError("Failed to update subscription. Maybe the server is down?")
+        }
+    }
+
+    async deleteUserPremium(): Promise<boolean | ApiErrorResponse> {
+        console.log("DELETE /user/premium");
+        if (!await this.validateApiToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("DELETE", `${this.apiURL}/user/premium`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to cancel subscription.", response.status)
+            }
+            return true;
+        } catch {
+            return this.returnError("Failed to cancel subscription. Maybe the server is down?")
+        }
+    }
+
+    async getUserStats(): Promise<UserStatsApiResponse | ApiErrorResponse> {
+        console.log("GET /user/stats");
+        if (!await this.validateApiToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("GET", `${this.apiURL}/user/stats`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to get user stats.", response.status)
+            }
+            const data: UserStatsApiResponse = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to get user stats. Maybe the server is down?")
+        }
     }
 }

@@ -64,7 +64,11 @@ async function authenticate() {
         email: userEmail.value
     });
     if (typeof resp !== 'boolean' && resp.error) {
-        window.electron.showError(resp.message);
+        if (resp.status == 403) {
+            window.electron.showError('At the moment, sign-ins are restricted to specific people. Sorry!');
+        } else {
+            window.electron.showError(resp.message);
+        }
         enableStartFields();
         return;
     }
