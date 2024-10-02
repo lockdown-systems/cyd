@@ -1,57 +1,57 @@
 // API error response
-export type ApiErrorResponse = {
+export type APIErrorResponse = {
     error: boolean;
     message: string;
     status?: number;
 };
 
 // API models for POST /authenticate
-export type AuthApiRequest = {
+export type AuthAPIRequest = {
     email: string;
 };
 
 // API models for POST /device
-export type RegisterDeviceApiRequest = {
+export type RegisterDeviceAPIRequest = {
     email: string;
     verification_code: string;
     description: string;
 };
 
-export type RegisterDeviceApiResponse = {
+export type RegisterDeviceAPIResponse = {
     uuid: string;
     device_token: string;
 };
 
 // API models for GET /device (an array of these)
-export type GetDevicesApiResponse = {
+export type GetDevicesAPIResponse = {
     uuid: string;
     description: string;
     last_accessed_at: Date;
 };
 
-export type GetDevicesApiResponseArray = {
-    devices: GetDevicesApiResponse[];
+export type GetDevicesAPIResponseArray = {
+    devices: GetDevicesAPIResponse[];
 };
 
 // API models for POST /token
-export type TokenApiRequest = {
+export type TokenAPIRequest = {
     email: string;
     device_token: string;
 };
 
-export type TokenApiResponse = {
+export type TokenAPIResponse = {
     api_token: string;
     device_uuid: string;
     email: string;
 };
 
 // API models for DELETE /device
-export type DeleteDeviceApiRequest = {
+export type DeleteDeviceAPIRequest = {
     uuid: string;
 };
 
 // API models for POST /x-progress
-export type PostXProgressApiRequest = {
+export type PostXProgressAPIRequest = {
     account_uuid: string;
     total_tweets_archived: number;
     total_messages_indexed: number;
@@ -62,7 +62,7 @@ export type PostXProgressApiRequest = {
 };
 
 // API models for GET /user/premium
-export type UserPremiumApiResponse = {
+export type UserPremiumAPIResponse = {
     premium_price_cents: number;
     premium_business_price_cents: number;
     premium_access: boolean;
@@ -74,12 +74,12 @@ export type UserPremiumApiResponse = {
 };
 
 // API models for POST /user/premium
-export type PostUserPremiumApiResponse = {
+export type PostUserPremiumAPIResponse = {
     redirect_url: string;
 };
 
 // API models for GET /user/stats
-export type UserStatsApiResponse = {
+export type UserStatsAPIResponse = {
     total_tweets_archived: number;
     total_messages_indexed: number;
     total_tweets_deleted: number;
@@ -121,8 +121,8 @@ export default class SemiphemeralAPIClient {
         return this.deviceUUID;
     }
 
-    returnError(message: string, status?: number): ApiErrorResponse {
-        const apiErrorResponse: ApiErrorResponse = {
+    returnError(message: string, status?: number): APIErrorResponse {
+        const apiErrorResponse: APIErrorResponse = {
             error: true,
             message: message,
             status: status
@@ -165,7 +165,7 @@ export default class SemiphemeralAPIClient {
 
                 // Try to get a new token, and then try one more time
                 console.log("Failed to authenticate with the server. Trying to get a new API token.");
-                this.getNewApiToken().then(success => {
+                this.getNewAPIToken().then(success => {
                     if (success) {
                         console.log("Got a new API token. Retrying the request.")
                         fetch(resource, options).then(resolve, reject);
@@ -181,7 +181,7 @@ export default class SemiphemeralAPIClient {
         });
     }
 
-    async getNewApiToken(): Promise<boolean> {
+    async getNewAPIToken(): Promise<boolean> {
         console.log("Getting a new API token");
         if (
             typeof this.userEmail === 'string' && this.userEmail != '' &&
@@ -201,16 +201,16 @@ export default class SemiphemeralAPIClient {
         return false;
     }
 
-    async validateApiToken(): Promise<boolean> {
+    async validateAPIToken(): Promise<boolean> {
         if (typeof this.apiToken === 'string') {
             return true;
         }
-        return await this.getNewApiToken();
+        return await this.getNewAPIToken();
     }
 
     // Auth API (not authenticated)
 
-    async authenticate(request: AuthApiRequest): Promise<boolean | ApiErrorResponse> {
+    async authenticate(request: AuthAPIRequest): Promise<boolean | APIErrorResponse> {
         console.log("POST /authenticate");
         try {
             const response = await this.fetch("POST", `${this.apiURL}/authenticate`, request);
@@ -223,14 +223,14 @@ export default class SemiphemeralAPIClient {
         }
     }
 
-    async registerDevice(request: RegisterDeviceApiRequest): Promise<RegisterDeviceApiResponse | ApiErrorResponse> {
+    async registerDevice(request: RegisterDeviceAPIRequest): Promise<RegisterDeviceAPIResponse | APIErrorResponse> {
         console.log("POST /device");
         try {
             const response = await this.fetch("POST", `${this.apiURL}/device`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to register device with the server.", response.status)
             }
-            const data: RegisterDeviceApiResponse = await response.json();
+            const data: RegisterDeviceAPIResponse = await response.json();
             return data;
         } catch {
             return this.returnError("Failed to register device with the server. Maybe the server is down?")
@@ -238,14 +238,14 @@ export default class SemiphemeralAPIClient {
 
     }
 
-    async getToken(request: TokenApiRequest): Promise<TokenApiResponse | ApiErrorResponse> {
+    async getToken(request: TokenAPIRequest): Promise<TokenAPIResponse | APIErrorResponse> {
         console.log("POST /token");
         try {
             const response = await this.fetch("POST", `${this.apiURL}/token`, request);
             if (response.status != 200) {
                 return this.returnError("Failed to get token with the server.", response.status)
             }
-            const data: TokenApiResponse = await response.json();
+            const data: TokenAPIResponse = await response.json();
 
             this.apiToken = data.api_token;
 
@@ -259,9 +259,9 @@ export default class SemiphemeralAPIClient {
 
     // Auth API (authenticated)
 
-    async deleteDevice(request: DeleteDeviceApiRequest): Promise<void | ApiErrorResponse> {
+    async deleteDevice(request: DeleteDeviceAPIRequest): Promise<void | APIErrorResponse> {
         console.log("DELETE /device");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -274,9 +274,9 @@ export default class SemiphemeralAPIClient {
         }
     }
 
-    async getDevices(): Promise<GetDevicesApiResponseArray | ApiErrorResponse> {
+    async getDevices(): Promise<GetDevicesAPIResponseArray | APIErrorResponse> {
         console.log("GET /device");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -284,7 +284,7 @@ export default class SemiphemeralAPIClient {
             if (response.status != 200) {
                 return this.returnError("Failed to get devices.", response.status)
             }
-            const data: GetDevicesApiResponse[] = await response.json();
+            const data: GetDevicesAPIResponse[] = await response.json();
             return { devices: data };
         } catch {
             return this.returnError("Failed to get devices. Maybe the server is down?")
@@ -293,7 +293,7 @@ export default class SemiphemeralAPIClient {
 
     async ping(): Promise<boolean> {
         console.log("GET /ping");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             console.log("Failed to get a new API token.")
             return false;
         }
@@ -307,13 +307,13 @@ export default class SemiphemeralAPIClient {
 
     // Submit progress
 
-    async postXProgress(request: PostXProgressApiRequest, authenticated: boolean): Promise<boolean | ApiErrorResponse> {
+    async postXProgress(request: PostXProgressAPIRequest, authenticated: boolean): Promise<boolean | APIErrorResponse> {
         console.log("POST /x-progress", request);
 
         // Use the unauthenticated fetch function if we don't have an API token
         let fetchFunc = this.fetch;
         if (authenticated) {
-            if (!await this.validateApiToken()) {
+            if (!await this.validateAPIToken()) {
                 return this.returnError("Failed to get a new API token.")
             }
             fetchFunc = this.fetchAuthenticated;
@@ -342,9 +342,9 @@ export default class SemiphemeralAPIClient {
 
     // User API (authenticated)
 
-    async getUserPremium(): Promise<UserPremiumApiResponse | ApiErrorResponse> {
+    async getUserPremium(): Promise<UserPremiumAPIResponse | APIErrorResponse> {
         console.log("GET /user/premium");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -352,16 +352,16 @@ export default class SemiphemeralAPIClient {
             if (response.status != 200) {
                 return this.returnError("Failed to get user premium status.", response.status)
             }
-            const data: UserPremiumApiResponse = await response.json();
+            const data: UserPremiumAPIResponse = await response.json();
             return data;
         } catch {
             return this.returnError("Failed to get user premium status. Maybe the server is down?")
         }
     }
 
-    async postUserPremium(): Promise<PostUserPremiumApiResponse | ApiErrorResponse> {
+    async postUserPremium(): Promise<PostUserPremiumAPIResponse | APIErrorResponse> {
         console.log("POST /user/premium");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -369,16 +369,16 @@ export default class SemiphemeralAPIClient {
             if (response.status != 200) {
                 return this.returnError("Failed to upgrade user to premium.", response.status)
             }
-            const data: PostUserPremiumApiResponse = await response.json();
+            const data: PostUserPremiumAPIResponse = await response.json();
             return data;
         } catch {
             return this.returnError("Failed to upgrade user to premium. Maybe the server is down?")
         }
     }
 
-    async putUserPremium(action: string): Promise<boolean | ApiErrorResponse> {
+    async putUserPremium(action: string): Promise<boolean | APIErrorResponse> {
         console.log("PUT /user/premium");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -392,9 +392,9 @@ export default class SemiphemeralAPIClient {
         }
     }
 
-    async deleteUserPremium(): Promise<boolean | ApiErrorResponse> {
+    async deleteUserPremium(): Promise<boolean | APIErrorResponse> {
         console.log("DELETE /user/premium");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -408,9 +408,9 @@ export default class SemiphemeralAPIClient {
         }
     }
 
-    async getUserStats(): Promise<UserStatsApiResponse | ApiErrorResponse> {
+    async getUserStats(): Promise<UserStatsAPIResponse | APIErrorResponse> {
         console.log("GET /user/stats");
-        if (!await this.validateApiToken()) {
+        if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
@@ -418,7 +418,7 @@ export default class SemiphemeralAPIClient {
             if (response.status != 200) {
                 return this.returnError("Failed to get user stats.", response.status)
             }
-            const data: UserStatsApiResponse = await response.json();
+            const data: UserStatsAPIResponse = await response.json();
             return data;
         } catch {
             return this.returnError("Failed to get user stats. Maybe the server is down?")

@@ -7,8 +7,9 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
-import { PlausibleEvents, ApiErrorResponse } from "../types";
+import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
+import { APIErrorResponse } from "../semiphemeral-api-client";
 
 export enum State {
     Login = "login",
@@ -22,7 +23,7 @@ export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
-    public postXProgresResp: boolean | ApiErrorResponse = false;
+    public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public forceIndexEverything: boolean = false;
     private isFirstRun: boolean = false;
