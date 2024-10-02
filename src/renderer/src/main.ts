@@ -11,6 +11,8 @@ import App from "./App.vue";
 declare global {
     interface Window {
         electron: {
+            getVersion: () => Promise<string>;
+            getPlatform: () => Promise<string>;
             getAPIURL: () => Promise<string>;
             getDashURL: () => Promise<string>;
             trackEvent: (eventName: string, userAgent: string) => Promise<string>;

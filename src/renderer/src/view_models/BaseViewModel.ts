@@ -3,7 +3,7 @@ import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import type { DeviceInfo } from '../types';
-import { AutomationErrorType } from '../automation_errors';
+import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
 
 export class TimeoutError extends Error {
@@ -115,8 +115,41 @@ export class BaseViewModel {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    error(automationErrorType: AutomationErrorType, error: any = null) {
-        console.error(`Automation Error: ${automationErrorType}`, error);
+    async error(automationErrorType: AutomationErrorType, errorReportData: any = {}, sensitiveContextData: any = {}) {
+        console.error(`Automation Error: ${automationErrorType}`, errorReportData);
+
+        // Get username
+        let username = "";
+        switch (this.account.type) {
+            case "X":
+                username = this.account.xAccount?.username ? this.account.xAccount.username : "";
+                break;
+            default:
+                break;
+        }
+
+        // Get screenshot
+        let screenshotDataURL = "";
+        const webview = this.getWebview();
+        if (webview) {
+            screenshotDataURL = (await webview.capturePage()).toDataURL();
+        }
+
+        const details: AutomationErrorDetails = {
+            accountType: this.account.type,
+            automationErrorType: automationErrorType,
+            errorReportData: errorReportData,
+            username: username,
+            screenshotDataURL: screenshotDataURL,
+            sensitiveContextData: sensitiveContextData,
+        };
+
+        // Set the details and show the error modal
+        this.emitter?.emit("set-automation-error-details", details);
+        this.emitter?.emit("show-automation-error");
+
+        this.pause()
+        await this.waitForPause();
     }
 
     async waitForLoadingToFinish() {

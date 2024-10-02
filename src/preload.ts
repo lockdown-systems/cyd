@@ -2,6 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
+    getVersion: (): Promise<string> => {
+        return ipcRenderer.invoke('getVersion')
+    },
+    getPlatform: (): Promise<string> => {
+        return ipcRenderer.invoke('getPlatform')
+    },
     getAPIURL: (): Promise<string> => {
         return ipcRenderer.invoke('getAPIURL')
     },

@@ -125,6 +125,14 @@ async function createWindow() {
 
         // Main IPC events
 
+        ipcMain.handle('getVersion', async () => {
+            return app.getVersion();
+        });
+
+        ipcMain.handle('getPlatform', async () => {
+            return os.platform();
+        });
+
         ipcMain.handle('getAPIURL', async () => {
             return config.apiURL;
         });
