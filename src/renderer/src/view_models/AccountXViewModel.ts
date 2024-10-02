@@ -369,7 +369,13 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     }
 
                     // Parse so far
-                    this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                    try {
+                        this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                    } catch (e) {
+                        this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
+                            error: e
+                        });
+                    }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
