@@ -36,9 +36,9 @@ export type AutomationErrorDetails = {
     accountType: string;
     automationErrorType: AutomationErrorType;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    error_report_data: any;
+    errorReportData: any;
     username: string;
-    screenshotBase64: string;
+    screenshotDataURL: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sensitive_context_data: any;
+    sensitiveContextData: any;
 }
