@@ -7,8 +7,8 @@
   "license": "proprietary",
   "authors": "Lockdown Systems",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
+    "start": "npx tsx ./node_modules/.bin/electron-forge start",
+    "package": "npx tsx ./node_modules/.bin/electron-forge package",
     "make-local": "sh ./scripts/make-local.sh",
     "make-dev": "sh ./scripts/make-dev.sh",
     "make-dev-macos": "./scripts/make-dev-macos.sh",
