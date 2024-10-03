@@ -204,6 +204,21 @@ const updateArchivePath = async () => {
     archivePath.value = path ? path : '';
 };
 
+const onAutomationErrorContinue = () => {
+    console.log('Continuing automation after error');
+    if (accountXViewModel.value) {
+        accountXViewModel.value?.errorJob(accountXViewModel.value?.currentJobIndex);
+        accountXViewModel.value?.resume();
+    } else {
+        console.error('AccountXViewModel not found');
+    }
+};
+
+const onAutomationErrorCancel = () => {
+    console.log('Cancelling automation after error');
+    emit('onRefreshClicked');
+};
+
 onMounted(async () => {
     await updateArchivePath();
 
@@ -238,10 +253,19 @@ onMounted(async () => {
     } else {
         console.error('Webview component not found');
     }
+
+    // Define automation error handlers on the global emitter for this account
+    console.log("Defining event handlers", `automation-error-${props.account.id}-continue`, `automation-error-${props.account.id}-cancel`);
+    emitter?.on(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
+    emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });
 
 onUnmounted(async () => {
     isWebviewMounted.value = false;
+
+    // Remove automation error handlers
+    emitter?.off(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
+    emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });
 </script>
 

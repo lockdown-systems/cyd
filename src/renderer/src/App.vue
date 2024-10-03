@@ -62,10 +62,8 @@ provide('showSignIn', showSignIn);
 // Automation error report
 const showAutomationErrorReportModal = ref(false);
 emitter?.on('show-automation-error', () => {
-  console.log('show-automation-error');
   showAutomationErrorReportModal.value = true;
 });
-
 
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);

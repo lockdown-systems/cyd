@@ -25,7 +25,6 @@ const includeSensitiveData = ref(false);
 const details = ref<AutomationErrorDetails | null>(null);
 
 emitter?.on('set-automation-error-details', (newDetails: AutomationErrorDetails) => {
-    console.log('set-automation-error-details', newDetails);
     details.value = newDetails;
 });
 
@@ -64,6 +63,36 @@ const toggleShowDetails = () => {
     }
 };
 
+const shouldContinue = async () => {
+    if (!details.value) {
+        console.error("No details provided for automation error report");
+        return;
+    }
+
+    if (await window.electron.showQuestion(
+        "Do you want to continue onto the next step anyway, even though there was an error?",
+        "Yes, continue",
+        "No, cancel"
+    )) {
+        console.log(`Emitting event: automation-error-${details.value?.accountID}-continue`);
+        emitter.emit(`automation-error-${details.value?.accountID}-continue`);
+    } else {
+        console.log(`Emitting event: automation-error-${details.value?.accountID}-cancel`);
+        emitter.emit(`automation-error-${details.value?.accountID}-cancel`);
+    }
+
+};
+
+const submitReport = async () => {
+    await shouldContinue();
+    hide();
+};
+
+const doNotSubmitReport = async () => {
+    await shouldContinue();
+    hide();
+};
+
 onMounted(async () => {
     const modalElement = automationErrorReportModal.value;
     if (modalElement) {
@@ -72,7 +101,7 @@ onMounted(async () => {
 
         // The 'hidden.bs.modal' event is triggered when when the user clicks outside the modal
         modalElement.addEventListener('hidden.bs.modal', () => {
-            hide();
+            doNotSubmitReport();
         });
     }
 
@@ -105,30 +134,27 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Automation Error: {{ automationErrorType() }}
+                        Submit an automation error report
                     </h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                        @click="doNotSubmitReport" />
                 </div>
                 <div class="modal-body">
                     <div class="d-flex flex-column">
                         <div>
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <div class="mb-3 form-check">
-                                        <input id="includeSensitiveData" v-model="includeSensitiveData" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label" for="includeSensitiveData">
-                                            <strong>Send extra details.</strong> This includes your username, a
-                                            screenshot of the embedded browser, and other data that could help debug
-                                            this problem.
-                                        </label>
-                                    </div>
-                                    <p>The more info you provide, the easier it will be for us to fix.</p>
-                                </div>
-                                <div class="error-logo text-center">
-                                    <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird">
-                                </div>
+                            <h5 class="mb-3">
+                                {{ automationErrorType() }}
+                            </h5>
+                            <div class="mb-3 form-check">
+                                <input id="includeSensitiveData" v-model="includeSensitiveData" type="checkbox"
+                                    class="form-check-input">
+                                <label class="form-check-label" for="includeSensitiveData">
+                                    <strong>Send extra details.</strong> This includes your username, a
+                                    screenshot of the embedded browser, and other data that could help debug
+                                    this problem.
+                                </label>
                             </div>
+                            <p>The more info you provide, the easier it will be for us to fix.</p>
                             <div>
                                 <p>
                                     <a href="#" class="toggle-details" @click="toggleShowDetails">
@@ -177,17 +203,20 @@ onUnmounted(() => {
                                         </div>
                                     </li>
                                 </ul>
+                                <div v-else class="error-logo text-center">
+                                    <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <div class="d-flex justify-content-between w-100">
-                        <button type="button" class="btn btn-outline-danger">
+                        <button type="button" class="btn btn-outline-danger" @click="submitReport">
                             <i class="fa-solid fa-thumbs-down" />
                             Don't Submit Report
                         </button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" @click="doNotSubmitReport">
                             <i class="fa-solid fa-thumbs-up" />
                             Submit Report
                         </button>
@@ -202,7 +231,7 @@ onUnmounted(() => {
 .error-logo img {
     width: 120px;
     animation: spin 2s ease-in-out infinite;
-    margin: 0 2rem;
+    margin: 2rem;
 }
 
 @keyframes spin {

@@ -136,6 +136,7 @@ export class BaseViewModel {
         }
 
         const details: AutomationErrorDetails = {
+            accountID: this.account.id,
             accountType: this.account.type,
             automationErrorType: automationErrorType,
             errorReportData: errorReportData,

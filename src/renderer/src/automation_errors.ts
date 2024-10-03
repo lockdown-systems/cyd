@@ -33,6 +33,7 @@ export const AutomationErrorTypeToMessage = {
 }
 
 export type AutomationErrorDetails = {
+    accountID: number;
     accountType: string;
     automationErrorType: AutomationErrorType;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
