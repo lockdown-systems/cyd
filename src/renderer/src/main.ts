@@ -5,12 +5,23 @@ import "@fortawesome/fontawesome-free/css/all.css";
 import mitt from 'mitt';
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from "../../shared_types";
+import type {
+    Account,
+    XProgress,
+    XJob,
+    XArchiveStartResponse,
+    XIndexMessagesStartResponse,
+    XRateLimitInfo,
+    XProgressInfo,
+    ResponseData
+} from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
     interface Window {
         electron: {
+            getVersion: () => Promise<string>;
+            getPlatform: () => Promise<string>;
             getAPIURL: () => Promise<string>;
             getDashURL: () => Promise<string>;
             trackEvent: (eventName: string, userAgent: string) => Promise<string>;
@@ -39,7 +50,9 @@ declare global {
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
                 getLastFinishedJob: (accountID: number, jobType: string) => Promise<XJob | null>;
                 updateJob: (accountID: number, jobJSON: string) => void;
-                getUsername: (accountID: number, webContentsID: number) => Promise<string | null>;
+                getUsernameStart: (accountID: number) => void;
+                getUsernameStop: (accountID: number) => void;
+                getUsername: (accountID: number) => Promise<string | null>;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
                 indexParseTweets: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
@@ -62,6 +75,7 @@ declare global {
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
+                getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
             };
         };
     }

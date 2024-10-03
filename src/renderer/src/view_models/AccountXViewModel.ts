@@ -7,8 +7,9 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
-import { PlausibleEvents, ApiErrorResponse } from "../types";
+import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
+import { APIErrorResponse } from "../semiphemeral-api-client";
 
 export enum State {
     Login = "login",
@@ -22,9 +23,10 @@ export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
-    public postXProgresResp: boolean | ApiErrorResponse = false;
+    public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public forceIndexEverything: boolean = false;
+    public currentJobIndex: number = 0;
     private isFirstRun: boolean = false;
 
     private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
@@ -201,9 +203,9 @@ export class AccountXViewModel extends BaseViewModel {
             await this.waitForURL(["https://x.com/login", "https://x.com/i/flow/login"], "https://x.com/home");
         } catch (e) {
             if (e instanceof URLChangedError) {
-                this.error(AutomationErrorType.X_login_URLChanged, { error: e });
+                await this.error(AutomationErrorType.X_login_URLChanged, { exception: e.toString() });
             } else {
-                this.error(AutomationErrorType.X_login_WaitingForURLFailed, { error: e });
+                await this.error(AutomationErrorType.X_login_WaitingForURLFailed, { exception: (e as Error).toString() });
             }
         }
 
@@ -222,12 +224,15 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("login", "getting username");
         this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
 
-        let username = null;
-        if (this.webContentsID) {
-            username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
-        }
+        await window.electron.X.getUsernameStart(this.account.id);
+        await this.loadURLWithRateLimit("https://x.com/settings/account");
+        await this.waitForSelector('a[href="/settings/your_twitter_data/account"]');
+        const username = await window.electron.X.getUsername(this.account.id);
+        await window.electron.X.getUsernameStop(this.account.id);
+
         if (!username) {
-            this.error(AutomationErrorType.X_login_FailedToGetUsername);
+            const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+            await this.error(AutomationErrorType.X_login_FailedToGetUsername, null, latestResponseData);
             return;
         }
 
@@ -268,6 +273,14 @@ export class AccountXViewModel extends BaseViewModel {
         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
         this.log("finishJob", this.jobs[iJob].jobType);
+    }
+
+    async errorJob(iJob: number) {
+        this.jobs[iJob].finishedAt = new Date();
+        this.jobs[iJob].status = "error";
+        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+        this.log("errorJob", this.jobs[iJob].jobType);
     }
 
     async runJob(iJob: number) {
@@ -337,13 +350,13 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             }
                         } else if (e instanceof URLChangedError) {
                             const newURL = this.webview.getURL();
-                            this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
+                            await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
                                 newURL: newURL,
-                                error: e
+                                exception: e.toString()
                             })
                         } else {
-                            this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                                error: e
+                            await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
+                                exception: (e as Error).toString()
                             })
                         }
                     }
@@ -361,14 +374,22 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
-                            this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit);
+                            await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit);
                         }
                         await this.sleep(500);
                         moreToScroll = true;
                     }
 
                     // Parse so far
-                    this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                    try {
+                        this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                    } catch (e) {
+                        const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+                        await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
+                            exception: (e as Error).toString()
+                        }, latestResponseData);
+                        break;
+                    }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
@@ -480,13 +501,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             }
                         } else if (e instanceof URLChangedError) {
                             const newURL = this.webview.getURL();
-                            this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
+                            await this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
                                 newURL: newURL,
-                                error: e
+                                exception: e.toString()
                             })
                         } else {
-                            this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
-                                error: e
+                            await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
+                                exception: (e as Error).toString()
                             })
                         }
                     }
@@ -575,8 +596,8 @@ Please wait while I index all of the messages from each conversation.
                                 if (this.rateLimitInfo.isRateLimited) {
                                     await this.waitForRateLimit();
                                 } else {
-                                    this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-                                        error: e
+                                    await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
+                                        exception: e.toString()
                                     });
                                 }
                             } else if (e instanceof URLChangedError) {
@@ -592,20 +613,20 @@ Please wait while I index all of the messages from each conversation.
                                     await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
                                     break;
                                 } else {
-                                    this.error(AutomationErrorType.x_runJob_indexConversations_URLChangedButDidnt, {
-                                        error: e
+                                    await this.error(AutomationErrorType.x_runJob_indexConversations_URLChangedButDidnt, {
+                                        exception: e.toString()
                                     })
                                 }
                             } else {
-                                this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    error: e
+                                await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
+                                    exception: (e as Error).toString()
                                 });
                             }
 
                             tries += 1;
                             if (tries >= 3) {
-                                this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    error: e
+                                await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
+                                    exception: (e as Error).toString()
                                 });
                                 break;
                             }
@@ -740,6 +761,7 @@ You can make a local archive of your data, or you delete exactly what you choose
 
             case State.RunJobs:
                 for (let i = 0; i < this.jobs.length; i++) {
+                    this.currentJobIndex = i;
                     await this.runJob(i);
                 }
 

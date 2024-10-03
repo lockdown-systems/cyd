@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { ref, provide, onMounted } from "vue"
+import { ref, provide, onMounted, getCurrentInstance } from "vue"
 
 import { DeviceInfo, PlausibleEvents } from './types';
 import { getDeviceInfo } from './util';
 import SemiphemeralAPIClient from './semiphemeral-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
+import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
 import TabsView from "./views/TabsView.vue";
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Application state
 const isReady = ref(false);
@@ -54,6 +59,12 @@ const showSignIn = () => {
 };
 provide('showSignIn', showSignIn);
 
+// Automation error report
+const showAutomationErrorReportModal = ref(false);
+emitter?.on('show-automation-error', () => {
+  showAutomationErrorReportModal.value = true;
+});
+
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
@@ -95,6 +106,10 @@ onMounted(async () => {
 
     <!-- Sign in modal -->
     <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
+
+    <!-- Automation error report modal -->
+    <AutomationErrorReportModal v-if="showAutomationErrorReportModal" @hide="showAutomationErrorReportModal = false"
+      @close="showAutomationErrorReportModal = false" />
   </div>
 </template>
 
@@ -189,7 +204,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin: 0 auto;
+  margin: 1rem auto;
 }
 
 .modal-content {
@@ -200,10 +215,6 @@ body {
 
 .modal-body {
   overflow-y: auto;
-}
-
-.modal-xl {
-  max-width: 90%;
 }
 
 /* Webview styles */

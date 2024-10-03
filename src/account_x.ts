@@ -4,7 +4,7 @@ import fs from 'fs'
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
 
-import { app, ipcMain, session, shell, webContents } from 'electron'
+import { app, ipcMain, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
@@ -18,6 +18,7 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
     XProgressInfo, emptyXProgressInfo,
+    ResponseData,
     // XTweet
 } from './shared_types'
 import { runMigrations, getAccount, getXAccount, saveXAccount, exec, Sqlite3Count } from './database'
@@ -341,38 +342,27 @@ export class XAccountController {
         );
     }
 
-    async getUsername(webContentsID: number): Promise<string | null> {
+    async getUsernameStart() {
+        log.info("XAccountController.getUsernameStart");
+        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        await ses.clearCache();
+        await this.mitmController.startMonitoring();
+        await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
+    }
+
+    async getUsernameStop() {
+        log.info("XAccountController.getUsernameStop");
+        await this.mitmController.stopMonitoring();
+        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        await this.mitmController.stopMITM(ses);
+    }
+
+    async getUsername(): Promise<string | null> {
+        log.info("XAccountController.getUsername");
         let username = null;
         if (!this.account) {
             log.error("XAccountController.getUsername: account not found");
             return username;
-        }
-
-        // Start monitoring
-        const ses = session.fromPartition(`persist:account-${this.account.id}`);
-        await ses.clearCache();
-        await this.mitmController.startMonitoring();
-        await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
-
-        // Load settings page
-        const wc = webContents.fromId(webContentsID);
-        if (wc) {
-            const tries = 0;
-            while (tries < 3) {
-                try {
-                    await wc.loadURL("https://x.com/settings/account");
-                    break;
-                } catch (error) {
-                    log.info(`Failed to load URL: ${error}`);
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-            }
-
-            // Wait for the URL to finish loading
-            while (wc.isLoading()) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
-            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
         // See if we got settings.json
@@ -384,10 +374,6 @@ export class XAccountController {
                 break;
             }
         }
-
-        // Stop monitoring
-        await this.mitmController.stopMonitoring();
-        await this.mitmController.stopMITM(ses);
 
         return username;
     }
@@ -1237,6 +1223,15 @@ export class XAccountController {
             return;
         }
     }
+
+    async getLatestResponseData(): Promise<ResponseData | null> {
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            if (!this.mitmController.responseData[i].processed) {
+                return this.mitmController.responseData[i];
+            }
+        }
+        return null;
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -1271,9 +1266,19 @@ export const defineIPCX = () => {
         controller.updateJob(job);
     });
 
-    ipcMain.handle('X:getUsername', async (_, accountID: number, webContentsID: number): Promise<string | null> => {
+    ipcMain.handle('X:getUsernameStart', async (_, accountID: number): Promise<void> => {
         const controller = getXAccountController(accountID);
-        return await controller.getUsername(webContentsID);
+        await controller.getUsernameStart();
+    });
+
+    ipcMain.handle('X:getUsernameStop', async (_, accountID: number): Promise<void> => {
+        const controller = getXAccountController(accountID);
+        await controller.getUsernameStop();
+    });
+
+    ipcMain.handle('X:getUsername', async (_, accountID: number): Promise<string | null> => {
+        const controller = getXAccountController(accountID);
+        return await controller.getUsername();
     });
 
     ipcMain.handle('X:indexStart', async (_, accountID: number) => {
@@ -1385,5 +1390,10 @@ export const defineIPCX = () => {
     ipcMain.handle('X:saveProfileImage', async (_, accountID: number, url: string): Promise<void> => {
         const controller = getXAccountController(accountID);
         return await controller.saveProfileImage(url);
+    });
+
+    ipcMain.handle('X:getLatestResponseData', async (_, accountID: number): Promise<ResponseData | null> => {
+        const controller = getXAccountController(accountID);
+        return await controller.getLatestResponseData();
     });
 };

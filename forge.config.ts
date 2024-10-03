@@ -126,6 +126,7 @@ const config: ForgeConfig = {
     }),
     new MakerDMG({
       name: `Semiphemeral ${version}`,
+      appPath: path.join(__dirname, 'out', 'Semiphemeral-darwin-universal', 'Semiphemeral.app'),
       background: path.join(assetsPath, 'dmg-background.png'),
       iconSize: 110,
       icon: path.join(assetsPath, 'installer-icon.icns'),
