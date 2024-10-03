@@ -35,6 +35,8 @@ npm run make-prod
 
 ## Making releases
 
+Make sure to bump the version in `package.json`.
+
 ### Windows
 
 To set up Windows:
