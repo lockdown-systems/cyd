@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
 import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
+import { PostAutomationErrorReportAPIRequest } from '../semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
@@ -16,7 +17,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 const automationErrorReportModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const _apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 
 // Automation error fields
 const appVersion = ref('');
@@ -29,7 +30,7 @@ emitter?.on('set-automation-error-details', (newDetails: AutomationErrorDetails)
 });
 
 const automationErrorType = () => {
-    if (AutomationErrorTypeToMessage[details.value?.automationErrorType] !== null) {
+    if (details.value && AutomationErrorTypeToMessage[details.value?.automationErrorType] !== null) {
         return AutomationErrorTypeToMessage[details.value?.automationErrorType];
     }
     return "Automation error";
@@ -84,6 +85,40 @@ const shouldContinue = async () => {
 };
 
 const submitReport = async () => {
+    if (!details.value) {
+        await window.electron.showError("Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.")
+        await shouldContinue();
+        hide();
+        return;
+    }
+
+    // Build the data object
+    let data: PostAutomationErrorReportAPIRequest = {
+        app_version: appVersion.value,
+        client_platform: clientPlatform.value,
+        account_type: details.value.accountType,
+        error_report_type: details.value.automationErrorType,
+        error_report_data: details.value.errorReportData,
+    };
+    if (includeSensitiveData.value) {
+        data = {
+            ...data,
+            account_username: details.value.username,
+            screenshot_data_uri: details.value.screenshotDataURL,
+            sensitive_context_data: details.value.sensitiveContextData,
+        }
+    }
+
+    // Are we logged in?
+    const loggedIn = await apiClient.value.ping();
+
+    // Post the report
+    const postAutomationErrorReportResp = await apiClient.value.postAutomationErrorReport(data, loggedIn);
+    if (postAutomationErrorReportResp !== true && postAutomationErrorReportResp !== false && postAutomationErrorReportResp.error) {
+        console.error("Error posting automation error report:", postAutomationErrorReportResp.message);
+        await window.electron.showError("Well this is awkward. There's an error submitting your automation error report.")
+    }
+
     await shouldContinue();
     hide();
 };

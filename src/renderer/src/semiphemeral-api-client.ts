@@ -88,6 +88,17 @@ export type UserStatsAPIResponse = {
     total_messages_deleted: number;
 };
 
+// API models for POST /automation-error-report
+export type PostAutomationErrorReportAPIRequest = {
+    app_version: string;
+    client_platform: string;
+    account_type: string;
+    error_report_type: string;
+    error_report_data: object;
+    account_username?: string;
+    screenshot_data_uri?: string;
+    sensitive_context_data?: object;
+};
 
 // The API client
 export default class SemiphemeralAPIClient {
@@ -423,5 +434,40 @@ export default class SemiphemeralAPIClient {
         } catch {
             return this.returnError("Failed to get user stats. Maybe the server is down?")
         }
+    }
+
+    // Submit automation error report
+
+    async postAutomationErrorReport(request: PostAutomationErrorReportAPIRequest, authenticated: boolean): Promise<boolean | APIErrorResponse> {
+        console.log("POST /automation-error-report", request);
+
+        // Use the unauthenticated fetch function if we don't have an API token
+        let fetchFunc = this.fetch;
+        if (authenticated) {
+            if (!await this.validateAPIToken()) {
+                return this.returnError("Failed to get a new API token.")
+            }
+            fetchFunc = this.fetchAuthenticated;
+        }
+
+        try {
+            const response = await fetchFunc("POST", `${this.apiURL}/automation-error-report`, request);
+            if (response.status != 200) {
+                return this.returnError("Failed to post automation error report with the server.", response.status)
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            if (error.response) {
+                const statusCode = error.response.status;
+                const responseBody = error.response.data;
+                return this.returnError(`Failed to post automation error report with the server. Status code: ${statusCode}, Response body: ${JSON.stringify(responseBody)}`);
+            } else if (error.request) {
+                return this.returnError("Failed to post automation error report with the server. No response received.");
+            } else {
+                return this.returnError(`Failed to post automation error report with the server. Error: ${error.message}`);
+            }
+        }
+
+        return true;
     }
 }
