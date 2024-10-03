@@ -224,12 +224,15 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("login", "getting username");
         this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
 
-        let username = null;
-        if (this.webContentsID) {
-            username = await window.electron.X.getUsername(this.account.id, this.webContentsID);
-        }
+        await window.electron.X.getUsernameStart(this.account.id);
+        await this.loadURLWithRateLimit("https://x.com/settings/account");
+        await this.waitForSelector('a[href="/settings/your_twitter_data/account"]');
+        const username = await window.electron.X.getUsername(this.account.id);
+        await window.electron.X.getUsernameStop(this.account.id);
+
         if (!username) {
-            await this.error(AutomationErrorType.X_login_FailedToGetUsername);
+            const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+            await this.error(AutomationErrorType.X_login_FailedToGetUsername, null, latestResponseData);
             return;
         }
 

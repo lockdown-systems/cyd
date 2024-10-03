@@ -72,6 +72,8 @@ export class MITMController implements IMITMController {
     }
 
     async startMITM(ses: Electron.Session, proxyFilter: string[]) {
+        log.info(`MITMController: Account ${this.account?.id}, starting proxy`, proxyFilter);
+
         // Set the proxy filters
         this.proxyFilter = proxyFilter;
 
