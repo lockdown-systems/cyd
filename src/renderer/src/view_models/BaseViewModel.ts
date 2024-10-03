@@ -116,7 +116,7 @@ export class BaseViewModel {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async error(automationErrorType: AutomationErrorType, errorReportData: any = {}, sensitiveContextData: any = {}) {
-        console.error(`Automation Error: ${automationErrorType}`, errorReportData);
+        console.error(`Automation Error: ${automationErrorType}`, errorReportData, sensitiveContextData);
 
         // Get username
         let username = "";
@@ -144,9 +144,12 @@ export class BaseViewModel {
             sensitiveContextData: sensitiveContextData,
         };
 
-        // Set the details and show the error modal
-        this.emitter?.emit("set-automation-error-details", details);
+        // Show the error modal
         this.emitter?.emit("show-automation-error");
+        // Wait for it to appear
+        await new Promise(resolve => setTimeout(resolve, 200));
+        // Set the data
+        this.emitter?.emit("set-automation-error-details", details);
 
         this.pause()
         await this.waitForPause();

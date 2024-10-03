@@ -18,6 +18,7 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
     XProgressInfo, emptyXProgressInfo,
+    ResponseData,
     // XTweet
 } from './shared_types'
 import { runMigrations, getAccount, getXAccount, saveXAccount, exec, Sqlite3Count } from './database'
@@ -1237,6 +1238,15 @@ export class XAccountController {
             return;
         }
     }
+
+    async getLatestResponseData(): Promise<ResponseData | null> {
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            if (!this.mitmController.responseData[i].processed) {
+                return this.mitmController.responseData[i];
+            }
+        }
+        return null;
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -1385,5 +1395,10 @@ export const defineIPCX = () => {
     ipcMain.handle('X:saveProfileImage', async (_, accountID: number, url: string): Promise<void> => {
         const controller = getXAccountController(accountID);
         return await controller.saveProfileImage(url);
+    });
+
+    ipcMain.handle('X:getLatestResponseData', async (_, accountID: number): Promise<ResponseData | null> => {
+        const controller = getXAccountController(accountID);
+        return await controller.getLatestResponseData();
     });
 };

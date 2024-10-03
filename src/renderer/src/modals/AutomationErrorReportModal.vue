@@ -25,6 +25,7 @@ const includeSensitiveData = ref(false);
 const details = ref<AutomationErrorDetails | null>(null);
 
 emitter?.on('set-automation-error-details', (newDetails: AutomationErrorDetails) => {
+    console.log('set-automation-error-details', newDetails);
     details.value = newDetails;
 });
 
@@ -100,7 +101,7 @@ onUnmounted(() => {
 <template>
     <div id="automationErrorReportModal" ref="automationErrorReportModal" class="modal fade" role="dialog"
         aria-labelledby="automationErrorReportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
@@ -110,15 +111,23 @@ onUnmounted(() => {
                 </div>
                 <div class="modal-body">
                     <div class="d-flex flex-column">
-                        <form class="w-100" @submit.prevent>
-                            <div class="mb-3 form-check">
-                                <input id="includeSensitiveData" v-model="includeSensitiveData" type="checkbox"
-                                    class="form-check-input">
-                                <label class="form-check-label" for="includeSensitiveData">
-                                    Include my username, a screenshot of the embedded browser, and other data that could
-                                    help debug this problem. The more info you provide, the easier it will be for us to
-                                    fix.
-                                </label>
+                        <div>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <div class="mb-3 form-check">
+                                        <input id="includeSensitiveData" v-model="includeSensitiveData" type="checkbox"
+                                            class="form-check-input">
+                                        <label class="form-check-label" for="includeSensitiveData">
+                                            <strong>Send extra details.</strong> This includes your username, a
+                                            screenshot of the embedded browser, and other data that could help debug
+                                            this problem.
+                                        </label>
+                                    </div>
+                                    <p>The more info you provide, the easier it will be for us to fix.</p>
+                                </div>
+                                <div class="error-logo text-center">
+                                    <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird">
+                                </div>
                             </div>
                             <div>
                                 <p>
@@ -152,7 +161,7 @@ onUnmounted(() => {
                                         <label>Error type:</label>
                                         <span>{{ automationErrorType() }}</span>
                                     </li>
-                                    <li v-if="includeSensitiveData && errorReportData() != ''">
+                                    <li v-if="errorReportData() != ''">
                                         <label>Details:</label>
                                         <pre>{{ errorReportData() }}</pre>
                                     </li>
@@ -169,17 +178,19 @@ onUnmounted(() => {
                                     </li>
                                 </ul>
                             </div>
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-danger">
-                                    <i class="fa-solid fa-thumbs-down" />
-                                    Don't Submit Report
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fa-solid fa-thumbs-up" />
-                                    Submit Report
-                                </button>
-                            </div>
-                        </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="d-flex justify-content-between w-100">
+                        <button type="button" class="btn btn-outline-danger">
+                            <i class="fa-solid fa-thumbs-down" />
+                            Don't Submit Report
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-thumbs-up" />
+                            Submit Report
+                        </button>
                     </div>
                 </div>
             </div>
@@ -188,13 +199,25 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.screenshot img {
-    max-width: 80%;
-    border: 3px solid #000;
+.error-logo img {
+    width: 120px;
+    animation: spin 2s ease-in-out infinite;
+    margin: 0 2rem;
 }
 
-.w-100 {
-    width: 100% !important;
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.screenshot img {
+    max-width: 100%;
+    border: 3px solid #000;
 }
 
 a.toggle-details {
@@ -204,9 +227,10 @@ a.toggle-details {
 ul.details {
     list-style-type: none;
     padding-left: 0;
-    border: 1px solid #999;
+    border: 1px solid #d0d0d0;
     border-radius: 0.5rem;
     padding: 1.5rem;
+    background-color: #fafafa;
 }
 
 ul.details li {
@@ -221,5 +245,9 @@ ul.details li label {
 pre {
     font-size: 0.8rem;
     color: #666;
+}
+
+.w-100 {
+    width: 100% !important;
 }
 </style>

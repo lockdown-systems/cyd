@@ -62,6 +62,7 @@ provide('showSignIn', showSignIn);
 // Automation error report
 const showAutomationErrorReportModal = ref(false);
 emitter?.on('show-automation-error', () => {
+  console.log('show-automation-error');
   showAutomationErrorReportModal.value = true;
 });
 
@@ -205,7 +206,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin: 0 auto;
+  margin: 1rem auto;
 }
 
 .modal-content {
@@ -216,10 +217,6 @@ body {
 
 .modal-body {
   overflow-y: auto;
-}
-
-.modal-xl {
-  max-width: 90%;
 }
 
 /* Webview styles */

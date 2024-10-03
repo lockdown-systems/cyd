@@ -1,5 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from './shared_types'
+import {
+    Account,
+    XProgress,
+    XJob,
+    XArchiveStartResponse,
+    XIndexMessagesStartResponse,
+    XRateLimitInfo,
+    XProgressInfo,
+    ResponseData
+} from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
     getVersion: (): Promise<string> => {
@@ -150,6 +159,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         saveProfileImage: (accountID: number, url: string): Promise<void> => {
             return ipcRenderer.invoke('X:saveProfileImage', accountID, url);
+        },
+        getLatestResponseData: (accountID: number): Promise<ResponseData | null> => {
+            return ipcRenderer.invoke('X:getLatestResponseData', accountID);
         }
     }
 })

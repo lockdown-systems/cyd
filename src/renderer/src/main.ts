@@ -5,7 +5,16 @@ import "@fortawesome/fontawesome-free/css/all.css";
 import mitt from 'mitt';
 
 import { createApp } from "vue";
-import type { Account, XProgress, XJob, XArchiveStartResponse, XIndexMessagesStartResponse, XRateLimitInfo, XProgressInfo } from "../../shared_types";
+import type {
+    Account,
+    XProgress,
+    XJob,
+    XArchiveStartResponse,
+    XIndexMessagesStartResponse,
+    XRateLimitInfo,
+    XProgressInfo,
+    ResponseData
+} from "../../shared_types";
 import App from "./App.vue";
 
 declare global {
@@ -64,6 +73,7 @@ declare global {
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
+                getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
             };
         };
     }
