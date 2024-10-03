@@ -255,7 +255,6 @@ onMounted(async () => {
     }
 
     // Define automation error handlers on the global emitter for this account
-    console.log("Defining event handlers", `automation-error-${props.account.id}-continue`, `automation-error-${props.account.id}-cancel`);
     emitter?.on(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });

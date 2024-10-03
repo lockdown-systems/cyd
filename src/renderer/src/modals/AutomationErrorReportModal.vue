@@ -74,15 +74,12 @@ const shouldContinue = async () => {
     if (await window.electron.showQuestion(
         "Do you want to continue onto the next step anyway, even though there was an error?",
         "Yes, continue",
-        "No, cancel"
+        "No, return to dashboard"
     )) {
-        console.log(`Emitting event: automation-error-${details.value?.accountID}-continue`);
         emitter.emit(`automation-error-${details.value?.accountID}-continue`);
     } else {
-        console.log(`Emitting event: automation-error-${details.value?.accountID}-cancel`);
         emitter.emit(`automation-error-${details.value?.accountID}-cancel`);
     }
-
 };
 
 const submitReport = async () => {
@@ -101,22 +98,22 @@ const submitReport = async () => {
         client_platform: clientPlatform.value,
         account_type: details.value.accountType,
         error_report_type: details.value.automationErrorType,
-        error_report_data: details.value.errorReportData,
+        error_report_data: JSON.parse(JSON.stringify(details.value.errorReportData)),
     };
     if (includeSensitiveData.value) {
         data = {
             ...data,
             account_username: details.value.username,
             screenshot_data_uri: details.value.screenshotDataURL,
-            sensitive_context_data: details.value.sensitiveContextData,
+            sensitive_context_data: JSON.parse(JSON.stringify(details.value.sensitiveContextData)),
         }
     }
 
     // Are we logged in?
-    const loggedIn = await apiClient.value.ping();
+    const authenticated = await apiClient.value.ping();
 
     // Post the report
-    const postAutomationErrorReportResp = await apiClient.value.postAutomationErrorReport(data, loggedIn);
+    const postAutomationErrorReportResp = await apiClient.value.postAutomationErrorReport(data, authenticated);
     if (postAutomationErrorReportResp !== true && postAutomationErrorReportResp !== false && postAutomationErrorReportResp.error) {
         await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
 
@@ -133,6 +130,7 @@ const submitReport = async () => {
 const doNotSubmitReport = async () => {
     await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_NOT_SUBMITTED, navigator.userAgent);
 
+    console.log("Skipping submission of automation error report");
     await shouldContinue();
     hide();
 };
@@ -256,11 +254,11 @@ onUnmounted(() => {
                 </div>
                 <div class="modal-footer">
                     <div class="d-flex justify-content-between w-100">
-                        <button type="button" class="btn btn-outline-danger" @click="submitReport">
+                        <button type="button" class="btn btn-outline-danger" @click="doNotSubmitReport">
                             <i class="fa-solid fa-thumbs-down" />
                             Don't Submit Report
                         </button>
-                        <button type="submit" class="btn btn-primary" @click="doNotSubmitReport">
+                        <button type="submit" class="btn btn-primary" @click="submitReport">
                             <i class="fa-solid fa-thumbs-up" />
                             Submit Report
                         </button>

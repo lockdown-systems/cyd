@@ -321,17 +321,20 @@ export default class SemiphemeralAPIClient {
     async postXProgress(request: PostXProgressAPIRequest, authenticated: boolean): Promise<boolean | APIErrorResponse> {
         console.log("POST /x-progress", request);
 
-        // Use the unauthenticated fetch function if we don't have an API token
-        let fetchFunc = this.fetch;
         if (authenticated) {
             if (!await this.validateAPIToken()) {
                 return this.returnError("Failed to get a new API token.")
             }
-            fetchFunc = this.fetchAuthenticated;
         }
 
         try {
-            const response = await fetchFunc("POST", `${this.apiURL}/x-progress`, request);
+            let response;
+            if (authenticated) {
+                response = await this.fetchAuthenticated("POST", `${this.apiURL}/x-progress`, request);
+            } else {
+                response = await this.fetch("POST", `${this.apiURL}/x-progress`, request);
+            }
+
             if (response.status != 200) {
                 return this.returnError("Failed to post XProgress with the server.", response.status)
             }
@@ -439,19 +442,21 @@ export default class SemiphemeralAPIClient {
     // Submit automation error report
 
     async postAutomationErrorReport(request: PostAutomationErrorReportAPIRequest, authenticated: boolean): Promise<boolean | APIErrorResponse> {
-        console.log("POST /automation-error-report", request);
+        console.log("POST /automation-error-report", request, authenticated);
 
-        // Use the unauthenticated fetch function if we don't have an API token
-        let fetchFunc = this.fetch;
         if (authenticated) {
             if (!await this.validateAPIToken()) {
                 return this.returnError("Failed to get a new API token.")
             }
-            fetchFunc = this.fetchAuthenticated;
         }
 
         try {
-            const response = await fetchFunc("POST", `${this.apiURL}/automation-error-report`, request);
+            let response;
+            if (authenticated) {
+                response = await this.fetchAuthenticated("POST", `${this.apiURL}/automation-error-report`, request);
+            } else {
+                response = await this.fetch("POST", `${this.apiURL}/automation-error-report`, request);
+            }
             if (response.status != 200) {
                 return this.returnError("Failed to post automation error report with the server.", response.status)
             }
