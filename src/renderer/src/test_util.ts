@@ -1,5 +1,7 @@
 export const stubElectron = () => {
     return {
+        getVersion: cy.stub(),
+        getPlatform: cy.stub(),
         getAPIURL: cy.stub(),
         getDashURL: cy.stub(),
         trackEvent: cy.stub(),
@@ -28,6 +30,8 @@ export const stubElectron = () => {
             createJobs: cy.stub(),
             getLastFinishedJob: cy.stub(),
             updateJob: cy.stub(),
+            getUsernameStart: cy.stub(),
+            getUsernameStop: cy.stub(),
             getUsername: cy.stub(),
             indexStart: cy.stub(),
             indexStop: cy.stub(),
@@ -51,6 +55,7 @@ export const stubElectron = () => {
             isRateLimited: cy.stub(),
             getProgressInfo: cy.stub(),
             saveProfileImage: cy.stub(),
+            getLatestResponseData: cy.stub(),
         }
     };
 }
