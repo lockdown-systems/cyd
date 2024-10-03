@@ -1,5 +1,5 @@
 import path from "path"
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
@@ -346,7 +346,7 @@ export const createAccount = (): Account => {
     const sortOrder = row.maxSortOrder ? row.maxSortOrder + 1 : 0;
 
     // Insert it
-    const accountUUID = uuidv4();
+    const accountUUID = nanoid();
     const info: Sqlite3Info = exec(getMainDatabase(), 'INSERT INTO account (sortOrder, uuid) VALUES (?, ?)', [sortOrder, accountUUID]) as Sqlite3Info;
 
     // Return it

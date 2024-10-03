@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid'
 import TabsView from './TabsView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 
@@ -32,7 +32,7 @@ describe('<TabsView />', () => {
             return testDatabase.accounts;
         };
         window.electron.database.createAccount = async () => {
-            const accountUUID = uuidv4();
+            const accountUUID = nanoid();
             const newAccount: Account = {
                 id: accountID,
                 type: 'unknown',
