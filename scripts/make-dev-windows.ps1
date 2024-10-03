@@ -8,5 +8,4 @@ $env:SQUIRREL_TEMP = "build\SquirrelTemp"
 if (Test-Path -Path "out") {
     Remove-Item -Path "out" -Recurse -Force
 }
-
-electron-forge make
+npx tsx ./node_modules/@electron-forge/cli/dist/electron-forge.js make
