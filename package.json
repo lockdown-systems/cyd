@@ -8,6 +8,7 @@
   "authors": "Lockdown Systems",
   "scripts": {
     "start": "npx tsx ./node_modules/.bin/electron-forge start",
+    "start-windows": "npx tsx ./node_modules/@electron-forge/cli/dist/electron-forge.js start",
     "package": "npx tsx ./node_modules/.bin/electron-forge package",
     "make-local": "sh ./scripts/make-local.sh",
     "make-dev": "sh ./scripts/make-dev.sh",
