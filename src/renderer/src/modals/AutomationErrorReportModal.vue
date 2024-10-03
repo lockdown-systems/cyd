@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
 import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
+import { PlausibleEvents } from "../types";
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 import { PostAutomationErrorReportAPIRequest } from '../semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
@@ -86,6 +87,8 @@ const shouldContinue = async () => {
 
 const submitReport = async () => {
     if (!details.value) {
+        await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
+
         await window.electron.showError("Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.")
         await shouldContinue();
         hide();
@@ -115,8 +118,12 @@ const submitReport = async () => {
     // Post the report
     const postAutomationErrorReportResp = await apiClient.value.postAutomationErrorReport(data, loggedIn);
     if (postAutomationErrorReportResp !== true && postAutomationErrorReportResp !== false && postAutomationErrorReportResp.error) {
+        await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
+
         console.error("Error posting automation error report:", postAutomationErrorReportResp.message);
         await window.electron.showError("Well this is awkward. There's an error submitting your automation error report.")
+    } else {
+        await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED, navigator.userAgent);
     }
 
     await shouldContinue();
@@ -124,6 +131,8 @@ const submitReport = async () => {
 };
 
 const doNotSubmitReport = async () => {
+    await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_NOT_SUBMITTED, navigator.userAgent);
+
     await shouldContinue();
     hide();
 };

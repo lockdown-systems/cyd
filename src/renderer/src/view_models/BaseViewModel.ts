@@ -2,7 +2,7 @@ import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
-import type { DeviceInfo } from '../types';
+import { type DeviceInfo, PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
 
@@ -117,6 +117,8 @@ export class BaseViewModel {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async error(automationErrorType: AutomationErrorType, errorReportData: any = null, sensitiveContextData: any = null) {
         console.error(`Automation Error: ${automationErrorType}`, errorReportData, sensitiveContextData);
+
+        await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_OCCURED, navigator.userAgent);
 
         // Get username
         let username = "";
