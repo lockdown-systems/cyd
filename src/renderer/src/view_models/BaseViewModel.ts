@@ -115,7 +115,7 @@ export class BaseViewModel {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async error(automationErrorType: AutomationErrorType, errorReportData: any = {}, sensitiveContextData: any = {}) {
+    async error(automationErrorType: AutomationErrorType, errorReportData: any = null, sensitiveContextData: any = null) {
         console.error(`Automation Error: ${automationErrorType}`, errorReportData, sensitiveContextData);
 
         // Get username
