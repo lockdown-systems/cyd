@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import TabsView from './TabsView.vue';
 import SemiphemeralAPIClient from '../semiphemeral-api-client';
 
@@ -12,6 +11,17 @@ const testDatabase = {
     accounts: [] as Account[],
     config: {} as Record<string, string>,
 };
+
+function generateRandomString(length: number) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const charactersLength = characters.length;
+    const randomValues = crypto.getRandomValues(new Uint32Array(length));
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(randomValues[i] % charactersLength);
+    }
+    return result;
+}
 
 describe('<TabsView />', () => {
     beforeEach(() => {
@@ -32,7 +42,7 @@ describe('<TabsView />', () => {
             return testDatabase.accounts;
         };
         window.electron.database.createAccount = async () => {
-            const accountUUID = uuidv4();
+            const accountUUID = generateRandomString(32);
             const newAccount: Account = {
                 id: accountID,
                 type: 'unknown',

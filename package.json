@@ -42,7 +42,6 @@
     "mitt": "^3.0.1",
     "moment": "^2.30.1",
     "unzipper": "^0.12.3",
-    "uuid": "^10.0.0",
     "vue": "^3.4.21"
   },
   "devDependencies": {
