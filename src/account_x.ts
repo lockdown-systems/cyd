@@ -147,14 +147,14 @@ function convertXJobRowToXJob(row: XJobRow): XJob {
 // }
 
 export class XAccountController {
-    private accountUUID: string;
+    private accountUUID: string = "";
     private account: XAccount | null;
-    private accountDataPath: string;
+    private accountDataPath: string = "";
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     private thereIsMore: boolean = false;
 
     // Making this public so it can be accessed in tests
-    public db: Database.Database | null;
+    public db: Database.Database | null = null;
 
     private mitmController: IMITMController;
     private progress: XProgress = emptyXProgress();
