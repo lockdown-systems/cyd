@@ -135,7 +135,7 @@ export class XAccountController {
     // Making this public so it can be accessed in tests
     public db: Database.Database | null = null;
 
-    private mitmController: IMITMController;
+    public mitmController: IMITMController;
     private progress: XProgress = emptyXProgress();
 
     constructor(accountID: number, mitmController: IMITMController) {
