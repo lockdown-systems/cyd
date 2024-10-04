@@ -20,6 +20,7 @@ export enum AutomationErrorType {
     x_runJob_indexMessages_OtherError = "x_runJob_indexMessages_OtherError",
     x_runJob_indexMessages_ParseMessagesError = "x_runJob_indexMessages_ParseMessagesError",
     x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
+    x_runJob_UnknownError = "x_runJob_UnknownError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -44,6 +45,7 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_runJob_indexMessages_OtherError]: "Error while indexing messages",
     [AutomationErrorType.x_runJob_indexMessages_ParseMessagesError]: "Failed to parse messages while indexing messages",
     [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]: "Failed to archive build",
+    [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occured",
 }
 
 export type AutomationErrorDetails = {

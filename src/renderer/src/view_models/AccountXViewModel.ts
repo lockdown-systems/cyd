@@ -825,7 +825,14 @@ You can make a local archive of your data, or you delete exactly what you choose
             case State.RunJobs:
                 for (let i = 0; i < this.jobs.length; i++) {
                     this.currentJobIndex = i;
-                    await this.runJob(i);
+                    try {
+                        await this.runJob(i);
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_UnknownError, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
                 }
 
                 this.state = State.FinishedRunningJobs;
