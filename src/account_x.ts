@@ -125,27 +125,6 @@ function convertXJobRowToXJob(row: XJobRow): XJob {
     };
 }
 
-// function convertXTweetRowToXTweet(row: XTweetRow): XTweet {
-//     return {
-//         id: row.id,
-//         username: row.username,
-//         tweetID: row.tweetID,
-//         conversationID: row.conversationID,
-//         createdAt: new Date(row.createdAt),
-//         likeCount: row.likeCount,
-//         quoteCount: row.quoteCount,
-//         replyCount: row.replyCount,
-//         retweetCount: row.retweetCount,
-//         isLiked: row.isLiked,
-//         isRetweeted: row.isRetweeted,
-//         text: row.text,
-//         path: row.path,
-//         addedToDatabaseAt: new Date(row.addedToDatabaseAt),
-//         archivedAt: row.archivedAt ? new Date(row.archivedAt) : null,
-//         deletedAt: row.deletedAt ? new Date(row.deletedAt) : null,
-//     };
-// }
-
 export class XAccountController {
     private accountUUID: string = "";
     private account: XAccount | null;
