@@ -19,6 +19,7 @@ export enum AutomationErrorType {
     x_runJob_indexMessages_URLChangedButDidnt = "x_runJob_indexMessages_URLChangedButDidnt",
     x_runJob_indexMessages_OtherError = "x_runJob_indexMessages_OtherError",
     x_runJob_indexMessages_ParseMessagesError = "x_runJob_indexMessages_ParseMessagesError",
+    x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -42,6 +43,7 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt]: "URL changed (but didn't) while indexing conversations",
     [AutomationErrorType.x_runJob_indexMessages_OtherError]: "Error while indexing messages",
     [AutomationErrorType.x_runJob_indexMessages_ParseMessagesError]: "Failed to parse messages while indexing messages",
+    [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]: "Failed to archive build",
 }
 
 export type AutomationErrorDetails = {
