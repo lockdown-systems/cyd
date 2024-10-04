@@ -2,7 +2,10 @@ import fs from 'fs'
 import path from "path"
 
 import { Proxy, IContext } from "http-mitm-proxy"
+
 import * as zlib from "zlib"
+import * as zstd from "@mongodb-js/zstd"
+
 import log from 'electron-log/main';
 
 import { findOpenPort, getAccountSettingsPath } from "./util"
@@ -51,6 +54,9 @@ export class MITMController implements IMITMController {
         this.proxyFilter = [];
         this.proxy = null;
 
+        this.proxyPort = 0;
+        this.proxySSLCADir = '';
+
         this.isMonitoring = false;
         this.responseData = [];
 
@@ -68,11 +74,6 @@ export class MITMController implements IMITMController {
 
     async startMITM(ses: Electron.Session, proxyFilter: string[]) {
         log.info(`MITMController: Account ${this.account?.id}, starting proxy`, proxyFilter);
-
-        // Delete the old certificates
-        if (fs.existsSync(this.proxySSLCADir)) {
-            fs.rmdirSync(this.proxySSLCADir, { recursive: true });
-        }
 
         // Set the proxy filters
         this.proxyFilter = proxyFilter;
@@ -126,7 +127,34 @@ export class MITMController implements IMITMController {
                                     this.responseData.push(responseData);
                                     return callback();
                                 });
-                            } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'br') {
+                            } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'zstd') {
+                                // Response is zstd-compressed
+                                zstd.decompress(buffer).then(decompressed => {
+                                    responseData.body = decompressed.toString();
+
+                                    log.debug(`MITMController: got response`, {
+                                        host: ctx.clientToProxyRequest.headers.host,
+                                        url: ctx.clientToProxyRequest.url,
+                                        status: responseData.status,
+                                        bodyLength: responseData.body.length,
+                                    });
+                                    this.responseData.push(responseData);
+                                    return callback();
+                                }).catch(err => {
+                                    log.error("Error decompressing zstd response:", err);
+                                    responseData.body = buffer.toString();
+
+                                    log.debug(`MITMController: got response`, {
+                                        host: ctx.clientToProxyRequest.headers.host,
+                                        url: ctx.clientToProxyRequest.url,
+                                        status: responseData.status,
+                                        bodyLength: responseData.body.length,
+                                    });
+                                    this.responseData.push(responseData);
+                                    return callback();
+                                });
+                            }
+                            else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'br') {
                                 // Response is brotli-compressed
                                 zlib.brotliDecompress(buffer, (err, decompressed) => {
                                     if (!err) {
@@ -183,6 +211,14 @@ export class MITMController implements IMITMController {
             }
             return callback();
         });
+
+        // Delete the old certificates
+        if (fs.existsSync(this.proxySSLCADir)) {
+            log.debug(`Deleting old certificates dir: ${this.proxySSLCADir}`);
+            fs.rmSync(this.proxySSLCADir, { recursive: true });
+        } else {
+            log.debug(`Certificates dir: ${this.proxySSLCADir}`);
+        }
 
         // Start the proxy
         this.proxyPort = await findOpenPort()
