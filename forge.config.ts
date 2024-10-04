@@ -71,6 +71,8 @@ function findLatestSigntoolPath(): string {
   }
 }
 
+const shouldSignWindows = process.env.WINDOWS_SIGN === 'true';
+
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;
 
@@ -120,9 +122,9 @@ const config: ForgeConfig = {
       iconUrl: "https://raw.githubusercontent.com/Lockdown-Systems/Semiphemeral-Releases/main/icon.ico",
       name: "Semiphemeral",
       setupIcon: path.join(assetsPath, "icon.ico"),
-      windowsSign: {
+      windowsSign: shouldSignWindows ? {
         signToolPath: findLatestSigntoolPath()
-      }
+      } : undefined
     }),
     new MakerDMG({
       name: `Semiphemeral ${version}`,
