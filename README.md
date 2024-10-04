@@ -35,7 +35,11 @@ npm run make-prod
 
 ## Making releases
 
-Make sure to bump the version in `package.json`.
+Do all of these before making a release:
+
+- Bump the version in `package.json`
+- Run the tests
+- Manually test with `npm run start` to make sure nothing glaring is broken
 
 ### Windows
 
