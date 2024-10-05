@@ -7,12 +7,20 @@ export enum AutomationErrorType {
     x_runJob_indexTweets_OtherError = "x_runJob_indexTweets_OtherError",
     x_runJob_indexTweets_ParseTweetsError = "x_runJob_indexTweets_ParseTweetsError",
     x_runJob_indexTweets_FailedToRetryAfterRateLimit = "x_runJob_indexTweets_FailedToRetryAfterRateLimit",
+    x_runJob_archiveTweets_FailedToStart = "x_runJob_archiveTweets_FailedToStart",
+    x_runJob_archiveTweets_FailedToCheckData = "x_runJob_archiveTweets_FailedToCheckData",
+    x_runJob_archiveTweets_FailedToArchive = "x_runJob_archiveTweets_FailedToArchive",
     x_runJob_indexConversations_Timeout = "x_runJob_indexConversations_Timeout",
     x_runJob_indexConversations_URLChanged = "x_runJob_indexConversations_URLChanged",
     x_runJob_indexConversations_OtherError = "x_runJob_indexConversations_OtherError",
+    x_runJob_indexConversations_ParseConversationsError = "x_runJob_indexConversations_ParseConversationsError",
     x_runJob_indexMessages_Timeout = "x_runJob_indexMessages_Timeout",
-    x_runJob_indexConversations_URLChangedButDidnt = "x_runJob_indexConversations_URLChangedButDidnt",
+    x_runJob_indexMessages_FailedToStart = "x_runJob_indexMessages_FailedToStart",
+    x_runJob_indexMessages_URLChangedButDidnt = "x_runJob_indexMessages_URLChangedButDidnt",
     x_runJob_indexMessages_OtherError = "x_runJob_indexMessages_OtherError",
+    x_runJob_indexMessages_ParseMessagesError = "x_runJob_indexMessages_ParseMessagesError",
+    x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
+    x_runJob_UnknownError = "x_runJob_UnknownError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -24,12 +32,20 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_runJob_indexTweets_OtherError]: "Error while indexing tweets",
     [AutomationErrorType.x_runJob_indexTweets_ParseTweetsError]: "Failed to parse tweets while indexing tweets",
     [AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit]: "Failed to retry after rate limit while indexing tweets",
+    [AutomationErrorType.x_runJob_archiveTweets_FailedToStart]: "Failed to start archiving tweets",
+    [AutomationErrorType.x_runJob_archiveTweets_FailedToCheckData]: "Failed to check data while archiving tweets",
+    [AutomationErrorType.x_runJob_archiveTweets_FailedToArchive]: "Failed to create an archive of a tweet",
     [AutomationErrorType.x_runJob_indexConversations_Timeout]: "Timeout while indexing conversations",
     [AutomationErrorType.x_runJob_indexConversations_URLChanged]: "URL changed while indexing conversations",
     [AutomationErrorType.x_runJob_indexConversations_OtherError]: "Error while indexing conversations",
+    [AutomationErrorType.x_runJob_indexConversations_ParseConversationsError]: "Failed to parse conversations while indexing conversations",
     [AutomationErrorType.x_runJob_indexMessages_Timeout]: "Timeout while indexing messages",
-    [AutomationErrorType.x_runJob_indexConversations_URLChangedButDidnt]: "URL changed (but didn't) while indexing conversations",
+    [AutomationErrorType.x_runJob_indexMessages_FailedToStart]: "Failed to start indexing messages",
+    [AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt]: "URL changed (but didn't) while indexing conversations",
     [AutomationErrorType.x_runJob_indexMessages_OtherError]: "Error while indexing messages",
+    [AutomationErrorType.x_runJob_indexMessages_ParseMessagesError]: "Failed to parse messages while indexing messages",
+    [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]: "Failed to archive build",
+    [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occured",
 }
 
 export type AutomationErrorDetails = {

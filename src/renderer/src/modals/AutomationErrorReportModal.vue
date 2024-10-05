@@ -87,8 +87,8 @@ const submitReport = async () => {
         await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
 
         await window.electron.showError("Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.")
-        await shouldContinue();
         hide();
+        await shouldContinue();
         return;
     }
 
@@ -123,16 +123,16 @@ const submitReport = async () => {
         await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED, navigator.userAgent);
     }
 
-    await shouldContinue();
     hide();
+    await shouldContinue();
 };
 
 const doNotSubmitReport = async () => {
     await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_NOT_SUBMITTED, navigator.userAgent);
 
     console.log("Skipping submission of automation error report");
-    await shouldContinue();
     hide();
+    await shouldContinue();
 };
 
 onMounted(async () => {
