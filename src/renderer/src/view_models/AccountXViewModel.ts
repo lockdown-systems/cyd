@@ -203,9 +203,15 @@ export class AccountXViewModel extends BaseViewModel {
             await this.waitForURL(["https://x.com/login", "https://x.com/i/flow/login"], "https://x.com/home");
         } catch (e) {
             if (e instanceof URLChangedError) {
-                await this.error(AutomationErrorType.X_login_URLChanged, { exception: e.toString() });
+                await this.error(AutomationErrorType.X_login_URLChanged, {
+                    exception: e.toString(),
+                    stack: e.stack
+                });
             } else {
-                await this.error(AutomationErrorType.X_login_WaitingForURLFailed, { exception: (e as Error).toString() });
+                await this.error(AutomationErrorType.X_login_WaitingForURLFailed, {
+                    exception: (e as Error).toString(),
+                    stack: (e as Error).stack
+                });
             }
         }
 
@@ -352,12 +358,14 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             const newURL = this.webview.getURL();
                             await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
                                 newURL: newURL,
-                                exception: e.toString()
+                                exception: e.toString(),
+                                stack: e.stack
                             })
                             break;
                         } else {
                             await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                                exception: (e as Error).toString()
+                                exception: (e as Error).toString(),
+                                stack: (e as Error).stack
                             })
                             break;
                         }
@@ -389,7 +397,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     } catch (e) {
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
-                            exception: (e as Error).toString()
+                            exception: (e as Error).toString(),
+                            stack: (e as Error).stack
                         }, latestResponseData);
                         break;
                     }
@@ -423,7 +432,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                     this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
-                        exception: (e as Error).toString()
+                        exception: (e as Error).toString(),
+                        stack: (e as Error).stack
                     })
                     break;
                 }
@@ -449,6 +459,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                             } catch (e) {
                                 await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
                                     exception: (e as Error).toString(),
+                                    stack: (e as Error).stack
                                 }, {
                                     archiveStartResponseItem: this.archiveStartResponse.items[i],
                                     index: i
@@ -471,7 +482,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                             await window.electron.X.archiveTweet(this.account.id, this.archiveStartResponse.items[i].id);
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
-                                exception: (e as Error).toString()
+                                exception: (e as Error).toString(),
+                                stack: (e as Error).stack
                             }, {
                                 archiveStartResponseItem: this.archiveStartResponse.items[i],
                                 index: i
@@ -533,11 +545,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             const newURL = this.webview.getURL();
                             await this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
                                 newURL: newURL,
-                                exception: e.toString()
+                                exception: e.toString(),
+                                stack: (e as Error).stack
                             })
                         } else {
                             await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
-                                exception: (e as Error).toString()
+                                exception: (e as Error).toString(),
+                                stack: (e as Error).stack
                             })
                         }
                     }
@@ -560,7 +574,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     } catch (e) {
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexConversations_ParseConversationsError, {
-                            exception: (e as Error).toString()
+                            exception: (e as Error).toString(),
+                            stack: (e as Error).stack
                         }, latestResponseData);
                         break;
                     }
@@ -609,7 +624,8 @@ Please wait while I index all of the messages from each conversation.
                     this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
-                        exception: (e as Error).toString()
+                        exception: (e as Error).toString(),
+                        stack: (e as Error).stack
                     })
                     break;
                 }
@@ -642,7 +658,8 @@ Please wait while I index all of the messages from each conversation.
                                     await this.waitForRateLimit();
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-                                        exception: e.toString()
+                                        exception: e.toString(),
+                                        stack: (e as Error).stack
                                     });
                                     break;
                                 }
@@ -660,13 +677,15 @@ Please wait while I index all of the messages from each conversation.
                                     break;
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt, {
-                                        exception: e.toString()
+                                        exception: e.toString(),
+                                        stack: (e as Error).stack
                                     })
                                     break;
                                 }
                             } else {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    exception: (e as Error).toString()
+                                    exception: (e as Error).toString(),
+                                    stack: (e as Error).stack
                                 });
                                 break;
                             }
@@ -674,7 +693,8 @@ Please wait while I index all of the messages from each conversation.
                             tries += 1;
                             if (tries >= 3) {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    exception: (e as Error).toString()
+                                    exception: (e as Error).toString(),
+                                    stack: (e as Error).stack
                                 });
                                 break;
                             }
@@ -706,7 +726,8 @@ Please wait while I index all of the messages from each conversation.
                         } catch (e) {
                             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                             await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
-                                exception: (e as Error).toString()
+                                exception: (e as Error).toString(),
+                                stack: (e as Error).stack
                             }, latestResponseData);
                             break;
                         }
@@ -749,7 +770,8 @@ I'm building a searchable archive web page in HTML.
                     await window.electron.X.archiveBuild(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError, {
-                        exception: (e as Error).toString()
+                        exception: (e as Error).toString(),
+                        stack: (e as Error).stack
                     })
                     break;
                 }
@@ -829,7 +851,8 @@ You can make a local archive of your data, or you delete exactly what you choose
                         await this.runJob(i);
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_UnknownError, {
-                            exception: (e as Error).toString()
+                            exception: (e as Error).toString(),
+                            stack: (e as Error).stack
                         });
                         break;
                     }

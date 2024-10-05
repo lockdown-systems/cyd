@@ -213,11 +213,12 @@ export class MITMController implements IMITMController {
         });
 
         // Delete the old certificates
-        if (fs.existsSync(this.proxySSLCADir)) {
-            log.debug(`Deleting old certificates dir: ${this.proxySSLCADir}`);
-            fs.rmSync(this.proxySSLCADir, { recursive: true });
+        const certsPath = path.join(this.proxySSLCADir, 'certs');
+        if (fs.existsSync(certsPath)) {
+            log.debug(`Deleting old certificates dir: ${certsPath}`);
+            fs.rmSync(certsPath, { recursive: true });
         } else {
-            log.debug(`Certificates dir: ${this.proxySSLCADir}`);
+            log.debug(`Certificates dir: ${certsPath}`);
         }
 
         // Start the proxy
@@ -232,7 +233,15 @@ export class MITMController implements IMITMController {
         // Verify SSL certificates
         ses.setCertificateVerifyProc((request, callback) => {
             const certPath = path.join(this.proxySSLCADir, 'certs', `${request.hostname}.pem`);
-            const certData = fs.readFileSync(certPath).toString();
+            let certData: string;
+            try {
+                certData = fs.readFileSync(certPath).toString();
+            } catch (e) {
+                log.error(`MITMController: Account ${this.account?.id}, error reading certificate:`, e);
+                // TODO: mark as verified for now
+                callback(0);
+                return;
+            }
 
             // Trim whitespace and remove the '\r' characters, to normalize the certificates
             const certDataTrimmed = certData.trim().replace(/\r/g, '');

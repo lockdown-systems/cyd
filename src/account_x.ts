@@ -721,20 +721,28 @@ export class XAccountController {
                 }
 
                 // Add the users
-                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
-                for (const userID in users) {
-                    const user = users[userID];
-                    await this.indexUser(user);
+                if (users) {
+                    log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
+                    for (const userID in users) {
+                        const user = users[userID];
+                        await this.indexUser(user);
+                    }
+                } else {
+                    log.info('XAccountController.indexParseConversationsResponseData: no users');
                 }
 
                 // Add the conversations
-                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
-                for (const conversationID in conversations) {
-                    const conversation = conversations[conversationID];
-                    if (!this.indexConversation(conversation, isFirstRun)) {
-                        shouldReturnFalse = true;
-                        break;
+                if (conversations) {
+                    log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
+                    for (const conversationID in conversations) {
+                        const conversation = conversations[conversationID];
+                        if (!this.indexConversation(conversation, isFirstRun)) {
+                            shouldReturnFalse = true;
+                            break;
+                        }
                     }
+                } else {
+                    log.info('XAccountController.indexParseConversationsResponseData: no conversations');
                 }
 
                 this.mitmController.responseData[iResponse].processed = true;
@@ -894,13 +902,17 @@ export class XAccountController {
                 }
 
                 // Add the messages
-                log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
-                for (let i = 0; i < entries.length; i++) {
-                    const message = entries[i];
-                    if (!this.indexMessage(message, isFirstRun)) {
-                        shouldReturnFalse = true;
-                        break;
+                if (entries) {
+                    log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
+                    for (let i = 0; i < entries.length; i++) {
+                        const message = entries[i];
+                        if (!this.indexMessage(message, isFirstRun)) {
+                            shouldReturnFalse = true;
+                            break;
+                        }
                     }
+                } else {
+                    log.info('XAccountController.indexParseMessagesResponseData: no entries');
                 }
 
                 this.mitmController.responseData[iResponse].processed = true;
