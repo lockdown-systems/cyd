@@ -33,7 +33,9 @@ export const defineIPCArchive = () => {
 
             // Convert to HTML
             const mhtml = fs.readFileSync(mhtmlFilename, 'utf-8');
-            const html = mhtml2html.convert(mhtml, { parseDOM: (html) => new JSDOM(html) });
+            const html = mhtml2html.convert(mhtml, {
+                parseDOM: (html: string) => new JSDOM(html)
+            });
 
             // Save the HTML
             fs.writeFileSync(htmlFilename, html.serialize(), 'utf-8');

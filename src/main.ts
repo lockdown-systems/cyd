@@ -121,6 +121,7 @@ async function createWindow() {
 
     // IPC events
 
+    // @ts-expect-error: typescript doesn't know about this global variable
     if (!global.ipcHandlersRegistered) {
 
         // Main IPC events
@@ -314,6 +315,7 @@ async function createWindow() {
         defineIPCX();
         defineIPCArchive();
     }
+    // @ts-expect-error: typescript doesn't know about this global variable
     global.ipcHandlersRegistered = true;
 
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
