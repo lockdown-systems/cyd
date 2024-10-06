@@ -219,6 +219,11 @@ const onAutomationErrorCancel = () => {
     emit('onRefreshClicked');
 };
 
+const onCancelAutomation = () => {
+    console.log('Cancelling automation');
+    emit('onRefreshClicked');
+};
+
 onMounted(async () => {
     await updateArchivePath();
 
@@ -254,6 +259,9 @@ onMounted(async () => {
         console.error('Webview component not found');
     }
 
+    // Emitter for the view model to cancel automation
+    emitter?.on(`cancel-automation-${props.account.id}`, onCancelAutomation);
+
     // Define automation error handlers on the global emitter for this account
     emitter?.on(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
@@ -261,6 +269,9 @@ onMounted(async () => {
 
 onUnmounted(async () => {
     isWebviewMounted.value = false;
+
+    // Remove cancel automation handler
+    emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Remove automation error handlers
     emitter?.off(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);

@@ -221,15 +221,6 @@ export class MITMController implements IMITMController {
             log.debug(`Certificates dir: ${certsPath}`);
         }
 
-        // Start the proxy
-        this.proxyPort = await findOpenPort()
-        this.proxy.listen({
-            host: "127.0.0.1",
-            port: this.proxyPort,
-            sslCaDir: this.proxySSLCADir,
-        });
-        log.info(`MITMController: Account ${this.account?.id}, proxy listening on port ${this.proxyPort}`);
-
         // Verify SSL certificates
         ses.setCertificateVerifyProc((request, callback) => {
             const certPath = path.join(this.proxySSLCADir, 'certs', `${request.hostname}.pem`);
@@ -255,6 +246,15 @@ export class MITMController implements IMITMController {
                 callback(-3);
             }
         })
+
+        // Start the proxy
+        this.proxyPort = await findOpenPort()
+        this.proxy.listen({
+            host: "127.0.0.1",
+            port: this.proxyPort,
+            sslCaDir: this.proxySSLCADir,
+        });
+        log.info(`MITMController: Account ${this.account?.id}, proxy listening on port ${this.proxyPort}`);
 
         // Make the webview use the proxy
         ses.setProxy({
