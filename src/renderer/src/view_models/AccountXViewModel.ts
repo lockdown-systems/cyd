@@ -124,6 +124,15 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async startDeleting() {
+        // Ensure the user has paid for Premium
+        const authenticated = await this.api.ping();
+        if (!authenticated) {
+            this.emitter?.emit("show-sign-in");
+            return;
+        }
+
+        // TODO: Check if the user has premium
+
         this.setAction("delete");
 
         const jobTypes = [];

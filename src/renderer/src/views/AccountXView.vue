@@ -561,7 +561,7 @@ onUnmounted(async () => {
             <div>
                 <div class="container mt-3">
                     <button class="btn btn-primary" @click="reset()">
-                        I'm done archiving
+                        Back to the dashboard
                     </button>
                 </div>
             </div>
