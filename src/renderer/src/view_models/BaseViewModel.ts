@@ -84,7 +84,9 @@ export class BaseViewModel {
 
     async init() {
         // Open devtools if needed
-        if (await window.electron.shouldOpenDevtools()) {
+        const shouldOpenDevtools = await window.electron.shouldOpenDevtools();
+
+        if (shouldOpenDevtools) {
             this.getWebview()?.openDevTools();
         }
 

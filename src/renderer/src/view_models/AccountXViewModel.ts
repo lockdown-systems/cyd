@@ -81,7 +81,14 @@ export class AccountXViewModel extends BaseViewModel {
         }
         jobTypes.push("archiveBuild");
 
-        this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+        try {
+            this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+        } catch (e) {
+            await this.error(AutomationErrorType.x_unknownError, {
+                exception: (e as Error).toString()
+            });
+            return;
+        }
         this.state = State.RunJobs;
 
         await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_STARTED, navigator.userAgent);
@@ -90,7 +97,14 @@ export class AccountXViewModel extends BaseViewModel {
     async startDeleting() {
         // TODO: implement
         console.log("startDeleting: NOT IMPLEMENTED");
-        await window.electron.showMessage("Deleting data from X is not implemented yet.");
+        try {
+            await window.electron.showMessage("Deleting data from X is not implemented yet.");
+        } catch (e) {
+            await this.error(AutomationErrorType.x_unknownError, {
+                exception: (e as Error).toString()
+            });
+            return;
+        }
 
         await window.electron.trackEvent(PlausibleEvents.X_DELETE_STARTED, navigator.userAgent);
     }
@@ -800,60 +814,66 @@ I'm building a searchable archive web page in HTML.
 
     async run() {
         this.log("run", "running");
-        this.progress = await window.electron.X.resetProgress(this.account.id);
+        try {
+            this.progress = await window.electron.X.resetProgress(this.account.id);
 
-        switch (this.state) {
-            case State.Login:
-                this.actionString = `Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
+            switch (this.state) {
+                case State.Login:
+                    this.actionString = `Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
 retweets, likes, and direct messages.`;
-                this.instructions = `${this.actionString}
+                    this.instructions = `${this.actionString}
 
 **To get started, log in to your X account below.**`;
-                this.showBrowser = true;
-                this.showAutomationNotice = false;
-                await this.login();
-                this.state = State.Dashboard;
-                break;
+                    this.showBrowser = true;
+                    this.showAutomationNotice = false;
+                    await this.login();
+                    this.state = State.Dashboard;
+                    break;
 
-            case State.Dashboard:
-                this.showBrowser = false;
-                await this.loadURL("about:blank");
-                this.instructions = `
+                case State.Dashboard:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
 You're signed into **@${this.account.xAccount?.username}** on X.
 
 You can make a local archive of your data, or you delete exactly what you choose to. What would you like to do?
 `;
-                this.state = State.DashboardDisplay;
-                break;
+                    this.state = State.DashboardDisplay;
+                    break;
 
-            case State.RunJobs:
-                for (let i = 0; i < this.jobs.length; i++) {
-                    this.currentJobIndex = i;
-                    try {
-                        await this.runJob(i);
-                    } catch (e) {
-                        await this.error(AutomationErrorType.x_runJob_UnknownError, {
-                            exception: (e as Error).toString()
-                        });
-                        break;
+                case State.RunJobs:
+                    for (let i = 0; i < this.jobs.length; i++) {
+                        this.currentJobIndex = i;
+                        try {
+                            await this.runJob(i);
+                        } catch (e) {
+                            await this.error(AutomationErrorType.x_runJob_UnknownError, {
+                                exception: (e as Error).toString()
+                            });
+                            break;
+                        }
                     }
-                }
 
-                this.state = State.FinishedRunningJobs;
-                this.showBrowser = false;
-                await this.loadURL("about:blank");
-                this.instructions = `
+                    this.state = State.FinishedRunningJobs;
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
 **${this.actionFinishedString}**
 
 `;
-                if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
-                } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                }
-                break;
+                    if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
+                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
+                    } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
+                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
+                    } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
+                        this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
+                    }
+                    break;
+            }
+        } catch (e) {
+            await this.error(AutomationErrorType.x_runError, {
+                exception: (e as Error).toString()
+            });
         }
     }
 }
