@@ -134,13 +134,21 @@ export class AccountXViewModel extends BaseViewModel {
             await window.electron.X.resetRateLimitInfo(this.account.id);
 
             // Load the URL
-            await this.loadURL(url);
+            try {
+                await this.loadURL(url);
+            } catch (e) {
+                await this.error(AutomationErrorType.x_loadURLError, {
+                    url: url,
+                    exception: (e as Error).toString()
+                });
+                break;
+            }
             await this.sleep(1000);
             await this.waitForLoadingToFinish();
 
             // Did the URL change?
             if (this.webview.getURL() !== url) {
-                this.error(AutomationErrorType.X_loadURLURLChanged, {
+                this.error(AutomationErrorType.x_loadURLURLChanged, {
                     url: url,
                     newURL: this.webview.getURL()
                 });

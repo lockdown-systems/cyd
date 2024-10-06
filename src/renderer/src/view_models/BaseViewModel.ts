@@ -198,15 +198,19 @@ export class BaseViewModel {
         console.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
         if (webview) {
-            const tries = 0;
+            let tries = 0;
             while (tries < 3) {
                 try {
                     await webview.loadURL(url);
                     break;
-                } catch (e) {
-                    this.error(AutomationErrorType.X_loadURLURLChanged, {
-                        exception: (e as Error).toString()
-                    });
+                } catch (error) {
+                    tries += 1;
+                    if (tries >= 3) {
+                        throw error;
+                    } else {
+                        console.error(`Failed to load URL: ${error}`);
+                        await this.sleep(500);
+                    }
                 }
             }
         }
