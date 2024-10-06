@@ -221,24 +221,28 @@ body {
 
 .automation-notice {
   font-size: 0.8em;
-  padding: 0.3em 0.5em 0.5em 0.5em;
-  margin: 0;
+  padding: 0.3em 0.5em 1.5em 0.5em;
   background-color: #ffea9b;
   font-family: monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .ready-for-input {
   font-size: 0.8em;
-  padding: 0.3em 0.5em 0.5em 0.5em;
-  margin: 0;
+  padding: 0.3em 0.5em 1.5em 0.5em;
   background-color: #c1fac4;
   font-family: monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .wrapper {
@@ -247,6 +251,9 @@ body {
 
 .webview {
   height: 100vh;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .webview-automation-border {
