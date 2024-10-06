@@ -43,25 +43,54 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async setAction(action: string) {
+        const actions = [];
+        const finishedActions = [];
+
         this.action = action;
         switch (action) {
             case "archive":
-                if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.actionString = "I'm archiving your tweets and direct messages.";
-                    this.actionFinishedString = "I've finished archiving your tweets and direct messages!";
+                if (this.account.xAccount?.archiveTweets) {
+                    actions.push("tweets");
+                    finishedActions.push("tweets");
+                }
+                if (this.account.xAccount?.archiveDMs) {
+                    actions.push("direct messages");
+                    finishedActions.push("direct messages");
+                }
+
+                if (actions.length > 0) {
+                    this.actionString = `I'm archiving your ${actions.join(" and ")}.`;
+                    this.actionFinishedString = `I've finished archiving your ${finishedActions.join(" and ")}!`;
                 } else {
-                    if (this.account.xAccount?.archiveDMs) {
-                        this.actionString = "I'm archiving your direct messages.";
-                        this.actionFinishedString = "I've finished archiving your direct messages!";
-                    } else {
-                        this.actionString = "I'm archiving your tweets.";
-                        this.actionFinishedString = "I've finished archiving your tweets!";
-                    }
+                    this.actionString = "No archiving actions to perform.";
+                    this.actionFinishedString = "No archiving actions were performed.";
                 }
                 break;
             case "delete":
-                this.actionString = "I'm deleting your NOT IMPLEMENTED YET.";
-                this.actionFinishedString = "I've finished deleting your NOT IMPLEMENTED YET!";
+                if (this.account.xAccount?.deleteTweets) {
+                    actions.push("tweets");
+                    finishedActions.push("tweets");
+                }
+                if (this.account.xAccount?.deleteRetweets) {
+                    actions.push("retweets");
+                    finishedActions.push("retweets");
+                }
+                if (this.account.xAccount?.deleteLikes) {
+                    actions.push("likes");
+                    finishedActions.push("likes");
+                }
+                if (this.account.xAccount?.deleteDMs) {
+                    actions.push("direct messages");
+                    finishedActions.push("direct messages");
+                }
+
+                if (actions.length > 0) {
+                    this.actionString = `I'm deleting your ${actions.join(", ")}.`;
+                    this.actionFinishedString = `I've finished deleting your ${finishedActions.join(", ")}!`;
+                } else {
+                    this.actionString = "No actions to perform.";
+                    this.actionFinishedString = "No actions were performed.";
+                }
                 break;
         }
     }
@@ -95,16 +124,39 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async startDeleting() {
-        // TODO: implement
-        console.log("startDeleting: NOT IMPLEMENTED");
+        this.setAction("delete");
+
+        const jobTypes = [];
+        jobTypes.push("login");
+        if (this.account.xAccount?.deleteTweets || this.account.xAccount?.deleteRetweets) {
+            jobTypes.push("indexTweets");
+        }
+        if (this.account.xAccount?.deleteTweets) {
+            jobTypes.push("deleteTweets");
+        }
+        if (this.account.xAccount?.deleteRetweets) {
+            jobTypes.push("deleteRetweets");
+        }
+        if (this.account.xAccount?.deleteLikes) {
+            jobTypes.push("indexLikes");
+            jobTypes.push("deleteLikes");
+        }
+        if (this.account.xAccount?.deleteDMs) {
+            jobTypes.push("indexConversations");
+            jobTypes.push("indexMessages");
+            jobTypes.push("deleteMessages");
+        }
+        jobTypes.push("archiveBuild");
+
         try {
-            await window.electron.showMessage("Deleting data from X is not implemented yet.");
+            this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
             });
             return;
         }
+        this.state = State.RunJobs;
 
         await window.electron.trackEvent(PlausibleEvents.X_DELETE_STARTED, navigator.userAgent);
     }
@@ -837,8 +889,18 @@ I'm building a searchable archive web page in HTML.
                 await this.finishJob(iJob);
                 break;
 
+            case "indexLikes":
+                this.log("runJob", "indexLikes: NOT IMPLEMENTED");
+                await this.finishJob(iJob);
+                break;
+
             case "deleteTweets":
                 this.log("runJob", "deleteTweets: NOT IMPLEMENTED");
+                await this.finishJob(iJob);
+                break;
+
+            case "deleteRetweets":
+                this.log("runJob", "deleteRetweets: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
 
