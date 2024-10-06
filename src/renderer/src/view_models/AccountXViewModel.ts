@@ -498,6 +498,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                         // Already saved?
                         if (await window.electron.archive.isPageAlreadySaved(this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename)) {
+                            console.log("Already archived", this.archiveStartResponse.items[i].basename);
                             // Ensure the tweet has an archivedAt date
                             try {
                                 await window.electron.X.archiveTweetCheckDate(this.account.id, this.archiveStartResponse.items[i].id);
@@ -513,6 +514,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                             this.progress.tweetsArchived += 1;
                             continue;
+                        } else {
+                            console.log("Archiving", this.archiveStartResponse.items[i].basename);
                         }
 
                         // Load the URL
