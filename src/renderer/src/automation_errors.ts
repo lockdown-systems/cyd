@@ -25,7 +25,7 @@ export enum AutomationErrorType {
     x_runError = "x_runError",
     x_unknownError = "x_unknown",
     x_loadURLError = "x_loadURLError",
-    x_loadURLURLChanged = "X_loadURLURLChanged",
+    x_loadURLURLChanged = "x_loadURLURLChanged",
 }
 
 export const AutomationErrorTypeToMessage = {

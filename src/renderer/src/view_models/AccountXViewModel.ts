@@ -152,12 +152,23 @@ export class AccountXViewModel extends BaseViewModel {
 
             // Did the URL change?
             const newURL = this.webview.getURL();
-            if (newURL !== url && expectedURLs && !expectedURLs.includes(newURL)) {
-                this.error(AutomationErrorType.x_loadURLURLChanged, {
-                    url: url,
-                    newURL: newURL
-                });
-                break;
+            if (newURL != url) {
+                let changedToUnexpected = true;
+                for (const expectedURL of expectedURLs) {
+                    if (newURL.startsWith(expectedURL)) {
+                        changedToUnexpected = false;
+                        break;
+                    }
+                }
+
+                if (changedToUnexpected) {
+                    this.error(AutomationErrorType.x_loadURLURLChanged, {
+                        url: url,
+                        newURL: newURL,
+                        expectedURLs: expectedURLs
+                    });
+                    break;
+                }
             }
 
             // Were we rate limited?
