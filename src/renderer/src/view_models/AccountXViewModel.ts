@@ -1,4 +1,4 @@
-import { BaseViewModel, TimeoutError, URLChangedError } from './BaseViewModel';
+import { BaseViewModel, TimeoutError, URLChangedError, InternetDownError } from './BaseViewModel';
 import {
     XJob,
     XProgress, emptyXProgress,
@@ -127,7 +127,7 @@ export class AccountXViewModel extends BaseViewModel {
         await this.sleep(seconds * 1000);
     }
 
-    async loadURLWithRateLimit(url: string) {
+    async loadURLWithRateLimit(url: string, expectedURLs: string[] = []) {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             // Reset the rate limit checker
@@ -137,20 +137,25 @@ export class AccountXViewModel extends BaseViewModel {
             try {
                 await this.loadURL(url);
             } catch (e) {
-                await this.error(AutomationErrorType.x_loadURLError, {
-                    url: url,
-                    exception: (e as Error).toString()
-                });
+                if (e instanceof InternetDownError) {
+                    this.emitter?.emit(`cancel-automation-${this.account.id}`);
+                } else {
+                    await this.error(AutomationErrorType.x_loadURLError, {
+                        url: url,
+                        exception: (e as Error).toString()
+                    });
+                }
                 break;
             }
             await this.sleep(1000);
             await this.waitForLoadingToFinish();
 
             // Did the URL change?
-            if (this.webview.getURL() !== url) {
+            const newURL = this.webview.getURL();
+            if (newURL !== url && expectedURLs && !expectedURLs.includes(newURL)) {
                 this.error(AutomationErrorType.x_loadURLURLChanged, {
                     url: url,
-                    newURL: this.webview.getURL()
+                    newURL: newURL
                 });
                 break;
             }
@@ -229,9 +234,11 @@ export class AccountXViewModel extends BaseViewModel {
         this.showBrowser = true;
 
         this.log("login", "logging in");
-        await this.loadURLWithRateLimit("https://x.com/login");
+        const startingURLs = ["https://x.com/login", "https://x.com/i/flow/login"];
+        const expectedURL = "https://x.com/home";
+        await this.loadURLWithRateLimit("https://x.com/login", [expectedURL]);
         try {
-            await this.waitForURL(["https://x.com/login", "https://x.com/i/flow/login"], "https://x.com/home");
+            await this.waitForURL(startingURLs, expectedURL);
         } catch (e) {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
@@ -260,6 +267,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
 
         await window.electron.X.getUsernameStart(this.account.id);
+        await this.sleep(2000);
         await this.loadURLWithRateLimit("https://x.com/settings/account");
         await this.waitForSelector('a[href="/settings/your_twitter_data/account"]');
         const username = await window.electron.X.getUsername(this.account.id);
@@ -358,6 +366,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
+                await this.sleep(2000);
 
                 // Load the timeline and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
@@ -540,6 +549,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
+                await this.sleep(2000);
 
                 // Load the messages and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
@@ -638,6 +648,7 @@ Please wait while I index all of the messages from each conversation.
 
                 // Start monitoring network requests
                 await window.electron.X.indexStart(this.account.id);
+                await this.sleep(2000);
 
                 // Load the conversations
                 try {

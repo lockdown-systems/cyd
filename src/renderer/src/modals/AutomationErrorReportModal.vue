@@ -143,7 +143,7 @@ onMounted(async () => {
 
         // The 'hidden.bs.modal' event is triggered when when the user clicks outside the modal
         modalElement.addEventListener('hidden.bs.modal', () => {
-            doNotSubmitReport();
+            hide();
         });
     }
 

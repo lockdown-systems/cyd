@@ -20,6 +20,13 @@ export class URLChangedError extends Error {
     }
 }
 
+export class InternetDownError extends Error {
+    constructor() {
+        super(`Internet connection is down`);
+        this.name = "InternetDownError";
+    }
+}
+
 export class BaseViewModel {
     public account: Account;
     public webview: WebviewTag;
@@ -194,22 +201,40 @@ export class BaseViewModel {
         }
     }
 
+    async checkInternetConnectivity(): Promise<boolean> {
+        const testURL = this.api.apiURL;
+        if (!testURL) {
+            console.error("checkInternetConnectivity", "apiURL is not set");
+            return false;
+        }
+        try {
+            await fetch(testURL, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+            console.log("checkInternetConnectivity", "internet is up");
+            return true;
+        } catch (error) {
+            console.error("checkInternetConnectivity", "internet is down", (error as Error).toString());
+            return false;
+        }
+    }
+
     async loadURL(url: string) {
         console.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
         if (webview) {
-            let tries = 0;
-            while (tries < 3) {
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
                 try {
                     await webview.loadURL(url);
                     break;
                 } catch (error) {
-                    tries += 1;
-                    if (tries >= 3) {
+                    console.error(`Failed to load URL: ${error}`);
+
+                    if (await this.checkInternetConnectivity()) {
                         throw error;
                     } else {
-                        console.error(`Failed to load URL: ${error}`);
-                        await this.sleep(500);
+                        if (!await window.electron.showQuestion(`Error loading URL ${url}. It looks like your internet connection is down. Please check your connection and try again.`, "Retry", "Cancel")) {
+                            throw new InternetDownError();
+                        }
                     }
                 }
             }

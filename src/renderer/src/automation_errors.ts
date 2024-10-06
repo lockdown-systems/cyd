@@ -24,7 +24,7 @@ export enum AutomationErrorType {
     x_runJob_UnknownError = "x_runJob_UnknownError",
     x_runError = "x_runError",
     x_unknownError = "x_unknown",
-    x_loadURLError = "x_loadURLERror",
+    x_loadURLError = "x_loadURLError",
     x_loadURLURLChanged = "X_loadURLURLChanged",
 }
 
