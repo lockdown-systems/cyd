@@ -203,9 +203,10 @@ export class BaseViewModel {
                 try {
                     await webview.loadURL(url);
                     break;
-                } catch (error) {
-                    console.error(`Failed to load URL: ${error}`);
-                    await this.sleep(500);
+                } catch (e) {
+                    this.error(AutomationErrorType.X_loadURLURLChanged, {
+                        exception: (e as Error).toString()
+                    });
                 }
             }
         }
