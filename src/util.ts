@@ -110,3 +110,11 @@ export const trackEvent = (eventName: string, userAgent: string, plausibleDomain
         }
     }, 0);
 };
+
+export const packageExceptionForReport = (error: Error) => {
+    return JSON.stringify({
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+    });
+}

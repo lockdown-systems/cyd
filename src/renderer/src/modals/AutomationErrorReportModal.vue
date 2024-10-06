@@ -73,8 +73,8 @@ const shouldContinue = async () => {
 
     if (await window.electron.showQuestion(
         "Do you want to continue onto the next step anyway, even though there was an error?",
-        "Yes, continue",
-        "No, return to dashboard"
+        "Continue to Next Step",
+        "Return to Dashboard"
     )) {
         emitter.emit(`automation-error-${details.value?.accountID}-continue`);
     } else {
