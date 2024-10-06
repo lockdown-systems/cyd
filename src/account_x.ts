@@ -8,7 +8,7 @@ import { app, ipcMain, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
-import { getResourcesPath, getAccountDataPath } from './util'
+import { getResourcesPath, getAccountDataPath, packageExceptionForReport } from './util'
 import {
     XAccount,
     XJob,
@@ -1237,154 +1237,273 @@ const getXAccountController = (accountID: number): XAccountController => {
 
 export const defineIPCX = () => {
     ipcMain.handle('X:resetProgress', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return controller.resetProgress();
+        try {
+            const controller = getXAccountController(accountID);
+            return controller.resetProgress();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:createJobs', async (_, accountID: number, jobTypes: string[]): Promise<XJob[]> => {
-        const controller = getXAccountController(accountID);
-        return controller.createJobs(jobTypes);
+        try {
+            const controller = getXAccountController(accountID);
+            return controller.createJobs(jobTypes);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<XJob | null> => {
-        const controller = getXAccountController(accountID);
-        return controller.getLastFinishedJob(jobType);
+        try {
+            const controller = getXAccountController(accountID);
+            return controller.getLastFinishedJob(jobType);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:updateJob', async (_, accountID: number, jobJSON: string) => {
-        const controller = getXAccountController(accountID);
-        const job = JSON.parse(jobJSON) as XJob;
-        controller.updateJob(job);
+        try {
+            const controller = getXAccountController(accountID);
+            const job = JSON.parse(jobJSON) as XJob;
+            controller.updateJob(job);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:getUsernameStart', async (_, accountID: number): Promise<void> => {
-        const controller = getXAccountController(accountID);
-        await controller.getUsernameStart();
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.getUsernameStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:getUsernameStop', async (_, accountID: number): Promise<void> => {
-        const controller = getXAccountController(accountID);
-        await controller.getUsernameStop();
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.getUsernameStop();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:getUsername', async (_, accountID: number): Promise<string | null> => {
-        const controller = getXAccountController(accountID);
-        return await controller.getUsername();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getUsername();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexStart', async (_, accountID: number) => {
-        const controller = getXAccountController(accountID);
-        await controller.indexStart();
-
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.indexStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexStop', async (_, accountID: number) => {
-        const controller = getXAccountController(accountID);
-        await controller.indexStop();
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.indexStop();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexParseTweets', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexParseTweets(isFirstRun);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseTweets(isFirstRun);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexTweetsFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexTweetsFinished();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexTweetsFinished();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexParseConversations', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexParseConversations(isFirstRun);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseConversations(isFirstRun);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexIsThereMore', async (_, accountID: number): Promise<boolean> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexIsThereMore();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexIsThereMore();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexMessagesStart', async (_, accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexMessagesStart(isFirstRun);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexMessagesStart(isFirstRun);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexParseMessages', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexParseMessages(isFirstRun);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseMessages(isFirstRun);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexConversationsFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexConversationsFinished();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexConversationsFinished();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexMessagesFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexMessagesFinished();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexMessagesFinished();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexConversationFinished', async (_, accountID: number, conversationID: string): Promise<boolean> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexConversationFinished(conversationID);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexConversationFinished(conversationID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
-        const controller = getXAccountController(accountID);
-        return await controller.indexLikesFinished();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexLikesFinished();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveStartResponse> => {
-        const controller = getXAccountController(accountID);
-        return await controller.archiveTweetsStart();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.archiveTweetsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
-        const controller = getXAccountController(accountID);
-        return await controller.archiveTweet(tweetID);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.archiveTweet(tweetID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:archiveTweetCheckDate', async (_, accountID: number, tweetID: string): Promise<boolean> => {
-        const controller = getXAccountController(accountID);
-        return await controller.archiveTweetCheckDate(tweetID);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.archiveTweetCheckDate(tweetID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {
-        const controller = getXAccountController(accountID);
-        return await controller.archiveBuild();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.archiveBuild();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:syncProgress', async (_, accountID: number, progressJSON: string) => {
-        const controller = getXAccountController(accountID);
-        await controller.syncProgress(progressJSON);
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.syncProgress(progressJSON);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {
-        const controller = getXAccountController(accountID);
-        await controller.openFolder(folderName);
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.openFolder(folderName);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:resetRateLimitInfo', async (_, accountID: number): Promise<void> => {
-        const controller = getXAccountController(accountID);
-        return await controller.resetRateLimitInfo();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.resetRateLimitInfo();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:isRateLimited', async (_, accountID: number): Promise<XRateLimitInfo> => {
-        const controller = getXAccountController(accountID);
-        return await controller.isRateLimited();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.isRateLimited();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:getProgressInfo', async (_, accountID: number): Promise<XProgressInfo> => {
-        const controller = getXAccountController(accountID);
-        return await controller.getProgressInfo();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getProgressInfo();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:saveProfileImage', async (_, accountID: number, url: string): Promise<void> => {
-        const controller = getXAccountController(accountID);
-        return await controller.saveProfileImage(url);
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.saveProfileImage(url);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 
     ipcMain.handle('X:getLatestResponseData', async (_, accountID: number): Promise<ResponseData | null> => {
-        const controller = getXAccountController(accountID);
-        return await controller.getLatestResponseData();
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getLatestResponseData();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
     });
 };

@@ -9,7 +9,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage, s
 import * as database from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
-import { getAccountDataPath, getResourcesPath, trackEvent } from './util';
+import { getAccountDataPath, getResourcesPath, trackEvent, packageExceptionForReport } from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -121,116 +121,193 @@ async function createWindow() {
 
     // IPC events
 
+    // @ts-expect-error: typescript doesn't know about this global variable
     if (!global.ipcHandlersRegistered) {
 
         // Main IPC events
 
         ipcMain.handle('getVersion', async () => {
-            return app.getVersion();
+            try {
+                return app.getVersion();
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('getPlatform', async () => {
-            return os.platform();
+            try {
+                return os.platform();
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('getAPIURL', async () => {
-            return config.apiURL;
+            try {
+                return config.apiURL;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('getDashURL', async () => {
-            return config.dashURL;
+            try {
+                return config.dashURL;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('trackEvent', async (_, eventName: string, userAgent: string) => {
-            trackEvent(eventName, userAgent, config.plausibleDomain);
+            try {
+                trackEvent(eventName, userAgent, config.plausibleDomain);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('shouldOpenDevtools', async (_) => {
-            return semiphemeralDevtools;
+            try {
+                return semiphemeralDevtools;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('showMessage', async (_, message: string) => {
-            dialog.showMessageBoxSync({
-                message: message,
-                type: 'info',
-            });
+            try {
+                dialog.showMessageBoxSync({
+                    message: message,
+                    type: 'info',
+                });
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('showError', async (_, message: string) => {
-            dialog.showErrorBox('Semiphemeral Error', message);
+            try {
+                dialog.showErrorBox('Semiphemeral Error', message);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('showQuestion', async (_, message: string, trueText: string, falseText: string) => {
-            const result = dialog.showMessageBoxSync({
-                message: message,
-                type: 'question',
-                buttons: [falseText, trueText],
-                defaultId: 0,
-            });
-            return result === 1;
+            try {
+                const result = dialog.showMessageBoxSync({
+                    message: message,
+                    type: 'question',
+                    buttons: [falseText, trueText],
+                    defaultId: 0,
+                });
+                return result === 1;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('openURL', async (_, url) => {
-            shell.openExternal(url);
+            try {
+                shell.openExternal(url);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('loadFileInWebview', async (_, webContentsId: number, filename: string) => {
-            const wc = webContents.fromId(webContentsId);
-            if (wc) {
-                await wc.loadFile(filename);
+            try {
+                const wc = webContents.fromId(webContentsId);
+                if (wc) {
+                    await wc.loadFile(filename);
+                }
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
             }
         });
 
         ipcMain.handle('getAccountDataPath', async (_, accountID: number, filename: string): Promise<string | null> => {
-            const account = database.getAccount(accountID);
-            if (!account) {
-                return null;
-            }
-            const username = await database.getAccountUsername(account);
-            if (!username) {
-                return null;
-            }
+            try {
+                const account = database.getAccount(accountID);
+                if (!account) {
+                    return null;
+                }
+                const username = await database.getAccountUsername(account);
+                if (!username) {
+                    return null;
+                }
 
-            const archivePath = getAccountDataPath(account.type, username);
-            if (filename == '') {
-                return archivePath;
-            } else {
-                return path.join(archivePath, filename);
+                const archivePath = getAccountDataPath(account.type, username);
+                if (filename == '') {
+                    return archivePath;
+                } else {
+                    return path.join(archivePath, filename);
+                }
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
             }
         });
 
         // Database IPC events
 
         ipcMain.handle('database:getConfig', async (_, key) => {
-            return database.getConfig(key);
+            try {
+                return database.getConfig(key);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('database:setConfig', async (_, key, value) => {
-            database.setConfig(key, value);
+            try {
+                database.setConfig(key, value);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('database:getAccounts', async (_) => {
-            return database.getAccounts();
+            try {
+                return database.getAccounts();
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('database:createAccount', async (_) => {
-            return database.createAccount();
+            try {
+                return database.createAccount();
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
-            return database.selectAccountType(accountID, type);
+            try {
+                return database.selectAccountType(accountID, type);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('database:saveAccount', async (_, accountJson) => {
-            const account = JSON.parse(accountJson);
-            return database.saveAccount(account);
+            try {
+                const account = JSON.parse(accountJson);
+                return database.saveAccount(account);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         ipcMain.handle('database:deleteAccount', async (_, accountID) => {
-            const ses = session.fromPartition(`persist:account-${accountID}`);
-            await ses.closeAllConnections();
-            await ses.clearStorageData();
-            database.deleteAccount(accountID);
+            try {
+                const ses = session.fromPartition(`persist:account-${accountID}`);
+                await ses.closeAllConnections();
+                await ses.clearStorageData();
+                database.deleteAccount(accountID);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
         });
 
         // Other IPC events
@@ -238,6 +315,7 @@ async function createWindow() {
         defineIPCX();
         defineIPCArchive();
     }
+    // @ts-expect-error: typescript doesn't know about this global variable
     global.ipcHandlersRegistered = true;
 
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

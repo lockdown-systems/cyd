@@ -9,7 +9,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse } from "../semiphemeral-api-client";
+import { APIErrorResponse } from "../../../semiphemeral-api-client";
 
 export enum State {
     Login = "login",
@@ -81,7 +81,14 @@ export class AccountXViewModel extends BaseViewModel {
         }
         jobTypes.push("archiveBuild");
 
-        this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+        try {
+            this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+        } catch (e) {
+            await this.error(AutomationErrorType.x_unknownError, {
+                exception: (e as Error).toString()
+            });
+            return;
+        }
         this.state = State.RunJobs;
 
         await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_STARTED, navigator.userAgent);
@@ -90,7 +97,14 @@ export class AccountXViewModel extends BaseViewModel {
     async startDeleting() {
         // TODO: implement
         console.log("startDeleting: NOT IMPLEMENTED");
-        await window.electron.showMessage("Deleting data from X is not implemented yet.");
+        try {
+            await window.electron.showMessage("Deleting data from X is not implemented yet.");
+        } catch (e) {
+            await this.error(AutomationErrorType.x_unknownError, {
+                exception: (e as Error).toString()
+            });
+            return;
+        }
 
         await window.electron.trackEvent(PlausibleEvents.X_DELETE_STARTED, navigator.userAgent);
     }
@@ -204,13 +218,11 @@ export class AccountXViewModel extends BaseViewModel {
         } catch (e) {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
-                    exception: e.toString(),
-                    stack: e.stack
+                    exception: (e as Error).toString()
                 });
             } else {
                 await this.error(AutomationErrorType.X_login_WaitingForURLFailed, {
-                    exception: (e as Error).toString(),
-                    stack: (e as Error).stack
+                    exception: (e as Error).toString()
                 });
             }
         }
@@ -358,14 +370,12 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             const newURL = this.webview.getURL();
                             await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
                                 newURL: newURL,
-                                exception: e.toString(),
-                                stack: e.stack
+                                exception: (e as Error).toString()
                             })
                             break;
                         } else {
                             await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                                exception: (e as Error).toString(),
-                                stack: (e as Error).stack
+                                exception: (e as Error).toString()
                             })
                             break;
                         }
@@ -397,8 +407,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     } catch (e) {
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
-                            exception: (e as Error).toString(),
-                            stack: (e as Error).stack
+                            exception: (e as Error).toString()
                         }, latestResponseData);
                         break;
                     }
@@ -432,8 +441,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                     this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
-                        exception: (e as Error).toString(),
-                        stack: (e as Error).stack
+                        exception: (e as Error).toString()
                     })
                     break;
                 }
@@ -458,8 +466,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                                 await window.electron.X.archiveTweetCheckDate(this.account.id, this.archiveStartResponse.items[i].id);
                             } catch (e) {
                                 await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
-                                    exception: (e as Error).toString(),
-                                    stack: (e as Error).stack
+                                    exception: (e as Error).toString()
                                 }, {
                                     archiveStartResponseItem: this.archiveStartResponse.items[i],
                                     index: i
@@ -482,8 +489,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                             await window.electron.X.archiveTweet(this.account.id, this.archiveStartResponse.items[i].id);
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
-                                exception: (e as Error).toString(),
-                                stack: (e as Error).stack
+                                exception: (e as Error).toString()
                             }, {
                                 archiveStartResponseItem: this.archiveStartResponse.items[i],
                                 index: i
@@ -545,13 +551,11 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             const newURL = this.webview.getURL();
                             await this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
                                 newURL: newURL,
-                                exception: e.toString(),
-                                stack: (e as Error).stack
+                                exception: (e as Error).toString()
                             })
                         } else {
                             await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
-                                exception: (e as Error).toString(),
-                                stack: (e as Error).stack
+                                exception: (e as Error).toString()
                             })
                         }
                     }
@@ -574,8 +578,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     } catch (e) {
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexConversations_ParseConversationsError, {
-                            exception: (e as Error).toString(),
-                            stack: (e as Error).stack
+                            exception: (e as Error).toString()
                         }, latestResponseData);
                         break;
                     }
@@ -624,8 +627,7 @@ Please wait while I index all of the messages from each conversation.
                     this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
-                        exception: (e as Error).toString(),
-                        stack: (e as Error).stack
+                        exception: (e as Error).toString()
                     })
                     break;
                 }
@@ -658,8 +660,7 @@ Please wait while I index all of the messages from each conversation.
                                     await this.waitForRateLimit();
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-                                        exception: e.toString(),
-                                        stack: (e as Error).stack
+                                        exception: (e as Error).toString()
                                     });
                                     break;
                                 }
@@ -677,15 +678,13 @@ Please wait while I index all of the messages from each conversation.
                                     break;
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt, {
-                                        exception: e.toString(),
-                                        stack: (e as Error).stack
+                                        exception: (e as Error).toString()
                                     })
                                     break;
                                 }
                             } else {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    exception: (e as Error).toString(),
-                                    stack: (e as Error).stack
+                                    exception: (e as Error).toString()
                                 });
                                 break;
                             }
@@ -693,8 +692,7 @@ Please wait while I index all of the messages from each conversation.
                             tries += 1;
                             if (tries >= 3) {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    exception: (e as Error).toString(),
-                                    stack: (e as Error).stack
+                                    exception: (e as Error).toString()
                                 });
                                 break;
                             }
@@ -726,8 +724,7 @@ Please wait while I index all of the messages from each conversation.
                         } catch (e) {
                             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                             await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
-                                exception: (e as Error).toString(),
-                                stack: (e as Error).stack
+                                exception: (e as Error).toString()
                             }, latestResponseData);
                             break;
                         }
@@ -770,8 +767,7 @@ I'm building a searchable archive web page in HTML.
                     await window.electron.X.archiveBuild(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError, {
-                        exception: (e as Error).toString(),
-                        stack: (e as Error).stack
+                        exception: (e as Error).toString()
                     })
                     break;
                 }
@@ -818,61 +814,66 @@ I'm building a searchable archive web page in HTML.
 
     async run() {
         this.log("run", "running");
-        this.progress = await window.electron.X.resetProgress(this.account.id);
+        try {
+            this.progress = await window.electron.X.resetProgress(this.account.id);
 
-        switch (this.state) {
-            case State.Login:
-                this.actionString = `Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
+            switch (this.state) {
+                case State.Login:
+                    this.actionString = `Semiphemeral can help you archive your tweets and directs messages, and delete your tweets, 
 retweets, likes, and direct messages.`;
-                this.instructions = `${this.actionString}
+                    this.instructions = `${this.actionString}
 
 **To get started, log in to your X account below.**`;
-                this.showBrowser = true;
-                this.showAutomationNotice = false;
-                await this.login();
-                this.state = State.Dashboard;
-                break;
+                    this.showBrowser = true;
+                    this.showAutomationNotice = false;
+                    await this.login();
+                    this.state = State.Dashboard;
+                    break;
 
-            case State.Dashboard:
-                this.showBrowser = false;
-                await this.loadURL("about:blank");
-                this.instructions = `
+                case State.Dashboard:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
 You're signed into **@${this.account.xAccount?.username}** on X.
 
 You can make a local archive of your data, or you delete exactly what you choose to. What would you like to do?
 `;
-                this.state = State.DashboardDisplay;
-                break;
+                    this.state = State.DashboardDisplay;
+                    break;
 
-            case State.RunJobs:
-                for (let i = 0; i < this.jobs.length; i++) {
-                    this.currentJobIndex = i;
-                    try {
-                        await this.runJob(i);
-                    } catch (e) {
-                        await this.error(AutomationErrorType.x_runJob_UnknownError, {
-                            exception: (e as Error).toString(),
-                            stack: (e as Error).stack
-                        });
-                        break;
+                case State.RunJobs:
+                    for (let i = 0; i < this.jobs.length; i++) {
+                        this.currentJobIndex = i;
+                        try {
+                            await this.runJob(i);
+                        } catch (e) {
+                            await this.error(AutomationErrorType.x_runJob_UnknownError, {
+                                exception: (e as Error).toString()
+                            });
+                            break;
+                        }
                     }
-                }
 
-                this.state = State.FinishedRunningJobs;
-                this.showBrowser = false;
-                await this.loadURL("about:blank");
-                this.instructions = `
+                    this.state = State.FinishedRunningJobs;
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
 **${this.actionFinishedString}**
 
 `;
-                if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
-                } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                }
-                break;
+                    if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
+                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
+                    } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
+                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
+                    } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
+                        this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
+                    }
+                    break;
+            }
+        } catch (e) {
+            await this.error(AutomationErrorType.x_runError, {
+                exception: (e as Error).toString()
+            });
         }
     }
 }

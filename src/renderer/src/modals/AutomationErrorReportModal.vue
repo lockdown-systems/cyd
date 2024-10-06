@@ -2,8 +2,8 @@
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
 import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
 import { PlausibleEvents } from "../types";
-import SemiphemeralAPIClient from '../semiphemeral-api-client';
-import { PostAutomationErrorReportAPIRequest } from '../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import { PostAutomationErrorReportAPIRequest } from '../../../semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
@@ -73,8 +73,8 @@ const shouldContinue = async () => {
 
     if (await window.electron.showQuestion(
         "Do you want to continue onto the next step anyway, even though there was an error?",
-        "Yes, continue",
-        "No, return to dashboard"
+        "Continue to Next Step",
+        "Return to Dashboard"
     )) {
         emitter.emit(`automation-error-${details.value?.accountID}-continue`);
     } else {

@@ -1,4 +1,5 @@
 export enum AutomationErrorType {
+
     X_login_FailedToGetUsername = "X_login_FailedToGetUsername",
     X_login_URLChanged = "X_login_URLChanged",
     X_login_WaitingForURLFailed = "X_login_WaitingForURLFailed",
@@ -21,6 +22,8 @@ export enum AutomationErrorType {
     x_runJob_indexMessages_ParseMessagesError = "x_runJob_indexMessages_ParseMessagesError",
     x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
     x_runJob_UnknownError = "x_runJob_UnknownError",
+    x_runError = "x_runError",
+    x_unknownError = "x_unknown",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -46,6 +49,8 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_runJob_indexMessages_ParseMessagesError]: "Failed to parse messages while indexing messages",
     [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]: "Failed to archive build",
     [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occured",
+    [AutomationErrorType.x_runError]: "Error while in X run function",
+    [AutomationErrorType.x_unknownError]: "An unknown error occured",
 }
 
 export type AutomationErrorDetails = {

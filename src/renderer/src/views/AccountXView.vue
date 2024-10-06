@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Ref, ref, watch, onMounted, onUnmounted, inject, getCurrentInstance } from 'vue'
 import Electron from 'electron';
-import SemiphemeralAPIClient from '../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';

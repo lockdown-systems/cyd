@@ -1,7 +1,7 @@
 import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
-import SemiphemeralAPIClient from '../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
 import { type DeviceInfo, PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
@@ -84,7 +84,9 @@ export class BaseViewModel {
 
     async init() {
         // Open devtools if needed
-        if (await window.electron.shouldOpenDevtools()) {
+        const shouldOpenDevtools = await window.electron.shouldOpenDevtools();
+
+        if (shouldOpenDevtools) {
             this.getWebview()?.openDevTools();
         }
 

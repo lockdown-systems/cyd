@@ -1,5 +1,5 @@
 import TabsView from './TabsView.vue';
-import SemiphemeralAPIClient from '../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
 
 import { ref } from 'vue';
 
