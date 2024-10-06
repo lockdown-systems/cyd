@@ -24,6 +24,7 @@ export enum AutomationErrorType {
     x_runJob_UnknownError = "x_runJob_UnknownError",
     x_runError = "x_runError",
     x_unknownError = "x_unknown",
+    X_loadURLURLChanged = "X_loadURLURLChanged",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -51,6 +52,7 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occured",
     [AutomationErrorType.x_runError]: "Error while in X run function",
     [AutomationErrorType.x_unknownError]: "An unknown error occured",
+    [AutomationErrorType.X_loadURLURLChanged]: "URL changed after loading",
 }
 
 export type AutomationErrorDetails = {

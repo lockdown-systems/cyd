@@ -135,8 +135,17 @@ export class AccountXViewModel extends BaseViewModel {
 
             // Load the URL
             await this.loadURL(url);
-            await this.sleep(3000);
+            await this.sleep(1000);
             await this.waitForLoadingToFinish();
+
+            // Did the URL change?
+            if (this.webview.getURL() !== url) {
+                this.error(AutomationErrorType.X_loadURLURLChanged, {
+                    url: url,
+                    newURL: this.webview.getURL()
+                });
+                break;
+            }
 
             // Were we rate limited?
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
