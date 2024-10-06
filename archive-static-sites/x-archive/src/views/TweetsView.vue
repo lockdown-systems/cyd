@@ -15,20 +15,34 @@ const filteredTweets = computed(() => {
 </script>
 
 <template>
-  <div class="tweets">
-    <div class="mb-3">
-      <input type="text" v-model="filterText" class="form-control" placeholder="Filter your tweets">
+  <div class="tweets-container">
+    <div class="filter-container">
+      <p><input type="text" v-model="filterText" class="form-control" placeholder="Filter your tweets"></p>
+      <p class="text-center text-muted small">Showing {{ filteredTweets.length.toLocaleString() }} tweets</p>
     </div>
 
-    <p>Showing {{ filteredTweets.length.toLocaleString() }} tweets</p>
-
-    <TweetComponent v-for="tweet in filteredTweets" :key="tweet.tweetID" :tweet="tweet" />
+    <div class="tweets-list">
+      <TweetComponent v-for="tweet in filteredTweets" :key="tweet.tweetID" :tweet="tweet" />
+    </div>
   </div>
 </template>
 
 <style scoped>
-.tweets {
-  max-width: 600px;
+.tweets-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px);
+  max-width: 700px;
   margin: 0 auto;
+}
+
+.filter-container {
+  flex-shrink: 0;
+}
+
+.tweets-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 20px;
 }
 </style>

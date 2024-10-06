@@ -221,6 +221,7 @@ export class BaseViewModel {
         console.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
         if (webview) {
+            let tries = 0;
             // eslint-disable-next-line no-constant-condition
             while (true) {
                 try {
@@ -229,11 +230,17 @@ export class BaseViewModel {
                 } catch (error) {
                     console.error(`Failed to load URL: ${error}`);
 
-                    if (await this.checkInternetConnectivity()) {
-                        throw error;
-                    } else {
-                        if (!await window.electron.showQuestion(`Error loading URL ${url}. It looks like your internet connection is down. Please check your connection and try again.`, "Retry", "Cancel")) {
-                            throw new InternetDownError();
+                    tries++;
+                    if (tries >= 3) {
+                        if (await this.checkInternetConnectivity()) {
+                            throw error;
+                        } else {
+                            if (!await window.electron.showQuestion(`Error loading URL ${url}. It looks like your internet connection is down. Please check your connection and try again.`, "Retry", "Cancel")) {
+                                throw new InternetDownError();
+                            } else {
+                                tries = 0;
+                                this.sleep(1000);
+                            }
                         }
                     }
                 }

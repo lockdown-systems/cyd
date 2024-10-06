@@ -36,33 +36,61 @@ const selectConversation = (conversationID: string) => {
   <div class="container">
     <div class="row">
       <div class="col-md-5">
-        <div class="conversations">
-          <div class="mb-3">
-            <input type="text" v-model="conversationFilterText" class="form-control"
-              placeholder="Filter your conversations">
+        <div class="conversations-container">
+          <div class="filter-container">
+            <p><input type="text" v-model="conversationFilterText" class="form-control"
+                placeholder="Filter your conversations"></p>
+            <p class="text-center text-muted small">Showing {{ filteredConversations.length.toLocaleString() }}
+              conversations</p>
           </div>
 
-          <p>Showing {{ filteredConversations.length.toLocaleString() }} conversations</p>
-
-          <ConversationComponent v-for="conversation in filteredConversations" :key="conversation.conversationID"
-            :conversation="conversation" :is-selected="selectedConversationID == conversation.conversationID"
-            @click="selectConversation(conversation.conversationID)" />
+          <div class="items-list">
+            <ConversationComponent v-for="conversation in filteredConversations" :key="conversation.conversationID"
+              :conversation="conversation" :is-selected="selectedConversationID == conversation.conversationID"
+              @click="selectConversation(conversation.conversationID)" />
+          </div>
         </div>
       </div>
 
       <div class="col-md-7">
-        <div class="messages">
-          <div class="mb-3">
-            <input type="text" v-model="messageFilterText" class="form-control" placeholder="Filter your messages">
+        <div class="messages-container">
+          <div class="filter-container">
+            <p><input type="text" v-model="messageFilterText" class="form-control" placeholder="Filter your messages">
+            </p>
+            <p class="text-center text-muted small">Showing {{ filteredMessages.length.toLocaleString() }} messages</p>
           </div>
 
-          <p>Showing {{ filteredMessages.length.toLocaleString() }} messages</p>
-
-          <MessageComponent v-for="message in filteredMessages" :key="message.messageID" :message="message" />
+          <div class="items-list">
+            <MessageComponent v-for="message in filteredMessages" :key="message.messageID" :message="message" />
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.conversations-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px);
+  margin: 0 auto;
+}
+
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px);
+  margin: 0 auto;
+}
+
+.filter-container {
+  flex-shrink: 0;
+}
+
+.items-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 20px;
+}
+</style>

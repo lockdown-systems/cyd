@@ -17,7 +17,7 @@ onMounted(() => {
 <template>
   <template v-if="archiveDataFound">
     <div class="d-flex flex-column min-vh-100">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
           <a class="navbar-brand" href="https://semiphemeral.com" target="_blank">
             <img src="./assets/logo.png" alt="Semiphemeral" class="logo" style="height: 40px;">
@@ -41,7 +41,7 @@ onMounted(() => {
           </div>
         </div>
       </nav>
-      <div class="container mt-2 mb-2">
+      <div class="container main-content mb-2">
         <router-view />
       </div>
       <footer class="mt-auto bg-light py-3">
@@ -70,6 +70,12 @@ onMounted(() => {
 </template>
 
 <style>
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
 a {
   color: #007bff;
   text-decoration: none;
@@ -92,5 +98,9 @@ footer p {
   color: red;
   font-size: 3.5rem;
   margin: 0 1rem;
+}
+
+.main-content {
+  margin-top: 80px;
 }
 </style>
