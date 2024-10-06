@@ -1,4 +1,4 @@
-import SemiphemeralAPIClient from './semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../semiphemeral-api-client';
 import type { DeviceInfo } from './types';
 
 // This function checks to see if there's a userEmail and deviceToken, and if so if the

@@ -9,7 +9,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse } from "../semiphemeral-api-client";
+import { APIErrorResponse } from "../../../semiphemeral-api-client";
 
 export enum State {
     Login = "login",

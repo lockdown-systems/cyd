@@ -2,8 +2,8 @@
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
 import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
 import { PlausibleEvents } from "../types";
-import SemiphemeralAPIClient from '../semiphemeral-api-client';
-import { PostAutomationErrorReportAPIRequest } from '../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import { PostAutomationErrorReportAPIRequest } from '../../../semiphemeral-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
