@@ -99,9 +99,15 @@ export type XProgress = {
     conversationMessagesIndexed: number;
     shouldStopEarly: boolean;
 
+    totalTweetsToDelete: number;
     tweetsDeleted: number;
+
+    totalRetweetsToDelete: number;
     retweetsDeleted: number;
+
+    totalLikesToDelete: number;
     likesDeleted: number;
+
     dmConversationsDeleted: number;
 }
 
@@ -194,5 +200,18 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
         totalMessagesDeleted: 0
+    }
+}
+
+export type XDeleteTweetsStartResponse = {
+    tweets: {
+        id: number;
+        tweetID: string;
+    }[];
+}
+
+export function emptyXDeleteTweetsStartResponse(): XDeleteTweetsStartResponse {
+    return {
+        tweets: []
     }
 }

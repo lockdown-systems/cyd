@@ -8,7 +8,12 @@ import { app, ipcMain, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
-import { getResourcesPath, getAccountDataPath, packageExceptionForReport } from './util'
+import {
+    getResourcesPath,
+    getAccountDataPath,
+    packageExceptionForReport,
+    getTimestampDaysAgo
+} from './util'
 import {
     XAccount,
     XJob,
@@ -17,6 +22,7 @@ import {
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
+    XDeleteTweetsStartResponse,
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
     // XTweet
@@ -1158,6 +1164,72 @@ export class XAccountController {
         return true;
     }
 
+    // When you start deleting tweets, retur a list of tweetIDs to delete
+    async deleteTweetsStart(): Promise<XDeleteTweetsStartResponse> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Select just the tweets that need to be deleted based on the settings
+        let tweets: XTweetRow[];
+        const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteTweetsDaysOld);
+        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThreshold) {
+            // Both likes and retweets thresholds
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                [0, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
+                "all"
+            ) as XTweetRow[];
+        } else if (this.account.deleteTweetsLikesThresholdEnabled) {
+            // Just likes threshold
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
+                [0, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
+                "all"
+            ) as XTweetRow[];
+        } else if (this.account.deleteTweetsRetweetsThreshold) {
+            // Just retweets threshold
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                [0, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
+                "all"
+            ) as XTweetRow[];
+        } else {
+            // Neither likes nor retweets threshold
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND createdAt <= ? ORDER BY createdAt DESC',
+                [0, daysOldTimestamp],
+                "all"
+            ) as XTweetRow[];
+        }
+
+        log.debug("XAccountController.deleteTweetsStart", tweets);
+        return {
+            tweets: tweets.map((row) => ({
+                id: row.id,
+                tweetID: row.tweetID
+            })),
+        };
+    }
+
+    // Save the tweet's deletedAt timestamp
+    async deleteTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        exec(this.db, 'UPDATE tweet SET deletedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        return true;
+    }
+
     async syncProgress(progressJSON: string) {
         this.progress = JSON.parse(progressJSON);
     }
@@ -1502,6 +1574,24 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.getLatestResponseData();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteTweetsStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteTweetsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteTweet(tweetID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

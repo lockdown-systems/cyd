@@ -4,6 +4,7 @@ import {
     XProgress, emptyXProgress,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
+    XDeleteTweetsStartResponse, emptyXDeleteTweetsStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
@@ -31,6 +32,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
     private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
+    private deleteTweetsStartResponse: XDeleteTweetsStartResponse = emptyXDeleteTweetsStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -562,7 +564,6 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 if (this.webContentsID) {
 
                     // Start the progress
-                    this.progress.currentJob = "archiveTweets";
                     this.progress.totalTweetsToArchive = this.archiveStartResponse.items.length;
                     this.progress.tweetsArchived = 0;
                     this.progress.newTweetsArchived = 0;
@@ -748,11 +749,12 @@ Please wait while I index all of the messages from each conversation.
                     })
                     break;
                 }
-                this.progress.currentJob = "indexMessages";
+                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
+
+                // Start the progress
                 this.progress.totalConversations = this.indexMessagesStartResponse?.totalConversations;
                 this.progress.conversationMessagesIndexed = this.progress.totalConversations - this.indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
-                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
 
                 for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
                     await this.waitForPause();
@@ -918,7 +920,101 @@ I'm building a searchable archive web page in HTML.
                 break;
 
             case "deleteTweets":
-                this.log("runJob", "deleteTweets: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+I'm deleting your tweets, based on your criteria.
+`;
+                this.showAutomationNotice = true;
+
+                // Load the tweets to delete
+                try {
+                    this.deleteTweetsStartResponse = await window.electron.X.deleteTweetsStart(this.account.id);
+                } catch (e) {
+                    await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
+                        exception: (e as Error).toString()
+                    })
+                    break;
+                }
+                this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", this.deleteTweetsStartResponse]);
+
+                this.pause(); // DEBUG
+                await this.waitForPause();
+
+                // Start the progress
+                this.progress.totalTweetsToDelete = this.deleteTweetsStartResponse.tweets.length;
+                this.progress.tweetsDeleted = 0;
+                await this.syncProgress();
+
+                for (let i = 0; i < this.deleteTweetsStartResponse.tweets.length; i++) {
+                    // Load the URL
+                    await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${this.deleteTweetsStartResponse.tweets[i].tweetID}`);
+                    await this.sleep(200);
+
+                    this.pause(); // DEBUG
+                    await this.waitForPause();
+
+                    // Wait for the menu button to appear
+                    try {
+                        await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
+                    await this.sleep(200);
+
+                    // Click the menu button
+                    await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+
+                    // Wait for the menu to appear
+                    try {
+                        await this.waitForSelector('div[role="menu"] div[role="menuitem"]:first-of-type');
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
+                    await this.sleep(200);
+
+                    // Click the delete button
+                    await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
+
+                    // Wait for the delete confirmation popup to appear
+                    try {
+                        await this.waitForSelector('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
+                    await this.sleep(200);
+
+                    // Click delete confirmation
+                    await this.scriptClickElement('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
+                    await this.sleep(200);
+
+                    // Update the tweet's deletedAt date
+                    try {
+                        await window.electron.X.deleteTweet(this.account.id, this.deleteTweetsStartResponse.tweets[i].tweetID);
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            deleteTweetsStartResponseTweet: this.deleteTweetsStartResponse.tweets[i],
+                            index: i
+                        })
+                        break;
+                    }
+
+                    this.progress.tweetsDeleted += 1;
+                    await this.syncProgress();
+                }
+
                 await this.finishJob(iJob);
                 break;
 
