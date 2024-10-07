@@ -949,7 +949,6 @@ I'm deleting your tweets, based on your criteria.
                     await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${this.deleteTweetsStartResponse.tweets[i].tweetID}`);
                     await this.sleep(200);
 
-                    this.pause(); // DEBUG
                     await this.waitForPause();
 
                     // Wait for the menu button to appear
