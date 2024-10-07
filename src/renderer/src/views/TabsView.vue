@@ -119,9 +119,15 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
   }
 };
 
-const manageAccountClicked = async () => {
+const showManageAccountModal = () => {
   userBtnShowMenu.value = false;
   showManageAccount.value = true;
+};
+
+emitter?.on('show-manage-account', showManageAccountModal);
+
+const manageAccountClicked = async () => {
+  showManageAccountModal();
 };
 
 const signInClicked = async () => {

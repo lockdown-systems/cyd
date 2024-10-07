@@ -9,7 +9,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse } from "../../../semiphemeral-api-client";
+import { APIErrorResponse, UserPremiumAPIResponse } from "../../../semiphemeral-api-client";
 
 export enum State {
     Login = "login",
@@ -131,7 +131,21 @@ export class AccountXViewModel extends BaseViewModel {
             return;
         }
 
-        // TODO: Check if the user has premium
+        // Check if the user has premium
+        let userPremium: UserPremiumAPIResponse;
+        const resp = await this.api.getUserPremium();
+        if (resp && 'error' in resp === false) {
+            userPremium = resp;
+        } else {
+            await window.electron.showMessage("Failed to check if you have Premium access. Please try again later.");
+            return;
+        }
+
+        if (userPremium.premium_access === false) {
+            await window.electron.showMessage("Deleting data from X is a Premium feature. Please upgrade to Premium to use this feature.");
+            this.emitter?.emit("show-manage-account");
+            return;
+        }
 
         this.setAction("delete");
 
