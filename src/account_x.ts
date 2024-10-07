@@ -1069,7 +1069,7 @@ export class XAccountController {
         }
 
         // Select everything from database
-        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt", [this.account.username, 0], "all") as XTweetRow[];
+        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt DESC", [this.account.username, 0], "all") as XTweetRow[];
         const users: XUserRow[] = exec(this.db, 'SELECT * FROM user', [], "all") as XUserRow[];
         const conversations: XConversationRow[] = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all") as XConversationRow[];
         const conversationParticipants: XConversationParticipantRow[] = exec(this.db, 'SELECT * FROM conversation_participant', [], "all") as XConversationParticipantRow[];
