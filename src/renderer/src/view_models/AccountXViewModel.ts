@@ -1076,17 +1076,8 @@ You can make a local archive of your data, or you delete exactly what you choose
                     this.state = State.FinishedRunningJobs;
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-                    this.instructions = `
-**${this.actionFinishedString}**
 
-`;
-                    if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
-                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
-                    } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                    } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                        this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                    }
+                    this.instructions = `**${this.actionFinishedString}**`;
                     break;
             }
         } catch (e) {

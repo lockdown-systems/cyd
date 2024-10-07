@@ -6,6 +6,7 @@ import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
+import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 
@@ -79,16 +80,9 @@ watch(
 // Paths
 const archivePath = ref('');
 
-const openArchiveFolder = async () => {
-    await window.electron.X.openFolder(props.account.id, "");
-};
-
-const openArchive = async () => {
-    await window.electron.X.openFolder(props.account.id, "index.html");
-};
-
 // Settings
 const archiveTweets = ref(false);
+const archiveLikes = ref(false);
 const archiveDMs = ref(false);
 const deleteTweets = ref(false);
 const deleteTweetsDaysOld = ref(0);
@@ -130,6 +124,7 @@ const updateSettings = async () => {
             username: props.account.xAccount?.username || '',
             profileImageDataURI: props.account.xAccount?.profileImageDataURI || '',
             archiveTweets: archiveTweets.value,
+            archiveLikes: archiveLikes.value,
             archiveDMs: archiveDMs.value,
             deleteTweets: deleteTweets.value,
             deleteTweetsDaysOld: deleteTweetsDaysOld.value,
@@ -229,6 +224,7 @@ onMounted(async () => {
 
     if (props.account.xAccount !== null) {
         archiveTweets.value = props.account.xAccount.archiveTweets;
+        archiveLikes.value = props.account.xAccount.archiveLikes;
         archiveDMs.value = props.account.xAccount.archiveDMs;
         deleteTweets.value = props.account.xAccount.deleteTweets;
         deleteTweetsDaysOld.value = props.account.xAccount.deleteTweetsDaysOld;
@@ -343,6 +339,11 @@ onUnmounted(async () => {
                                 <label class="form-check-label" for="archiveTweets">Archive tweets</label>
                             </div>
                             <div class="mb-3 form-check">
+                                <input id="archiveLikes" v-model="archiveLikes" type="checkbox"
+                                    class="form-check-input">
+                                <label class="form-check-label" for="archiveLikes">Archive likes</label>
+                            </div>
+                            <div class="mb-3 form-check">
                                 <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
                                 <label class="form-check-label" for="archiveDMs">Archive direct messages</label>
                             </div>
@@ -352,7 +353,8 @@ onUnmounted(async () => {
                                 <label class="form-check-label" for="archiveForceIndexEverything">Force Semiphemeral to
                                     re-index everything, instead of just the newest</label>
                             </div>
-                            <button type="submit" class="btn btn-primary" :disabled="!(archiveTweets || archiveDMs)"
+                            <button type="submit" class="btn btn-primary"
+                                :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
                                 @click="startArchivingClicked">
                                 <i class="fa-solid fa-floppy-disk mr-2" />
                                 Start Archiving
@@ -361,15 +363,7 @@ onUnmounted(async () => {
 
                         <div v-if="!isFirstIndex" class="mt-5">
                             <h2>Explore my data</h2>
-                            <p class="d-flex gap-2">
-                                <button class="btn btn-success btn-sm" @click="openArchive">
-                                    Browse Archive
-                                </button>
-
-                                <button class="btn btn-secondary btn-sm" @click="openArchiveFolder">
-                                    Open Folder
-                                </button>
-                            </p>
+                            <ShowArchiveComponent :account-i-d="account.id" />
                         </div>
                     </div>
 
@@ -534,29 +528,83 @@ onUnmounted(async () => {
         <!-- Finished running jobs -->
         <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
             <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
-                <p>Your X archive is stored locally on your computer at <code>{{ archivePath }}</code>.</p>
+                <div class="finished-archive">
+                    <p>You just archived:</p>
 
-                <p class="d-flex gap-2">
-                    <button class="btn btn-success btn-sm" @click="openArchive">
-                        Browse Archive
-                    </button>
+                    <ul>
+                        <li v-if="account.xAccount?.archiveTweets">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.tweetsArchived.toLocaleString() }}</strong> tweets
+                        </li>
+                        <li v-if="account.xAccount?.archiveLikes">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                        </li>
+                        <li v-if="account.xAccount?.archiveDMs">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
+                        </li>
+                        <li v-if="account.xAccount?.archiveDMs">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                        </li>
+                    </ul>
 
-                    <button class="btn btn-secondary btn-sm" @click="openArchiveFolder">
-                        Open Folder
-                    </button>
-                </p>
+                    <p>Your X archive is stored locally on your computer at <code>{{ archivePath }}</code>.</p>
 
-                <p>
-                    Every time you have new tweets or DMs to archive, run this tool again and it will resume from last
-                    time you performed an archive.
-                </p>
+                    <ShowArchiveComponent :account-i-d="account.id" />
 
-                <p>
-                    If you want to recreate an archive of an individual tweet, delete its HTML file first.
-                </p>
+                    <p>
+                        Every time you have new tweets or DMs to archive, run this tool again and it will resume from
+                        last
+                        time you performed an archive.
+                    </p>
+
+                    <p>
+                        If you want to recreate an archive of an individual tweet, delete its HTML file first.
+                    </p>
+                </div>
             </div>
             <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
-                <p>DELETE NOT IMPLEMENTED YET</p>
+                <div class="finished-delete">
+                    <p>You just deleted:</p>
+                    <ul>
+                        <li v-if="account.xAccount?.deleteTweets && (progress?.tweetsArchived ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.tweetsArchived.toLocaleString() }}</strong> tweets
+                        </li>
+                        <li v-if="account.xAccount?.deleteLikes && (progress?.likesIndexed ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                        </li>
+                        <li v-if="account.xAccount?.deleteDMs && (progress?.conversationsIndexed ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
+                        </li>
+                        <li v-if="account.xAccount?.deleteDMs && (progress?.messagesIndexed ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                        </li>
+                        <li v-if="account.xAccount?.deleteTweets">
+                            <i class="fa-solid fa-fire delete-bullet" />
+                            <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
+                        </li>
+                        <li v-if="account.xAccount?.deleteRetweets">
+                            <i class="fa-solid fa-fire delete-bullet" />
+                            <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
+                        </li>
+                        <li v-if="account.xAccount?.deleteLikes">
+                            <i class="fa-solid fa-fire delete-bullet" />
+                            <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
+                        </li>
+                        <li v-if="account.xAccount?.deleteDMs">
+                            <i class="fa-solid fa-fire delete-bullet" />
+                            <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> direct messages
+                        </li>
+                    </ul>
+
+                    <ShowArchiveComponent :account-i-d="account.id" />
+                </div>
             </div>
             <div>
                 <div class="container mt-3">
@@ -614,6 +662,16 @@ onUnmounted(async () => {
     color: rgb(250, 190, 79);
 }
 
+.delete-bullet {
+    color: rgb(218, 82, 41);
+    margin-right: 5px;
+}
+
+.archive-bullet {
+    color: rgb(50, 164, 164);
+    margin-right: 5px;
+}
+
 .premium {
     text-transform: uppercase;
     font-size: 0.9rem;
@@ -622,5 +680,15 @@ onUnmounted(async () => {
     background-color: #50a4ff;
     color: white;
     border-radius: 0.25rem;
+}
+
+.finished-delete ul {
+    list-style-type: none;
+    padding-left: 0;
+    padding-bottom: 1rem;
+}
+
+.finished-delete li {
+    margin-bottom: 0.5rem;
 }
 </style>

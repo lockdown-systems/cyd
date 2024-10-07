@@ -67,6 +67,7 @@ export const runMainMigrations = () => {
     username TEXT,
     profileImageDataURI TEXT,
     archiveTweets BOOLEAN DEFAULT 1,
+    archiveLikes BOOLEAN DEFAULT 1,
     archiveDMs BOOLEAN DEFAULT 1,
     deleteTweets BOOLEAN DEFAULT 0,
     deleteTweetsDaysOld INTEGER DEFAULT 30,
@@ -116,6 +117,7 @@ interface XAccountRow {
     username: string;
     profileImageDataURI: string;
     archiveTweets: number;
+    archiveLikes: number;
     archiveDMs: number;
     deleteTweets: number;
     deleteTweetsDaysOld: number;
@@ -180,6 +182,7 @@ export const getXAccount = (id: number): XAccount | null => {
         username: row.username,
         profileImageDataURI: row.profileImageDataURI,
         archiveTweets: !!row.archiveTweets,
+        archiveLikes: !!row.archiveLikes,
         archiveDMs: !!row.archiveDMs,
         deleteTweets: !!row.deleteTweets,
         deleteTweetsDaysOld: row.deleteTweetsDaysOld,
@@ -209,6 +212,7 @@ export const getXAccounts = (): XAccount[] => {
             username: row.username,
             profileImageDataURI: row.profileImageDataURI,
             archiveTweets: !!row.archiveTweets,
+            archiveLikes: !!row.archiveLikes,
             archiveDMs: !!row.archiveDMs,
             deleteTweets: !!row.deleteTweets,
             deleteTweetsDaysOld: row.deleteTweetsDaysOld,
@@ -246,6 +250,7 @@ export const saveXAccount = (account: XAccount) => {
             username = ?,
             profileImageDataURI = ?,
             archiveTweets = ?,
+            archiveLikes = ?,
             archiveDMs = ?,
             deleteTweets = ?,
             deleteTweetsDaysOld = ?,
@@ -264,6 +269,7 @@ export const saveXAccount = (account: XAccount) => {
         account.username,
         account.profileImageDataURI,
         account.archiveTweets ? 1 : 0,
+        account.archiveLikes ? 1 : 0,
         account.archiveDMs ? 1 : 0,
         account.deleteTweets ? 1 : 0,
         account.deleteTweetsDaysOld,
