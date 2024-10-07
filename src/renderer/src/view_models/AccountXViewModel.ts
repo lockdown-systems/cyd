@@ -939,9 +939,6 @@ I'm deleting your tweets, based on your criteria.
                 }
                 this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", this.deleteTweetsStartResponse]);
 
-                this.pause(); // DEBUG
-                await this.waitForPause();
-
                 // Start the progress
                 this.progress.totalTweetsToDelete = this.deleteTweetsStartResponse.tweets.length;
                 this.progress.tweetsDeleted = 0;

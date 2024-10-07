@@ -64,6 +64,7 @@ onBeforeUnmount(() => {
         <div v-for="job in jobs" :key="job.id ?? 0" class="job-status-item d-flex align-items-center">
             <div class="status-icon me-2">
                 <i v-if="job.status !== 'running'" :class="getStatusIcon(job.status)" />
+                <i v-else-if="isPaused" class="fa-solid fa-pause" />
                 <i v-else :class="runningIcon" />
             </div>
             <div class="job-type">
