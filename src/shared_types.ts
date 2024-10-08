@@ -233,26 +233,12 @@ export function emptyXProgressInfo(): XProgressInfo {
 
 export type XDeleteTweetsStartResponse = {
     tweets: {
-        id: number;
-        tweetID: string;
-    }[];
-}
-
-export function emptyXDeleteTweetsStartResponse(): XDeleteTweetsStartResponse {
-    return {
-        tweets: []
-    }
-}
-
-export type XDeleteRetweetsStartResponse = {
-    tweets: {
-        id: number;
         username: string;
         tweetID: string;
     }[];
 }
 
-export function emptyXDeleteRetweetsStartResponse(): XDeleteRetweetsStartResponse {
+export function emptyXDeleteTweetsStartResponse(): XDeleteTweetsStartResponse {
     return {
         tweets: []
     }

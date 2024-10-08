@@ -12,7 +12,6 @@ import type {
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
-    XDeleteRetweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
     ResponseData
@@ -80,8 +79,9 @@ declare global {
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
                 getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
                 deleteTweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
+                deleteRetweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
+                deleteLikesStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteTweet: (accountID: number, tweetID: string) => Promise<boolean>;
-                deleteRetweetsStart: (accountID: number) => Promise<XDeleteRetweetsStartResponse>;
             };
         };
     }
