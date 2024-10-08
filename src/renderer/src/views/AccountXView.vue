@@ -532,9 +532,14 @@ onUnmounted(async () => {
                 <div class="finished-archive">
                     <p>You just archived:</p>
                     <ul>
-                        <li v-if="account.xAccount?.archiveTweets || (progress?.tweetsArchived ?? 0) > 0">
+                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.tweetsArchived.toLocaleString() }}</strong> tweets
+                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets saved as HTML
+                            archives
+                        </li>
+                        <li v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
                         </li>
                         <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -569,9 +574,14 @@ onUnmounted(async () => {
                 <div class="finished-delete">
                     <p>You just deleted:</p>
                     <ul>
-                        <li v-if="(progress?.tweetsArchived ?? 0) > 0">
+                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.tweetsArchived.toLocaleString() }}</strong> tweets
+                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets saved as HTML
+                            archives
+                        </li>
+                        <li v-if="(progress?.tweetsIndexed ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
                         </li>
                         <li v-if="(progress?.likesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -686,10 +696,11 @@ onUnmounted(async () => {
 .finished-delete ul {
     list-style-type: none;
     padding-left: 0;
+    margin-left: 1.5em;
 }
 
 .finished-archive li,
 .finished-delete li {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
 }
 </style>

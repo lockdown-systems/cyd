@@ -415,16 +415,14 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (existing.length == 0) {
-            if (tweetLegacy["retweeted"]) {
-                this.progress.retweetsIndexed++;
-            }
-            if (tweetLegacy["favorited"]) {
-                this.progress.likesIndexed++;
-            }
-            if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
-                this.progress.tweetsIndexed++;
-            }
+        if (tweetLegacy["retweeted"]) {
+            this.progress.retweetsIndexed++;
+        }
+        if (tweetLegacy["favorited"]) {
+            this.progress.likesIndexed++;
+        }
+        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
+            this.progress.tweetsIndexed++;
         }
 
         return true;
@@ -534,6 +532,25 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
+                this.progress.isIndexTweetsFinished = true;
+                return this.progress;
+            }
+        }
+
+        return this.progress;
+    }
+
+    // Parses the response data so far to index likes that have been collected
+    // Returns the progress object
+    async indexParseLikes(isFirstRun: boolean): Promise<XProgress> {
+        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
+
+        await this.mitmController.clearProcessed();
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
+            if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
+                this.progress.isIndexLikesFinished = true;
                 return this.progress;
             }
         }
@@ -810,7 +827,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexMessage(message: XAPIMessage, _isFirstRun: boolean): boolean {
+    indexMessage(message: XAPIMessage): boolean {
         log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
@@ -845,7 +862,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    async indexParseMessagesResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
+    async indexParseMessagesResponseData(iResponse: number): Promise<boolean> {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[iResponse];
 
@@ -898,7 +915,7 @@ export class XAccountController {
                 log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
                 for (let i = 0; i < entries.length; i++) {
                     const message = entries[i];
-                    if (!this.indexMessage(message, isFirstRun)) {
+                    if (!this.indexMessage(message)) {
                         shouldReturnFalse = true;
                         break;
                     }
@@ -930,8 +947,13 @@ export class XAccountController {
         this.progress.currentJob = "indexMessages";
         this.progress.isIndexMessagesFinished = false;
 
+        if (isFirstRun) {
+            // Delete the existing message data now, in order to accurately count the progress
+            exec(this.db, 'DELETE FROM message');
+        }
+
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.indexParseMessagesResponseData(i, isFirstRun)) {
+            if (!await this.indexParseMessagesResponseData(i)) {
                 this.progress.shouldStopEarly = true;
                 return this.progress;
             }
@@ -1390,6 +1412,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexParseTweets(isFirstRun);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:indexParseLikes', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseLikes(isFirstRun);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

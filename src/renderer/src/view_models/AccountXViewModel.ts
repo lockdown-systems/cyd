@@ -469,42 +469,36 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await this.syncProgress();
 
                 // Load the timeline and wait for tweets to appear
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    await this.waitForPause();
-                    await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
-                    try {
-                        await window.electron.X.resetRateLimitInfo(this.account.id);
-                        await this.waitForSelector('article');
-                        break;
-                    } catch (e) {
-                        this.log("runJob", ["jobType=indexTweets", "selector never appeared", e]);
-                        if (e instanceof TimeoutError) {
-                            // Were we rate limited?
-                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                            if (this.rateLimitInfo.isRateLimited) {
-                                await this.waitForRateLimit();
-                            } else {
-                                // If the page isn't loading, we assume the user has no conversations yet
-                                await this.waitForLoadingToFinish();
-                                this.progress.isIndexTweetsFinished = true;
-                                this.progress.tweetsIndexed = 0;
-                                await this.syncProgress();
-                                break;
-                            }
-                        } else if (e instanceof URLChangedError) {
-                            const newURL = this.webview.getURL();
-                            await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
-                                newURL: newURL,
-                                exception: (e as Error).toString()
-                            })
-                            break;
+                await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+                await window.electron.X.resetRateLimitInfo(this.account.id);
+                try {
+                    await this.waitForSelector('article');
+                } catch (e) {
+                    this.log("runJob", ["jobType=indexTweets", "selector never appeared", e]);
+                    if (e instanceof TimeoutError) {
+                        // Were we rate limited?
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
                         } else {
-                            await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                                exception: (e as Error).toString()
-                            })
-                            break;
+                            // If the page isn't loading, we assume the user has no conversations yet
+                            await this.waitForLoadingToFinish();
+                            this.progress.isIndexTweetsFinished = true;
+                            this.progress.tweetsIndexed = 0;
+                            await this.syncProgress();
                         }
+                    } else if (e instanceof URLChangedError) {
+                        const newURL = this.webview.getURL();
+                        await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
+                            newURL: newURL,
+                            exception: (e as Error).toString()
+                        })
+                        break;
+                    } else {
+                        await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
+                            exception: (e as Error).toString()
+                        })
+                        break;
                     }
                 }
 
@@ -857,7 +851,7 @@ Please wait while I index all of the messages from each conversation.
 
                         // Parse so far
                         try {
-                            this.progress = await window.electron.X.indexParseMessages(this.account.id);
+                            this.progress = await window.electron.X.indexParseMessages(this.account.id, this.isFirstRun);
                         } catch (e) {
                             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                             await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
@@ -956,42 +950,37 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await this.syncProgress();
 
                 // Load the likes and wait for tweets to appear
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    await this.waitForPause();
-                    await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
-                    try {
-                        await window.electron.X.resetRateLimitInfo(this.account.id);
-                        await this.waitForSelector('article');
-                        break;
-                    } catch (e) {
-                        this.log("runJob", ["jobType=indexLikes", "selector never appeared", e]);
-                        if (e instanceof TimeoutError) {
-                            // Were we rate limited?
-                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                            if (this.rateLimitInfo.isRateLimited) {
-                                await this.waitForRateLimit();
-                            } else {
-                                // If the page isn't loading, we assume the user has no likes yet
-                                await this.waitForLoadingToFinish();
-                                this.progress.isIndexLikesFinished = true;
-                                this.progress.likesIndexed = 0;
-                                await this.syncProgress();
-                                break;
-                            }
-                        } else if (e instanceof URLChangedError) {
-                            const newURL = this.webview.getURL();
-                            await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
-                                newURL: newURL,
-                                exception: (e as Error).toString()
-                            })
-                            break;
+                await this.waitForPause();
+                await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
+                await window.electron.X.resetRateLimitInfo(this.account.id);
+                try {
+                    await this.waitForSelector('article');
+                } catch (e) {
+                    this.log("runJob", ["jobType=indexLikes", "selector never appeared", e]);
+                    if (e instanceof TimeoutError) {
+                        // Were we rate limited?
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
                         } else {
-                            await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
-                                exception: (e as Error).toString()
-                            })
-                            break;
+                            // If the page isn't loading, we assume the user has no likes yet
+                            await this.waitForLoadingToFinish();
+                            this.progress.isIndexLikesFinished = true;
+                            this.progress.likesIndexed = 0;
+                            await this.syncProgress();
                         }
+                    } else if (e instanceof URLChangedError) {
+                        const newURL = this.webview.getURL();
+                        await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                            newURL: newURL,
+                            exception: (e as Error).toString()
+                        })
+                        break;
+                    } else {
+                        await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                            exception: (e as Error).toString()
+                        })
+                        break;
                     }
                 }
 
@@ -1016,8 +1005,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
 
                     // Parse so far
                     try {
-                        // Likes use indexParseTweets too because the structure is the same
-                        this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                        this.progress = await window.electron.X.indexParseLikes(this.account.id, this.isFirstRun);
                     } catch (e) {
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {

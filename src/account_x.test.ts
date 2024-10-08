@@ -573,10 +573,30 @@ test(
         expect(participantRows.length).toBe(0);
     })
 
-test("XAccountController.indexParseMessages() should add all the messages", async () => {
+test("XAccountController.indexParseMessages() should add all the messages on first run", async () => {
     const controller = createController("indexDMs");
 
     const progress: XProgress = await controller.indexParseMessages(true);
+    expect(progress.messagesIndexed).toBe(116);
+
+    const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
+    expect(rows.length).toBe(116);
+})
+
+test("XAccountController.indexParseMessages() should add all the messages, on re-index", async () => {
+    // Index messages the first time
+    let controller = createController("indexDMs");
+    let progress: XProgress = await controller.indexParseMessages(true);
+    expect(progress.messagesIndexed).toBe(116);
+
+    // Re-index them
+    controller = createController("indexDMs");
+    progress = await controller.indexParseMessages(false);
+    expect(progress.messagesIndexed).toBe(0);
+
+    // Re-index, but this time set isFirstRun to true
+    controller = createController("indexDMs");
+    progress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
