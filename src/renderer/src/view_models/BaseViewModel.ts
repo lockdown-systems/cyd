@@ -181,7 +181,7 @@ export class BaseViewModel {
         await new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async waitForSelector(selector: string, timeout: number = 3000) {
+    async waitForSelector(selector: string, timeout: number = 5000) {
         const startingURL = this.webview.getURL();
 
         const startTime = Date.now();
