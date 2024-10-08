@@ -12,6 +12,7 @@ import type {
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
+    XDeleteRetweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
     ResponseData
@@ -80,6 +81,7 @@ declare global {
                 getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
                 deleteTweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteTweet: (accountID: number, tweetID: string) => Promise<boolean>;
+                deleteRetweetsStart: (accountID: number) => Promise<XDeleteRetweetsStartResponse>;
             };
         };
     }

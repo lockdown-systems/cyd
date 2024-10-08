@@ -23,6 +23,7 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
+    XDeleteRetweetsStartResponse,
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
     // XTweet
@@ -1182,7 +1183,7 @@ export class XAccountController {
         return true;
     }
 
-    // When you start deleting tweets, retur a list of tweetIDs to delete
+    // When you start deleting tweets, return a list of tweetIDs to delete
     async deleteTweetsStart(): Promise<XDeleteTweetsStartResponse> {
         if (!this.db) {
             this.initDB();
@@ -1246,6 +1247,35 @@ export class XAccountController {
 
         exec(this.db, 'UPDATE tweet SET deletedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
         return true;
+    }
+
+    // When you start deleting retweets, return a list of tweetIDs to delete
+    async deleteRetweetsStart(): Promise<XDeleteRetweetsStartResponse> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Select just the retweets that need to be deleted based on the settings
+        const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteRetweetsDaysOld);
+        const tweets: XTweetRow[] = exec(
+            this.db,
+            'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username != ? AND createdAt <= ? ORDER BY createdAt DESC',
+            [1, this.account.username, daysOldTimestamp],
+            "all"
+        ) as XTweetRow[];
+
+        log.debug("XAccountController.deleteRetweetsStart", tweets);
+        return {
+            tweets: tweets.map((row) => ({
+                id: row.id,
+                username: row.username,
+                tweetID: row.tweetID
+            })),
+        };
     }
 
     async syncProgress(progressJSON: string) {
@@ -1619,6 +1649,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.deleteTweet(tweetID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteRetweetsStart', async (_, accountID: number): Promise<XDeleteRetweetsStartResponse> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteRetweetsStart();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

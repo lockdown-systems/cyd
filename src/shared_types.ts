@@ -243,3 +243,17 @@ export function emptyXDeleteTweetsStartResponse(): XDeleteTweetsStartResponse {
         tweets: []
     }
 }
+
+export type XDeleteRetweetsStartResponse = {
+    tweets: {
+        id: number;
+        username: string;
+        tweetID: string;
+    }[];
+}
+
+export function emptyXDeleteRetweetsStartResponse(): XDeleteRetweetsStartResponse {
+    return {
+        tweets: []
+    }
+}

@@ -153,6 +153,28 @@ onUnmounted(() => {
                 </div>
             </template>
 
+            <!-- Delete Retweets -->
+            <template v-if="progress.currentJob == 'deleteRetweets'">
+                <p>
+                    Deleted
+                    <b>{{ progress.retweetsDeleted.toLocaleString() }} out of
+                        {{ progress.totalRetweetsToDelete.toLocaleString() }} retweets</b>.
+                    <template v-if="progress.isDeleteRetweetsFinished">
+                        Finished deleting retweets!
+                    </template>
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.retweetsDeleted / progress.totalRetweetsToDelete) * 100}%` }"
+                            :aria-valuenow="(progress.retweetsDeleted / progress.totalRetweetsToDelete) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.retweetsDeleted / progress.totalRetweetsToDelete) * 100) }}%
+                        </div>
+                    </div>
+                </div>
+            </template>
+
             <!-- Build archive -->
             <template v-if="progress.currentJob == 'archiveBuild'">
                 <p>Building archive website</p>

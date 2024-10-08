@@ -6,6 +6,7 @@ import {
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
+    XDeleteRetweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
     ResponseData
@@ -178,6 +179,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         deleteTweet: (accountID: number, tweetID: string): Promise<boolean> => {
             return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID);
-        }
+        },
+        deleteRetweetsStart: (accountID: number): Promise<XDeleteRetweetsStartResponse> => {
+            return ipcRenderer.invoke('X:deleteRetweetsStart', accountID);
+        },
     }
 })

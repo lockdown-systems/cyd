@@ -37,10 +37,11 @@ const getJobTypeText = (jobType: string) => {
         archiveTweets: 'Archiving tweets',
         archiveBuild: 'Building archive',
         deleteTweets: 'Deleting tweets',
+        deleteRetweets: 'Deleting retweets',
         deleteLikes: 'Deleting likes',
         deleteDMs: 'Deleting DMs'
     };
-    return jobTypeTexts[jobType] || '';
+    return jobTypeTexts[jobType] || jobType;
 };
 
 const cycleRunningIcon = () => {
