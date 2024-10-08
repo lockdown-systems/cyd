@@ -4,10 +4,9 @@ import {
     XProgress, emptyXProgress,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
-    XDeleteTweetsStartResponse, emptyXDeleteTweetsStartResponse,
-    XDeleteRetweetsStartResponse, emptyXDeleteRetweetsStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
-    XProgressInfo, emptyXProgressInfo
+    XProgressInfo, emptyXProgressInfo,
+    XDeleteTweetsStartResponse
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
@@ -33,8 +32,6 @@ export class AccountXViewModel extends BaseViewModel {
 
     private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
     private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
-    private deleteTweetsStartResponse: XDeleteTweetsStartResponse = emptyXDeleteTweetsStartResponse();
-    private deleteRetweetsStartResponse: XDeleteRetweetsStartResponse = emptyXDeleteRetweetsStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -428,6 +425,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Variables for use in the switch statement
         let alreadyDeleted = false;
+        let tweetsToDelete: XDeleteTweetsStartResponse;
 
         // Start the job
         this.jobs[iJob].startedAt = new Date();
@@ -1051,23 +1049,23 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
 
                 // Load the tweets to delete
                 try {
-                    this.deleteTweetsStartResponse = await window.electron.X.deleteTweetsStart(this.account.id);
+                    tweetsToDelete = await window.electron.X.deleteTweetsStart(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
                         exception: (e as Error).toString()
                     })
                     break;
                 }
-                this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", this.deleteTweetsStartResponse]);
+                this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", tweetsToDelete]);
 
                 // Start the progress
-                this.progress.totalTweetsToDelete = this.deleteTweetsStartResponse.tweets.length;
+                this.progress.totalTweetsToDelete = tweetsToDelete.tweets.length;
                 this.progress.tweetsDeleted = 0;
                 await this.syncProgress();
 
-                for (let i = 0; i < this.deleteTweetsStartResponse.tweets.length; i++) {
+                for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
                     // Load the URL
-                    await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${this.deleteTweetsStartResponse.tweets[i].tweetID}`);
+                    await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${tweetsToDelete.tweets[i].tweetID}`);
                     await this.sleep(200);
 
                     await this.waitForPause();
@@ -1117,12 +1115,12 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
 
                     // Update the tweet's deletedAt date
                     try {
-                        await window.electron.X.deleteTweet(this.account.id, this.deleteTweetsStartResponse.tweets[i].tweetID);
+                        await window.electron.X.deleteTweet(this.account.id, tweetsToDelete.tweets[i].tweetID);
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
                             exception: (e as Error).toString()
                         }, {
-                            deleteTweetsStartResponseTweet: this.deleteTweetsStartResponse.tweets[i],
+                            tweet: tweetsToDelete.tweets[i],
                             index: i
                         })
                         break;
@@ -1146,25 +1144,25 @@ I'm deleting your retweets, starting with the earliest.
 
                 // Load the retweets to delete
                 try {
-                    this.deleteRetweetsStartResponse = await window.electron.X.deleteRetweetsStart(this.account.id);
+                    tweetsToDelete = await window.electron.X.deleteRetweetsStart(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
                         exception: (e as Error).toString()
                     })
                     break;
                 }
-                this.log('runJob', ["jobType=deleteRetweets", "deleteReteetsStartResponse", this.deleteRetweetsStartResponse]);
+                this.log('runJob', ["jobType=deleteRetweets", "deleteRetweetsStartResponse", tweetsToDelete]);
 
                 // Start the progress
-                this.progress.totalRetweetsToDelete = this.deleteRetweetsStartResponse.tweets.length;
+                this.progress.totalRetweetsToDelete = tweetsToDelete.tweets.length;
                 this.progress.retweetsDeleted = 0;
                 await this.syncProgress();
 
-                for (let i = 0; i < this.deleteRetweetsStartResponse.tweets.length; i++) {
+                for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
                     alreadyDeleted = false;
 
                     // Load the URL
-                    await this.loadURLWithRateLimit(`https://x.com/${this.deleteRetweetsStartResponse.tweets[i].username}/status/${this.deleteRetweetsStartResponse.tweets[i].tweetID}`);
+                    await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
                     await this.sleep(200);
 
                     await this.waitForPause();
@@ -1196,17 +1194,19 @@ I'm deleting your retweets, starting with the earliest.
                         // Click the delete button
                         await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
                         await this.sleep(200);
+                    } else {
+                        console.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
                     }
 
                     // Mark the tweet as deleted
                     try {
                         // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
-                        await window.electron.X.deleteTweet(this.account.id, this.deleteRetweetsStartResponse.tweets[i].tweetID);
+                        await window.electron.X.deleteTweet(this.account.id, tweetsToDelete.tweets[i].tweetID);
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp, {
                             exception: (e as Error).toString()
                         }, {
-                            deleteRetweetsStartResponseTweet: this.deleteRetweetsStartResponse.tweets[i],
+                            tweet: tweetsToDelete.tweets[i],
                             index: i
                         })
                         break;
@@ -1220,7 +1220,75 @@ I'm deleting your retweets, starting with the earliest.
                 break;
 
             case "deleteLikes":
-                this.log("runJob", "deleteLikes: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+I'm deleting your likes, starting with the earliest.
+`;
+                this.showAutomationNotice = true;
+
+                // Load the likes to delete
+                try {
+                    tweetsToDelete = await window.electron.X.deleteLikesStart(this.account.id);
+                } catch (e) {
+                    await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
+                        exception: (e as Error).toString()
+                    })
+                    break;
+                }
+                this.log('runJob', ["jobType=deleteLikes", "deleteLikesStartResponse", tweetsToDelete]);
+
+                // Start the progress
+                this.progress.totalLikesToDelete = tweetsToDelete.tweets.length;
+                this.progress.likesDeleted = 0;
+                await this.syncProgress();
+
+                for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+                    alreadyDeleted = false;
+
+                    // Load the URL
+                    await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
+                    await this.sleep(200);
+
+                    await this.waitForPause();
+
+                    // Wait for the unlike button to appear
+                    try {
+                        await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
+                    } catch (e) {
+                        // If it doesn't appear, let's assume this like was already deleted
+                        alreadyDeleted = true;
+                    }
+                    await this.sleep(200);
+
+                    if (!alreadyDeleted) {
+                        // Click the unlike button
+                        await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
+                        await this.sleep(200);
+                    } else {
+                        console.log("Already unliked", tweetsToDelete.tweets[i].tweetID);
+                    }
+
+
+                    // Mark the tweet as deleted
+                    try {
+                        // Deleting likes uses the same deleteTweet IPC function as deleting tweets
+                        await window.electron.X.deleteTweet(this.account.id, tweetsToDelete.tweets[i].tweetID);
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            tweet: tweetsToDelete.tweets[i],
+                            index: i
+                        })
+                        break;
+                    }
+
+                    this.progress.likesDeleted += 1;
+                    await this.syncProgress();
+                }
+
                 await this.finishJob(iJob);
                 break;
 

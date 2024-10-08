@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ref, ref, watch, onMounted, onUnmounted, inject, getCurrentInstance } from 'vue'
+import { Ref, ref, watch, onMounted, onUnmounted, inject, getCurrentInstance, computed } from 'vue'
 import Electron from 'electron';
 import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
 import AccountHeader from '../components/AccountHeader.vue';
@@ -109,6 +109,17 @@ const checkIfIsFirstIndex = async () => {
         await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
     );
 }
+
+const showArchivedOnFinishedDelete = computed(() => {
+    return (
+        accountXViewModel.value?.action === 'delete' &&
+        (progress.value?.newTweetsArchived || 0) > 0 ||
+        (progress.value?.tweetsIndexed || 0) > 0 ||
+        (progress.value?.likesIndexed || 0) > 0 ||
+        (progress.value?.conversationsIndexed || 0) > 0 ||
+        (progress.value?.messagesIndexed || 0) > 0
+    );
+});
 
 const updateSettings = async () => {
     console.log('Updating settings')
@@ -572,29 +583,35 @@ onUnmounted(async () => {
             </div>
             <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
                 <div class="finished-delete">
+                    <div v-if="showArchivedOnFinishedDelete">
+                        <p>You just archived:</p>
+                        <ul>
+                            <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets saved as HTML
+                                archives
+                            </li>
+                            <li v-if="(progress?.tweetsIndexed ?? 0) > 0">
+                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                            </li>
+                            <li v-if="(progress?.likesIndexed ?? 0) > 0">
+                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                            </li>
+                            <li v-if="(progress?.conversationsIndexed ?? 0) > 0">
+                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
+                            </li>
+                            <li v-if="(progress?.messagesIndexed ?? 0) > 0">
+                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                            </li>
+                        </ul>
+                    </div>
+
                     <p>You just deleted:</p>
                     <ul>
-                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets saved as HTML
-                            archives
-                        </li>
-                        <li v-if="(progress?.tweetsIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
-                        </li>
-                        <li v-if="(progress?.likesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
-                        </li>
-                        <li v-if="(progress?.conversationsIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
-                        </li>
-                        <li v-if="(progress?.messagesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
-                        </li>
                         <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
@@ -642,7 +659,7 @@ onUnmounted(async () => {
 }
 
 .form-short {
-    width: 50px;
+    width: 55px;
 }
 
 .no-wrap {
