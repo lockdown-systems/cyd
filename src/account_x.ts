@@ -392,7 +392,6 @@ export class XAccountController {
             } else {
                 // We have seen this tweet, so return early
                 this.mitmController.responseData[iResponse].processed = true;
-                this.progress.isIndexTweetsFinished = true;
                 return false;
             }
         }
@@ -418,9 +417,11 @@ export class XAccountController {
         if (existing.length == 0) {
             if (tweetLegacy["retweeted"]) {
                 this.progress.retweetsIndexed++;
-            } else if (tweetLegacy["favorited"]) {
+            }
+            if (tweetLegacy["favorited"]) {
                 this.progress.likesIndexed++;
-            } else {
+            }
+            if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
                 this.progress.tweetsIndexed++;
             }
         }
