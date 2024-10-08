@@ -328,11 +328,9 @@ export class AccountXViewModel extends BaseViewModel {
         this.showBrowser = true;
 
         this.log("login", "logging in");
-        const startingURLs = ["https://x.com/login", "https://x.com/i/flow/login"];
-        const expectedURL = "https://x.com/home";
-        await this.loadURLWithRateLimit("https://x.com/login", [expectedURL]);
+        await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
         try {
-            await this.waitForURL(startingURLs, expectedURL);
+            await this.waitForURL("https://x.com/home");
         } catch (e) {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {

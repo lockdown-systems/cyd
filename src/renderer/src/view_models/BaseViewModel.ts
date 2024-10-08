@@ -14,8 +14,12 @@ export class TimeoutError extends Error {
 }
 
 export class URLChangedError extends Error {
-    constructor(oldURL: string, newURL: string) {
-        super(`URL changed from ${oldURL} to ${newURL} while waiting for selector`);
+    constructor(oldURL: string, newURL: string, validURLs: string[] = []) {
+        let errorMessage = `URL changed from ${oldURL} to ${newURL}`;
+        if (validURLs.length > 0) {
+            errorMessage += ` (valid URLs: ${validURLs.join(", ")})`;
+        }
+        super(errorMessage);
         this.name = "URLChangedError";
     }
 }
@@ -249,7 +253,7 @@ export class BaseViewModel {
         await this.waitForLoadingToFinish();
     }
 
-    async waitForURL(startingURLs: string[], waitingForURL: string) {
+    async waitForURL(waitingForURL: string) {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const newURL = this.getWebview()?.getURL();
@@ -257,19 +261,12 @@ export class BaseViewModel {
                 waitingForURL: waitingForURL,
                 currentURL: newURL,
             });
+
+            // Check if we got the URL we were waiting for
             if (newURL?.startsWith(waitingForURL)) {
                 break;
             }
-            let isStartingURL = false;
-            for (const startingURL of startingURLs) {
-                if (newURL?.startsWith(startingURL)) {
-                    isStartingURL = true;
-                    break;
-                }
-            }
-            if (!isStartingURL) {
-                throw new URLChangedError("", newURL ? newURL : "unknown");
-            }
+
             await this.sleep(500);
         }
     }
