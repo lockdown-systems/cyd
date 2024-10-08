@@ -418,6 +418,8 @@ export class XAccountController {
         if (existing.length == 0) {
             if (tweetLegacy["retweeted"]) {
                 this.progress.retweetsIndexed++;
+            } else if (tweetLegacy["favorited"]) {
+                this.progress.likesIndexed++;
             } else {
                 this.progress.tweetsIndexed++;
             }
@@ -445,7 +447,7 @@ export class XAccountController {
 
         // Process the next response
         if (
-            responseData.url.includes("/UserTweetsAndReplies?") &&
+            (responseData.url.includes("/UserTweetsAndReplies?") || responseData.url.includes("/Likes?")) &&
             responseData.status == 200
         ) {
             try {
@@ -529,9 +531,6 @@ export class XAccountController {
     // Returns the progress object
     async indexParseTweets(isFirstRun: boolean): Promise<XProgress> {
         log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
-
-        this.progress.currentJob = "indexTweets";
-        this.progress.isIndexTweetsFinished = false;
 
         await this.mitmController.clearProcessed();
 

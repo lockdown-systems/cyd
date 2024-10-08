@@ -682,12 +682,13 @@ onUnmounted(async () => {
     border-radius: 0.25rem;
 }
 
+.finished-archive ul,
 .finished-delete ul {
     list-style-type: none;
     padding-left: 0;
-    padding-bottom: 1rem;
 }
 
+.finished-archive li,
 .finished-delete li {
     margin-bottom: 0.5rem;
 }
