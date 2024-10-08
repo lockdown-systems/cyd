@@ -123,6 +123,8 @@ export class AccountXViewModel extends BaseViewModel {
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
+            }, {
+                currentURL: this.webview.getURL()
             });
             return;
         }
@@ -184,6 +186,8 @@ export class AccountXViewModel extends BaseViewModel {
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
+            }, {
+                currentURL: this.webview.getURL()
             });
             return;
         }
@@ -226,6 +230,8 @@ export class AccountXViewModel extends BaseViewModel {
                     await this.error(AutomationErrorType.x_loadURLError, {
                         url: url,
                         exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
                     });
                 }
                 break;
@@ -249,6 +255,8 @@ export class AccountXViewModel extends BaseViewModel {
                         url: url,
                         newURL: newURL,
                         expectedURLs: expectedURLs
+                    }, {
+                        currentURL: this.webview.getURL()
                     });
                     break;
                 }
@@ -335,10 +343,14 @@ export class AccountXViewModel extends BaseViewModel {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
                     exception: (e as Error).toString()
+                }, {
+                    currentURL: this.webview.getURL()
                 });
             } else {
                 await this.error(AutomationErrorType.X_login_WaitingForURLFailed, {
                     exception: (e as Error).toString()
+                }, {
+                    currentURL: this.webview.getURL()
                 });
             }
         }
@@ -367,7 +379,10 @@ export class AccountXViewModel extends BaseViewModel {
 
         if (!username) {
             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
-            await this.error(AutomationErrorType.X_login_FailedToGetUsername, null, latestResponseData);
+            await this.error(AutomationErrorType.X_login_FailedToGetUsername, null, {
+                latestResponseData: latestResponseData,
+                currentURL: this.webview.getURL()
+            });
             return;
         }
 
@@ -493,11 +508,15 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
                             newURL: newURL,
                             exception: (e as Error).toString()
+                        }, {
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     } else {
                         await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
                             exception: (e as Error).toString()
+                        }, {
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     }
@@ -515,7 +534,9 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
-                            await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit);
+                            await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, null, {
+                                currentURL: this.webview.getURL()
+                            });
                             break;
                         }
                         await this.sleep(500);
@@ -529,7 +550,10 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
                             exception: (e as Error).toString()
-                        }, latestResponseData);
+                        }, {
+                            latestResponseData: latestResponseData,
+                            currentURL: this.webview.getURL()
+                        });
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -569,6 +593,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
                         exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
                     })
                     break;
                 }
@@ -596,7 +622,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                                     exception: (e as Error).toString()
                                 }, {
                                     archiveStartResponseItem: this.archiveStartResponse.items[i],
-                                    index: i
+                                    index: i,
+                                    currentURL: this.webview.getURL()
                                 })
                                 break;
                             }
@@ -621,7 +648,8 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                                 exception: (e as Error).toString()
                             }, {
                                 archiveStartResponseItem: this.archiveStartResponse.items[i],
-                                index: i
+                                index: i,
+                                currentURL: this.webview.getURL()
                             })
                             break;
                         }
@@ -681,11 +709,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             const newURL = this.webview.getURL();
                             await this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
                                 newURL: newURL,
-                                exception: (e as Error).toString()
+                                exception: (e as Error).toString(),
+                                currentURL: this.webview.getURL()
                             })
                         } else {
                             await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
-                                exception: (e as Error).toString()
+                                exception: (e as Error).toString(),
+                                currentURL: this.webview.getURL()
                             })
                         }
                     }
@@ -709,7 +739,10 @@ Hang on while I scroll down to your earliest direct message conversations that I
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexConversations_ParseConversationsError, {
                             exception: (e as Error).toString()
-                        }, latestResponseData);
+                        }, {
+                            latestResponseData: latestResponseData,
+                            currentURL: this.webview.getURL()
+                        });
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -759,6 +792,8 @@ Please wait while I index all of the messages from each conversation.
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
                         exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
                     })
                     break;
                 }
@@ -792,7 +827,9 @@ Please wait while I index all of the messages from each conversation.
                                     await this.waitForRateLimit();
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-                                        exception: (e as Error).toString()
+                                        exception: (e as Error).toString(),
+                                    }, {
+                                        currentURL: this.webview.getURL()
                                     });
                                     break;
                                 }
@@ -811,12 +848,16 @@ Please wait while I index all of the messages from each conversation.
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt, {
                                         exception: (e as Error).toString()
+                                    }, {
+                                        currentURL: this.webview.getURL()
                                     })
                                     break;
                                 }
                             } else {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
                                     exception: (e as Error).toString()
+                                }, {
+                                    currentURL: this.webview.getURL()
                                 });
                                 break;
                             }
@@ -825,6 +866,8 @@ Please wait while I index all of the messages from each conversation.
                             if (tries >= 3) {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
                                     exception: (e as Error).toString()
+                                }, {
+                                    currentURL: this.webview.getURL()
                                 });
                                 break;
                             }
@@ -857,7 +900,10 @@ Please wait while I index all of the messages from each conversation.
                             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                             await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
                                 exception: (e as Error).toString()
-                            }, latestResponseData);
+                            }, {
+                                latestResponseData: latestResponseData,
+                                currentURL: this.webview.getURL()
+                            });
                             break;
                         }
                         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -975,11 +1021,15 @@ Hang on while I scroll down to your earliest likes that I've seen.
                         await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
                             newURL: newURL,
                             exception: (e as Error).toString()
+                        }, {
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     } else {
                         await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
                             exception: (e as Error).toString()
+                        }, {
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     }
@@ -997,7 +1047,9 @@ Hang on while I scroll down to your earliest likes that I've seen.
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
-                            await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit);
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, null, {
+                                currentURL: this.webview.getURL()
+                            });
                             break;
                         }
                         await this.sleep(500);
@@ -1011,7 +1063,10 @@ Hang on while I scroll down to your earliest likes that I've seen.
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
                             exception: (e as Error).toString()
-                        }, latestResponseData);
+                        }, {
+                            latestResponseData: latestResponseData,
+                            currentURL: this.webview.getURL()
+                        });
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -1051,6 +1106,8 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
                         exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
                     })
                     break;
                 }
@@ -1074,7 +1131,9 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed, {
                             exception: (e as Error).toString()
-                        });
+                        }), {
+                            currentURL: this.webview.getURL()
+                        };
                         break;
                     }
                     await this.sleep(200);
@@ -1088,6 +1147,8 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed, {
                             exception: (e as Error).toString()
+                        }, {
+                            currentURL: this.webview.getURL()
                         });
                         break;
                     }
@@ -1102,6 +1163,8 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed, {
                             exception: (e as Error).toString()
+                        }, {
+                            currentURL: this.webview.getURL()
                         });
                         break;
                     }
@@ -1119,7 +1182,8 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                             exception: (e as Error).toString()
                         }, {
                             tweet: tweetsToDelete.tweets[i],
-                            index: i
+                            index: i,
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     }
@@ -1146,6 +1210,8 @@ I'm deleting your retweets, starting with the earliest.
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
                         exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
                     })
                     break;
                 }
@@ -1184,6 +1250,8 @@ I'm deleting your retweets, starting with the earliest.
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_deleteRetweets_WaitForMenuFailed, {
                                 exception: (e as Error).toString()
+                            }, {
+                                currentURL: this.webview.getURL()
                             });
                             break;
                         }
@@ -1205,7 +1273,8 @@ I'm deleting your retweets, starting with the earliest.
                             exception: (e as Error).toString()
                         }, {
                             tweet: tweetsToDelete.tweets[i],
-                            index: i
+                            index: i,
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     }
@@ -1232,6 +1301,8 @@ I'm deleting your likes, starting with the earliest.
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
                         exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
                     })
                     break;
                 }
@@ -1278,7 +1349,8 @@ I'm deleting your likes, starting with the earliest.
                             exception: (e as Error).toString()
                         }, {
                             tweet: tweetsToDelete.tweets[i],
-                            index: i
+                            index: i,
+                            currentURL: this.webview.getURL()
                         })
                         break;
                     }
@@ -1334,6 +1406,8 @@ You can make a local archive of your data, or you delete exactly what you choose
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_UnknownError, {
                                 exception: (e as Error).toString()
+                            }, {
+                                currentURL: this.webview.getURL()
                             });
                             break;
                         }
@@ -1349,6 +1423,8 @@ You can make a local archive of your data, or you delete exactly what you choose
         } catch (e) {
             await this.error(AutomationErrorType.x_runError, {
                 exception: (e as Error).toString()
+            }, {
+                currentURL: this.webview.getURL()
             });
         }
     }
