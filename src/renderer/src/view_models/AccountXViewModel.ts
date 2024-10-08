@@ -1005,8 +1005,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
 
                     // Parse so far
                     try {
-                        // Likes use indexParseTweets too because the structure is the same
-                        this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                        this.progress = await window.electron.X.indexParseLikes(this.account.id, this.isFirstRun);
                     } catch (e) {
                         const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                         await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {

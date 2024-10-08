@@ -534,6 +534,25 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
+                this.progress.isIndexTweetsFinished = true;
+                return this.progress;
+            }
+        }
+
+        return this.progress;
+    }
+
+    // Parses the response data so far to index likes that have been collected
+    // Returns the progress object
+    async indexParseLikes(isFirstRun: boolean): Promise<XProgress> {
+        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
+
+        await this.mitmController.clearProcessed();
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
+            if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
+                this.progress.isIndexLikesFinished = true;
                 return this.progress;
             }
         }
@@ -1390,6 +1409,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexParseTweets(isFirstRun);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:indexParseLikes', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseLikes(isFirstRun);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
