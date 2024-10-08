@@ -133,7 +133,8 @@ function convertXJobRowToXJob(row: XJobRow): XJob {
 
 export class XAccountController {
     private accountUUID: string = "";
-    private account: XAccount | null;
+    // Making this public so it can be accessed in tests
+    public account: XAccount | null;
     private accountDataPath: string = "";
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     private thereIsMore: boolean = false;

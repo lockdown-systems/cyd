@@ -62,7 +62,7 @@ import * as database from './database';
 
 // Mock a MITMController
 class MockMITMController implements IMITMController {
-    private account: Account | null = null;
+    public account: Account | null = null;
     private proxy: Proxy | null = null;
     private proxyPort: number = 0;
     private proxySSLCADir: string = "";
@@ -432,9 +432,14 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
 
 test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
     const controller = createController("indexTweets");
+    if (controller.account && controller.account) {
+        controller.account.username = 'nexamind91325';
+    }
 
     const progress: XProgress = await controller.indexParseTweets(false)
-    expect(progress.tweetsIndexed).toBe(39);
+    expect(progress.likesIndexed).toBe(2);
+    expect(progress.tweetsIndexed).toBe(22);
+    expect(progress.retweetsIndexed).toBe(5);
 
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(44);
