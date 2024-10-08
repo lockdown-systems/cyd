@@ -105,6 +105,7 @@ const deleteForceIndexEverything = ref(false);
 const checkIfIsFirstIndex = async () => {
     isFirstIndex.value = (
         await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null &&
+        await window.electron.X.getLastFinishedJob(props.account.id, "indexLikes") == null &&
         await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
     );
 }
@@ -530,21 +531,20 @@ onUnmounted(async () => {
             <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
                 <div class="finished-archive">
                     <p>You just archived:</p>
-
                     <ul>
-                        <li v-if="account.xAccount?.archiveTweets">
+                        <li v-if="account.xAccount?.archiveTweets || (progress?.tweetsArchived ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.tweetsArchived.toLocaleString() }}</strong> tweets
                         </li>
-                        <li v-if="account.xAccount?.archiveLikes">
+                        <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.archiveDMs">
+                        <li v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
                         </li>
-                        <li v-if="account.xAccount?.archiveDMs">
+                        <li v-if="account.xAccount?.archiveDMs || (progress?.messagesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
                         </li>
@@ -569,35 +569,35 @@ onUnmounted(async () => {
                 <div class="finished-delete">
                     <p>You just deleted:</p>
                     <ul>
-                        <li v-if="account.xAccount?.deleteTweets && (progress?.tweetsArchived ?? 0) > 0">
+                        <li v-if="(progress?.tweetsArchived ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.tweetsArchived.toLocaleString() }}</strong> tweets
                         </li>
-                        <li v-if="account.xAccount?.deleteLikes && (progress?.likesIndexed ?? 0) > 0">
+                        <li v-if="(progress?.likesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.deleteDMs && (progress?.conversationsIndexed ?? 0) > 0">
+                        <li v-if="(progress?.conversationsIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
                         </li>
-                        <li v-if="account.xAccount?.deleteDMs && (progress?.messagesIndexed ?? 0) > 0">
+                        <li v-if="(progress?.messagesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
                         </li>
-                        <li v-if="account.xAccount?.deleteTweets">
+                        <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
                         </li>
-                        <li v-if="account.xAccount?.deleteRetweets">
+                        <li v-if="account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
                         </li>
-                        <li v-if="account.xAccount?.deleteLikes">
+                        <li v-if="account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.deleteDMs">
+                        <li v-if="account.xAccount?.deleteDMs || (progress?.messagesDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> direct messages
                         </li>

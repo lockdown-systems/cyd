@@ -463,6 +463,11 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
+                // Start the progress
+                this.progress.isIndexTweetsFinished = false;
+                this.progress.tweetsIndexed = 0;
+                await this.syncProgress();
+
                 // Load the timeline and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
@@ -536,9 +541,15 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                     // Check if we're done
-                    if (!moreToScroll) {
+                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
                         this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
                         break;
+                    } else {
+                        if (!moreToScroll) {
+                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                            await this.sleep(500);
+                            await this.scrollUp(1000);
+                        }
                     }
                 }
 
@@ -939,6 +950,11 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
+                // Start the progress
+                this.progress.isIndexLikesFinished = false;
+                this.progress.likesIndexed = 0;
+                await this.syncProgress();
+
                 // Load the likes and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
@@ -1013,9 +1029,15 @@ Hang on while I scroll down to your earliest likes that I've seen.
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                     // Check if we're done
-                    if (!moreToScroll) {
+                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
                         this.progress = await window.electron.X.indexLikesFinished(this.account.id);
                         break;
+                    } else {
+                        if (!moreToScroll) {
+                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                            await this.sleep(500);
+                            await this.scrollUp(1000);
+                        }
                     }
                 }
 

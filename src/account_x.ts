@@ -458,6 +458,12 @@ export class XAccountController {
                     return;
                 }
 
+                // If we only have two entries, they both have entryType of TimelineTimelineCursor (one cursorType of Top and the other of Bottom), this means there are no more tweets
+                if (instructions.entries?.length == 2 && instructions.entries[0].content.entryType == "TimelineTimelineCursor" && instructions.entries[1].content.entryType == "TimelineTimelineCursor") {
+                    this.thereIsMore = false;
+                    return;
+                }
+
                 // Loop through the entries
                 instructions.entries?.forEach((entries) => {
                     let userLegacy: XAPILegacyUser | undefined;
