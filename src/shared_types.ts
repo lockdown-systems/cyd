@@ -25,6 +25,7 @@ export type XAccount = {
     username: string;
     profileImageDataURI: string;
     archiveTweets: boolean;
+    archiveLikes: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;
     deleteTweetsDaysOld: number;
@@ -82,7 +83,10 @@ export type XProgress = {
     isIndexMessagesFinished: boolean;
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
-    isDeleteFinished: boolean;
+    isArchiveLikesFinished: boolean;
+    isDeleteTweetsFinished: boolean;
+    isDeleteRetweetsFinished: boolean;
+    isDeleteLikesFinished: boolean;
 
     tweetsIndexed: number;
     retweetsIndexed: number;
@@ -95,42 +99,72 @@ export type XProgress = {
     tweetsArchived: number;
     newTweetsArchived: number;
 
+    totalLikesToArchive: number;
+    likesArchived: number;
+
     totalConversations: number;
     conversationMessagesIndexed: number;
     shouldStopEarly: boolean;
 
+    totalTweetsToDelete: number;
     tweetsDeleted: number;
+
+    totalRetweetsToDelete: number;
     retweetsDeleted: number;
+
+    totalLikesToDelete: number;
     likesDeleted: number;
+
+    messagesDeleted: number;
+    totalMessagesToDelete: number;
     dmConversationsDeleted: number;
 }
 
 export function emptyXProgress(): XProgress {
     return {
         currentJob: "",
+
         isIndexTweetsFinished: false,
         isIndexConversationsFinished: false,
         isIndexMessagesFinished: false,
         isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
-        isDeleteFinished: false,
+        isArchiveLikesFinished: false,
+        isDeleteTweetsFinished: false,
+        isDeleteRetweetsFinished: false,
+        isDeleteLikesFinished: false,
+
         tweetsIndexed: 0,
         retweetsIndexed: 0,
         usersIndexed: 0,
         conversationsIndexed: 0,
         messagesIndexed: 0,
         likesIndexed: 0,
+
         totalTweetsToArchive: 0,
         tweetsArchived: 0,
         newTweetsArchived: 0,
+
+        totalLikesToArchive: 0,
+        likesArchived: 0,
+
         totalConversations: 0,
         conversationMessagesIndexed: 0,
         shouldStopEarly: false,
+
+        totalTweetsToDelete: 0,
         tweetsDeleted: 0,
+
+        totalRetweetsToDelete: 0,
         retweetsDeleted: 0,
+
+        totalLikesToDelete: 0,
         likesDeleted: 0,
+
+        messagesDeleted: 0,
+        totalMessagesToDelete: 0,
         dmConversationsDeleted: 0
-    }
+    };
 }
 
 export type XArchiveItem = {
@@ -194,5 +228,18 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
         totalMessagesDeleted: 0
+    }
+}
+
+export type XDeleteTweetsStartResponse = {
+    tweets: {
+        id: number;
+        tweetID: string;
+    }[];
+}
+
+export function emptyXDeleteTweetsStartResponse(): XDeleteTweetsStartResponse {
+    return {
+        tweets: []
     }
 }

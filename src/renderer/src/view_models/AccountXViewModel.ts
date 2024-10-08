@@ -4,12 +4,13 @@ import {
     XProgress, emptyXProgress,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
+    XDeleteTweetsStartResponse, emptyXDeleteTweetsStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse } from "../../../semiphemeral-api-client";
+import { APIErrorResponse, UserPremiumAPIResponse } from "../../../semiphemeral-api-client";
 
 export enum State {
     Login = "login",
@@ -31,6 +32,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
     private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
+    private deleteTweetsStartResponse: XDeleteTweetsStartResponse = emptyXDeleteTweetsStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -43,25 +45,58 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async setAction(action: string) {
+        const actions = [];
+        const finishedActions = [];
+
         this.action = action;
         switch (action) {
             case "archive":
-                if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                    this.actionString = "I'm archiving your tweets and direct messages.";
-                    this.actionFinishedString = "I've finished archiving your tweets and direct messages!";
+                if (this.account.xAccount?.archiveTweets) {
+                    actions.push("tweets");
+                    finishedActions.push("tweets");
+                }
+                if (this.account.xAccount?.archiveLikes) {
+                    actions.push("likes");
+                    finishedActions.push("likes");
+                }
+                if (this.account.xAccount?.archiveDMs) {
+                    actions.push("direct messages");
+                    finishedActions.push("direct messages");
+                }
+
+                if (actions.length > 0) {
+                    this.actionString = `I'm archiving your ${actions.join(" and ")}.`;
+                    this.actionFinishedString = `I've finished archiving your ${finishedActions.join(" and ")}!`;
                 } else {
-                    if (this.account.xAccount?.archiveDMs) {
-                        this.actionString = "I'm archiving your direct messages.";
-                        this.actionFinishedString = "I've finished archiving your direct messages!";
-                    } else {
-                        this.actionString = "I'm archiving your tweets.";
-                        this.actionFinishedString = "I've finished archiving your tweets!";
-                    }
+                    this.actionString = "No archiving actions to perform.";
+                    this.actionFinishedString = "No archiving actions were performed.";
                 }
                 break;
             case "delete":
-                this.actionString = "I'm deleting your NOT IMPLEMENTED YET.";
-                this.actionFinishedString = "I've finished deleting your NOT IMPLEMENTED YET!";
+                if (this.account.xAccount?.deleteTweets) {
+                    actions.push("tweets");
+                    finishedActions.push("tweets");
+                }
+                if (this.account.xAccount?.deleteRetweets) {
+                    actions.push("retweets");
+                    finishedActions.push("retweets");
+                }
+                if (this.account.xAccount?.deleteLikes) {
+                    actions.push("likes");
+                    finishedActions.push("likes");
+                }
+                if (this.account.xAccount?.deleteDMs) {
+                    actions.push("direct messages");
+                    finishedActions.push("direct messages");
+                }
+
+                if (actions.length > 0) {
+                    this.actionString = `I'm deleting your ${actions.join(", ")}.`;
+                    this.actionFinishedString = `I've finished deleting your ${finishedActions.join(", ")}!`;
+                } else {
+                    this.actionString = "No actions to perform.";
+                    this.actionFinishedString = "No actions were performed.";
+                }
                 break;
         }
     }
@@ -74,6 +109,9 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.account.xAccount?.archiveTweets) {
             jobTypes.push("indexTweets");
             jobTypes.push("archiveTweets");
+        }
+        if (this.account.xAccount?.archiveLikes) {
+            jobTypes.push("indexLikes");
         }
         if (this.account.xAccount?.archiveDMs) {
             jobTypes.push("indexConversations");
@@ -95,16 +133,62 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async startDeleting() {
-        // TODO: implement
-        console.log("startDeleting: NOT IMPLEMENTED");
+        // Ensure the user has paid for Premium
+        const authenticated = await this.api.ping();
+        if (!authenticated) {
+            this.emitter?.emit("show-sign-in");
+            return;
+        }
+
+        // Check if the user has premium
+        let userPremium: UserPremiumAPIResponse;
+        const resp = await this.api.getUserPremium();
+        if (resp && 'error' in resp === false) {
+            userPremium = resp;
+        } else {
+            await window.electron.showMessage("Failed to check if you have Premium access. Please try again later.");
+            return;
+        }
+
+        if (userPremium.premium_access === false) {
+            await window.electron.showMessage("Deleting data from X is a Premium feature. Please upgrade to Premium to use this feature.");
+            this.emitter?.emit("show-manage-account");
+            return;
+        }
+
+        this.setAction("delete");
+
+        const jobTypes = [];
+        jobTypes.push("login");
+        if (this.account.xAccount?.deleteTweets || this.account.xAccount?.deleteRetweets) {
+            jobTypes.push("indexTweets");
+        }
+        if (this.account.xAccount?.deleteTweets) {
+            jobTypes.push("deleteTweets");
+        }
+        if (this.account.xAccount?.deleteRetweets) {
+            jobTypes.push("deleteRetweets");
+        }
+        if (this.account.xAccount?.deleteLikes) {
+            jobTypes.push("indexLikes");
+            jobTypes.push("deleteLikes");
+        }
+        if (this.account.xAccount?.deleteDMs) {
+            jobTypes.push("indexConversations");
+            jobTypes.push("indexMessages");
+            jobTypes.push("deleteMessages");
+        }
+        jobTypes.push("archiveBuild");
+
         try {
-            await window.electron.showMessage("Deleting data from X is not implemented yet.");
+            this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
             });
             return;
         }
+        this.state = State.RunJobs;
 
         await window.electron.trackEvent(PlausibleEvents.X_DELETE_STARTED, navigator.userAgent);
     }
@@ -379,6 +463,11 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
+                // Start the progress
+                this.progress.isIndexTweetsFinished = false;
+                this.progress.tweetsIndexed = 0;
+                await this.syncProgress();
+
                 // Load the timeline and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
@@ -452,9 +541,15 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
 
                     // Check if we're done
-                    if (!moreToScroll) {
+                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
                         this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
                         break;
+                    } else {
+                        if (!moreToScroll) {
+                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                            await this.sleep(500);
+                            await this.scrollUp(1000);
+                        }
                     }
                 }
 
@@ -487,7 +582,6 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 if (this.webContentsID) {
 
                     // Start the progress
-                    this.progress.currentJob = "archiveTweets";
                     this.progress.totalTweetsToArchive = this.archiveStartResponse.items.length;
                     this.progress.tweetsArchived = 0;
                     this.progress.newTweetsArchived = 0;
@@ -673,11 +767,12 @@ Please wait while I index all of the messages from each conversation.
                     })
                     break;
                 }
-                this.progress.currentJob = "indexMessages";
+                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
+
+                // Start the progress
                 this.progress.totalConversations = this.indexMessagesStartResponse?.totalConversations;
                 this.progress.conversationMessagesIndexed = this.progress.totalConversations - this.indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
-                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
 
                 for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
                     await this.waitForPause();
@@ -837,8 +932,218 @@ I'm building a searchable archive web page in HTML.
                 await this.finishJob(iJob);
                 break;
 
+            case "indexLikes":
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+Hang on while I scroll down to your earliest likes that I've seen.
+`;
+                this.showAutomationNotice = true;
+
+                // Check if this is the first time indexing likes has happened in this account
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexLikes") == null) {
+                    this.isFirstRun = true;
+                }
+
+                // Start monitoring network requests
+                await window.electron.X.indexStart(this.account.id);
+                await this.sleep(2000);
+
+                // Start the progress
+                this.progress.isIndexLikesFinished = false;
+                this.progress.likesIndexed = 0;
+                await this.syncProgress();
+
+                // Load the likes and wait for tweets to appear
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await this.waitForPause();
+                    await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
+                    try {
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                        await this.waitForSelector('article');
+                        break;
+                    } catch (e) {
+                        this.log("runJob", ["jobType=indexLikes", "selector never appeared", e]);
+                        if (e instanceof TimeoutError) {
+                            // Were we rate limited?
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                            } else {
+                                // If the page isn't loading, we assume the user has no likes yet
+                                await this.waitForLoadingToFinish();
+                                this.progress.isIndexLikesFinished = true;
+                                this.progress.likesIndexed = 0;
+                                await this.syncProgress();
+                                break;
+                            }
+                        } else if (e instanceof URLChangedError) {
+                            const newURL = this.webview.getURL();
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                                newURL: newURL,
+                                exception: (e as Error).toString()
+                            })
+                            break;
+                        } else {
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                                exception: (e as Error).toString()
+                            })
+                            break;
+                        }
+                    }
+                }
+
+                while (this.progress.isIndexLikesFinished === false) {
+                    await this.waitForPause();
+
+                    // Scroll to bottom
+                    await window.electron.X.resetRateLimitInfo(this.account.id);
+                    let moreToScroll = await this.scrollToBottom();
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.sleep(500);
+                        await this.scrollToBottom();
+                        await this.waitForRateLimit();
+                        if (!await this.indexTweetsHandleRateLimit()) {
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit);
+                            break;
+                        }
+                        await this.sleep(500);
+                        moreToScroll = true;
+                    }
+
+                    // Parse so far
+                    try {
+                        // Likes use indexParseTweets too because the structure is the same
+                        this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                    } catch (e) {
+                        const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+                        await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
+                            exception: (e as Error).toString()
+                        }, latestResponseData);
+                        break;
+                    }
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+
+                    // Check if we're done
+                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
+                        this.progress = await window.electron.X.indexLikesFinished(this.account.id);
+                        break;
+                    } else {
+                        if (!moreToScroll) {
+                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                            await this.sleep(500);
+                            await this.scrollUp(1000);
+                        }
+                    }
+                }
+
+                // Stop monitoring network requests
+                await window.electron.X.indexStop(this.account.id);
+
+                await this.finishJob(iJob);
+                break;
+
             case "deleteTweets":
-                this.log("runJob", "deleteTweets: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+I'm deleting your tweets, based on your criteria.
+`;
+                this.showAutomationNotice = true;
+
+                // Load the tweets to delete
+                try {
+                    this.deleteTweetsStartResponse = await window.electron.X.deleteTweetsStart(this.account.id);
+                } catch (e) {
+                    await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
+                        exception: (e as Error).toString()
+                    })
+                    break;
+                }
+                this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", this.deleteTweetsStartResponse]);
+
+                // Start the progress
+                this.progress.totalTweetsToDelete = this.deleteTweetsStartResponse.tweets.length;
+                this.progress.tweetsDeleted = 0;
+                await this.syncProgress();
+
+                for (let i = 0; i < this.deleteTweetsStartResponse.tweets.length; i++) {
+                    // Load the URL
+                    await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${this.deleteTweetsStartResponse.tweets[i].tweetID}`);
+                    await this.sleep(200);
+
+                    await this.waitForPause();
+
+                    // Wait for the menu button to appear
+                    try {
+                        await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
+                    await this.sleep(200);
+
+                    // Click the menu button
+                    await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+
+                    // Wait for the menu to appear
+                    try {
+                        await this.waitForSelector('div[role="menu"] div[role="menuitem"]:first-of-type');
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
+                    await this.sleep(200);
+
+                    // Click the delete button
+                    await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
+
+                    // Wait for the delete confirmation popup to appear
+                    try {
+                        await this.waitForSelector('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed, {
+                            exception: (e as Error).toString()
+                        });
+                        break;
+                    }
+                    await this.sleep(200);
+
+                    // Click delete confirmation
+                    await this.scriptClickElement('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
+                    await this.sleep(200);
+
+                    // Update the tweet's deletedAt date
+                    try {
+                        await window.electron.X.deleteTweet(this.account.id, this.deleteTweetsStartResponse.tweets[i].tweetID);
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            deleteTweetsStartResponseTweet: this.deleteTweetsStartResponse.tweets[i],
+                            index: i
+                        })
+                        break;
+                    }
+
+                    this.progress.tweetsDeleted += 1;
+                    await this.syncProgress();
+                }
+
+                await this.finishJob(iJob);
+                break;
+
+            case "deleteRetweets":
+                this.log("runJob", "deleteRetweets: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
 
@@ -899,17 +1204,8 @@ You can make a local archive of your data, or you delete exactly what you choose
                     this.state = State.FinishedRunningJobs;
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-                    this.instructions = `
-**${this.actionFinishedString}**
 
-`;
-                    if (this.account.xAccount?.archiveTweets && !this.account.xAccount?.archiveDMs) {
-                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets**.`
-                    } else if (this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                        this.instructions += `I have **archived ${this.progress?.newTweetsArchived.toLocaleString()} tweets** and **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                    } else if (!this.account.xAccount?.archiveTweets && this.account.xAccount?.archiveDMs) {
-                        this.instructions += `I have **indexed ${this.progress?.conversationsIndexed} conversations**, including **${this.progress?.messagesIndexed} messages**.`
-                    }
+                    this.instructions = `**${this.actionFinishedString}**`;
                     break;
             }
         } catch (e) {

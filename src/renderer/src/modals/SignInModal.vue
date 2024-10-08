@@ -188,7 +188,7 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Sign in
+                        Sign in to Semiphemeral to access premium features
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>
@@ -196,25 +196,31 @@ onUnmounted(() => {
                     <div class="d-flex flex-column align-items-center">
                         <form @submit.prevent>
                             <template v-if="signInState == 'start'">
-                                <div class="form-group d-flex flex-column align-items-center">
-                                    <p>Sign in to Semiphemeral using your email address.</p>
-                                    <input ref="emailInputEl" v-model="userEmail" type="email" class="form-control"
-                                        data-vue-ref="emailInputEl" placeholder="Email address">
-                                    <button type="submit" class="btn btn-primary mt-2" rel="startContinueButtonEl"
-                                        data-vue-ref="startContinueButtonEl" @click="authenticate">
-                                        Continue
-                                    </button>
+                                <div class="form-group d-flex flex-column mt-4">
+                                    <label for="email" class="sr-only">Enter your email address</label>
+                                    <input id="email" ref="emailInputEl" v-model="userEmail" type="email"
+                                        class="form-control" data-vue-ref="emailInputEl" placeholder="Email address">
+                                    <div class="mt-2 text-center">
+                                        <button type="submit" class="btn btn-primary mt-2" rel="startContinueButtonEl"
+                                            data-vue-ref="startContinueButtonEl" @click="authenticate">
+                                            Continue
+                                        </button>
+                                    </div>
                                 </div>
+                                <p class="text-muted small mt-5">
+                                    Your email address will be used to identify your account. We won't share it or send
+                                    you unsolicited emails.
+                                </p>
                             </template>
                             <template v-else-if="signInState == 'registerDevice'">
-                                <div>
+                                <div class="mt-4">
                                     <p>We've emailed you a verification code. Enter it below.</p>
                                     <div class="verification-code-container">
                                         <input v-model="verificationCode" type="text"
                                             class="form-control verification-code" rel="verificationCodeInputEl"
                                             data-vue-ref="verificationCodeInputEl" maxlength="6">
                                     </div>
-                                    <div class="button-container mt-2">
+                                    <div class="button-container text-center mt-5">
                                         <button type="submit" class="btn btn-secondary" rel="backButtonEl"
                                             data-vue-ref="backButtonEl" @click="goBack">
                                             Back
@@ -233,4 +239,13 @@ onUnmounted(() => {
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+label {
+    margin-bottom: 0.5rem;
+}
+
+input[type="email"],
+input[type="text"] {
+    font-size: 1.5rem;
+}
+</style>

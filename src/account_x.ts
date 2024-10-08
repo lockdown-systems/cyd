@@ -8,7 +8,12 @@ import { app, ipcMain, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
-import { getResourcesPath, getAccountDataPath, packageExceptionForReport } from './util'
+import {
+    getResourcesPath,
+    getAccountDataPath,
+    packageExceptionForReport,
+    getTimestampDaysAgo
+} from './util'
 import {
     XAccount,
     XJob,
@@ -17,6 +22,7 @@ import {
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
+    XDeleteTweetsStartResponse,
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
     // XTweet
@@ -127,7 +133,8 @@ function convertXJobRowToXJob(row: XJobRow): XJob {
 
 export class XAccountController {
     private accountUUID: string = "";
-    private account: XAccount | null;
+    // Making this public so it can be accessed in tests
+    public account: XAccount | null;
     private accountDataPath: string = "";
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     private thereIsMore: boolean = false;
@@ -386,7 +393,6 @@ export class XAccountController {
             } else {
                 // We have seen this tweet, so return early
                 this.mitmController.responseData[iResponse].processed = true;
-                this.progress.isIndexTweetsFinished = true;
                 return false;
             }
         }
@@ -412,7 +418,11 @@ export class XAccountController {
         if (existing.length == 0) {
             if (tweetLegacy["retweeted"]) {
                 this.progress.retweetsIndexed++;
-            } else {
+            }
+            if (tweetLegacy["favorited"]) {
+                this.progress.likesIndexed++;
+            }
+            if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
                 this.progress.tweetsIndexed++;
             }
         }
@@ -439,77 +449,73 @@ export class XAccountController {
 
         // Process the next response
         if (
-            responseData.url.includes("/UserTweetsAndReplies?") &&
+            (responseData.url.includes("/UserTweetsAndReplies?") || responseData.url.includes("/Likes?")) &&
             responseData.status == 200
         ) {
-            try {
-                const body: XAPIData = JSON.parse(responseData.body);
+            const body: XAPIData = JSON.parse(responseData.body);
 
-                // Loop through instructions
-                body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
-                    if (instructions["type"] != "TimelineAddEntries") {
-                        return;
-                    }
+            // Loop through instructions
+            body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+                if (instructions["type"] != "TimelineAddEntries") {
+                    return;
+                }
 
-                    // Loop through the entries
-                    instructions.entries?.forEach((entries) => {
-                        let userLegacy: XAPILegacyUser | undefined;
-                        let tweetLegacy: XAPILegacyTweet | undefined;
+                // If we only have two entries, they both have entryType of TimelineTimelineCursor (one cursorType of Top and the other of Bottom), this means there are no more tweets
+                if (instructions.entries?.length == 2 && instructions.entries[0].content.entryType == "TimelineTimelineCursor" && instructions.entries[1].content.entryType == "TimelineTimelineCursor") {
+                    this.thereIsMore = false;
+                    return;
+                }
 
-                        if (entries.content.entryType == "TimelineTimelineModule") {
-                            entries.content.items?.forEach((item) => {
-                                if (item.item.itemContent.tweet_results?.result.core) {
-                                    userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
-                                    tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
-                                }
-                                if (item.item.itemContent.tweet_results?.result.tweet) {
-                                    userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
-                                    tweetLegacy = item.item.itemContent.tweet_results?.result.tweet.legacy;
-                                }
+                // Loop through the entries
+                instructions.entries?.forEach((entries) => {
+                    let userLegacy: XAPILegacyUser | undefined;
+                    let tweetLegacy: XAPILegacyTweet | undefined;
 
-                                if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
-                                    shouldReturnFalse = true;
-                                    return;
-                                }
-                            });
-                        } else if (entries.content.entryType == "TimelineTimelineItem") {
-                            if (entries.content.itemContent?.tweet_results?.result.core) {
-                                userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
-                                tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
+                    if (entries.content.entryType == "TimelineTimelineModule") {
+                        entries.content.items?.forEach((item) => {
+                            if (item.item.itemContent.tweet_results?.result.core) {
+                                userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
+                                tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
                             }
-                            if (entries.content.itemContent?.tweet_results?.result.tweet) {
-                                userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
-                                tweetLegacy = entries.content.itemContent?.tweet_results?.result.tweet.legacy;
+                            if (item.item.itemContent.tweet_results?.result.tweet) {
+                                userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                                tweetLegacy = item.item.itemContent.tweet_results?.result.tweet.legacy;
                             }
 
                             if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
+                        });
+                    } else if (entries.content.entryType == "TimelineTimelineItem") {
+                        if (entries.content.itemContent?.tweet_results?.result.core) {
+                            userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                            tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
+                        }
+                        if (entries.content.itemContent?.tweet_results?.result.tweet) {
+                            userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                            tweetLegacy = entries.content.itemContent?.tweet_results?.result.tweet.legacy;
                         }
 
-
-                    });
-
-                    if (shouldReturnFalse) {
-                        return;
+                        if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                            shouldReturnFalse = true;
+                            return;
+                        }
                     }
-                });
 
-                this.mitmController.responseData[iResponse].processed = true;
-                log.debug('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+
+                });
 
                 if (shouldReturnFalse) {
                     return false;
                 }
-            } catch (error) {
-                // TODO: automation error
-                log.error('XAccountController.indexParseTweetsResponseData: error', error);
-                log.debug(responseData.url)
-                log.debug(responseData.body)
+            });
 
-                // Throw an exception
-                throw error;
+            this.mitmController.responseData[iResponse].processed = true;
+            log.debug('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+
+            if (shouldReturnFalse) {
+                return false;
             }
         } else {
             // Skip response
@@ -523,9 +529,6 @@ export class XAccountController {
     // Returns the progress object
     async indexParseTweets(isFirstRun: boolean): Promise<XProgress> {
         log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
-
-        this.progress.currentJob = "indexTweets";
-        this.progress.isIndexTweetsFinished = false;
 
         await this.mitmController.clearProcessed();
 
@@ -698,67 +701,57 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            try {
-                let users: Record<string, XAPIUser>;
-                let conversations: Record<string, XAPIConversation>;
-                if (
-                    responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-                    responseData.url.includes("/i/api/1.1/dm/user_updates.json")
-                ) {
-                    const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                    if (!inbox_initial_state.inbox_initial_state) {
-                        // Skip this response
-                        return true;
+            let users: Record<string, XAPIUser>;
+            let conversations: Record<string, XAPIConversation>;
+            if (
+                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
+                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
+            ) {
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                if (!inbox_initial_state.inbox_initial_state) {
+                    // Skip this response
+                    return true;
+                }
+                users = inbox_initial_state.inbox_initial_state.users;
+                conversations = inbox_initial_state.inbox_initial_state.conversations;
+                this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
+            } else {
+                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
+                users = inbox_timeline.inbox_timeline.users;
+                conversations = inbox_timeline.inbox_timeline.conversations;
+                this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
+            }
+
+            // Add the users
+            if (users) {
+                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
+                for (const userID in users) {
+                    const user = users[userID];
+                    await this.indexUser(user);
+                }
+            } else {
+                log.info('XAccountController.indexParseConversationsResponseData: no users');
+            }
+
+            // Add the conversations
+            if (conversations) {
+                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
+                for (const conversationID in conversations) {
+                    const conversation = conversations[conversationID];
+                    if (!this.indexConversation(conversation, isFirstRun)) {
+                        shouldReturnFalse = true;
+                        break;
                     }
-                    users = inbox_initial_state.inbox_initial_state.users;
-                    conversations = inbox_initial_state.inbox_initial_state.conversations;
-                    this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
-                } else {
-                    const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
-                    users = inbox_timeline.inbox_timeline.users;
-                    conversations = inbox_timeline.inbox_timeline.conversations;
-                    this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
                 }
+            } else {
+                log.info('XAccountController.indexParseConversationsResponseData: no conversations');
+            }
 
-                // Add the users
-                if (users) {
-                    log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
-                    for (const userID in users) {
-                        const user = users[userID];
-                        await this.indexUser(user);
-                    }
-                } else {
-                    log.info('XAccountController.indexParseConversationsResponseData: no users');
-                }
+            this.mitmController.responseData[iResponse].processed = true;
+            log.debug('XAccountController.indexParseConversationsResponseData: processed', iResponse);
 
-                // Add the conversations
-                if (conversations) {
-                    log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
-                    for (const conversationID in conversations) {
-                        const conversation = conversations[conversationID];
-                        if (!this.indexConversation(conversation, isFirstRun)) {
-                            shouldReturnFalse = true;
-                            break;
-                        }
-                    }
-                } else {
-                    log.info('XAccountController.indexParseConversationsResponseData: no conversations');
-                }
-
-                this.mitmController.responseData[iResponse].processed = true;
-                log.debug('XAccountController.indexParseConversationsResponseData: processed', iResponse);
-
-                if (shouldReturnFalse) {
-                    return false;
-                }
-            } catch (error) {
-                // TODO: automation error
-                log.error('XAccountController.indexParseConversationsResponseData: error', error);
-                log.debug(responseData.url)
-                log.debug(responseData.body)
-
-                // Throw an exception
-                throw error;
+            if (shouldReturnFalse) {
+                return false;
             }
         } else {
             // Skip response
@@ -879,56 +872,46 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            try {
-                log.debug("XAccountController.indexParseMessagesResponseData", iResponse);
-                let entries: XAPIMessage[];
+            log.debug("XAccountController.indexParseMessagesResponseData", iResponse);
+            let entries: XAPIMessage[];
 
-                if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
-                    // XAPIConversationTimeline
-                    const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
-                    if (!conversationTimeline.conversation_timeline.entries) {
-                        // Skip this response
-                        return true;
-                    }
-                    entries = conversationTimeline.conversation_timeline.entries;
-                } else {
-                    // XAPIInboxInitialState
-                    const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                    if (!inbox_initial_state.inbox_initial_state) {
-                        // Skip this response
-                        return true;
-                    }
-                    entries = inbox_initial_state.inbox_initial_state.entries;
+            if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
+                // XAPIConversationTimeline
+                const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
+                if (!conversationTimeline.conversation_timeline.entries) {
+                    // Skip this response
+                    return true;
                 }
+                entries = conversationTimeline.conversation_timeline.entries;
+            } else {
+                // XAPIInboxInitialState
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                if (!inbox_initial_state.inbox_initial_state) {
+                    // Skip this response
+                    return true;
+                }
+                entries = inbox_initial_state.inbox_initial_state.entries;
+            }
 
-                // Add the messages
-                if (entries) {
-                    log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
-                    for (let i = 0; i < entries.length; i++) {
-                        const message = entries[i];
-                        if (!this.indexMessage(message, isFirstRun)) {
-                            shouldReturnFalse = true;
-                            break;
-                        }
+            // Add the messages
+            if (entries) {
+                log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
+                for (let i = 0; i < entries.length; i++) {
+                    const message = entries[i];
+                    if (!this.indexMessage(message, isFirstRun)) {
+                        shouldReturnFalse = true;
+                        break;
                     }
-                } else {
-                    log.info('XAccountController.indexParseMessagesResponseData: no entries');
                 }
+            } else {
+                log.info('XAccountController.indexParseMessagesResponseData: no entries');
+            }
 
-                this.mitmController.responseData[iResponse].processed = true;
-                log.debug('XAccountController.indexParseMessagesResponseData: processed', iResponse);
+            this.mitmController.responseData[iResponse].processed = true;
+            log.debug('XAccountController.indexParseMessagesResponseData: processed', iResponse);
 
-                if (shouldReturnFalse) {
-                    return false;
-                }
-            } catch (error) {
-                // TODO: automation error
-                log.error('XAccountController.indexParseMessagesResponseData: error', error);
-                log.debug(responseData.url)
-                log.debug(responseData.body)
-
-                // Throw an exception
-                throw error;
+            if (shouldReturnFalse) {
+                return false;
             }
         } else {
             // Skip response
@@ -1063,7 +1046,7 @@ export class XAccountController {
         }
 
         // Select everything from database
-        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt", [this.account.username, 0], "all") as XTweetRow[];
+        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt DESC", [this.account.username, 0], "all") as XTweetRow[];
         const users: XUserRow[] = exec(this.db, 'SELECT * FROM user', [], "all") as XUserRow[];
         const conversations: XConversationRow[] = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all") as XConversationRow[];
         const conversationParticipants: XConversationParticipantRow[] = exec(this.db, 'SELECT * FROM conversation_participant', [], "all") as XConversationParticipantRow[];
@@ -1155,6 +1138,72 @@ export class XAccountController {
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: getAccountDataPath("X", this.account.username) });
 
+        return true;
+    }
+
+    // When you start deleting tweets, retur a list of tweetIDs to delete
+    async deleteTweetsStart(): Promise<XDeleteTweetsStartResponse> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Select just the tweets that need to be deleted based on the settings
+        let tweets: XTweetRow[];
+        const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteTweetsDaysOld);
+        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThreshold) {
+            // Both likes and retweets thresholds
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
+                "all"
+            ) as XTweetRow[];
+        } else if (this.account.deleteTweetsLikesThresholdEnabled) {
+            // Just likes threshold
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
+                "all"
+            ) as XTweetRow[];
+        } else if (this.account.deleteTweetsRetweetsThreshold) {
+            // Just retweets threshold
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
+                "all"
+            ) as XTweetRow[];
+        } else {
+            // Neither likes nor retweets threshold
+            tweets = exec(
+                this.db,
+                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp],
+                "all"
+            ) as XTweetRow[];
+        }
+
+        log.debug("XAccountController.deleteTweetsStart", tweets);
+        return {
+            tweets: tweets.map((row) => ({
+                id: row.id,
+                tweetID: row.tweetID
+            })),
+        };
+    }
+
+    // Save the tweet's deletedAt timestamp
+    async deleteTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        exec(this.db, 'UPDATE tweet SET deletedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
         return true;
     }
 
@@ -1502,6 +1551,24 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.getLatestResponseData();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteTweetsStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteTweetsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteTweet(tweetID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

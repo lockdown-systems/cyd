@@ -11,6 +11,7 @@ import type {
     XJob,
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
+    XDeleteTweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
     ResponseData
@@ -76,6 +77,8 @@ declare global {
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
                 getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
+                deleteTweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
+                deleteTweet: (accountID: number, tweetID: string) => Promise<boolean>;
             };
         };
     }

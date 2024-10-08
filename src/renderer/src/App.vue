@@ -54,10 +54,9 @@ provide('userEmail', userEmail);
 
 // Sign in
 const showSignInModal = ref(false);
-const showSignIn = () => {
+emitter?.on('show-sign-in', () => {
   showSignInModal.value = true;
-};
-provide('showSignIn', showSignIn);
+});
 
 // Automation error report
 const showAutomationErrorReportModal = ref(false);

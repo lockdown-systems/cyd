@@ -21,7 +21,6 @@ const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
-const showSignIn = inject('showSignIn') as () => void;
 
 const showManageAccount = ref(false);
 
@@ -120,13 +119,19 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
   }
 };
 
-const manageAccountClicked = async () => {
+const showManageAccountModal = () => {
   userBtnShowMenu.value = false;
   showManageAccount.value = true;
 };
 
+emitter?.on('show-manage-account', showManageAccountModal);
+
+const manageAccountClicked = async () => {
+  showManageAccountModal();
+};
+
 const signInClicked = async () => {
-  showSignIn();
+  emitter?.emit('show-sign-in');
 };
 
 const signOutClicked = async () => {
@@ -246,7 +251,7 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="signInClicked">
-                    Sign in to Semiphemeral to access paid features
+                    Sign in to Semiphemeral to access premium features
                   </li>
                 </ul>
               </template>

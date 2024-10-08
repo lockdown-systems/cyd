@@ -118,3 +118,9 @@ export const packageExceptionForReport = (error: Error) => {
         stack: error.stack,
     });
 }
+
+export function getTimestampDaysAgo(days: number): string {
+    const now = new Date();
+    now.setDate(now.getDate() - days);
+    return now.toISOString();
+}
