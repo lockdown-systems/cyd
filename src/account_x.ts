@@ -1046,7 +1046,8 @@ export class XAccountController {
         }
 
         // Select everything from database
-        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt DESC", [this.account.username, 0], "all") as XTweetRow[];
+        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? ORDER BY createdAt DESC", [this.account.username], "all") as XTweetRow[];
+        const likes: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE isLiked = ? ORDER BY createdAt DESC", [1], "all") as XTweetRow[];
         const users: XUserRow[] = exec(this.db, 'SELECT * FROM user', [], "all") as XUserRow[];
         const conversations: XConversationRow[] = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all") as XConversationRow[];
         const conversationParticipants: XConversationParticipantRow[] = exec(this.db, 'SELECT * FROM conversation_participant', [], "all") as XConversationParticipantRow[];
@@ -1058,6 +1059,23 @@ export class XAccountController {
 
         // Build the archive object
         const formattedTweets: XArchiveTypes.Tweet[] = tweets.map((tweet) => {
+            return {
+                tweetID: tweet.tweetID,
+                username: tweet.username,
+                createdAt: tweet.createdAt,
+                likeCount: tweet.likeCount,
+                quoteCount: tweet.quoteCount,
+                replyCount: tweet.replyCount,
+                retweetCount: tweet.retweetCount,
+                isLiked: tweet.isLiked,
+                isRetweeted: tweet.isRetweeted,
+                text: tweet.text,
+                path: tweet.path,
+                archivedAt: tweet.archivedAt,
+                deletedAt: tweet.deletedAt,
+            }
+        });
+        const formattedLikes: XArchiveTypes.Tweet[] = likes.map((tweet) => {
             return {
                 tweetID: tweet.tweetID,
                 username: tweet.username,
@@ -1120,6 +1138,7 @@ export class XAccountController {
             username: this.account.username,
             createdAt: new Date().toLocaleString(),
             tweets: formattedTweets,
+            likes: formattedLikes,
             users: formattedUsers,
             conversations: formattedConversations,
             messages: formattedMessages,

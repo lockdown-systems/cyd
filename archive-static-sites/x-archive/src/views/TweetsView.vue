@@ -8,9 +8,11 @@ const archiveData = inject('archiveData') as Ref<XArchive>;
 const filterText = ref('');
 
 const filteredTweets = computed(() => {
-  return archiveData.value.tweets.filter(tweet =>
-    tweet.text.toLowerCase().includes(filterText.value.toLowerCase())
-  );
+  return archiveData.value.tweets.filter(tweet => {
+    const lowerCaseFilterText = filterText.value.toLowerCase();
+    return tweet.text.toLowerCase().includes(lowerCaseFilterText) ||
+      tweet.username.toLowerCase().includes(lowerCaseFilterText);
+  });
 });
 </script>
 

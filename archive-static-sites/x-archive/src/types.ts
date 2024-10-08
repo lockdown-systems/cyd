@@ -44,6 +44,7 @@ export type XArchive = {
     username: string;
     createdAt: string;
     tweets: Tweet[];
+    likes: Tweet[];
     users: Record<string, User>;
     conversations: Conversation[];
     messages: Message[];
