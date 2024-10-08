@@ -827,7 +827,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexMessage(message: XAPIMessage, isFirstRun: boolean): boolean {
+    indexMessage(message: XAPIMessage): boolean {
         log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
@@ -854,7 +854,7 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (isInsert || isFirstRun) {
+        if (isInsert) {
             this.progress.messagesIndexed++;
         }
 
@@ -862,7 +862,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    async indexParseMessagesResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
+    async indexParseMessagesResponseData(iResponse: number): Promise<boolean> {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[iResponse];
 
@@ -915,7 +915,7 @@ export class XAccountController {
                 log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
                 for (let i = 0; i < entries.length; i++) {
                     const message = entries[i];
-                    if (!this.indexMessage(message, isFirstRun)) {
+                    if (!this.indexMessage(message)) {
                         shouldReturnFalse = true;
                         break;
                     }
@@ -947,8 +947,13 @@ export class XAccountController {
         this.progress.currentJob = "indexMessages";
         this.progress.isIndexMessagesFinished = false;
 
+        if (isFirstRun) {
+            // Delete the existing message data now, in order to accurately count the progress
+            exec(this.db, 'DELETE FROM message');
+        }
+
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.indexParseMessagesResponseData(i, isFirstRun)) {
+            if (!await this.indexParseMessagesResponseData(i)) {
                 this.progress.shouldStopEarly = true;
                 return this.progress;
             }
