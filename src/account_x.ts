@@ -450,74 +450,64 @@ export class XAccountController {
             (responseData.url.includes("/UserTweetsAndReplies?") || responseData.url.includes("/Likes?")) &&
             responseData.status == 200
         ) {
-            try {
-                const body: XAPIData = JSON.parse(responseData.body);
+            const body: XAPIData = JSON.parse(responseData.body);
 
-                // Loop through instructions
-                body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
-                    if (instructions["type"] != "TimelineAddEntries") {
-                        return;
-                    }
+            // Loop through instructions
+            body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+                if (instructions["type"] != "TimelineAddEntries") {
+                    return;
+                }
 
-                    // Loop through the entries
-                    instructions.entries?.forEach((entries) => {
-                        let userLegacy: XAPILegacyUser | undefined;
-                        let tweetLegacy: XAPILegacyTweet | undefined;
+                // Loop through the entries
+                instructions.entries?.forEach((entries) => {
+                    let userLegacy: XAPILegacyUser | undefined;
+                    let tweetLegacy: XAPILegacyTweet | undefined;
 
-                        if (entries.content.entryType == "TimelineTimelineModule") {
-                            entries.content.items?.forEach((item) => {
-                                if (item.item.itemContent.tweet_results?.result.core) {
-                                    userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
-                                    tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
-                                }
-                                if (item.item.itemContent.tweet_results?.result.tweet) {
-                                    userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
-                                    tweetLegacy = item.item.itemContent.tweet_results?.result.tweet.legacy;
-                                }
-
-                                if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
-                                    shouldReturnFalse = true;
-                                    return;
-                                }
-                            });
-                        } else if (entries.content.entryType == "TimelineTimelineItem") {
-                            if (entries.content.itemContent?.tweet_results?.result.core) {
-                                userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
-                                tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
+                    if (entries.content.entryType == "TimelineTimelineModule") {
+                        entries.content.items?.forEach((item) => {
+                            if (item.item.itemContent.tweet_results?.result.core) {
+                                userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
+                                tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
                             }
-                            if (entries.content.itemContent?.tweet_results?.result.tweet) {
-                                userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
-                                tweetLegacy = entries.content.itemContent?.tweet_results?.result.tweet.legacy;
+                            if (item.item.itemContent.tweet_results?.result.tweet) {
+                                userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                                tweetLegacy = item.item.itemContent.tweet_results?.result.tweet.legacy;
                             }
 
                             if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
+                        });
+                    } else if (entries.content.entryType == "TimelineTimelineItem") {
+                        if (entries.content.itemContent?.tweet_results?.result.core) {
+                            userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
+                            tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
+                        }
+                        if (entries.content.itemContent?.tweet_results?.result.tweet) {
+                            userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
+                            tweetLegacy = entries.content.itemContent?.tweet_results?.result.tweet.legacy;
                         }
 
-
-                    });
-
-                    if (shouldReturnFalse) {
-                        return;
+                        if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                            shouldReturnFalse = true;
+                            return;
+                        }
                     }
-                });
 
-                this.mitmController.responseData[iResponse].processed = true;
-                log.debug('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+
+                });
 
                 if (shouldReturnFalse) {
                     return false;
                 }
-            } catch (error) {
-                // TODO: automation error
-                log.error('XAccountController.indexParseTweetsResponseData: error', error);
-                log.debug(responseData.url)
-                log.debug(responseData.body)
+            });
 
-                // Throw an exception
-                throw error;
+            this.mitmController.responseData[iResponse].processed = true;
+            log.debug('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+
+            if (shouldReturnFalse) {
+                return false;
             }
         } else {
             // Skip response
@@ -703,67 +693,57 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            try {
-                let users: Record<string, XAPIUser>;
-                let conversations: Record<string, XAPIConversation>;
-                if (
-                    responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-                    responseData.url.includes("/i/api/1.1/dm/user_updates.json")
-                ) {
-                    const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                    if (!inbox_initial_state.inbox_initial_state) {
-                        // Skip this response
-                        return true;
+            let users: Record<string, XAPIUser>;
+            let conversations: Record<string, XAPIConversation>;
+            if (
+                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
+                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
+            ) {
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                if (!inbox_initial_state.inbox_initial_state) {
+                    // Skip this response
+                    return true;
+                }
+                users = inbox_initial_state.inbox_initial_state.users;
+                conversations = inbox_initial_state.inbox_initial_state.conversations;
+                this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
+            } else {
+                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
+                users = inbox_timeline.inbox_timeline.users;
+                conversations = inbox_timeline.inbox_timeline.conversations;
+                this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
+            }
+
+            // Add the users
+            if (users) {
+                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
+                for (const userID in users) {
+                    const user = users[userID];
+                    await this.indexUser(user);
+                }
+            } else {
+                log.info('XAccountController.indexParseConversationsResponseData: no users');
+            }
+
+            // Add the conversations
+            if (conversations) {
+                log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
+                for (const conversationID in conversations) {
+                    const conversation = conversations[conversationID];
+                    if (!this.indexConversation(conversation, isFirstRun)) {
+                        shouldReturnFalse = true;
+                        break;
                     }
-                    users = inbox_initial_state.inbox_initial_state.users;
-                    conversations = inbox_initial_state.inbox_initial_state.conversations;
-                    this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
-                } else {
-                    const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
-                    users = inbox_timeline.inbox_timeline.users;
-                    conversations = inbox_timeline.inbox_timeline.conversations;
-                    this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
                 }
+            } else {
+                log.info('XAccountController.indexParseConversationsResponseData: no conversations');
+            }
 
-                // Add the users
-                if (users) {
-                    log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`);
-                    for (const userID in users) {
-                        const user = users[userID];
-                        await this.indexUser(user);
-                    }
-                } else {
-                    log.info('XAccountController.indexParseConversationsResponseData: no users');
-                }
+            this.mitmController.responseData[iResponse].processed = true;
+            log.debug('XAccountController.indexParseConversationsResponseData: processed', iResponse);
 
-                // Add the conversations
-                if (conversations) {
-                    log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
-                    for (const conversationID in conversations) {
-                        const conversation = conversations[conversationID];
-                        if (!this.indexConversation(conversation, isFirstRun)) {
-                            shouldReturnFalse = true;
-                            break;
-                        }
-                    }
-                } else {
-                    log.info('XAccountController.indexParseConversationsResponseData: no conversations');
-                }
-
-                this.mitmController.responseData[iResponse].processed = true;
-                log.debug('XAccountController.indexParseConversationsResponseData: processed', iResponse);
-
-                if (shouldReturnFalse) {
-                    return false;
-                }
-            } catch (error) {
-                // TODO: automation error
-                log.error('XAccountController.indexParseConversationsResponseData: error', error);
-                log.debug(responseData.url)
-                log.debug(responseData.body)
-
-                // Throw an exception
-                throw error;
+            if (shouldReturnFalse) {
+                return false;
             }
         } else {
             // Skip response
@@ -884,56 +864,46 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            try {
-                log.debug("XAccountController.indexParseMessagesResponseData", iResponse);
-                let entries: XAPIMessage[];
+            log.debug("XAccountController.indexParseMessagesResponseData", iResponse);
+            let entries: XAPIMessage[];
 
-                if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
-                    // XAPIConversationTimeline
-                    const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
-                    if (!conversationTimeline.conversation_timeline.entries) {
-                        // Skip this response
-                        return true;
-                    }
-                    entries = conversationTimeline.conversation_timeline.entries;
-                } else {
-                    // XAPIInboxInitialState
-                    const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                    if (!inbox_initial_state.inbox_initial_state) {
-                        // Skip this response
-                        return true;
-                    }
-                    entries = inbox_initial_state.inbox_initial_state.entries;
+            if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
+                // XAPIConversationTimeline
+                const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
+                if (!conversationTimeline.conversation_timeline.entries) {
+                    // Skip this response
+                    return true;
                 }
+                entries = conversationTimeline.conversation_timeline.entries;
+            } else {
+                // XAPIInboxInitialState
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                if (!inbox_initial_state.inbox_initial_state) {
+                    // Skip this response
+                    return true;
+                }
+                entries = inbox_initial_state.inbox_initial_state.entries;
+            }
 
-                // Add the messages
-                if (entries) {
-                    log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
-                    for (let i = 0; i < entries.length; i++) {
-                        const message = entries[i];
-                        if (!this.indexMessage(message, isFirstRun)) {
-                            shouldReturnFalse = true;
-                            break;
-                        }
+            // Add the messages
+            if (entries) {
+                log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
+                for (let i = 0; i < entries.length; i++) {
+                    const message = entries[i];
+                    if (!this.indexMessage(message, isFirstRun)) {
+                        shouldReturnFalse = true;
+                        break;
                     }
-                } else {
-                    log.info('XAccountController.indexParseMessagesResponseData: no entries');
                 }
+            } else {
+                log.info('XAccountController.indexParseMessagesResponseData: no entries');
+            }
 
-                this.mitmController.responseData[iResponse].processed = true;
-                log.debug('XAccountController.indexParseMessagesResponseData: processed', iResponse);
+            this.mitmController.responseData[iResponse].processed = true;
+            log.debug('XAccountController.indexParseMessagesResponseData: processed', iResponse);
 
-                if (shouldReturnFalse) {
-                    return false;
-                }
-            } catch (error) {
-                // TODO: automation error
-                log.error('XAccountController.indexParseMessagesResponseData: error', error);
-                log.debug(responseData.url)
-                log.debug(responseData.body)
-
-                // Throw an exception
-                throw error;
+            if (shouldReturnFalse) {
+                return false;
             }
         } else {
             // Skip response
