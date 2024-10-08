@@ -1263,7 +1263,7 @@ export class XAccountController {
         const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteRetweetsDaysOld);
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username != ? AND createdAt <= ? ORDER BY createdAt DESC',
+            'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username != ? AND createdAt <= ? ORDER BY createdAt DESC',
             [1, this.account.username, daysOldTimestamp],
             "all"
         ) as XTweetRow[];

@@ -5,7 +5,7 @@ import {
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
     XDeleteTweetsStartResponse, emptyXDeleteTweetsStartResponse,
-    XDeleteRetweetsStartResponse, emptyDeleteRetweetsStartResponse,
+    XDeleteRetweetsStartResponse, emptyXDeleteRetweetsStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
@@ -34,7 +34,7 @@ export class AccountXViewModel extends BaseViewModel {
     private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
     private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
     private deleteTweetsStartResponse: XDeleteTweetsStartResponse = emptyXDeleteTweetsStartResponse();
-    private deleteRetweetsStartResponse: XDeleteRetweetsStartResponse = emptyDeleteRetweetsStartResponse();
+    private deleteRetweetsStartResponse: XDeleteRetweetsStartResponse = emptyXDeleteRetweetsStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -178,7 +178,7 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.account.xAccount?.deleteDMs) {
             jobTypes.push("indexConversations");
             jobTypes.push("indexMessages");
-            jobTypes.push("deleteMessages");
+            jobTypes.push("deleteDMs");
         }
         jobTypes.push("archiveBuild");
 
@@ -425,6 +425,9 @@ export class AccountXViewModel extends BaseViewModel {
 
     async runJob(iJob: number) {
         await this.waitForPause();
+
+        // Variables for use in the switch statement
+        let alreadyDeleted = false;
 
         // Start the job
         this.jobs[iJob].startedAt = new Date();
@@ -1157,15 +1160,60 @@ I'm deleting your retweets, starting with the earliest.
                 this.progress.retweetsDeleted = 0;
                 await this.syncProgress();
 
-                for (let i = 0; i < this.deleteTweetsStartResponse.tweets.length; i++) {
+                for (let i = 0; i < this.deleteRetweetsStartResponse.tweets.length; i++) {
+                    alreadyDeleted = false;
+
                     // Load the URL
-                    await this.loadURLWithRateLimit(`https://x.com/${this.deleteRetweetsStartResponse.tweets[i].username}/status/${this.deleteTweetsStartResponse.tweets[i].tweetID}`);
+                    await this.loadURLWithRateLimit(`https://x.com/${this.deleteRetweetsStartResponse.tweets[i].username}/status/${this.deleteRetweetsStartResponse.tweets[i].tweetID}`);
                     await this.sleep(200);
 
                     await this.waitForPause();
 
-                    // Wait for the menu button to appear
-                    // TODO: this is where I left off...
+                    // Wait for the retweet menu button to appear
+                    try {
+                        await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unretweet"]');
+                    } catch (e) {
+                        // If it doesn't appear, let's assume this retweet was already deleted
+                        alreadyDeleted = true;
+                    }
+                    await this.sleep(200);
+
+                    if (!alreadyDeleted) {
+                        // Click the retweet menu button
+                        await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unretweet"]');
+
+                        // Wait for the unretweet menu to appear
+                        try {
+                            await this.waitForSelector('div[role="menu"] div[role="menuitem"]:first-of-type');
+                        } catch (e) {
+                            await this.error(AutomationErrorType.x_runJob_deleteRetweets_WaitForMenuFailed, {
+                                exception: (e as Error).toString()
+                            });
+                            break;
+                        }
+                        await this.sleep(200);
+
+                        // Click the delete button
+                        await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
+                        await this.sleep(200);
+                    }
+
+                    // Mark the tweet as deleted
+                    try {
+                        // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
+                        await window.electron.X.deleteTweet(this.account.id, this.deleteRetweetsStartResponse.tweets[i].tweetID);
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            deleteRetweetsStartResponseTweet: this.deleteRetweetsStartResponse.tweets[i],
+                            index: i
+                        })
+                        break;
+                    }
+
+                    this.progress.retweetsDeleted += 1;
+                    await this.syncProgress();
                 }
 
                 await this.finishJob(iJob);
@@ -1176,7 +1224,7 @@ I'm deleting your retweets, starting with the earliest.
                 await this.finishJob(iJob);
                 break;
 
-            case "deleteMessages":
+            case "deleteDMs":
                 this.log("runJob", "deleteMessages: NOT IMPLEMENTED");
                 await this.finishJob(iJob);
                 break;
