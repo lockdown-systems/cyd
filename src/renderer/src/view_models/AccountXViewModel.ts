@@ -5,6 +5,7 @@ import {
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
     XDeleteTweetsStartResponse, emptyXDeleteTweetsStartResponse,
+    XDeleteRetweetsStartResponse, emptyDeleteRetweetsStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo
 } from '../../../shared_types';
@@ -33,6 +34,7 @@ export class AccountXViewModel extends BaseViewModel {
     private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
     private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
     private deleteTweetsStartResponse: XDeleteTweetsStartResponse = emptyXDeleteTweetsStartResponse();
+    private deleteRetweetsStartResponse: XDeleteRetweetsStartResponse = emptyDeleteRetweetsStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -1040,7 +1042,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 this.instructions = `
 **${this.actionString}**
 
-I'm deleting your tweets, based on your criteria.
+I'm deleting your tweets based on your criteria, starting with the earliest.
 `;
                 this.showAutomationNotice = true;
 
@@ -1131,7 +1133,41 @@ I'm deleting your tweets, based on your criteria.
                 break;
 
             case "deleteRetweets":
-                this.log("runJob", "deleteRetweets: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+I'm deleting your retweets, starting with the earliest.
+`;
+                this.showAutomationNotice = true;
+
+                // Load the retweets to delete
+                try {
+                    this.deleteRetweetsStartResponse = await window.electron.X.deleteRetweetsStart(this.account.id);
+                } catch (e) {
+                    await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
+                        exception: (e as Error).toString()
+                    })
+                    break;
+                }
+                this.log('runJob', ["jobType=deleteRetweets", "deleteReteetsStartResponse", this.deleteRetweetsStartResponse]);
+
+                // Start the progress
+                this.progress.totalRetweetsToDelete = this.deleteRetweetsStartResponse.tweets.length;
+                this.progress.retweetsDeleted = 0;
+                await this.syncProgress();
+
+                for (let i = 0; i < this.deleteTweetsStartResponse.tweets.length; i++) {
+                    // Load the URL
+                    await this.loadURLWithRateLimit(`https://x.com/${this.deleteRetweetsStartResponse.tweets[i].username}/status/${this.deleteTweetsStartResponse.tweets[i].tweetID}`);
+                    await this.sleep(200);
+
+                    await this.waitForPause();
+
+                    // Wait for the menu button to appear
+                    // TODO: this is where I left off...
+                }
+
                 await this.finishJob(iJob);
                 break;
 
