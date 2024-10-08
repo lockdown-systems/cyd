@@ -61,7 +61,7 @@ declare global {
                 indexParseConversations: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexIsThereMore: (accountID: number) => Promise<boolean>;
                 indexMessagesStart: (accountID: number, isFirstRun: boolean) => Promise<XIndexMessagesStartResponse>;
-                indexParseMessages: (accountID: number) => Promise<XProgress>;
+                indexParseMessages: (accountID: number, isFirstRun: boolean) => Promise<XProgress>;
                 indexTweetsFinished: (accountID: number) => Promise<XProgress>;
                 indexConversationsFinished: (accountID: number) => Promise<XProgress>;
                 indexMessagesFinished: (accountID: number) => Promise<XProgress>;

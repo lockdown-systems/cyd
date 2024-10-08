@@ -122,8 +122,8 @@ contextBridge.exposeInMainWorld('electron', {
         indexMessagesStart: (accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {
             return ipcRenderer.invoke('X:indexMessagesStart', accountID, isFirstRun);
         },
-        indexParseMessages: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseMessages', accountID)
+        indexParseMessages: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseMessages', accountID, isFirstRun)
         },
         indexTweetsFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexTweetsFinished', accountID)

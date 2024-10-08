@@ -851,7 +851,7 @@ Please wait while I index all of the messages from each conversation.
 
                         // Parse so far
                         try {
-                            this.progress = await window.electron.X.indexParseMessages(this.account.id);
+                            this.progress = await window.electron.X.indexParseMessages(this.account.id, this.isFirstRun);
                         } catch (e) {
                             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                             await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
