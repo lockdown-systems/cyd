@@ -55,6 +55,10 @@ export class AccountXViewModel extends BaseViewModel {
                     actions.push("tweets");
                     finishedActions.push("tweets");
                 }
+                if (this.account.xAccount?.archiveLikes) {
+                    actions.push("likes");
+                    finishedActions.push("likes");
+                }
                 if (this.account.xAccount?.archiveDMs) {
                     actions.push("direct messages");
                     finishedActions.push("direct messages");
@@ -105,6 +109,9 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.account.xAccount?.archiveTweets) {
             jobTypes.push("indexTweets");
             jobTypes.push("archiveTweets");
+        }
+        if (this.account.xAccount?.archiveLikes) {
+            jobTypes.push("indexLikes");
         }
         if (this.account.xAccount?.archiveDMs) {
             jobTypes.push("indexConversations");
@@ -915,7 +922,105 @@ I'm building a searchable archive web page in HTML.
                 break;
 
             case "indexLikes":
-                this.log("runJob", "indexLikes: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `
+**${this.actionString}**
+
+Hang on while I scroll down to your earliest likes that I've seen.
+`;
+                this.showAutomationNotice = true;
+
+                // Check if this is the first time indexing likes has happened in this account
+                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexLikes") == null) {
+                    this.isFirstRun = true;
+                }
+
+                // Start monitoring network requests
+                await window.electron.X.indexStart(this.account.id);
+                await this.sleep(2000);
+
+                // Load the likes and wait for tweets to appear
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await this.waitForPause();
+                    await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
+                    try {
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                        await this.waitForSelector('article');
+                        break;
+                    } catch (e) {
+                        this.log("runJob", ["jobType=indexLikes", "selector never appeared", e]);
+                        if (e instanceof TimeoutError) {
+                            // Were we rate limited?
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                            } else {
+                                // If the page isn't loading, we assume the user has no likes yet
+                                await this.waitForLoadingToFinish();
+                                this.progress.isIndexLikesFinished = true;
+                                this.progress.likesIndexed = 0;
+                                await this.syncProgress();
+                                break;
+                            }
+                        } else if (e instanceof URLChangedError) {
+                            const newURL = this.webview.getURL();
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                                newURL: newURL,
+                                exception: (e as Error).toString()
+                            })
+                            break;
+                        } else {
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                                exception: (e as Error).toString()
+                            })
+                            break;
+                        }
+                    }
+                }
+
+                while (this.progress.isIndexLikesFinished === false) {
+                    await this.waitForPause();
+
+                    // Scroll to bottom
+                    await window.electron.X.resetRateLimitInfo(this.account.id);
+                    let moreToScroll = await this.scrollToBottom();
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.sleep(500);
+                        await this.scrollToBottom();
+                        await this.waitForRateLimit();
+                        if (!await this.indexTweetsHandleRateLimit()) {
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit);
+                            break;
+                        }
+                        await this.sleep(500);
+                        moreToScroll = true;
+                    }
+
+                    // Parse so far
+                    try {
+                        this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                    } catch (e) {
+                        const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+                        await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
+                            exception: (e as Error).toString()
+                        }, latestResponseData);
+                        break;
+                    }
+                    this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
+                    await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+
+                    // Check if we're done
+                    if (!moreToScroll) {
+                        this.progress = await window.electron.X.indexLikesFinished(this.account.id);
+                        break;
+                    }
+                }
+
+                // Stop monitoring network requests
+                await window.electron.X.indexStop(this.account.id);
+
                 await this.finishJob(iJob);
                 break;
 
