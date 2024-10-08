@@ -415,16 +415,14 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (existing.length == 0) {
-            if (tweetLegacy["retweeted"]) {
-                this.progress.retweetsIndexed++;
-            }
-            if (tweetLegacy["favorited"]) {
-                this.progress.likesIndexed++;
-            }
-            if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
-                this.progress.tweetsIndexed++;
-            }
+        if (tweetLegacy["retweeted"]) {
+            this.progress.retweetsIndexed++;
+        }
+        if (tweetLegacy["favorited"]) {
+            this.progress.likesIndexed++;
+        }
+        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
+            this.progress.tweetsIndexed++;
         }
 
         return true;
@@ -829,7 +827,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexMessage(message: XAPIMessage, _isFirstRun: boolean): boolean {
+    indexMessage(message: XAPIMessage, isFirstRun: boolean): boolean {
         log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
@@ -856,7 +854,7 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (isInsert) {
+        if (isInsert || isFirstRun) {
             this.progress.messagesIndexed++;
         }
 
