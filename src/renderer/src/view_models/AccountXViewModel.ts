@@ -20,6 +20,17 @@ export enum State {
     FinishedRunningJobs = "finishedRunningJobs",
 }
 
+export type XViewModelState = {
+    state: State;
+    action: string;
+    actionString: string;
+    actionFinishedString: string;
+    progress: XProgress;
+    jobs: XJob[];
+    forceIndexEverything: boolean;
+    currentJobIndex: number;
+}
+
 export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
@@ -39,6 +50,8 @@ export class AccountXViewModel extends BaseViewModel {
         } else {
             this.state = State.Login;
         }
+
+        this.currentJobIndex = 0;
 
         super.init();
     }
@@ -1370,7 +1383,7 @@ I'm deleting your likes, starting with the earliest.
     }
 
     async run() {
-        this.log("run", "running");
+        this.log("run", `running state: ${this.state}`);
         try {
             this.progress = await window.electron.X.resetProgress(this.account.id);
 
@@ -1399,7 +1412,8 @@ You can make a local archive of your data, or you delete exactly what you choose
                     break;
 
                 case State.RunJobs:
-                    for (let i = 0; i < this.jobs.length; i++) {
+                    // i is starting at currentJobIndex instead of 0, in case we restored state
+                    for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
                         this.currentJobIndex = i;
                         try {
                             await this.runJob(i);
@@ -1427,5 +1441,29 @@ You can make a local archive of your data, or you delete exactly what you choose
                 currentURL: this.webview.getURL()
             });
         }
+    }
+
+    saveState(): XViewModelState {
+        return {
+            "state": this.state as State,
+            "action": this.action,
+            "actionString": this.actionString,
+            "actionFinishedString": this.actionFinishedString,
+            "progress": this.progress,
+            "jobs": this.jobs,
+            "currentJobIndex": this.currentJobIndex,
+            "forceIndexEverything": this.forceIndexEverything,
+        }
+    }
+
+    restoreState(state: XViewModelState) {
+        this.state = state.state;
+        this.action = state.action;
+        this.actionString = state.actionString;
+        this.actionFinishedString = state.actionFinishedString;
+        this.progress = state.progress;
+        this.jobs = state.jobs;
+        this.currentJobIndex = state.currentJobIndex;
+        this.forceIndexEverything = state.forceIndexEverything;
     }
 }

@@ -10,7 +10,7 @@ import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 
-import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
+import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -35,7 +35,7 @@ const isPaused = ref<boolean>(false);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
-const isWebviewMounted = ref(true);
+const canStateLoopRun = ref(true);
 
 // Keep currentState in sync
 watch(
@@ -43,7 +43,6 @@ watch(
     (newState) => {
         if (newState) {
             currentState.value = newState as State;
-            console.log('Current state:', currentState.value);
         }
     },
     { deep: true, }
@@ -178,9 +177,13 @@ const startDeletingClicked = async () => {
 
 const startStateLoop = async () => {
     console.log('State loop started');
-    while (isWebviewMounted.value) {
-        await runNextState();
+    while (canStateLoopRun.value) {
+        // Run next state
+        if (accountXViewModel.value !== null) {
+            await accountXViewModel.value.run();
+        }
 
+        // Break out of the state loop if the view model is in a final state
         if (
             accountXViewModel.value?.state === State.DashboardDisplay ||
             accountXViewModel.value?.state === State.FinishedRunningJobs
@@ -194,12 +197,6 @@ const startStateLoop = async () => {
     console.log('State loop ended');
 };
 
-const runNextState = async () => {
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.run();
-    }
-};
-
 const reset = async () => {
     await checkIfIsFirstIndex();
     await accountXViewModel.value?.reset()
@@ -211,14 +208,13 @@ const updateArchivePath = async () => {
     archivePath.value = path ? path : '';
 };
 
-const onAutomationErrorContinue = () => {
-    console.log('Continuing automation after error');
-    if (accountXViewModel.value) {
-        accountXViewModel.value?.errorJob(accountXViewModel.value?.currentJobIndex);
-        accountXViewModel.value?.resume();
-    } else {
-        console.error('AccountXViewModel not found');
-    }
+const onAutomationErrorRetry = () => {
+    console.log('Retrying automation after error');
+
+    // Store the state of the view model before the error
+    const state: XViewModelState | undefined = accountXViewModel.value?.saveState();
+    localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
+    emit('onRefreshClicked');
 };
 
 const onAutomationErrorCancel = () => {
@@ -261,6 +257,21 @@ onMounted(async () => {
         if (props.account.xAccount !== null) {
             accountXViewModel.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value, emitter);
             await accountXViewModel.value.init();
+
+            // If there's a saved state from a retry, restore it
+            const savedState = localStorage.getItem(`account-${props.account.id}-state`);
+            if (savedState) {
+                console.log('Restoring saved state', savedState);
+                const savedStateObj: XViewModelState = JSON.parse(savedState);
+
+                accountXViewModel.value.restoreState(savedStateObj);
+                currentState.value = savedStateObj.state as State;
+                progress.value = savedStateObj.progress;
+                currentJobs.value = savedStateObj.jobs;
+
+                localStorage.removeItem(`account-${props.account.id}-state`);
+            }
+
             await startStateLoop();
         }
     } else {
@@ -271,18 +282,18 @@ onMounted(async () => {
     emitter?.on(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Define automation error handlers on the global emitter for this account
-    emitter?.on(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
+    emitter?.on(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });
 
 onUnmounted(async () => {
-    isWebviewMounted.value = false;
+    canStateLoopRun.value = false;
 
     // Remove cancel automation handler
     emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Remove automation error handlers
-    emitter?.off(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
+    emitter?.off(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });
 </script>

@@ -65,18 +65,18 @@ const toggleShowDetails = () => {
     }
 };
 
-const shouldContinue = async () => {
+const shouldRetry = async () => {
     if (!details.value) {
         console.error("No details provided for automation error report");
         return;
     }
 
     if (await window.electron.showQuestion(
-        "Do you want to continue onto the next step anyway, even though there was an error?",
-        "Continue to Next Step",
-        "Return to Dashboard"
+        "Do you want to try this step again, or cancel and go back to the dashboard?",
+        "Retry",
+        "Cancel"
     )) {
-        emitter.emit(`automation-error-${details.value?.accountID}-continue`);
+        emitter.emit(`automation-error-${details.value?.accountID}-retry`);
     } else {
         emitter.emit(`automation-error-${details.value?.accountID}-cancel`);
     }
@@ -88,7 +88,7 @@ const submitReport = async () => {
 
         await window.electron.showError("Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.")
         hide();
-        await shouldContinue();
+        await shouldRetry();
         return;
     }
 
@@ -124,7 +124,7 @@ const submitReport = async () => {
     }
 
     hide();
-    await shouldContinue();
+    await shouldRetry();
 };
 
 const doNotSubmitReport = async () => {
@@ -132,7 +132,7 @@ const doNotSubmitReport = async () => {
 
     console.log("Skipping submission of automation error report");
     hide();
-    await shouldContinue();
+    await shouldRetry();
 };
 
 onMounted(async () => {
