@@ -130,7 +130,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
-            console.log("startArchiving", this.jobs);
+            console.log("startArchiving", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -194,7 +194,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
-            console.log("startDeleting", this.jobs);
+            console.log("startDeleting", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -1652,6 +1652,7 @@ You can make a local archive of your data, or you delete exactly what you choose
                             break;
                         }
                     }
+                    this.currentJobIndex = 0;
 
                     this.state = State.FinishedRunningJobs;
                     this.showBrowser = false;
