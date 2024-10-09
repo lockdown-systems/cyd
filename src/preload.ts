@@ -164,6 +164,9 @@ contextBridge.exposeInMainWorld('electron', {
         isRateLimited: (accountID: number): Promise<XRateLimitInfo> => {
             return ipcRenderer.invoke('X:isRateLimited', accountID);
         },
+        getProgress: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:getProgress', accountID);
+        },
         getProgressInfo: (accountID: number): Promise<XProgressInfo> => {
             return ipcRenderer.invoke('X:getProgressInfo', accountID);
         },

@@ -205,6 +205,39 @@ export class BaseViewModel {
         }
     }
 
+    // wait for containerSelector to exist, and also selector within containerSelector to exist
+    async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = 5000) {
+        const startingURL = this.webview.getURL();
+
+        const startTime = Date.now();
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            if (Date.now() - startTime > timeout) {
+                throw new TimeoutError(selector);
+            }
+            const found = await this.getWebview()?.executeJavaScript(`
+                (() => {
+                    const el = document.querySelector('${containerSelector}');
+                    if(el === null) { return false; }
+                    const innerEl = el.querySelector('${selector}');
+                    if(innerEl === null) { return false; }
+                    return true;
+                })()
+            `);
+            if (found) {
+                console.log("waitForSelectorWithinSelector", `found: ${selector}`);
+                break;
+            }
+            await this.sleep(200);
+
+            // Check if the URL has changed
+            if (this.webview.getURL() !== startingURL) {
+                console.log("waitForSelectorWithinSelector", `URL changed: ${this.webview.getURL()}`);
+                throw new URLChangedError(startingURL, this.webview.getURL());
+            }
+        }
+    }
+
     async checkInternetConnectivity(): Promise<boolean> {
         const testURL = this.api.apiURL;
         if (!testURL) {
@@ -344,6 +377,106 @@ export class BaseViewModel {
             let el = document.querySelector('${selector}');
             if(el === null) { return false; }
             el.click();
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // click the first element in the list of elements that match selector
+    async scriptClickElementFirst(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            if(els.length == 0) { return false; }
+            const firstEl = els[0];
+            firstEl.click()
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // click the last element in the list of elements that match selector
+    async scriptClickElementLast(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            if(els.length == 0) { return false; }
+            const lastEl = els[els.length - 1];
+            lastEl.click()
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // if the first element in the list of elements that match containerSelector, and click selector
+    async scriptClickElementWithinElementFirst(containerSelector: string, selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${containerSelector}');
+            if(els.length == 0) { return false; }
+            const firstEl = els[0];
+            const innerEl = firstEl.querySelector('${selector}');
+            if(innerEl === null) { return false; }
+            innerEl.click();
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // if the last element in the list of elements that match containerSelector, and click selector
+    async scriptClickElementWithinElementLast(containerSelector: string, selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${containerSelector}');
+            if(els.length == 0) { return false; }
+            const lastEl = els[els.length - 1];
+            const innerEl = lastEl.querySelector('${selector}');
+            if(innerEl === null) { return false; }
+            innerEl.click();
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    async scriptMouseoverElement(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            let el = document.querySelector('${selector}');
+            if(el === null) { return false; }
+            el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // mouseover the first element in the list of elements that match selector
+    async scriptMouseoverElementFirst(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            if(els.length == 0) { return false; }
+            const firstEl = els[0];
+            firstEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
+            return true;
+        })()
+        `;
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // mouseover the last element in the list of elements that match selector
+    async scriptMouseoverElementLast(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            if(els.length == 0) { return false; }
+            const lastEl = els[els.length - 1];
+            lastEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
             return true;
         })()
         `;

@@ -179,8 +179,15 @@ export class XAccountController {
             }
 
             // Monitor for deleting conversations
-            if (details.method == "POST" && details.statusCode == 204) {
-                log.debug("XAccountController: possible conversation deleted:", details);
+            if (
+                details.url.startsWith("https://x.com/i/api/1.1/dm/conversation/") &&
+                details.url.endsWith("/delete.json") &&
+                details.method == "POST" &&
+                details.statusCode == 204
+            ) {
+                const urlParts = details.url.split("/");
+                const conversationID = urlParts[urlParts.length - 2];
+                this.deleteDMsMarkDeleted(conversationID);
             }
         });
     }
@@ -649,7 +656,7 @@ export class XAccountController {
             newProgress = true;
 
             // Update the conversation
-            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ?, updatedInDatabaseAt = ?, shouldIndexMessages = ? WHERE conversationID = ?', [
+            exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ?, updatedInDatabaseAt = ?, shouldIndexMessages = ?, deletedAt = NULL WHERE conversationID = ?', [
                 conversation.sort_timestamp,
                 conversation.type,
                 conversation.min_entry_id,
@@ -1330,70 +1337,25 @@ export class XAccountController {
         return this.progress;
     }
 
-    // Returns false if the loop should stop
-    async deleteDMsParseConversationsResponseData(iResponse: number): Promise<boolean> {
-        const responseData = this.mitmController.responseData[iResponse];
+    deleteDMsMarkDeleted(conversationID: string) {
+        log.info(`XAccountController.deleteDMsMarkDeleted: conversationID=${conversationID}`);
 
-        // Already processed?
-        if (responseData.processed) {
-            return true;
+        if (!this.db) {
+            this.initDB();
         }
 
-        // Rate limited?
-        if (responseData.status == 429) {
-            log.warn('XAccountController.deleteDMsParseConversationsResponseData: RATE LIMITED');
-            this.mitmController.responseData[iResponse].processed = true;
-            return false;
-        }
+        // Mark the conversation as deleted
+        exec(this.db, 'UPDATE conversation SET deletedAt = ? WHERE conversationID = ?', [new Date(), conversationID]);
 
-        // Process the response
-        if (
-            (
-                // XAPIInboxTimeline
-                responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") ||
-                responseData.url.includes("/i/api/1.1/dm/inbox_timeline/untrusted.json") ||
+        // Count the number of messages that are deleted
+        const totalMessagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE conversationID = ? AND deletedAt is NULL", [conversationID], "get") as Sqlite3Count;
 
-                // XAPIInboxInitialState
-                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
-            ) &&
-            responseData.status == 200
-        ) {
-            if (
-                responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-                responseData.url.includes("/i/api/1.1/dm/user_updates.json")
-            ) {
-                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
-                if (!inbox_initial_state.inbox_initial_state) {
-                    // Skip this response
-                    return true;
-                }
-                this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
-            } else {
-                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
-                this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
-            }
+        // Mark all the messages as deleted
+        exec(this.db, 'UPDATE message SET deletedAt = ? WHERE conversationID = ? AND deletedAt is NULL', [new Date(), conversationID]);
 
-            this.mitmController.responseData[iResponse].processed = true;
-            log.debug('XAccountController.deleteDMsParseConversationsResponseData: processed', iResponse);
-        } else {
-            // Skip response
-            this.mitmController.responseData[iResponse].processed = true;
-        }
-
-        return true;
-    }
-
-    async deleteDMsScrollToBottom(): Promise<void> {
-        log.info(`XAccountController.deleteDMsScrollToBottom: parsing ${this.mitmController.responseData.length} responses`);
-
-        await this.mitmController.clearProcessed();
-
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.deleteDMsParseConversationsResponseData(i)) {
-                return;
-            }
-        }
+        // Update the progress
+        this.progress.conversationsDeleted++;
+        this.progress.messagesDeleted += totalMessagesDeleted.count;
     }
 
     async syncProgress(progressJSON: string) {
@@ -1415,11 +1377,17 @@ export class XAccountController {
         return this.rateLimitInfo;
     }
 
+    async getProgress(): Promise<XProgress> {
+        return this.progress;
+    }
+
     async getProgressInfo(): Promise<XProgressInfo> {
         const totalTweetsArchived: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get") as Sqlite3Count;
         const totalMessagesIndexed: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
         const totalTweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
         const totalRetweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
+        const totalLikesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
+        const totalConversationsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
         const totalMessagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
 
         const progressInfo = emptyXProgressInfo();
@@ -1428,7 +1396,8 @@ export class XAccountController {
         progressInfo.totalMessagesIndexed = totalMessagesIndexed.count;
         progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
         progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
-        progressInfo.totalLikesDeleted = 0;
+        progressInfo.totalLikesDeleted = totalLikesDeleted.count;
+        progressInfo.totalConversationsDeleted = totalConversationsDeleted.count;
         progressInfo.totalMessagesDeleted = totalMessagesDeleted.count;
         return progressInfo;
     }
@@ -1727,6 +1696,15 @@ export const defineIPCX = () => {
         }
     });
 
+    ipcMain.handle('X:getProgress', async (_, accountID: number): Promise<XProgress> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getProgress();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
     ipcMain.handle('X:getProgressInfo', async (_, accountID: number): Promise<XProgressInfo> => {
         try {
             const controller = getXAccountController(accountID);
@@ -1794,15 +1772,6 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.deleteDMsStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteDMsScrollToBottom', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.deleteDMsScrollToBottom();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

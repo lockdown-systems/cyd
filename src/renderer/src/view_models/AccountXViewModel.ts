@@ -388,7 +388,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         if (!username) {
             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
-            await this.error(AutomationErrorType.X_login_FailedToGetUsername, null, {
+            await this.error(AutomationErrorType.X_login_FailedToGetUsername, {}, {
                 latestResponseData: latestResponseData,
                 currentURL: this.webview.getURL()
             });
@@ -442,10 +442,89 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("errorJob", this.jobs[iJob].jobType);
     }
 
+    async waitForSelectorDeleteDMs(selector: string, errorType: AutomationErrorType): Promise<boolean> {
+        try {
+            await this.waitForSelector(selector);
+        } catch (e) {
+            this.log("runJob", ["jobType=deleteDMs", "waitForSelectorDeleteDMs: selector never appeared", e]);
+            if (e instanceof TimeoutError) {
+                // Were we rate limited?
+                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                if (this.rateLimitInfo.isRateLimited) {
+                    await this.waitForRateLimit();
+                } else {
+                    await this.error(errorType, {
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
+                    })
+                    return false;
+                }
+            } else if (e instanceof URLChangedError) {
+                const newURL = this.webview.getURL();
+                await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
+                    newURL: newURL,
+                    exception: (e as Error).toString()
+                }, {
+                    currentURL: this.webview.getURL()
+                })
+                return false;
+            } else {
+                await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
+                    exception: (e as Error).toString()
+                }, {
+                    currentURL: this.webview.getURL()
+                })
+                return false;
+            }
+        }
+        return true;
+    }
+
+    async waitForSelectorWithinSelectorDeleteDMs(containerSelector: string, selector: string, errorType: AutomationErrorType): Promise<boolean> {
+        try {
+            await this.waitForSelectorWithinSelector(containerSelector, selector);
+        } catch (e) {
+            this.log("runJob", ["jobType=deleteDMs", "waitForSelectorWithinSelectorDeleteDMs: selector within selector never appeared", e]);
+            if (e instanceof TimeoutError) {
+                // Were we rate limited?
+                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                if (this.rateLimitInfo.isRateLimited) {
+                    await this.waitForRateLimit();
+                } else {
+                    await this.error(errorType, {
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
+                    })
+                    return false;
+                }
+            } else if (e instanceof URLChangedError) {
+                const newURL = this.webview.getURL();
+                await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
+                    newURL: newURL,
+                    exception: (e as Error).toString()
+                }, {
+                    currentURL: this.webview.getURL()
+                })
+                return false;
+            } else {
+                await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
+                    exception: (e as Error).toString()
+                }, {
+                    currentURL: this.webview.getURL()
+                })
+                return false;
+            }
+        }
+        return true;
+    }
+
     async runJob(iJob: number) {
         await this.waitForPause();
 
         // Variables for use in the switch statement
+        let errorTriggered = false;
         let alreadyDeleted = false;
         let tweetsToDelete: XDeleteTweetsStartResponse;
         let archiveStartResponse: XArchiveStartResponse;
@@ -545,7 +624,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
-                            await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, null, {
+                            await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
                                 currentURL: this.webview.getURL()
                             });
                             break;
@@ -1059,7 +1138,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                         await this.scrollToBottom();
                         await this.waitForRateLimit();
                         if (!await this.indexTweetsHandleRateLimit()) {
-                            await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, null, {
+                            await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, {}, {
                                 currentURL: this.webview.getURL()
                             });
                             break;
@@ -1378,8 +1457,7 @@ I'm deleting your likes, starting with the earliest.
                 this.showBrowser = true;
                 this.instructions = `**${this.actionString}**
 
-I'm loading your messages page.
-`;
+I'm deleting all of your direct message conversations, start with the most recent.`;
                 this.showAutomationNotice = true;
 
                 // Start the progress
@@ -1424,70 +1502,94 @@ I'm loading your messages page.
                     }
                 }
 
-                this.instructions = `**${this.actionString}**
-                
-I'm scrolling down to your earliest direct message conversations.
-                `;
-
-                // Scroll all the way to the bottom. To do this accurately though, we need to basically
-                // reindex all the conversations (but without saving users and conversations) so we can 
-                // monitor the "HAS_MORE" status in the API responses, since the frontend is unreliable
-
-                // Start monitoring network requests
-                await window.electron.X.indexStart(this.account.id);
-                await this.sleep(2000);
-
+                errorTriggered = false;
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
                     await this.waitForPause();
 
-                    // Scroll to bottom
-                    await window.electron.X.resetRateLimitInfo(this.account.id);
-                    const moreToScroll = await this.scrollToBottom();
-                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                    if (this.rateLimitInfo.isRateLimited) {
-                        await this.waitForRateLimit();
+                    // Wait for conversation selector
+                    if (!await this.waitForSelectorDeleteDMs(
+                        'div[data-testid="conversation"]',
+                        AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed
+                    )) {
+                        errorTriggered = true;
+                        break;
                     }
 
-                    // Parse so far
-                    try {
-                        await window.electron.X.deleteDMsScrollToBottom(this.account.id);
-                    } catch (e) {
-                        const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
-                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ParseConversationsError, {
-                            exception: (e as Error).toString()
-                        }, {
-                            latestResponseData: latestResponseData,
+                    // Mouseover the first conversation
+                    if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
+                        await this.error(AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed, {}, {
                             currentURL: this.webview.getURL()
                         });
+                        errorTriggered = true;
                         break;
                     }
 
-                    // Check if we're done
-                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
+                    // Wait for menu button selector
+                    if (!await this.waitForSelectorWithinSelectorDeleteDMs(
+                        'div[data-testid="conversation"]',
+                        'button[aria-label="More"]',
+                        AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed
+                    )) {
+                        errorTriggered = true;
                         break;
-                    } else {
-                        if (!moreToScroll) {
-                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
-                            await this.sleep(500);
-                            await this.scrollUp(1000);
-                        }
                     }
+
+                    // Click the menu button
+                    if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
+                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed, {}, {
+                            currentURL: this.webview.getURL()
+                        });
+                        errorTriggered = true;
+                        break;
+                    }
+
+                    // Wait for delete button selector
+                    if (!await this.waitForSelectorDeleteDMs(
+                        'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
+                        AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed
+                    )) {
+                        errorTriggered = true;
+                        break;
+                    }
+
+                    // Click the delete button
+                    if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
+                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed, {}, {
+                            currentURL: this.webview.getURL()
+                        });
+                        errorTriggered = true;
+                        break;
+                    }
+
+                    // Wait for delete confirm selector
+                    if (!await this.waitForSelectorDeleteDMs(
+                        'button[data-testid="confirmationSheetConfirm"]',
+                        AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed
+                    )) {
+                        errorTriggered = true;
+                        break;
+                    }
+
+                    // Click the confirm button
+                    if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
+                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed, {}, {
+                            currentURL: this.webview.getURL()
+                        });
+                        errorTriggered = true;
+                        break;
+                    }
+
+                    await this.sleep(500);
+                    await this.waitForLoadingToFinish();
+
+                    // Update the progress
+                    this.progress = await window.electron.X.getProgress(this.account.id);
                 }
 
-                // Stop monitoring network requests
-                await window.electron.X.indexStop(this.account.id);
-
-                this.instructions = `**${this.actionString}**
-
-I'm deleting all of your direct message conversations, start with the oldest.
-`;
-
-                this.pause()
-                await this.waitForPause();
-
-                // TODO: test and make sure scrolling to the bottom works.
-                // next, figure out how to select the bottom conversation to delete
+                if (errorTriggered) {
+                    break;
+                }
 
                 await this.finishJob(iJob);
                 break;
