@@ -94,7 +94,6 @@ const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
-const deleteDMsDaysOld = ref(0);
 
 // Force re-index everything options
 const isFirstIndex = ref(true);
@@ -148,7 +147,6 @@ const updateSettings = async () => {
             deleteLikes: deleteLikes.value,
             deleteLikesDaysOld: deleteLikesDaysOld.value,
             deleteDMs: deleteDMs.value,
-            deleteDMsDaysOld: deleteDMsDaysOld.value
         }
     };
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
@@ -245,7 +243,6 @@ onMounted(async () => {
         deleteLikes.value = props.account.xAccount.deleteLikes;
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = props.account.xAccount.deleteDMs;
-        deleteDMsDaysOld.value = props.account.xAccount.deleteDMsDaysOld;
     }
 
     await checkIfIsFirstIndex();
@@ -514,20 +511,8 @@ onUnmounted(async () => {
                                 <div class="form-check mb-2">
                                     <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
                                     <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
-                                        Delete direct messages
+                                        Delete all direct messages
                                     </label>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteDMsDaysOld">
-                                        older than
-                                    </label>
-                                    <div class="input-group flex-nowrap">
-                                        <input id="deleteDMsDaysOld" v-model="deleteDMsDaysOld" type="text"
-                                            class="form-control form-short">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text">days</span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">

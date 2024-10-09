@@ -38,7 +38,6 @@ export type XAccount = {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
-    deleteDMsDaysOld: number;
 };
 
 // X models

@@ -79,8 +79,7 @@ export const runMainMigrations = () => {
     deleteRetweetsDaysOld INTEGER DEFAULT 30,
     deleteLikes BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 60,
-    deleteDMs BOOLEAN DEFAULT 0,
-    deleteDMsDaysOld INTEGER DEFAULT 30
+    deleteDMs BOOLEAN DEFAULT 0
 );`,
             ]
         }
@@ -130,7 +129,6 @@ interface XAccountRow {
     deleteLikes: number;
     deleteLikesDaysOld: number;
     deleteDMs: number;
-    deleteDMsDaysOld: number;
 }
 
 // Utils
@@ -195,7 +193,6 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
-        deleteDMsDaysOld: row.deleteDMsDaysOld,
     };
 }
 
@@ -225,7 +222,6 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
-            deleteDMsDaysOld: row.deleteDMsDaysOld,
         });
     }
     return accounts;
@@ -262,8 +258,7 @@ export const saveXAccount = (account: XAccount) => {
             deleteRetweetsDaysOld = ?,
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
-            deleteDMs = ?,
-            deleteDMsDaysOld = ?
+            deleteDMs = ?
         WHERE id = ?
     `, [
         account.username,
@@ -282,7 +277,6 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
-        account.deleteDMsDaysOld,
         account.id
     ]);
 }
