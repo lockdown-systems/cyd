@@ -190,13 +190,6 @@ export type XIndexMessagesStartResponse = {
     totalConversations: number;
 }
 
-export function emptyXIndexMessagesStartResponse(): XIndexMessagesStartResponse {
-    return {
-        conversationIDs: [],
-        totalConversations: 0
-    }
-}
-
 export type XRateLimitInfo = {
     isRateLimited: boolean;
     rateLimitReset: number;

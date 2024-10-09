@@ -2,8 +2,8 @@ import { BaseViewModel, TimeoutError, URLChangedError, InternetDownError } from 
 import {
     XJob,
     XProgress, emptyXProgress,
-    XArchiveStartResponse, emptyXArchiveStartResponse,
-    XIndexMessagesStartResponse, emptyXIndexMessagesStartResponse,
+    XArchiveStartResponse,
+    XIndexMessagesStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse
@@ -40,9 +40,6 @@ export class AccountXViewModel extends BaseViewModel {
     public forceIndexEverything: boolean = false;
     public currentJobIndex: number = 0;
     private isFirstRun: boolean = false;
-
-    private archiveStartResponse: XArchiveStartResponse = emptyXArchiveStartResponse();
-    private indexMessagesStartResponse: XIndexMessagesStartResponse = emptyXIndexMessagesStartResponse();
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -214,7 +211,6 @@ export class AccountXViewModel extends BaseViewModel {
         this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
         this.isFirstRun = false;
-        this.archiveStartResponse = emptyXArchiveStartResponse();
         this.state = State.Dashboard;
     }
 
@@ -452,6 +448,8 @@ export class AccountXViewModel extends BaseViewModel {
         // Variables for use in the switch statement
         let alreadyDeleted = false;
         let tweetsToDelete: XDeleteTweetsStartResponse;
+        let archiveStartResponse: XArchiveStartResponse;
+        let indexMessagesStartResponse: XIndexMessagesStartResponse;
 
         // Start the job
         this.jobs[iJob].startedAt = new Date();
@@ -602,7 +600,7 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
 
                 // Initialize archiving of tweets
                 try {
-                    this.archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
+                    archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
                         exception: (e as Error).toString()
@@ -611,30 +609,30 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                     })
                     break;
                 }
-                this.log('runJob', ["jobType=archiveTweets", "archiveStartResponse", this.archiveStartResponse]);
+                this.log('runJob', ["jobType=archiveTweets", "archiveStartResponse", archiveStartResponse]);
 
                 if (this.webContentsID) {
 
                     // Start the progress
-                    this.progress.totalTweetsToArchive = this.archiveStartResponse.items.length;
+                    this.progress.totalTweetsToArchive = archiveStartResponse.items.length;
                     this.progress.tweetsArchived = 0;
                     this.progress.newTweetsArchived = 0;
 
                     // Archive the tweets
-                    for (let i = 0; i < this.archiveStartResponse.items.length; i++) {
+                    for (let i = 0; i < archiveStartResponse.items.length; i++) {
                         await this.waitForPause();
 
                         // Already saved?
-                        if (await window.electron.archive.isPageAlreadySaved(this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename)) {
-                            console.log("Already archived", this.archiveStartResponse.items[i].basename);
+                        if (await window.electron.archive.isPageAlreadySaved(archiveStartResponse.outputPath, archiveStartResponse.items[i].basename)) {
+                            console.log("Already archived", archiveStartResponse.items[i].basename);
                             // Ensure the tweet has an archivedAt date
                             try {
-                                await window.electron.X.archiveTweetCheckDate(this.account.id, this.archiveStartResponse.items[i].id);
+                                await window.electron.X.archiveTweetCheckDate(this.account.id, archiveStartResponse.items[i].id);
                             } catch (e) {
                                 await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
                                     exception: (e as Error).toString()
                                 }, {
-                                    archiveStartResponseItem: this.archiveStartResponse.items[i],
+                                    archiveStartResponseItem: archiveStartResponse.items[i],
                                     index: i,
                                     currentURL: this.webview.getURL()
                                 })
@@ -644,23 +642,23 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                             this.progress.tweetsArchived += 1;
                             continue;
                         } else {
-                            console.log("Archiving", this.archiveStartResponse.items[i].basename);
+                            console.log("Archiving", archiveStartResponse.items[i].basename);
                         }
 
                         // Load the URL
-                        await this.loadURLWithRateLimit(this.archiveStartResponse.items[i].url);
+                        await this.loadURLWithRateLimit(archiveStartResponse.items[i].url);
 
                         // Save the page
-                        await window.electron.archive.savePage(this.webContentsID, this.archiveStartResponse.outputPath, this.archiveStartResponse.items[i].basename);
+                        await window.electron.archive.savePage(this.webContentsID, archiveStartResponse.outputPath, archiveStartResponse.items[i].basename);
 
                         // Update tweet's archivedAt date
                         try {
-                            await window.electron.X.archiveTweet(this.account.id, this.archiveStartResponse.items[i].id);
+                            await window.electron.X.archiveTweet(this.account.id, archiveStartResponse.items[i].id);
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
                                 exception: (e as Error).toString()
                             }, {
-                                archiveStartResponseItem: this.archiveStartResponse.items[i],
+                                archiveStartResponseItem: archiveStartResponse.items[i],
                                 index: i,
                                 currentURL: this.webview.getURL()
                             })
@@ -801,7 +799,7 @@ Please wait while I index all of the messages from each conversation.
 
                 // Load the conversations
                 try {
-                    this.indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
+                    indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
                         exception: (e as Error).toString()
@@ -810,14 +808,14 @@ Please wait while I index all of the messages from each conversation.
                     })
                     break;
                 }
-                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", this.indexMessagesStartResponse]);
+                this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", indexMessagesStartResponse]);
 
                 // Start the progress
-                this.progress.totalConversations = this.indexMessagesStartResponse?.totalConversations;
-                this.progress.conversationMessagesIndexed = this.progress.totalConversations - this.indexMessagesStartResponse?.conversationIDs.length;
+                this.progress.totalConversations = indexMessagesStartResponse?.totalConversations;
+                this.progress.conversationMessagesIndexed = this.progress.totalConversations - indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
 
-                for (let i = 0; i < this.indexMessagesStartResponse.conversationIDs.length; i++) {
+                for (let i = 0; i < indexMessagesStartResponse.conversationIDs.length; i++) {
                     await this.waitForPause();
 
                     // Load the URL (in 3 tries)
@@ -827,7 +825,7 @@ Please wait while I index all of the messages from each conversation.
                     while (true) {
                         await this.waitForPause();
 
-                        await this.loadURLWithRateLimit("https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]);
+                        await this.loadURLWithRateLimit("https://x.com/messages/" + indexMessagesStartResponse.conversationIDs[i]);
                         try {
                             await this.waitForSelector('div[data-testid="DmActivityContainer"]');
                             break;
@@ -849,14 +847,14 @@ Please wait while I index all of the messages from each conversation.
                             } else if (e instanceof URLChangedError) {
                                 // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
                                 // This is a page that says: "Get X Premium to message this user"
-                                if (this.webview && this.webview.getURL() != "https://x.com/messages/" + this.indexMessagesStartResponse.conversationIDs[i]) {
+                                if (this.webview && this.webview.getURL() != "https://x.com/messages/" + indexMessagesStartResponse.conversationIDs[i]) {
                                     this.log("runJob", ["jobType=indexMessages", "conversation is inaccessible, so skipping it"]);
                                     this.progress.conversationMessagesIndexed += 1;
                                     await this.syncProgress();
                                     shouldSkip = true;
 
                                     // Mark the conversation's shouldIndexMessages to false
-                                    await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
+                                    await window.electron.X.indexConversationFinished(this.account.id, indexMessagesStartResponse.conversationIDs[i]);
                                     break;
                                 } else {
                                     await this.error(AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt, {
@@ -935,7 +933,7 @@ Please wait while I index all of the messages from each conversation.
                     }
 
                     // Mark the conversation's shouldIndexMessages to false
-                    await window.electron.X.indexConversationFinished(this.account.id, this.indexMessagesStartResponse.conversationIDs[i]);
+                    await window.electron.X.indexConversationFinished(this.account.id, indexMessagesStartResponse.conversationIDs[i]);
                 }
 
                 // Stop monitoring network requests
