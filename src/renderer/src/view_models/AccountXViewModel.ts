@@ -130,6 +130,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+            console.log("startArchiving", this.jobs);
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -193,6 +194,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+            console.log("startDeleting", this.jobs);
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -1464,6 +1466,11 @@ I'm deleting all of your direct message conversations, start with the most recen
                 await this.syncProgress();
                 this.progress = await window.electron.X.deleteDMsStart(this.account.id);
 
+                if (this.progress.totalConversationsToDelete == 0) {
+                    await this.finishJob(iJob);
+                    break;
+                }
+
                 // Load the messages and wait for tweets to appear
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
@@ -1585,6 +1592,11 @@ I'm deleting all of your direct message conversations, start with the most recen
 
                     // Update the progress
                     this.progress = await window.electron.X.getProgress(this.account.id);
+
+                    // Have we deleted all conversations?
+                    if (this.progress.conversationsDeleted == this.progress.totalConversationsToDelete) {
+                        break;
+                    }
                 }
 
                 if (errorTriggered) {

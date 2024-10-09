@@ -552,13 +552,11 @@ onUnmounted(async () => {
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0">
+                        <li
+                            v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
-                        </li>
-                        <li v-if="account.xAccount?.archiveDMs || (progress?.messagesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations,
+                            including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
                         </li>
                     </ul>
 
@@ -595,13 +593,11 @@ onUnmounted(async () => {
                                 <i class="fa-solid fa-floppy-disk archive-bullet" />
                                 <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                             </li>
-                            <li v-if="(progress?.conversationsIndexed ?? 0) > 0">
+                            <li
+                                v-if="(progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
                                 <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
-                            </li>
-                            <li v-if="(progress?.messagesIndexed ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations,
+                                including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
                             </li>
                         </ul>
                     </div>
@@ -620,9 +616,11 @@ onUnmounted(async () => {
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.deleteDMs || (progress?.messagesDeleted ?? 0) > 0">
+                        <li
+                            v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
-                            <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> direct messages
+                            <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong> conversations,
+                            including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> messages
                         </li>
                     </ul>
 
