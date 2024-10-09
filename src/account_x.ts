@@ -629,8 +629,6 @@ export class XAccountController {
             this.initDB();
         }
 
-        let newProgress = false;
-
         // Have we seen this conversation before?
         const existing: XConversationRow[] = exec(this.db, 'SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all") as XConversationRow[];
         if (existing.length > 0) {
@@ -653,8 +651,6 @@ export class XAccountController {
                 newMaxEntryID: conversation.max_entry_id,
             });
 
-            newProgress = true;
-
             // Update the conversation
             exec(this.db, 'UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ?, updatedInDatabaseAt = ?, shouldIndexMessages = ?, deletedAt = NULL WHERE conversationID = ?', [
                 conversation.sort_timestamp,
@@ -667,8 +663,6 @@ export class XAccountController {
                 conversation.conversation_id,
             ]);
         } else {
-            newProgress = true;
-
             // Add the conversation
             exec(this.db, 'INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted, addedToDatabaseAt, shouldIndexMessages) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
                 conversation.conversation_id,
@@ -694,9 +688,7 @@ export class XAccountController {
         });
 
         // Update progress
-        if (newProgress) {
-            this.progress.conversationsIndexed++;
-        }
+        this.progress.conversationsIndexed++;
 
         return true;
     }
@@ -822,6 +814,9 @@ export class XAccountController {
 
         // On first run, we need to index all conversations
         if (isFirstRun) {
+            // Delete the existing message data now, in order to accurately count the progress
+            exec(this.db, 'DELETE FROM message');
+
             const conversationIDs: XConversationRow[] = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all") as XConversationRow[];
             return {
                 conversationIDs: conversationIDs.map((row) => row.conversationID),
@@ -840,7 +835,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexMessage(message: XAPIMessage): boolean {
+    indexMessage(message: XAPIMessage, _isFirstRun: boolean): boolean {
         log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
@@ -875,7 +870,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    async indexParseMessagesResponseData(iResponse: number): Promise<boolean> {
+    async indexParseMessagesResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
         let shouldReturnFalse = false;
         const responseData = this.mitmController.responseData[iResponse];
 
@@ -928,7 +923,7 @@ export class XAccountController {
                 log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
                 for (let i = 0; i < entries.length; i++) {
                     const message = entries[i];
-                    if (!this.indexMessage(message)) {
+                    if (!this.indexMessage(message, isFirstRun)) {
                         shouldReturnFalse = true;
                         break;
                     }
@@ -960,13 +955,8 @@ export class XAccountController {
         this.progress.currentJob = "indexMessages";
         this.progress.isIndexMessagesFinished = false;
 
-        if (isFirstRun) {
-            // Delete the existing message data now, in order to accurately count the progress
-            exec(this.db, 'DELETE FROM message');
-        }
-
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.indexParseMessagesResponseData(i)) {
+            if (!await this.indexParseMessagesResponseData(i, isFirstRun)) {
                 this.progress.shouldStopEarly = true;
                 return this.progress;
             }
