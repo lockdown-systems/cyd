@@ -96,7 +96,6 @@ test("createXAccount should create a new XAccount", () => {
     expect(xAccount).toHaveProperty('deleteLikes');
     expect(xAccount).toHaveProperty('deleteLikesDaysOld');
     expect(xAccount).toHaveProperty('deleteDMs');
-    expect(xAccount).toHaveProperty('deleteDMsDaysOld');
 });
 
 test("saveXAccount should update an existing XAccount", () => {

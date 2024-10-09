@@ -586,16 +586,19 @@ test("XAccountController.indexParseMessages() should add all the messages on fir
 test("XAccountController.indexParseMessages() should add all the messages, on re-index", async () => {
     // Index messages the first time
     let controller = createController("indexDMs");
+    controller.indexMessagesStart(true);
     let progress: XProgress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 
     // Re-index them
     controller = createController("indexDMs");
+    controller.indexMessagesStart(false);
     progress = await controller.indexParseMessages(false);
     expect(progress.messagesIndexed).toBe(0);
 
     // Re-index, but this time set isFirstRun to true
     controller = createController("indexDMs");
+    controller.indexMessagesStart(true);
     progress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 

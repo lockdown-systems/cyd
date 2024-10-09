@@ -10,7 +10,7 @@ import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 
-import { AccountXViewModel, State } from '../view_models/AccountXViewModel'
+import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -35,7 +35,7 @@ const isPaused = ref<boolean>(false);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
-const isWebviewMounted = ref(true);
+const canStateLoopRun = ref(true);
 
 // Keep currentState in sync
 watch(
@@ -43,7 +43,6 @@ watch(
     (newState) => {
         if (newState) {
             currentState.value = newState as State;
-            console.log('Current state:', currentState.value);
         }
     },
     { deep: true, }
@@ -95,7 +94,6 @@ const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
-const deleteDMsDaysOld = ref(0);
 
 // Force re-index everything options
 const isFirstIndex = ref(true);
@@ -149,7 +147,6 @@ const updateSettings = async () => {
             deleteLikes: deleteLikes.value,
             deleteLikesDaysOld: deleteLikesDaysOld.value,
             deleteDMs: deleteDMs.value,
-            deleteDMsDaysOld: deleteDMsDaysOld.value
         }
     };
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
@@ -178,9 +175,13 @@ const startDeletingClicked = async () => {
 
 const startStateLoop = async () => {
     console.log('State loop started');
-    while (isWebviewMounted.value) {
-        await runNextState();
+    while (canStateLoopRun.value) {
+        // Run next state
+        if (accountXViewModel.value !== null) {
+            await accountXViewModel.value.run();
+        }
 
+        // Break out of the state loop if the view model is in a final state
         if (
             accountXViewModel.value?.state === State.DashboardDisplay ||
             accountXViewModel.value?.state === State.FinishedRunningJobs
@@ -194,12 +195,6 @@ const startStateLoop = async () => {
     console.log('State loop ended');
 };
 
-const runNextState = async () => {
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.run();
-    }
-};
-
 const reset = async () => {
     await checkIfIsFirstIndex();
     await accountXViewModel.value?.reset()
@@ -211,14 +206,13 @@ const updateArchivePath = async () => {
     archivePath.value = path ? path : '';
 };
 
-const onAutomationErrorContinue = () => {
-    console.log('Continuing automation after error');
-    if (accountXViewModel.value) {
-        accountXViewModel.value?.errorJob(accountXViewModel.value?.currentJobIndex);
-        accountXViewModel.value?.resume();
-    } else {
-        console.error('AccountXViewModel not found');
-    }
+const onAutomationErrorRetry = () => {
+    console.log('Retrying automation after error');
+
+    // Store the state of the view model before the error
+    const state: XViewModelState | undefined = accountXViewModel.value?.saveState();
+    localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
+    emit('onRefreshClicked');
 };
 
 const onAutomationErrorCancel = () => {
@@ -249,7 +243,6 @@ onMounted(async () => {
         deleteLikes.value = props.account.xAccount.deleteLikes;
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = props.account.xAccount.deleteDMs;
-        deleteDMsDaysOld.value = props.account.xAccount.deleteDMsDaysOld;
     }
 
     await checkIfIsFirstIndex();
@@ -261,6 +254,21 @@ onMounted(async () => {
         if (props.account.xAccount !== null) {
             accountXViewModel.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value, emitter);
             await accountXViewModel.value.init();
+
+            // If there's a saved state from a retry, restore it
+            const savedState = localStorage.getItem(`account-${props.account.id}-state`);
+            if (savedState) {
+                console.log('Restoring saved state', savedState);
+                const savedStateObj: XViewModelState = JSON.parse(savedState);
+
+                accountXViewModel.value.restoreState(savedStateObj);
+                currentState.value = savedStateObj.state as State;
+                progress.value = savedStateObj.progress;
+                currentJobs.value = savedStateObj.jobs;
+
+                localStorage.removeItem(`account-${props.account.id}-state`);
+            }
+
             await startStateLoop();
         }
     } else {
@@ -271,18 +279,18 @@ onMounted(async () => {
     emitter?.on(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Define automation error handlers on the global emitter for this account
-    emitter?.on(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
+    emitter?.on(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });
 
 onUnmounted(async () => {
-    isWebviewMounted.value = false;
+    canStateLoopRun.value = false;
 
     // Remove cancel automation handler
     emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Remove automation error handlers
-    emitter?.off(`automation-error-${props.account.id}-continue`, onAutomationErrorContinue);
+    emitter?.off(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 });
 </script>
@@ -503,20 +511,8 @@ onUnmounted(async () => {
                                 <div class="form-check mb-2">
                                     <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
                                     <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
-                                        Delete direct messages
+                                        Delete all direct messages
                                     </label>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteDMsDaysOld">
-                                        older than
-                                    </label>
-                                    <div class="input-group flex-nowrap">
-                                        <input id="deleteDMsDaysOld" v-model="deleteDMsDaysOld" type="text"
-                                            class="form-control form-short">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text">days</span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             <div v-if="!isFirstIndex" class="mb-3 form-check force-reindex">
@@ -556,13 +552,11 @@ onUnmounted(async () => {
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0">
+                        <li
+                            v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
-                        </li>
-                        <li v-if="account.xAccount?.archiveDMs || (progress?.messagesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations,
+                            including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
                         </li>
                     </ul>
 
@@ -599,13 +593,11 @@ onUnmounted(async () => {
                                 <i class="fa-solid fa-floppy-disk archive-bullet" />
                                 <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                             </li>
-                            <li v-if="(progress?.conversationsIndexed ?? 0) > 0">
+                            <li
+                                v-if="(progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
                                 <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations
-                            </li>
-                            <li v-if="(progress?.messagesIndexed ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
+                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations,
+                                including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
                             </li>
                         </ul>
                     </div>
@@ -624,9 +616,11 @@ onUnmounted(async () => {
                             <i class="fa-solid fa-fire delete-bullet" />
                             <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="account.xAccount?.deleteDMs || (progress?.messagesDeleted ?? 0) > 0">
+                        <li
+                            v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
                             <i class="fa-solid fa-fire delete-bullet" />
-                            <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> direct messages
+                            <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong> conversations,
+                            including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> messages
                         </li>
                     </ul>
 

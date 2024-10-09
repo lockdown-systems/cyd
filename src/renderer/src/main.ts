@@ -75,6 +75,7 @@ declare global {
                 openFolder: (accountID: number, folderName: string) => void;
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
+                getProgress: (accountID: number) => Promise<XProgress>;
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
                 getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
@@ -82,6 +83,8 @@ declare global {
                 deleteRetweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteLikesStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteTweet: (accountID: number, tweetID: string) => Promise<boolean>;
+                deleteDMsStart: (accountID: number) => Promise<XProgress>;
+                deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
             };
         };
     }
