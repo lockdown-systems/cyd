@@ -185,5 +185,11 @@ contextBridge.exposeInMainWorld('electron', {
         deleteTweet: (accountID: number, tweetID: string): Promise<boolean> => {
             return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID);
         },
+        deleteDMsStart: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:deleteDMsStart', accountID);
+        },
+        deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
+        }
     }
 })

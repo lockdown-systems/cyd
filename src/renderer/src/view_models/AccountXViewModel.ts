@@ -710,6 +710,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             if (this.rateLimitInfo.isRateLimited) {
                                 await this.waitForRateLimit();
                             } else {
+                                // Assume that there are no conversations
                                 await this.waitForLoadingToFinish();
                                 this.progress.isIndexConversationsFinished = true;
                                 this.progress.conversationsIndexed = 0;
@@ -1374,7 +1375,120 @@ I'm deleting your likes, starting with the earliest.
                 break;
 
             case "deleteDMs":
-                this.log("runJob", "deleteMessages: NOT IMPLEMENTED");
+                this.showBrowser = true;
+                this.instructions = `**${this.actionString}**
+
+I'm loading your messages page.
+`;
+                this.showAutomationNotice = true;
+
+                // Start the progress
+                await this.syncProgress();
+                this.progress = await window.electron.X.deleteDMsStart(this.account.id);
+
+                // Load the messages and wait for tweets to appear
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await this.loadURLWithRateLimit("https://x.com/messages");
+                    try {
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                        await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+                        break;
+                    } catch (e) {
+                        this.log("runJob", ["jobType=deleteDMs", "selector never appeared", e]);
+                        if (e instanceof TimeoutError) {
+                            // Were we rate limited?
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                            } else {
+                                // Assume that there are no conversations
+                                await this.waitForLoadingToFinish();
+                                this.progress.isDeleteDMsFinished = true;
+                                await this.syncProgress();
+                                break;
+                            }
+                        } else if (e instanceof URLChangedError) {
+                            const newURL = this.webview.getURL();
+                            await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
+                                newURL: newURL,
+                                exception: (e as Error).toString(),
+                                currentURL: this.webview.getURL()
+                            })
+                        } else {
+                            await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
+                                exception: (e as Error).toString(),
+                                currentURL: this.webview.getURL()
+                            })
+                        }
+                    }
+                }
+
+                this.instructions = `**${this.actionString}**
+                
+I'm scrolling down to your earliest direct message conversations.
+                `;
+
+                // Scroll all the way to the bottom. To do this accurately though, we need to basically
+                // reindex all the conversations (but without saving users and conversations) so we can 
+                // monitor the "HAS_MORE" status in the API responses, since the frontend is unreliable
+
+                // Start monitoring network requests
+                await window.electron.X.indexStart(this.account.id);
+                await this.sleep(2000);
+
+                // eslint-disable-next-line no-constant-condition
+                while (true) {
+                    await this.waitForPause();
+
+                    // Scroll to bottom
+                    await window.electron.X.resetRateLimitInfo(this.account.id);
+                    const moreToScroll = await this.scrollToBottom();
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    }
+
+                    // Parse so far
+                    try {
+                        await window.electron.X.deleteDMsScrollToBottom(this.account.id);
+                    } catch (e) {
+                        const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ParseConversationsError, {
+                            exception: (e as Error).toString()
+                        }, {
+                            latestResponseData: latestResponseData,
+                            currentURL: this.webview.getURL()
+                        });
+                        break;
+                    }
+
+                    // Check if we're done
+                    if (!await window.electron.X.indexIsThereMore(this.account.id)) {
+                        break;
+                    } else {
+                        if (!moreToScroll) {
+                            // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                            await this.sleep(500);
+                            await this.scrollUp(1000);
+                        }
+                    }
+                }
+
+                // Stop monitoring network requests
+                await window.electron.X.indexStop(this.account.id);
+
+                this.instructions = `**${this.actionString}**
+
+I'm deleting all of your direct message conversations, start with the oldest.
+`;
+
+                this.pause()
+                await this.waitForPause();
+
+                // TODO: test and make sure scrolling to the bottom works.
+                // next, figure out how to select the bottom conversation to delete
+
                 await this.finishJob(iJob);
                 break;
         }

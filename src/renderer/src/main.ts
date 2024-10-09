@@ -82,6 +82,8 @@ declare global {
                 deleteRetweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteLikesStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteTweet: (accountID: number, tweetID: string) => Promise<boolean>;
+                deleteDMsStart: (accountID: number) => Promise<XProgress>;
+                deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
             };
         };
     }
