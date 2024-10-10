@@ -227,7 +227,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
-  max-width: 1000px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -240,7 +240,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
-  max-width: 1000px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -251,7 +251,7 @@ body {
 .webview {
   height: 100vh;
   width: 100%;
-  max-width: 1000px;
+  max-width: 900px;
   margin: 0 auto;
 }
 

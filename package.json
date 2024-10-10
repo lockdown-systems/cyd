@@ -5,7 +5,7 @@
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",
-  "authors": "Lockdown Systems",
+  "authors": "Lockdown Systems LLC",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.2",
-    "@mongodb-js/zstd": "^1.2.2",
     "@rushstack/eslint-patch": "^1.10.3",
     "@types/bootstrap": "^5.2.10",
     "@types/cheerio": "^0.22.35",
@@ -34,6 +33,7 @@
     "electron-log": "^5.1.4",
     "electron-squirrel-startup": "^1.0.1",
     "extract-zip": "^2.0.1",
+    "http-encoding": "^2.0.1",
     "http-mitm-proxy": "^1.1.0",
     "jsdom": "^24.1.1",
     "marked": "^13.0.0",
