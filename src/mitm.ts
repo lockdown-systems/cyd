@@ -3,8 +3,7 @@ import path from "path"
 
 import { Proxy, IContext } from "http-mitm-proxy"
 
-import * as zlib from "zlib"
-import * as zstd from "@mongodb-js/zstd"
+import * as HttpEncoding from 'http-encoding'
 
 import log from 'electron-log/main';
 
@@ -102,109 +101,27 @@ export class MITMController implements IMITMController {
                             return callback(null, chunk);
                         });
 
-                        ctx.onResponseEnd((ctx, callback) => {
+                        ctx.onResponseEnd(async (ctx, callback) => {
                             responseData.status = ctx.serverToProxyResponse?.statusCode ?? 0;
                             responseData.headers = ctx.serverToProxyResponse?.headers ?? {};
 
                             const buffer = Buffer.concat(chunks);
 
-                            if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'gzip') {
-                                // Response is gzip-compressed
-                                zlib.gunzip(buffer, (err, decompressed) => {
-                                    if (!err) {
-                                        responseData.body = decompressed.toString();
-                                    } else {
-                                        log.error("Error decompressing gzip response:", err);
-                                        responseData.body = buffer.toString();
-                                    }
-
-                                    log.debug(`MITMController: got response`, {
-                                        host: ctx.clientToProxyRequest.headers.host,
-                                        url: ctx.clientToProxyRequest.url,
-                                        status: responseData.status,
-                                        bodyLength: responseData.body.length,
-                                    });
-                                    this.responseData.push(responseData);
-                                    return callback();
-                                });
-                            } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'zstd') {
-                                // Response is zstd-compressed
-                                zstd.decompress(buffer).then(decompressed => {
-                                    responseData.body = decompressed.toString();
-
-                                    log.debug(`MITMController: got response`, {
-                                        host: ctx.clientToProxyRequest.headers.host,
-                                        url: ctx.clientToProxyRequest.url,
-                                        status: responseData.status,
-                                        bodyLength: responseData.body.length,
-                                    });
-                                    this.responseData.push(responseData);
-                                    return callback();
-                                }).catch(err => {
-                                    log.error("Error decompressing zstd response:", err);
-                                    responseData.body = buffer.toString();
-
-                                    log.debug(`MITMController: got response`, {
-                                        host: ctx.clientToProxyRequest.headers.host,
-                                        url: ctx.clientToProxyRequest.url,
-                                        status: responseData.status,
-                                        bodyLength: responseData.body.length,
-                                    });
-                                    this.responseData.push(responseData);
-                                    return callback();
-                                });
-                            }
-                            else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'br') {
-                                // Response is brotli-compressed
-                                zlib.brotliDecompress(buffer, (err, decompressed) => {
-                                    if (!err) {
-                                        responseData.body = decompressed.toString();
-                                    } else {
-                                        log.error("Error decompressing brotli response:", err);
-                                        responseData.body = buffer.toString();
-                                    }
-
-                                    log.debug(`MITMController: got response`, {
-                                        host: ctx.clientToProxyRequest.headers.host,
-                                        url: ctx.clientToProxyRequest.url,
-                                        status: responseData.status,
-                                        bodyLength: responseData.body.length,
-                                    });
-                                    this.responseData.push(responseData);
-                                    return callback();
-                                });
-                            } else if (ctx.serverToProxyResponse?.headers['content-encoding'] === 'deflate') {
-                                // Response is deflate-compressed
-                                zlib.inflate(buffer, (err, decompressed) => {
-                                    if (!err) {
-                                        responseData.body = decompressed.toString();
-                                    } else {
-                                        log.error("Error decompressing deflate response:", err);
-                                        responseData.body = buffer.toString();
-                                    }
-
-                                    log.debug(`MITMController: got response`, {
-                                        host: ctx.clientToProxyRequest.headers.host,
-                                        url: ctx.clientToProxyRequest.url,
-                                        status: responseData.status,
-                                        bodyLength: responseData.body.length,
-                                    });
-                                    this.responseData.push(responseData);
-                                    return callback();
-                                });
-                            } else {
-                                // If not compressed, just convert buffer to string
+                            try {
+                                responseData.body = (await HttpEncoding.decodeBuffer(buffer, ctx.serverToProxyResponse?.headers['content-encoding'])).toString();
+                            } catch (e) {
+                                log.error("Error decoding response body:", e);
                                 responseData.body = buffer.toString();
-
-                                log.debug(`MITMController: got response`, {
-                                    host: ctx.clientToProxyRequest.headers.host,
-                                    url: ctx.clientToProxyRequest.url,
-                                    status: responseData.status,
-                                    bodyLength: responseData.body.length,
-                                });
-                                this.responseData.push(responseData);
-                                return callback();
                             }
+
+                            log.debug(`MITMController: got response`, {
+                                host: ctx.clientToProxyRequest.headers.host,
+                                url: ctx.clientToProxyRequest.url,
+                                status: responseData.status,
+                                bodyLength: responseData.body.length,
+                            });
+                            this.responseData.push(responseData);
+                            return callback();
                         });
                     }
                 }
