@@ -1063,6 +1063,7 @@ I'm building a searchable archive web page in HTML.
                     total_tweets_deleted: this.progressInfo.totalTweetsDeleted,
                     total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
                     total_likes_deleted: this.progressInfo.totalLikesDeleted,
+                    total_conversations_deleted: this.progressInfo.totalConversationsDeleted,
                     total_messages_deleted: this.progressInfo.totalMessagesDeleted
                 }, this.deviceInfo?.valid ? true : false)
                 if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
