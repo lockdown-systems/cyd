@@ -58,6 +58,7 @@ export type PostXProgressAPIRequest = {
     total_tweets_deleted: number;
     total_retweets_deleted: number;
     total_likes_deleted: number;
+    total_conversations_deleted: number;
     total_messages_deleted: number;
 };
 
@@ -85,6 +86,7 @@ export type UserStatsAPIResponse = {
     total_tweets_deleted: number;
     total_retweets_deleted: number;
     total_likes_deleted: number;
+    total_conversations_deleted: number;
     total_messages_deleted: number;
 };
 
