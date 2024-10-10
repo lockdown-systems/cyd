@@ -2,6 +2,7 @@ import { BaseViewModel, TimeoutError, URLChangedError, InternetDownError } from 
 import {
     XJob,
     XProgress, emptyXProgress,
+    XTweetItem,
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
@@ -522,6 +523,51 @@ export class AccountXViewModel extends BaseViewModel {
         return true;
     }
 
+    async archiveSaveTweet(outputPath: string, tweetItem: XTweetItem): Promise<boolean> {
+        console.log("Archiving", tweetItem.basename);
+
+        // Check if the tweet is already archived
+        if (await window.electron.archive.isPageAlreadySaved(outputPath, tweetItem.basename)) {
+            console.log("Already archived", tweetItem.basename);
+            await window.electron.X.archiveTweetCheckDate(this.account.id, tweetItem.tweetID);
+            this.progress.tweetsArchived += 1;
+            return true;
+        }
+
+        // Load the URL
+        await this.loadURLWithRateLimit(tweetItem.url);
+
+        // Save the page
+        if (this.webContentsID) {
+            await window.electron.archive.savePage(this.webContentsID, outputPath, tweetItem.basename);
+        } else {
+            this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
+                message: "webContentsID is null"
+            }, {
+                currentURL: this.webview.getURL()
+            });
+            return false;
+        }
+
+        // Update tweet's archivedAt date
+        try {
+            await window.electron.X.archiveTweet(this.account.id, tweetItem.tweetID);
+        } catch (e) {
+            await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
+                exception: (e as Error).toString()
+            }, {
+                tweetItem: tweetItem,
+                currentURL: this.webview.getURL()
+            })
+            return false;
+        }
+
+        // Update progress
+        this.progress.tweetsArchived += 1;
+        this.progress.newTweetsArchived += 1;
+        return true;
+    }
+
     async runJob(iJob: number) {
         await this.waitForPause();
 
@@ -692,64 +738,25 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
                 }
                 this.log('runJob', ["jobType=archiveTweets", "archiveStartResponse", archiveStartResponse]);
 
-                if (this.webContentsID) {
+                // Start the progress
+                this.progress.totalTweetsToArchive = archiveStartResponse.items.length;
+                this.progress.tweetsArchived = 0;
+                this.progress.newTweetsArchived = 0;
 
-                    // Start the progress
-                    this.progress.totalTweetsToArchive = archiveStartResponse.items.length;
-                    this.progress.tweetsArchived = 0;
-                    this.progress.newTweetsArchived = 0;
+                // Archive the tweets
+                errorTriggered = false;
+                for (let i = 0; i < archiveStartResponse.items.length; i++) {
+                    await this.waitForPause();
 
-                    // Archive the tweets
-                    for (let i = 0; i < archiveStartResponse.items.length; i++) {
-                        await this.waitForPause();
-
-                        // Already saved?
-                        if (await window.electron.archive.isPageAlreadySaved(archiveStartResponse.outputPath, archiveStartResponse.items[i].basename)) {
-                            console.log("Already archived", archiveStartResponse.items[i].basename);
-                            // Ensure the tweet has an archivedAt date
-                            try {
-                                await window.electron.X.archiveTweetCheckDate(this.account.id, archiveStartResponse.items[i].id);
-                            } catch (e) {
-                                await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
-                                    exception: (e as Error).toString()
-                                }, {
-                                    archiveStartResponseItem: archiveStartResponse.items[i],
-                                    index: i,
-                                    currentURL: this.webview.getURL()
-                                })
-                                break;
-                            }
-
-                            this.progress.tweetsArchived += 1;
-                            continue;
-                        } else {
-                            console.log("Archiving", archiveStartResponse.items[i].basename);
-                        }
-
-                        // Load the URL
-                        await this.loadURLWithRateLimit(archiveStartResponse.items[i].url);
-
-                        // Save the page
-                        await window.electron.archive.savePage(this.webContentsID, archiveStartResponse.outputPath, archiveStartResponse.items[i].basename);
-
-                        // Update tweet's archivedAt date
-                        try {
-                            await window.electron.X.archiveTweet(this.account.id, archiveStartResponse.items[i].id);
-                        } catch (e) {
-                            await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
-                                exception: (e as Error).toString()
-                            }, {
-                                archiveStartResponseItem: archiveStartResponse.items[i],
-                                index: i,
-                                currentURL: this.webview.getURL()
-                            })
-                            break;
-                        }
-
-                        // Update progress
-                        this.progress.tweetsArchived += 1;
-                        this.progress.newTweetsArchived += 1;
+                    // Save the tweet
+                    if (!await this.archiveSaveTweet(archiveStartResponse.outputPath, archiveStartResponse.items[i])) {
+                        errorTriggered = true;
+                        break;
                     }
+                }
+
+                if (errorTriggered) {
+                    break;
                 }
 
                 await this.syncProgress();
@@ -1209,12 +1216,25 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                 // Start the progress
                 this.progress.totalTweetsToDelete = tweetsToDelete.tweets.length;
                 this.progress.tweetsDeleted = 0;
+                this.progress.tweetsArchived = 0;
+                this.progress.newTweetsArchived = 0;
                 await this.syncProgress();
 
+                errorTriggered = false;
                 for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
                     // Load the URL
                     await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${tweetsToDelete.tweets[i].tweetID}`);
                     await this.sleep(200);
+
+                    await this.waitForPause();
+
+                    if (this.account.xAccount?.deleteTweetsArchiveEnabled) {
+                        // Archive the tweet
+                        if (!await this.archiveSaveTweet(await window.electron.X.archiveTweetsOutputPath(this.account.id), tweetsToDelete.tweets[i])) {
+                            errorTriggered = true;
+                            break;
+                        }
+                    }
 
                     await this.waitForPause();
 
@@ -1227,6 +1247,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                         }), {
                             currentURL: this.webview.getURL()
                         };
+                        errorTriggered = true;
                         break;
                     }
                     await this.sleep(200);
@@ -1243,6 +1264,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                         }, {
                             currentURL: this.webview.getURL()
                         });
+                        errorTriggered = true;
                         break;
                     }
                     await this.sleep(200);
@@ -1259,6 +1281,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                         }, {
                             currentURL: this.webview.getURL()
                         });
+                        errorTriggered = true;
                         break;
                     }
                     await this.sleep(200);
@@ -1278,11 +1301,16 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                             index: i,
                             currentURL: this.webview.getURL()
                         })
+                        errorTriggered = true;
                         break;
                     }
 
                     this.progress.tweetsDeleted += 1;
                     await this.syncProgress();
+                }
+
+                if (errorTriggered) {
+                    break;
                 }
 
                 await this.finishJob(iJob);

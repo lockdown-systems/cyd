@@ -68,6 +68,7 @@ declare global {
                 indexConversationFinished: (accountID: number, conversationID: string) => Promise<boolean>;
                 indexLikesFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveStartResponse>;
+                archiveTweetsOutputPath: (accountID: number) => Promise<string>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<boolean>;
                 archiveTweetCheckDate: (accountID: number, tweetID: string) => Promise<boolean>;
                 archiveBuild: (accountID: number) => Promise<boolean>;

@@ -143,6 +143,9 @@ contextBridge.exposeInMainWorld('electron', {
         archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
             return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
         },
+        archiveTweetsOutputPath: (accountID: number): Promise<string> => {
+            return ipcRenderer.invoke('X:archiveTweetsOutputPath', accountID)
+        },
         archiveTweet: (accountID: number, tweetID: string): Promise<boolean> => {
             return ipcRenderer.invoke('X:archiveTweet', accountID, tweetID)
         },
