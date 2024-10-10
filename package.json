@@ -5,7 +5,7 @@
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",
-  "authors": "Lockdown Systems",
+  "authors": "Lockdown Systems LLC",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",

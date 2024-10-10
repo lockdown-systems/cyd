@@ -149,6 +149,11 @@ const config: ForgeConfig = {
     new MakerDeb({
       options: {
         icon: path.join(assetsPath, 'icon.png'),
+        maintainer: 'Lockdown Systems LLC',
+        homepage: 'https://semiphemeral.com',
+        categories: ['Utility', 'Network'],
+        description: 'Claw back your data from Big Tech',
+        productName: "Semiphemeral",
       }
     })
   ],
