@@ -89,6 +89,7 @@ const deleteTweetsLikesThresholdEnabled = ref(false);
 const deleteTweetsLikesThreshold = ref(0);
 const deleteTweetsRetweetsThresholdEnabled = ref(false);
 const deleteTweetsRetweetsThreshold = ref(0);
+const deleteTweetsArchiveEnabled = ref(false);
 const deleteRetweets = ref(false);
 const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
@@ -142,6 +143,7 @@ const updateSettings = async () => {
             deleteTweetsLikesThreshold: deleteTweetsLikesThreshold.value,
             deleteTweetsRetweetsThresholdEnabled: deleteTweetsRetweetsThresholdEnabled.value,
             deleteTweetsRetweetsThreshold: deleteTweetsRetweetsThreshold.value,
+            deleteTweetsArchiveEnabled: deleteTweetsArchiveEnabled.value,
             deleteRetweets: deleteRetweets.value,
             deleteRetweetsDaysOld: deleteRetweetsDaysOld.value,
             deleteLikes: deleteLikes.value,
@@ -238,6 +240,7 @@ onMounted(async () => {
         deleteTweetsLikesThreshold.value = props.account.xAccount.deleteTweetsLikesThreshold;
         deleteTweetsRetweetsThresholdEnabled.value = props.account.xAccount.deleteTweetsRetweetsThresholdEnabled;
         deleteTweetsRetweetsThreshold.value = props.account.xAccount.deleteTweetsRetweetsThreshold;
+        deleteTweetsArchiveEnabled.value = props.account.xAccount.deleteTweetsArchiveEnabled;
         deleteRetweets.value = props.account.xAccount.deleteRetweets;
         deleteRetweetsDaysOld.value = props.account.xAccount.deleteRetweetsDaysOld;
         deleteLikes.value = props.account.xAccount.deleteLikes;
@@ -461,6 +464,16 @@ onUnmounted(async () => {
                                                 <span class="input-group-text">likes</span>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check mb-2">
+                                        <input id="deleteTweetsArchiveEnabled" v-model="deleteTweetsArchiveEnabled"
+                                            type="checkbox" class="form-check-input" :disabled="!deleteTweets">
+                                        <label class="form-check-label mr-1 text-nowrap"
+                                            for="deleteTweetsArchiveEnabled">
+                                            Archive before deleting
+                                        </label>
                                     </div>
                                 </div>
                             </div>

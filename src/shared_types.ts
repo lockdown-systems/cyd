@@ -33,6 +33,7 @@ export type XAccount = {
     deleteTweetsLikesThreshold: number;
     deleteTweetsRetweetsThresholdEnabled: boolean;
     deleteTweetsRetweetsThreshold: number;
+    deleteTweetsArchiveEnabled: boolean;
     deleteRetweets: boolean;
     deleteRetweetsDaysOld: number;
     deleteLikes: boolean;
@@ -170,15 +171,16 @@ export function emptyXProgress(): XProgress {
     };
 }
 
-export type XArchiveItem = {
+export type XTweetItem = {
     url: string,
-    id: string,
-    basename: string
+    username: string,
+    tweetID: string,
+    basename: string,
 }
 
 export type XArchiveStartResponse = {
     outputPath: string;
-    items: XArchiveItem[]
+    items: XTweetItem[]
 }
 
 export function emptyXArchiveStartResponse(): XArchiveStartResponse {
@@ -230,8 +232,5 @@ export function emptyXProgressInfo(): XProgressInfo {
 }
 
 export type XDeleteTweetsStartResponse = {
-    tweets: {
-        username: string;
-        tweetID: string;
-    }[];
+    tweets: XTweetItem[];
 }

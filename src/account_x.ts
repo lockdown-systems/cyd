@@ -18,14 +18,13 @@ import {
     XAccount,
     XJob,
     XProgress, emptyXProgress,
-    XArchiveItem,
+    XTweetItem,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
-    // XTweet
 } from './shared_types'
 import { runMigrations, getAccount, getXAccount, saveXAccount, exec, Sqlite3Count } from './database'
 import { IMITMController, getMITMController } from './mitm';
@@ -128,6 +127,15 @@ function convertXJobRowToXJob(row: XJobRow): XJob {
         finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
         progressJSON: row.progressJSON ? JSON.parse(row.progressJSON) : null,
         error: row.error,
+    };
+}
+
+function convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
+    return {
+        url: `https://x.com/${row.path}`,
+        tweetID: row.tweetID,
+        basename: `${formatDateToYYYYMMDD(row.createdAt)}_${row.tweetID}`,
+        username: row.username
     };
 }
 
@@ -1010,33 +1018,35 @@ export class XAccountController {
         if (this.account) {
             const tweetsResp: XTweetRow[] = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE username = ? AND isRetweeted = ? ORDER BY createdAt',
                 [this.account.username, 0],
                 "all"
             ) as XTweetRow[];
 
-            const items: XArchiveItem[] = [];
+            const items: XTweetItem[] = [];
             for (let i = 0; i < tweetsResp.length; i++) {
-                items.push({
-                    url: `https://x.com/${tweetsResp[i].path}`,
-                    id: tweetsResp[i].tweetID,
-                    basename: `${formatDateToYYYYMMDD(tweetsResp[i].createdAt)}_${tweetsResp[i].tweetID}`
-                })
+                items.push(convertTweetRowToXTweetItem(tweetsResp[i]))
             }
 
-            // Make sure the Archived Tweets folder exists
+            return {
+                outputPath: await this.archiveTweetsOutputPath(),
+                items: items
+            };
+        }
+        return emptyXArchiveStartResponse();
+    }
+
+    // Make sure the Archived Tweets folder exists and return its path
+    async archiveTweetsOutputPath(): Promise<string> {
+        if (this.account) {
             const accountDataPath = getAccountDataPath("X", this.account.username);
             const outputPath = path.join(accountDataPath, "Archived Tweets");
             if (!fs.existsSync(outputPath)) {
                 fs.mkdirSync(outputPath);
             }
-
-            return {
-                outputPath: outputPath,
-                items: items
-            };
+            return outputPath;
         }
-        return emptyXArchiveStartResponse();
+        throw new Error("Account not found");
     }
 
     // Save the tweet's archivedAt timestamp
@@ -1203,7 +1213,7 @@ export class XAccountController {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
-                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
                 [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1211,7 +1221,7 @@ export class XAccountController {
             // Just likes threshold
             tweets = exec(
                 this.db,
-                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
                 [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1219,7 +1229,7 @@ export class XAccountController {
             // Just retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
                 [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1227,7 +1237,7 @@ export class XAccountController {
             // Neither likes nor retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT id, tweetID FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
                 [0, this.account.username, daysOldTimestamp],
                 "all"
             ) as XTweetRow[];
@@ -1235,10 +1245,7 @@ export class XAccountController {
 
         log.debug("XAccountController.deleteTweetsStart", tweets);
         return {
-            tweets: tweets.map((row) => ({
-                username: row.username,
-                tweetID: row.tweetID
-            })),
+            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -1263,10 +1270,7 @@ export class XAccountController {
 
         log.debug("XAccountController.deleteRetweetsStart", tweets);
         return {
-            tweets: tweets.map((row) => ({
-                username: row.username,
-                tweetID: row.tweetID
-            })),
+            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -1291,10 +1295,7 @@ export class XAccountController {
 
         log.debug("XAccountController.deleteLikesStart", tweets);
         return {
-            tweets: tweets.map((row) => ({
-                username: row.username,
-                tweetID: row.tweetID
-            })),
+            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -1619,6 +1620,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.archiveTweetsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:archiveTweetsOutputPath', async (_, accountID: number): Promise<string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.archiveTweetsOutputPath();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
