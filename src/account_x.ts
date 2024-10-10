@@ -816,6 +816,7 @@ export class XAccountController {
         if (isFirstRun) {
             // Delete the existing message data now, in order to accurately count the progress
             exec(this.db, 'DELETE FROM message WHERE deletedAt IS NULL');
+            exec(this.db, 'UPDATE conversation SET shouldIndexMessages = 1 WHERE deletedAt IS NULL');
 
             const conversationIDs: XConversationRow[] = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all") as XConversationRow[];
             return {
