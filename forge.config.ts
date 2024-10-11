@@ -175,10 +175,9 @@ const config: ForgeConfig = {
         accessKeyId: process.env.DO_SPACES_KEY,
         secretAccessKey: process.env.DO_SPACES_SECRET,
         bucket: 'semiphemeral-releases',
-        endpoint: 'https://semiphemeral-releases.sfo3.digitaloceanspaces.com',
+        endpoint: 'https://sfo3.digitaloceanspaces.com',
         folder: process.env.SEMIPHEMERAL_ENV,
         public: true,
-        region: 'sfo3',
         keyResolver: (filename: string, platform: string, arch: string) => {
           return `${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
         }
