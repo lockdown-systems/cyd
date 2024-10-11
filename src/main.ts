@@ -5,6 +5,7 @@ import fs from 'fs';
 
 import log from 'electron-log/main';
 import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage, session } from 'electron';
+import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
@@ -349,3 +350,17 @@ app.on('activate', () => {
         createWindow();
     }
 });
+
+// Set up auto-updates for Windows and macOS
+let updateArch = process.arch.toString();
+if (os.platform() == 'darwin') {
+    updateArch = 'universal';
+}
+if (os.platform() == 'win32' || os.platform() == 'darwin') {
+    updateElectronApp({
+        updateSource: {
+            type: UpdateSourceType.StaticStorage,
+            baseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${config.mode}/${process.platform}/${updateArch}`
+        }
+    });
+}
