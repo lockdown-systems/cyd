@@ -123,7 +123,7 @@ async function initializeApp() {
         updateElectronApp({
             updateSource: {
                 type: UpdateSourceType.StaticStorage,
-                baseUrl: getUpdatesBaseURL()
+                baseUrl: getUpdatesBaseURL(config.mode)
             }
         });
     }
@@ -172,7 +172,7 @@ async function createWindow() {
 
                     // const requestHeaders = { 'User-Agent': `Semiphemeral/${app.getVersion()} (${os.platform()})` };
                     // autoUpdater.setFeedURL({
-                    //     url: getUpdatesBaseURL() + '/RELEASES.json',
+                    //     url: getUpdatesBaseURL(config.mode) + '/RELEASES.json',
                     //     headers: requestHeaders
                     // });
                 }

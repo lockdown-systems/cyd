@@ -164,7 +164,9 @@ const signOutClicked = async () => {
 };
 
 const checkForUpdatesClicked = async () => {
-  // TODO: implement
+  console.log('Checking for updates');
+  await window.electron.checkForUpdates();
+  userBtnShowMenu.value = false;
 };
 
 const reloadAccounts = async () => {
@@ -256,6 +258,9 @@ onUnmounted(async () => {
                     Sign in to Semiphemeral to access premium features
                   </li>
                 </template>
+                <li class="menu-line">
+                  <hr>
+                </li>
                 <li class="menu-btn" @click="checkForUpdatesClicked">
                   Check for updates
                 </li>

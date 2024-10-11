@@ -21,6 +21,7 @@ import App from "./App.vue";
 declare global {
     interface Window {
         electron: {
+            checkForUpdates: () => void;
             getVersion: () => Promise<string>;
             getPlatform: () => Promise<string>;
             getAPIURL: () => Promise<string>;
