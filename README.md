@@ -53,6 +53,10 @@ To set up Windows:
 - Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
 - Set PowerShell execution policy, in an administrator PowerShell: `Set-ExecutionPolicy -ExecutionPolicy Bypass`
 - Clone the Semiphemeral repo (to a folder with no spaces!)
+- Make sure you have the following environment variables set:
+  - `DO_SPACES_KEY`
+  - `DO_SPACES_SECRET`
+- Plug in HARICA USB token and have the PIN ready
 
 Build Semiphemeral
 

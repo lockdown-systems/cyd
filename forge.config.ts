@@ -128,7 +128,7 @@ const config: ForgeConfig = {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
       // For auto-updates
-      remoteReleases: `https://semiphemeral-releases.sfo3.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/win32/${process.arch}`,
+      remoteReleases: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/win32/${process.arch}`,
     }),
     // macOS DMG
     new MakerDMG({
@@ -152,7 +152,7 @@ const config: ForgeConfig = {
     }),
     // macOS ZIP, for auto-updates
     new MakerZIP({
-      macUpdateManifestBaseUrl: `https://semiphemeral-releases.sfo3.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/darwin/universal2`
+      macUpdateManifestBaseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/darwin/universal`
     }),
     // Linux RPM
     new MakerRpm({}),
