@@ -78,8 +78,8 @@ Build Semiphemeral
 
 ```sh
 cd code/Semiphemeral
-npm run make-dev
-npm run make-prod
+npm run make-dev-linux
+npm run make-prod-linux
 ```
 
 ### macOS

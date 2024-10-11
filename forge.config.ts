@@ -7,6 +7,7 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { PublisherS3 } from '@electron-forge/publisher-s3';
 
 import { execSync } from 'child_process';
 import path from 'path';
@@ -169,20 +170,18 @@ const config: ForgeConfig = {
     })
   ],
   publishers: [
-    {
-      name: '@electron-forge/publisher-s3',
-      config: {
-        accessKeyId: process.env.DO_SPACES_KEY,
-        secretAccessKey: process.env.DO_SPACES_SECRET,
-        bucket: 'semiphemeral-releases',
-        endpoint: 'https://sfo3.digitaloceanspaces.com',
-        folder: process.env.SEMIPHEMERAL_ENV,
-        public: true,
-        keyResolver: (filename: string, platform: string, arch: string) => {
-          return `${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
-        }
-      },
-    }
+    new PublisherS3({
+      accessKeyId: process.env.DO_SPACES_KEY,
+      secretAccessKey: process.env.DO_SPACES_SECRET,
+      bucket: 'semiphemeral-releases',
+      endpoint: 'https://sfo3.digitaloceanspaces.com',
+      region: 'sfo3',
+      folder: process.env.SEMIPHEMERAL_ENV,
+      public: true,
+      keyResolver: (filename: string, platform: string, arch: string) => {
+        return `${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
+      }
+    })
   ],
   hooks: {
     // Delete pre-existing code signatures from the app bundle, as this prevents the unversal binary from building
