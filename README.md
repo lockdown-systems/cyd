@@ -43,6 +43,8 @@ Do all of these before making a release:
 
 ### Windows
 
+Do this process in a Windows VM in both x64 with VirtualBox and arm64 [with UTM](https://docs.getutm.app/guides/windows/).
+
 To set up Windows:
 
 - **Make sure the Windows user does not have spaces in the filename (e.g., "user", not "Micah Lee")!**
@@ -62,11 +64,19 @@ Build Semiphemeral
 
 ```powershell
 cd .\code\Semiphemeral
+
+# Make a release and test it
 npm run make-dev-windows
 npm run make-prod-windows
+
+# Publish a release
+npm run publish-dev-windows
+npm run publish-prod-windows
 ```
 
 ### Linux
+
+Do this process in a Debian VM in both x64 with VirtualBox and [arm64 with UTM](https://mac.getutm.app/gallery/debian-12).
 
 To set up Debian 12:
 
@@ -78,8 +88,14 @@ Build Semiphemeral
 
 ```sh
 cd code/Semiphemeral
+
+# Make a release and test it
 npm run make-dev-linux
 npm run make-prod-linux
+
+# Publish a release
+npm run publish-dev-linux
+npm run publish-prod-linux
 ```
 
 ### macOS
@@ -98,6 +114,12 @@ Build Semiphemeral:
 
 ```sh
 cd code/Semiphemeral
+
+# Make a release and test it
 npm run make-dev-macos
 npm run make-prod-macos
+
+# Publish a release
+npm run publish-dev-macos
+npm run publish-prod-macos
 ```
