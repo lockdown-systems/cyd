@@ -122,14 +122,14 @@ const config: ForgeConfig = {
   makers: [
     // Windows
     new MakerSquirrel({
-      iconUrl: "https://raw.githubusercontent.com/Lockdown-Systems/Semiphemeral-Releases/main/icon.ico",
+      iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
       name: "Semiphemeral",
       setupIcon: path.join(assetsPath, "icon.ico"),
       windowsSign: shouldSignWindows ? {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
       // For auto-updates
-      remoteReleases: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
+      remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
     }),
     // macOS DMG
     new MakerDMG({
@@ -153,7 +153,7 @@ const config: ForgeConfig = {
     }),
     // macOS ZIP, for auto-updates
     new MakerZIP({
-      macUpdateManifestBaseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
+      macUpdateManifestBaseUrl: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
     }),
     // Linux RPM
     new MakerRpm({}),
@@ -173,7 +173,7 @@ const config: ForgeConfig = {
     new PublisherS3({
       accessKeyId: process.env.DO_SPACES_KEY,
       secretAccessKey: process.env.DO_SPACES_SECRET,
-      bucket: 'semiphemeral-releases',
+      bucket: 'lockdownsystems-releases',
       endpoint: 'https://sfo3.digitaloceanspaces.com',
       region: 'sfo3',
       folder: process.env.SEMIPHEMERAL_ENV,

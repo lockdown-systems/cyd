@@ -10,7 +10,7 @@ export const getUpdatesBaseURL = (mode: string): string => {
     if (os.platform() == 'darwin') {
         updateArch = 'universal';
     }
-    return `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${mode}/${process.platform}/${updateArch}`;
+    return `https://releases.lockdown.systems/semiphemeral/${mode}/${process.platform}/${updateArch}`;
 }
 
 export const getResourcesPath = () => {
