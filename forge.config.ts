@@ -312,7 +312,7 @@ const config: ForgeConfig = {
       // Staple the notarization ticket to the artifact
       for (const artifactPath of artifactPaths) {
         console.log(`🍎 Stapling notarization ticket to macOS artifact: ${artifactPath}`);
-        execSync(`xcrun stapler staple "${artifactPath}`);
+        execSync(`xcrun stapler staple "${artifactPath}"`);
       }
 
       return makeResults;
