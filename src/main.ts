@@ -102,6 +102,21 @@ async function initializeApp() {
         database.setConfig("deviceDescription", description);
     }
 
+    // Set up auto-updates for Windows and macOS
+    if (os.platform() == 'win32' || os.platform() == 'darwin') {
+        let updateArch = process.arch.toString();
+        if (os.platform() == 'darwin') {
+            updateArch = 'universal';
+        }
+        updateElectronApp({
+            updateSource: {
+                type: UpdateSourceType.StaticStorage,
+                baseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${config.mode}/${process.platform}/${updateArch}`
+            }
+        });
+    }
+
+    // Create the window
     await createWindow();
 }
 
@@ -350,17 +365,3 @@ app.on('activate', () => {
         createWindow();
     }
 });
-
-// Set up auto-updates for Windows and macOS
-let updateArch = process.arch.toString();
-if (os.platform() == 'darwin') {
-    updateArch = 'universal';
-}
-if (os.platform() == 'win32' || os.platform() == 'darwin') {
-    updateElectronApp({
-        updateSource: {
-            type: UpdateSourceType.StaticStorage,
-            baseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${config.mode}/${process.platform}/${updateArch}`
-        }
-    });
-}

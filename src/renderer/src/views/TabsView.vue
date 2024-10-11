@@ -163,6 +163,10 @@ const signOutClicked = async () => {
   userBtnShowMenu.value = false;
 };
 
+const checkForUpdatesClicked = async () => {
+  // TODO: implement
+};
+
 const reloadAccounts = async () => {
   accounts.value = await window.electron.database.getAccounts();
   console.log('Reloading accounts', JSON.parse(JSON.stringify(accounts.value)));
@@ -226,8 +230,8 @@ onUnmounted(async () => {
               </template>
             </div>
             <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="menu-popup">
-              <template v-if="deviceInfo?.valid">
-                <ul>
+              <ul>
+                <template v-if="deviceInfo?.valid">
                   <li class="menu-text">
                     Signed in as {{ deviceInfo?.userEmail }}
                   </li>
@@ -240,10 +244,8 @@ onUnmounted(async () => {
                   <li class="menu-btn" @click="signOutClicked">
                     Sign out of my Semiphemeral account
                   </li>
-                </ul>
-              </template>
-              <template v-else>
-                <ul>
+                </template>
+                <template v-else>
                   <li class="menu-text">
                     Not signed in
                   </li>
@@ -253,8 +255,11 @@ onUnmounted(async () => {
                   <li class="menu-btn" @click="signInClicked">
                     Sign in to Semiphemeral to access premium features
                   </li>
-                </ul>
-              </template>
+                </template>
+                <li class="menu-btn" @click="checkForUpdatesClicked">
+                  Check for updates
+                </li>
+              </ul>
             </div>
           </div>
         </div>
