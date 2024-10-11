@@ -185,7 +185,7 @@ const config: ForgeConfig = {
         if (platform == 'darwin') {
           platform = 'macos';
         }
-        return `${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
+        return `semiphemeral/${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
       }
     })
   ],
