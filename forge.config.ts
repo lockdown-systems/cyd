@@ -305,14 +305,16 @@ const config: ForgeConfig = {
 
         console.log(`🍎 Waiting for notarization of macOS artifact: ${artifactPath}`);
         execSync(`xcrun notarytool wait "${submissionID}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}"`);
-
-        console.log(`🍎 Finished notarizing macOS artifact: ${artifactPath}`);
       }
 
       // Staple the notarization ticket to the artifact
       for (const artifactPath of artifactPaths) {
-        console.log(`🍎 Stapling notarization ticket to macOS artifact: ${artifactPath}`);
-        execSync(`xcrun stapler staple "${artifactPath}"`);
+        if (artifactPath.endsWith('.dmg')) {
+          console.log(`🍎 Stapling notarization ticket to macOS artifact: ${artifactPath}`);
+          execSync(`xcrun stapler staple "${artifactPath}"`);
+        } else {
+          console.log(`🍎 Skipping stapling for artifact: ${artifactPath}`);
+        }
       }
 
       return makeResults;
