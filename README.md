@@ -84,6 +84,11 @@ To set up macOS:
 
 - I'm having trouble getting this working in a VM, so instead just do it natively in macOS.
 - I'll update these docs next time I rebuild my Mac...
+- Make sure you have the following environment variables set:
+  - `DO_SPACES_KEY`
+  - `DO_SPACES_SECRET`
+  - `APPLE_ID`
+  - `APPLE_PASSWORD`
 
 Build Semiphemeral:
 

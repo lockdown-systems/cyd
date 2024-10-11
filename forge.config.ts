@@ -1,6 +1,7 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerDMG } from '@electron-forge/maker-dmg';
+import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
@@ -118,14 +119,18 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
+    // Windows
     new MakerSquirrel({
       iconUrl: "https://raw.githubusercontent.com/Lockdown-Systems/Semiphemeral-Releases/main/icon.ico",
       name: "Semiphemeral",
       setupIcon: path.join(assetsPath, "icon.ico"),
       windowsSign: shouldSignWindows ? {
         signToolPath: findLatestSigntoolPath()
-      } : undefined
+      } : undefined,
+      // For auto-updates
+      remoteReleases: `https://semiphemeral-releases.sfo3.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/win32/${process.arch}`,
     }),
+    // macOS DMG
     new MakerDMG({
       name: `Semiphemeral ${version}`,
       background: path.join(assetsPath, 'dmg-background.png'),
@@ -145,7 +150,13 @@ const config: ForgeConfig = {
         }
       },
     }),
+    // macOS ZIP, for auto-updates
+    new MakerZIP({
+      macUpdateManifestBaseUrl: `https://semiphemeral-releases.sfo3.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/darwin/universal2`
+    }),
+    // Linux RPM
     new MakerRpm({}),
+    // Linux Debian
     new MakerDeb({
       options: {
         icon: path.join(assetsPath, 'icon.png'),
@@ -156,6 +167,23 @@ const config: ForgeConfig = {
         productName: "Semiphemeral",
       }
     })
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-s3',
+      config: {
+        accessKeyId: process.env.DO_SPACES_KEY,
+        secretAccessKey: process.env.DO_SPACES_SECRET,
+        bucket: 'semiphemeral-releases',
+        endpoint: 'https://semiphemeral-releases.sfo3.digitaloceanspaces.com',
+        folder: process.env.SEMIPHEMERAL_ENV,
+        public: true,
+        region: 'sfo3',
+        keyResolver: (filename: string, platform: string, arch: string) => {
+          return `${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
+        }
+      },
+    }
   ],
   hooks: {
     // Delete pre-existing code signatures from the app bundle, as this prevents the unversal binary from building
