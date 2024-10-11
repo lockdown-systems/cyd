@@ -5,6 +5,14 @@ import os from 'os'
 
 import { app } from 'electron';
 
+export const getUpdatesBaseURL = (): string => {
+    let updateArch = process.arch.toString();
+    if (os.platform() == 'darwin') {
+        updateArch = 'universal';
+    }
+    return `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${config.mode}/${process.platform}/${updateArch}`;
+}
+
 export const getResourcesPath = () => {
     if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
         return process.resourcesPath;

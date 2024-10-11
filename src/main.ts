@@ -4,13 +4,29 @@ import path from 'path';
 import fs from 'fs';
 
 import log from 'electron-log/main';
-import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage, session } from 'electron';
+import {
+    app,
+    BrowserWindow,
+    ipcMain,
+    dialog,
+    shell,
+    webContents,
+    nativeImage,
+    session,
+    autoUpdater
+} from 'electron';
 import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
-import { getAccountDataPath, getResourcesPath, trackEvent, packageExceptionForReport } from './util';
+import {
+    getUpdatesBaseURL,
+    getAccountDataPath,
+    getResourcesPath,
+    trackEvent,
+    packageExceptionForReport
+} from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -104,14 +120,10 @@ async function initializeApp() {
 
     // Set up auto-updates for Windows and macOS
     if (os.platform() == 'win32' || os.platform() == 'darwin') {
-        let updateArch = process.arch.toString();
-        if (os.platform() == 'darwin') {
-            updateArch = 'universal';
-        }
         updateElectronApp({
             updateSource: {
                 type: UpdateSourceType.StaticStorage,
-                baseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${config.mode}/${process.platform}/${updateArch}`
+                baseUrl: getUpdatesBaseURL()
             }
         });
     }
@@ -141,6 +153,33 @@ async function createWindow() {
     if (!global.ipcHandlersRegistered) {
 
         // Main IPC events
+
+        ipcMain.handle('checkForUpdates', async () => {
+            try {
+                if (os.platform() == 'darwin') {
+                    autoUpdater.checkForUpdates();
+                } else if (os.platform() == 'win32') {
+                    autoUpdater.checkForUpdates();
+                } else {
+                    // Linux does not support automatic updates
+
+                    // TODO: check for updates on Linux
+
+                    dialog.showMessageBoxSync({
+                        message: "Automatic updates are not supported on Linux.",
+                        type: 'info',
+                    });
+
+                    // const requestHeaders = { 'User-Agent': `Semiphemeral/${app.getVersion()} (${os.platform()})` };
+                    // autoUpdater.setFeedURL({
+                    //     url: getUpdatesBaseURL() + '/RELEASES.json',
+                    //     headers: requestHeaders
+                    // });
+                }
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
 
         ipcMain.handle('getVersion', async () => {
             try {
