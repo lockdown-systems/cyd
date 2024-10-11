@@ -129,7 +129,7 @@ const config: ForgeConfig = {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
       // For auto-updates
-      remoteReleases: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/win32/${process.arch}`,
+      remoteReleases: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
     }),
     // macOS DMG
     new MakerDMG({
@@ -153,7 +153,7 @@ const config: ForgeConfig = {
     }),
     // macOS ZIP, for auto-updates
     new MakerZIP({
-      macUpdateManifestBaseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/darwin/universal`
+      macUpdateManifestBaseUrl: `https://semiphemeral-releases.sfo3.cdn.digitaloceanspaces.com/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
     }),
     // Linux RPM
     new MakerRpm({}),
@@ -179,6 +179,12 @@ const config: ForgeConfig = {
       folder: process.env.SEMIPHEMERAL_ENV,
       public: true,
       keyResolver: (filename: string, platform: string, arch: string) => {
+        if (platform == 'win32') {
+          platform = 'windows';
+        }
+        if (platform == 'darwin') {
+          platform = 'macos';
+        }
         return `${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
       }
     })
