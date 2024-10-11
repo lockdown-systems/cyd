@@ -272,22 +272,48 @@ const config: ForgeConfig = {
         return makeResults;
       }
 
-      console.log('🍎 Preparing to notarize macOS DMG package');
+      console.log('🍎 Preparing to notarize macOS artifacts');
 
-      const dmgPath = makeResults[0].artifacts[0];
       const appleId = process.env.APPLE_ID ? process.env.APPLE_ID : '';
       const appleIdPassword = process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '';
       const teamId = "G762K6CH36";
 
-      // Notarize the DMG
-      console.log('Notarizing macOS DMG package');
-      execSync(`xcrun notarytool submit "${dmgPath}" --wait --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}" --progress`);
+      const artifactPaths: string[] = [];
+      const submissionIDs: string[] = [];
 
-      // Staple the notarization ticket to the DMG
-      console.log('Stapling notarization ticket to macOS DMG package');
-      execSync(`xcrun stapler staple "${dmgPath}"`);
+      for (const result of makeResults) {
+        for (const artifactPath of result.artifacts) {
+          // Skip artifiacts that are not DMGs or ZIPs
+          if (artifactPath.endsWith('.dmg') || artifactPath.endsWith('.zip')) {
+            artifactPaths.push(artifactPath);
 
-      console.log('🍎 Finished notarizing macOS DMG package');
+            // Notarize the artifact
+            console.log(`🍎 Submitting macOS artifact: ${artifactPath}`);
+            const outputJSON = execSync(`xcrun notarytool submit "${artifactPath}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}" -f json`);
+            const output = JSON.parse(outputJSON.toString());
+            submissionIDs.push(output.id);
+          } else {
+            console.log(`🍎 Skipping notarization for artifact: ${artifactPath}`);
+          }
+        }
+      }
+
+      // Wait for the notarization to complete
+      for (let i = 0; i < submissionIDs.length; i++) {
+        const submissionID = submissionIDs[i];
+        const artifactPath = artifactPaths[i];
+
+        console.log(`🍎 Waiting for notarization of macOS artifact: ${artifactPath}`);
+        execSync(`xcrun notarytool wait "${submissionID}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}"`);
+
+        console.log(`🍎 Finished notarizing macOS artifact: ${artifactPath}`);
+      }
+
+      // Staple the notarization ticket to the artifact
+      for (const artifactPath of artifactPaths) {
+        console.log(`🍎 Stapling notarization ticket to macOS artifact: ${artifactPath}`);
+        execSync(`xcrun stapler staple "${artifactPath}`);
+      }
 
       return makeResults;
     },
