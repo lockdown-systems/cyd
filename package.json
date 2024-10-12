@@ -1,7 +1,7 @@
 {
   "name": "semiphemeral",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",

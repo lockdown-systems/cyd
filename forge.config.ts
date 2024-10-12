@@ -130,6 +130,7 @@ const config: ForgeConfig = {
       } : undefined,
       // For auto-updates
       remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
+      noDelta: false,
     }),
     // macOS DMG
     new MakerDMG({
