@@ -164,6 +164,7 @@ async function createWindow() {
                         });
                         autoUpdater.off('update-available', updateAvailable);
                         autoUpdater.off('update-not-available', updateNotAvailable);
+                        autoUpdater.off('error', updateError);
                     };
                     const updateNotAvailable = () => {
                         dialog.showMessageBoxSync({
@@ -172,10 +173,21 @@ async function createWindow() {
                         });
                         autoUpdater.off('update-available', updateAvailable);
                         autoUpdater.off('update-not-available', updateNotAvailable);
+                        autoUpdater.off('error', updateError);
                     };
+                    const updateError = (error: Error) => {
+                        dialog.showMessageBoxSync({
+                            message: `Error checking for updates: ${error.toString()}`,
+                            type: 'info',
+                        });
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                        autoUpdater.off('error', updateError);
+                    }
 
                     autoUpdater.on('update-available', updateAvailable);
                     autoUpdater.on('update-not-available', updateNotAvailable);
+                    autoUpdater.on('error', updateError);
 
                     autoUpdater.checkForUpdates();
 
