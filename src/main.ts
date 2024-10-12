@@ -156,10 +156,33 @@ async function createWindow() {
 
         ipcMain.handle('checkForUpdates', async () => {
             try {
-                if (os.platform() == 'darwin') {
+                if (os.platform() == 'darwin' || os.platform() == 'win32') {
+                    const updateAvailable = () => {
+                        dialog.showMessageBoxSync({
+                            message: `An update is available and is downloading in the background. You will be prompted to install it once it's ready.`,
+                            type: 'info',
+                        });
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                    };
+                    const updateNotAvailable = () => {
+                        dialog.showMessageBoxSync({
+                            message: `You are using the latest version, Semiphemeral ${app.getVersion()}.`,
+                            type: 'info',
+                        });
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                    };
+
+                    autoUpdater.on('update-available', updateAvailable);
+                    autoUpdater.on('update-not-available', updateNotAvailable);
+
                     autoUpdater.checkForUpdates();
-                } else if (os.platform() == 'win32') {
-                    autoUpdater.checkForUpdates();
+
+                    setTimeout(() => {
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                    }, 10000);
                 } else {
                     // Linux does not support automatic updates
 
