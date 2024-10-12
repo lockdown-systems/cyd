@@ -10,7 +10,14 @@ export const getUpdatesBaseURL = (mode: string): string => {
     if (os.platform() == 'darwin') {
         updateArch = 'universal';
     }
-    return `https://releases.lockdown.systems/semiphemeral/${mode}/${process.platform}/${updateArch}`;
+    let platform = process.platform.toString();
+    if (platform == 'win32') {
+        platform = 'windows';
+    }
+    if (platform == 'darwin') {
+        platform = 'macos';
+    }
+    return `https://releases.lockdown.systems/semiphemeral/${mode}/${platform}/${updateArch}`;
 }
 
 export const getResourcesPath = () => {
