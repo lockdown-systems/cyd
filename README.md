@@ -105,15 +105,13 @@ npm run publish-prod-macos
 
 ### Linux
 
-Do this process in a Debian VM in both x64 with VirtualBox and [arm64 with UTM](https://mac.getutm.app/gallery/debian-12).
-
 To set up Debian 12:
 
 - `sudo apt install -y build-essential curl git rpm zip`
 - Install [Node.js LTS](https://nodejs.org/en/download/package-manager) on Linux using nvm
 - Clone the Semiphemeral repo
 
-Build Semiphemeral
+Build Semiphemeral:
 
 ```sh
 cd code/Semiphemeral
@@ -121,14 +119,14 @@ cd code/Semiphemeral
 # Make a release and test it
 npm run make-dev-linux
 npm run make-prod-linux
+```
 
-# Publish a dev release
-cd ../linux-repos/
-./copy-binaries.sh dev
-docker compose --env-file .env-dev up --build
+To publish a release for linux/amd64 and linux/arm64, run this on an Apply Silicon Mac with Docker installed:
 
-# Publish a prod release
-cd ../linux-repos/
-./copy-binaries.sh prod
-docker compose --env-file .env-prod up --build
+```sh
+# Publish release
+./scripts/publish-dev-linux.sh
+./scripts/publish-prod-linux.sh
+
+# Then follow the instructions to copy the release to linux-repos
 ```
