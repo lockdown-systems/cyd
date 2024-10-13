@@ -1,7 +1,7 @@
 {
   "name": "semiphemeral",
   "private": true,
-  "version": "0.1.6-dev",
+  "version": "0.1.7-dev",
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",
@@ -49,7 +49,6 @@
     "vue": "^3.4.21"
   },
   "devDependencies": {
-    "@cypress/vue": "^6.0.0",
     "@electron-forge/cli": "7.4.0",
     "@electron-forge/maker-deb": "7.4.0",
     "@electron-forge/maker-dmg": "7.4.0",
@@ -79,7 +78,6 @@
     "@vue/eslint-config-typescript": "^13.0.0",
     "archiver": "^7.0.1",
     "cross-env": "^7.0.3",
-    "cypress": "^13.11.0",
     "electron": "^31.1.2",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
@@ -94,6 +92,8 @@
     "vue-tsc": "^2.0.6"
   },
   "optionalDependencies": {
+    "@cypress/vue": "^6.0.0",
+    "cypress": "^13.11.0",
     "appdmg": "^0.6.6"
   }
 }
