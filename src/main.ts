@@ -196,20 +196,11 @@ async function createWindow() {
                         autoUpdater.off('update-not-available', updateNotAvailable);
                     }, 10000);
                 } else {
-                    // Linux does not support automatic updates
-
-                    // TODO: check for updates on Linux
-
+                    // Linux updates are done through the package manager
                     dialog.showMessageBoxSync({
-                        message: "Automatic updates are not supported on Linux.",
+                        message: `You are running Semiphemeral ${app.getVersion()}.\n\nInstall updates with your Linux package manager to make sure you're on the latest version.`,
                         type: 'info',
                     });
-
-                    // const requestHeaders = { 'User-Agent': `Semiphemeral/${app.getVersion()} (${os.platform()})` };
-                    // autoUpdater.setFeedURL({
-                    //     url: getUpdatesBaseURL(config.mode) + '/RELEASES.json',
-                    //     headers: requestHeaders
-                    // });
                 }
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
