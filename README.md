@@ -43,10 +43,10 @@ Do all of these before making a release:
 
 To make the release:
 
-- [ ] On Ubuntu build machine, in Windows VM, make Windows x64 release
-- [ ] On Mac build machine, in Windows VM (arm64), make Windows arm64 release
-- [ ] On Mac build machine, make macOS (universal) release
-- [ ] On Mac build machine, with Docker, make Linux (amd64) and Linux (arm64) release
+- [ ] Windows x86: Ubuntu build machine, in Windows VM
+- [ ] Windows arm64: Mac build machine, in Windows VM (arm64)
+- [ ] macOS universal: Mac build machine, host
+- [ ] Linux amd64 and Linux arm64: Mac build machine, Docker
 
 ### Windows
 
