@@ -5,6 +5,21 @@ import os from 'os'
 
 import { app } from 'electron';
 
+export const getUpdatesBaseURL = (mode: string): string => {
+    let updateArch = process.arch.toString();
+    if (os.platform() == 'darwin') {
+        updateArch = 'universal';
+    }
+    let platform = process.platform.toString();
+    if (platform == 'win32') {
+        platform = 'windows';
+    }
+    if (platform == 'darwin') {
+        platform = 'macos';
+    }
+    return `https://releases.lockdown.systems/semiphemeral/${mode}/${platform}/${updateArch}`;
+}
+
 export const getResourcesPath = () => {
     if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
         return process.resourcesPath;

@@ -4,12 +4,29 @@ import path from 'path';
 import fs from 'fs';
 
 import log from 'electron-log/main';
-import { app, BrowserWindow, ipcMain, dialog, shell, webContents, nativeImage, session } from 'electron';
+import {
+    app,
+    BrowserWindow,
+    ipcMain,
+    dialog,
+    shell,
+    webContents,
+    nativeImage,
+    session,
+    autoUpdater
+} from 'electron';
+import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
 import { defineIPCArchive } from './archive';
-import { getAccountDataPath, getResourcesPath, trackEvent, packageExceptionForReport } from './util';
+import {
+    getUpdatesBaseURL,
+    getAccountDataPath,
+    getResourcesPath,
+    trackEvent,
+    packageExceptionForReport
+} from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -101,6 +118,17 @@ async function initializeApp() {
         database.setConfig("deviceDescription", description);
     }
 
+    // Set up auto-updates for Windows and macOS
+    if (os.platform() == 'win32' || os.platform() == 'darwin') {
+        updateElectronApp({
+            updateSource: {
+                type: UpdateSourceType.StaticStorage,
+                baseUrl: getUpdatesBaseURL(config.mode)
+            }
+        });
+    }
+
+    // Create the window
     await createWindow();
 }
 
@@ -125,6 +153,59 @@ async function createWindow() {
     if (!global.ipcHandlersRegistered) {
 
         // Main IPC events
+
+        ipcMain.handle('checkForUpdates', async () => {
+            try {
+                if (os.platform() == 'darwin' || os.platform() == 'win32') {
+                    const updateAvailable = () => {
+                        dialog.showMessageBoxSync({
+                            message: `An update is available and is downloading in the background. You will be prompted to install it once it's ready.`,
+                            type: 'info',
+                        });
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                        autoUpdater.off('error', updateError);
+                    };
+                    const updateNotAvailable = () => {
+                        dialog.showMessageBoxSync({
+                            message: `You are using the latest version, Semiphemeral ${app.getVersion()}.`,
+                            type: 'info',
+                        });
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                        autoUpdater.off('error', updateError);
+                    };
+                    const updateError = (error: Error) => {
+                        dialog.showMessageBoxSync({
+                            message: `Error checking for updates: ${error.toString()}`,
+                            type: 'info',
+                        });
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                        autoUpdater.off('error', updateError);
+                    }
+
+                    autoUpdater.on('update-available', updateAvailable);
+                    autoUpdater.on('update-not-available', updateNotAvailable);
+                    autoUpdater.on('error', updateError);
+
+                    autoUpdater.checkForUpdates();
+
+                    setTimeout(() => {
+                        autoUpdater.off('update-available', updateAvailable);
+                        autoUpdater.off('update-not-available', updateNotAvailable);
+                    }, 10000);
+                } else {
+                    // Linux updates are done through the package manager
+                    dialog.showMessageBoxSync({
+                        message: `You are running Semiphemeral ${app.getVersion()}.\n\nInstall updates with your Linux package manager to make sure you're on the latest version.`,
+                        type: 'info',
+                    });
+                }
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
 
         ipcMain.handle('getVersion', async () => {
             try {

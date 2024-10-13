@@ -12,6 +12,9 @@ import {
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
+    checkForUpdates: () => {
+        ipcRenderer.invoke('checkForUpdates')
+    },
     getVersion: (): Promise<string> => {
         return ipcRenderer.invoke('getVersion')
     },

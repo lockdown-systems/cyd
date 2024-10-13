@@ -1,7 +1,7 @@
 {
   "name": "semiphemeral",
   "private": true,
-  "version": "0.1.0-dev5",
+  "version": "0.1.7-dev",
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",
@@ -9,13 +9,17 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make-local": "sh ./scripts/make-local.sh",
-    "make-dev": "sh ./scripts/make-dev.sh",
+    "make-local": "./scripts/make-local.sh",
+    "make-dev-linux": "./scripts/make-dev-linux.sh",
     "make-dev-macos": "./scripts/make-dev-macos.sh",
     "make-dev-windows": "powershell -ExecutionPolicy Bypass -File ./scripts/make-dev-windows.ps1",
-    "make-prod": "./scripts/make-prod.sh",
+    "make-prod-linux": "./scripts/make-prod-linux.sh",
     "make-prod-macos": "./scripts/make-prod-macos.sh",
     "make-prod-windows": "powershell -ExecutionPolicy Bypass -File ./scripts/make-prod-windows.ps1",
+    "publish-dev-macos": "./scripts/publish-dev-macos.sh",
+    "publish-dev-windows": "powershell -ExecutionPolicy Bypass -File ./scripts/publish-dev-windows.ps1",
+    "publish-prod-macos": "./scripts/publish-prod-macos.sh",
+    "publish-prod-windows": "powershell -ExecutionPolicy Bypass -File ./scripts/publish-prod-windows.ps1",
     "tests": "vitest run .",
     "tests:components": "cd src/renderer && cypress run --component",
     "open-cypress": "cd src/renderer && cypress open",
@@ -41,10 +45,10 @@
     "mitt": "^3.0.1",
     "moment": "^2.30.1",
     "unzipper": "^0.12.3",
+    "update-electron-app": "^3.0.0",
     "vue": "^3.4.21"
   },
   "devDependencies": {
-    "@cypress/vue": "^6.0.0",
     "@electron-forge/cli": "7.4.0",
     "@electron-forge/maker-deb": "7.4.0",
     "@electron-forge/maker-dmg": "7.4.0",
@@ -54,6 +58,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "7.4.0",
     "@electron-forge/plugin-fuses": "7.4.0",
     "@electron-forge/plugin-vite": "7.4.0",
+    "@electron-forge/publisher-s3": "7.4.0",
     "@electron/fuses": "^1.8.0",
     "@electron/notarize": "^2.4.0",
     "@electron/osx-sign": "^1.3.1",
@@ -73,7 +78,6 @@
     "@vue/eslint-config-typescript": "^13.0.0",
     "archiver": "^7.0.1",
     "cross-env": "^7.0.3",
-    "cypress": "^13.11.0",
     "electron": "^31.1.2",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
@@ -88,6 +92,8 @@
     "vue-tsc": "^2.0.6"
   },
   "optionalDependencies": {
+    "@cypress/vue": "^6.0.0",
+    "cypress": "^13.11.0",
     "appdmg": "^0.6.6"
   }
 }

@@ -1,11 +1,13 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerDMG } from '@electron-forge/maker-dmg';
+import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { PublisherS3 } from '@electron-forge/publisher-s3';
 
 import { execSync } from 'child_process';
 import path from 'path';
@@ -118,14 +120,19 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
+    // Windows
     new MakerSquirrel({
-      iconUrl: "https://raw.githubusercontent.com/Lockdown-Systems/Semiphemeral-Releases/main/icon.ico",
+      iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
       name: "Semiphemeral",
       setupIcon: path.join(assetsPath, "icon.ico"),
       windowsSign: shouldSignWindows ? {
         signToolPath: findLatestSigntoolPath()
-      } : undefined
+      } : undefined,
+      // For auto-updates
+      remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
+      noDelta: false,
     }),
+    // macOS DMG
     new MakerDMG({
       name: `Semiphemeral ${version}`,
       background: path.join(assetsPath, 'dmg-background.png'),
@@ -145,7 +152,13 @@ const config: ForgeConfig = {
         }
       },
     }),
+    // macOS ZIP, for auto-updates
+    new MakerZIP({
+      macUpdateManifestBaseUrl: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
+    }),
+    // Linux RPM
     new MakerRpm({}),
+    // Linux Debian
     new MakerDeb({
       options: {
         icon: path.join(assetsPath, 'icon.png'),
@@ -154,6 +167,26 @@ const config: ForgeConfig = {
         categories: ['Utility', 'Network'],
         description: 'Claw back your data from Big Tech',
         productName: "Semiphemeral",
+      }
+    })
+  ],
+  publishers: [
+    new PublisherS3({
+      accessKeyId: process.env.DO_SPACES_KEY,
+      secretAccessKey: process.env.DO_SPACES_SECRET,
+      bucket: 'lockdownsystems-releases',
+      endpoint: 'https://sfo3.digitaloceanspaces.com',
+      region: 'sfo3',
+      folder: process.env.SEMIPHEMERAL_ENV,
+      public: true,
+      keyResolver: (filename: string, platform: string, arch: string) => {
+        if (platform == 'win32') {
+          platform = 'windows';
+        }
+        if (platform == 'darwin') {
+          platform = 'macos';
+        }
+        return `semiphemeral/${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
       }
     })
   ],
@@ -246,22 +279,50 @@ const config: ForgeConfig = {
         return makeResults;
       }
 
-      console.log('🍎 Preparing to notarize macOS DMG package');
+      console.log('🍎 Preparing to notarize macOS artifacts');
 
-      const dmgPath = makeResults[0].artifacts[0];
       const appleId = process.env.APPLE_ID ? process.env.APPLE_ID : '';
       const appleIdPassword = process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '';
       const teamId = "G762K6CH36";
 
-      // Notarize the DMG
-      console.log('Notarizing macOS DMG package');
-      execSync(`xcrun notarytool submit "${dmgPath}" --wait --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}" --progress`);
+      const artifactPaths: string[] = [];
+      const submissionIDs: string[] = [];
 
-      // Staple the notarization ticket to the DMG
-      console.log('Stapling notarization ticket to macOS DMG package');
-      execSync(`xcrun stapler staple "${dmgPath}"`);
+      for (const result of makeResults) {
+        for (const artifactPath of result.artifacts) {
+          // Skip artifiacts that are not DMGs or ZIPs
+          if (artifactPath.endsWith('.dmg') || artifactPath.endsWith('.zip')) {
+            artifactPaths.push(artifactPath);
 
-      console.log('🍎 Finished notarizing macOS DMG package');
+            // Notarize the artifact
+            console.log(`🍎 Submitting macOS artifact: ${artifactPath}`);
+            const outputJSON = execSync(`xcrun notarytool submit "${artifactPath}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}" -f json`);
+            const output = JSON.parse(outputJSON.toString());
+            submissionIDs.push(output.id);
+          } else {
+            console.log(`🍎 Skipping notarization for artifact: ${artifactPath}`);
+          }
+        }
+      }
+
+      // Wait for the notarization to complete
+      for (let i = 0; i < submissionIDs.length; i++) {
+        const submissionID = submissionIDs[i];
+        const artifactPath = artifactPaths[i];
+
+        console.log(`🍎 Waiting for notarization of macOS artifact: ${artifactPath}`);
+        execSync(`xcrun notarytool wait "${submissionID}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}"`);
+      }
+
+      // Staple the notarization ticket to the artifact
+      for (const artifactPath of artifactPaths) {
+        if (artifactPath.endsWith('.dmg')) {
+          console.log(`🍎 Stapling notarization ticket to macOS artifact: ${artifactPath}`);
+          execSync(`xcrun stapler staple "${artifactPath}"`);
+        } else {
+          console.log(`🍎 Skipping stapling for artifact: ${artifactPath}`);
+        }
+      }
 
       return makeResults;
     },
