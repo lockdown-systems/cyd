@@ -2,11 +2,11 @@
 
 # Build release for arm64
 docker build --platform linux/arm64 -f Dockerfile-linux-release -t semiphemeral-linux-release .
-docker run --platform linux/arm64 --rm -v $(pwd):/app semiphemeral-linux-release-prod npm run make-prod-linux
+docker run --platform linux/arm64 --rm -v $(pwd):/app semiphemeral-linux-release npm run make-prod-linux
 
 # Build release for amd64
 docker build --platform linux/amd64 -f Dockerfile-linux-release -t semiphemeral-linux-release .
-docker run --platform linux/amd64 --rm -v $(pwd):/app semiphemeral-linux-release-prod npm run make-prod-linux
+docker run --platform linux/amd64 --rm -v $(pwd):/app semiphemeral-linux-release npm run make-prod-linux
 
 # Copy binaries to linux-repos
 echo ""
