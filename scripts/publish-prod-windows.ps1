@@ -7,4 +7,4 @@ $env:WINDOWS_SIGN = "true"
 $env:SQUIRREL_TEMP = "build\SquirrelTemp"
 
 powershell -ExecutionPolicy Bypass -File .\scripts\clean.ps1
-electron-forge publish
+electron-forge publish --arch=x64,arm64
