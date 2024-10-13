@@ -37,9 +37,16 @@ npm run make-prod
 
 Do all of these before making a release:
 
-- Bump the version in `package.json`
-- Run the tests
-- Manually test with `npm run start` to make sure nothing glaring is broken
+- [ ] Bump the version in `package.json`
+- [ ] Manually test with `npm run start` and make sure it runs
+- [ ] Make a release, install it, and run the installed binary, and make sure it runs
+
+To make the release:
+
+- [ ] On Ubuntu build machine, in Windows VM, make Windows x64 release
+- [ ] On Mac build machine, in Windows VM (arm64), make Windows arm64 release
+- [ ] On Mac build machine, make macOS (universal) release
+- [ ] On Mac build machine, with Docker, make Linux (amd64) and Linux (arm64) release
 
 ### Windows
 

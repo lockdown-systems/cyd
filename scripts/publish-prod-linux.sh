@@ -1,16 +1,18 @@
 #!/bin/bash
 
 # Build release for arm64
-docker build -f Dockerfile-linux-release --platform linux/arm64 -t semiphemeral-linux-release .
-docker run --platform linux/arm64 -v $(pwd):/app semiphemeral-linux-release npm run make-dev-linux
+docker build --platform linux/arm64 -f Dockerfile-linux-release -t semiphemeral-linux-release .
+docker run --platform linux/arm64 --rm -v $(pwd):/app semiphemeral-linux-release-prod npm run make-prod-linux
 
 # Build release for amd64
-docker build -f Dockerfile-linux-release --platform linux/amd64 -t semiphemeral-linux-release .
-docker run --platform linux/amd64 -v $(pwd):/app semiphemeral-linux-release npm run make-dev-linux
+docker build --platform linux/amd64 -f Dockerfile-linux-release -t semiphemeral-linux-release .
+docker run --platform linux/amd64 --rm -v $(pwd):/app semiphemeral-linux-release-prod npm run make-prod-linux
 
 # Copy binaries to linux-repos
-echo "Copying binaries to linux-repos like this:"
-echo "---"
+echo ""
+echo "======================================="
+echo "Copy binaries to linux-repos like this:"
+echo "======================================="
 echo cd ../linux-repos/
-echo ./copy-binaries.sh dev
-echo docker compose --env-file .env-dev up --build
+echo ./copy-binaries.sh prod
+echo docker compose --env-file .env-prod up --build
