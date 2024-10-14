@@ -492,13 +492,30 @@ export class XAccountController {
 
                     if (entries.content.entryType == "TimelineTimelineModule") {
                         entries.content.items?.forEach((item) => {
-                            if (item.item.itemContent.tweet_results?.result.core) {
-                                userLegacy = item.item.itemContent.tweet_results?.result.core.user_results.result?.legacy;
-                                tweetLegacy = item.item.itemContent.tweet_results?.result.legacy;
+                            if (
+                                item.item.itemContent.tweet_results &&
+                                item.item.itemContent.tweet_results.result &&
+                                item.item.itemContent.tweet_results.result.core &&
+                                item.item.itemContent.tweet_results.result.core.user_results &&
+                                item.item.itemContent.tweet_results.result.core.user_results.result &&
+                                item.item.itemContent.tweet_results.result.core.user_results.result.legacy &&
+                                item.item.itemContent.tweet_results.result.legacy
+                            ) {
+                                userLegacy = item.item.itemContent.tweet_results.result.core.user_results.result.legacy;
+                                tweetLegacy = item.item.itemContent.tweet_results.result.legacy;
                             }
-                            if (item.item.itemContent.tweet_results?.result.tweet) {
-                                userLegacy = item.item.itemContent.tweet_results?.result.tweet.core.user_results.result?.legacy;
-                                tweetLegacy = item.item.itemContent.tweet_results?.result.tweet.legacy;
+                            if (
+                                item.item.itemContent.tweet_results &&
+                                item.item.itemContent.tweet_results.result &&
+                                item.item.itemContent.tweet_results.result.tweet &&
+                                item.item.itemContent.tweet_results.result.tweet.core &&
+                                item.item.itemContent.tweet_results.result.tweet.core.user_results &&
+                                item.item.itemContent.tweet_results.result.tweet.core.user_results.result &&
+                                item.item.itemContent.tweet_results.result.tweet.core.user_results.result.legacy &&
+                                item.item.itemContent.tweet_results.result.tweet.legacy
+                            ) {
+                                userLegacy = item.item.itemContent.tweet_results.result.tweet.core.user_results.result.legacy;
+                                tweetLegacy = item.item.itemContent.tweet_results.result.tweet.legacy;
                             }
 
                             if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
@@ -507,13 +524,32 @@ export class XAccountController {
                             }
                         });
                     } else if (entries.content.entryType == "TimelineTimelineItem") {
-                        if (entries.content.itemContent?.tweet_results?.result.core) {
-                            userLegacy = entries.content.itemContent?.tweet_results?.result.core.user_results.result?.legacy;
-                            tweetLegacy = entries.content.itemContent?.tweet_results?.result.legacy;
+                        if (
+                            entries.content.itemContent &&
+                            entries.content.itemContent.tweet_results &&
+                            entries.content.itemContent.tweet_results.result &&
+                            entries.content.itemContent.tweet_results.result.core &&
+                            entries.content.itemContent.tweet_results.result.core.user_results &&
+                            entries.content.itemContent.tweet_results.result.core.user_results.result &&
+                            entries.content.itemContent.tweet_results.result.core.user_results.result.legacy &&
+                            entries.content.itemContent.tweet_results.result.legacy
+                        ) {
+                            userLegacy = entries.content.itemContent.tweet_results.result.core.user_results.result.legacy;
+                            tweetLegacy = entries.content.itemContent.tweet_results.result.legacy;
                         }
-                        if (entries.content.itemContent?.tweet_results?.result.tweet) {
-                            userLegacy = entries.content.itemContent?.tweet_results?.result.tweet.core.user_results.result?.legacy;
-                            tweetLegacy = entries.content.itemContent?.tweet_results?.result.tweet.legacy;
+                        if (
+                            entries.content.itemContent &&
+                            entries.content.itemContent.tweet_results &&
+                            entries.content.itemContent.tweet_results.result &&
+                            entries.content.itemContent.tweet_results.result.tweet &&
+                            entries.content.itemContent.tweet_results.result.tweet.core &&
+                            entries.content.itemContent.tweet_results.result.tweet.core.user_results &&
+                            entries.content.itemContent.tweet_results.result.tweet.core.user_results.result &&
+                            entries.content.itemContent.tweet_results.result.tweet.core.user_results.result.legacy &&
+                            entries.content.itemContent.tweet_results.result.tweet.legacy
+                        ) {
+                            userLegacy = entries.content.itemContent.tweet_results.result.tweet.core.user_results.result.legacy;
+                            tweetLegacy = entries.content.itemContent.tweet_results.result.tweet.legacy;
                         }
 
                         if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {

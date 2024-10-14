@@ -69,7 +69,7 @@ class MockMITMController implements IMITMController {
     private proxyFilter: string[] = [];
     private isMonitoring: boolean = false;
     public responseData: ResponseData[] = [];
-    constructor(testdata: string) {
+    constructor(testdata: string | undefined) {
         if (testdata == "indexTweets") {
             this.responseData = [
                 {
@@ -135,7 +135,7 @@ class MockMITMController implements IMITMController {
     async clearProcessed(): Promise<void> { }
 }
 
-const createController = (testdata: string): XAccountController => {
+const createController = (testdata: string | undefined): XAccountController => {
     const mitmController = new MockMITMController(testdata);
     const controller = new XAccountController(1, mitmController);
     controller.initDB()
@@ -604,4 +604,16 @@ test("XAccountController.indexParseMessages() should add all the messages, on re
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
+})
+
+test("XAccountController.indexParseMessages() should succeed with automation error dev-54", async () => {
+    // https://dev-admin.semiphemeral.com/#/error/54
+    const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', 'dev-54.json'), 'utf8'));
+    const responseData = testData.latestResponseData;
+
+    const controller = createController("");
+    controller.mitmController.responseData = [responseData];
+
+    const progress: XProgress = await controller.indexParseTweets(false)
+    expect(progress.likesIndexed).toBe(0)
 })
