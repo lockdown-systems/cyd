@@ -142,6 +142,18 @@ const createController = (testdata: string | undefined): XAccountController => {
     return controller;
 }
 
+const createControllerWithAutomationErrorReportData = (filename: string): XAccountController => {
+    const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', filename), 'utf8'));
+    const responseData = testData.latestResponseData;
+
+    const mitmController = new MockMITMController(undefined);
+    mitmController.responseData = [responseData];
+
+    const controller = new XAccountController(1, mitmController);
+    controller.initDB()
+    return controller;
+}
+
 
 beforeEach(() => {
     database.runMainMigrations();
@@ -606,14 +618,38 @@ test("XAccountController.indexParseMessages() should add all the messages, on re
     expect(rows.length).toBe(116);
 })
 
-test("XAccountController.indexParseMessages() should succeed with automation error dev-54", async () => {
+test("XAccountController.indexParseTweets() should succeed with automation error dev-54", async () => {
     // https://dev-admin.semiphemeral.com/#/error/54
-    const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', 'dev-54.json'), 'utf8'));
-    const responseData = testData.latestResponseData;
-
-    const controller = createController("");
-    controller.mitmController.responseData = [responseData];
-
+    const controller = createControllerWithAutomationErrorReportData("dev-54.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
 })
+
+test("XAccountController.indexParseTweets() should succeed with automation error dev-51", async () => {
+    // https://dev-admin.semiphemeral.com/#/error/51
+    const controller = createControllerWithAutomationErrorReportData("dev-51.json")
+    const progress: XProgress = await controller.indexParseTweets(false)
+    expect(progress.likesIndexed).toBe(0)
+})
+
+
+test("XAccountController.indexParseTweets() should succeed with automation error dev-34", async () => {
+    // https://dev-admin.semiphemeral.com/#/error/34
+    const controller = createControllerWithAutomationErrorReportData("dev-34.json")
+    const progress: XProgress = await controller.indexParseTweets(false)
+    expect(progress.likesIndexed).toBe(0)
+})
+
+test("XAccountController.indexParseTweets() should succeed with automation error dev-25", async () => {
+    // https://dev-admin.semiphemeral.com/#/error/25
+    const controller = createControllerWithAutomationErrorReportData("dev-25.json")
+    const progress: XProgress = await controller.indexParseTweets(false)
+    expect(progress.likesIndexed).toBe(0)
+})
+
+// test("XAccountController.indexParseMessages() should succeed with automation error dev-16", async () => {
+//     // https://dev-admin.semiphemeral.com/#/error/16
+//     const controller = createControllerWithAutomationErrorReportData("dev-16.json")
+//     const progress: XProgress = await controller.indexParseMessages(false)
+//     expect(progress.messagesIndexed).toBe(1)
+// })
