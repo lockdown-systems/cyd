@@ -93,7 +93,7 @@
   },
   "optionalDependencies": {
     "@cypress/vue": "^6.0.0",
-    "cypress": "^13.11.0",
-    "appdmg": "^0.6.6"
+    "appdmg": "^0.6.6",
+    "cypress": "^13.11.0"
   }
 }

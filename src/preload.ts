@@ -95,8 +95,8 @@ contextBridge.exposeInMainWorld('electron', {
         updateJob: (accountID: number, jobJSON: XJob) => {
             ipcRenderer.invoke('X:updateJob', accountID, jobJSON)
         },
-        getUsernameStart: (accountID: number) => {
-            ipcRenderer.invoke('X:getUsernameStart', accountID)
+        getUsernameStart: (accountID: number): Promise<boolean> => {
+            return ipcRenderer.invoke('X:getUsernameStart', accountID)
         },
         getUsernameStop: (accountID: number) => {
             ipcRenderer.invoke('X:getUsernameStop', accountID)

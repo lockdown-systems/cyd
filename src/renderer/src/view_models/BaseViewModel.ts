@@ -254,6 +254,14 @@ export class BaseViewModel {
         }
     }
 
+    async loadBlank() {
+        console.log("AccountXViewModel.loadBlank");
+        const webview = this.getWebview();
+        if (webview) {
+            await webview.loadURL("about:blank")
+        }
+    }
+
     async loadURL(url: string) {
         console.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
