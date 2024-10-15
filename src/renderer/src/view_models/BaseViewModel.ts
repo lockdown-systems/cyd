@@ -181,27 +181,32 @@ export class BaseViewModel {
         await new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async waitForSelector(selector: string, timeout: number = 5000) {
-        const startingURL = this.webview.getURL();
+    async waitForSelector(selector: string, startingURL: string = '', timeout: number = 5000) {
+        if (startingURL == '') {
+            startingURL = this.webview.getURL();
+        }
 
         const startTime = Date.now();
         // eslint-disable-next-line no-constant-condition
         while (true) {
+            // Check if the URL has changed
+            if (this.webview.getURL() !== startingURL) {
+                console.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
+                throw new URLChangedError(startingURL, this.webview.getURL());
+            }
+
+            // Check if we have timed out
             if (Date.now() - startTime > timeout) {
                 throw new TimeoutError(selector);
             }
+
+            // Did we find the selector?
             const found = await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
             if (found) {
                 console.log("waitForSelector", `found: ${selector}`);
                 break;
             }
             await this.sleep(200);
-
-            // Check if the URL has changed
-            if (this.webview.getURL() !== startingURL) {
-                console.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
-                throw new URLChangedError(startingURL, this.webview.getURL());
-            }
         }
     }
 
