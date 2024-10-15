@@ -1542,92 +1542,94 @@ I'm deleting all of your direct message conversations, start with the most recen
                 }
 
                 errorTriggered = false;
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    await this.waitForPause();
+                if (!this.progress.isDeleteDMsFinished) {
+                    // eslint-disable-next-line no-constant-condition
+                    while (true) {
+                        await this.waitForPause();
 
-                    // Wait for conversation selector
-                    if (!await this.waitForSelectorDeleteDMs(
-                        'div[data-testid="conversation"]',
-                        AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed
-                    )) {
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Wait for conversation selector
+                        if (!await this.waitForSelectorDeleteDMs(
+                            'div[data-testid="conversation"]',
+                            AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed
+                        )) {
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Mouseover the first conversation
-                    if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
-                        await this.error(AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed, {}, {
-                            currentURL: this.webview.getURL()
-                        });
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Mouseover the first conversation
+                        if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
+                            await this.error(AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed, {}, {
+                                currentURL: this.webview.getURL()
+                            });
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Wait for menu button selector
-                    if (!await this.waitForSelectorWithinSelectorDeleteDMs(
-                        'div[data-testid="conversation"]',
-                        'button[aria-label="More"]',
-                        AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed
-                    )) {
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Wait for menu button selector
+                        if (!await this.waitForSelectorWithinSelectorDeleteDMs(
+                            'div[data-testid="conversation"]',
+                            'button[aria-label="More"]',
+                            AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed
+                        )) {
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Click the menu button
-                    if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
-                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed, {}, {
-                            currentURL: this.webview.getURL()
-                        });
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Click the menu button
+                        if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
+                            await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed, {}, {
+                                currentURL: this.webview.getURL()
+                            });
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Wait for delete button selector
-                    if (!await this.waitForSelectorDeleteDMs(
-                        'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
-                        AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed
-                    )) {
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Wait for delete button selector
+                        if (!await this.waitForSelectorDeleteDMs(
+                            'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
+                            AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed
+                        )) {
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Click the delete button
-                    if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
-                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed, {}, {
-                            currentURL: this.webview.getURL()
-                        });
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Click the delete button
+                        if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
+                            await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed, {}, {
+                                currentURL: this.webview.getURL()
+                            });
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Wait for delete confirm selector
-                    if (!await this.waitForSelectorDeleteDMs(
-                        'button[data-testid="confirmationSheetConfirm"]',
-                        AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed
-                    )) {
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Wait for delete confirm selector
+                        if (!await this.waitForSelectorDeleteDMs(
+                            'button[data-testid="confirmationSheetConfirm"]',
+                            AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed
+                        )) {
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    // Click the confirm button
-                    if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
-                        await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed, {}, {
-                            currentURL: this.webview.getURL()
-                        });
-                        errorTriggered = true;
-                        break;
-                    }
+                        // Click the confirm button
+                        if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
+                            await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed, {}, {
+                                currentURL: this.webview.getURL()
+                            });
+                            errorTriggered = true;
+                            break;
+                        }
 
-                    await this.sleep(500);
-                    await this.waitForLoadingToFinish();
+                        await this.sleep(500);
+                        await this.waitForLoadingToFinish();
 
-                    // Update the progress
-                    this.progress = await window.electron.X.getProgress(this.account.id);
+                        // Update the progress
+                        this.progress = await window.electron.X.getProgress(this.account.id);
 
-                    // Have we deleted all conversations?
-                    if (this.progress.conversationsDeleted == this.progress.totalConversationsToDelete) {
-                        break;
+                        // Have we deleted all conversations?
+                        if (this.progress.conversationsDeleted == this.progress.totalConversationsToDelete) {
+                            break;
+                        }
                     }
                 }
 
