@@ -632,13 +632,6 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     expect(progress.likesIndexed).toBe(0)
 })
 
-// test("XAccountController.indexParseMessages() should succeed with automation error dev-16", async () => {
-//     // https://dev-admin.semiphemeral.com/#/error/16
-//     const controller = createControllerWithAutomationErrorReportData("dev-16.json")
-//     const progress: XProgress = await controller.indexParseMessages(false)
-//     expect(progress.messagesIndexed).toBe(1)
-// })
-
 test("XAccountController.indexParseTweets() should succeed with automation error dev-25", async () => {
     // https://dev-admin.semiphemeral.com/#/error/25
     const controller = createControllerWithAutomationErrorReportData("dev-25.json")
