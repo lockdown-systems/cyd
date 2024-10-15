@@ -384,7 +384,7 @@ export class AccountXViewModel extends BaseViewModel {
         await this.loadBlank();
         await window.electron.X.getUsernameStart(this.account.id);
         await this.loadURLWithRateLimit("https://x.com/settings/account");
-        await this.waitForSelector('a[href="/settings/your_twitter_data/account"]');
+        await this.waitForSelector('a[href="/settings/your_twitter_data/account"]', "https://x.com/settings/account");
         const username = await window.electron.X.getUsername(this.account.id);
         await window.electron.X.getUsernameStop(this.account.id);
 
@@ -417,7 +417,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.instructions = `You're logged in as **@${username}**. Now I'm scraping your profile image...`;
 
         await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
-        await this.waitForSelector('div[aria-label="Image"]');
+        await this.waitForSelector('div[aria-label="Image"]', `https://x.com/${username}/photo`);
 
         const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[aria-label="Image"]').querySelector('img').src`);
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
@@ -626,7 +626,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 try {
-                    await this.waitForSelector('article');
+                    await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/with_replies");
                 } catch (e) {
                     this.log("runJob", ["jobType=indexTweets", "selector never appeared", e]);
                     if (e instanceof TimeoutError) {
@@ -789,7 +789,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                     await this.loadURLWithRateLimit("https://x.com/messages");
                     try {
                         await window.electron.X.resetRateLimitInfo(this.account.id);
-                        await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+                        await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                         break;
                     } catch (e) {
                         this.log("runJob", ["jobType=indexConversations", "selector never appeared", e]);
@@ -916,9 +916,9 @@ Please wait while I index all of the messages from each conversation.
                     while (true) {
                         await this.waitForPause();
 
-                        await this.loadURLWithRateLimit("https://x.com/messages/" + indexMessagesStartResponse.conversationIDs[i]);
+                        await this.loadURLWithRateLimit(`https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`);
                         try {
-                            await this.waitForSelector('div[data-testid="DmActivityContainer"]');
+                            await this.waitForSelector('div[data-testid="DmActivityContainer"]', `https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`);
                             break;
                         } catch (e) {
                             this.log("runJob", ["jobType=indexMessages", "selector never appeared", e]);
@@ -1105,7 +1105,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 try {
-                    await this.waitForSelector('article');
+                    await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/likes");
                 } catch (e) {
                     this.log("runJob", ["jobType=indexLikes", "selector never appeared", e]);
                     if (e instanceof TimeoutError) {
@@ -1509,7 +1509,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                     await this.loadURLWithRateLimit("https://x.com/messages");
                     try {
                         await window.electron.X.resetRateLimitInfo(this.account.id);
-                        await this.waitForSelector('div[aria-label="Timeline: Messages"]');
+                        await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                         break;
                     } catch (e) {
                         this.log("runJob", ["jobType=deleteDMs", "selector never appeared", e]);
