@@ -381,9 +381,8 @@ export class AccountXViewModel extends BaseViewModel {
         // Get the username
         this.log("login", "getting username");
         this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
-
+        await this.loadBlank();
         await window.electron.X.getUsernameStart(this.account.id);
-        await this.sleep(2000);
         await this.loadURLWithRateLimit("https://x.com/settings/account");
         await this.waitForSelector('a[href="/settings/your_twitter_data/account"]');
         const username = await window.electron.X.getUsername(this.account.id);
@@ -614,6 +613,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 }
 
                 // Start monitoring network requests
+                await this.loadBlank();
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
@@ -778,6 +778,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 }
 
                 // Start monitoring network requests
+                await this.loadBlank();
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
@@ -883,6 +884,7 @@ Please wait while I index all of the messages from each conversation.
                 }
 
                 // Start monitoring network requests
+                await this.loadBlank();
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
@@ -1089,6 +1091,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 }
 
                 // Start monitoring network requests
+                await this.loadBlank();
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 

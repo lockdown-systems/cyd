@@ -32,7 +32,7 @@ class CustomProxy extends Proxy {
 export interface IMITMController {
     responseData: ResponseData[];
 
-    startMITM(ses: Electron.Session, proxyFilter: string[]): Promise<void>;
+    startMITM(ses: Electron.Session, proxyFilter: string[]): Promise<boolean>;
     stopMITM(ses: Electron.Session): Promise<void>;
     startMonitoring(): Promise<void>;
     stopMonitoring(): Promise<void>;
@@ -71,7 +71,7 @@ export class MITMController implements IMITMController {
         this.proxySSLCADir = path.join(accountSettingsPath, 'ca');
     }
 
-    async startMITM(ses: Electron.Session, proxyFilter: string[]) {
+    async startMITM(ses: Electron.Session, proxyFilter: string[]): Promise<boolean> {
         log.info(`MITMController: Account ${this.account?.id}, starting proxy`, proxyFilter);
 
         // Set the proxy filters
@@ -132,10 +132,10 @@ export class MITMController implements IMITMController {
         // Delete the old certificates
         const certsPath = path.join(this.proxySSLCADir, 'certs');
         if (fs.existsSync(certsPath)) {
-            log.debug(`Deleting old certificates dir: ${certsPath}`);
+            log.debug(`MITMController: Account ${this.account?.id}, Deleting old certificates dir: ${certsPath}`);
             fs.rmSync(certsPath, { recursive: true });
         } else {
-            log.debug(`Certificates dir: ${certsPath}`);
+            log.debug(`MITMController: Account ${this.account?.id}, Certificates dir: ${certsPath}`);
         }
 
         // Verify SSL certificates
@@ -179,7 +179,24 @@ export class MITMController implements IMITMController {
         })
 
         // Wait for proxy to be ready
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const testURL = 'https://dev-api.semiphemeral.com/health'; // TODO: update this to the prod API URL
+        let success = false;
+        log.debug(`MITMController: Account ${this.account?.id}, waiting for proxy to be ready...`)
+        await new Promise(resolve => setTimeout(resolve, 200));
+        while (!success) {
+            try {
+                log.debug(`MITMController: Account ${this.account?.id}, making request through proxy`)
+                const resp = await ses.fetch(testURL, { method: 'GET' });
+                log.debug(`MITMController: Account ${this.account?.id}, got response: ${resp.status}`);
+                success = true;
+            } catch (_e) {
+                log.debug(`MITMController: Account ${this.account?.id}, proxy not ready yet, waiting 500ms`);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+        log.debug(`MITMController: Account ${this.account?.id}, proxy is ready`);
+
+        return true;
     }
 
     async stopMITM(ses: Electron.Session) {
