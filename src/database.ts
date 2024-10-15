@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 
-import { getSettingsPath } from "./util"
+import { getSettingsPath, packageExceptionForReport } from "./util"
 import { Account, XAccount } from './shared_types'
 
 export type Migration = {
@@ -152,8 +152,18 @@ export const exec = (db: Database.Database | null, sql: string, params: Array<nu
 
     // Execute the query
     log.debug("Executing SQL:", sql, "Params:", paramsConverted);
-    const stmt = db.prepare(sql);
-    return stmt[cmd](...paramsConverted);
+    try {
+        const stmt = db.prepare(sql);
+        const ret = stmt[cmd](...paramsConverted);
+        return ret
+    } catch (error) {
+        const exception = JSON.parse(packageExceptionForReport(error as Error))
+        throw new Error(JSON.stringify({
+            exception: exception,
+            sql: sql,
+            params: paramsConverted
+        }));
+    }
 }
 
 // Config
