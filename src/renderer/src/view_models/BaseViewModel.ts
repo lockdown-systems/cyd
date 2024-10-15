@@ -239,7 +239,7 @@ export class BaseViewModel {
     }
 
     async checkInternetConnectivity(): Promise<boolean> {
-        const testURL = this.api.apiURL;
+        const testURL = this.api.apiURL + "/health";
         if (!testURL) {
             console.error("checkInternetConnectivity", "apiURL is not set");
             return false;
