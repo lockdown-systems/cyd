@@ -1697,7 +1697,10 @@ You can make a local archive of your data, or you delete exactly what you choose
             }
         } catch (e) {
             await this.error(AutomationErrorType.x_runError, {
-                exception: (e as Error).toString()
+                exception: (e as Error).toString(),
+                state: this.state,
+                jobs: this.jobs,
+                currentJobIndex: this.currentJobIndex,
             }, {
                 currentURL: this.webview.getURL()
             });
