@@ -1850,7 +1850,7 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:getConfig', async (_, accountID: number, key: string, value: string): Promise<void> => {
+    ipcMain.handle('X:setConfig', async (_, accountID: number, key: string, value: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.setConfig(key, value);
