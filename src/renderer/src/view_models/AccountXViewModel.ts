@@ -624,7 +624,6 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 `;
                 this.showAutomationNotice = true;
 
-                // Check if this is the first time indexing tweets has happened in this account
                 if (await window.electron.X.getConfig(this.account.id, "forceIndexTweets") == "true") {
                     this.isFirstRun = true;
                 }
@@ -640,6 +639,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await this.syncProgress();
 
                 // Load the timeline and wait for tweets to appear
+                errorTriggered = false;
                 await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 try {
@@ -666,17 +666,22 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         }, {
                             currentURL: this.webview.getURL()
                         })
-                        break;
+                        errorTriggered = true;
                     } else {
                         await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
                             exception: (e as Error).toString()
                         }, {
                             currentURL: this.webview.getURL()
                         })
-                        break;
+                        errorTriggered = true;
                     }
                 }
 
+                if (errorTriggered) {
+                    break;
+                }
+
+                errorTriggered = false;
                 while (this.progress.isIndexTweetsFinished === false) {
                     await this.waitForPause();
 
@@ -692,6 +697,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
                                 currentURL: this.webview.getURL()
                             });
+                            errorTriggered = true;
                             break;
                         }
                         await this.sleep(500);
@@ -709,6 +715,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             latestResponseData: latestResponseData,
                             currentURL: this.webview.getURL()
                         });
+                        errorTriggered = true;
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -729,6 +736,10 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                if (errorTriggered) {
+                    break;
+                }
 
                 await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "false");
 
@@ -802,12 +813,13 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await this.sleep(2000);
 
                 // Load the messages and wait for tweets to appear
+                errorTriggered = false;
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
                     await this.waitForPause();
                     await this.loadURLWithRateLimit("https://x.com/messages");
+                    await window.electron.X.resetRateLimitInfo(this.account.id);
                     try {
-                        await window.electron.X.resetRateLimitInfo(this.account.id);
                         await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                         break;
                     } catch (e) {
@@ -832,13 +844,19 @@ Hang on while I scroll down to your earliest direct message conversations that I
                                 exception: (e as Error).toString(),
                                 currentURL: this.webview.getURL()
                             })
+                            errorTriggered = true;
                         } else {
                             await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
                                 exception: (e as Error).toString(),
                                 currentURL: this.webview.getURL()
                             })
+                            errorTriggered = true;
                         }
                     }
+                }
+
+                if (errorTriggered) {
+                    break;
                 }
 
                 while (this.progress.isIndexConversationsFinished === false) {
@@ -863,6 +881,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             latestResponseData: latestResponseData,
                             currentURL: this.webview.getURL()
                         });
+                        errorTriggered = true;
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -883,6 +902,10 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                if (errorTriggered) {
+                    break;
+                }
 
                 await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "false");
 
@@ -927,6 +950,7 @@ Please wait while I index all of the messages from each conversation.
                 this.progress.conversationMessagesIndexed = this.progress.totalConversations - indexMessagesStartResponse?.conversationIDs.length;
                 await this.syncProgress();
 
+                errorTriggered = false;
                 for (let i = 0; i < indexMessagesStartResponse.conversationIDs.length; i++) {
                     await this.waitForPause();
 
@@ -954,6 +978,7 @@ Please wait while I index all of the messages from each conversation.
                                     }, {
                                         currentURL: this.webview.getURL()
                                     });
+                                    errorTriggered = true;
                                     break;
                                 }
                             } else if (e instanceof URLChangedError) {
@@ -974,6 +999,7 @@ Please wait while I index all of the messages from each conversation.
                                     }, {
                                         currentURL: this.webview.getURL()
                                     })
+                                    errorTriggered = true;
                                     break;
                                 }
                             } else {
@@ -982,6 +1008,7 @@ Please wait while I index all of the messages from each conversation.
                                 }, {
                                     currentURL: this.webview.getURL()
                                 });
+                                errorTriggered = true;
                                 break;
                             }
 
@@ -992,6 +1019,7 @@ Please wait while I index all of the messages from each conversation.
                                 }, {
                                     currentURL: this.webview.getURL()
                                 });
+                                errorTriggered = true;
                                 break;
                             }
                         }
@@ -1027,6 +1055,7 @@ Please wait while I index all of the messages from each conversation.
                                 latestResponseData: latestResponseData,
                                 currentURL: this.webview.getURL()
                             });
+                            errorTriggered = true;
                             break;
                         }
                         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -1050,6 +1079,10 @@ Please wait while I index all of the messages from each conversation.
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                if (errorTriggered) {
+                    break;
+                }
 
                 await this.finishJob(iJob);
                 break;
@@ -1122,6 +1155,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await this.syncProgress();
 
                 // Load the likes and wait for tweets to appear
+                errorTriggered = false;
                 await this.waitForPause();
                 await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
                 await window.electron.X.resetRateLimitInfo(this.account.id);
@@ -1149,6 +1183,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                         }, {
                             currentURL: this.webview.getURL()
                         })
+                        errorTriggered = true;
                         break;
                     } else {
                         await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
@@ -1156,8 +1191,14 @@ Hang on while I scroll down to your earliest likes that I've seen.
                         }, {
                             currentURL: this.webview.getURL()
                         })
+                        errorTriggered = true;
                         break;
                     }
+                }
+
+                if (errorTriggered) {
+                    await window.electron.X.indexStop(this.account.id);
+                    break;
                 }
 
                 while (this.progress.isIndexLikesFinished === false) {
@@ -1175,6 +1216,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                             await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, {}, {
                                 currentURL: this.webview.getURL()
                             });
+                            errorTriggered = true;
                             break;
                         }
                         await this.sleep(500);
@@ -1192,6 +1234,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                             latestResponseData: latestResponseData,
                             currentURL: this.webview.getURL()
                         });
+                        errorTriggered = true;
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -1212,6 +1255,10 @@ Hang on while I scroll down to your earliest likes that I've seen.
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                if (errorTriggered) {
+                    break;
+                }
 
                 await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "false");
 
@@ -1370,6 +1417,7 @@ I'm deleting your retweets, starting with the earliest.
                 this.progress.retweetsDeleted = 0;
                 await this.syncProgress();
 
+                errorTriggered = false;
                 for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
                     alreadyDeleted = false;
 
@@ -1401,6 +1449,7 @@ I'm deleting your retweets, starting with the earliest.
                             }, {
                                 currentURL: this.webview.getURL()
                             });
+                            errorTriggered = true;
                             break;
                         }
                         await this.sleep(200);
@@ -1424,11 +1473,16 @@ I'm deleting your retweets, starting with the earliest.
                             index: i,
                             currentURL: this.webview.getURL()
                         })
+                        errorTriggered = true;
                         break;
                     }
 
                     this.progress.retweetsDeleted += 1;
                     await this.syncProgress();
+                }
+
+                if (errorTriggered) {
+                    break;
                 }
 
                 await this.finishJob(iJob);
@@ -1461,6 +1515,7 @@ I'm deleting your likes, starting with the earliest.
                 this.progress.likesDeleted = 0;
                 await this.syncProgress();
 
+                errorTriggered = false;
                 for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
                     alreadyDeleted = false;
 
@@ -1500,11 +1555,16 @@ I'm deleting your likes, starting with the earliest.
                             index: i,
                             currentURL: this.webview.getURL()
                         })
+                        errorTriggered = true;
                         break;
                     }
 
                     this.progress.likesDeleted += 1;
                     await this.syncProgress();
+                }
+
+                if (errorTriggered) {
+                    break;
                 }
 
                 await this.finishJob(iJob);
@@ -1527,6 +1587,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                 }
 
                 // Load the messages and wait for tweets to appear
+                errorTriggered = false;
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
                     await this.loadURLWithRateLimit("https://x.com/messages");
@@ -1555,16 +1616,21 @@ I'm deleting all of your direct message conversations, start with the most recen
                                 exception: (e as Error).toString(),
                                 currentURL: this.webview.getURL()
                             })
+                            errorTriggered = true;
                         } else {
                             await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
                                 exception: (e as Error).toString(),
                                 currentURL: this.webview.getURL()
                             })
+                            errorTriggered = true;
                         }
                     }
                 }
 
-                errorTriggered = false;
+                if (errorTriggered) {
+                    break;
+                }
+
                 if (!this.progress.isDeleteDMsFinished) {
                     // eslint-disable-next-line no-constant-condition
                     while (true) {
