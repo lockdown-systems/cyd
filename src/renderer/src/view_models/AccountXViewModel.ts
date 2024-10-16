@@ -381,7 +381,6 @@ export class AccountXViewModel extends BaseViewModel {
         // Get the username
         this.log("login", "getting username");
         this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
-        await this.loadBlank();
         await window.electron.X.getUsernameStart(this.account.id);
         await this.loadURLWithRateLimit("https://x.com/settings/account");
         await this.waitForSelector('a[href="/settings/your_twitter_data/account"]', "https://x.com/settings/account");
