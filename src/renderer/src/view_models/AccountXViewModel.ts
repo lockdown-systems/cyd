@@ -131,7 +131,8 @@ export class AccountXViewModel extends BaseViewModel {
             jobTypes.push("indexConversations");
             jobTypes.push("indexMessages");
             if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexDMs", "true");
+                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
+                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
             }
         }
         jobTypes.push("archiveBuild");
@@ -204,7 +205,8 @@ export class AccountXViewModel extends BaseViewModel {
             jobTypes.push("indexMessages");
             jobTypes.push("deleteDMs");
             if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexDMs", "true");
+                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
+                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
             }
         }
         jobTypes.push("archiveBuild");
@@ -623,7 +625,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 this.showAutomationNotice = true;
 
                 // Check if this is the first time indexing tweets has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexTweets") == null) {
+                if (await window.electron.X.getConfig(this.account.id, "forceIndexTweets") == "true") {
                     this.isFirstRun = true;
                 }
 
@@ -728,6 +730,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
 
+                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "false");
+
                 await this.finishJob(iJob);
                 break;
 
@@ -788,7 +792,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 this.showAutomationNotice = true;
 
                 // Check if this is the first time indexing DMs has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexConversations") == null) {
+                if (await window.electron.X.getConfig(this.account.id, "forceIndexConversations") == "true") {
                     this.isFirstRun = true;
                 }
 
@@ -880,6 +884,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
 
+                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "false");
+
                 await this.finishJob(iJob);
                 break;
 
@@ -892,11 +898,11 @@ Please wait while I index all of the messages from each conversation.
 `;
                 this.showAutomationNotice = true;
 
-                // Only set isFirstRun to true if we're forcing everything to be indexed
-                // Because even if idnexMessages has never completed, we want to resume where we left off
-                if (this.forceIndexEverything) {
+                if (await window.electron.X.getConfig(this.account.id, "forceIndexMessages") == "true") {
                     this.isFirstRun = true;
                 }
+                // We want indexMessages to resume where it left off, so turn off forceIndexMessages right away
+                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "false")
 
                 // Start monitoring network requests
                 await this.loadBlank();
@@ -1101,7 +1107,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 this.showAutomationNotice = true;
 
                 // Check if this is the first time indexing likes has happened in this account
-                if (this.forceIndexEverything || await window.electron.X.getLastFinishedJob(this.account.id, "indexLikes") == null) {
+                if (await window.electron.X.getConfig(this.account.id, "forceIndexLikes") == "true") {
                     this.isFirstRun = true;
                 }
 
@@ -1206,6 +1212,8 @@ Hang on while I scroll down to your earliest likes that I've seen.
 
                 // Stop monitoring network requests
                 await window.electron.X.indexStop(this.account.id);
+
+                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "false");
 
                 await this.finishJob(iJob);
                 break;
