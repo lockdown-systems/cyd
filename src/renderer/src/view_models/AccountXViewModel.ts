@@ -698,6 +698,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                                 currentURL: this.webview.getURL()
                             });
                             errorTriggered = true;
+                            await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                             break;
                         }
                         await this.sleep(500);
@@ -716,6 +717,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                             currentURL: this.webview.getURL()
                         });
                         errorTriggered = true;
+                        await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -812,7 +814,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await window.electron.X.indexStart(this.account.id);
                 await this.sleep(2000);
 
-                // Load the messages and wait for tweets to appear
+                // Load the messages page and wait for conversations to appear
                 errorTriggered = false;
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
@@ -882,6 +884,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                             currentURL: this.webview.getURL()
                         });
                         errorTriggered = true;
+                        await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -954,8 +957,7 @@ Please wait while I index all of the messages from each conversation.
                 for (let i = 0; i < indexMessagesStartResponse.conversationIDs.length; i++) {
                     await this.waitForPause();
 
-                    // Load the URL (in 3 tries)
-                    let tries = 0;
+                    // Load the URL
                     let shouldSkip = false;
                     // eslint-disable-next-line no-constant-condition
                     while (true) {
@@ -1000,6 +1002,7 @@ Please wait while I index all of the messages from each conversation.
                                         currentURL: this.webview.getURL()
                                     })
                                     errorTriggered = true;
+                                    await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                                     break;
                                 }
                             } else {
@@ -1009,17 +1012,7 @@ Please wait while I index all of the messages from each conversation.
                                     currentURL: this.webview.getURL()
                                 });
                                 errorTriggered = true;
-                                break;
-                            }
-
-                            tries += 1;
-                            if (tries >= 3) {
-                                await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                                    exception: (e as Error).toString()
-                                }, {
-                                    currentURL: this.webview.getURL()
-                                });
-                                errorTriggered = true;
+                                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                                 break;
                             }
                         }
@@ -1027,6 +1020,11 @@ Please wait while I index all of the messages from each conversation.
 
                     if (shouldSkip) {
                         continue;
+                    }
+
+                    if (errorTriggered) {
+                        await window.electron.X.indexStop(this.account.id);
+                        break;
                     }
 
                     await this.sleep(500);
@@ -1056,6 +1054,7 @@ Please wait while I index all of the messages from each conversation.
                                 currentURL: this.webview.getURL()
                             });
                             errorTriggered = true;
+                            await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                             break;
                         }
                         this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
@@ -1217,6 +1216,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                                 currentURL: this.webview.getURL()
                             });
                             errorTriggered = true;
+                            await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                             break;
                         }
                         await this.sleep(500);
@@ -1235,6 +1235,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                             currentURL: this.webview.getURL()
                         });
                         errorTriggered = true;
+                        await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                         break;
                     }
                     this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
