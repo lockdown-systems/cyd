@@ -168,13 +168,19 @@ export const exec = (db: Database.Database | null, sql: string, params: Array<nu
 
 // Config
 
-export const getConfig = (key: string): string | null => {
-    const row: ConfigRow | undefined = exec(getMainDatabase(), 'SELECT value FROM config WHERE key = ?', [key], 'get') as ConfigRow | undefined;
+export const getConfig = (key: string, db: Database.Database | null = null): string | null => {
+    if (!db) {
+        db = getMainDatabase();
+    }
+    const row: ConfigRow | undefined = exec(db, 'SELECT value FROM config WHERE key = ?', [key], 'get') as ConfigRow | undefined;
     return row ? row.value : null;
 }
 
-export const setConfig = (key: string, value: string) => {
-    exec(getMainDatabase(), 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
+export const setConfig = (key: string, value: string, db: Database.Database | null = null) => {
+    if (!db) {
+        db = getMainDatabase();
+    }
+    exec(db, 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
 }
 
 // X accounts

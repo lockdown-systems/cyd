@@ -26,7 +26,16 @@ import {
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
 } from './shared_types'
-import { runMigrations, getAccount, getXAccount, saveXAccount, exec, Sqlite3Count } from './database'
+import {
+    runMigrations,
+    getAccount,
+    getXAccount,
+    saveXAccount,
+    exec,
+    Sqlite3Count,
+    getConfig,
+    setConfig,
+} from './database'
 import { IMITMController, getMITMController } from './mitm';
 import {
     XAPILegacyUser,
@@ -37,7 +46,7 @@ import {
     XAPIConversation,
     XAPIConversationTimeline,
     XAPIMessage,
-    XAPIUser
+    XAPIUser,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -1468,6 +1477,14 @@ export class XAccountController {
         }
         return null;
     }
+
+    async getConfig(key: string): Promise<string | null> {
+        return getConfig(key, this.db);
+    }
+
+    async setConfig(key: string, value: string) {
+        return setConfig(key, value, this.db);
+    }
 }
 
 const controllers: Record<number, XAccountController> = {};
@@ -1819,6 +1836,24 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.deleteDMsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:getConfig', async (_, accountID: number, key: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getConfig(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:getConfig', async (_, accountID: number, key: string, value: string): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.setConfig(key, value);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
