@@ -284,6 +284,16 @@ export class XAccountController {
     deletedAt DATETIME
 );`
                 ]
+            },
+            {
+                name: "20241016_add_config",
+                sql: [
+                    `CREATE TABLE config (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL UNIQUE,
+    value TEXT NOT NULL
+);`
+                ]
             }
         ])
     }
