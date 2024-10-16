@@ -263,7 +263,12 @@ export class BaseViewModel {
         console.log("AccountXViewModel.loadBlank");
         const webview = this.getWebview();
         if (webview) {
+            // Note: We need to wait for the page to finish loading before and after this to prevent
+            // Error: Error invoking remote method 'ELECTRON_GUEST_VIEW_MANAGER_CALL'
+            // https://github.com/electron/electron/issues/24171#issuecomment-953053293
+            await this.waitForLoadingToFinish();
             await webview.loadURL("about:blank")
+            await this.waitForLoadingToFinish();
         }
     }
 
