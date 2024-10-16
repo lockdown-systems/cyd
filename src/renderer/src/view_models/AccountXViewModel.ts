@@ -28,7 +28,6 @@ export type XViewModelState = {
     actionFinishedString: string;
     progress: XProgress;
     jobs: XJob[];
-    forceIndexEverything: boolean;
     currentJobIndex: number;
 }
 
@@ -38,7 +37,6 @@ export class AccountXViewModel extends BaseViewModel {
     public progressInfo: XProgressInfo = emptyXProgressInfo();
     public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
-    public forceIndexEverything: boolean = false;
     public currentJobIndex: number = 0;
     private isFirstRun: boolean = false;
 
@@ -111,7 +109,7 @@ export class AccountXViewModel extends BaseViewModel {
         }
     }
 
-    async startArchiving() {
+    async startArchiving(forceIndex: boolean) {
         this.setAction("archive");
 
         const jobTypes = [];
@@ -119,13 +117,22 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.account.xAccount?.archiveTweets) {
             jobTypes.push("indexTweets");
             jobTypes.push("archiveTweets");
+            if (forceIndex) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
+            }
         }
         if (this.account.xAccount?.archiveLikes) {
             jobTypes.push("indexLikes");
+            if (forceIndex) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
+            }
         }
         if (this.account.xAccount?.archiveDMs) {
             jobTypes.push("indexConversations");
             jobTypes.push("indexMessages");
+            if (forceIndex) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexDMs", "true");
+            }
         }
         jobTypes.push("archiveBuild");
 
@@ -145,7 +152,7 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_STARTED, navigator.userAgent);
     }
 
-    async startDeleting() {
+    async startDeleting(forceIndex: boolean) {
         // Ensure the user has paid for Premium
         const authenticated = await this.api.ping();
         if (!authenticated) {
@@ -175,6 +182,9 @@ export class AccountXViewModel extends BaseViewModel {
         jobTypes.push("login");
         if (this.account.xAccount?.deleteTweets || this.account.xAccount?.deleteRetweets) {
             jobTypes.push("indexTweets");
+            if (forceIndex) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
+            }
         }
         if (this.account.xAccount?.deleteTweets) {
             jobTypes.push("deleteTweets");
@@ -185,11 +195,17 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.account.xAccount?.deleteLikes) {
             jobTypes.push("indexLikes");
             jobTypes.push("deleteLikes");
+            if (forceIndex) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
+            }
         }
         if (this.account.xAccount?.deleteDMs) {
             jobTypes.push("indexConversations");
             jobTypes.push("indexMessages");
             jobTypes.push("deleteDMs");
+            if (forceIndex) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexDMs", "true");
+            }
         }
         jobTypes.push("archiveBuild");
 
@@ -1715,7 +1731,6 @@ You can make a local archive of your data, or you delete exactly what you choose
             "progress": this.progress,
             "jobs": this.jobs,
             "currentJobIndex": this.currentJobIndex,
-            "forceIndexEverything": this.forceIndexEverything,
         }
     }
 
@@ -1727,6 +1742,5 @@ You can make a local archive of your data, or you delete exactly what you choose
         this.progress = state.progress;
         this.jobs = state.jobs;
         this.currentJobIndex = state.currentJobIndex;
-        this.forceIndexEverything = state.forceIndexEverything;
     }
 }
