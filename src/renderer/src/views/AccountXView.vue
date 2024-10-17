@@ -225,6 +225,10 @@ const onCancelAutomation = () => {
     emit('onRefreshClicked');
 };
 
+const u2fInfoClicked = () => {
+    window.electron.openURL('https://semiphemeral.com/docs-u2f');
+};
+
 onMounted(async () => {
     await updateArchivePath();
 
@@ -321,6 +325,13 @@ onUnmounted(async () => {
                     @on-cancel="emit('onRefreshClicked')" />
             </div>
         </div>
+
+        <!-- U2F security key notice -->
+        <p v-if="accountXViewModel?.state == State.Login" class="u2f-info text-center text-muted small">
+            <i class="fa-solid fa-circle-info me-2" />
+            If you use a U2F security key (like a Yubikey) for two-factor authentication, <a href="#"
+                @click="u2fInfoClicked">read this</a>.
+        </p>
 
         <!-- Automation notice -->
         <p v-if="(accountXViewModel?.showBrowser && accountXViewModel?.showAutomationNotice)"
