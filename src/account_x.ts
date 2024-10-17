@@ -156,6 +156,9 @@ export class XAccountController {
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     private thereIsMore: boolean = false;
 
+    // Temp variable for accurately counting message progress
+    private messageIDsIndexed: string[] = [];
+
     // Making this public so it can be accessed in tests
     public db: Database.Database | null = null;
 
@@ -877,8 +880,9 @@ export class XAccountController {
 
         // On first run, we need to index all conversations
         if (isFirstRun) {
-            // Delete the existing message data now, in order to accurately count the progress
-            exec(this.db, 'DELETE FROM message WHERE deletedAt IS NULL');
+            // Keep track of the message IDs indexed this time
+            this.messageIDsIndexed = [];
+
             exec(this.db, 'UPDATE conversation SET shouldIndexMessages = 1 WHERE deletedAt IS NULL');
 
             const conversationIDs: XConversationRow[] = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all") as XConversationRow[];
@@ -899,7 +903,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexMessage(message: XAPIMessage, _isFirstRun: boolean): boolean {
+    indexMessage(message: XAPIMessage, isFirstRun: boolean): boolean {
         log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
@@ -926,8 +930,17 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (isInsert) {
-            this.progress.messagesIndexed++;
+        if (isFirstRun) {
+            const insertMessageID: string = message.message.id;
+            if (!this.messageIDsIndexed.some(messageID => messageID === insertMessageID)) {
+                this.messageIDsIndexed.push(insertMessageID);
+            }
+
+            this.progress.messagesIndexed = this.messageIDsIndexed.length;
+        } else {
+            if (isInsert) {
+                this.progress.messagesIndexed++;
+            }
         }
 
         return true;
