@@ -645,13 +645,29 @@ export class AccountXViewModel extends BaseViewModel {
 
         switch (this.jobs[iJob].jobType) {
             case "login":
+                this.showBrowser = true;
                 this.instructions = `
 **${this.actionString}**
 
 Checking to see if you're still logged in to your X account...
 `;
+
                 this.showAutomationNotice = true;
-                await this.login();
+
+                // Load https://x.com/home and see if it redirects
+                await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
+                if (this.webview.getURL().startsWith("https://x.com/i/flow/login")) {
+                    // Not logged in, so prompt the user to login
+                    this.instructions = `
+**${this.actionString}**
+
+You've been logged out. Please log back into **@${this.account.xAccount?.username}**.
+`;
+
+                    this.showAutomationNotice = false;
+                    await this.login();
+                }
+
                 await this.finishJob(iJob);
                 break;
 
