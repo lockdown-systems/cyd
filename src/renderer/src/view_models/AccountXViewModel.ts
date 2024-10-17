@@ -244,7 +244,7 @@ export class AccountXViewModel extends BaseViewModel {
         await this.sleep(seconds * 1000);
     }
 
-    async loadURLWithRateLimit(url: string, expectedURLs: string[] = []) {
+    async loadURLWithRateLimit(url: string, expectedURLs: string[] = [], redirectOk: boolean = false) {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             // Reset the rate limit checker
@@ -270,25 +270,21 @@ export class AccountXViewModel extends BaseViewModel {
             await this.waitForLoadingToFinish();
 
             // Did the URL change?
-            const newURL = this.webview.getURL();
-            if (newURL != url) {
-                let changedToUnexpected = true;
-                for (const expectedURL of expectedURLs) {
-                    if (newURL.startsWith(expectedURL)) {
-                        changedToUnexpected = false;
-                        break;
+            if (!redirectOk) {
+                const newURL = this.webview.getURL();
+                if (newURL != url) {
+                    let changedToUnexpected = true;
+                    for (const expectedURL of expectedURLs) {
+                        if (newURL.startsWith(expectedURL)) {
+                            changedToUnexpected = false;
+                            break;
+                        }
                     }
-                }
 
-                if (changedToUnexpected) {
-                    this.error(AutomationErrorType.x_loadURLURLChanged, {
-                        url: url,
-                        newURL: newURL,
-                        expectedURLs: expectedURLs
-                    }, {
-                        currentURL: this.webview.getURL()
-                    });
-                    break;
+                    if (changedToUnexpected) {
+                        console.log("loadURLWithRateLimit", `URL changed: ${this.webview.getURL()}`);
+                        throw new URLChangedError(url, this.webview.getURL());
+                    }
                 }
             }
 
@@ -593,6 +589,7 @@ export class AccountXViewModel extends BaseViewModel {
         let tweetsToDelete: XDeleteTweetsStartResponse;
         let archiveStartResponse: XArchiveStartResponse;
         let indexMessagesStartResponse: XIndexMessagesStartResponse;
+        let url = '';
 
         // Start the job
         this.jobs[iJob].startedAt = new Date();
@@ -963,9 +960,11 @@ Please wait while I index all of the messages from each conversation.
                     while (true) {
                         await this.waitForPause();
 
-                        await this.loadURLWithRateLimit(`https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`);
+                        // Load URL and wait for messages to appear
                         try {
-                            await this.waitForSelector('div[data-testid="DmActivityContainer"]', `https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`);
+                            url = `https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`;
+                            await this.loadURLWithRateLimit(url);
+                            await this.waitForSelector('div[data-testid="DmActivityContainer"]', url);
                             break;
                         } catch (e) {
                             this.log("runJob", ["jobType=indexMessages", "selector never appeared", e]);
@@ -984,27 +983,15 @@ Please wait while I index all of the messages from each conversation.
                                     break;
                                 }
                             } else if (e instanceof URLChangedError) {
-                                // Have we been redirected, such as to https://x.com/i/verified-get-verified ?
-                                // This is a page that says: "Get X Premium to message this user"
-                                if (this.webview && this.webview.getURL() != "https://x.com/messages/" + indexMessagesStartResponse.conversationIDs[i]) {
-                                    this.log("runJob", ["jobType=indexMessages", "conversation is inaccessible, so skipping it"]);
-                                    this.progress.conversationMessagesIndexed += 1;
-                                    await this.syncProgress();
-                                    shouldSkip = true;
+                                // If the URL changes (like to https://x.com/i/verified-get-verified), skip it
+                                this.log("runJob", ["jobType=indexMessages", "conversation is inaccessible, so skipping it"]);
+                                this.progress.conversationMessagesIndexed += 1;
+                                await this.syncProgress();
+                                shouldSkip = true;
 
-                                    // Mark the conversation's shouldIndexMessages to false
-                                    await window.electron.X.indexConversationFinished(this.account.id, indexMessagesStartResponse.conversationIDs[i]);
-                                    break;
-                                } else {
-                                    await this.error(AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt, {
-                                        exception: (e as Error).toString()
-                                    }, {
-                                        currentURL: this.webview.getURL()
-                                    })
-                                    errorTriggered = true;
-                                    await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
-                                    break;
-                                }
+                                // Mark the conversation's shouldIndexMessages to false
+                                await window.electron.X.indexConversationFinished(this.account.id, indexMessagesStartResponse.conversationIDs[i]);
+                                break;
                             } else {
                                 await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
                                     exception: (e as Error).toString()
