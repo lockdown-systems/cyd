@@ -535,6 +535,49 @@ export class AccountXViewModel extends BaseViewModel {
         return true;
     }
 
+    // Load the DMs page, and return true if an error was triggered
+    async deleteDMsLoadDMsPage(): Promise<boolean> {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            await this.loadURLWithRateLimit("https://x.com/messages");
+            try {
+                await window.electron.X.resetRateLimitInfo(this.account.id);
+                await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
+                break;
+            } catch (e) {
+                this.log("runJob", ["jobType=deleteDMs", "selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // Assume that there are no conversations
+                        await this.waitForLoadingToFinish();
+                        this.progress.isDeleteDMsFinished = true;
+                        await this.syncProgress();
+                        break;
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview.getURL();
+                    await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString(),
+                        currentURL: this.webview.getURL()
+                    })
+                    return true;
+                } else {
+                    await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
+                        exception: (e as Error).toString(),
+                        currentURL: this.webview.getURL()
+                    })
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     async archiveSaveTweet(outputPath: string, tweetItem: XTweetItem): Promise<boolean> {
         console.log("Archiving", tweetItem.basename);
 
@@ -1575,46 +1618,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                 }
 
                 // Load the messages and wait for tweets to appear
-                errorTriggered = false;
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    await this.loadURLWithRateLimit("https://x.com/messages");
-                    try {
-                        await window.electron.X.resetRateLimitInfo(this.account.id);
-                        await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
-                        break;
-                    } catch (e) {
-                        this.log("runJob", ["jobType=deleteDMs", "selector never appeared", e]);
-                        if (e instanceof TimeoutError) {
-                            // Were we rate limited?
-                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                            if (this.rateLimitInfo.isRateLimited) {
-                                await this.waitForRateLimit();
-                            } else {
-                                // Assume that there are no conversations
-                                await this.waitForLoadingToFinish();
-                                this.progress.isDeleteDMsFinished = true;
-                                await this.syncProgress();
-                                break;
-                            }
-                        } else if (e instanceof URLChangedError) {
-                            const newURL = this.webview.getURL();
-                            await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
-                                newURL: newURL,
-                                exception: (e as Error).toString(),
-                                currentURL: this.webview.getURL()
-                            })
-                            errorTriggered = true;
-                        } else {
-                            await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
-                                exception: (e as Error).toString(),
-                                currentURL: this.webview.getURL()
-                            })
-                            errorTriggered = true;
-                        }
-                    }
-                }
-
+                errorTriggered = await this.deleteDMsLoadDMsPage();
                 if (errorTriggered) {
                     break;
                 }
@@ -1624,21 +1628,34 @@ I'm deleting all of your direct message conversations, start with the most recen
                     while (true) {
                         await this.waitForPause();
 
-                        // Wait for conversation selector, giving a 10 second timeout
+                        // Wait for conversation selector
                         try {
-                            await this.waitForSelector('div[data-testid="conversation"]', "https://x.com/messages", 10000);
+                            await this.waitForSelector('div[data-testid="conversation"]');
                         } catch (e) {
                             // Were we rate limited?
                             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                             if (this.rateLimitInfo.isRateLimited) {
                                 await this.waitForRateLimit();
                             } else {
-                                // Assume there are no more conversations
-                                this.log('runJob', ["jobType=deleteDMs", "no more conversations, so ending deleteDMS"]);
-                                this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
-                                this.progress.isDeleteDMsFinished = true;
-                                await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
-                                break;
+                                // Reload the DMs page, to see if there are actually no conversations
+                                errorTriggered = await this.deleteDMsLoadDMsPage();
+                                if (errorTriggered) {
+                                    break;
+                                }
+
+                                // deleteDMsLoadDMsPage will have set isDeleteDMsFinished to true if there were no conversations left
+                                if (this.progress.isDeleteDMsFinished) {
+                                    this.log('runJob', ["jobType=deleteDMs", "no more conversations, so ending deleteDMS"]);
+                                    this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
+                                    this.progress.isDeleteDMsFinished = true;
+                                    await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
+                                    break;
+                                } else {
+                                    // Trigger error
+                                    await this.error(AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed, {}, {
+                                        currentURL: this.webview.getURL()
+                                    })
+                                }
                             }
                         }
 
