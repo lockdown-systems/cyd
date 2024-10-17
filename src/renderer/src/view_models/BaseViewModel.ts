@@ -210,6 +210,10 @@ export class BaseViewModel {
         }
     }
 
+    async doesSelectorExist(selector: string): Promise<boolean> {
+        return await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
+    }
+
     // wait for containerSelector to exist, and also selector within containerSelector to exist
     async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = 5000) {
         const startingURL = this.webview.getURL();

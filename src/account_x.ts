@@ -1405,6 +1405,19 @@ export class XAccountController {
         this.progress.messagesDeleted += totalMessagesDeleted.count;
     }
 
+    async deleteDMsMarkAllDeleted(): Promise<void> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        const conversations = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all") as XConversationRow[];
+        log.info(`XAccountController.deleteDMsMarkAllDeleted: marking ${conversations.length} conversations deleted`)
+
+        for (let i = 0; i < conversations.length; i++) {
+            this.deleteDMsMarkDeleted(conversations[i].conversationID)
+        }
+    }
+
     async syncProgress(progressJSON: string) {
         this.progress = JSON.parse(progressJSON);
     }
@@ -1836,6 +1849,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.deleteDMsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteDMsMarkAllDeleted', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.deleteDMsMarkAllDeleted();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

@@ -1624,13 +1624,22 @@ I'm deleting all of your direct message conversations, start with the most recen
                     while (true) {
                         await this.waitForPause();
 
-                        // Wait for conversation selector
-                        if (!await this.waitForSelectorDeleteDMs(
-                            'div[data-testid="conversation"]',
-                            AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed
-                        )) {
-                            errorTriggered = true;
-                            break;
+                        // Wait for conversation selector, giving a 10 second timeout
+                        try {
+                            await this.waitForSelector('div[data-testid="conversation"]', "https://x.com/messages", 10000);
+                        } catch (e) {
+                            // Were we rate limited?
+                            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                            if (this.rateLimitInfo.isRateLimited) {
+                                await this.waitForRateLimit();
+                            } else {
+                                // Assume there are no more conversations
+                                this.log('runJob', ["jobType=deleteDMs", "no more conversations, so ending deleteDMS"]);
+                                this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
+                                this.progress.isDeleteDMsFinished = true;
+                                await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
+                                break;
+                            }
                         }
 
                         // Mouseover the first conversation

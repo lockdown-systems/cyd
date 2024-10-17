@@ -197,6 +197,9 @@ contextBridge.exposeInMainWorld('electron', {
         deleteDMsStart: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:deleteDMsStart', accountID);
         },
+        deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteDMsMarkAllDeleted', accountID);
+        },
         deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
         },
