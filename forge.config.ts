@@ -4,6 +4,7 @@ import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
+import { MakerSnap } from '@electron-forge/maker-snap';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
@@ -75,6 +76,83 @@ function findLatestSigntoolPath(): string {
 
 const shouldSignWindows = process.env.WINDOWS_SIGN === 'true';
 
+type Maker = MakerSquirrel | MakerDMG | MakerZIP | MakerRpm | MakerDeb | MakerSnap;
+const makers: Maker[] = [
+  // Windows
+  new MakerSquirrel({
+    iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
+    name: "Semiphemeral",
+    setupIcon: path.join(assetsPath, "icon.ico"),
+    windowsSign: shouldSignWindows ? {
+      signToolPath: findLatestSigntoolPath()
+    } : undefined,
+    // For auto-updates
+    remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
+    noDelta: false,
+  }),
+  // macOS DMG
+  new MakerDMG({
+    name: `Semiphemeral ${version}`,
+    background: path.join(assetsPath, 'dmg-background.png'),
+    iconSize: 110,
+    icon: path.join(assetsPath, 'installer-icon.icns'),
+    overwrite: true,
+    contents: [
+      { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Semiphemeral-darwin-universal/Semiphemeral.app` },
+      { "x": 430, "y": 80, "type": "link", "path": "/Applications" }
+    ],
+    additionalDMGOptions: {
+      window: {
+        size: {
+          width: 540,
+          height: 200,
+        },
+      }
+    },
+  }),
+  // macOS ZIP, for auto-updates
+  new MakerZIP({
+    macUpdateManifestBaseUrl: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
+  }),
+  // Linux RPM
+  new MakerRpm({}),
+  // Linux Debian
+  new MakerDeb({
+    options: {
+      icon: path.join(assetsPath, 'icon.png'),
+      maintainer: 'Lockdown Systems LLC',
+      homepage: 'https://semiphemeral.com',
+      categories: ['Utility', 'Network'],
+      description: 'Claw back your data from Big Tech',
+      productName: "Semiphemeral",
+    }
+  }),
+];
+
+if (process.env.SEMIPHEMERAL_MAKE_SNAP === '1') {
+  // Linux Snap
+  makers.push(
+    new MakerSnap({
+      name: 'semiphemeral',
+      confinement: 'strict',
+      description: 'Claw back your data from Big Tech',
+      summary: 'Claw back your data from Big Tech',
+      icon: path.join(assetsPath, 'icon.png'),
+      features: {
+        // @ts-expect-error don't worry, this works
+        browserSandbox: true,
+      },
+      grade: 'devel',
+      apps: {
+        semiphemeral: {
+          command: 'semiphemeral',
+          desktopFile: 'semiphemeral.desktop',
+        },
+      },
+    })
+  );
+}
+
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;
 
@@ -119,57 +197,7 @@ const config: ForgeConfig = {
     ],
   },
   rebuildConfig: {},
-  makers: [
-    // Windows
-    new MakerSquirrel({
-      iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
-      name: "Semiphemeral",
-      setupIcon: path.join(assetsPath, "icon.ico"),
-      windowsSign: shouldSignWindows ? {
-        signToolPath: findLatestSigntoolPath()
-      } : undefined,
-      // For auto-updates
-      remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
-      noDelta: false,
-    }),
-    // macOS DMG
-    new MakerDMG({
-      name: `Semiphemeral ${version}`,
-      background: path.join(assetsPath, 'dmg-background.png'),
-      iconSize: 110,
-      icon: path.join(assetsPath, 'installer-icon.icns'),
-      overwrite: true,
-      contents: [
-        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Semiphemeral-darwin-universal/Semiphemeral.app` },
-        { "x": 430, "y": 80, "type": "link", "path": "/Applications" }
-      ],
-      additionalDMGOptions: {
-        window: {
-          size: {
-            width: 540,
-            height: 200,
-          },
-        }
-      },
-    }),
-    // macOS ZIP, for auto-updates
-    new MakerZIP({
-      macUpdateManifestBaseUrl: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
-    }),
-    // Linux RPM
-    new MakerRpm({}),
-    // Linux Debian
-    new MakerDeb({
-      options: {
-        icon: path.join(assetsPath, 'icon.png'),
-        maintainer: 'Lockdown Systems LLC',
-        homepage: 'https://semiphemeral.com',
-        categories: ['Utility', 'Network'],
-        description: 'Claw back your data from Big Tech',
-        productName: "Semiphemeral",
-      }
-    })
-  ],
+  makers: makers,
   publishers: [
     new PublisherS3({
       accessKeyId: process.env.DO_SPACES_KEY,
