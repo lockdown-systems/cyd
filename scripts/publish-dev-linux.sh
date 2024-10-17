@@ -12,11 +12,13 @@ cp -r out/ ./out-amd64
 
 # Merge the two builds
 rm -rf out/
-mkdir -p out/make/deb out/make/rpm
+mkdir -p out/make/deb out/make/rpm out/make/zip
 mv out-arm64/make/deb/* out/make/deb
 mv out-arm64/make/rpm/* out/make/rpm
+mv out-arm64/make/zip/* out/make/zip
 mv out-amd64/make/deb/* out/make/deb
 mv out-amd64/make/rpm/* out/make/rpm
+mv out-amd64/make/zip/* out/make/zip
 rm -rf out-arm64 out-amd64
 
 # Copy binaries to linux-repos
