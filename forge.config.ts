@@ -129,29 +129,29 @@ const makers: Maker[] = [
   }),
 ];
 
-if (process.env.SEMIPHEMERAL_MAKE_SNAP === '1') {
-  // Linux Snap
-  makers.push(
-    new MakerSnap({
-      name: 'semiphemeral',
-      confinement: 'strict',
-      description: 'Claw back your data from Big Tech',
-      summary: 'Claw back your data from Big Tech',
-      icon: path.join(assetsPath, 'icon.png'),
-      features: {
-        // @ts-expect-error don't worry, this works
-        browserSandbox: true,
-      },
-      grade: 'devel',
-      apps: {
-        semiphemeral: {
-          command: 'semiphemeral',
-          desktopFile: 'semiphemeral.desktop',
-        },
-      },
-    })
-  );
-}
+// if (process.env.SEMIPHEMERAL_MAKE_SNAP === '1') {
+//   // Linux Snap
+//   makers.push(
+//     new MakerSnap({
+//       name: 'semiphemeral',
+//       confinement: 'strict',
+//       description: 'Claw back your data from Big Tech',
+//       summary: 'Claw back your data from Big Tech',
+//       icon: path.join(assetsPath, 'icon.png'),
+//       features: {
+//         // @ts-expect-error don't worry, this works
+//         browserSandbox: true,
+//       },
+//       grade: 'devel',
+//       apps: {
+//         semiphemeral: {
+//           command: 'semiphemeral',
+//           desktopFile: 'semiphemeral.desktop',
+//         },
+//       },
+//     })
+//   );
+// }
 
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;

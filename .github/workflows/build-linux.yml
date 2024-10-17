@@ -1,5 +1,5 @@
 name: Build
-run-name: Build Linux DEB, RPM, zip, and Snap 🚀
+run-name: Build Linux DEB, RPM, and zip 🚀
 on:
   push:
     branches:
@@ -14,30 +14,23 @@ jobs:
     strategy:
       matrix:
         platform:
-        - i386
         - amd64
-        - armhf
         - arm64
-        - ppc64el
-        - s390x
     steps:
     - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential fakeroot curl rpm zip sudo
-        sudo lxd init --auto
-        sudo lxc storage list
-        sudo snap install snapcraft --classic
-        sudo ufw disable
-    - name: Install node dependencies
+    - name: Install node
       run: |
         curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
         sudo apt-get install -y nodejs
+    - name: Install node dependencies
+      run: |
         npm install
     - name: Build
       env:
         SEMIPHEMERAL_ENV: dev
-        DEBUG: electron-packager,electron-universal,electron-forge*,electron-installer-snap*
-        SEMIPHEMERAL_MAKE_SNAP: 1
+        DEBUG: electron-packager,electron-universal,electron-forge*
       run: npx electron-forge make
