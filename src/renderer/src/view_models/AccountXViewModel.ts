@@ -1651,10 +1651,17 @@ I'm deleting all of your direct message conversations, start with the most recen
                                     await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
                                     break;
                                 } else {
-                                    // Trigger error
-                                    await this.error(AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed, {}, {
-                                        currentURL: this.webview.getURL()
-                                    })
+                                    // Try waiting for selector again
+                                    try {
+                                        await this.waitForSelector('div[data-testid="conversation"]');
+                                    } catch (e) {
+                                        // Trigger error this time
+                                        await this.error(AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed, {
+                                            exception: (e as Error).toString()
+                                        }, {
+                                            currentURL: this.webview.getURL()
+                                        })
+                                    }
                                 }
                             }
                         }
