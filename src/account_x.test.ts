@@ -128,7 +128,7 @@ class MockMITMController implements IMITMController {
             ];
         }
     }
-    async startMITM(_ses: Electron.Session, _proxyFilter: string[]) { }
+    async startMITM(_ses: Electron.Session, _proxyFilter: string[]): Promise<boolean> { return true; }
     async stopMITM(_ses: Electron.Session) { }
     async startMonitoring() { }
     async stopMonitoring() { }
@@ -658,4 +658,21 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-54.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+})
+
+// Testing the X migrations
+
+test("test migration: 20241016_add_config", async () => {
+    // Copy test data into account data
+    const accountDataPath = getAccountDataPath("X", "test");
+    fs.mkdirSync(accountDataPath, { recursive: true });
+    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', 'initial.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
+
+    // Run the migrations
+    const controller = createController(undefined);
+    controller.initDB()
+
+    // The config table should exist
+    const rows = database.exec(controller.db, "SELECT * FROM config", [], "all") as Record<string, string>[];
+    expect(rows.length).toBe(0);
 })

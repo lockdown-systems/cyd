@@ -197,8 +197,17 @@ contextBridge.exposeInMainWorld('electron', {
         deleteDMsStart: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:deleteDMsStart', accountID);
         },
+        deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteDMsMarkAllDeleted', accountID);
+        },
         deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
+        },
+        getConfig: (accountID: number, key: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:getConfig', accountID, key);
+        },
+        setConfig: (accountID: number, key: string, value: string): Promise<void> => {
+            return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         }
     }
 })
