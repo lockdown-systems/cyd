@@ -6,6 +6,8 @@ import { type DeviceInfo, PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
 
+const DEFAULT_TIMEOUT = 30000;
+
 export class TimeoutError extends Error {
     constructor(selector: string) {
         super(`Timeout waiting for selector: ${selector}`);
@@ -181,7 +183,7 @@ export class BaseViewModel {
         await new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async waitForSelector(selector: string, startingURL: string = '', timeout: number = 5000) {
+    async waitForSelector(selector: string, startingURL: string = '', timeout: number = DEFAULT_TIMEOUT) {
         if (startingURL == '') {
             startingURL = this.webview.getURL();
         }
@@ -215,7 +217,7 @@ export class BaseViewModel {
     }
 
     // wait for containerSelector to exist, and also selector within containerSelector to exist
-    async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = 5000) {
+    async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = DEFAULT_TIMEOUT) {
         const startingURL = this.webview.getURL();
 
         const startTime = Date.now();
