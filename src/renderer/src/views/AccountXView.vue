@@ -329,8 +329,8 @@ onUnmounted(async () => {
         <!-- U2F security key notice -->
         <p v-if="accountXViewModel?.state == State.Login" class="u2f-info text-center text-muted small">
             <i class="fa-solid fa-circle-info me-2" />
-            If you use a U2F security key (like a Yubikey) for two-factor authentication, <a href="#"
-                @click="u2fInfoClicked">read this</a>.
+            If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
+            screen. <a href="#" @click="u2fInfoClicked">Read more</a>.
         </p>
 
         <!-- Automation notice -->
