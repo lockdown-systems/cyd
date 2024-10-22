@@ -462,92 +462,20 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("errorJob", this.jobs[iJob].jobType);
     }
 
-    async waitForSelectorDeleteDMs(selector: string, errorType: AutomationErrorType): Promise<boolean> {
-        try {
-            await this.waitForSelector(selector);
-        } catch (e) {
-            this.log("waitForSelectorDeleteDMs", ["selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                if (this.rateLimitInfo.isRateLimited) {
-                    await this.waitForRateLimit();
-                } else {
-                    await this.error(errorType, {
-                        exception: (e as Error).toString()
-                    }, {
-                        currentURL: this.webview.getURL()
-                    })
-                    return false;
-                }
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview.getURL();
-                await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
-                    newURL: newURL,
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                return false;
-            } else {
-                await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                return false;
-            }
-        }
-        return true;
-    }
-
-    async waitForSelectorWithinSelectorDeleteDMs(containerSelector: string, selector: string, errorType: AutomationErrorType): Promise<boolean> {
-        try {
-            await this.waitForSelectorWithinSelector(containerSelector, selector);
-        } catch (e) {
-            this.log("waitForSelectorWithinSelectorDeleteDMs", ["selector within selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                if (this.rateLimitInfo.isRateLimited) {
-                    await this.waitForRateLimit();
-                } else {
-                    await this.error(errorType, {
-                        exception: (e as Error).toString()
-                    }, {
-                        currentURL: this.webview.getURL()
-                    })
-                    return false;
-                }
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview.getURL();
-                await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
-                    newURL: newURL,
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                return false;
-            } else {
-                await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                return false;
-            }
-        }
-        return true;
-    }
-
     // Load the DMs page, and return true if an error was triggered
     async deleteDMsLoadDMsPage(): Promise<boolean> {
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
+        let tries: number, success: boolean;
+        let error: Error | null = null;
+        let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteDMs_OtherError;
+        let newURL: string = "";
+
+        success = false;
+        for (tries = 0; tries < 3; tries++) {
             await this.loadURLWithRateLimit("https://x.com/messages");
             try {
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
+                success = true;
                 break;
             } catch (e) {
                 this.log("deleteDMsLoadDMsPage", ["selector never appeared", e]);
@@ -561,25 +489,33 @@ export class AccountXViewModel extends BaseViewModel {
                         await this.waitForLoadingToFinish();
                         this.progress.isDeleteDMsFinished = true;
                         await this.syncProgress();
-                        break;
+                        return false;
                     }
                 } else if (e instanceof URLChangedError) {
-                    const newURL = this.webview.getURL();
-                    await this.error(AutomationErrorType.x_runJob_deleteDMs_URLChanged, {
-                        newURL: newURL,
-                        exception: (e as Error).toString(),
-                        currentURL: this.webview.getURL()
-                    })
-                    return true;
+                    newURL = this.webview.getURL();
+                    error = e;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_URLChanged;
+                    console.log("deleteDMsLoadDMsPage", ["URL changed", newURL]);
+                    await this.sleep(1000);
+                    continue;
                 } else {
-                    await this.error(AutomationErrorType.x_runJob_deleteDMs_OtherError, {
-                        exception: (e as Error).toString(),
-                        currentURL: this.webview.getURL()
-                    })
-                    return true;
+                    error = e as Error
+                    console.log("deleteDMsLoadDMsPage", ["other error", e]);
+                    await this.sleep(1000);
+                    continue;
                 }
             }
         }
+
+        if (!success) {
+            await this.error(errorType, {
+                exception: (error as Error).toString(),
+                currentURL: this.webview.getURL(),
+                newURL: newURL,
+            })
+            return true;
+        }
+
         return false;
     }
 
@@ -1685,6 +1621,13 @@ I'm deleting your likes, starting with the earliest.
     }
 
     async runJobDeleteDMs(iJob: number): Promise<boolean> {
+        let tries: number, success: boolean;
+        let error: Error | null = null;
+        let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteDMs_UnknownError;
+
+        let errorTriggered = false;
+        let reloadDMsPage = true;
+
         this.showBrowser = true;
         this.instructions = `**${this.actionString}**
 
@@ -1700,129 +1643,168 @@ I'm deleting all of your direct message conversations, start with the most recen
             return true;
         }
 
-        // Load the messages and wait for tweets to appear
-        let errorTriggered = await this.deleteDMsLoadDMsPage();
-        if (errorTriggered) {
-            return false;
-        }
-
         if (!this.progress.isDeleteDMsFinished) {
             // eslint-disable-next-line no-constant-condition
             while (true) {
                 await this.waitForPause();
 
-                // Wait for conversation selector
-                try {
-                    await this.waitForSelector('div[data-testid="conversation"]');
-                } catch (e) {
-                    // Were we rate limited?
-                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                    if (this.rateLimitInfo.isRateLimited) {
-                        await this.waitForRateLimit();
-                    } else {
-                        // Reload the DMs page, to see if there are actually no conversations
-                        errorTriggered = await this.deleteDMsLoadDMsPage();
-                        if (errorTriggered) {
-                            break;
+                error = null;
+                success = false;
+                for (tries = 0; tries < 3; tries++) {
+                    // Load the DMs page, if necessary
+                    if (reloadDMsPage) {
+                        if (await this.deleteDMsLoadDMsPage()) {
+                            return false;
                         }
+                        reloadDMsPage = false;
+                    }
 
-                        // deleteDMsLoadDMsPage will have set isDeleteDMsFinished to true if there were no conversations left
-                        if (this.progress.isDeleteDMsFinished) {
-                            this.log('runJob', ["jobType=deleteDMs", "no more conversations, so ending deleteDMS"]);
-                            this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
-                            this.progress.isDeleteDMsFinished = true;
-                            await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
-                            break;
+                    if (this.progress.isDeleteDMsFinished) {
+                        this.log('runJob', ["jobType=deleteDMs", "no more conversations, so ending deleteDMS"]);
+                        this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
+                        this.progress.isDeleteDMsFinished = true;
+                        await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
+                        success = true;
+                        break;
+                    }
+
+                    // Wait for conversation selector
+                    try {
+                        await this.waitForSelector('div[data-testid="conversation"]');
+                    } catch (e) {
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
+                            reloadDMsPage = true;
+                            tries--;
+                            continue;
                         } else {
-                            // Try waiting for selector again
-                            try {
-                                await this.waitForSelector('div[data-testid="conversation"]');
-                            } catch (e) {
-                                // Trigger error this time
-                                await this.error(AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed, {
-                                    exception: (e as Error).toString()
-                                }, {
-                                    currentURL: this.webview.getURL()
-                                })
-                            }
+                            error = e as Error;
+                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed;
+                            console.log("runJobDeleteDMs", ["wait for conversation selector failed, try #", tries]);
+                            reloadDMsPage = true;
+                            continue;
                         }
                     }
+
+                    // Mouseover the first conversation
+                    if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
+                        reloadDMsPage = true;
+                        continue;
+                    }
+
+                    // Wait for menu button selector
+                    try {
+                        await this.waitForSelectorWithinSelector(
+                            'div[data-testid="conversation"]',
+                            'button[aria-label="More"]',
+                        )
+                    } catch (e) {
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
+                            reloadDMsPage = true;
+                            tries--;
+                            continue;
+                        } else {
+                            error = e as Error;
+                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed;
+                            console.log("runJobDeleteDMs", ["wait for menu button selector failed, try #", tries]);
+                            reloadDMsPage = true;
+                            continue;
+                        }
+                    }
+
+                    // Click the menu button
+                    if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed;
+                        reloadDMsPage = true;
+                        continue;
+                    }
+
+                    // Wait for delete button selector
+                    try {
+                        await this.waitForSelector(
+                            'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
+                        )
+                    } catch (e) {
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
+                            reloadDMsPage = true;
+                            tries--;
+                            continue;
+                        } else {
+                            error = e as Error;
+                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed;
+                            console.log("runJobDeleteDMs", ["wait for delete button selector failed, try #", tries]);
+                            reloadDMsPage = true;
+                            continue;
+                        }
+                    }
+
+                    // Click the delete button
+                    if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed;
+                        reloadDMsPage = true;
+                        continue;
+                    }
+
+                    // Wait for delete confirm selector
+                    try {
+                        await this.waitForSelector(
+                            'button[data-testid="confirmationSheetConfirm"]',
+                        )
+                    } catch (e) {
+                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                        if (this.rateLimitInfo.isRateLimited) {
+                            await this.waitForRateLimit();
+                            reloadDMsPage = true;
+                            tries--;
+                            continue;
+                        } else {
+                            error = e as Error;
+                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed;
+                            console.log("runJobDeleteDMs", ["wait for confirm button selector failed, try #", tries]);
+                            reloadDMsPage = true;
+                            continue;
+                        }
+                    }
+
+                    // Click the confirm button
+                    if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed;
+                        reloadDMsPage = true;
+                        continue;
+                    }
+
+                    await this.sleep(500);
+                    await this.waitForLoadingToFinish();
+
+                    success = true;
                 }
 
-                // Mouseover the first conversation
-                if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
-                    await this.error(AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed, {}, {
+                if (success) {
+                    // Update the progress
+                    this.progress = await window.electron.X.getProgress(this.account.id);
+
+                    // Have we deleted all conversations?
+                    if (this.progress.conversationsDeleted == this.progress.totalConversationsToDelete) {
+                        break;
+                    }
+                } else {
+                    const errorReportData = {};
+                    if (error) {
+                        // @ts-expect-error errorReportData object isn't defined
+                        errorReportData.exception = (error as Error).toString()
+                    }
+                    await this.error(errorType, errorReportData, {
                         currentURL: this.webview.getURL()
                     });
                     errorTriggered = true;
-                    break;
                 }
 
-                // Wait for menu button selector
-                if (!await this.waitForSelectorWithinSelectorDeleteDMs(
-                    'div[data-testid="conversation"]',
-                    'button[aria-label="More"]',
-                    AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed
-                )) {
-                    errorTriggered = true;
-                    break;
-                }
-
-                // Click the menu button
-                if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
-                    await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed, {}, {
-                        currentURL: this.webview.getURL()
-                    });
-                    errorTriggered = true;
-                    break;
-                }
-
-                // Wait for delete button selector
-                if (!await this.waitForSelectorDeleteDMs(
-                    'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
-                    AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed
-                )) {
-                    errorTriggered = true;
-                    break;
-                }
-
-                // Click the delete button
-                if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
-                    await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed, {}, {
-                        currentURL: this.webview.getURL()
-                    });
-                    errorTriggered = true;
-                    break;
-                }
-
-                // Wait for delete confirm selector
-                if (!await this.waitForSelectorDeleteDMs(
-                    'button[data-testid="confirmationSheetConfirm"]',
-                    AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed
-                )) {
-                    errorTriggered = true;
-                    break;
-                }
-
-                // Click the confirm button
-                if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
-                    await this.error(AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed, {}, {
-                        currentURL: this.webview.getURL()
-                    });
-                    errorTriggered = true;
-                    break;
-                }
-
-                await this.sleep(500);
-                await this.waitForLoadingToFinish();
-
-                // Update the progress
-                this.progress = await window.electron.X.getProgress(this.account.id);
-
-                // Have we deleted all conversations?
-                if (this.progress.conversationsDeleted == this.progress.totalConversationsToDelete) {
-                    break;
-                }
             }
         }
 
