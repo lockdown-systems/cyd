@@ -358,10 +358,13 @@ export class AccountXViewModel extends BaseViewModel {
 
     async login() {
         const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
+        let tries: number, success: boolean;
 
         this.showBrowser = true;
 
         this.log("login", "logging in");
+
+        // Load the login page and wait for it to redirect to home
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
         try {
             await this.waitForURL("https://x.com/home");
@@ -395,13 +398,25 @@ export class AccountXViewModel extends BaseViewModel {
         // Get the username
         this.log("login", "getting username");
         this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
-        await window.electron.X.getUsernameStart(this.account.id);
-        await this.loadURLWithRateLimit("https://x.com/settings/account");
-        await this.waitForSelector('a[href="/settings/your_twitter_data/account"]', "https://x.com/settings/account");
-        const username = await window.electron.X.getUsername(this.account.id);
-        await window.electron.X.getUsernameStop(this.account.id);
 
-        if (!username) {
+        let username: string | null = null;
+        success = false;
+        for (tries = 0; tries < 3; tries++) {
+            await window.electron.X.getUsernameStart(this.account.id);
+            await this.loadURLWithRateLimit("https://x.com/settings/account");
+            await this.waitForSelector('a[href="/settings/your_twitter_data/account"]', "https://x.com/settings/account");
+            username = await window.electron.X.getUsername(this.account.id);
+            await window.electron.X.getUsernameStop(this.account.id);
+
+            if (username) {
+                success = true;
+                break;
+            } else {
+                console.log("login", `failed to get username, try #${tries}`);
+                await this.sleep(1000);
+            }
+        }
+        if (!success) {
             const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
             await this.error(AutomationErrorType.X_login_FailedToGetUsername, {}, {
                 latestResponseData: latestResponseData,
@@ -413,11 +428,12 @@ export class AccountXViewModel extends BaseViewModel {
         if (originalUsername !== null && username != originalUsername) {
             this.log("login", `username changed from ${this.account.xAccount?.username} to ${username}`);
             // TODO: username changed error
+            console.error(`Username changed from ${originalUsername} to ${username}!`);
             return;
         }
 
         // Save the username
-        if (this.account && this.account.xAccount) {
+        if (this.account && this.account.xAccount && username) {
             this.account.xAccount.username = username;
         }
         await window.electron.database.saveAccount(JSON.stringify(this.account));
