@@ -183,6 +183,10 @@ export class BaseViewModel {
         await new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    async getScrollHeight() {
+        return await this.getWebview()?.executeJavaScript("document.body.scrollHeight");
+    }
+
     async waitForSelector(selector: string, startingURL: string = '', timeout: number = DEFAULT_TIMEOUT) {
         if (startingURL == '') {
             startingURL = this.webview.getURL();

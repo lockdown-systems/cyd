@@ -315,10 +315,13 @@ export class AccountXViewModel extends BaseViewModel {
             //         <button>...</button>
             //     </div>
             // </div>
+            const scrollHeightStart = await this.getScrollHeight();
             await this.scriptClickElementWithinElementLast('[data-testid="cellInnerDiv"]', 'button');
-            await this.sleep(1000);
+            await this.sleep(2000);
+            const scrollHeightEnd = await this.getScrollHeight();
 
-            // The button should be gone now
+            // If the scroll height increased, this means more tweets loaded
+            return scrollHeightEnd > scrollHeightStart;
         } else {
             // No tweets have loaded. If there are no tweets, the HTML looks kind of like this:
             // <div>
@@ -654,6 +657,8 @@ You've been logged out. Please log back into **@${this.account.xAccount?.usernam
     }
 
     async runJobIndexTweets(iJob: number): Promise<boolean> {
+        let tries: number, success: boolean;
+
         this.showBrowser = true;
         this.instructions = `
 **${this.actionString}**
@@ -728,11 +733,25 @@ Hang on while I scroll down to your earliest tweets that I've seen.
             let moreToScroll = await this.scrollToBottom();
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
             if (this.rateLimitInfo.isRateLimited) {
+                // Scroll down more to see the retry button
                 await this.sleep(500);
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
 
-                if (!await this.indexTweetsHandleRateLimit()) {
+                // Try to handle the rate limit
+                success = false;
+                for (tries = 0; tries < 3; tries++) {
+                    if (await this.indexTweetsHandleRateLimit()) {
+                        success = true;
+                        break;
+                    } else {
+                        console.log("runJob", ["jobType=indexTweets", "handleRateLimit failed, try #", tries]);
+                        await this.sleep(1000);
+                    }
+                }
+
+                // If rate limit failed, error out
+                if (!success) {
                     await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
                         currentURL: this.webview.getURL()
                     });
@@ -740,6 +759,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                     await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                     break;
                 }
+
                 await this.sleep(500);
                 moreToScroll = true;
             }
