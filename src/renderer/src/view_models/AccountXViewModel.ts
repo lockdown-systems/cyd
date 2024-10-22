@@ -466,7 +466,7 @@ export class AccountXViewModel extends BaseViewModel {
         try {
             await this.waitForSelector(selector);
         } catch (e) {
-            this.log("runJob", ["jobType=deleteDMs", "waitForSelectorDeleteDMs: selector never appeared", e]);
+            this.log("waitForSelectorDeleteDMs", ["selector never appeared", e]);
             if (e instanceof TimeoutError) {
                 // Were we rate limited?
                 this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -505,7 +505,7 @@ export class AccountXViewModel extends BaseViewModel {
         try {
             await this.waitForSelectorWithinSelector(containerSelector, selector);
         } catch (e) {
-            this.log("runJob", ["jobType=deleteDMs", "waitForSelectorWithinSelectorDeleteDMs: selector within selector never appeared", e]);
+            this.log("waitForSelectorWithinSelectorDeleteDMs", ["selector within selector never appeared", e]);
             if (e instanceof TimeoutError) {
                 // Were we rate limited?
                 this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -550,7 +550,7 @@ export class AccountXViewModel extends BaseViewModel {
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                 break;
             } catch (e) {
-                this.log("runJob", ["jobType=deleteDMs", "selector never appeared", e]);
+                this.log("deleteDMsLoadDMsPage", ["selector never appeared", e]);
                 if (e instanceof TimeoutError) {
                     // Were we rate limited?
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -688,7 +688,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
         try {
             await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/with_replies");
         } catch (e) {
-            this.log("runJob", ["jobType=indexTweets", "selector never appeared", e]);
+            this.log("runJobIndexTweets", ["selector never appeared", e]);
             if (e instanceof TimeoutError) {
                 // Were we rate limited?
                 this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -745,7 +745,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         success = true;
                         break;
                     } else {
-                        console.log("runJob", ["jobType=indexTweets", "handleRateLimit failed, try #", tries]);
+                        console.log("runJobIndexTweets", ["handleRateLimit failed, try #", tries]);
                         await this.sleep(1000);
                     }
                 }
@@ -888,7 +888,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                 break;
             } catch (e) {
-                this.log("runJob", ["jobType=indexConversations", "selector never appeared", e]);
+                this.log("runJobIndexConversations", ["selector never appeared", e]);
                 if (e instanceof TimeoutError) {
                     // Were we rate limited?
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -1015,7 +1015,7 @@ Please wait while I index all of the messages from each conversation.
             })
             return false;
         }
-        this.log('runJob', ["jobType=indexMessages", "indexMessagesStartResponse", indexMessagesStartResponse]);
+        this.log('runJobIndexMessages', ["indexMessagesStartResponse", indexMessagesStartResponse]);
 
         // Start the progress
         this.progress.totalConversations = indexMessagesStartResponse?.totalConversations;
@@ -1040,7 +1040,7 @@ Please wait while I index all of the messages from each conversation.
                     success = true;
                     break;
                 } catch (e) {
-                    this.log("runJob", ["jobType=indexMessages", "selector never appeared", e]);
+                    this.log("runJobIndexMessages", ["selector never appeared", e]);
                     if (e instanceof TimeoutError) {
                         // Were we rate limited?
                         this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
@@ -1048,12 +1048,12 @@ Please wait while I index all of the messages from each conversation.
                             await this.waitForRateLimit();
                         } else {
                             error = e;
-                            console.log("runJob", ["jobType=indexMessages", "loading conversation and waiting for messages failed, try #", tries]);
+                            console.log("runJobIndexMessages", ["loading conversation and waiting for messages failed, try #", tries]);
                             await this.sleep(1000);
                         }
                     } else if (e instanceof URLChangedError) {
                         // If the URL changes (like to https://x.com/i/verified-get-verified), skip it
-                        this.log("runJob", ["jobType=indexMessages", "conversation is inaccessible, so skipping it"]);
+                        this.log("runJobIndexMessages", ["conversation is inaccessible, so skipping it"]);
                         this.progress.conversationMessagesIndexed += 1;
                         await this.syncProgress();
                         shouldSkip = true;
@@ -1064,7 +1064,7 @@ Please wait while I index all of the messages from each conversation.
                         break;
                     } else {
                         error = e as Error;
-                        console.log("runJob", ["jobType=indexMessages", "loading conversation and waiting for messages failed, try #", tries]);
+                        console.log("runJobIndexMessages", ["loading conversation and waiting for messages failed, try #", tries]);
                         await this.sleep(1000);
                     }
                 }
@@ -1173,7 +1173,7 @@ I'm building a searchable archive web page in HTML.
 
         // Submit progress to the API
         this.progressInfo = await window.electron.X.getProgressInfo(this.account?.id);
-        this.log("runJob", ["jobType=archiveBuild", "progressInfo", JSON.parse(JSON.stringify(this.progressInfo))]);
+        this.log("runJobArchiveBuild", ["progressInfo", JSON.parse(JSON.stringify(this.progressInfo))]);
         this.postXProgresResp = await this.api.postXProgress({
             account_uuid: this.progressInfo.accountUUID,
             total_tweets_archived: this.progressInfo.totalTweetsArchived,
@@ -1186,7 +1186,7 @@ I'm building a searchable archive web page in HTML.
         }, this.deviceInfo?.valid ? true : false)
         if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
             // Silently log the error and continue
-            this.log("runJob", ["jobType=archiveBuild", "failed to post progress to the API", this.postXProgresResp.message]);
+            this.log("runJobArchiveBuild", ["failed to post progress to the API", this.postXProgresResp.message]);
         }
 
         await this.finishJob(iJob);
@@ -1225,7 +1225,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
         try {
             await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/likes");
         } catch (e) {
-            this.log("runJob", ["jobType=indexLikes", "selector never appeared", e]);
+            this.log("runJobIndexLikes", ["selector never appeared", e]);
             if (e instanceof TimeoutError) {
                 // Were we rate limited?
                 this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
