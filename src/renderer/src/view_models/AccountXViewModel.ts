@@ -980,6 +980,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
     }
 
     async runJobIndexMessages(iJob: number): Promise<boolean> {
+        let tries: number, success: boolean, error: null | Error = null;
+
         let indexMessagesStartResponse: XIndexMessagesStartResponse;
         let url = '';
 
@@ -1025,9 +1027,9 @@ Please wait while I index all of the messages from each conversation.
             await this.waitForPause();
 
             // Load the URL
+            success = false;
             let shouldSkip = false;
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
+            for (tries = 0; tries < 3; tries++) {
                 await this.waitForPause();
 
                 // Load URL and wait for messages to appear
@@ -1035,6 +1037,7 @@ Please wait while I index all of the messages from each conversation.
                     url = `https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`;
                     await this.loadURLWithRateLimit(url);
                     await this.waitForSelector('div[data-testid="DmActivityContainer"]', url);
+                    success = true;
                     break;
                 } catch (e) {
                     this.log("runJob", ["jobType=indexMessages", "selector never appeared", e]);
@@ -1044,13 +1047,9 @@ Please wait while I index all of the messages from each conversation.
                         if (this.rateLimitInfo.isRateLimited) {
                             await this.waitForRateLimit();
                         } else {
-                            await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-                                exception: (e as Error).toString(),
-                            }, {
-                                currentURL: this.webview.getURL()
-                            });
-                            errorTriggered = true;
-                            break;
+                            error = e;
+                            console.log("runJob", ["jobType=indexMessages", "loading conversation and waiting for messages failed, try #", tries]);
+                            await this.sleep(1000);
                         }
                     } else if (e instanceof URLChangedError) {
                         // If the URL changes (like to https://x.com/i/verified-get-verified), skip it
@@ -1058,21 +1057,27 @@ Please wait while I index all of the messages from each conversation.
                         this.progress.conversationMessagesIndexed += 1;
                         await this.syncProgress();
                         shouldSkip = true;
+                        success = true;
 
                         // Mark the conversation's shouldIndexMessages to false
                         await window.electron.X.indexConversationFinished(this.account.id, indexMessagesStartResponse.conversationIDs[i]);
                         break;
                     } else {
-                        await this.error(AutomationErrorType.x_runJob_indexMessages_OtherError, {
-                            exception: (e as Error).toString()
-                        }, {
-                            currentURL: this.webview.getURL()
-                        });
-                        errorTriggered = true;
-                        await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
-                        break;
+                        error = e as Error;
+                        console.log("runJob", ["jobType=indexMessages", "loading conversation and waiting for messages failed, try #", tries]);
+                        await this.sleep(1000);
                     }
                 }
+            }
+
+            if (!success) {
+                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
+                await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
+                    exception: (error as Error).toString(),
+                }, {
+                    currentURL: this.webview.getURL()
+                });
+                errorTriggered = true;
             }
 
             if (shouldSkip) {
