@@ -1660,7 +1660,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                     }
 
                     if (this.progress.isDeleteDMsFinished) {
-                        this.log('runJob', ["jobType=deleteDMs", "no more conversations, so ending deleteDMS"]);
+                        this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
                         this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
                         this.progress.isDeleteDMsFinished = true;
                         await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
@@ -1788,11 +1788,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                 if (success) {
                     // Update the progress
                     this.progress = await window.electron.X.getProgress(this.account.id);
-
-                    // Have we deleted all conversations?
-                    if (this.progress.conversationsDeleted == this.progress.totalConversationsToDelete) {
-                        break;
-                    }
+                    break;
                 } else {
                     const errorReportData = {};
                     if (error) {
