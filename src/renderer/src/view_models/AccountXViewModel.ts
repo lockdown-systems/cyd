@@ -1330,6 +1330,10 @@ Hang on while I scroll down to your earliest likes that I've seen.
     }
 
     async runJobDeleteTweets(iJob: number): Promise<boolean> {
+        let tries: number, success: boolean;
+        let error: Error | null = null;
+        let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
+
         let tweetsToDelete: XDeleteTweetsStartResponse;
 
         this.showBrowser = true;
@@ -1362,91 +1366,106 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
 
         let errorTriggered = false;
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
-            // Load the URL
-            await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${tweetsToDelete.tweets[i].tweetID}`);
-            await this.sleep(200);
+            errorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
 
-            await this.waitForPause();
+            success = false;
+            for (tries = 0; tries < 3; tries++) {
+                // Load the URL
+                await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${tweetsToDelete.tweets[i].tweetID}`);
+                await this.sleep(200);
 
-            if (this.account.xAccount?.deleteTweetsArchiveEnabled) {
-                // Archive the tweet
-                if (!await this.archiveSaveTweet(await window.electron.X.archiveTweetsOutputPath(this.account.id), tweetsToDelete.tweets[i])) {
+                await this.waitForPause();
+
+                if (this.account.xAccount?.deleteTweetsArchiveEnabled) {
+                    // Archive the tweet
+                    if (!await this.archiveSaveTweet(await window.electron.X.archiveTweetsOutputPath(this.account.id), tweetsToDelete.tweets[i])) {
+                        errorTriggered = true;
+                        break;
+                    }
+                }
+
+                await this.waitForPause();
+
+                // Wait for the menu button to appear
+                try {
+                    await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                } catch (e) {
+                    error = e as Error;
+                    errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
+                    console.log("runJobDeleteTweets", ["wait for menu button to appear failed, try #", tries]);
+                    await this.sleep(1000);
+                    continue;
+                }
+                await this.sleep(200);
+
+                // Click the menu button
+                await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+
+                // Wait for the menu to appear
+                try {
+                    await this.waitForSelector('div[role="menu"] div[role="menuitem"]:first-of-type');
+                } catch (e) {
+                    error = e as Error;
+                    errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed;
+                    console.log("runJobDeleteTweets", ["wait for menu to appear failed, try #", tries]);
+                    await this.sleep(1000);
+                    continue;
+                }
+                await this.sleep(200);
+
+                // Click the delete button
+                await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
+
+                // Wait for the delete confirmation popup to appear
+                try {
+                    await this.waitForSelector('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
+                } catch (e) {
+                    error = e as Error;
+                    errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed;
+                    console.log("runJobDeleteTweets", ["wait for delete confirmation popup to appear failed, try #", tries]);
+                    await this.sleep(1000);
+                    continue;
+                }
+                await this.sleep(200);
+
+                // Click delete confirmation
+                await this.scriptClickElement('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
+                await this.sleep(200);
+
+                // Update the tweet's deletedAt date
+                try {
+                    await window.electron.X.deleteTweet(this.account.id, tweetsToDelete.tweets[i].tweetID);
+                } catch (e) {
+                    await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
+                        exception: (e as Error).toString()
+                    }, {
+                        tweet: tweetsToDelete.tweets[i],
+                        index: i,
+                        currentURL: this.webview.getURL()
+                    })
                     errorTriggered = true;
                     break;
                 }
-            }
 
-            await this.waitForPause();
-
-            // Wait for the menu button to appear
-            try {
-                await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
-            } catch (e) {
-                await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed, {
-                    exception: (e as Error).toString()
-                }), {
-                    currentURL: this.webview.getURL()
-                };
-                errorTriggered = true;
+                this.progress.tweetsDeleted += 1;
+                await this.syncProgress();
                 break;
             }
-            await this.sleep(200);
 
-            // Click the menu button
-            await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
-
-            // Wait for the menu to appear
-            try {
-                await this.waitForSelector('div[role="menu"] div[role="menuitem"]:first-of-type');
-            } catch (e) {
-                await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed, {
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                });
-                errorTriggered = true;
+            if (errorTriggered) {
                 break;
             }
-            await this.sleep(200);
 
-            // Click the delete button
-            await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
-
-            // Wait for the delete confirmation popup to appear
-            try {
-                await this.waitForSelector('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
-            } catch (e) {
-                await this.error(AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed, {
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                });
-                errorTriggered = true;
-                break;
-            }
-            await this.sleep(200);
-
-            // Click delete confirmation
-            await this.scriptClickElement('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
-            await this.sleep(200);
-
-            // Update the tweet's deletedAt date
-            try {
-                await window.electron.X.deleteTweet(this.account.id, tweetsToDelete.tweets[i].tweetID);
-            } catch (e) {
-                await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
-                    exception: (e as Error).toString()
+            if (!success) {
+                await this.error(errorType, {
+                    exception: (error as Error).toString()
                 }, {
                     tweet: tweetsToDelete.tweets[i],
                     index: i,
                     currentURL: this.webview.getURL()
-                })
+                });
                 errorTriggered = true;
-                break;
             }
-
-            this.progress.tweetsDeleted += 1;
-            await this.syncProgress();
         }
 
         if (errorTriggered) {
