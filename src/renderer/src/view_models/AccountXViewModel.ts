@@ -305,36 +305,30 @@ export class AccountXViewModel extends BaseViewModel {
     async indexTweetsHandleRateLimit(): Promise<boolean> {
         this.log("indexTweetsHandleRateLimit", this.progress);
 
-        // Click retry.
-        /*
-        There are two conditions where rate limit occurs for index: if there are no tweets in the DOM's timeline yet, or if there are already some.
+        if (await this.doesSelectorExist('[data-testid="cellInnerDiv"]')) {
+            // Tweets have loaded. If there are tweets, the HTML looks like of like this:
+            // <div>
+            //     <div data-testid="cellInnerDiv"></div>
+            //     <div data-testid="cellInnerDiv"></div>
+            //     <div data-testid="cellInnerDiv>...</div>
+            //         <div>...</div>
+            //         <button>...</button>
+            //     </div>
+            // </div>
+            await this.scriptClickElementWithinElementLast('[data-testid="cellInnerDiv"]', 'button');
+            await this.sleep(1000);
 
-        If there are no tweets, the HTML looks kind of like this:
-        
-        <div>
-            <nav aria-label="Profile timelines">
-            <div>
-                <div>...</div>
-                <button>...</button>
-            </div>
-        </div>
-
-        If there are tweets, the HTML looks like of like this:
-
-        <div>
-            <div data-testid="cellInnerDiv"></div>
-            <div data-testid="cellInnerDiv"></div>
-            <div data-testid="cellInnerDiv>...</div>
-                <div>...</div>
-                <button>...</button>
-            </div>
-        </div>
-        */
-        const code = `
-        (() => {
-            let els = document.querySelectorAll('[data-testid="cellInnerDiv"]');
-            if(els.length === 0) {
-                // no tweets have loaded yet
+            // The button should be gone now
+        } else {
+            // No tweets have loaded. If there are no tweets, the HTML looks kind of like this:
+            // <div>
+            //     <nav aria-label="Profile timelines">
+            //     <div>
+            //         <div>...</div>
+            //         <button>...</button>
+            //     </div>
+            // </div>
+            return await this.getWebview()?.executeJavaScript(`(() => {
                 let el = document.querySelector('[aria-label="Profile timelines"]');
                 if(el === null) { return false; }
                 el = el.parentNode.children[el.parentNode.children.length - 1];
@@ -342,18 +336,10 @@ export class AccountXViewModel extends BaseViewModel {
                 el = el.querySelector('button');
                 if(el === null) { return false; }
                 el.click();
-            } else {
-                // tweets have loaded
-                let el = els[els.length - 1];
-                if(el === null) { return false; }
-                el = el.querySelector('button');
-                if(el === null) { return false; }
-                el.click();
-            }
-            return true;
-        })()
-        `;
-        return await this.getWebview()?.executeJavaScript(code);
+                return true;
+            })()`);
+        }
+        return true;
     }
 
     async login() {
@@ -745,6 +731,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await this.sleep(500);
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
+
                 if (!await this.indexTweetsHandleRateLimit()) {
                     await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
                         currentURL: this.webview.getURL()
