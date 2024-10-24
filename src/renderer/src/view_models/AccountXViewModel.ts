@@ -342,7 +342,6 @@ export class AccountXViewModel extends BaseViewModel {
                 return true;
             })()`);
         }
-        return true;
     }
 
     async login() {
