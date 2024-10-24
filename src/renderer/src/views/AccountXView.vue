@@ -155,22 +155,25 @@ const updateSettings = async () => {
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.account = updatedAccount;
     }
+    emitter?.emit('account-updated');
 };
 
 const startArchivingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value) {
         await accountXViewModel.value.startArchiving(archiveForceIndexEverything.value);
-        await startStateLoop();
     }
+    archiveForceIndexEverything.value = false;
+    await startStateLoop();
 };
 
 const startDeletingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
         await accountXViewModel.value.startDeleting(deleteForceIndexEverything.value);
-        await startStateLoop();
     }
+    deleteForceIndexEverything.value = false;
+    await startStateLoop();
 };
 
 const startStateLoop = async () => {
