@@ -1492,6 +1492,7 @@ I'm deleting your retweets, starting with the earliest.
                     success = true;
                 } else {
                     console.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
+                    success = true;
                 }
             }
 
