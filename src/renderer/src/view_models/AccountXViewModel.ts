@@ -1490,9 +1490,11 @@ I'm deleting your retweets, starting with the earliest.
                     await this.sleep(200);
 
                     success = true;
+                    break;
                 } else {
                     console.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
                     success = true;
+                    break;
                 }
             }
 
