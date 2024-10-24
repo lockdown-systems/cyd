@@ -155,6 +155,7 @@ const updateSettings = async () => {
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.account = updatedAccount;
     }
+    emitter?.emit('account-updated');
 };
 
 const startArchivingClicked = async () => {
