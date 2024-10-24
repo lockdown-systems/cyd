@@ -161,16 +161,18 @@ const startArchivingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value) {
         await accountXViewModel.value.startArchiving(archiveForceIndexEverything.value);
-        await startStateLoop();
     }
+    archiveForceIndexEverything.value = false;
+    await startStateLoop();
 };
 
 const startDeletingClicked = async () => {
     await updateSettings();
     if (accountXViewModel.value !== null) {
         await accountXViewModel.value.startDeleting(deleteForceIndexEverything.value);
-        await startStateLoop();
     }
+    archiveForceIndexEverything.value = false;
+    await startStateLoop();
 };
 
 const startStateLoop = async () => {
