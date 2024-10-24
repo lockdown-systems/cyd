@@ -171,7 +171,7 @@ const startDeletingClicked = async () => {
     if (accountXViewModel.value !== null) {
         await accountXViewModel.value.startDeleting(deleteForceIndexEverything.value);
     }
-    archiveForceIndexEverything.value = false;
+    deleteForceIndexEverything.value = false;
     await startStateLoop();
 };
 
