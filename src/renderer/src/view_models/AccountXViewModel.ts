@@ -445,20 +445,20 @@ export class AccountXViewModel extends BaseViewModel {
         await this.waitForPause();
     }
 
-    async finishJob(iJob: number) {
-        this.jobs[iJob].finishedAt = new Date();
-        this.jobs[iJob].status = "finished";
-        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-        this.log("finishJob", this.jobs[iJob].jobType);
+    async finishJob(jobIndex: number) {
+        this.jobs[jobIndex].finishedAt = new Date();
+        this.jobs[jobIndex].status = "finished";
+        this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
+        this.log("finishJob", this.jobs[jobIndex].jobType);
     }
 
-    async errorJob(iJob: number) {
-        this.jobs[iJob].finishedAt = new Date();
-        this.jobs[iJob].status = "error";
-        this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
-        this.log("errorJob", this.jobs[iJob].jobType);
+    async errorJob(jobIndex: number) {
+        this.jobs[jobIndex].finishedAt = new Date();
+        this.jobs[jobIndex].status = "error";
+        this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
+        this.log("errorJob", this.jobs[jobIndex].jobType);
     }
 
     // Load the DMs page, and return true if an error was triggered
@@ -563,7 +563,7 @@ export class AccountXViewModel extends BaseViewModel {
         return true;
     }
 
-    async runJobLogin(iJob: number): Promise<boolean> {
+    async runJobLogin(jobIndex: number): Promise<boolean> {
         this.showBrowser = true;
         this.instructions = `
 **${this.actionString}**
@@ -587,11 +587,11 @@ You've been logged out. Please log back into **@${this.account.xAccount?.usernam
             await this.login();
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobIndexTweets(iJob: number): Promise<boolean> {
+    async runJobIndexTweets(jobIndex: number): Promise<boolean> {
         let tries: number, success: boolean;
 
         this.showBrowser = true;
@@ -714,8 +714,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                 await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                 break;
             }
-            this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+            this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
@@ -739,11 +739,11 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
         await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "false");
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobArchiveTweets(iJob: number): Promise<boolean> {
+    async runJobArchiveTweets(jobIndex: number): Promise<boolean> {
         let archiveStartResponse: XArchiveStartResponse;
 
         this.showBrowser = true;
@@ -789,11 +789,11 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
         }
 
         await this.syncProgress();
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobIndexConversations(iJob: number): Promise<boolean> {
+    async runJobIndexConversations(jobIndex: number): Promise<boolean> {
         this.showBrowser = true;
         this.instructions = `
 **${this.actionString}**
@@ -885,8 +885,8 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
                 break;
             }
-            this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+            this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
@@ -910,11 +910,11 @@ Hang on while I scroll down to your earliest direct message conversations that I
 
         await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "false");
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobIndexMessages(iJob: number): Promise<boolean> {
+    async runJobIndexMessages(jobIndex: number): Promise<boolean> {
         let tries: number, success: boolean, error: null | Error = null;
 
         let indexMessagesStartResponse: XIndexMessagesStartResponse;
@@ -1054,8 +1054,8 @@ Please wait while I index all of the messages from each conversation.
                     await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                     break;
                 }
-                this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+                this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
 
                 // Check if we're done
                 if (!moreToScroll || this.progress.shouldStopEarly) {
@@ -1080,11 +1080,11 @@ Please wait while I index all of the messages from each conversation.
             return false;
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobArchiveBuild(iJob: number): Promise<boolean> {
+    async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
         this.showBrowser = false;
         this.instructions = `
 **${this.actionString}**
@@ -1124,11 +1124,11 @@ I'm building a searchable archive web page in HTML.
             this.log("runJobArchiveBuild", ["failed to post progress to the API", this.postXProgresResp.message]);
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobIndexLikes(iJob: number): Promise<boolean> {
+    async runJobIndexLikes(jobIndex: number): Promise<boolean> {
         this.showBrowser = true;
         this.instructions = `
 **${this.actionString}**
@@ -1235,8 +1235,8 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                 break;
             }
-            this.jobs[iJob].progressJSON = JSON.stringify(this.progress);
-            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+            this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+            await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
@@ -1260,11 +1260,11 @@ Hang on while I scroll down to your earliest likes that I've seen.
 
         await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "false");
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobDeleteTweets(iJob: number): Promise<boolean> {
+    async runJobDeleteTweets(jobIndex: number): Promise<boolean> {
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
@@ -1409,11 +1409,11 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
             return false;
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobDeleteRetweets(iJob: number): Promise<boolean> {
+    async runJobDeleteRetweets(jobIndex: number): Promise<boolean> {
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteRetweets_UnknownError;
@@ -1532,11 +1532,11 @@ I'm deleting your retweets, starting with the earliest.
             return false;
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobDeleteLikes(iJob: number): Promise<boolean> {
+    async runJobDeleteLikes(jobIndex: number): Promise<boolean> {
         let tweetsToDelete: XDeleteTweetsStartResponse;
         let alreadyDeleted = false;
 
@@ -1618,11 +1618,11 @@ I'm deleting your likes, starting with the earliest.
             return false;
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJobDeleteDMs(iJob: number): Promise<boolean> {
+    async runJobDeleteDMs(jobIndex: number): Promise<boolean> {
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteDMs_UnknownError;
@@ -1641,7 +1641,7 @@ I'm deleting all of your direct message conversations, start with the most recen
         this.progress = await window.electron.X.deleteDMsStart(this.account.id);
 
         if (this.progress.totalConversationsToDelete == 0) {
-            await this.finishJob(iJob);
+            await this.finishJob(jobIndex);
             return true;
         }
 
@@ -1810,65 +1810,65 @@ I'm deleting all of your direct message conversations, start with the most recen
             return false;
         }
 
-        await this.finishJob(iJob);
+        await this.finishJob(jobIndex);
         return true;
     }
 
-    async runJob(iJob: number) {
+    async runJob(jobIndex: number) {
         await this.waitForPause();
 
         // Start the job
-        this.jobs[iJob].startedAt = new Date();
-        this.jobs[iJob].status = "running";
-        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[iJob]));
+        this.jobs[jobIndex].startedAt = new Date();
+        this.jobs[jobIndex].status = "running";
+        await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
 
         // Set the current job immediately
-        this.progress.currentJob = this.jobs[iJob].jobType;
+        this.progress.currentJob = this.jobs[jobIndex].jobType;
         await this.syncProgress();
 
-        switch (this.jobs[iJob].jobType) {
+        switch (this.jobs[jobIndex].jobType) {
             case "login":
-                await this.runJobLogin(iJob);
+                await this.runJobLogin(jobIndex);
                 break;
 
             case "indexTweets":
-                await this.runJobIndexTweets(iJob);
+                await this.runJobIndexTweets(jobIndex);
                 break;
 
             case "archiveTweets":
-                await this.runJobArchiveTweets(iJob);
+                await this.runJobArchiveTweets(jobIndex);
                 break;
 
             case "indexConversations":
-                await this.runJobIndexConversations(iJob);
+                await this.runJobIndexConversations(jobIndex);
                 break;
 
             case "indexMessages":
-                await this.runJobIndexMessages(iJob);
+                await this.runJobIndexMessages(jobIndex);
                 break;
 
             case "archiveBuild":
-                await this.runJobArchiveBuild(iJob);
+                await this.runJobArchiveBuild(jobIndex);
                 break;
 
             case "indexLikes":
-                await this.runJobIndexLikes(iJob);
+                await this.runJobIndexLikes(jobIndex);
                 break;
 
             case "deleteTweets":
-                await this.runJobDeleteTweets(iJob);
+                await this.runJobDeleteTweets(jobIndex);
                 break;
 
             case "deleteRetweets":
-                await this.runJobDeleteRetweets(iJob);
+                await this.runJobDeleteRetweets(jobIndex);
                 break;
 
             case "deleteLikes":
-                await this.runJobDeleteLikes(iJob);
+                await this.runJobDeleteLikes(jobIndex);
                 break;
 
             case "deleteDMs":
-                await this.runJobDeleteDMs(iJob);
+                await this.runJobDeleteDMs(jobIndex);
                 break;
         }
     }
