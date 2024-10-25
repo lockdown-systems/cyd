@@ -38,6 +38,7 @@ watch(verificationCode, async (newValue, _oldValue) => {
     }
     // Auto-submit on 6 digits
     if (newValue.length === 6) {
+        signInState.value = 'token';
         await registerDevice();
     }
 });
@@ -98,6 +99,8 @@ async function registerDevice() {
         verificationCode.value = '';
         verificationCodeInputEl.value?.focus();
         window.electron.showError('Invalid verification code.');
+        signInState.value = 'registerDevice';
+        verificationCode.value = '';
         return;
     }
     if (!registerDeviceResp.device_token) {
