@@ -49,6 +49,7 @@ import {
     XAPIUser,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
+import { is } from 'cypress/types/bluebird';
 
 function formatDateToYYYYMMDD(dateString: string): string {
     const date = new Date(dateString);
@@ -611,7 +612,11 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
-                this.progress.isIndexTweetsFinished = true;
+                // If this is not the first run, we should stop early
+                if (!isFirstRun) {
+                    this.progress.isIndexTweetsFinished = true;
+                }
+
                 return this.progress;
             }
         }
@@ -629,7 +634,10 @@ export class XAccountController {
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
             if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
-                this.progress.isIndexLikesFinished = true;
+                // If this is not the first run, we should stop early
+                if (!isFirstRun) {
+                    this.progress.isIndexLikesFinished = true;
+                }
                 return this.progress;
             }
         }
