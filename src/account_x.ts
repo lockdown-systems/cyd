@@ -422,7 +422,7 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexTweet(iResponse: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
+    indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
         if (!this.db) {
             this.initDB();
         }
@@ -435,7 +435,7 @@ export class XAccountController {
                 exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
             } else {
                 // We have seen this tweet, so return early
-                this.mitmController.responseData[iResponse].processed = true;
+                this.mitmController.responseData[responseIndex].processed = true;
                 return false;
             }
         }
@@ -472,9 +472,9 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    indexParseTweetsResponseData(iResponse: number, isFirstRun: boolean): boolean {
+    indexParseTweetsResponseData(responseIndex: number, isFirstRun: boolean): boolean {
         let shouldReturnFalse = false;
-        const responseData = this.mitmController.responseData[iResponse];
+        const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
         if (responseData.processed) {
@@ -484,7 +484,7 @@ export class XAccountController {
         // Rate limited?
         if (responseData.status == 429) {
             log.warn('XAccountController.indexParseTweetsResponseData: RATE LIMITED');
-            this.mitmController.responseData[iResponse].processed = true;
+            this.mitmController.responseData[responseIndex].processed = true;
             return false;
         }
 
@@ -540,7 +540,7 @@ export class XAccountController {
                                 tweetLegacy = item.item.itemContent.tweet_results.result.tweet.legacy;
                             }
 
-                            if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                            if (userLegacy && tweetLegacy && !this.indexTweet(responseIndex, userLegacy, tweetLegacy, isFirstRun)) {
                                 shouldReturnFalse = true;
                                 return;
                             }
@@ -574,7 +574,7 @@ export class XAccountController {
                             tweetLegacy = entries.content.itemContent.tweet_results.result.tweet.legacy;
                         }
 
-                        if (userLegacy && tweetLegacy && !this.indexTweet(iResponse, userLegacy, tweetLegacy, isFirstRun)) {
+                        if (userLegacy && tweetLegacy && !this.indexTweet(responseIndex, userLegacy, tweetLegacy, isFirstRun)) {
                             shouldReturnFalse = true;
                             return;
                         }
@@ -588,15 +588,15 @@ export class XAccountController {
                 }
             });
 
-            this.mitmController.responseData[iResponse].processed = true;
-            log.debug('XAccountController.indexParseTweetsResponseData: processed', iResponse);
+            this.mitmController.responseData[responseIndex].processed = true;
+            log.debug('XAccountController.indexParseTweetsResponseData: processed', responseIndex);
 
             if (shouldReturnFalse) {
                 return false;
             }
         } else {
             // Skip response
-            this.mitmController.responseData[iResponse].processed = true;
+            this.mitmController.responseData[responseIndex].processed = true;
         }
 
         return true;
@@ -760,9 +760,9 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    async indexParseConversationsResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
+    async indexParseConversationsResponseData(responseIndex: number, isFirstRun: boolean): Promise<boolean> {
         let shouldReturnFalse = false;
-        const responseData = this.mitmController.responseData[iResponse];
+        const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
         if (responseData.processed) {
@@ -772,7 +772,7 @@ export class XAccountController {
         // Rate limited?
         if (responseData.status == 429) {
             log.warn('XAccountController.indexParseConversationsResponseData: RATE LIMITED');
-            this.mitmController.responseData[iResponse].processed = true;
+            this.mitmController.responseData[responseIndex].processed = true;
             return false;
         }
 
@@ -835,15 +835,15 @@ export class XAccountController {
                 log.info('XAccountController.indexParseConversationsResponseData: no conversations');
             }
 
-            this.mitmController.responseData[iResponse].processed = true;
-            log.debug('XAccountController.indexParseConversationsResponseData: processed', iResponse);
+            this.mitmController.responseData[responseIndex].processed = true;
+            log.debug('XAccountController.indexParseConversationsResponseData: processed', responseIndex);
 
             if (shouldReturnFalse) {
                 return false;
             }
         } else {
             // Skip response
-            this.mitmController.responseData[iResponse].processed = true;
+            this.mitmController.responseData[responseIndex].processed = true;
         }
 
         return true;
@@ -947,9 +947,9 @@ export class XAccountController {
     }
 
     // Returns false if the loop should stop
-    async indexParseMessagesResponseData(iResponse: number, isFirstRun: boolean): Promise<boolean> {
+    async indexParseMessagesResponseData(responseIndex: number, isFirstRun: boolean): Promise<boolean> {
         let shouldReturnFalse = false;
-        const responseData = this.mitmController.responseData[iResponse];
+        const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
         if (responseData.processed) {
@@ -959,7 +959,7 @@ export class XAccountController {
         // Rate limited?
         if (responseData.status == 429) {
             log.warn('XAccountController.indexParseMessagesResponseData: RATE LIMITED');
-            this.mitmController.responseData[iResponse].processed = true;
+            this.mitmController.responseData[responseIndex].processed = true;
             return false;
         }
 
@@ -974,7 +974,7 @@ export class XAccountController {
             ) &&
             responseData.status == 200
         ) {
-            log.debug("XAccountController.indexParseMessagesResponseData", iResponse);
+            log.debug("XAccountController.indexParseMessagesResponseData", responseIndex);
             let entries: XAPIMessage[];
 
             if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
@@ -1009,8 +1009,8 @@ export class XAccountController {
                 log.info('XAccountController.indexParseMessagesResponseData: no entries');
             }
 
-            this.mitmController.responseData[iResponse].processed = true;
-            log.debug('XAccountController.indexParseMessagesResponseData: processed', iResponse);
+            this.mitmController.responseData[responseIndex].processed = true;
+            log.debug('XAccountController.indexParseMessagesResponseData: processed', responseIndex);
 
             if (shouldReturnFalse) {
                 return false;
@@ -1018,7 +1018,7 @@ export class XAccountController {
         } else {
             // Skip response
             log.debug('XAccountController.indexParseMessagesResponseData: skipping response', responseData.url);
-            this.mitmController.responseData[iResponse].processed = true;
+            this.mitmController.responseData[responseIndex].processed = true;
         }
 
         return true;
