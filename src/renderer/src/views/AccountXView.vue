@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { Ref, ref, watch, onMounted, onUnmounted, inject, getCurrentInstance, computed } from 'vue'
+import {
+    Ref,
+    ref,
+    watch,
+    onMounted,
+    onUnmounted,
+    inject,
+    getCurrentInstance,
+    computed,
+} from 'vue'
 import Electron from 'electron';
 import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
 import AccountHeader from '../components/AccountHeader.vue';
@@ -36,6 +45,9 @@ const isPaused = ref<boolean>(false);
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
+
+// Keep track of if power block saver ID
+let powerSaveBlockerID: null | number = null;
 
 // Keep currentState in sync
 watch(
@@ -100,9 +112,6 @@ const deleteDMs = ref(false);
 const isFirstIndex = ref(true);
 const archiveForceIndexEverything = ref(false);
 const deleteForceIndexEverything = ref(false);
-
-// Keep track of if power block saver ID
-let powerSaveBlockerID: null | number = null;
 
 const checkIfIsFirstIndex = async () => {
     isFirstIndex.value = (
@@ -312,6 +321,11 @@ onUnmounted(async () => {
     // Stop power block saver
     if (powerSaveBlockerID !== null) {
         await window.electron.stopPowerSaveBlocker(powerSaveBlockerID);
+    }
+
+    // Cleanup the view controller
+    if (accountXViewModel.value !== null) {
+        await accountXViewModel.value.cleanup();
     }
 });
 </script>

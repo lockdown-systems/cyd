@@ -1,4 +1,4 @@
-import { WebviewTag } from 'electron';
+import { WebviewTag, ipcRenderer, IpcRendererEvent } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
@@ -48,6 +48,9 @@ export class BaseViewModel {
     public domReady: boolean;
     public isPaused: boolean;
 
+    // If the computer resumes from sleep, should we resume the automation?
+    private shouldResumeOnResume: boolean;
+
     public showBrowser: boolean;
     public showAutomationNotice: boolean;
     public instructions: string;
@@ -73,6 +76,7 @@ export class BaseViewModel {
         this.showAutomationNotice = false;
         this.domReady = false;
         this.isPaused = false;
+        this.shouldResumeOnResume = false;
 
         this.emitter = emitter;
 
@@ -93,6 +97,37 @@ export class BaseViewModel {
             }
         }
         this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
+
+        // Pause on suspend
+        ipcRenderer.on('powerMonitor-suspend', (_event: IpcRendererEvent) => this.powerMonitorSuspend);
+
+        // Resume on resume
+        ipcRenderer.on('powerMonitor-resume', (_event: IpcRendererEvent) => this.powerMonitorResume);
+    }
+
+    cleanup() {
+        ipcRenderer.off('powerMonitor-suspend', this.powerMonitorSuspend);
+        ipcRenderer.off('powerMonitor-resume', this.powerMonitorResume);
+    }
+
+    powerMonitorSuspend() {
+        if (this.isPaused) {
+            this.log("powerMonitor-suspend", "already paused");
+            this.shouldResumeOnResume = false;
+        } else {
+            this.log("powerMonitor-suspend", "pausing, will auto-resume on wake");
+            this.shouldResumeOnResume = true;
+            this.pause();
+        }
+    }
+
+    powerMonitorResume() {
+        if (this.shouldResumeOnResume) {
+            this.log("powerMonitor-resume", "resuming");
+            this.resume();
+        } else {
+            this.log("powerMonitor-resume", "was already paused");
+        }
     }
 
     async init() {
