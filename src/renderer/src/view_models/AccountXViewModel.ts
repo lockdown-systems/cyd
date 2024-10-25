@@ -139,7 +139,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
-            console.log("startArchiving", JSON.parse(JSON.stringify(this.jobs)));
+            this.log("startArchiving", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -213,7 +213,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
-            console.log("startDeleting", JSON.parse(JSON.stringify(this.jobs)));
+            this.log("startDeleting", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -282,7 +282,7 @@ export class AccountXViewModel extends BaseViewModel {
                     }
 
                     if (changedToUnexpected) {
-                        console.log("loadURLWithRateLimit", `URL changed: ${this.webview.getURL()}`);
+                        this.log("loadURLWithRateLimit", `URL changed: ${this.webview.getURL()}`);
                         throw new URLChangedError(url, this.webview.getURL());
                     }
                 }
@@ -400,7 +400,7 @@ export class AccountXViewModel extends BaseViewModel {
                 success = true;
                 break;
             } else {
-                console.log("login", `failed to get username, try #${tries}`);
+                this.log("login", `failed to get username, try #${tries}`);
                 await this.sleep(1000);
             }
         }
@@ -494,12 +494,12 @@ export class AccountXViewModel extends BaseViewModel {
                     newURL = this.webview.getURL();
                     error = e;
                     errorType = AutomationErrorType.x_runJob_deleteDMs_URLChanged;
-                    console.log("deleteDMsLoadDMsPage", ["URL changed", newURL]);
+                    this.log("deleteDMsLoadDMsPage", ["URL changed", newURL]);
                     await this.sleep(1000);
                     continue;
                 } else {
                     error = e as Error
-                    console.log("deleteDMsLoadDMsPage", ["other error", e]);
+                    this.log("deleteDMsLoadDMsPage", ["other error", e]);
                     await this.sleep(1000);
                     continue;
                 }
@@ -519,11 +519,11 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async archiveSaveTweet(outputPath: string, tweetItem: XTweetItem): Promise<boolean> {
-        console.log("Archiving", tweetItem.basename);
+        this.log("Archiving", tweetItem.basename);
 
         // Check if the tweet is already archived
         if (await window.electron.archive.isPageAlreadySaved(outputPath, tweetItem.basename)) {
-            console.log("Already archived", tweetItem.basename);
+            this.log("Already archived", tweetItem.basename);
             await window.electron.X.archiveTweetCheckDate(this.account.id, tweetItem.tweetID);
             this.progress.tweetsArchived += 1;
             return true;
@@ -668,6 +668,8 @@ Hang on while I scroll down to your earliest tweets that I've seen.
             let moreToScroll = await this.scrollToBottom();
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
             if (this.rateLimitInfo.isRateLimited) {
+                this.log("runJobIndexTweets", ["rate limited", this.progress]);
+
                 // Scroll down more to see the retry button
                 await this.sleep(500);
                 await this.scrollToBottom();
@@ -680,7 +682,7 @@ Hang on while I scroll down to your earliest tweets that I've seen.
                         success = true;
                         break;
                     } else {
-                        console.log("runJobIndexTweets", ["handleRateLimit failed, try #", tries]);
+                        this.log("runJobIndexTweets", ["handleRateLimit failed, try #", tries]);
                         await this.sleep(1000);
                     }
                 }
@@ -697,11 +699,18 @@ Hang on while I scroll down to your earliest tweets that I've seen.
 
                 await this.sleep(500);
                 moreToScroll = true;
+
+                // Continue on the next iteration of the infinite loop.
+                // If we don't do this, `window.electron.X.indexParseTweets`, and it will see the same tweets again,
+                // which will trigger it to end the step early.
+                this.log("runJobIndexTweets", ["finished waiting for rate limit"]);
+                continue;
             }
 
             // Parse so far
             try {
                 this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                this.log("runJobIndexTweets", ["parsed tweets", this.progress]);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
@@ -983,7 +992,7 @@ Please wait while I index all of the messages from each conversation.
                             await this.waitForRateLimit();
                         } else {
                             error = e;
-                            console.log("runJobIndexMessages", ["loading conversation and waiting for messages failed, try #", tries]);
+                            this.log("runJobIndexMessages", ["loading conversation and waiting for messages failed, try #", tries]);
                             await this.sleep(1000);
                         }
                     } else if (e instanceof URLChangedError) {
@@ -999,7 +1008,7 @@ Please wait while I index all of the messages from each conversation.
                         break;
                     } else {
                         error = e as Error;
-                        console.log("runJobIndexMessages", ["loading conversation and waiting for messages failed, try #", tries]);
+                        this.log("runJobIndexMessages", ["loading conversation and waiting for messages failed, try #", tries]);
                         await this.sleep(1000);
                     }
                 }
@@ -1327,7 +1336,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
-                    console.log("runJobDeleteTweets", ["wait for menu button to appear failed, try #", tries]);
+                    this.log("runJobDeleteTweets", ["wait for menu button to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
                 }
@@ -1342,7 +1351,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed;
-                    console.log("runJobDeleteTweets", ["wait for menu to appear failed, try #", tries]);
+                    this.log("runJobDeleteTweets", ["wait for menu to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
                 }
@@ -1357,7 +1366,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed;
-                    console.log("runJobDeleteTweets", ["wait for delete confirmation popup to appear failed, try #", tries]);
+                    this.log("runJobDeleteTweets", ["wait for delete confirmation popup to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
                 }
@@ -1479,7 +1488,7 @@ I'm deleting your retweets, starting with the earliest.
                     } catch (e) {
                         error = e as Error;
                         errorType = AutomationErrorType.x_runJob_deleteRetweets_WaitForMenuFailed;
-                        console.log("runJobDeleteRetweets", ["wait for unretweet menu to appear failed, try #", tries]);
+                        this.log("runJobDeleteRetweets", ["wait for unretweet menu to appear failed, try #", tries]);
                         await this.sleep(1000);
                         continue;
                     }
@@ -1492,7 +1501,7 @@ I'm deleting your retweets, starting with the earliest.
                     success = true;
                     break;
                 } else {
-                    console.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
+                    this.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
                     success = true;
                     break;
                 }
@@ -1590,7 +1599,7 @@ I'm deleting your likes, starting with the earliest.
                 await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
                 await this.sleep(200);
             } else {
-                console.log("Already unliked", tweetsToDelete.tweets[i].tweetID);
+                this.log("Already unliked", tweetsToDelete.tweets[i].tweetID);
             }
 
 
@@ -1683,7 +1692,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                         } else {
                             error = e as Error;
                             errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed;
-                            console.log("runJobDeleteDMs", ["wait for conversation selector failed, try #", tries]);
+                            this.log("runJobDeleteDMs", ["wait for conversation selector failed, try #", tries]);
                             reloadDMsPage = true;
                             continue;
                         }
@@ -1712,7 +1721,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                         } else {
                             error = e as Error;
                             errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed;
-                            console.log("runJobDeleteDMs", ["wait for menu button selector failed, try #", tries]);
+                            this.log("runJobDeleteDMs", ["wait for menu button selector failed, try #", tries]);
                             reloadDMsPage = true;
                             continue;
                         }
@@ -1740,7 +1749,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                         } else {
                             error = e as Error;
                             errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed;
-                            console.log("runJobDeleteDMs", ["wait for delete button selector failed, try #", tries]);
+                            this.log("runJobDeleteDMs", ["wait for delete button selector failed, try #", tries]);
                             reloadDMsPage = true;
                             continue;
                         }
@@ -1768,7 +1777,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                         } else {
                             error = e as Error;
                             errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed;
-                            console.log("runJobDeleteDMs", ["wait for confirm button selector failed, try #", tries]);
+                            this.log("runJobDeleteDMs", ["wait for confirm button selector failed, try #", tries]);
                             reloadDMsPage = true;
                             continue;
                         }
