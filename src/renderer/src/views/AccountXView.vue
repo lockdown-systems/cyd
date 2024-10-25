@@ -101,6 +101,9 @@ const isFirstIndex = ref(true);
 const archiveForceIndexEverything = ref(false);
 const deleteForceIndexEverything = ref(false);
 
+// Keep track of if power block saver ID
+let powerSaveBlockerID: null | number = null;
+
 const checkIfIsFirstIndex = async () => {
     isFirstIndex.value = (
         await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null &&
@@ -178,6 +181,8 @@ const startDeletingClicked = async () => {
 
 const startStateLoop = async () => {
     console.log('State loop started');
+    powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
+
     while (canStateLoopRun.value) {
         // Run next state
         if (accountXViewModel.value !== null) {
@@ -195,6 +200,9 @@ const startStateLoop = async () => {
 
         await new Promise(resolve => setTimeout(resolve, 500));
     }
+
+    await window.electron.stopPowerSaveBlocker(powerSaveBlockerID);
+    powerSaveBlockerID = null;
     console.log('State loop ended');
 };
 
@@ -300,6 +308,11 @@ onUnmounted(async () => {
     // Remove automation error handlers
     emitter?.off(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
+
+    // Stop power block saver
+    if (powerSaveBlockerID !== null) {
+        await window.electron.stopPowerSaveBlocker(powerSaveBlockerID);
+    }
 });
 </script>
 
