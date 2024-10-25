@@ -34,7 +34,7 @@ export const getSettingsPath = () => {
 
     const settingsPath = path.join(app.getPath('userData'), "settings");
     if (!fs.existsSync(settingsPath)) {
-        fs.mkdirSync(settingsPath);
+        fs.mkdirSync(settingsPath, { recursive: true });
     }
     return settingsPath;
 }
@@ -43,7 +43,7 @@ export const getAccountSettingsPath = (accountID: number) => {
     const settingsPath = getSettingsPath();
     const accountSettingsPath = path.join(settingsPath, `account-${accountID}`);
     if (!fs.existsSync(accountSettingsPath)) {
-        fs.mkdirSync(accountSettingsPath);
+        fs.mkdirSync(accountSettingsPath, { recursive: true });
     }
     return accountSettingsPath;
 }
@@ -53,7 +53,7 @@ export const getAccountTempPath = (accountID: number) => {
     const accountSettingsPath = path.join(settingsPath, `account-${accountID}`);
     const accountTempPath = path.join(accountSettingsPath, 'tmp');
     if (!fs.existsSync(accountTempPath)) {
-        fs.mkdirSync(accountTempPath);
+        fs.mkdirSync(accountTempPath, { recursive: true });
     }
     return accountTempPath;
 }
@@ -65,7 +65,7 @@ export const getDataPath = () => {
 
     const dataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
     if (!fs.existsSync(dataPath)) {
-        fs.mkdirSync(dataPath);
+        fs.mkdirSync(dataPath, { recursive: true });
     }
     return dataPath;
 }
@@ -74,11 +74,11 @@ export const getAccountDataPath = (accountType: string, accountUsername: string)
     const dataPath = getDataPath();
     const accountDataPath = path.join(dataPath, accountType);
     if (!fs.existsSync(accountDataPath)) {
-        fs.mkdirSync(accountDataPath);
+        fs.mkdirSync(accountDataPath, { recursive: true });
     }
     const accountUserDataPath = path.join(accountDataPath, accountUsername);
     if (!fs.existsSync(accountUserDataPath)) {
-        fs.mkdirSync(accountUserDataPath);
+        fs.mkdirSync(accountUserDataPath, { recursive: true });
     }
     return accountUserDataPath;
 }
