@@ -28,6 +28,8 @@ dist-ssr
 
 # Electron-Forge and packaging
 out/
+out-arm64/
+out-amd64/
 build
 
 # Tests
