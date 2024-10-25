@@ -49,7 +49,6 @@ import {
     XAPIUser,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
-import { is } from 'cypress/types/bluebird';
 
 function formatDateToYYYYMMDD(dateString: string): string {
     const date = new Date(dateString);
