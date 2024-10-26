@@ -99,23 +99,23 @@ export class BaseViewModel {
         this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
 
         // Pause on suspend
-        ipcRenderer.on('powerMonitor-suspend', (_event: IpcRendererEvent) => this.powerMonitorSuspend);
+        ipcRenderer.on('powerMonitor:suspend', (_event: IpcRendererEvent) => this.powerMonitorSuspend);
 
         // Resume on resume
-        ipcRenderer.on('powerMonitor-resume', (_event: IpcRendererEvent) => this.powerMonitorResume);
+        ipcRenderer.on('powerMonitor:resume', (_event: IpcRendererEvent) => this.powerMonitorResume);
     }
 
     cleanup() {
-        ipcRenderer.off('powerMonitor-suspend', this.powerMonitorSuspend);
-        ipcRenderer.off('powerMonitor-resume', this.powerMonitorResume);
+        ipcRenderer.off('powerMonitor:suspend', this.powerMonitorSuspend);
+        ipcRenderer.off('powerMonitor:resume', this.powerMonitorResume);
     }
 
     powerMonitorSuspend() {
         if (this.isPaused) {
-            this.log("powerMonitor-suspend", "already paused");
+            this.log("powerMonitorSuspend", "already paused");
             this.shouldResumeOnResume = false;
         } else {
-            this.log("powerMonitor-suspend", "pausing, will auto-resume on wake");
+            this.log("powerMonitorSuspend", "pausing, will auto-resume on wake");
             this.shouldResumeOnResume = true;
             this.pause();
         }
@@ -123,10 +123,10 @@ export class BaseViewModel {
 
     powerMonitorResume() {
         if (this.shouldResumeOnResume) {
-            this.log("powerMonitor-resume", "resuming");
+            this.log("powerMonitorResume", "resuming");
             this.resume();
         } else {
-            this.log("powerMonitor-resume", "was already paused");
+            this.log("powerMonitorResume", "was already paused");
         }
     }
 

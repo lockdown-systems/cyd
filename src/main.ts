@@ -14,7 +14,8 @@ import {
     nativeImage,
     session,
     autoUpdater,
-    powerSaveBlocker
+    powerSaveBlocker,
+    powerMonitor
 } from 'electron';
 import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
@@ -147,6 +148,18 @@ async function createWindow() {
             preload: path.join(__dirname, './preload.js')
         },
         icon: icon
+    });
+
+    // Handle power monitor events
+
+    powerMonitor.on('suspend', () => {
+        log.info('System is suspending');
+        win.webContents.send('powerMonitor:suspend');
+    });
+
+    powerMonitor.on('resume', () => {
+        log.info('System has resumed');
+        win.webContents.send('powerMonitor:resume');
     });
 
     // IPC events
