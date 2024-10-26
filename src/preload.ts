@@ -215,5 +215,12 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         }
-    }
+    },
+    // Handle events from the main process
+    onPowerMonitorSuspend: (callback: () => void) => {
+        ipcRenderer.on('powerMonitor:suspend', callback);
+    },
+    onPowerMonitorResume: (callback: () => void) => {
+        ipcRenderer.on('powerMonitor:resume', callback);
+    },
 })

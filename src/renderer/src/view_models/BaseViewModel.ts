@@ -1,4 +1,4 @@
-import { WebviewTag, ipcRenderer, IpcRendererEvent } from 'electron';
+import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
@@ -98,16 +98,14 @@ export class BaseViewModel {
         }
         this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
 
-        // Pause on suspend
-        ipcRenderer.on('powerMonitor:suspend', (_event: IpcRendererEvent) => this.powerMonitorSuspend);
-
-        // Resume on resume
-        ipcRenderer.on('powerMonitor:resume', (_event: IpcRendererEvent) => this.powerMonitorResume);
+        // Suspend and resume
+        window.electron.onPowerMonitorSuspend(() => this.powerMonitorSuspend());
+        window.electron.onPowerMonitorResume(() => this.powerMonitorResume());
     }
 
     cleanup() {
-        ipcRenderer.off('powerMonitor:suspend', this.powerMonitorSuspend);
-        ipcRenderer.off('powerMonitor:resume', this.powerMonitorResume);
+        // Remove the event listener
+        this.getWebview()?.removeEventListener("dom-ready", this.domReadyHandler);
     }
 
     powerMonitorSuspend() {

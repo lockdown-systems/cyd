@@ -93,6 +93,8 @@ declare global {
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
             };
+            onPowerMonitorSuspend: (callback: () => void) => void;
+            onPowerMonitorResume: (callback: () => void) => void;
         };
     }
 }
