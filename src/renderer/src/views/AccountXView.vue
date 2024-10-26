@@ -249,6 +249,20 @@ const u2fInfoClicked = () => {
     window.electron.openURL('https://semiphemeral.com/docs-u2f');
 };
 
+// Debug functions
+const enableDebugMode = async () => {
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.state = State.Debug;
+    }
+    await startStateLoop();
+};
+
+const disableDebugMode = async () => {
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.state = State.DashboardDisplay;
+    }
+};
+
 onMounted(async () => {
     await updateArchivePath();
 
@@ -583,6 +597,11 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </div>
+            <p>
+                <button class="btn btn-primary" @click="enableDebugMode">
+                    Debug Mode
+                </button>
+            </p>
         </div>
 
         <!-- Finished running jobs -->
@@ -686,6 +705,16 @@ onUnmounted(async () => {
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Debug state -->
+        <div v-if="accountXViewModel?.state == State.Debug">
+            <p>Debug debug debug!!!</p>
+            <p>
+                <button class="btn btn-primary" @click="disableDebugMode">
+                    Cancel Debug Mode
+                </button>
+            </p>
         </div>
     </div>
 </template>
