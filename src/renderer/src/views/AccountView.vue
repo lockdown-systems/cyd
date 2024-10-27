@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import AccountXView from './AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
@@ -17,6 +17,8 @@ const emit = defineEmits<{
 
 const isRefreshing = ref(false);
 
+const showPreventSleepMessage = ref(false);
+
 const refresh = async () => {
   await setAccountRunning(props.account.id, false);
   isRefreshing.value = true;
@@ -28,6 +30,42 @@ const refresh = async () => {
 const accountClicked = (accountType: string) => {
   emit('accountSelected', props.account, accountType);
 };
+
+const preventSleepLearnMore = async () => {
+  const platform = await window.electron.getPlatform();
+  let url: string;
+  if (platform === 'darwin') {
+    url = 'https://semiphemeral.com/docs-disable-sleep-in-macos/';
+  } else if(platform == 'win32') {
+    url = 'https://semiphemeral.com/docs-disable-sleep-in-windows/';
+  } else if(platform == 'linux') {
+    url = 'https://semiphemeral.com/docs-disable-sleep-in-linux/';
+  } else {
+    url = 'https://semiphemeral.com/';
+  }
+  await window.electron.openURL(url);
+};
+
+const preventSleepDontShowAgain = async () => {
+  showPreventSleepMessage.value = false;
+  await window.electron.database.setConfig("showPreventSleepMessage", "false");
+};
+
+const preventSleepDismiss = async () => {
+  showPreventSleepMessage.value = false;
+};
+
+onMounted(async () => {
+  const showPreventSleepMessageConfig = await window.electron.database.getConfig("showPreventSleepMessage");
+  if(showPreventSleepMessageConfig === null) {
+    showPreventSleepMessage.value = true;
+    await window.electron.database.setConfig("showPreventSleepMessage", "true");
+  } else if(showPreventSleepMessageConfig == "true") {
+    showPreventSleepMessage.value = true;
+  } else {
+    showPreventSleepMessage.value = false;
+  }
+});
 </script>
 
 <template>
@@ -66,6 +104,15 @@ const accountClicked = (accountType: string) => {
 
     <template v-else-if="account.type == 'X'">
       <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+
+      <div v-if="showPreventSleepMessage" class="prevent-sleep">
+        <p>You must disable sleep on your computer while running Semiphemeral or it will get interrupted.</p>
+        <ul>
+          <li class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></li>
+          <li><a href="#" @click="preventSleepDontShowAgain">Don't show this again</a></li>
+          <li><a href="#" @click="preventSleepDismiss">Dismiss</a></li>
+        </ul>
+      </div>
     </template>
 
     <template v-else>
@@ -91,5 +138,32 @@ const accountClicked = (accountType: string) => {
   font-size: 1.2rem;
   font-weight: bold;
   ;
+}
+
+.prevent-sleep {
+  border: 1px solid #666;
+  background-color: #f0f0f0;
+  padding: 10px;
+  text-align: right;
+  height: 70px;
+  width: 700px;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.prevent-sleep p {
+  margin: 0;
+}
+
+.prevent-sleep ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.prevent-sleep li {
+  display: inline;
+  margin-left: 20px;
 }
 </style>
