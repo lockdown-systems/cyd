@@ -7,6 +7,8 @@ import SemiphemeralAPIClient from '../../semiphemeral-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
+import InterruptedModal from "./modals/InterruptedModal.vue";
+
 import TabsView from "./views/TabsView.vue";
 
 // Get the global emitter
@@ -52,16 +54,22 @@ provide('refreshAPIClient', refreshAPIClient);
 const userEmail = ref('');
 provide('userEmail', userEmail);
 
-// Sign in
+// Sign in modal
 const showSignInModal = ref(false);
 emitter?.on('show-sign-in', () => {
   showSignInModal.value = true;
 });
 
-// Automation error report
+// Automation error report modal
 const showAutomationErrorReportModal = ref(false);
 emitter?.on('show-automation-error', () => {
   showAutomationErrorReportModal.value = true;
+});
+
+// Interrupted modal
+const showInterruptedModal = ref(false);
+emitter?.on('show-interrupted', () => {
+  showInterruptedModal.value = true;
 });
 
 onMounted(async () => {
@@ -109,6 +117,10 @@ onMounted(async () => {
     <!-- Automation error report modal -->
     <AutomationErrorReportModal v-if="showAutomationErrorReportModal" @hide="showAutomationErrorReportModal = false"
       @close="showAutomationErrorReportModal = false" />
+
+    <!-- Interrupted modal -->
+    <InterruptedModal v-if="showInterruptedModal" @hide="showInterruptedModal = false"
+      @close="showInterruptedModal = false" />
   </div>
 </template>
 

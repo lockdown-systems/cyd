@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, getCurrentInstance } from 'vue'
 import AccountXView from './AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
-import { setAccountRunning } from '../util';
+import { getAccountRunning, setAccountRunning, openPreventSleepURL } from '../util';
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 const props = defineProps<{
   account: Account;
@@ -32,18 +36,7 @@ const accountClicked = (accountType: string) => {
 };
 
 const preventSleepLearnMore = async () => {
-  const platform = await window.electron.getPlatform();
-  let url: string;
-  if (platform === 'darwin') {
-    url = 'https://semiphemeral.com/docs-disable-sleep-in-macos/';
-  } else if(platform == 'win32') {
-    url = 'https://semiphemeral.com/docs-disable-sleep-in-windows/';
-  } else if(platform == 'linux') {
-    url = 'https://semiphemeral.com/docs-disable-sleep-in-linux/';
-  } else {
-    url = 'https://semiphemeral.com/';
-  }
-  await window.electron.openURL(url);
+  await openPreventSleepURL();
 };
 
 const preventSleepDontShowAgain = async () => {
@@ -56,14 +49,22 @@ const preventSleepDismiss = async () => {
 };
 
 onMounted(async () => {
+  // See if we should show the prevent sleep message
   const showPreventSleepMessageConfig = await window.electron.database.getConfig("showPreventSleepMessage");
-  if(showPreventSleepMessageConfig === null) {
+  if (showPreventSleepMessageConfig === null) {
     showPreventSleepMessage.value = true;
     await window.electron.database.setConfig("showPreventSleepMessage", "true");
-  } else if(showPreventSleepMessageConfig == "true") {
+  } else if (showPreventSleepMessageConfig == "true") {
     showPreventSleepMessage.value = true;
   } else {
     showPreventSleepMessage.value = false;
+  }
+
+  // Check if this account was already running and got interrupted
+  if (await getAccountRunning(props.account.id)) {
+    console.error('Account was running and got interrupted');
+    await setAccountRunning(props.account.id, false);
+    emitter?.emit('show-interrupted');
   }
 });
 </script>

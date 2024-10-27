@@ -25,7 +25,7 @@ import { AutomationErrorType } from '../automation_errors';
 
 import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
 
-import { setAccountRunning, getAccountRunning } from '../util';
+import { setAccountRunning } from '../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -277,12 +277,6 @@ const debugModeDisable = async () => {
 };
 
 onMounted(async () => {
-    // Check if this account was already running and got interrupted
-    if (await getAccountRunning(props.account.id)) {
-        console.error('Account was running and got interrupted');
-        await setAccountRunning(props.account.id, false);
-    }
-
     await updateArchivePath();
 
     if (props.account.xAccount !== null) {

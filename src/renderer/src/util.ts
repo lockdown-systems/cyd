@@ -89,3 +89,18 @@ export async function getAccountRunning(accountID: number): Promise<boolean> {
     const isRunning = localStorage.getItem(`account-${accountID}-running`);
     return isRunning ? JSON.parse(isRunning) : false;
 }
+
+export async function openPreventSleepURL() {
+    const platform = await window.electron.getPlatform();
+    let url: string;
+    if (platform === 'darwin') {
+        url = 'https://semiphemeral.com/docs-disable-sleep-in-macos/';
+    } else if (platform == 'win32') {
+        url = 'https://semiphemeral.com/docs-disable-sleep-in-windows/';
+    } else if (platform == 'linux') {
+        url = 'https://semiphemeral.com/docs-disable-sleep-in-linux/';
+    } else {
+        url = 'https://semiphemeral.com/';
+    }
+    await window.electron.openURL(url);
+}
