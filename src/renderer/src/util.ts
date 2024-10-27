@@ -66,3 +66,13 @@ export function getAccountIcon(accountType: string): string {
 export function logObj(obj: any) {
     return JSON.parse(JSON.stringify(obj));
 }
+
+
+export function setAccountRunning(accountID: number, isRunning: boolean) {
+    localStorage.setItem(`account-${accountID}-running`, JSON.stringify(isRunning));
+}
+
+export function getAccountRunning(accountID: number): boolean {
+    const isRunning = localStorage.getItem(`account-${accountID}-running`);
+    return isRunning ? JSON.parse(isRunning) : false;
+}

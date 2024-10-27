@@ -10,16 +10,21 @@ import {
     computed,
 } from 'vue'
 import Electron from 'electron';
+
 import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
 import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
+
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 
 import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
+
+import { setAccountRunning, getAccountRunning } from '../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -191,6 +196,7 @@ const startDeletingClicked = async () => {
 const startStateLoop = async () => {
     console.log('State loop started');
     powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
+    setAccountRunning(props.account.id, true);
 
     while (canStateLoopRun.value) {
         // Run next state
@@ -212,6 +218,7 @@ const startStateLoop = async () => {
 
     await window.electron.stopPowerSaveBlocker(powerSaveBlockerID);
     powerSaveBlockerID = null;
+    setAccountRunning(props.account.id, false);
     console.log('State loop ended');
 };
 
@@ -264,6 +271,13 @@ const disableDebugMode = async () => {
 };
 
 onMounted(async () => {
+    // Check if this account was already running and got interrupted
+    if (getAccountRunning(props.account.id)) {
+        console.log('Account was running and got interrupted');
+        await window.electron.showMessage('Account was running and got interrupted');
+        setAccountRunning(props.account.id, false);
+    }
+
     await updateArchivePath();
 
     if (props.account.xAccount !== null) {

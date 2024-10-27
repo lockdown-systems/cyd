@@ -4,6 +4,8 @@ import AccountXView from './AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
+import { setAccountRunning } from '../util';
+
 const props = defineProps<{
   account: Account;
 }>();
@@ -16,6 +18,7 @@ const emit = defineEmits<{
 const isRefreshing = ref(false);
 
 const refresh = () => {
+  setAccountRunning(props.account.id, false);
   isRefreshing.value = true;
   setTimeout(() => {
     isRefreshing.value = false;
