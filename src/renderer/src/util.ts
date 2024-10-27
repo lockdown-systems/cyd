@@ -68,11 +68,24 @@ export function logObj(obj: any) {
 }
 
 
-export function setAccountRunning(accountID: number, isRunning: boolean) {
+export async function setAccountRunning(accountID: number, isRunning: boolean) {
+    if (isRunning) {
+        // Start power save blocker
+        const powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
+        localStorage.setItem(`account-${accountID}-power-save-blocker-id`, JSON.stringify(powerSaveBlockerID));
+    } else {
+        // Stop power save blocker
+        const powerSaveBlockerID = localStorage.getItem(`account-${accountID}-power-save-blocker-id`);
+        if (powerSaveBlockerID) {
+            window.electron.stopPowerSaveBlocker(JSON.parse(powerSaveBlockerID));
+            localStorage.removeItem(`account-${accountID}-power-save-blocker-id`);
+        }
+    }
+
     localStorage.setItem(`account-${accountID}-running`, JSON.stringify(isRunning));
 }
 
-export function getAccountRunning(accountID: number): boolean {
+export async function getAccountRunning(accountID: number): Promise<boolean> {
     const isRunning = localStorage.getItem(`account-${accountID}-running`);
     return isRunning ? JSON.parse(isRunning) : false;
 }

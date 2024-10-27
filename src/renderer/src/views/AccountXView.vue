@@ -21,6 +21,7 @@ import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
 
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
+import { AutomationErrorType } from '../automation_errors';
 
 import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
 
@@ -50,9 +51,6 @@ const isPaused = ref<boolean>(false);
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
-
-// Keep track of if power block saver ID
-let powerSaveBlockerID: null | number = null;
 
 // Keep currentState in sync
 watch(
@@ -195,8 +193,7 @@ const startDeletingClicked = async () => {
 
 const startStateLoop = async () => {
     console.log('State loop started');
-    powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
-    setAccountRunning(props.account.id, true);
+    await setAccountRunning(props.account.id, true);
 
     while (canStateLoopRun.value) {
         // Run next state
@@ -216,9 +213,7 @@ const startStateLoop = async () => {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    await window.electron.stopPowerSaveBlocker(powerSaveBlockerID);
-    powerSaveBlockerID = null;
-    setAccountRunning(props.account.id, false);
+    await setAccountRunning(props.account.id, false);
     console.log('State loop ended');
 };
 
@@ -257,6 +252,7 @@ const u2fInfoClicked = () => {
 };
 
 // Debug functions
+
 const enableDebugMode = async () => {
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.state = State.Debug;
@@ -264,7 +260,17 @@ const enableDebugMode = async () => {
     await startStateLoop();
 };
 
-const disableDebugMode = async () => {
+const debugModeTriggerError = async () => {
+    if (accountXViewModel.value !== null) {
+        await accountXViewModel.value.error(AutomationErrorType.x_unknownError, {
+            message: 'Debug mode error triggered'
+        }, {
+            currentURL: accountXViewModel.value.webview.getURL()
+        });
+    }
+};
+
+const debugModeDisable = async () => {
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.state = State.DashboardDisplay;
     }
@@ -272,10 +278,9 @@ const disableDebugMode = async () => {
 
 onMounted(async () => {
     // Check if this account was already running and got interrupted
-    if (getAccountRunning(props.account.id)) {
-        console.log('Account was running and got interrupted');
-        await window.electron.showMessage('Account was running and got interrupted');
-        setAccountRunning(props.account.id, false);
+    if (await getAccountRunning(props.account.id)) {
+        console.error('Account was running and got interrupted');
+        await setAccountRunning(props.account.id, false);
     }
 
     await updateArchivePath();
@@ -339,17 +344,15 @@ onMounted(async () => {
 onUnmounted(async () => {
     canStateLoopRun.value = false;
 
+    // Make sure the account isn't running and power save blocker is stopped
+    await setAccountRunning(props.account.id, false);
+
     // Remove cancel automation handler
     emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Remove automation error handlers
     emitter?.off(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
-
-    // Stop power block saver
-    if (powerSaveBlockerID !== null) {
-        await window.electron.stopPowerSaveBlocker(powerSaveBlockerID);
-    }
 
     // Cleanup the view controller
     if (accountXViewModel.value !== null) {
@@ -725,7 +728,12 @@ onUnmounted(async () => {
         <div v-if="accountXViewModel?.state == State.Debug">
             <p>Debug debug debug!!!</p>
             <p>
-                <button class="btn btn-primary" @click="disableDebugMode">
+                <button class="btn btn-danger" @click="debugModeTriggerError">
+                    Trigger Error
+                </button>
+            </p>
+            <p>
+                <button class="btn btn-primary" @click="debugModeDisable">
                     Cancel Debug Mode
                 </button>
             </p>

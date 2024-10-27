@@ -18,7 +18,7 @@ const emit = defineEmits<{
 const isRefreshing = ref(false);
 
 const refresh = () => {
-  setAccountRunning(props.account.id, false);
+  await setAccountRunning(props.account.id, false);
   isRefreshing.value = true;
   setTimeout(() => {
     isRefreshing.value = false;
