@@ -12,7 +12,6 @@ import {
     shell,
     webContents,
     nativeImage,
-    session,
     autoUpdater,
     powerSaveBlocker,
     powerMonitor
@@ -355,70 +354,8 @@ async function createWindow() {
             log.info('Stopped power save blocker with ID:', powerSaveBlockerID);
         });
 
-        // Database IPC events
-
-        ipcMain.handle('database:getConfig', async (_, key) => {
-            try {
-                return database.getConfig(key);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:setConfig', async (_, key, value) => {
-            try {
-                database.setConfig(key, value);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:getAccounts', async (_) => {
-            try {
-                return database.getAccounts();
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:createAccount', async (_) => {
-            try {
-                return database.createAccount();
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
-            try {
-                return database.selectAccountType(accountID, type);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:saveAccount', async (_, accountJson) => {
-            try {
-                const account = JSON.parse(accountJson);
-                return database.saveAccount(account);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:deleteAccount', async (_, accountID) => {
-            try {
-                const ses = session.fromPartition(`persist:account-${accountID}`);
-                await ses.closeAllConnections();
-                await ses.clearStorageData();
-                database.deleteAccount(accountID);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
         // Other IPC events
-
+        database.defineIPCDatabase();
         defineIPCX();
         defineIPCArchive();
     }

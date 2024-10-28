@@ -2,6 +2,7 @@ import path from "path"
 import crypto from 'crypto';
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
+import { ipcMain, session } from 'electron';
 
 import { getSettingsPath, packageExceptionForReport } from "./util"
 import { Account, XAccount } from './shared_types'
@@ -453,4 +454,66 @@ export const deleteAccount = (accountID: number) => {
 
     // Delete the account
     exec(getMainDatabase(), 'DELETE FROM account WHERE id = ?', [accountID]);
+}
+
+export const defineIPCDatabase = () => {
+    ipcMain.handle('database:getConfig', async (_, key) => {
+        try {
+            return getConfig(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:setConfig', async (_, key, value) => {
+        try {
+            setConfig(key, value);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:getAccounts', async (_) => {
+        try {
+            return getAccounts();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:createAccount', async (_) => {
+        try {
+            return createAccount();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
+        try {
+            return selectAccountType(accountID, type);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:saveAccount', async (_, accountJson) => {
+        try {
+            const account = JSON.parse(accountJson);
+            return saveAccount(account);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:deleteAccount', async (_, accountID) => {
+        try {
+            const ses = session.fromPartition(`persist:account-${accountID}`);
+            await ses.closeAllConnections();
+            await ses.clearStorageData();
+            deleteAccount(accountID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 }
