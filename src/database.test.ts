@@ -25,6 +25,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    database.closeMainDatabase();
     fs.readdirSync(getSettingsPath()).forEach(file => {
         fs.unlinkSync(path.join(getSettingsPath(), file));
     });

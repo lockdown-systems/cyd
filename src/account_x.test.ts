@@ -43,7 +43,7 @@ vi.mock('./util', () => ({
 }));
 import { getSettingsPath, getAccountDataPath } from './util';
 
-// Mock the session object from Electron
+// Mock Electron
 vi.mock('electron', () => ({
     session: {
         fromPartition: vi.fn().mockReturnValue({
@@ -51,6 +51,9 @@ vi.mock('electron', () => ({
                 onCompleted: vi.fn()
             }
         })
+    },
+    app: {
+        getPath: vi.fn().mockReturnValue('/mock/path')
     }
 }));
 

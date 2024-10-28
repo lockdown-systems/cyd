@@ -27,7 +27,9 @@ export const getMainDatabase = () => {
 
 export const closeMainDatabase = () => {
     const db = getMainDatabase();
-    db.close();
+    if (db) {
+        db.close();
+    }
 }
 
 export const runMigrations = (db: Database.Database, migrations: Migration[]) => {
