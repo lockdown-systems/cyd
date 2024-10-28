@@ -4,6 +4,7 @@ import path from "path"
 import os from 'os'
 
 import { app } from 'electron';
+import { getConfig, setConfig } from './database';
 
 export const getUpdatesBaseURL = (mode: string): string => {
     let updateArch = process.arch.toString();
@@ -63,10 +64,18 @@ export const getDataPath = () => {
         return process.env.TEST_DATA_PATH;
     }
 
-    const dataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
+    // Get dataPath from config
+    let dataPath = getConfig('dataPath');
+    if (!dataPath) {
+        dataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
+        setConfig('dataPath', dataPath);
+    }
+
+    // Make sure the folder exists
     if (!fs.existsSync(dataPath)) {
         fs.mkdirSync(dataPath, { recursive: true });
     }
+
     return dataPath;
 }
 

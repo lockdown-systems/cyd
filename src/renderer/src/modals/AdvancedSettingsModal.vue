@@ -10,9 +10,9 @@ const hide = () => {
 const advancedSettingsModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const archiveFolderPath = ref('');
+const dataPath = ref('');
 
-const browseArchiveFolder = async () => {
+const browseClicked = async () => {
     await window.electron.showMessage("Not implemented yet");
 };
 
@@ -21,6 +21,11 @@ const deleteAllSettingsAndRestart = async () => {
 };
 
 onMounted(async () => {
+    const dataPathConfig = await window.electron.database.getConfig('dataPath');
+    if (dataPathConfig) {
+        dataPath.value = dataPathConfig;
+    }
+
     const modalElement = advancedSettingsModal.value;
     if (modalElement) {
         modalInstance = new Modal(modalElement);
@@ -53,10 +58,10 @@ onUnmounted(() => {
                 </div>
                 <div class="modal-body">
                     <div class="mb-4">
-                        <h5>Archive Folder</h5>
+                        <h5>Data Folder</h5>
                         <div class="input-group">
-                            <input type="text" class="form-control" v-model="archiveFolderPath" readonly>
-                            <button class="btn btn-secondary" @click="browseArchiveFolder">Browse</button>
+                            <input type="text" class="form-control" v-model="dataPath" readonly>
+                            <button class="btn btn-secondary" @click="browseClicked">Browse</button>
                         </div>
                     </div>
 
