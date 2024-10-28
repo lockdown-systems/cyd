@@ -253,6 +253,8 @@ const u2fInfoClicked = () => {
 
 // Debug functions
 
+const shouldOpenDevtools = ref(false);
+
 const enableDebugMode = async () => {
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.state = State.Debug;
@@ -277,6 +279,8 @@ const debugModeDisable = async () => {
 };
 
 onMounted(async () => {
+    shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
+
     await updateArchivePath();
 
     if (props.account.xAccount !== null) {
@@ -608,11 +612,11 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </div>
-            <!-- <p>
+            <p v-if="shouldOpenDevtools">
                 <button class="btn btn-primary" @click="enableDebugMode">
                     Debug Mode
                 </button>
-            </p> -->
+            </p>
         </div>
 
         <!-- Finished running jobs -->
