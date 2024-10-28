@@ -53,7 +53,7 @@ vi.mock('electron', () => ({
         })
     },
     app: {
-        getPath: vi.fn().mockReturnValue('/mock/path')
+        getPath: vi.fn().mockReturnValue(path.join(__dirname, '..', 'testdata', 'tmp'))
     }
 }));
 
@@ -169,7 +169,9 @@ afterEach(() => {
     database.closeMainDatabase();
 
     // Close the account database
-    controller.cleanup();
+    if (controller) {
+        controller.cleanup();
+    }
 
     // Delete databases from disk
     fs.readdirSync(getSettingsPath()).forEach(file => {
