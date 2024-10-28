@@ -26,6 +26,7 @@ import {
     getAccountDataPath,
     getResourcesPath,
     getSettingsPath,
+    getDataPath,
     trackEvent,
     packageExceptionForReport
 } from './util';
@@ -130,6 +131,9 @@ async function initializeApp() {
             }
         });
     }
+
+    // Make sure the data path is created and the config setting is saved
+    getDataPath();
 
     // Create the window
     await createWindow();
