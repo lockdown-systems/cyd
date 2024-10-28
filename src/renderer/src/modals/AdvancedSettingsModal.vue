@@ -13,7 +13,11 @@ let modalInstance: Modal | null = null;
 const dataPath = ref('');
 
 const browseClicked = async () => {
-    await window.electron.showMessage("Not implemented yet");
+    const newDataPath = await window.electron.showSelectFolderDialog();
+    if (newDataPath) {
+        dataPath.value = newDataPath;
+        await window.electron.database.setConfig('dataPath', newDataPath);
+    }
 };
 
 const deleteAllSettingsAndRestart = async () => {

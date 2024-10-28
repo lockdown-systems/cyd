@@ -67,7 +67,7 @@ export const getDataPath = () => {
     // Get dataPath from config
     let dataPath = getConfig('dataPath');
     if (!dataPath) {
-        dataPath = path.join(os.homedir(), 'Documents', 'Semiphemeral');
+        dataPath = path.join(app.getPath('documents'), 'Semiphemeral');
         setConfig('dataPath', dataPath);
     }
 
