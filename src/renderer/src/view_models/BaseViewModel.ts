@@ -48,6 +48,9 @@ export class BaseViewModel {
     public domReady: boolean;
     public isPaused: boolean;
 
+    // If the computer resumes from sleep, should we resume the automation?
+    private shouldResumeOnResume: boolean;
+
     public showBrowser: boolean;
     public showAutomationNotice: boolean;
     public instructions: string;
@@ -73,6 +76,7 @@ export class BaseViewModel {
         this.showAutomationNotice = false;
         this.domReady = false;
         this.isPaused = false;
+        this.shouldResumeOnResume = false;
 
         this.emitter = emitter;
 
@@ -93,6 +97,35 @@ export class BaseViewModel {
             }
         }
         this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
+
+        // Suspend and resume
+        window.electron.onPowerMonitorSuspend(() => this.powerMonitorSuspend());
+        window.electron.onPowerMonitorResume(() => this.powerMonitorResume());
+    }
+
+    cleanup() {
+        // Remove the event listener
+        this.getWebview()?.removeEventListener("dom-ready", this.domReadyHandler);
+    }
+
+    powerMonitorSuspend() {
+        if (this.isPaused) {
+            this.log("powerMonitorSuspend", "already paused");
+            this.shouldResumeOnResume = false;
+        } else {
+            this.log("powerMonitorSuspend", "pausing, will auto-resume on wake");
+            this.shouldResumeOnResume = true;
+            this.pause();
+        }
+    }
+
+    powerMonitorResume() {
+        if (this.shouldResumeOnResume) {
+            this.log("powerMonitorResume", "resuming");
+            this.resume();
+        } else {
+            this.log("powerMonitorResume", "was already paused");
+        }
     }
 
     async init() {

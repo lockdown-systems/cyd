@@ -1,16 +1,31 @@
 <script setup lang="ts">
-import { Ref, ref, watch, onMounted, onUnmounted, inject, getCurrentInstance, computed } from 'vue'
+import {
+    Ref,
+    ref,
+    watch,
+    onMounted,
+    onUnmounted,
+    inject,
+    getCurrentInstance,
+    computed,
+} from 'vue'
 import Electron from 'electron';
+
 import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
 import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
+
 import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
+import { AutomationErrorType } from '../automation_errors';
 
 import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
+
+import { setAccountRunning } from '../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -178,6 +193,8 @@ const startDeletingClicked = async () => {
 
 const startStateLoop = async () => {
     console.log('State loop started');
+    await setAccountRunning(props.account.id, true);
+
     while (canStateLoopRun.value) {
         // Run next state
         if (accountXViewModel.value !== null) {
@@ -195,6 +212,8 @@ const startStateLoop = async () => {
 
         await new Promise(resolve => setTimeout(resolve, 500));
     }
+
+    await setAccountRunning(props.account.id, false);
     console.log('State loop ended');
 };
 
@@ -232,7 +251,36 @@ const u2fInfoClicked = () => {
     window.electron.openURL('https://semiphemeral.com/docs-u2f');
 };
 
+// Debug functions
+
+const shouldOpenDevtools = ref(false);
+
+const enableDebugMode = async () => {
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.state = State.Debug;
+    }
+    await startStateLoop();
+};
+
+const debugModeTriggerError = async () => {
+    if (accountXViewModel.value !== null) {
+        await accountXViewModel.value.error(AutomationErrorType.x_unknownError, {
+            message: 'Debug mode error triggered'
+        }, {
+            currentURL: accountXViewModel.value.webview.getURL()
+        });
+    }
+};
+
+const debugModeDisable = async () => {
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.state = State.DashboardDisplay;
+    }
+};
+
 onMounted(async () => {
+    shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
+
     await updateArchivePath();
 
     if (props.account.xAccount !== null) {
@@ -294,12 +342,20 @@ onMounted(async () => {
 onUnmounted(async () => {
     canStateLoopRun.value = false;
 
+    // Make sure the account isn't running and power save blocker is stopped
+    await setAccountRunning(props.account.id, false);
+
     // Remove cancel automation handler
     emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
 
     // Remove automation error handlers
     emitter?.off(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
+
+    // Cleanup the view controller
+    if (accountXViewModel.value !== null) {
+        await accountXViewModel.value.cleanup();
+    }
 });
 </script>
 
@@ -556,6 +612,11 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </div>
+            <p v-if="shouldOpenDevtools">
+                <button class="btn btn-primary" @click="enableDebugMode">
+                    Debug Mode
+                </button>
+            </p>
         </div>
 
         <!-- Finished running jobs -->
@@ -659,6 +720,21 @@ onUnmounted(async () => {
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Debug state -->
+        <div v-if="accountXViewModel?.state == State.Debug">
+            <p>Debug debug debug!!!</p>
+            <p>
+                <button class="btn btn-danger" @click="debugModeTriggerError">
+                    Trigger Error
+                </button>
+            </p>
+            <p>
+                <button class="btn btn-primary" @click="debugModeDisable">
+                    Cancel Debug Mode
+                </button>
+            </p>
         </div>
     </div>
 </template>

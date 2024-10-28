@@ -34,6 +34,8 @@ declare global {
             openURL: (url: string) => void;
             loadFileInWebview: (webContentsId: number, filename: string) => void;
             getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,
+            startPowerSaveBlocker: () => Promise<number>;
+            stopPowerSaveBlocker: (powerSaveBlockerID: number) => void;
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
@@ -91,6 +93,8 @@ declare global {
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
             };
+            onPowerMonitorSuspend: (callback: () => void) => void;
+            onPowerMonitorResume: (callback: () => void) => void;
         };
     }
 }

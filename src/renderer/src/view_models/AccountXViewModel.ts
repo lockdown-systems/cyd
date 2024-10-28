@@ -19,6 +19,7 @@ export enum State {
     DashboardDisplay = "dashboardDisplay",
     RunJobs = "runJobs",
     FinishedRunningJobs = "finishedRunningJobs",
+    Debug = "debug",
 }
 
 export type XViewModelState = {
@@ -1932,6 +1933,16 @@ You can make a local archive of your data, or you delete exactly what you choose
                     await this.loadURL("about:blank");
 
                     this.instructions = `**${this.actionFinishedString}**`;
+                    break;
+
+                case State.Debug:
+                    // Stay in this state until the user cancels it
+                    this.showBrowser = false
+                    await this.loadURL("about:blank");
+                    this.instructions = `I'm in my debug state.`;
+                    while (this.state === State.Debug) {
+                        await this.sleep(1000);
+                    }
                     break;
             }
         } catch (e) {

@@ -13,7 +13,9 @@ import {
     webContents,
     nativeImage,
     session,
-    autoUpdater
+    autoUpdater,
+    powerSaveBlocker,
+    powerMonitor
 } from 'electron';
 import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
@@ -59,6 +61,7 @@ if (!app.requestSingleInstanceLock()) {
 // Initialize the logger
 log.initialize();
 log.transports.file.level = false; // Disable file logging
+log.info('Semiphemeral version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
 const semiphemeralDevtools = process.env.SEMIPHEMERAL_DEVTOOLS === "1";
@@ -145,6 +148,18 @@ async function createWindow() {
             preload: path.join(__dirname, './preload.js')
         },
         icon: icon
+    });
+
+    // Handle power monitor events
+
+    powerMonitor.on('suspend', () => {
+        log.info('System is suspending');
+        win.webContents.send('powerMonitor:suspend');
+    });
+
+    powerMonitor.on('resume', () => {
+        log.info('System has resumed');
+        win.webContents.send('powerMonitor:resume');
     });
 
     // IPC events
@@ -327,6 +342,17 @@ async function createWindow() {
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }
+        });
+
+        ipcMain.handle('startPowerSaveBlocker', async (_): Promise<number> => {
+            const powerSaveBlockerID = powerSaveBlocker.start('prevent-app-suspension');
+            log.info('Started power save blocker with ID:', powerSaveBlockerID);
+            return powerSaveBlockerID;
+        });
+
+        ipcMain.handle('stopPowerSaveBlocker', async (_, powerSaveBlockerID: number) => {
+            powerSaveBlocker.stop(powerSaveBlockerID)
+            log.info('Stopped power save blocker with ID:', powerSaveBlockerID);
         });
 
         // Database IPC events

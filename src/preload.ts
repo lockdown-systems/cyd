@@ -51,6 +51,12 @@ contextBridge.exposeInMainWorld('electron', {
     getAccountDataPath: (accountID: number, filename: string): Promise<string | null> => {
         return ipcRenderer.invoke('getAccountDataPath', accountID, filename)
     },
+    startPowerSaveBlocker: (accountID: number): Promise<number> => {
+        return ipcRenderer.invoke('startPowerSaveBlocker', accountID)
+    },
+    stopPowerSaveBlocker: (accountID: number, powerSaveBlockerID: number) => {
+        ipcRenderer.invoke('stopPowerSaveBlocker', accountID, powerSaveBlockerID)
+    },
     database: {
         getConfig: (key: string): Promise<string | null> => {
             return ipcRenderer.invoke('database:getConfig', key);
@@ -209,5 +215,12 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         }
-    }
+    },
+    // Handle events from the main process
+    onPowerMonitorSuspend: (callback: () => void) => {
+        ipcRenderer.on('powerMonitor:suspend', callback);
+    },
+    onPowerMonitorResume: (callback: () => void) => {
+        ipcRenderer.on('powerMonitor:resume', callback);
+    },
 })

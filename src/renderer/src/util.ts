@@ -66,3 +66,41 @@ export function getAccountIcon(accountType: string): string {
 export function logObj(obj: any) {
     return JSON.parse(JSON.stringify(obj));
 }
+
+
+export async function setAccountRunning(accountID: number, isRunning: boolean) {
+    if (isRunning) {
+        // Start power save blocker
+        const powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
+        localStorage.setItem(`account-${accountID}-power-save-blocker-id`, JSON.stringify(powerSaveBlockerID));
+    } else {
+        // Stop power save blocker
+        const powerSaveBlockerID = localStorage.getItem(`account-${accountID}-power-save-blocker-id`);
+        if (powerSaveBlockerID) {
+            window.electron.stopPowerSaveBlocker(JSON.parse(powerSaveBlockerID));
+            localStorage.removeItem(`account-${accountID}-power-save-blocker-id`);
+        }
+    }
+
+    localStorage.setItem(`account-${accountID}-running`, JSON.stringify(isRunning));
+}
+
+export async function getAccountRunning(accountID: number): Promise<boolean> {
+    const isRunning = localStorage.getItem(`account-${accountID}-running`);
+    return isRunning ? JSON.parse(isRunning) : false;
+}
+
+export async function openPreventSleepURL() {
+    const platform = await window.electron.getPlatform();
+    let url: string;
+    if (platform === 'darwin') {
+        url = 'https://semiphemeral.com/docs-disable-sleep-in-macos/';
+    } else if (platform == 'win32') {
+        url = 'https://semiphemeral.com/docs-disable-sleep-in-windows/';
+    } else if (platform == 'linux') {
+        url = 'https://semiphemeral.com/docs-disable-sleep-in-linux/';
+    } else {
+        url = 'https://semiphemeral.com/';
+    }
+    await window.electron.openURL(url);
+}
