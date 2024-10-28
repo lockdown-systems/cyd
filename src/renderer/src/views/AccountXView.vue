@@ -608,11 +608,11 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </div>
-            <p>
+            <!-- <p>
                 <button class="btn btn-primary" @click="enableDebugMode">
                     Debug Mode
                 </button>
-            </p>
+            </p> -->
         </div>
 
         <!-- Finished running jobs -->
