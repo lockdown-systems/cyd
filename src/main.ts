@@ -379,6 +379,11 @@ async function createWindow() {
                 fs.rmSync(settingsPath, { recursive: true, force: true });
                 log.info('Deleted settings folder:', settingsPath);
 
+                // Delete partitions
+                const partitionsPath = path.join(app.getPath('userData'), 'Partitions');
+                fs.rmSync(partitionsPath, { recursive: true, force: true });
+                log.info('Deleted partitions folder:', partitionsPath);
+
                 // Restart app
                 app.relaunch();
                 app.exit(0)
