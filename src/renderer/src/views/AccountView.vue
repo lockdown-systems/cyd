@@ -106,13 +106,20 @@ onMounted(async () => {
     <template v-else-if="account.type == 'X'">
       <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
 
-      <div v-if="showPreventSleepMessage" class="prevent-sleep">
-        <p>You must disable sleep on your computer while running Semiphemeral or it will get interrupted.</p>
-        <ul>
-          <li class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></li>
-          <li><a href="#" @click="preventSleepDontShowAgain">Don't show this again</a></li>
-          <li><a href="#" @click="preventSleepDismiss">Dismiss</a></li>
-        </ul>
+      <div v-if="showPreventSleepMessage" class="prevent-sleep alert alert-warning d-flex align-items-center">
+        <div class="me-3">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <p class="mb-0">
+            You must disable sleep on your computer while running Semiphemeral or it will get interrupted.
+          </p>
+          <ul class="list-unstyled mb-0">
+            <li class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></li>
+            <li><a href="#" @click="preventSleepDontShowAgain">Don't show this again</a></li>
+            <li><a href="#" @click="preventSleepDismiss">Dismiss</a></li>
+          </ul>
+        </div>
       </div>
     </template>
 
@@ -142,12 +149,9 @@ onMounted(async () => {
 }
 
 .prevent-sleep {
-  border: 1px solid #666;
-  background-color: #f0f0f0;
   padding: 10px;
   text-align: right;
   height: 70px;
-  width: 700px;
   position: absolute;
   bottom: 10px;
   right: 10px;
@@ -166,5 +170,10 @@ onMounted(async () => {
 .prevent-sleep li {
   display: inline;
   margin-left: 20px;
+}
+
+.prevent-sleep i.fa-triangle-exclamation {
+  color: #664d03;
+  font-size: 2em;
 }
 </style>
