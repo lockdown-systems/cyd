@@ -72,7 +72,15 @@ class MockMITMController implements IMITMController {
     private proxyFilter: string[] = [];
     private isMonitoring: boolean = false;
     public responseData: ResponseData[] = [];
-    constructor(testdata: string | undefined) {
+    constructor() { }
+    async startMITM(_ses: Electron.Session, _proxyFilter: string[]): Promise<boolean> { return true; }
+    async stopMITM(_ses: Electron.Session) { }
+    async startMonitoring() { }
+    async stopMonitoring() { }
+    async clearProcessed(): Promise<void> { }
+
+    // Just used in the tests
+    setTestdata(testdata: string | undefined) {
         if (testdata == "indexTweets") {
             this.responseData = [
                 {
@@ -93,7 +101,6 @@ class MockMITMController implements IMITMController {
                 }
             ];
         }
-
         if (testdata == "indexDMs") {
             this.responseData = [
                 {
@@ -131,32 +138,14 @@ class MockMITMController implements IMITMController {
             ];
         }
     }
-    async startMITM(_ses: Electron.Session, _proxyFilter: string[]): Promise<boolean> { return true; }
-    async stopMITM(_ses: Electron.Session) { }
-    async startMonitoring() { }
-    async stopMonitoring() { }
-    async clearProcessed(): Promise<void> { }
+    setAutomationErrorReportTestdata(filename: string) {
+        const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', filename), 'utf8'));
+        this.responseData = [testData.latestResponseData];
+    }
 }
 
-const createController = (testdata: string | undefined): XAccountController => {
-    const mitmController = new MockMITMController(testdata);
-    const controller = new XAccountController(1, mitmController);
-    controller.initDB()
-    return controller;
-}
-
-const createControllerWithAutomationErrorReportData = (filename: string): XAccountController => {
-    const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', filename), 'utf8'));
-    const responseData = testData.latestResponseData;
-
-    const mitmController = new MockMITMController(undefined);
-    mitmController.responseData = [responseData];
-
-    const controller = new XAccountController(1, mitmController);
-    controller.initDB()
-    return controller;
-}
-
+let mitmController: MockMITMController;
+let controller: XAccountController;
 
 beforeEach(() => {
     database.runMainMigrations();
@@ -168,10 +157,21 @@ beforeEach(() => {
         account.xAccount.username = "test";
     }
     database.saveAccount(account);
+
+    // Create an XAccountController
+    mitmController = new MockMITMController();
+    controller = new XAccountController(account.id, mitmController);
+    controller.initDB();
 });
 
 afterEach(() => {
+    // Close the main database
     database.closeMainDatabase();
+
+    // Close the account database
+    controller.cleanup();
+
+    // Delete databases from disk
     fs.readdirSync(getSettingsPath()).forEach(file => {
         fs.unlinkSync(path.join(getSettingsPath(), file));
     });
@@ -416,28 +416,24 @@ const dmConversation: XAPIConversation = {
 // XAccountController tests
 
 test('XAccountController.constructor() creates a database for the user', async () => {
-    const controller = createController("indexTweets")
+    mitmController.setTestdata("indexTweets");
 
     // There should be a file called data.sqlite3 in the account data directory
     const files = fs.readdirSync(getAccountDataPath("X", "test"));
     expect(files).toContain('data.sqlite3');
-
-    controller.cleanup();
 })
 
 test('XAccountController.indexTweet() should add a tweet', async () => {
-    const controller = createController("indexTweets");
+    mitmController.setTestdata("indexTweets");
 
     controller.indexTweet(0, userLegacy, tweetLegacy, false)
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].text).toBe(tweetLegacy.full_text);
-
-    controller.cleanup();
 })
 
 test("XAccountController.indexTweet() should not add a tweet if it's already there", async () => {
-    const controller = createController("indexTweets");
+    mitmController.setTestdata("indexTweets");
 
     let ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
     expect(ret).toBe(true);
@@ -448,13 +444,11 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
     expect(ret).toBe(false);
     const rows2: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows2.length).toBe(1);
-
-    controller.cleanup();
 })
 
 test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
-    const controller = createController("indexTweets");
-    if (controller.account && controller.account) {
+    mitmController.setTestdata("indexTweets");
+    if (controller.account) {
         controller.account.username = 'nexamind91325';
     }
 
@@ -465,24 +459,20 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
 
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(44);
-
-    controller.cleanup();
 })
 
 test('XAccountController.indexUser() should add a user', async () => {
-    const controller = createController("indexDMs");
+    mitmController.setTestdata("indexDMs");
 
     await controller.indexUser(dmUser1)
     const rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].screenName).toBe(dmUser1.screen_name);
-
-    controller.cleanup();
 })
 
 test('XAccountController.indexUser() should update a user if its already there', async () => {
-    const controller = createController("indexDMs");
+    mitmController.setTestdata("indexDMs");
 
     await controller.indexUser(dmUser1)
     let rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
@@ -498,23 +488,19 @@ test('XAccountController.indexUser() should update a user if its already there',
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].name).toBe('changed name');
-
-    controller.cleanup();
 })
 
 test('XAccountController.indexUser() with different users should add different users', async () => {
-    const controller = createController("indexDMs");
+    mitmController.setTestdata("indexDMs");
 
     await controller.indexUser(dmUser1)
     await controller.indexUser(dmUser2)
     const rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(2);
-
-    controller.cleanup();
 })
 
 test('XAccountController.indexConversation() should add a conversation and participants', async () => {
-    const controller = createController("indexDMs");
+    mitmController.setTestdata("indexDMs");
 
     await controller.indexConversation(dmConversation, true)
     const rows: XConversationRow[] = database.exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
@@ -523,15 +509,13 @@ test('XAccountController.indexConversation() should add a conversation and parti
 
     const participantRows: XConversationParticipantRow[] = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
     expect(participantRows.length).toBe(2);
-
-    controller.cleanup();
 })
 
 test(
     "XAccountController.indexParseConversations() should add all the conversations and users",
     { timeout: 10000 },
     async () => {
-        const controller = createController("indexDMs");
+        mitmController.setTestdata("indexDMs");
 
         const progress: XProgress = await controller.indexParseConversations(true);
         expect(progress.usersIndexed).toBe(78);
@@ -545,15 +529,13 @@ test(
 
         const participantRows = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
         expect(participantRows.length).toBe(126);
-
-        controller.cleanup();
     })
 
 test(
     "XAccountController.indexParseConversations() should not crash with empty response data",
     { timeout: 10000 },
     async () => {
-        const controller = createController("indexDMs");
+        mitmController.setTestdata("indexDMs");
         // https://dev-admin.semiphemeral.com/#/error/4
         controller.mitmController.responseData = [{
             "host": "x.com",
@@ -604,51 +586,46 @@ test(
 
         const participantRows = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
         expect(participantRows.length).toBe(0);
-
-        controller.cleanup();
     })
 
 test("XAccountController.indexParseMessages() should add all the messages on first run", async () => {
-    const controller = createController("indexDMs");
+    mitmController.setTestdata("indexDMs");
 
     const progress: XProgress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
-
-    controller.cleanup();
 })
 
 test("XAccountController.indexParseMessages() should add all the messages, on re-index", async () => {
     // Index messages the first time
-    let controller = createController("indexDMs");
+    mitmController.setTestdata("indexDMs");
     controller.indexMessagesStart(true);
     let progress: XProgress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
-    controller.cleanup();
 
     // Re-index them
-    controller = createController("indexDMs");
+    controller.resetProgress();
+    mitmController.setTestdata("indexDMs");
     controller.indexMessagesStart(false);
     progress = await controller.indexParseMessages(false);
     expect(progress.messagesIndexed).toBe(0);
-    controller.cleanup();
 
     // Re-index, but this time set isFirstRun to true
-    controller = createController("indexDMs");
+    controller.resetProgress();
+    mitmController.setTestdata("indexDMs");
     controller.indexMessagesStart(true);
     progress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
-    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-4", async () => {
     // https://dev-admin.semiphemeral.com/#/error/4
-    const controller = createControllerWithAutomationErrorReportData("dev-4.json")
+    mitmController.setAutomationErrorReportTestdata("dev-4.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
@@ -656,7 +633,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-10", async () => {
     // https://dev-admin.semiphemeral.com/#/error/10
-    const controller = createControllerWithAutomationErrorReportData("dev-10.json")
+    mitmController.setAutomationErrorReportTestdata("dev-10.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
@@ -664,7 +641,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-25", async () => {
     // https://dev-admin.semiphemeral.com/#/error/25
-    const controller = createControllerWithAutomationErrorReportData("dev-25.json")
+    mitmController.setAutomationErrorReportTestdata("dev-25.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
@@ -672,7 +649,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-34", async () => {
     // https://dev-admin.semiphemeral.com/#/error/34
-    const controller = createControllerWithAutomationErrorReportData("dev-34.json")
+    mitmController.setAutomationErrorReportTestdata("dev-34.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
@@ -680,7 +657,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-51", async () => {
     // https://dev-admin.semiphemeral.com/#/error/51
-    const controller = createControllerWithAutomationErrorReportData("dev-51.json")
+    mitmController.setAutomationErrorReportTestdata("dev-51.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
@@ -688,7 +665,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-54", async () => {
     // https://dev-admin.semiphemeral.com/#/error/54
-    const controller = createControllerWithAutomationErrorReportData("dev-54.json")
+    mitmController.setAutomationErrorReportTestdata("dev-54.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
@@ -697,18 +674,18 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 // Testing the X migrations
 
 test("test migration: 20241016_add_config", async () => {
-    // Copy test data into account data
+    // Close the X account database
+    controller.cleanup();
+
+    // Replace it with test data
     const accountDataPath = getAccountDataPath("X", "test");
     fs.mkdirSync(accountDataPath, { recursive: true });
     fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', 'initial.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
 
     // Run the migrations
-    const controller = createController(undefined);
     controller.initDB()
 
     // The config table should exist
     const rows = database.exec(controller.db, "SELECT * FROM config", [], "all") as Record<string, string>[];
     expect(rows.length).toBe(0);
-
-    controller.cleanup();
 })
