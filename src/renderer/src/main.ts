@@ -31,11 +31,13 @@ declare global {
             showMessage: (message: string) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
+            showSelectFolderDialog: () => Promise<string | null>;
             openURL: (url: string) => void;
             loadFileInWebview: (webContentsId: number, filename: string) => void;
             getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,
             startPowerSaveBlocker: () => Promise<number>;
             stopPowerSaveBlocker: (powerSaveBlockerID: number) => void;
+            deleteSettingsAndRestart: () => void;
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;

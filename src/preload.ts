@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('electron', {
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
+    showSelectFolderDialog: (): Promise<string | null> => {
+        return ipcRenderer.invoke('showSelectFolderDialog')
+    },
     openURL: (url: string) => {
         ipcRenderer.invoke('openURL', url)
     },
@@ -56,6 +59,9 @@ contextBridge.exposeInMainWorld('electron', {
     },
     stopPowerSaveBlocker: (accountID: number, powerSaveBlockerID: number) => {
         ipcRenderer.invoke('stopPowerSaveBlocker', accountID, powerSaveBlockerID)
+    },
+    deleteSettingsAndRestart: () => {
+        ipcRenderer.invoke('deleteSettingsAndRestart')
     },
     database: {
         getConfig: (key: string): Promise<string | null> => {

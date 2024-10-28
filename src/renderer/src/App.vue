@@ -8,6 +8,7 @@ import SemiphemeralAPIClient from '../../semiphemeral-api-client';
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
 import InterruptedModal from "./modals/InterruptedModal.vue";
+import AdvancedSettingsModal from "./modals/AdvancedSettingsModal.vue";
 
 import TabsView from "./views/TabsView.vue";
 
@@ -54,6 +55,15 @@ provide('refreshAPIClient', refreshAPIClient);
 const userEmail = ref('');
 provide('userEmail', userEmail);
 
+// For advanced option to delete all settings and restart the app, before we do this we need to kill all of the
+// potential webviews by hiding the TabsView component
+const shouldHideTabsView = ref(false);
+emitter?.on('delete-all-settings-and-restart', async () => {
+  shouldHideTabsView.value = true;
+});
+
+// Modals!
+
 // Sign in modal
 const showSignInModal = ref(false);
 emitter?.on('show-sign-in', () => {
@@ -71,6 +81,13 @@ const showInterruptedModal = ref(false);
 emitter?.on('show-interrupted', () => {
   showInterruptedModal.value = true;
 });
+
+// Advanced settings modal
+const showAdvancedSettingsModal = ref(false);
+emitter?.on('show-advanced-settings', () => {
+  showAdvancedSettingsModal.value = true;
+});
+
 
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
@@ -107,7 +124,7 @@ onMounted(async () => {
         </div>
       </template>
       <template v-else>
-        <TabsView />
+        <TabsView v-if="!shouldHideTabsView" />
       </template>
     </div>
 
@@ -121,6 +138,10 @@ onMounted(async () => {
     <!-- Interrupted modal -->
     <InterruptedModal v-if="showInterruptedModal" @hide="showInterruptedModal = false"
       @close="showInterruptedModal = false" />
+
+    <!-- Advanced settings modal -->
+    <AdvancedSettingsModal v-if="showAdvancedSettingsModal" @hide="showAdvancedSettingsModal = false"
+      @close="showAdvancedSettingsModal = false" />
   </div>
 </template>
 

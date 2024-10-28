@@ -12,7 +12,6 @@ import {
     shell,
     webContents,
     nativeImage,
-    session,
     autoUpdater,
     powerSaveBlocker,
     powerMonitor
@@ -26,6 +25,8 @@ import {
     getUpdatesBaseURL,
     getAccountDataPath,
     getResourcesPath,
+    getSettingsPath,
+    getDataPath,
     trackEvent,
     packageExceptionForReport
 } from './util';
@@ -130,6 +131,9 @@ async function initializeApp() {
             }
         });
     }
+
+    // Make sure the data path is created and the config setting is saved
+    getDataPath();
 
     // Create the window
     await createWindow();
@@ -303,6 +307,27 @@ async function createWindow() {
             }
         });
 
+        ipcMain.handle('showSelectFolderDialog', async (_): Promise<string | null> => {
+            const dataPath = database.getConfig('dataPath');
+
+            const options: Electron.OpenDialogSyncOptions = {
+                properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
+            };
+            if (dataPath) {
+                options.defaultPath = dataPath;
+            }
+
+            try {
+                const result = dialog.showOpenDialogSync(win, options);
+                if (result && result.length > 0) {
+                    return result[0];
+                }
+                return null;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
+
         ipcMain.handle('openURL', async (_, url) => {
             try {
                 shell.openExternal(url);
@@ -344,6 +369,29 @@ async function createWindow() {
             }
         });
 
+        ipcMain.handle('deleteSettingsAndRestart', async (_) => {
+            try {
+                // Close the database
+                database.closeMainDatabase();
+
+                // Delete settings
+                const settingsPath = getSettingsPath();
+                fs.rmSync(settingsPath, { recursive: true, force: true });
+                log.info('Deleted settings folder:', settingsPath);
+
+                // Delete partitions
+                const partitionsPath = path.join(app.getPath('userData'), 'Partitions');
+                fs.rmSync(partitionsPath, { recursive: true, force: true });
+                log.info('Deleted partitions folder:', partitionsPath);
+
+                // Restart app
+                app.relaunch();
+                app.exit(0)
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
+
         ipcMain.handle('startPowerSaveBlocker', async (_): Promise<number> => {
             const powerSaveBlockerID = powerSaveBlocker.start('prevent-app-suspension');
             log.info('Started power save blocker with ID:', powerSaveBlockerID);
@@ -355,70 +403,8 @@ async function createWindow() {
             log.info('Stopped power save blocker with ID:', powerSaveBlockerID);
         });
 
-        // Database IPC events
-
-        ipcMain.handle('database:getConfig', async (_, key) => {
-            try {
-                return database.getConfig(key);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:setConfig', async (_, key, value) => {
-            try {
-                database.setConfig(key, value);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:getAccounts', async (_) => {
-            try {
-                return database.getAccounts();
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:createAccount', async (_) => {
-            try {
-                return database.createAccount();
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:selectAccountType', async (_, accountID, type) => {
-            try {
-                return database.selectAccountType(accountID, type);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:saveAccount', async (_, accountJson) => {
-            try {
-                const account = JSON.parse(accountJson);
-                return database.saveAccount(account);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('database:deleteAccount', async (_, accountID) => {
-            try {
-                const ses = session.fromPartition(`persist:account-${accountID}`);
-                await ses.closeAllConnections();
-                await ses.clearStorageData();
-                database.deleteAccount(accountID);
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
         // Other IPC events
-
+        database.defineIPCDatabase();
         defineIPCX();
         defineIPCArchive();
     }
