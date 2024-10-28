@@ -21,10 +21,13 @@ import { getSettingsPath } from './util';
 import * as database from './database';
 
 beforeEach(() => {
+    // Make sure we open the database
+    database.getMainDatabase();
     database.runMainMigrations();
 });
 
 afterEach(() => {
+    // Make sure we close the database and clean up
     database.closeMainDatabase();
     fs.readdirSync(getSettingsPath()).forEach(file => {
         fs.unlinkSync(path.join(getSettingsPath(), file));

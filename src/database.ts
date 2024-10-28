@@ -26,9 +26,9 @@ export const getMainDatabase = () => {
 }
 
 export const closeMainDatabase = () => {
-    const db = getMainDatabase();
-    if (db) {
-        db.close();
+    if (mainDatabase) {
+        mainDatabase.close();
+        mainDatabase = null;
     }
 }
 

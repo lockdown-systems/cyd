@@ -212,6 +212,13 @@ export class XAccountController {
         });
     }
 
+    cleanup() {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+    }
+
     refreshAccount() {
         if (this.account) {
             this.account = getXAccount(this.account.id);

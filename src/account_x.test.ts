@@ -171,6 +171,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    database.closeMainDatabase();
     fs.readdirSync(getSettingsPath()).forEach(file => {
         fs.unlinkSync(path.join(getSettingsPath(), file));
     });
@@ -415,11 +416,13 @@ const dmConversation: XAPIConversation = {
 // XAccountController tests
 
 test('XAccountController.constructor() creates a database for the user', async () => {
-    createController("indexTweets")
+    const controller = createController("indexTweets")
 
     // There should be a file called data.sqlite3 in the account data directory
     const files = fs.readdirSync(getAccountDataPath("X", "test"));
     expect(files).toContain('data.sqlite3');
+
+    controller.cleanup();
 })
 
 test('XAccountController.indexTweet() should add a tweet', async () => {
@@ -429,6 +432,8 @@ test('XAccountController.indexTweet() should add a tweet', async () => {
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].text).toBe(tweetLegacy.full_text);
+
+    controller.cleanup();
 })
 
 test("XAccountController.indexTweet() should not add a tweet if it's already there", async () => {
@@ -443,6 +448,8 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
     expect(ret).toBe(false);
     const rows2: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows2.length).toBe(1);
+
+    controller.cleanup();
 })
 
 test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
@@ -458,6 +465,8 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
 
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(44);
+
+    controller.cleanup();
 })
 
 test('XAccountController.indexUser() should add a user', async () => {
@@ -468,6 +477,8 @@ test('XAccountController.indexUser() should add a user', async () => {
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].screenName).toBe(dmUser1.screen_name);
+
+    controller.cleanup();
 })
 
 test('XAccountController.indexUser() should update a user if its already there', async () => {
@@ -487,6 +498,8 @@ test('XAccountController.indexUser() should update a user if its already there',
     expect(rows.length).toBe(1);
     expect(rows[0].userID).toBe(dmUser1.id_str);
     expect(rows[0].name).toBe('changed name');
+
+    controller.cleanup();
 })
 
 test('XAccountController.indexUser() with different users should add different users', async () => {
@@ -496,6 +509,8 @@ test('XAccountController.indexUser() with different users should add different u
     await controller.indexUser(dmUser2)
     const rows: XUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as XUserRow[];
     expect(rows.length).toBe(2);
+
+    controller.cleanup();
 })
 
 test('XAccountController.indexConversation() should add a conversation and participants', async () => {
@@ -509,6 +524,7 @@ test('XAccountController.indexConversation() should add a conversation and parti
     const participantRows: XConversationParticipantRow[] = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
     expect(participantRows.length).toBe(2);
 
+    controller.cleanup();
 })
 
 test(
@@ -529,6 +545,8 @@ test(
 
         const participantRows = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
         expect(participantRows.length).toBe(126);
+
+        controller.cleanup();
     })
 
 test(
@@ -586,6 +604,8 @@ test(
 
         const participantRows = database.exec(controller.db, "SELECT * FROM conversation_participant", [], "all") as XConversationParticipantRow[];
         expect(participantRows.length).toBe(0);
+
+        controller.cleanup();
     })
 
 test("XAccountController.indexParseMessages() should add all the messages on first run", async () => {
@@ -596,6 +616,8 @@ test("XAccountController.indexParseMessages() should add all the messages on fir
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
+
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseMessages() should add all the messages, on re-index", async () => {
@@ -604,12 +626,14 @@ test("XAccountController.indexParseMessages() should add all the messages, on re
     controller.indexMessagesStart(true);
     let progress: XProgress = await controller.indexParseMessages(true);
     expect(progress.messagesIndexed).toBe(116);
+    controller.cleanup();
 
     // Re-index them
     controller = createController("indexDMs");
     controller.indexMessagesStart(false);
     progress = await controller.indexParseMessages(false);
     expect(progress.messagesIndexed).toBe(0);
+    controller.cleanup();
 
     // Re-index, but this time set isFirstRun to true
     controller = createController("indexDMs");
@@ -619,6 +643,7 @@ test("XAccountController.indexParseMessages() should add all the messages, on re
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
     expect(rows.length).toBe(116);
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-4", async () => {
@@ -626,6 +651,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-4.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-10", async () => {
@@ -633,6 +659,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-10.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-25", async () => {
@@ -640,6 +667,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-25.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-34", async () => {
@@ -647,6 +675,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-34.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-51", async () => {
@@ -654,6 +683,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-51.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+    controller.cleanup();
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-54", async () => {
@@ -661,6 +691,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
     const controller = createControllerWithAutomationErrorReportData("dev-54.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
+    controller.cleanup();
 })
 
 // Testing the X migrations
@@ -678,4 +709,6 @@ test("test migration: 20241016_add_config", async () => {
     // The config table should exist
     const rows = database.exec(controller.db, "SELECT * FROM config", [], "all") as Record<string, string>[];
     expect(rows.length).toBe(0);
+
+    controller.cleanup();
 })
