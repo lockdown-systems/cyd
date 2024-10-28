@@ -25,6 +25,7 @@ import {
     getUpdatesBaseURL,
     getAccountDataPath,
     getResourcesPath,
+    getSettingsPath,
     trackEvent,
     packageExceptionForReport
 } from './util';
@@ -359,6 +360,24 @@ async function createWindow() {
                 } else {
                     return path.join(archivePath, filename);
                 }
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
+
+        ipcMain.handle('deleteSettingsAndRestart', async (_) => {
+            try {
+                // Close the database
+                database.closeMainDatabase();
+
+                // Delete settings
+                const settingsPath = getSettingsPath();
+                fs.rmSync(settingsPath, { recursive: true, force: true });
+                log.info('Deleted settings folder:', settingsPath);
+
+                // Restart app
+                app.relaunch();
+                app.exit(0)
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }

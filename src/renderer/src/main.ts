@@ -37,6 +37,7 @@ declare global {
             getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,
             startPowerSaveBlocker: () => Promise<number>;
             stopPowerSaveBlocker: (powerSaveBlockerID: number) => void;
+            deleteSettingsAndRestart: () => void;
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;

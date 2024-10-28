@@ -55,6 +55,13 @@ provide('refreshAPIClient', refreshAPIClient);
 const userEmail = ref('');
 provide('userEmail', userEmail);
 
+// For advanced option to delete all settings and restart the app, before we do this we need to kill all of the
+// potential webviews by hiding the TabsView component
+const shouldHideTabsView = ref(false);
+emitter?.on('delete-all-settings-and-restart', async () => {
+  shouldHideTabsView.value = true;
+});
+
 // Modals!
 
 // Sign in modal
@@ -117,7 +124,7 @@ onMounted(async () => {
         </div>
       </template>
       <template v-else>
-        <TabsView />
+        <TabsView v-if="!shouldHideTabsView" />
       </template>
     </div>
 

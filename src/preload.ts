@@ -60,6 +60,9 @@ contextBridge.exposeInMainWorld('electron', {
     stopPowerSaveBlocker: (accountID: number, powerSaveBlockerID: number) => {
         ipcRenderer.invoke('stopPowerSaveBlocker', accountID, powerSaveBlockerID)
     },
+    deleteSettingsAndRestart: () => {
+        ipcRenderer.invoke('deleteSettingsAndRestart')
+    },
     database: {
         getConfig: (key: string): Promise<string | null> => {
             return ipcRenderer.invoke('database:getConfig', key);

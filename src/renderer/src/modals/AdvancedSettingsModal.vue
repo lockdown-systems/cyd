@@ -21,7 +21,9 @@ const browseClicked = async () => {
 };
 
 const deleteAllSettingsAndRestart = async () => {
-    await window.electron.showMessage("Not implemented yet");
+    if (await window.electron.showQuestion("Are you sure you want to delete all settings and restart the app?", "Yes, delete it all!", "Cancel")) {
+        await window.electron.deleteSettingsAndRestart();
+    }
 };
 
 onMounted(async () => {

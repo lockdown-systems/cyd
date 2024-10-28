@@ -12,11 +12,22 @@ export type Migration = {
     sql: string[];
 };
 
+let mainDatabase: Database.Database | null = null;
+
 export const getMainDatabase = () => {
+    if (mainDatabase) {
+        return mainDatabase;
+    }
+
     const dbPath = path.join(getSettingsPath(), 'db.sqlite');
-    const db = new Database(dbPath, {});
-    db.pragma('journal_mode = WAL');
-    return db;
+    mainDatabase = new Database(dbPath, {});
+    mainDatabase.pragma('journal_mode = WAL');
+    return mainDatabase;
+}
+
+export const closeMainDatabase = () => {
+    const db = getMainDatabase();
+    db.close();
 }
 
 export const runMigrations = (db: Database.Database, migrations: Migration[]) => {
