@@ -112,7 +112,8 @@ onMounted(async () => {
         </div>
         <div>
           <p class="mb-0">
-            You must disable sleep on your computer while running Semiphemeral or it will get interrupted.
+            Your computer needs to be awake to use Semiphemeral. Don't close the lid, and disable sleep while plugged
+            in.
           </p>
           <ul class="list-unstyled mb-0">
             <li class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></li>
@@ -149,13 +150,13 @@ onMounted(async () => {
 }
 
 .prevent-sleep {
-  padding: 10px;
   text-align: right;
   height: 70px;
   position: absolute;
   bottom: 10px;
   right: 10px;
   z-index: 1;
+  font-size: 0.8em;
 }
 
 .prevent-sleep p {

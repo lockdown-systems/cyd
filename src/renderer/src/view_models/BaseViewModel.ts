@@ -156,9 +156,9 @@ export class BaseViewModel {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log(func: string, message?: any) {
         if (message === undefined) {
-            console.log(`${this.constructor.name}.${func} (${this.state})`);
+            console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state})`);
         } else {
-            console.log(`${this.constructor.name}.${func} (${this.state}):`, logObj(message));
+            console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state}):`, logObj(message));
         }
     }
 
