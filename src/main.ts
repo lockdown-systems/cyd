@@ -423,6 +423,14 @@ async function createWindow() {
         win.setSize(1500, 800);
     }
 
+    // When devtools opens, make sure the window is wide enough
+    win.webContents.on('devtools-opened', () => {
+        const [width, height] = win.getSize();
+        if (width < 1500) {
+            win.setSize(1500, height);
+        }
+    });
+
     return win;
 }
 
