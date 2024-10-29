@@ -8,6 +8,12 @@ import { logObj } from '../util';
 
 const DEFAULT_TIMEOUT = 30000;
 
+type Log = {
+    timestamp: string; // ISO string
+    func: string;
+    message?: any;
+};
+
 export class TimeoutError extends Error {
     constructor(selector: string) {
         super(`Timeout waiting for selector: ${selector}`);
@@ -34,6 +40,8 @@ export class InternetDownError extends Error {
 }
 
 export class BaseViewModel {
+    public logs: Log[] = [];
+
     public account: Account;
     public webview: WebviewTag;
     public api: SemiphemeralAPIClient;
@@ -79,6 +87,8 @@ export class BaseViewModel {
         this.shouldResumeOnResume = false;
 
         this.emitter = emitter;
+
+        this.resetLogs();
 
         this.domReadyHandler = async () => {
             this.log("domReadyHandler", "dom-ready");
@@ -155,6 +165,12 @@ export class BaseViewModel {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log(func: string, message?: any) {
+        this.logs.push({
+            timestamp: new Date().toISOString(),
+            func: func,
+            message: message,
+        });
+
         if (message === undefined) {
             console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state})`);
         } else {
@@ -162,11 +178,16 @@ export class BaseViewModel {
         }
     }
 
+    resetLogs() {
+        this.logs = [];
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async error(automationErrorType: AutomationErrorType, errorReportData: any = null, sensitiveContextData: any = null) {
         console.error(`Automation Error: ${automationErrorType}`, errorReportData, sensitiveContextData);
 
         await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_OCCURED, navigator.userAgent);
+        const webview = this.getWebview();
 
         // Get username
         let username = "";
@@ -180,9 +201,19 @@ export class BaseViewModel {
 
         // Get screenshot
         let screenshotDataURL = "";
-        const webview = this.getWebview();
         if (webview) {
             screenshotDataURL = (await webview.capturePage()).toDataURL();
+        }
+
+        // Add logs to sensitiive context data
+        if (sensitiveContextData === null) {
+            sensitiveContextData = {};
+        }
+        sensitiveContextData.logs = this.logs;
+
+        // Add current URL to sensitive context data
+        if (webview) {
+            sensitiveContextData.currentURL = webview.getURL();
         }
 
         const details: AutomationErrorDetails = {

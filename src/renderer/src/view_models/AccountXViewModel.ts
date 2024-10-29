@@ -520,11 +520,11 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async archiveSaveTweet(outputPath: string, tweetItem: XTweetItem): Promise<boolean> {
-        this.log("Archiving", tweetItem.basename);
+        this.log("archiveSaveTweet", `Archiving ${tweetItem.basename}`);
 
         // Check if the tweet is already archived
         if (await window.electron.archive.isPageAlreadySaved(outputPath, tweetItem.basename)) {
-            this.log("Already archived", tweetItem.basename);
+            this.log("archiveSaveTweet", `Already archived ${tweetItem.basename}`);
             await window.electron.X.archiveTweetCheckDate(this.account.id, tweetItem.tweetID);
             this.progress.tweetsArchived += 1;
             return true;
@@ -770,8 +770,6 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
                 exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview.getURL()
             })
             return false;
         }
@@ -888,8 +886,7 @@ Hang on while I scroll down to your earliest direct message conversations that I
                 await this.error(AutomationErrorType.x_runJob_indexConversations_ParseConversationsError, {
                     exception: (e as Error).toString()
                 }, {
-                    latestResponseData: latestResponseData,
-                    currentURL: this.webview.getURL()
+                    latestResponseData: latestResponseData
                 });
                 errorTriggered = true;
                 await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
@@ -955,8 +952,6 @@ Please wait while I index all of the messages from each conversation.
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
                 exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview.getURL()
             })
             return false;
         }
@@ -1019,8 +1014,6 @@ Please wait while I index all of the messages from each conversation.
                 await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                 await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
                     exception: (error as Error).toString(),
-                }, {
-                    currentURL: this.webview.getURL()
                 });
                 errorTriggered = true;
             }
@@ -1188,15 +1181,11 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
                     newURL: newURL,
                     exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
                 })
                 errorTriggered = true;
             } else {
                 await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
                     exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
                 })
                 errorTriggered = true;
             }
@@ -1219,9 +1208,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
                 if (!await this.indexTweetsHandleRateLimit()) {
-                    await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, {}, {
-                        currentURL: this.webview.getURL()
-                    });
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, {});
                     errorTriggered = true;
                     await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                     break;
@@ -1238,8 +1225,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
                 await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
                     exception: (e as Error).toString()
                 }, {
-                    latestResponseData: latestResponseData,
-                    currentURL: this.webview.getURL()
+                    latestResponseData: latestResponseData
                 });
                 errorTriggered = true;
                 await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
@@ -1295,8 +1281,6 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
                 exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview.getURL()
             })
             return false;
         }
@@ -1394,8 +1378,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                         exception: (e as Error).toString()
                     }, {
                         tweet: tweetsToDelete.tweets[i],
-                        index: i,
-                        currentURL: this.webview.getURL()
+                        index: i
                     })
                     errorTriggered = true;
                     break;
@@ -1408,8 +1391,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                     exception: (error as Error).toString()
                 }, {
                     tweet: tweetsToDelete.tweets[i],
-                    index: i,
-                    currentURL: this.webview.getURL()
+                    index: i
                 });
                 errorTriggered = true;
             }
@@ -1445,8 +1427,6 @@ I'm deleting your retweets, starting with the earliest.
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
                 exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview.getURL()
             })
             return false;
         }
@@ -1518,8 +1498,7 @@ I'm deleting your retweets, starting with the earliest.
                         exception: (e as Error).toString()
                     }, {
                         tweet: tweetsToDelete.tweets[i],
-                        index: i,
-                        currentURL: this.webview.getURL()
+                        index: i
                     })
                     errorTriggered = true;
                     break;
@@ -1530,8 +1509,6 @@ I'm deleting your retweets, starting with the earliest.
             } else {
                 await this.error(errorType, {
                     exception: (error as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
                 });
                 errorTriggered = true;
                 break;
@@ -1564,8 +1541,6 @@ I'm deleting your likes, starting with the earliest.
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
                 exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview.getURL()
             })
             return false;
         }
@@ -1613,8 +1588,7 @@ I'm deleting your likes, starting with the earliest.
                     exception: (e as Error).toString()
                 }, {
                     tweet: tweetsToDelete.tweets[i],
-                    index: i,
-                    currentURL: this.webview.getURL()
+                    index: i
                 })
                 errorTriggered = true;
                 break;
@@ -1807,9 +1781,7 @@ I'm deleting all of your direct message conversations, start with the most recen
                         // @ts-expect-error errorReportData object isn't defined
                         errorReportData.exception = (error as Error).toString()
                     }
-                    await this.error(errorType, errorReportData, {
-                        currentURL: this.webview.getURL()
-                    });
+                    await this.error(errorType, errorReportData);
                     errorTriggered = true;
                 }
 
@@ -1825,6 +1797,10 @@ I'm deleting all of your direct message conversations, start with the most recen
     }
 
     async runJob(jobIndex: number) {
+        // Reset logs before each job, so the sensitive context data in error reports will only includes
+        // logs from the current job
+        this.resetLogs();
+
         await this.waitForPause();
 
         // Start the job
@@ -1836,6 +1812,7 @@ I'm deleting all of your direct message conversations, start with the most recen
         this.progress.currentJob = this.jobs[jobIndex].jobType;
         await this.syncProgress();
 
+        this.log("runJob", `running job ${this.jobs[jobIndex].jobType}`);
         switch (this.jobs[jobIndex].jobType) {
             case "login":
                 await this.runJobLogin(jobIndex);
@@ -1884,6 +1861,9 @@ I'm deleting all of your direct message conversations, start with the most recen
     }
 
     async run() {
+        // Reset logs before running any state
+        this.resetLogs();
+
         this.log("run", `running state: ${this.state}`);
         try {
             this.progress = await window.electron.X.resetProgress(this.account.id);
@@ -1920,8 +1900,6 @@ You can make a local archive of your data, or you delete exactly what you choose
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_UnknownError, {
                                 exception: (e as Error).toString()
-                            }, {
-                                currentURL: this.webview.getURL()
                             });
                             break;
                         }
@@ -1951,8 +1929,6 @@ You can make a local archive of your data, or you delete exactly what you choose
                 state: this.state,
                 jobs: this.jobs,
                 currentJobIndex: this.currentJobIndex,
-            }, {
-                currentURL: this.webview.getURL()
             });
         }
     }
