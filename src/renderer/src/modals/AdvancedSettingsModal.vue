@@ -58,7 +58,7 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Advanced settings
+                        Advanced
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>
@@ -72,9 +72,11 @@ onUnmounted(() => {
                     </div>
 
                     <div class="danger-zone mt-5">
-                        <h5 class="text-danger">Danger Zone</h5>
-                        <button class="btn btn-danger" @click="deleteAllSettingsAndRestart">Delete all settings and
-                            restart the app</button>
+                        <p class="mb-1">
+                            <button class="btn btn-sm btn-outline-danger" @click="deleteAllSettingsAndRestart">Reset
+                                Semiphemeral</button>
+                        </p>
+                        <p class="text-muted">Delete all settings and restart the app</p>
                     </div>
                 </div>
             </div>

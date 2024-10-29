@@ -110,7 +110,7 @@ onMounted(async () => {
         <div>
           <p class="mb-2">
             Your computer needs to be awake to use Semiphemeral. Don't close the
-            lid, keep plugged in, and disable sleep while plugged in.
+            lid, keep it plugged in, and disable sleep while plugged in.
           </p>
           <p class="text-center">
             <span class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></span>
