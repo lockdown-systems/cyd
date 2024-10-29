@@ -634,6 +634,10 @@ onUnmounted(async () => {
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
                         </li>
+                        <li v-if="account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
+                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
+                        </li>
                         <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                             <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
@@ -674,6 +678,10 @@ onUnmounted(async () => {
                             <li v-if="(progress?.tweetsIndexed ?? 0) > 0">
                                 <i class="fa-solid fa-floppy-disk archive-bullet" />
                                 <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                            </li>
+                            <li v-if="(progress?.retweetsIndexed ?? 0) > 0">
+                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
                             </li>
                             <li v-if="(progress?.likesIndexed ?? 0) > 0">
                                 <i class="fa-solid fa-floppy-disk archive-bullet" />
