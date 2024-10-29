@@ -11,6 +11,7 @@ const DEFAULT_TIMEOUT = 30000;
 type Log = {
     timestamp: string; // ISO string
     func: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     message?: any;
 };
 

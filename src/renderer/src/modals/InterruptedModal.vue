@@ -49,8 +49,10 @@ onUnmounted(() => {
                 </div>
                 <div class="modal-body">
                     <p>Something went wrong. This might have happened because your computer went to sleep.</p>
-                    <p><a href="#" @click="preventSleepLearnMore">Follow these instructions</a> to prevent
-                        your computer from sleeping.</p>
+                    <p>
+<a href="#" @click="preventSleepLearnMore">Follow these instructions</a> to prevent
+                        your computer from sleeping.
+</p>
                 </div>
             </div>
         </div>
