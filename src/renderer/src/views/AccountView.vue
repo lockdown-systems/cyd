@@ -107,19 +107,16 @@ onMounted(async () => {
       <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
 
       <div v-if="showPreventSleepMessage" class="prevent-sleep alert alert-warning d-flex align-items-center">
-        <div class="me-3">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
         <div>
-          <p class="mb-0">
-            Your computer needs to be awake to use Semiphemeral. Don't close the lid, and disable sleep while plugged
-            in.
+          <p class="mb-2">
+            Your computer needs to be awake to use Semiphemeral. Don't close the
+            lid, keep plugged in, and disable sleep while plugged in.
           </p>
-          <ul class="list-unstyled mb-0">
-            <li class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></li>
-            <li><a href="#" @click="preventSleepDontShowAgain">Don't show this again</a></li>
-            <li><a href="#" @click="preventSleepDismiss">Dismiss</a></li>
-          </ul>
+          <p class="text-center">
+            <span class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></span>
+            <span><a href="#" @click="preventSleepDontShowAgain">Don't show this again</a></span>
+            <span><a href="#" @click="preventSleepDismiss">Dismiss</a></span>
+          </p>
         </div>
       </div>
     </template>
@@ -150,31 +147,21 @@ onMounted(async () => {
 }
 
 .prevent-sleep {
-  text-align: right;
-  height: 70px;
   position: absolute;
   bottom: 10px;
-  right: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1;
   font-size: 0.8em;
+  min-width: 500px;
 }
 
 .prevent-sleep p {
   margin: 0;
 }
 
-.prevent-sleep ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.prevent-sleep li {
-  display: inline;
-  margin-left: 20px;
-}
-
-.prevent-sleep i.fa-triangle-exclamation {
-  color: #664d03;
-  font-size: 2em;
+.prevent-sleep span a {
+  margin: 0 10px;
+  text-wrap: nowrap;
 }
 </style>

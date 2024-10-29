@@ -48,8 +48,8 @@ onUnmounted(() => {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>
                 <div class="modal-body">
-                    <p>This probably happened because your computer went to sleep.</p>
-                    <p><a href="#" @click="preventSleepLearnMore">Follow these instructions</a> to temporarily prevent
+                    <p>Something went wrong. This might have happened because your computer went to sleep.</p>
+                    <p><a href="#" @click="preventSleepLearnMore">Follow these instructions</a> to prevent
                         your computer from sleeping.</p>
                 </div>
             </div>
