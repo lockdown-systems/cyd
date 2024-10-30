@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-$env:SEMIPHEMERAL_ENV = "dev"
+$env:CYD_ENV = "dev"
 $env:DEBUG = "electron-packager,electron-universal,electron-forge*"
 $env:WINDOWS_SIGN = "true"
 

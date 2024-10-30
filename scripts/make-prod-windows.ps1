@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
-$env:SEMIPHEMERAL_ENV = "prod"
+$env:CYD_ENV = "prod"
 $env:DEBUG = "electron-packager,electron-universal,electron-forge*"
-$env:WINDOWS_SIGN = "true"
+$env:WINDOWS_SIGN = "false"
 
 # https://github.com/Squirrel/Squirrel.Windows/issues/1838#issuecomment-1514089628
 $env:SQUIRREL_TEMP = "build\SquirrelTemp"
