@@ -11,7 +11,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse, UserPremiumAPIResponse } from "../../../semiphemeral-api-client";
+import { APIErrorResponse, UserPremiumAPIResponse } from "../../../cyd-api-client";
 
 export enum State {
     Login = "login",

@@ -1,7 +1,7 @@
 import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../cyd-api-client';
 import { type DeviceInfo, PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';

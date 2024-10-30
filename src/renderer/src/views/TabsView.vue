@@ -2,7 +2,7 @@
 import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../cyd-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 import ManageAccountView from './ManageAccountView.vue';

@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, inject, Ref, watch, getCurrentInstance } from 'vue';
 import type { DeviceInfo } from '../types';
 import { Account, XProgressInfo } from '../../../shared_types'
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../cyd-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);

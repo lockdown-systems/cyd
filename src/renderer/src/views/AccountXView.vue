@@ -11,7 +11,7 @@ import {
 } from 'vue'
 import Electron from 'electron';
 
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import SemiphemeralAPIClient from '../../../cyd-api-client';
 
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
