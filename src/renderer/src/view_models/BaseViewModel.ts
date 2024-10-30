@@ -1,7 +1,7 @@
 import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
-import SemiphemeralAPIClient from '../../../cyd-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 import { type DeviceInfo, PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
@@ -45,7 +45,7 @@ export class BaseViewModel {
 
     public account: Account;
     public webview: WebviewTag;
-    public api: SemiphemeralAPIClient;
+    public api: CydAPIClient;
     public deviceInfo: DeviceInfo | null;
     public webContentsID: number | null;
     public isWebviewDestroyed: boolean;
@@ -71,7 +71,7 @@ export class BaseViewModel {
 
     private domReadyHandler: () => void;
 
-    constructor(account: Account, webview: WebviewTag, api: SemiphemeralAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
+    constructor(account: Account, webview: WebviewTag, api: CydAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
         this.account = account;
         this.webview = webview;
         this.api = api;

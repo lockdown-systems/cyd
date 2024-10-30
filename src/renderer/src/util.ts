@@ -1,4 +1,4 @@
-import SemiphemeralAPIClient from '../../cyd-api-client';
+import CydAPIClient from '../../cyd-api-client';
 import type { DeviceInfo } from './types';
 
 // This function checks to see if there's a userEmail and deviceToken, and if so if the
@@ -13,7 +13,7 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
         "valid": false
     };
 
-    const apiClient = new SemiphemeralAPIClient();
+    const apiClient = new CydAPIClient();
     apiClient.initialize(await window.electron.getAPIURL());
 
     const deviceDescription = await window.electron.database.getConfig("deviceDescription");

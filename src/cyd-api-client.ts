@@ -103,7 +103,7 @@ export type PostAutomationErrorReportAPIRequest = {
 };
 
 // The API client
-export default class SemiphemeralAPIClient {
+export default class CydAPIClient {
     public apiURL: string | null = null;
     private userEmail: string | null = null;
     private deviceToken: string | null = null;

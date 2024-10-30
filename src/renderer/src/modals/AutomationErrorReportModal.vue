@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
 import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
 import { PlausibleEvents } from "../types";
-import SemiphemeralAPIClient from '../../../cyd-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 import { PostAutomationErrorReportAPIRequest } from '../../../cyd-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
@@ -18,7 +18,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 const automationErrorReportModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 
 // Automation error fields
 const appVersion = ref('');

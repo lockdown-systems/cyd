@@ -2,7 +2,7 @@
 import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
-import SemiphemeralAPIClient from '../../../cyd-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 import ManageAccountView from './ManageAccountView.vue';
@@ -17,7 +17,7 @@ const userBtnShowMenu = ref(false);
 const accounts = ref<Account[]>([]);
 const activeAccountId = ref<number | null>(null);
 
-const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
