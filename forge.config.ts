@@ -73,8 +73,6 @@ function findLatestSigntoolPath(): string {
   }
 }
 
-const shouldSignWindows = process.env.WINDOWS_SIGN === 'true';
-
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;
 
@@ -125,12 +123,12 @@ const config: ForgeConfig = {
       iconUrl: "https://releases.lockdown.systems/cyd/icon.ico",
       name: "Cyd",
       setupIcon: path.join(assetsPath, "icon.ico"),
-      windowsSign: shouldSignWindows ? {
+      windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
       // For auto-updates
       remoteReleases: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/windows/${process.arch}`,
-      noDelta: false,
+      noDelta: process.env.WINDOWS_RELEASE === 'true' ? false : true,
     }),
     // macOS DMG
     new MakerDMG({
