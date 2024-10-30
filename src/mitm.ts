@@ -179,7 +179,7 @@ export class MITMController implements IMITMController {
         })
 
         // Wait for proxy to be ready
-        const testURL = 'https://dev-api.semiphemeral.com/health'; // TODO: update this to the prod API URL
+        const testURL = 'https://dev-api.cyd.social/health'; // TODO: update this to the prod API URL
         let success = false;
         log.debug(`MITMController: Account ${this.account?.id}, waiting for proxy to be ready...`)
         await new Promise(resolve => setTimeout(resolve, 200));

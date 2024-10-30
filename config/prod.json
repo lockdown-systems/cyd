@@ -1,6 +1,6 @@
 {
     "mode": "prod",
-    "apiURL": "https://api.semiphemeral.com",
-    "dashURL": "https://dash.semiphemeral.com",
-    "plausibleDomain": "app.semiphemeral.com"
+    "apiURL": "https://api.cyd.social",
+    "dashURL": "https://dash.cyd.social",
+    "plausibleDomain": "plausible-app.cyd.social"
 }
