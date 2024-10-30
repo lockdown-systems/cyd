@@ -229,7 +229,7 @@ onUnmounted(() => {
 
             <!-- Rate Limit -->
             <p v-if="rateLimitInfo?.isRateLimited" class="rate-limit">
-                You have a hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
+                You have hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>
             </p>
         </div>
     </template>

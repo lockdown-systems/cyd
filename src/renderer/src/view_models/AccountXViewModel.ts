@@ -243,11 +243,22 @@ export class AccountXViewModel extends BaseViewModel {
             seconds = this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
         }
         await this.sleep(seconds * 1000);
+        this.log("waitForRateLimit", "finished waiting for rate limit");
+
+        // Wait for the user to unpause.
+        // This is important because if the computer sleeps and autopauses during a rate limit, this will
+        // continue to wait until after the computer wakes up.
+        await this.waitForPause();
+        this.log("waitForRateLimit", "finished waiting for pause");
     }
 
     async loadURLWithRateLimit(url: string, expectedURLs: string[] = [], redirectOk: boolean = false) {
+        this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
+
         // eslint-disable-next-line no-constant-condition
         while (true) {
+            this.log("loadURLWithRateLimit", "resetting rate limit info and loading the URL");
+
             // Reset the rate limit checker
             await window.electron.X.resetRateLimitInfo(this.account.id);
 
@@ -272,6 +283,7 @@ export class AccountXViewModel extends BaseViewModel {
 
             // Did the URL change?
             if (!redirectOk) {
+                this.log("loadURLWithRateLimit", "checking if URL changed");
                 const newURL = this.webview.getURL();
                 if (newURL != url) {
                     let changedToUnexpected = true;
@@ -293,7 +305,9 @@ export class AccountXViewModel extends BaseViewModel {
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
             if (this.rateLimitInfo.isRateLimited) {
                 await this.waitForRateLimit();
+                this.log("loadURLWithRateLimit", "waiting for rate limit finished, trying to load the URL again");
             } else {
+                this.log("loadURLWithRateLimit", "finished loading URL");
                 break;
             }
         }

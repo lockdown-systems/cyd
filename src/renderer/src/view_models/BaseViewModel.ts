@@ -55,10 +55,13 @@ export class BaseViewModel {
     public actionString: string;
     public actionFinishedString: string;
     public domReady: boolean;
+
     public isPaused: boolean;
 
     // If the computer resumes from sleep, should we resume the automation?
     private shouldResumeOnResume: boolean;
+    // Only allow the suspend events to be triggerer once at a time
+    private suspendLock: boolean;
 
     public showBrowser: boolean;
     public showAutomationNotice: boolean;
@@ -84,8 +87,10 @@ export class BaseViewModel {
         this.showBrowser = false;
         this.showAutomationNotice = false;
         this.domReady = false;
+
         this.isPaused = false;
         this.shouldResumeOnResume = false;
+        this.suspendLock = false;
 
         this.emitter = emitter;
 
@@ -120,6 +125,12 @@ export class BaseViewModel {
     }
 
     powerMonitorSuspend() {
+        if (this.suspendLock) {
+            this.log("powerMonitorSuspend", "already got the suspend event, so skipping");
+            return;
+        }
+        this.suspendLock = true;
+
         if (this.isPaused) {
             this.log("powerMonitorSuspend", "already paused");
             this.shouldResumeOnResume = false;
@@ -131,6 +142,8 @@ export class BaseViewModel {
     }
 
     powerMonitorResume() {
+        this.suspendLock = false;
+
         if (this.shouldResumeOnResume) {
             this.log("powerMonitorResume", "resuming");
             this.resume();
@@ -611,8 +624,13 @@ export class BaseViewModel {
     }
 
     async waitForPause() {
+        if (!this.isPaused) {
+            return;
+        }
+
         while (this.isPaused) {
             await new Promise(resolve => setTimeout(resolve, 200));
         }
+        this.log("waitForPause", "resumed");
     }
 }

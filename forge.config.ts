@@ -121,17 +121,17 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     // Windows
-    new MakerSquirrel({
-      iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
-      name: "Semiphemeral",
-      setupIcon: path.join(assetsPath, "icon.ico"),
-      windowsSign: shouldSignWindows ? {
-        signToolPath: findLatestSigntoolPath()
-      } : undefined,
-      // For auto-updates
-      remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
-      noDelta: false,
-    }),
+    // new MakerSquirrel({
+    //   iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
+    //   name: "Semiphemeral",
+    //   setupIcon: path.join(assetsPath, "icon.ico"),
+    //   windowsSign: shouldSignWindows ? {
+    //     signToolPath: findLatestSigntoolPath()
+    //   } : undefined,
+    //   // For auto-updates
+    //   remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
+    //   noDelta: false,
+    // }),
     // macOS DMG
     new MakerDMG({
       name: `Semiphemeral ${version}`,
