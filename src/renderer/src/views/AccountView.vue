@@ -74,10 +74,10 @@ onMounted(async () => {
     <template v-if="account.type == 'unknown'">
       <div class="container mt-5">
         <div class="text-center">
-          <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird" style="width: 120px;">
+          <img src="/logo.png" class="logo mb-3" alt="Cyd Avatar" style="width: 120px;">
         </div>
         <p class="lead">
-          With Semiphemeral, you can automatically delete your data in tech platforms, except for
+          With Cyd, you can automatically delete your data in tech platforms, except for
           what you want to keep.
         </p>
         <p class="lead fw-bold">
@@ -109,7 +109,7 @@ onMounted(async () => {
       <div v-if="showPreventSleepMessage" class="prevent-sleep alert alert-warning d-flex align-items-center">
         <div>
           <p class="mb-2">
-            Your computer needs to be awake to use Semiphemeral. Don't close the
+            Your computer needs to be awake to use Cyd. Don't close the
             lid, keep it plugged in, and disable sleep while plugged in.
           </p>
           <p class="text-center">

@@ -18,7 +18,7 @@ export const getUpdatesBaseURL = (mode: string): string => {
     if (platform == 'darwin') {
         platform = 'macos';
     }
-    return `https://releases.lockdown.systems/semiphemeral/${mode}/${platform}/${updateArch}`;
+    return `https://releases.lockdown.systems/cyd/${mode}/${platform}/${updateArch}`;
 }
 
 export const getResourcesPath = () => {
@@ -67,7 +67,7 @@ export const getDataPath = () => {
     // Get dataPath from config
     let dataPath = getConfig('dataPath');
     if (!dataPath) {
-        dataPath = path.join(app.getPath('documents'), 'Semiphemeral');
+        dataPath = path.join(app.getPath('documents'), 'Cyd');
         setConfig('dataPath', dataPath);
     }
 

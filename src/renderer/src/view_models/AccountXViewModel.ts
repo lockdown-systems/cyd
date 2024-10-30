@@ -1884,7 +1884,7 @@ I'm deleting all of your direct message conversations, start with the most recen
 
             switch (this.state) {
                 case State.Login:
-                    this.actionString = `Semiphemeral can help you archive your tweets and direct messages. It can also help delete your tweets, retweets, likes, and direct messages.`;
+                    this.actionString = `Cyd can help you archive your tweets and direct messages. It can also help delete your tweets, retweets, likes, and direct messages.`;
                     this.instructions = `${this.actionString}
 
 **To get started, log in to your X account below.**`;

@@ -43,16 +43,16 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Semiphemeral was interrupted
+                        Cyd was interrupted
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>
                 <div class="modal-body">
                     <p>Something went wrong. This might have happened because your computer went to sleep.</p>
                     <p>
-<a href="#" @click="preventSleepLearnMore">Follow these instructions</a> to prevent
+                        <a href="#" @click="preventSleepLearnMore">Follow these instructions</a> to prevent
                         your computer from sleeping.
-</p>
+                    </p>
                 </div>
             </div>
         </div>

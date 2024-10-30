@@ -12,7 +12,7 @@ const parsedMessage = computed(() => marked.parse(props.message));
 <template>
   <div class="row pt-2 g-1">
     <div class="col-auto">
-      <img src="/logo.png" class="bird img-fluid" alt="Semiphemeral Bird">
+      <img src="/logo.png" class="bird img-fluid" alt="Cyd Avatar">
     </div>
     <div class="col">
       <div class="bubble p-3 text-black">

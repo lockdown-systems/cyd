@@ -68,21 +68,20 @@ onUnmounted(() => {
                         <div class="input-group">
                             <input v-model="dataPath" type="text" class="form-control" readonly>
                             <button class="btn btn-secondary" @click="browseClicked">
-Browse
-</button>
+                                Browse
+                            </button>
                         </div>
                     </div>
 
                     <div class="danger-zone mt-5">
                         <p class="mb-1">
                             <button class="btn btn-sm btn-outline-danger" @click="deleteAllSettingsAndRestart">
-Reset
-                                Semiphemeral
-</button>
+                                Reset Cyd
+                            </button>
                         </p>
                         <p class="text-muted">
-Delete all settings and restart the app
-</p>
+                            Delete all settings and restart the app
+                        </p>
                     </div>
                 </div>
             </div>

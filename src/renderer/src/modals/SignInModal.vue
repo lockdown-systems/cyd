@@ -192,7 +192,7 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Sign in to Semiphemeral to access premium features
+                        Sign in to Cyd to access premium features
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>

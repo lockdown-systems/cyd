@@ -213,8 +213,7 @@ onUnmounted(() => {
                                     <li>
                                         <label>App version:</label>
                                         <span>
-                                            Semiphemeral {{ appVersion }} for {{
-                                                clientPlatform }}
+                                            Cyd {{ appVersion }} for {{ clientPlatform }}
                                         </span>
                                     </li>
                                     <li>
@@ -246,7 +245,7 @@ onUnmounted(() => {
                                     </li>
                                 </ul>
                                 <div v-else class="error-logo text-center">
-                                    <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird">
+                                    <img src="/logo.png" class="logo mb-3" alt="Cyd Avatar">
                                 </div>
                             </div>
                         </div>

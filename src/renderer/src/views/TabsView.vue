@@ -59,7 +59,7 @@ const addAccountClicked = async () => {
 
 const removeAccount = async (accountID: number) => {
   if (await window.electron.showQuestion(
-    'Are you sure you want to remove this account from Semiphemeral?',
+    'Are you sure you want to remove this account from Cyd?',
     'Yes, remove it',
     'No, keep it'
   )) {
@@ -246,10 +246,10 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="manageAccountClicked">
-                    Manage my Semiphemeral account
+                    Manage my Cyd account
                   </li>
                   <li class="menu-btn" @click="signOutClicked">
-                    Sign out of my Semiphemeral account
+                    Sign out of my Cyd account
                   </li>
                 </template>
                 <template v-else>
@@ -260,7 +260,7 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="signInClicked">
-                    Sign in to Semiphemeral to access premium features
+                    Sign in to Cyd to access premium features
                   </li>
                 </template>
                 <li class="menu-line">
