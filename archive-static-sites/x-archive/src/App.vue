@@ -19,8 +19,8 @@ onMounted(() => {
     <div class="d-flex flex-column min-vh-100">
       <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
-          <a class="navbar-brand" href="https://semiphemeral.com" target="_blank">
-            <img src="./assets/logo.png" alt="Semiphemeral" class="logo" style="height: 40px;">
+          <a class="navbar-brand" href="https://cyd.social" target="_blank">
+            <img src="./assets/logo.png" alt="Cyd" class="logo" style="height: 40px;">
           </a>
           <span class="navbar-text">
             <i class="fa-brands fa-x-twitter"></i> Archive: <b>@{{ archiveData.username }}</b>
@@ -49,8 +49,8 @@ onMounted(() => {
       </div>
       <footer class="mt-auto bg-light py-3">
         <div class="container">
-          <p class="text-center mb-0">Archive created with <a href="https://semiphemeral.com/">Semiphemeral</a> v{{
-            archiveData.semipheralVersion }} | Exported {{
+          <p class="text-center mb-0">Archive created with <a href="https://cyd.social/">Cyd</a> v{{
+            archiveData.appVersion }} | Exported {{
               formattedDate(archiveData.createdAt) }}</p>
         </div>
       </footer>
@@ -60,13 +60,13 @@ onMounted(() => {
     <div class="archive-data-missing d-flex justify-content-center align-items-center vh-100">
       <div class="container">
         <div class="text-center">
-          <img src="./assets/logo.png" alt="Semiphemeral" class="img-fluid mb-4">
+          <img src="./assets/logo.png" alt="Cyd" class="img-fluid mb-4">
           <i class="fa-solid fa-triangle-exclamation" />
         </div>
         <p class="text-center">
           Uh oh! <code>assets/archive.js</code> is missing, so I cannot display your archive.
         </p>
-        <p class="text-center">Try archiving your X data with Semiphemeral again.</p>
+        <p class="text-center">Try archiving your X data with Cyd again.</p>
       </div>
     </div>
   </template>
