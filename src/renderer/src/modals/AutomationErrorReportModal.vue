@@ -244,8 +244,8 @@ onUnmounted(() => {
                                         </div>
                                     </li>
                                 </ul>
-                                <div v-else class="error-logo text-center">
-                                    <img src="/logo.png" class="logo mb-3" alt="Cyd Avatar">
+                                <div v-else class="error-avatar text-center">
+                                    <img src="/avatar1.svg" class="cyd-avatar mb-3" alt="Cyd Avatar">
                                 </div>
                             </div>
                         </div>
@@ -269,7 +269,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.error-logo img {
+.error-avatar img {
     width: 120px;
     animation: spin 2s ease-in-out infinite;
     margin: 2rem;

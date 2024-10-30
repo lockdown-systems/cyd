@@ -73,11 +73,12 @@ onMounted(async () => {
   <div v-if="!isRefreshing">
     <template v-if="account.type == 'unknown'">
       <div class="container mt-5">
-        <div class="text-center">
-          <img src="/logo.png" class="logo mb-3" alt="Cyd Avatar" style="width: 120px;">
+        <div class="text-center mb-3">
+          <img src="/avatar2.svg" class="cyd-avatar" alt="Cyd Avatar">
         </div>
         <p class="lead">
-          With Cyd, you can automatically delete your data in tech platforms, except for
+          With <img src="/logotext.svg" class="cyd-logotext" alt="Cyd">, you can automatically delete your data in tech
+          platforms, except for
           what you want to keep.
         </p>
         <p class="lead fw-bold">
@@ -128,6 +129,14 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.cyd-avatar {
+  width: 130px;
+}
+
+.cyd-logotext {
+  height: 1em;
+}
+
 .card:hover {
   cursor: pointer;
   background-color: #e8f7ff;
