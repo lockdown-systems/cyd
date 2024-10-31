@@ -144,7 +144,7 @@ async function createWindow() {
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
     const win = new BrowserWindow({
         width: 1000,
-        height: 800,
+        height: 900,
         minWidth: 900,
         minHeight: 700,
         webPreferences: {
@@ -426,7 +426,7 @@ async function createWindow() {
     // Open dev tools?
     if (cydDevMode) {
         win.webContents.openDevTools();
-        win.setSize(1500, 800);
+        win.setSize(1500, 900);
     }
 
     // When devtools opens, make sure the window is wide enough
