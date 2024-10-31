@@ -64,7 +64,6 @@ onMounted(async () => {
   if (await getAccountRunning(props.account.id)) {
     console.error('Account was running and got interrupted');
     await setAccountRunning(props.account.id, false);
-    emitter?.emit('show-interrupted');
   }
 });
 </script>
