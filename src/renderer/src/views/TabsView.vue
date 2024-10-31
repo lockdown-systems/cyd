@@ -6,6 +6,7 @@ import CydAPIClient from '../../../cyd-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 import ManageAccountView from './ManageAccountView.vue';
+import AboutView from './AboutView.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -24,9 +25,11 @@ const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 
 const hideAllAccounts = ref(false);
 const showManageAccount = ref(false);
+const showAbout = ref(false);
 
 const accountClicked = async (account: Account) => {
   hideManageAccountView();
+  hideAboutView();
 
   activeAccountId.value = account.id;
 
@@ -45,6 +48,7 @@ const accountClicked = async (account: Account) => {
 
 const addAccountClicked = async () => {
   hideManageAccountView();
+  hideAboutView();
 
   // Do we already have an unknown account?
   const unknownAccount = accounts.value.find((account) => account.type === 'unknown');
@@ -87,6 +91,7 @@ const removeAccount = async (accountID: number) => {
 
 const accountSelected = async (account: Account, accountType: string) => {
   hideManageAccountView();
+  hideAboutView();
 
   try {
     const newAccount = await window.electron.database.selectAccountType(account.id, accountType);
@@ -127,12 +132,15 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
 
 const showManageAccountView = () => {
   userBtnShowMenu.value = false;
+
   showManageAccount.value = true;
+  showAbout.value = false;
   hideAllAccounts.value = true;
 };
 
 const hideManageAccountView = () => {
   showManageAccount.value = false;
+  showAbout.value = false;
   hideAllAccounts.value = false;
 };
 
@@ -140,6 +148,23 @@ emitter?.on('show-manage-account', showManageAccountView);
 
 const manageAccountClicked = async () => {
   showManageAccountView();
+};
+
+const showAboutView = () => {
+  userBtnShowMenu.value = false;
+  showManageAccount.value = false;
+  showAbout.value = true;
+  hideAllAccounts.value = true;
+};
+
+const hideAboutView = () => {
+  showManageAccount.value = false;
+  showAbout.value = false;
+  hideAllAccounts.value = false;
+};
+
+const aboutClicked = async () => {
+  showAboutView();
 };
 
 const signInClicked = async () => {
@@ -238,7 +263,7 @@ onUnmounted(async () => {
           <div class="btn-container">
             <div ref="userMenuBtnEl" class="user-btn sidebar-btn d-flex justify-content-center align-items-center"
               @mouseover="userBtnShowInfo = true" @mouseleave="userBtnShowInfo = false" @click="userMenuClicked">
-              <i class="fa-solid fa-user-ninja" />
+              <i class="fa-solid fa-bars" />
             </div>
             <div v-if="userBtnShowInfo" class="info-popup">
               <template v-if="deviceInfo?.valid">
@@ -284,6 +309,9 @@ onUnmounted(async () => {
                 <li class="menu-btn" @click="advancedSettingsClicked">
                   Advanced settings
                 </li>
+                <li class="menu-btn" @click="aboutClicked">
+                  About
+                </li>
               </ul>
             </div>
           </div>
@@ -291,10 +319,16 @@ onUnmounted(async () => {
       </div>
 
       <div class="main-content col">
-        <ManageAccountView :should-show="showManageAccount" />
+        <!-- Accounts -->
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
           :class="{ 'hide': hideAllAccounts || activeAccountId !== account.id }" @account-selected="accountSelected"
           @on-remove-clicked="removeAccount(account.id)" />
+
+        <!-- Manay my Cyd account -->
+        <ManageAccountView :should-show="showManageAccount" />
+
+        <!-- About -->
+        <AboutView :should-show="showAbout" />
       </div>
     </div>
   </div>
