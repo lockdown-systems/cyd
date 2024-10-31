@@ -338,8 +338,8 @@ onUnmounted(async () => {
 .sidebar {
   height: 100vh;
   width: 66px;
-  background-color: #254a5b;
-  border-right: 3px solid #5b9bb9;
+  background-color: #3f5f8b;
+  border-right: 3px solid #5885c4;
 }
 
 .sidebar-btn {

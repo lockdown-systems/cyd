@@ -205,6 +205,7 @@ body {
   padding: 3px 6px;
   border-radius: 4px;
   white-space: nowrap;
+  z-index: 1000;
 }
 
 /* Modal styles */
