@@ -22,10 +22,12 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 
+const hideAllAccounts = ref(false);
 const showManageAccount = ref(false);
 
 const accountClicked = async (account: Account) => {
-  showManageAccount.value = false;
+  hideManageAccountView();
+
   activeAccountId.value = account.id;
 
   // If we clicked out of an unknown account, remove the unknown account
@@ -42,6 +44,8 @@ const accountClicked = async (account: Account) => {
 };
 
 const addAccountClicked = async () => {
+  hideManageAccountView();
+
   // Do we already have an unknown account?
   const unknownAccount = accounts.value.find((account) => account.type === 'unknown');
   if (unknownAccount) {
@@ -82,6 +86,8 @@ const removeAccount = async (accountID: number) => {
 }
 
 const accountSelected = async (account: Account, accountType: string) => {
+  hideManageAccountView();
+
   try {
     const newAccount = await window.electron.database.selectAccountType(account.id, accountType);
     if (newAccount === null) {
@@ -119,15 +125,21 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
   }
 };
 
-const showManageAccountModal = () => {
+const showManageAccountView = () => {
   userBtnShowMenu.value = false;
   showManageAccount.value = true;
+  hideAllAccounts.value = true;
 };
 
-emitter?.on('show-manage-account', showManageAccountModal);
+const hideManageAccountView = () => {
+  showManageAccount.value = false;
+  hideAllAccounts.value = false;
+};
+
+emitter?.on('show-manage-account', showManageAccountView);
 
 const manageAccountClicked = async () => {
-  showManageAccountModal();
+  showManageAccountView();
 };
 
 const signInClicked = async () => {
@@ -279,14 +291,10 @@ onUnmounted(async () => {
       </div>
 
       <div class="main-content col">
-        <template v-if="showManageAccount">
-          <ManageAccountView />
-        </template>
-        <template v-else>
-          <AccountView v-for="account in accounts" :key="account.id" :account="account"
-            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected"
-            @on-remove-clicked="removeAccount(account.id)" />
-        </template>
+        <ManageAccountView :should-show="showManageAccount" />
+        <AccountView v-for="account in accounts" :key="account.id" :account="account"
+          :class="{ 'hide': hideAllAccounts || activeAccountId !== account.id }" @account-selected="accountSelected"
+          @on-remove-clicked="removeAccount(account.id)" />
       </div>
     </div>
   </div>
