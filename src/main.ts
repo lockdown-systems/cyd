@@ -44,7 +44,7 @@ interface Config {
 // Load the config
 const configPath = path.join(getResourcesPath(), 'config.json');
 if (!fs.existsSync(configPath)) {
-    dialog.showErrorBox('Semiphemeral Error', 'Cannot find config.json!');
+    dialog.showErrorBox('Cyd Error', 'Cannot find config.json!');
     app.quit();
 }
 const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -62,23 +62,23 @@ if (!app.requestSingleInstanceLock()) {
 // Initialize the logger
 log.initialize();
 log.transports.file.level = false; // Disable file logging
-log.info('Semiphemeral version:', app.getVersion());
+log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
-const semiphemeralDevtools = process.env.SEMIPHEMERAL_DEVTOOLS === "1";
+const cydDevMode = process.env.CYD_DEV === "1";
 
 async function initializeApp() {
     // Display message in dev mode
     if (config.mode == "dev") {
         dialog.showMessageBoxSync({
-            title: `Semiphemeral ${app.getVersion()}`,
-            message: `You're running Semiphemeral ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
+            title: `Cyd ${app.getVersion()}`,
+            message: `You're running Cyd ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
             type: 'info',
         });
     } else if (config.mode == "local") {
         dialog.showMessageBoxSync({
-            title: `Semiphemeral ${app.getVersion()}`,
-            message: `You're running Semiphemeral ${app.getVersion()} in local mode.`,
+            title: `Cyd ${app.getVersion()}`,
+            message: `You're running Cyd ${app.getVersion()} in local mode.`,
             type: 'info',
         });
     }
@@ -96,7 +96,7 @@ async function initializeApp() {
         database.runMainMigrations();
     } catch (error) {
         log.error("Failed to run migrations:", error);
-        dialog.showErrorBox('Semiphemeral Error', 'Failed to run database migrations. The application will now exit.');
+        dialog.showErrorBox('Cyd Error', 'Failed to run database migrations. The application will now exit.');
         app.quit();
         return;
     }
@@ -178,6 +178,7 @@ async function createWindow() {
                 if (os.platform() == 'darwin' || os.platform() == 'win32') {
                     const updateAvailable = () => {
                         dialog.showMessageBoxSync({
+                            title: "Cyd",
                             message: `An update is available and is downloading in the background. You will be prompted to install it once it's ready.`,
                             type: 'info',
                         });
@@ -187,7 +188,8 @@ async function createWindow() {
                     };
                     const updateNotAvailable = () => {
                         dialog.showMessageBoxSync({
-                            message: `You are using the latest version, Semiphemeral ${app.getVersion()}.`,
+                            title: "Cyd",
+                            message: `You are using the latest version, Cyd ${app.getVersion()}.`,
                             type: 'info',
                         });
                         autoUpdater.off('update-available', updateAvailable);
@@ -196,6 +198,7 @@ async function createWindow() {
                     };
                     const updateError = (error: Error) => {
                         dialog.showMessageBoxSync({
+                            title: "Cyd",
                             message: `Error checking for updates: ${error.toString()}`,
                             type: 'info',
                         });
@@ -217,7 +220,8 @@ async function createWindow() {
                 } else {
                     // Linux updates are done through the package manager
                     dialog.showMessageBoxSync({
-                        message: `You are running Semiphemeral ${app.getVersion()}.\n\nInstall updates with your Linux package manager to make sure you're on the latest version.`,
+                        title: "Cyd",
+                        message: `You are running Cyd ${app.getVersion()}.\n\nInstall updates with your Linux package manager to make sure you're on the latest version.`,
                         type: 'info',
                     });
                 }
@@ -268,7 +272,7 @@ async function createWindow() {
 
         ipcMain.handle('shouldOpenDevtools', async (_) => {
             try {
-                return semiphemeralDevtools;
+                return cydDevMode;
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }
@@ -277,6 +281,7 @@ async function createWindow() {
         ipcMain.handle('showMessage', async (_, message: string) => {
             try {
                 dialog.showMessageBoxSync({
+                    title: "Cyd",
                     message: message,
                     type: 'info',
                 });
@@ -287,7 +292,7 @@ async function createWindow() {
 
         ipcMain.handle('showError', async (_, message: string) => {
             try {
-                dialog.showErrorBox('Semiphemeral Error', message);
+                dialog.showErrorBox('Cyd Error', message);
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }
@@ -296,6 +301,7 @@ async function createWindow() {
         ipcMain.handle('showQuestion', async (_, message: string, trueText: string, falseText: string) => {
             try {
                 const result = dialog.showMessageBoxSync({
+                    title: "Cyd",
                     message: message,
                     type: 'question',
                     buttons: [falseText, trueText],
@@ -418,7 +424,7 @@ async function createWindow() {
     };
 
     // Open dev tools?
-    if (semiphemeralDevtools) {
+    if (cydDevMode) {
         win.webContents.openDevTools();
         win.setSize(1500, 800);
     }

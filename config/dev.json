@@ -1,6 +1,6 @@
 {
     "mode": "dev",
-    "apiURL": "https://dev-api.semiphemeral.com",
-    "dashURL": "https://dev-dash.semiphemeral.com",
-    "plausibleDomain": "dev-app.semiphemeral.com"
+    "apiURL": "https://dev-api.cyd.social",
+    "dashURL": "https://dev-dash.cyd.social",
+    "plausibleDomain": "dev-plausible-app.cyd.social"
 }

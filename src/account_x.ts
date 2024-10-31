@@ -1252,7 +1252,7 @@ export class XAccountController {
         });
 
         const archive: XArchiveTypes.XArchive = {
-            semipheralVersion: app.getVersion(),
+            appVersion: app.getVersion(),
             username: this.account.username,
             createdAt: new Date().toLocaleString(),
             tweets: formattedTweets,

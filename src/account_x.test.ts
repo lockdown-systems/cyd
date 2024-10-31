@@ -538,7 +538,7 @@ test(
     { timeout: 10000 },
     async () => {
         mitmController.setTestdata("indexDMs");
-        // https://dev-admin.semiphemeral.com/#/error/4
+        // https://dev-admin.cyd.social/#/error/4
         controller.mitmController.responseData = [{
             "host": "x.com",
             "url": "/i/api/1.1/dm/user_updates.json?nsfw_filtering_enabled=false&cursor=GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&supports_edit=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
@@ -626,7 +626,7 @@ test("XAccountController.indexParseMessages() should add all the messages, on re
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-4", async () => {
-    // https://dev-admin.semiphemeral.com/#/error/4
+    // https://dev-admin.cyd.social/#/error/4
     mitmController.setAutomationErrorReportTestdata("dev-4.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
@@ -634,7 +634,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-10", async () => {
-    // https://dev-admin.semiphemeral.com/#/error/10
+    // https://dev-admin.cyd.social/#/error/10
     mitmController.setAutomationErrorReportTestdata("dev-10.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
@@ -642,7 +642,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-25", async () => {
-    // https://dev-admin.semiphemeral.com/#/error/25
+    // https://dev-admin.cyd.social/#/error/25
     mitmController.setAutomationErrorReportTestdata("dev-25.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
@@ -650,7 +650,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-34", async () => {
-    // https://dev-admin.semiphemeral.com/#/error/34
+    // https://dev-admin.cyd.social/#/error/34
     mitmController.setAutomationErrorReportTestdata("dev-34.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
@@ -658,7 +658,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-51", async () => {
-    // https://dev-admin.semiphemeral.com/#/error/51
+    // https://dev-admin.cyd.social/#/error/51
     mitmController.setAutomationErrorReportTestdata("dev-51.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)
@@ -666,7 +666,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 })
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-54", async () => {
-    // https://dev-admin.semiphemeral.com/#/error/54
+    // https://dev-admin.cyd.social/#/error/54
     mitmController.setAutomationErrorReportTestdata("dev-54.json")
     const progress: XProgress = await controller.indexParseTweets(false)
     expect(progress.likesIndexed).toBe(0)

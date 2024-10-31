@@ -3,7 +3,7 @@ import { ref, provide, onMounted, getCurrentInstance } from "vue"
 
 import { DeviceInfo, PlausibleEvents } from './types';
 import { getDeviceInfo } from './util';
-import SemiphemeralAPIClient from '../../semiphemeral-api-client';
+import CydAPIClient from '../../cyd-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
@@ -22,7 +22,7 @@ const isFirstLoad = ref(true);
 const isSignedIn = ref(false);
 
 // API client
-const apiClient = ref(new SemiphemeralAPIClient());
+const apiClient = ref(new CydAPIClient());
 provide('apiClient', apiClient);
 
 // Device info
@@ -45,7 +45,7 @@ provide('refreshDeviceInfo', refreshDeviceInfo);
 
 // Refresh API client
 const refreshAPIClient = async () => {
-  apiClient.value = new SemiphemeralAPIClient();
+  apiClient.value = new CydAPIClient();
   apiClient.value.initialize(await window.electron.getAPIURL());
   await refreshDeviceInfo();
 };
@@ -114,7 +114,7 @@ onMounted(async () => {
           <div class="d-flex align-items-center h-100">
             <div class="w-100">
               <div class="text-center">
-                <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird" style="width: 120px;">
+                <img src="/logo.png" class="logo mb-3" alt="Cyd Avatar" style="width: 120px;">
               </div>
               <p class="lead text-muted text-center">
                 Automatically delete your old posts, except the ones you want to keep.

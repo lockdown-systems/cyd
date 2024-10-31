@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 import SignInModal from './SignInModal.vue'
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 
 import { stubElectron } from '../test_util';
 
@@ -53,7 +53,7 @@ describe('<SignInModal />', () => {
     cy.mount(SignInModal, {
       global: {
         plugins: [(app) => {
-          app.provide('apiClient', ref(new SemiphemeralAPIClient()));
+          app.provide('apiClient', ref(new CydAPIClient()));
           app.provide('userEmail', ref(testEmail));
         }]
       }
@@ -73,7 +73,7 @@ describe('<SignInModal />', () => {
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
-      const apiClient = new SemiphemeralAPIClient();
+      const apiClient = new CydAPIClient();
       apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
@@ -110,7 +110,7 @@ describe('<SignInModal />', () => {
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
-      const apiClient = new SemiphemeralAPIClient();
+      const apiClient = new CydAPIClient();
       apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
@@ -155,7 +155,7 @@ describe('<SignInModal />', () => {
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
-      const apiClient = new SemiphemeralAPIClient();
+      const apiClient = new CydAPIClient();
       apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
@@ -212,7 +212,7 @@ describe('<SignInModal />', () => {
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
-      const apiClient = new SemiphemeralAPIClient();
+      const apiClient = new CydAPIClient();
       apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {
@@ -269,7 +269,7 @@ describe('<SignInModal />', () => {
     const testEmail = 'test@lockdown.systems';
 
     cy.window().then(async (_win) => {
-      const apiClient = new SemiphemeralAPIClient();
+      const apiClient = new CydAPIClient();
       apiClient.initialize('https://mock/api');
 
       cy.mount(SignInModal, {

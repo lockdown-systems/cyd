@@ -11,7 +11,7 @@ import {
 } from 'vue'
 import Electron from 'electron';
 
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
@@ -37,7 +37,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['onRefreshClicked', 'onRemoveClicked']);
 
-const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const accountXViewModel = ref<AccountXViewModel | null>(null);

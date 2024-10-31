@@ -73,8 +73,6 @@ function findLatestSigntoolPath(): string {
   }
 }
 
-const shouldSignWindows = process.env.WINDOWS_SIGN === 'true';
-
 function removeCodeSignatures(dir: string) {
   if (!fs.existsSync(dir)) return;
 
@@ -96,19 +94,19 @@ function removeCodeSignatures(dir: string) {
 
 const config: ForgeConfig = {
   packagerConfig: {
-    name: 'Semiphemeral',
-    executableName: os.platform() == 'linux' ? 'semiphemeral' : 'Semiphemeral',
-    appBundleId: 'systems.lockdown.semiphemeral',
+    name: 'Cyd',
+    executableName: os.platform() == 'linux' ? 'cyd' : 'Cyd',
+    appBundleId: 'systems.lockdown.cyd',
     appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
     icon: path.join(assetsPath, 'icon'),
     beforeAsar: [
       // Copy the config.json file to the resources path
       (_buildPath, _electronVersion, _platform, _arch, callback) => {
-        const semiphemeralEnv = process.env.SEMIPHEMERAL_ENV || 'prod';
-        const semiphemeralConfigPath = path.join(__dirname, 'config', `${semiphemeralEnv}.json`);
-        const semiphemeralConfigDestPath = path.join(buildPath, 'config.json');
-        fs.copyFileSync(semiphemeralConfigPath, semiphemeralConfigDestPath);
+        const cydEnv = process.env.CYD_ENV || 'prod';
+        const cydConfigPath = path.join(__dirname, 'config', `${cydEnv}.json`);
+        const cydConfigDestPath = path.join(buildPath, 'config.json');
+        fs.copyFileSync(cydConfigPath, cydConfigDestPath);
         callback();
       },
     ],
@@ -121,26 +119,26 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     // Windows
-    // new MakerSquirrel({
-    //   iconUrl: "https://releases.lockdown.systems/semiphemeral/icon.ico",
-    //   name: "Semiphemeral",
-    //   setupIcon: path.join(assetsPath, "icon.ico"),
-    //   windowsSign: shouldSignWindows ? {
-    //     signToolPath: findLatestSigntoolPath()
-    //   } : undefined,
-    //   // For auto-updates
-    //   remoteReleases: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/windows/${process.arch}`,
-    //   noDelta: false,
-    // }),
+    new MakerSquirrel({
+      iconUrl: "https://releases.lockdown.systems/cyd/icon.ico",
+      name: "Cyd",
+      setupIcon: path.join(assetsPath, "icon.ico"),
+      windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {
+        signToolPath: findLatestSigntoolPath()
+      } : undefined,
+      // For auto-updates
+      remoteReleases: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/windows/${process.arch}`,
+      noDelta: process.env.WINDOWS_RELEASE === 'true' ? false : true,
+    }),
     // macOS DMG
     new MakerDMG({
-      name: `Semiphemeral ${version}`,
+      name: `Cyd ${version}`,
       background: path.join(assetsPath, 'dmg-background.png'),
       iconSize: 110,
       icon: path.join(assetsPath, 'installer-icon.icns'),
       overwrite: true,
       contents: [
-        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Semiphemeral-darwin-universal/Semiphemeral.app` },
+        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Cyd-darwin-universal/Cyd.app` },
         { "x": 430, "y": 80, "type": "link", "path": "/Applications" }
       ],
       additionalDMGOptions: {
@@ -154,7 +152,7 @@ const config: ForgeConfig = {
     }),
     // macOS ZIP, for auto-updates
     new MakerZIP({
-      macUpdateManifestBaseUrl: `https://releases.lockdown.systems/semiphemeral/${process.env.SEMIPHEMERAL_ENV}/macos/universal`
+      macUpdateManifestBaseUrl: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/macos/universal`
     }),
     // Linux RPM
     new MakerRpm({}),
@@ -163,10 +161,10 @@ const config: ForgeConfig = {
       options: {
         icon: path.join(assetsPath, 'icon.png'),
         maintainer: 'Lockdown Systems LLC',
-        homepage: 'https://semiphemeral.com',
+        homepage: 'https://cyd.social',
         categories: ['Utility', 'Network'],
         description: 'Claw back your data from Big Tech',
-        productName: "Semiphemeral",
+        productName: "Cyd",
       }
     })
   ],
@@ -177,7 +175,7 @@ const config: ForgeConfig = {
       bucket: 'lockdownsystems-releases',
       endpoint: 'https://sfo3.digitaloceanspaces.com',
       region: 'sfo3',
-      folder: process.env.SEMIPHEMERAL_ENV,
+      folder: process.env.CYD_ENV,
       public: true,
       keyResolver: (filename: string, platform: string, arch: string) => {
         if (platform == 'win32') {
@@ -186,7 +184,7 @@ const config: ForgeConfig = {
         if (platform == 'darwin') {
           platform = 'macos';
         }
-        return `semiphemeral/${process.env.SEMIPHEMERAL_ENV}/${platform}/${arch}/${filename}`
+        return `cyd/${process.env.CYD_ENV}/${platform}/${arch}/${filename}`
       }
     })
   ],
@@ -211,8 +209,8 @@ const config: ForgeConfig = {
 
       console.log('🍎 Preparing to codesign macOS app bundle');
 
-      const universalBuildPath = path.join(__dirname, 'out', 'Semiphemeral-darwin-universal');
-      const appPath = path.join(universalBuildPath, "Semiphemeral.app");
+      const universalBuildPath = path.join(__dirname, 'out', 'Cyd-darwin-universal');
+      const appPath = path.join(universalBuildPath, "Cyd.app");
       const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
       const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
       const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');

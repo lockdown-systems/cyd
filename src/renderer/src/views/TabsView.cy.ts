@@ -1,5 +1,5 @@
 import TabsView from './TabsView.vue';
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 
 import { ref } from 'vue';
 
@@ -76,7 +76,7 @@ describe('<TabsView />', () => {
         cy.mount(TabsView, {
             global: {
                 plugins: [(app) => {
-                    app.provide('apiClient', ref(new SemiphemeralAPIClient()));
+                    app.provide('apiClient', ref(new CydAPIClient()));
                     app.provide('deviceInfo', ref({
                         userEmail: "test@lockdown.systems",
                         deviceDescription: "Test Device",

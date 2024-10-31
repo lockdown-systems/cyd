@@ -2,10 +2,11 @@
 import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import AccountButton from '../components/AccountButton.vue';
 import AccountView from './AccountView.vue';
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
 import ManageAccountView from './ManageAccountView.vue';
+import AboutView from './AboutView.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -17,15 +18,19 @@ const userBtnShowMenu = ref(false);
 const accounts = ref<Account[]>([]);
 const activeAccountId = ref<number | null>(null);
 
-const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 
+const hideAllAccounts = ref(false);
 const showManageAccount = ref(false);
+const showAbout = ref(false);
 
 const accountClicked = async (account: Account) => {
-  showManageAccount.value = false;
+  hideManageAccountView();
+  hideAboutView();
+
   activeAccountId.value = account.id;
 
   // If we clicked out of an unknown account, remove the unknown account
@@ -42,6 +47,9 @@ const accountClicked = async (account: Account) => {
 };
 
 const addAccountClicked = async () => {
+  hideManageAccountView();
+  hideAboutView();
+
   // Do we already have an unknown account?
   const unknownAccount = accounts.value.find((account) => account.type === 'unknown');
   if (unknownAccount) {
@@ -59,7 +67,7 @@ const addAccountClicked = async () => {
 
 const removeAccount = async (accountID: number) => {
   if (await window.electron.showQuestion(
-    'Are you sure you want to remove this account from Semiphemeral?',
+    'Are you sure you want to remove this account from Cyd?',
     'Yes, remove it',
     'No, keep it'
   )) {
@@ -82,6 +90,9 @@ const removeAccount = async (accountID: number) => {
 }
 
 const accountSelected = async (account: Account, accountType: string) => {
+  hideManageAccountView();
+  hideAboutView();
+
   try {
     const newAccount = await window.electron.database.selectAccountType(account.id, accountType);
     if (newAccount === null) {
@@ -119,15 +130,41 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
   }
 };
 
-const showManageAccountModal = () => {
+const showManageAccountView = () => {
   userBtnShowMenu.value = false;
+
   showManageAccount.value = true;
+  showAbout.value = false;
+  hideAllAccounts.value = true;
 };
 
-emitter?.on('show-manage-account', showManageAccountModal);
+const hideManageAccountView = () => {
+  showManageAccount.value = false;
+  showAbout.value = false;
+  hideAllAccounts.value = false;
+};
+
+emitter?.on('show-manage-account', showManageAccountView);
 
 const manageAccountClicked = async () => {
-  showManageAccountModal();
+  showManageAccountView();
+};
+
+const showAboutView = () => {
+  userBtnShowMenu.value = false;
+  showManageAccount.value = false;
+  showAbout.value = true;
+  hideAllAccounts.value = true;
+};
+
+const hideAboutView = () => {
+  showManageAccount.value = false;
+  showAbout.value = false;
+  hideAllAccounts.value = false;
+};
+
+const aboutClicked = async () => {
+  showAboutView();
 };
 
 const signInClicked = async () => {
@@ -226,7 +263,7 @@ onUnmounted(async () => {
           <div class="btn-container">
             <div ref="userMenuBtnEl" class="user-btn sidebar-btn d-flex justify-content-center align-items-center"
               @mouseover="userBtnShowInfo = true" @mouseleave="userBtnShowInfo = false" @click="userMenuClicked">
-              <i class="fa-solid fa-user-ninja" />
+              <i class="fa-solid fa-bars" />
             </div>
             <div v-if="userBtnShowInfo" class="info-popup">
               <template v-if="deviceInfo?.valid">
@@ -246,10 +283,10 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="manageAccountClicked">
-                    Manage my Semiphemeral account
+                    Manage my Cyd account
                   </li>
                   <li class="menu-btn" @click="signOutClicked">
-                    Sign out of my Semiphemeral account
+                    Sign out of my Cyd account
                   </li>
                 </template>
                 <template v-else>
@@ -260,7 +297,7 @@ onUnmounted(async () => {
                     <hr>
                   </li>
                   <li class="menu-btn" @click="signInClicked">
-                    Sign in to Semiphemeral to access premium features
+                    Sign in to Cyd to access premium features
                   </li>
                 </template>
                 <li class="menu-line">
@@ -272,6 +309,9 @@ onUnmounted(async () => {
                 <li class="menu-btn" @click="advancedSettingsClicked">
                   Advanced settings
                 </li>
+                <li class="menu-btn" @click="aboutClicked">
+                  About
+                </li>
               </ul>
             </div>
           </div>
@@ -279,14 +319,16 @@ onUnmounted(async () => {
       </div>
 
       <div class="main-content col">
-        <template v-if="showManageAccount">
-          <ManageAccountView />
-        </template>
-        <template v-else>
-          <AccountView v-for="account in accounts" :key="account.id" :account="account"
-            :class="{ 'hide': activeAccountId !== account.id }" @account-selected="accountSelected"
-            @on-remove-clicked="removeAccount(account.id)" />
-        </template>
+        <!-- Accounts -->
+        <AccountView v-for="account in accounts" :key="account.id" :account="account"
+          :class="{ 'hide': hideAllAccounts || activeAccountId !== account.id }" @account-selected="accountSelected"
+          @on-remove-clicked="removeAccount(account.id)" />
+
+        <!-- Manay my Cyd account -->
+        <ManageAccountView :should-show="showManageAccount" />
+
+        <!-- About -->
+        <AboutView :should-show="showAbout" />
       </div>
     </div>
   </div>

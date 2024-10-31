@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, inject, Ref, watch, getCurrentInstance } from 'vue';
 import type { DeviceInfo } from '../types';
 import { Account, XProgressInfo } from '../../../shared_types'
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
+import CydAPIClient from '../../../cyd-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
@@ -18,7 +18,7 @@ const signInModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
 const userEmail = inject('userEmail') as Ref<string>;
-const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
@@ -192,7 +192,7 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Sign in to Semiphemeral to access premium features
+                        Sign in to Cyd to access premium features
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>

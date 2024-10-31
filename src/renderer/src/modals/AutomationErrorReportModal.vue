@@ -2,8 +2,8 @@
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
 import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
 import { PlausibleEvents } from "../types";
-import SemiphemeralAPIClient from '../../../semiphemeral-api-client';
-import { PostAutomationErrorReportAPIRequest } from '../../../semiphemeral-api-client';
+import CydAPIClient from '../../../cyd-api-client';
+import { PostAutomationErrorReportAPIRequest } from '../../../cyd-api-client';
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
@@ -18,7 +18,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 const automationErrorReportModal = ref<HTMLElement | null>(null);
 let modalInstance: Modal | null = null;
 
-const apiClient = inject('apiClient') as Ref<SemiphemeralAPIClient>;
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 
 // Automation error fields
 const appVersion = ref('');
@@ -213,8 +213,7 @@ onUnmounted(() => {
                                     <li>
                                         <label>App version:</label>
                                         <span>
-                                            Semiphemeral {{ appVersion }} for {{
-                                                clientPlatform }}
+                                            Cyd {{ appVersion }} for {{ clientPlatform }}
                                         </span>
                                     </li>
                                     <li>
@@ -245,8 +244,8 @@ onUnmounted(() => {
                                         </div>
                                     </li>
                                 </ul>
-                                <div v-else class="error-logo text-center">
-                                    <img src="/logo.png" class="logo mb-3" alt="Semiphemeral Bird">
+                                <div v-else class="error-avatar text-center">
+                                    <img src="/avatar1.svg" class="cyd-avatar mb-3" alt="Cyd Avatar">
                                 </div>
                             </div>
                         </div>
@@ -270,7 +269,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.error-logo img {
+.error-avatar img {
     width: 120px;
     animation: spin 2s ease-in-out infinite;
     margin: 2rem;
