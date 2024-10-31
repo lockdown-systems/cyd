@@ -28,8 +28,8 @@ img.cyd-avatar {
 }
 
 .bubble {
-  background-color: #c1fac4;
-  border: 1px solid #7ba57d;
+  background-color: #f8a81223;
+  border: 1px solid #f8a712;
   border-top-right-radius: 2rem;
   border-bottom-left-radius: 2rem;
   border-bottom-right-radius: 2rem;

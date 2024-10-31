@@ -267,10 +267,10 @@ onUnmounted(async () => {
             </div>
             <div v-if="userBtnShowInfo" class="info-popup">
               <template v-if="deviceInfo?.valid">
-                You are signed in as {{ deviceInfo?.userEmail }}
+                You are signed in to Cyd as {{ deviceInfo?.userEmail }}
               </template>
               <template v-else>
-                You are not signed in
+                You are not signed in to Cyd
               </template>
             </div>
             <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="menu-popup">
@@ -291,7 +291,7 @@ onUnmounted(async () => {
                 </template>
                 <template v-else>
                   <li class="menu-text">
-                    Not signed in
+                    Not signed in to Cyd
                   </li>
                   <li class="menu-line">
                     <hr>
@@ -338,8 +338,8 @@ onUnmounted(async () => {
 .sidebar {
   height: 100vh;
   width: 66px;
-  background-color: #254a5b;
-  border-right: 3px solid #5b9bb9;
+  background-color: #3f5f8b;
+  border-right: 3px solid #5885c4;
 }
 
 .sidebar-btn {

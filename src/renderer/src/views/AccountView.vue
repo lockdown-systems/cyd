@@ -102,7 +102,7 @@ onMounted(async () => {
     <template v-else-if="account.type == 'X'">
       <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
 
-      <div v-if="showPreventSleepMessage" class="prevent-sleep alert alert-warning d-flex align-items-center">
+      <div v-if="showPreventSleepMessage" class="prevent-sleep alert d-flex align-items-center">
         <div>
           <p class="mb-2">
             Your computer needs to be awake to use Cyd. Don't close the
@@ -147,7 +147,6 @@ onMounted(async () => {
 .select-account .name {
   font-size: 1.2rem;
   font-weight: bold;
-  ;
 }
 
 .prevent-sleep {
@@ -158,6 +157,8 @@ onMounted(async () => {
   z-index: 1;
   font-size: 0.8em;
   min-width: 500px;
+  background-color: #f8a81223;
+  border-color: #f8a712;
 }
 
 .prevent-sleep p {
