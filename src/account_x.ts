@@ -378,42 +378,6 @@ export class XAccountController {
         );
     }
 
-    async getUsernameStart() {
-        log.info("XAccountController.getUsernameStart");
-        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
-        await ses.clearCache();
-        await this.mitmController.startMonitoring();
-        await this.mitmController.startMITM(ses, ["api.x.com/1.1/account/settings.json"]);
-    }
-
-    async getUsernameStop() {
-        log.info("XAccountController.getUsernameStop");
-        await this.mitmController.stopMonitoring();
-        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
-        await this.mitmController.stopMITM(ses);
-    }
-
-    async getUsername(): Promise<string | null> {
-        log.info("XAccountController.getUsername");
-        let username = null;
-        if (!this.account) {
-            log.error("XAccountController.getUsername: account not found");
-            return username;
-        }
-
-        // See if we got settings.json
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            // If URL starts with /1.1/account/settings.json
-            if (this.mitmController.responseData[i].url.includes("/1.1/account/settings.json") && this.mitmController.responseData[i].status == 200) {
-                const body = JSON.parse(this.mitmController.responseData[i].body);
-                username = body.screen_name;
-                break;
-            }
-        }
-
-        return username;
-    }
-
     async indexStart() {
         const ses = session.fromPartition(`persist:account-${this.account?.id}`);
         await ses.clearCache();
@@ -1570,33 +1534,6 @@ export const defineIPCX = () => {
             const controller = getXAccountController(accountID);
             const job = JSON.parse(jobJSON) as XJob;
             controller.updateJob(job);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getUsernameStart', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.getUsernameStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getUsernameStop', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.getUsernameStop();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getUsername', async (_, accountID: number): Promise<string | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getUsername();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
