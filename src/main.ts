@@ -178,6 +178,7 @@ async function createWindow() {
                 if (os.platform() == 'darwin' || os.platform() == 'win32') {
                     const updateAvailable = () => {
                         dialog.showMessageBoxSync({
+                            title: "Cyd",
                             message: `An update is available and is downloading in the background. You will be prompted to install it once it's ready.`,
                             type: 'info',
                         });
@@ -187,6 +188,7 @@ async function createWindow() {
                     };
                     const updateNotAvailable = () => {
                         dialog.showMessageBoxSync({
+                            title: "Cyd",
                             message: `You are using the latest version, Cyd ${app.getVersion()}.`,
                             type: 'info',
                         });
@@ -196,6 +198,7 @@ async function createWindow() {
                     };
                     const updateError = (error: Error) => {
                         dialog.showMessageBoxSync({
+                            title: "Cyd",
                             message: `Error checking for updates: ${error.toString()}`,
                             type: 'info',
                         });
@@ -217,6 +220,7 @@ async function createWindow() {
                 } else {
                     // Linux updates are done through the package manager
                     dialog.showMessageBoxSync({
+                        title: "Cyd",
                         message: `You are running Cyd ${app.getVersion()}.\n\nInstall updates with your Linux package manager to make sure you're on the latest version.`,
                         type: 'info',
                     });
@@ -277,6 +281,7 @@ async function createWindow() {
         ipcMain.handle('showMessage', async (_, message: string) => {
             try {
                 dialog.showMessageBoxSync({
+                    title: "Cyd",
                     message: message,
                     type: 'info',
                 });
@@ -296,6 +301,7 @@ async function createWindow() {
         ipcMain.handle('showQuestion', async (_, message: string, trueText: string, falseText: string) => {
             try {
                 const result = dialog.showMessageBoxSync({
+                    title: "Cyd",
                     message: message,
                     type: 'question',
                     buttons: [falseText, trueText],
