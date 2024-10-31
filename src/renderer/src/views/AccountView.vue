@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, getCurrentInstance } from 'vue'
+import { ref, onMounted } from 'vue'
 import AccountXView from './AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
 import { getAccountRunning, setAccountRunning, openPreventSleepURL } from '../util';
-
-// Get the global emitter
-const vueInstance = getCurrentInstance();
-const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 const props = defineProps<{
   account: Account;
@@ -64,7 +60,6 @@ onMounted(async () => {
   if (await getAccountRunning(props.account.id)) {
     console.error('Account was running and got interrupted');
     await setAccountRunning(props.account.id, false);
-    emitter?.emit('show-interrupted');
   }
 });
 </script>

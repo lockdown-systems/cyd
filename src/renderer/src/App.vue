@@ -7,7 +7,6 @@ import CydAPIClient from '../../cyd-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
-import InterruptedModal from "./modals/InterruptedModal.vue";
 import AdvancedSettingsModal from "./modals/AdvancedSettingsModal.vue";
 
 import TabsView from "./views/TabsView.vue";
@@ -76,12 +75,6 @@ emitter?.on('show-automation-error', () => {
   showAutomationErrorReportModal.value = true;
 });
 
-// Interrupted modal
-const showInterruptedModal = ref(false);
-emitter?.on('show-interrupted', () => {
-  showInterruptedModal.value = true;
-});
-
 // Advanced settings modal
 const showAdvancedSettingsModal = ref(false);
 emitter?.on('show-advanced-settings', () => {
@@ -134,10 +127,6 @@ onMounted(async () => {
     <!-- Automation error report modal -->
     <AutomationErrorReportModal v-if="showAutomationErrorReportModal" @hide="showAutomationErrorReportModal = false"
       @close="showAutomationErrorReportModal = false" />
-
-    <!-- Interrupted modal -->
-    <InterruptedModal v-if="showInterruptedModal" @hide="showInterruptedModal = false"
-      @close="showInterruptedModal = false" />
 
     <!-- Advanced settings modal -->
     <AdvancedSettingsModal v-if="showAdvancedSettingsModal" @hide="showAdvancedSettingsModal = false"
