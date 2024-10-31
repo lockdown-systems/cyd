@@ -361,7 +361,6 @@ export class AccountXViewModel extends BaseViewModel {
 
     async login() {
         const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
-        let tries: number, success: boolean;
 
         this.showBrowser = true;
 
@@ -400,33 +399,20 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the username
         this.log("login", "getting username");
-        this.instructions = `You've logged in successfully. Now I'm scraping your username...`;
-
-        let username: string | null = null;
-        success = false;
-        for (tries = 0; tries < 3; tries++) {
-            await window.electron.X.getUsernameStart(this.account.id);
-            await this.loadURLWithRateLimit("https://x.com/settings/account");
-            await this.waitForSelector('a[href="/settings/your_twitter_data/account"]', "https://x.com/settings/account");
-            username = await window.electron.X.getUsername(this.account.id);
-            await window.electron.X.getUsernameStop(this.account.id);
-
-            if (username) {
-                success = true;
-                break;
-            } else {
-                this.log("login", `failed to get username, try #${tries}`);
-                await this.sleep(1000);
-            }
+        this.instructions = `You're logged in. Now I'm scraping your username...`;
+        if (this.webview.getURL() != "https://x.com/home") {
+            await this.loadURLWithRateLimit("https://x.com/home");
         }
-        if (!success) {
-            const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
-            await this.error(AutomationErrorType.X_login_FailedToGetUsername, {}, {
-                latestResponseData: latestResponseData,
-                currentURL: this.webview.getURL()
-            });
-            return;
-        }
+
+        // Wait for profile button to appear, and click it
+        await this.waitForSelector('a[aria-label="Profile"]', "https://x.com/home");
+        await this.scriptClickElement('a[aria-label="Profile"]');
+
+        // Wait for profile page to load, and get the username from the URL
+        await this.waitForSelector('div[data-testid="UserName"]');
+        const url = this.webview.getURL();
+        const urlObj = new URL(url);
+        const username = urlObj.pathname.substring(1);
 
         if (originalUsername !== null && username != originalUsername) {
             this.log("login", `username changed from ${this.account.xAccount?.username} to ${username}`);
