@@ -245,7 +245,7 @@ onUnmounted(() => {
                                     </li>
                                 </ul>
                                 <div v-else class="error-avatar text-center">
-                                    <img src="/avatar1.svg" class="cyd-avatar mb-3" alt="Cyd Avatar">
+                                    <img src="/avatar-error.svg" class="mb-3" alt="Cyd Error Message">
                                 </div>
                             </div>
                         </div>
@@ -270,18 +270,30 @@ onUnmounted(() => {
 
 <style scoped>
 .error-avatar img {
-    width: 120px;
-    animation: spin 2s ease-in-out infinite;
+    width: 180px;
+    animation: spin-alternate 1.5s linear infinite;
     margin: 2rem;
 }
 
-@keyframes spin {
-    from {
+@keyframes spin-alternate {
+    0% {
         transform: rotate(0deg);
     }
 
-    to {
-        transform: rotate(360deg);
+    25% {
+        transform: rotate(15deg);
+    }
+
+    50% {
+        transform: rotate(0deg);
+    }
+
+    75% {
+        transform: rotate(-15deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
     }
 }
 

@@ -157,7 +157,7 @@ onMounted(async () => {
   z-index: 1;
   font-size: 0.8em;
   min-width: 500px;
-  background-color: #f8a81223;
+  background-color: #fef3de;
   border-color: #f8a712;
 }
 
