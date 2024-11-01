@@ -135,7 +135,6 @@ const config: ForgeConfig = {
       name: `Cyd ${version}`,
       background: path.join(assetsPath, 'dmg-background.png'),
       iconSize: 110,
-      icon: path.join(assetsPath, 'installer-icon.icns'),
       overwrite: true,
       contents: [
         { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Cyd-darwin-universal/Cyd.app` },
