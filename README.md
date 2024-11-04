@@ -2,8 +2,8 @@
 
 The environment variable `CYD_ENV` is used to determine the API URL. The options are:
 
-- `dev`: the dev server at https://dev-api.semiphemeral.com/v1/
-- `prod` (default): the prod server at http://api.semiphemeral.com/v1/
+- `dev`: the dev server at https://dev-api.cyd.social/v1/
+- `prod` (default): the prod server at http://api.cyd.social/v1/
 
 If you want devtools to open up, set `CYD_DEV=1`.
 
@@ -55,20 +55,20 @@ To set up Windows:
 - Set up code signing
   - Install [Safenet Authentication Client](https://guides.harica.gr/docs/Guides/Software/Safenet-Authentication-Client/Drivers/)
   - Login to [HARICA](https://cm.harica.gr/), download the cert in DER and DER CA format, and install in Windows
-- Install [git](https://git-scm.com/download/win) (and make sure the Semiphemeral repo has a deploy key for Windows)
+- Install [git](https://git-scm.com/download/win) (and make sure the Cyd repo has a deploy key for Windows)
 - Install [Node.js LTS](https://nodejs.org/en)
 - Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
 - Set PowerShell execution policy, in an administrator PowerShell: `Set-ExecutionPolicy -ExecutionPolicy Bypass`
-- Clone the Semiphemeral repo (to a folder with no spaces!)
+- Clone the Cyd repo (to a folder with no spaces!)
 - Make sure you have the following environment variables set:
   - `DO_SPACES_KEY`
   - `DO_SPACES_SECRET`
 - Plug in HARICA USB token and have the PIN ready
 
-Build Semiphemeral
+Build Cyd
 
 ```powershell
-cd .\code\Semiphemeral
+cd .\code\Cyd
 
 # Make a release and test it
 npm run make-dev-windows
@@ -83,18 +83,24 @@ npm run publish-prod-windows
 
 To set up macOS:
 
-- I'm having trouble getting this working in a VM, so instead just do it natively in macOS.
-- I'll update these docs next time I rebuild my Mac...
+- Install Xcode from the App Store, and set up code signing certificates
+  - Xcode > Settings
+  - Accounts tab
+  - Sign into Apple ID, and create:
+    - Developer ID Application
+    - Developer ID Installer
+    - Apple Development
+- Install [Node.js LTS](https://nodejs.org/en)
 - Make sure you have the following environment variables set:
   - `DO_SPACES_KEY`
   - `DO_SPACES_SECRET`
   - `APPLE_ID`
   - `APPLE_PASSWORD`
 
-Build Semiphemeral:
+Build Cyd:
 
 ```sh
-cd code/Semiphemeral
+cd code/Cyd
 
 # Make a release and test it
 npm run make-dev-macos
@@ -111,12 +117,12 @@ To set up Debian 12:
 
 - `sudo apt install -y build-essential curl git rpm zip`
 - Install [Node.js LTS](https://nodejs.org/en/download/package-manager) on Linux using nvm
-- Clone the Semiphemeral repo
+- Clone the Cyd repo
 
-Build Semiphemeral:
+Build Cyd:
 
 ```sh
-cd code/Semiphemeral
+cd code/Cyd
 
 # Make a release and test it
 npm run make-dev-linux
