@@ -84,6 +84,12 @@ npm run publish-prod-windows
 To set up macOS:
 
 - Install Xcode from the App Store, and set up code signing certificates
+  - Xcode > Settings
+  - Accounts tab
+  - Sign into Apple ID, and create:
+    - Developer ID Application
+    - Developer ID Installer
+    - Apple Development
 - Install [Node.js LTS](https://nodejs.org/en)
 - Make sure you have the following environment variables set:
   - `DO_SPACES_KEY`
