@@ -50,15 +50,17 @@ Do this process in a Windows VM in both x64 with VirtualBox and arm64 [with UTM]
 To set up Windows:
 
 - **Make sure the Windows user does not have spaces in the filename (e.g., "user", not "Micah Lee")!**
-- Install [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/), and add `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64` to the PATH (even on arm64, you should use teh x64 binary)
-  - Example code signing: `signtool.exe sign /v /d "Calculator" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://timestamp.digicert.com .\calc.exe`
+- Install Windows SDK (`winget install Microsoft.WindowsSDK.10.0.26100`)
+  - add `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64` to the PATH (even on arm64, you should use teh x64 binary)
+  - example code signing: `signtool.exe sign /v /d "Calculator" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://timestamp.digicert.com .\calc.exe`
 - Set up code signing
   - Install [Safenet Authentication Client](https://guides.harica.gr/docs/Guides/Software/Safenet-Authentication-Client/Drivers/)
   - Login to [HARICA](https://cm.harica.gr/), download the cert in DER and DER CA format, and install in Windows
-- Install [git](https://git-scm.com/download/win) (and make sure the Cyd repo has a deploy key for Windows)
-- Install [Node.js LTS](https://nodejs.org/en)
+- Install Git: `winget install git.git` (and make sure the Cyd repo has a deploy key for Windows)
+- Install Node.JS LTS (`winget install OpenJS.NodeJS.LTS`)
 - Install SSH, in an administrator PowerShell: `Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0`
 - Set PowerShell execution policy, in an administrator PowerShell: `Set-ExecutionPolicy -ExecutionPolicy Bypass`
+- While you're at it, install VSCode: `winget install Microsoft.VisualStudioCode`
 - Clone the Cyd repo (to a folder with no spaces!)
 - Make sure you have the following environment variables set:
   - `DO_SPACES_KEY`
