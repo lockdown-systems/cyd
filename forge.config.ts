@@ -145,7 +145,7 @@ const config: ForgeConfig = {
         window: {
           size: {
             width: 540,
-            height: 200,
+            height: 290,
           },
         }
       },
