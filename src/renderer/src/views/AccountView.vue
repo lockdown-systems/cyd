@@ -79,7 +79,7 @@ onMounted(async () => {
           what you want to keep.
         </p>
         <p class="lead fw-bold">
-          Ready to get started? Choose a platform.
+          Ready to get started? Add a new account.
         </p>
 
         <div class="select-account select-account-x d-flex flex-wrap" @click="accountClicked('X')">
@@ -88,8 +88,13 @@ onMounted(async () => {
               <div class="logo mr-2">
                 <i :class="getAccountIcon('X')" />
               </div>
-              <div class="name">
-                X (formerly Twitter)
+              <div class="description">
+                <div class="name">
+                  X
+                </div>
+                <div class="info text-muted">
+                  Formerly Twitter, owned by Elon Musk
+                </div>
               </div>
             </div>
           </div>
@@ -146,9 +151,13 @@ onMounted(async () => {
   padding: 0 0.8rem;
 }
 
-.select-account .name {
+.select-account .description .name {
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+.select-account .description .info {
+  font-size: 1rem;
 }
 
 .prevent-sleep {
