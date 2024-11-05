@@ -107,7 +107,7 @@ onMounted(async () => {
           <div class="d-flex align-items-center h-100">
             <div class="w-100">
               <div class="text-center">
-                <img src="/avatar1.svg" class="cyd-avatar mb-3" alt="Cyd Avatar" style="width: 120px;">
+                <img src="/cyd-plain.svg" class="cyd-avatar mb-3" alt="Cyd Avatar">
               </div>
               <p class="lead text-muted text-center">
                 Automatically delete your old posts, except the ones you want to keep.

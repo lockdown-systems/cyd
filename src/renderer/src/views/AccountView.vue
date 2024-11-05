@@ -6,6 +6,8 @@ import type { Account } from '../../../shared_types';
 
 import { getAccountRunning, setAccountRunning, openPreventSleepURL } from '../util';
 
+import CydAvatarComponent from '../components/CydAvatarComponent.vue';
+
 const props = defineProps<{
   account: Account;
 }>();
@@ -69,7 +71,7 @@ onMounted(async () => {
     <template v-if="account.type == 'unknown'">
       <div class="container mt-5">
         <div class="text-center mb-3">
-          <img src="/avatar2.svg" class="cyd-avatar" alt="Cyd Avatar">
+          <CydAvatarComponent :height="200" />
         </div>
         <p class="lead">
           With <img src="/logotext.svg" class="cyd-logotext" alt="Cyd">, you can automatically delete your data in tech
@@ -125,7 +127,7 @@ onMounted(async () => {
 
 <style scoped>
 .cyd-avatar {
-  width: 130px;
+  width: 150px;
 }
 
 .cyd-logotext {

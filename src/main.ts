@@ -144,7 +144,7 @@ async function createWindow() {
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
     const win = new BrowserWindow({
         width: 1000,
-        height: 900,
+        height: 850,
         minWidth: 900,
         minHeight: 700,
         webPreferences: {
