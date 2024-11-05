@@ -6,6 +6,8 @@ import type { Account } from '../../../shared_types';
 
 import { getAccountRunning, setAccountRunning, openPreventSleepURL } from '../util';
 
+import CydAvatarComponent from '../components/CydAvatarComponent.vue';
+
 const props = defineProps<{
   account: Account;
 }>();
@@ -69,7 +71,7 @@ onMounted(async () => {
     <template v-if="account.type == 'unknown'">
       <div class="container mt-5">
         <div class="text-center mb-3">
-          <img src="/avatar2.svg" class="cyd-avatar" alt="Cyd Avatar">
+          <CydAvatarComponent :height="200" />
         </div>
         <p class="lead">
           With <img src="/logotext.svg" class="cyd-logotext" alt="Cyd">, you can automatically delete your data in tech
@@ -77,7 +79,7 @@ onMounted(async () => {
           what you want to keep.
         </p>
         <p class="lead fw-bold">
-          Ready to get started? Choose a platform.
+          Ready to get started? Add a new account.
         </p>
 
         <div class="select-account select-account-x d-flex flex-wrap" @click="accountClicked('X')">
@@ -86,8 +88,13 @@ onMounted(async () => {
               <div class="logo mr-2">
                 <i :class="getAccountIcon('X')" />
               </div>
-              <div class="name">
-                X (formerly Twitter)
+              <div class="description">
+                <div class="name">
+                  X
+                </div>
+                <div class="info text-muted">
+                  Formerly Twitter, owned by Elon Musk
+                </div>
               </div>
             </div>
           </div>
@@ -125,7 +132,7 @@ onMounted(async () => {
 
 <style scoped>
 .cyd-avatar {
-  width: 130px;
+  width: 150px;
 }
 
 .cyd-logotext {
@@ -144,9 +151,13 @@ onMounted(async () => {
   padding: 0 0.8rem;
 }
 
-.select-account .name {
+.select-account .description .name {
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+.select-account .description .info {
+  font-size: 1rem;
 }
 
 .prevent-sleep {

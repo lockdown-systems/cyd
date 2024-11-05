@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import { marked } from 'marked';
 
+import CydAvatarComponent from '../components/CydAvatarComponent.vue';
+
 const props = defineProps<{
   message: string;
 }>();
@@ -11,8 +13,8 @@ const parsedMessage = computed(() => marked.parse(props.message));
 
 <template>
   <div class="row pt-2 g-1">
-    <div class="col-auto mr-1">
-      <img src="/avatar1.svg" class="cyd-avatar img-fluid" alt="Cyd Avatar">
+    <div class="col-auto">
+      <CydAvatarComponent :height="140" />
     </div>
     <div class="col">
       <div class="bubble p-3 text-black">
@@ -23,10 +25,6 @@ const parsedMessage = computed(() => marked.parse(props.message));
 </template>
 
 <style scoped>
-img.cyd-avatar {
-  width: 80px;
-}
-
 .bubble {
   background-color: #fef3de;
   border: 1px solid #f8a712;

@@ -133,18 +133,19 @@ const config: ForgeConfig = {
     // macOS DMG
     new MakerDMG({
       name: `Cyd ${version}`,
-      background: path.join(assetsPath, 'dmg-background.png'),
+      background: path.join(assetsPath, 'dmg-background-540x290.png'),
+      icon: path.join(assetsPath, 'installer-icon.icns'),
       iconSize: 110,
       overwrite: true,
       contents: [
-        { "x": 270, "y": 80, "type": "file", "path": `${process.cwd()}/out/Cyd-darwin-universal/Cyd.app` },
-        { "x": 430, "y": 80, "type": "link", "path": "/Applications" }
+        { "x": 270, "y": 142, "type": "file", "path": `${process.cwd()}/out/Cyd-darwin-universal/Cyd.app` },
+        { "x": 428, "y": 142, "type": "link", "path": "/Applications" }
       ],
       additionalDMGOptions: {
         window: {
           size: {
             width: 540,
-            height: 200,
+            height: 290,
           },
         }
       },

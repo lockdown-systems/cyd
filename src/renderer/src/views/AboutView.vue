@@ -18,7 +18,7 @@ onMounted(async () => {
         <div class="d-flex justify-content-center align-items-center flex-grow-1">
             <div class="text-center">
                 <div>
-                    <img src="/avatar-tmkf.svg" alt="This Machine Kills Fascists" class="kills-fascists">
+                    <img src="/cyd-tmkf.svg" alt="This Machine Kills Fascists" class="kills-fascists">
                 </div>
             </div>
         </div>
@@ -36,7 +36,7 @@ onMounted(async () => {
 
 <style scoped>
 .kills-fascists {
-    width: 300px;
+    width: 350px;
 }
 
 .cyd-logotext {
