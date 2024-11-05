@@ -122,7 +122,7 @@ const config: ForgeConfig = {
     new MakerSquirrel({
       iconUrl: "https://releases.lockdown.systems/cyd/icon.ico",
       name: "Cyd",
-      setupIcon: path.join(assetsPath, "icon.ico"),
+      setupIcon: path.join(assetsPath, "installer-icon.ico"),
       windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
