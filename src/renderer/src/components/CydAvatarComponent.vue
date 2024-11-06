@@ -13,14 +13,19 @@ const isBlinking = ref(false);
 const isLooking = ref(false);
 
 const imageUrl = computed(() => {
-    let filename = `./cyd-${stance.value}`;
+    let filename = `cyd-${stance.value}`;
     if (isBlinking.value) {
         filename = `${filename}-blink`;
     }
     if (isLooking.value) {
         filename = `${filename}-look`;
     }
-    return new URL(`${filename}.svg`, import.meta.url).href;
+
+    if (import.meta.env.MODE === 'production') {
+        return new URL(`${filename}.svg`, import.meta.url).href;
+    } else {
+        return `/assets/${filename}.svg`
+    }
 });
 
 onMounted(async () => {
