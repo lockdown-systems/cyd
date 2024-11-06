@@ -123,6 +123,7 @@ const config: ForgeConfig = {
       iconUrl: "https://releases.lockdown.systems/cyd/icon.ico",
       name: "Cyd",
       setupIcon: path.join(assetsPath, "installer-icon.ico"),
+      loadingGif: path.join(assetsPath, "installer-loading.gif"),
       windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
