@@ -1892,9 +1892,9 @@ I'm deleting all of your direct message conversations, start with the most recen
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-You're signed into **@${this.account.xAccount?.username}** on X.
+You're signed into **@${this.account.xAccount?.username}** on X. After you anwer a few quick question, I will help you take control of your data on X.
 
-After you anwer a few quick question, I will help you take control of your data on X.`;
+**What would you like to do?**`;
                     this.state = State.WizardStartDisplay;
                     break;
 
@@ -1903,7 +1903,9 @@ After you anwer a few quick question, I will help you take control of your data 
                     await this.loadURL("about:blank");
                     this.instructions = `
 I'll help you build a private local database of your X data to the \`Documents\` folder on your computer. 
-You'll be able to access it even after you delete it from X. Which data do you want to save?`;
+You'll be able to access it even after you delete it from X.
+
+**Which data do you want to save?**`;
                     this.state = State.WizardSaveOptionsDisplay;
                     break;
 
@@ -1913,7 +1915,9 @@ You'll be able to access it even after you delete it from X. Which data do you w
                     this.instructions = `
 I'll help you delete your data from X. Before I can delete your tweets, retweets, or likes, I will need 
 to build a local database of them. I can delete your direct messages right away without building a local 
-database.`;
+database.
+
+**Which data do you want to delete?**`;
                     this.state = State.WizardDeleteOptionsDisplay;
                     break;
 

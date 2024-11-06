@@ -99,10 +99,11 @@ export const runMainMigrations = () => {
             ]
         },
         {
-            name: "add saveMyData and deleteMyData columns to xAccount",
+            name: "add saveMyData, deleteMyData, and archiveTweetsHTML columns to xAccount",
             sql: [
                 `ALTER TABLE xAccount ADD COLUMN saveMyData BOOLEAN DEFAULT 1;`,
                 `ALTER TABLE xAccount ADD COLUMN deleteMyData BOOLEAN DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN archiveTweetsHTML BOOLEAN DEFAULT 0;`,
             ]
         }
     ]);
@@ -139,21 +140,22 @@ interface XAccountRow {
     profileImageDataURI: string;
     saveMyData: boolean;
     deleteMyData: boolean;
-    archiveTweets: number;
-    archiveLikes: number;
-    archiveDMs: number;
-    deleteTweets: number;
+    archiveTweets: boolean;
+    archiveTweetsHTML: boolean;
+    archiveLikes: boolean;
+    archiveDMs: boolean;
+    deleteTweets: boolean;
     deleteTweetsDaysOld: number;
-    deleteTweetsLikesThresholdEnabled: number;
+    deleteTweetsLikesThresholdEnabled: boolean;
     deleteTweetsLikesThreshold: number;
-    deleteTweetsRetweetsThresholdEnabled: number;
+    deleteTweetsRetweetsThresholdEnabled: boolean;
     deleteTweetsRetweetsThreshold: number;
     deleteTweetsArchiveEnabled: boolean;
-    deleteRetweets: number;
+    deleteRetweets: boolean;
     deleteRetweetsDaysOld: number;
-    deleteLikes: number;
+    deleteLikes: boolean;
     deleteLikesDaysOld: number;
-    deleteDMs: number;
+    deleteDMs: boolean;
 }
 
 // Utils
@@ -223,6 +225,7 @@ export const getXAccount = (id: number): XAccount | null => {
         saveMyData: !!row.saveMyData,
         deleteMyData: !!row.deleteMyData,
         archiveTweets: !!row.archiveTweets,
+        archiveTweetsHTML: !!row.archiveTweetsHTML,
         archiveLikes: !!row.archiveLikes,
         archiveDMs: !!row.archiveDMs,
         deleteTweets: !!row.deleteTweets,
@@ -255,6 +258,7 @@ export const getXAccounts = (): XAccount[] => {
             saveMyData: !!row.saveMyData,
             deleteMyData: !!row.deleteMyData,
             archiveTweets: !!row.archiveTweets,
+            archiveTweetsHTML: !!row.archiveTweetsHTML,
             archiveLikes: !!row.archiveLikes,
             archiveDMs: !!row.archiveDMs,
             deleteTweets: !!row.deleteTweets,
@@ -295,6 +299,7 @@ export const saveXAccount = (account: XAccount) => {
             saveMyData = ?,
             deleteMyData = ?,
             archiveTweets = ?,
+            archiveTweetsHTML = ?,
             archiveLikes = ?,
             archiveDMs = ?,
             deleteTweets = ?,
@@ -316,6 +321,7 @@ export const saveXAccount = (account: XAccount) => {
         account.saveMyData ? 1 : 0,
         account.deleteMyData ? 1 : 0,
         account.archiveTweets ? 1 : 0,
+        account.archiveTweetsHTML ? 1 : 0,
         account.archiveLikes ? 1 : 0,
         account.archiveDMs ? 1 : 0,
         account.deleteTweets ? 1 : 0,

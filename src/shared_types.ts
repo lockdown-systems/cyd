@@ -27,6 +27,7 @@ export type XAccount = {
     saveMyData: boolean;
     deleteMyData: boolean;
     archiveTweets: boolean;
+    archiveTweetsHTML: boolean;
     archiveLikes: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;

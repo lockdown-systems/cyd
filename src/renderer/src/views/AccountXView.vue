@@ -98,6 +98,7 @@ const archivePath = ref('');
 const saveMyData = ref(true);
 const deleteMyData = ref(true);
 const archiveTweets = ref(false);
+const archiveTweetsHTML = ref(false);
 const archiveLikes = ref(false);
 const archiveDMs = ref(false);
 const deleteTweets = ref(false);
@@ -141,6 +142,7 @@ const updateSettings = async () => {
             saveMyData: saveMyData.value,
             deleteMyData: deleteMyData.value,
             archiveTweets: archiveTweets.value,
+            archiveTweetsHTML: archiveTweetsHTML.value,
             archiveLikes: archiveLikes.value,
             archiveDMs: archiveDMs.value,
             deleteTweets: deleteTweets.value,
@@ -248,13 +250,20 @@ const u2fInfoClicked = () => {
 // Wizard functions
 
 const wizardStartNextClicked = async () => {
+    if (!accountXViewModel.value) {
+        console.error('Account view model not found');
+        return;
+    }
+
     await updateSettings();
 
     if (saveMyData.value) {
-        currentState.value = State.WizardSaveOptions;
+        accountXViewModel.value.state = State.WizardSaveOptions;
     } else if (deleteMyData.value) {
-        currentState.value = State.WizardDeleteOptions;
+        accountXViewModel.value.state = State.WizardDeleteOptions;
     }
+
+    await startStateLoop();
 };
 
 // Debug functions
@@ -421,9 +430,6 @@ onUnmounted(async () => {
 
         <!-- Wizard: start -->
         <div v-if="accountXViewModel?.state == State.WizardStartDisplay" class="wizard container mb-4 mt-3 mx-auto">
-            <h2 class="mb-3">
-                What would you like to do?
-            </h2>
             <form @submit.prevent>
                 <div class="mb-3">
                     <div class="form-check">
@@ -458,6 +464,49 @@ onUnmounted(async () => {
                     Debug Mode
                 </button>
             </p>
+        </div>
+
+        <!-- Wizard: save options -->
+        <div v-if="accountXViewModel?.state == State.WizardSaveOptionsDisplay"
+            class="wizard container mb-4 mt-3 mx-auto">
+            <form @submit.prevent>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="archiveTweets">Save my tweets</label>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="mb-3 form-check">
+                        <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version of each
+                            tweet</label>
+                    </div>
+                    <small class="form-text text-muted">
+                        Make an HTML archive of each tweet, including its replies, which is good for taking screenshots
+                        <em>(takes longer)</em>
+                    </small>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="archiveLikes" v-model="archiveLikes" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="archiveLikes">Save my likes</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <button type="submit" class="btn btn-primary" :disabled="!(saveMyData || deleteMyData)"
+                        @click="wizardStartNextClicked">
+                        Next
+                    </button>
+                </div>
+            </form>
         </div>
 
         <!-- <div v-if="accountXViewModel?.state == State.WizardStartDisplay" class="wizard">
