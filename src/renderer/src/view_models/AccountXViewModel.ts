@@ -15,8 +15,16 @@ import { APIErrorResponse, UserPremiumAPIResponse } from "../../../cyd-api-clien
 
 export enum State {
     Login = "login",
-    Dashboard = "dashboard",
-    DashboardDisplay = "dashboardDisplay",
+    WizardStart = "wizardStart",
+    WizardStartDisplay = "wizardStartDisplay",
+    WizardSaveOptions = "wizardSaveOptions",
+    WizardSaveOptionsDisplay = "wizardSaveOptionsDisplay",
+    WizardDeleteOptions = "wizardDeleteOptions",
+    WizardDeleteOptionsDisplay = "wizardDeleteOptionsDisplay",
+    WizardReview = "wizardReview",
+    WizardReviewDisplay = "wizardReviewDisplay",
+    WizardDeleteReview = "wizardDeleteReview",
+    WizardDeleteReviewDisplay = "wizardDeleteReviewDisplay",
     RunJobs = "runJobs",
     FinishedRunningJobs = "finishedRunningJobs",
     Debug = "debug",
@@ -43,7 +51,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
-            this.state = State.Dashboard;
+            this.state = State.WizardStart;
         } else {
             this.state = State.Login;
         }
@@ -233,7 +241,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
         this.isFirstRun = false;
-        this.state = State.Dashboard;
+        this.state = State.WizardStart;
     }
 
     async waitForRateLimit() {
@@ -1877,18 +1885,54 @@ I'm deleting all of your direct message conversations, start with the most recen
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
-                    this.state = State.Dashboard;
+                    this.state = State.WizardStart;
                     break;
 
-                case State.Dashboard:
+                case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
 You're signed into **@${this.account.xAccount?.username}** on X.
 
-You can make a local archive of your data, or you delete exactly what you choose to. What would you like to do?
-`;
-                    this.state = State.DashboardDisplay;
+After you anwer a few quick question, I will help you take control of your data on X.`;
+                    this.state = State.WizardStartDisplay;
+                    break;
+
+                case State.WizardSaveOptions:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I'll help you build a private local database of your X data to the \`Documents\` folder on your computer. 
+You'll be able to access it even after you delete it from X. Which data do you want to save?`;
+                    this.state = State.WizardSaveOptionsDisplay;
+                    break;
+
+                case State.WizardDeleteOptions:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I'll help you delete your data from X. Before I can delete your tweets, retweets, or likes, I will need 
+to build a local database of them. I can delete your direct messages right away without building a local 
+database.`;
+                    this.state = State.WizardDeleteOptionsDisplay;
+                    break;
+
+                case State.WizardReview:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+TK TK replace this`;
+                    this.state = State.WizardReviewDisplay;
+                    break;
+
+                case State.WizardDeleteReview:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I've finished saving all the data I need before I can start deleting. The database of your X data contains: ...
+
+Next, I'm going to delete the following data:`;
+                    this.state = State.WizardDeleteReviewDisplay;
                     break;
 
                 case State.RunJobs:

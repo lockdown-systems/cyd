@@ -97,6 +97,13 @@ export const runMainMigrations = () => {
     deleteDMs BOOLEAN DEFAULT 0
 );`,
             ]
+        },
+        {
+            name: "add saveMyData and deleteMyData columns to xAccount",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN saveMyData BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN deleteMyData BOOLEAN DEFAULT 0;`,
+            ]
         }
     ]);
 }
@@ -130,6 +137,8 @@ interface XAccountRow {
     accessedAt: string;
     username: string;
     profileImageDataURI: string;
+    saveMyData: boolean;
+    deleteMyData: boolean;
     archiveTweets: number;
     archiveLikes: number;
     archiveDMs: number;
@@ -211,6 +220,8 @@ export const getXAccount = (id: number): XAccount | null => {
         accessedAt: new Date(row.accessedAt),
         username: row.username,
         profileImageDataURI: row.profileImageDataURI,
+        saveMyData: !!row.saveMyData,
+        deleteMyData: !!row.deleteMyData,
         archiveTweets: !!row.archiveTweets,
         archiveLikes: !!row.archiveLikes,
         archiveDMs: !!row.archiveDMs,
@@ -241,6 +252,8 @@ export const getXAccounts = (): XAccount[] => {
             accessedAt: new Date(row.accessedAt),
             username: row.username,
             profileImageDataURI: row.profileImageDataURI,
+            saveMyData: !!row.saveMyData,
+            deleteMyData: !!row.deleteMyData,
             archiveTweets: !!row.archiveTweets,
             archiveLikes: !!row.archiveLikes,
             archiveDMs: !!row.archiveDMs,
@@ -279,6 +292,8 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             profileImageDataURI = ?,
+            saveMyData = ?,
+            deleteMyData = ?,
             archiveTweets = ?,
             archiveLikes = ?,
             archiveDMs = ?,
@@ -298,6 +313,8 @@ export const saveXAccount = (account: XAccount) => {
     `, [
         account.username,
         account.profileImageDataURI,
+        account.saveMyData ? 1 : 0,
+        account.deleteMyData ? 1 : 0,
         account.archiveTweets ? 1 : 0,
         account.archiveLikes ? 1 : 0,
         account.archiveDMs ? 1 : 0,

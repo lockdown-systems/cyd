@@ -95,6 +95,8 @@ watch(
 const archivePath = ref('');
 
 // Settings
+const saveMyData = ref(true);
+const deleteMyData = ref(true);
 const archiveTweets = ref(false);
 const archiveLikes = ref(false);
 const archiveDMs = ref(false);
@@ -110,19 +112,6 @@ const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
-
-// Force re-index everything options
-const isFirstIndex = ref(true);
-const archiveForceIndexEverything = ref(false);
-const deleteForceIndexEverything = ref(false);
-
-const checkIfIsFirstIndex = async () => {
-    isFirstIndex.value = (
-        await window.electron.X.getLastFinishedJob(props.account.id, "indexTweets") == null &&
-        await window.electron.X.getLastFinishedJob(props.account.id, "indexLikes") == null &&
-        await window.electron.X.getLastFinishedJob(props.account.id, "indexDMs") == null
-    );
-}
 
 const showArchivedOnFinishedDelete = computed(() => {
     return (
@@ -149,6 +138,8 @@ const updateSettings = async () => {
             accessedAt: new Date(),
             username: props.account.xAccount?.username || '',
             profileImageDataURI: props.account.xAccount?.profileImageDataURI || '',
+            saveMyData: saveMyData.value,
+            deleteMyData: deleteMyData.value,
             archiveTweets: archiveTweets.value,
             archiveLikes: archiveLikes.value,
             archiveDMs: archiveDMs.value,
@@ -173,23 +164,23 @@ const updateSettings = async () => {
     emitter?.emit('account-updated');
 };
 
-const startArchivingClicked = async () => {
-    await updateSettings();
-    if (accountXViewModel.value) {
-        await accountXViewModel.value.startArchiving(archiveForceIndexEverything.value);
-    }
-    archiveForceIndexEverything.value = false;
-    await startStateLoop();
-};
+// const startArchivingClicked = async () => {
+//     await updateSettings();
+//     if (accountXViewModel.value) {
+//         await accountXViewModel.value.startArchiving(archiveForceIndexEverything.value);
+//     }
+//     archiveForceIndexEverything.value = false;
+//     await startStateLoop();
+// };
 
-const startDeletingClicked = async () => {
-    await updateSettings();
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.startDeleting(deleteForceIndexEverything.value);
-    }
-    deleteForceIndexEverything.value = false;
-    await startStateLoop();
-};
+// const startDeletingClicked = async () => {
+//     await updateSettings();
+//     if (accountXViewModel.value !== null) {
+//         await accountXViewModel.value.startDeleting(deleteForceIndexEverything.value);
+//     }
+//     deleteForceIndexEverything.value = false;
+//     await startStateLoop();
+// };
 
 const startStateLoop = async () => {
     console.log('State loop started');
@@ -203,7 +194,11 @@ const startStateLoop = async () => {
 
         // Break out of the state loop if the view model is in a final state
         if (
-            accountXViewModel.value?.state === State.DashboardDisplay ||
+            accountXViewModel.value?.state === State.WizardStartDisplay ||
+            accountXViewModel.value?.state === State.WizardSaveOptionsDisplay ||
+            accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay ||
+            accountXViewModel.value?.state === State.WizardReviewDisplay ||
+            accountXViewModel.value?.state === State.WizardDeleteReviewDisplay ||
             accountXViewModel.value?.state === State.FinishedRunningJobs
         ) {
             await updateArchivePath();
@@ -218,7 +213,6 @@ const startStateLoop = async () => {
 };
 
 const reset = async () => {
-    await checkIfIsFirstIndex();
     await accountXViewModel.value?.reset()
     await startStateLoop();
 };
@@ -251,6 +245,18 @@ const u2fInfoClicked = () => {
     window.electron.openURL('https://semiphemeral.com/docs-u2f');
 };
 
+// Wizard functions
+
+const wizardStartNextClicked = async () => {
+    await updateSettings();
+
+    if (saveMyData.value) {
+        currentState.value = State.WizardSaveOptions;
+    } else if (deleteMyData.value) {
+        currentState.value = State.WizardDeleteOptions;
+    }
+};
+
 // Debug functions
 
 const shouldOpenDevtools = ref(false);
@@ -274,7 +280,7 @@ const debugModeTriggerError = async () => {
 
 const debugModeDisable = async () => {
     if (accountXViewModel.value !== null) {
-        accountXViewModel.value.state = State.DashboardDisplay;
+        accountXViewModel.value.state = State.WizardStart;
     }
 };
 
@@ -287,6 +293,8 @@ onMounted(async () => {
         archiveTweets.value = props.account.xAccount.archiveTweets;
         archiveLikes.value = props.account.xAccount.archiveLikes;
         archiveDMs.value = props.account.xAccount.archiveDMs;
+        saveMyData.value = props.account.xAccount.saveMyData;
+        deleteMyData.value = props.account.xAccount.deleteMyData;
         deleteTweets.value = props.account.xAccount.deleteTweets;
         deleteTweetsDaysOld.value = props.account.xAccount.deleteTweetsDaysOld;
         deleteTweetsLikesThresholdEnabled.value = props.account.xAccount.deleteTweetsLikesThresholdEnabled;
@@ -300,8 +308,6 @@ onMounted(async () => {
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = props.account.xAccount.deleteDMs;
     }
-
-    await checkIfIsFirstIndex();
 
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
@@ -361,7 +367,7 @@ onUnmounted(async () => {
 
 <template>
     <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
-        <AccountHeader :account="account" :show-dashboard-button="currentState != State.DashboardDisplay"
+        <AccountHeader :account="account" :show-dashboard-button="currentState != State.wizardStartDisplay"
             @on-dashboard-clicked="emit('onRefreshClicked')" @on-remove-clicked="emit('onRemoveClicked')" />
 
         <div class="d-flex">
@@ -413,8 +419,48 @@ onUnmounted(async () => {
                 'webview-input-border': !accountXViewModel?.showAutomationNotice
             }" />
 
-        <!-- Dashboard -->
-        <div v-if="accountXViewModel?.state == State.DashboardDisplay" class="dashboard">
+        <!-- Wizard: start -->
+        <div v-if="accountXViewModel?.state == State.WizardStartDisplay" class="wizard container mb-4 mt-3 mx-auto">
+            <h2 class="mb-3">
+                What would you like to do?
+            </h2>
+            <form @submit.prevent>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="saveMyData" v-model="saveMyData" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="saveMyData">Save my data</label>
+                    </div>
+                    <small class="form-text text-muted">
+                        Create a local archive of tweets, retweets, likes, and/or direct messages
+                    </small>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="deleteMyData" v-model="deleteMyData" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="deleteMyData">Delete my data</label>
+                        <span class="premium badge badge-primary">Premium</span>
+                    </div>
+                    <small class="form-text text-muted">
+                        Delete my tweets, retweets, likes, and/or direct messages
+                    </small>
+                </div>
+
+                <div class="buttons">
+                    <button type="submit" class="btn btn-primary" :disabled="!(saveMyData || deleteMyData)"
+                        @click="wizardStartNextClicked">
+                        Next
+                    </button>
+                </div>
+            </form>
+
+            <p v-if="shouldOpenDevtools">
+                <button class="btn btn-primary" @click="enableDebugMode">
+                    Debug Mode
+                </button>
+            </p>
+        </div>
+
+        <!-- <div v-if="accountXViewModel?.state == State.WizardStartDisplay" class="wizard">
             <div class="container mb-4 mt-3">
                 <div class="row">
                     <div class="col-md-6 mb-4">
@@ -617,7 +663,7 @@ onUnmounted(async () => {
                     Debug Mode
                 </button>
             </p>
-        </div>
+        </div> -->
 
         <!-- Finished running jobs -->
         <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
@@ -756,9 +802,14 @@ onUnmounted(async () => {
     display: none;
 }
 
-.dashboard {
+.wizard {
     height: 100vh;
     overflow: auto;
+    max-width: 600px;
+}
+
+.wizard .buttons {
+    margin-top: 3rem;
 }
 
 .form-short {
@@ -804,8 +855,8 @@ onUnmounted(async () => {
 
 .premium {
     text-transform: uppercase;
-    font-size: 0.9rem;
-    margin-left: 5px;
+    font-size: 0.7rem;
+    margin-left: 1rem;
     padding: 0.2em 0.5em;
     background-color: #50a4ff;
     color: white;
