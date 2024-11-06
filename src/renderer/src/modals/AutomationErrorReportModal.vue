@@ -245,7 +245,7 @@ onUnmounted(() => {
                                     </li>
                                 </ul>
                                 <div v-else class="error-avatar text-center">
-                                    <img src="/cyd-omgkevin.svg" class="mb-3" alt="Cyd Error Message">
+                                    <img src="/assets/cyd-omgkevin.svg" class="mb-3" alt="Cyd Error Message">
                                 </div>
                             </div>
                         </div>

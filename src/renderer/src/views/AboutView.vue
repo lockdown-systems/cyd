@@ -18,13 +18,13 @@ onMounted(async () => {
         <div class="d-flex justify-content-center align-items-center flex-grow-1">
             <div class="text-center">
                 <div>
-                    <img src="/cyd-tmkf.svg" alt="This Machine Kills Fascists" class="kills-fascists">
+                    <img src="/assets/cyd-tmkf.svg" alt="This Machine Kills Fascists" class="kills-fascists">
                 </div>
             </div>
         </div>
         <div class="text-center">
             <p class="text-muted">
-                <img src="/logotext.svg" class="cyd-logotext mr-2" alt="Cyd">
+                <img src="/assets/logotext.svg" class="cyd-logotext mr-2" alt="Cyd">
                 version {{ appVersion }}
             </p>
             <p class="text-muted">

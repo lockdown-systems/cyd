@@ -12,15 +12,20 @@ const stance = ref('plain');
 const isBlinking = ref(false);
 const isLooking = ref(false);
 
-const cydSrc = computed(() => {
-    const filename = `/cyd-${stance.value}`;
+const imageUrl = computed(() => {
+    let filename = `cyd-${stance.value}`;
     if (isBlinking.value) {
-        return `${filename}-blink.svg`;
+        filename = `${filename}-blink`;
     }
     if (isLooking.value) {
-        return `${filename}-look.svg`;
+        filename = `${filename}-look`;
     }
-    return `${filename}.svg`;
+
+    if (import.meta.env.MODE === 'production') {
+        return new URL(`${filename}.svg`, import.meta.url).href;
+    } else {
+        return `/assets/${filename}.svg`
+    }
 });
 
 onMounted(async () => {
@@ -67,7 +72,7 @@ onMounted(async () => {
 
 <template>
     <div>
-        <img :src="cydSrc" :height="height" alt="Cyd">
+        <img :src="imageUrl" :height="height" alt="Cyd">
     </div>
 </template>
 
