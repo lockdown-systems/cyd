@@ -61,63 +61,6 @@ export class AccountXViewModel extends BaseViewModel {
         super.init();
     }
 
-    async setAction(action: string) {
-        const actions = [];
-        const finishedActions = [];
-
-        this.action = action;
-        switch (action) {
-            case "archive":
-                if (this.account.xAccount?.archiveTweets) {
-                    actions.push("tweets");
-                    finishedActions.push("tweets");
-                }
-                if (this.account.xAccount?.archiveLikes) {
-                    actions.push("likes");
-                    finishedActions.push("likes");
-                }
-                if (this.account.xAccount?.archiveDMs) {
-                    actions.push("direct messages");
-                    finishedActions.push("direct messages");
-                }
-
-                if (actions.length > 0) {
-                    this.actionString = `I'm archiving your ${actions.join(" and ")}.`;
-                    this.actionFinishedString = `I've finished archiving your ${finishedActions.join(" and ")}!`;
-                } else {
-                    this.actionString = "No archiving actions to perform.";
-                    this.actionFinishedString = "No archiving actions were performed.";
-                }
-                break;
-            case "delete":
-                if (this.account.xAccount?.deleteTweets) {
-                    actions.push("tweets");
-                    finishedActions.push("tweets");
-                }
-                if (this.account.xAccount?.deleteRetweets) {
-                    actions.push("retweets");
-                    finishedActions.push("retweets");
-                }
-                if (this.account.xAccount?.deleteLikes) {
-                    actions.push("likes");
-                    finishedActions.push("likes");
-                }
-                if (this.account.xAccount?.deleteDMs) {
-                    actions.push("direct messages");
-                    finishedActions.push("direct messages");
-                }
-
-                if (actions.length > 0) {
-                    this.actionString = `I'm deleting your ${actions.join(", ")}.`;
-                    this.actionFinishedString = `I've finished deleting your ${finishedActions.join(", ")}!`;
-                } else {
-                    this.actionString = "No actions to perform.";
-                    this.actionFinishedString = "No actions were performed.";
-                }
-                break;
-        }
-    }
-
     async defineJobs(chanceToReview: boolean, justDelete: boolean = false) {
         if (this.account.xAccount?.deleteMyData) {
             // Ensure the user has paid for Premium
@@ -557,9 +500,10 @@ export class AccountXViewModel extends BaseViewModel {
     async runJobLogin(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_LOGIN, navigator.userAgent);
 
+        this.actionFinishedString = "You're logged in.";
+
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**${this.actionString}**
 
 Checking to see if you're still logged in to your X account...
 `;
@@ -570,8 +514,7 @@ Checking to see if you're still logged in to your X account...
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
         if (this.webview.getURL().startsWith("https://x.com/i/flow/login")) {
             // Not logged in, so prompt the user to login
-            this.instructions = `
-**${this.actionString}**
+            this.instructions = `**${this.actionString}**
 
 You've been logged out. Please log back into **@${this.account.xAccount?.username}**.
 `;
@@ -590,12 +533,12 @@ You've been logged out. Please log back into **@${this.account.xAccount?.usernam
         let tries: number, success: boolean;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm saving your tweets.**
 
-Hang on while I scroll down to your earliest tweets that I've seen.
-`;
+Hang on while I scroll down to your earliest tweets.`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished saving your tweets.";
 
         if (await window.electron.X.getConfig(this.account.id, "forceIndexTweets") == "true") {
             this.isFirstRun = true;
@@ -753,12 +696,12 @@ Hang on while I scroll down to your earliest tweets that I've seen.
         let archiveStartResponse: XArchiveStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm download HTML copies of your tweets, starting with the oldest.**
 
-I'm archiving your tweets, starting with the oldest. This may take a while...
-`;
+This may take a while...`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished downloading HTML copies of your tweets.";
 
         // Initialize archiving of tweets
         try {
@@ -801,12 +744,12 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_CONVERSATIONS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm saving your direct message conversations.**
 
-Hang on while I scroll down to your earliest direct message conversations that I've seen.
-`;
+Hang on while I scroll down to your earliest direct message conversations...`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished saving your direct message conversations.";
 
         // Check if this is the first time indexing DMs has happened in this account
         if (await window.electron.X.getConfig(this.account.id, "forceIndexConversations") == "true") {
@@ -928,12 +871,12 @@ Hang on while I scroll down to your earliest direct message conversations that I
         let url = '';
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm saving your direct messages.**
 
-Please wait while I index all of the messages from each conversation.
-`;
+Please wait while I index all of the messages from each conversation...`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished saving your direct messages.";
 
         if (await window.electron.X.getConfig(this.account.id, "forceIndexMessages") == "true") {
             this.isFirstRun = true;
@@ -1091,12 +1034,10 @@ Please wait while I index all of the messages from each conversation.
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_ARCHIVE_BUILD, navigator.userAgent);
 
         this.showBrowser = false;
-        this.instructions = `
-**${this.actionString}**
-
-I'm building a searchable archive web page in HTML.
-`;
+        this.instructions = `**I'm building a searchable archive web page in HTML.**`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished building a searchable archive web page in HTML.";
 
         // Build the archive
         try {
@@ -1134,12 +1075,12 @@ I'm building a searchable archive web page in HTML.
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_LIKES, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm saving your likes.**
 
-Hang on while I scroll down to your earliest likes that I've seen.
-`;
+Hang on while I scroll down to your earliest likes.`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished saving your likes.";
 
         // Check if this is the first time indexing likes has happened in this account
         if (await window.electron.X.getConfig(this.account.id, "forceIndexLikes") == "true") {
@@ -1271,12 +1212,10 @@ Hang on while I scroll down to your earliest likes that I've seen.
         let tweetsToDelete: XDeleteTweetsStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
-
-I'm deleting your tweets based on your criteria, starting with the earliest.
-`;
+        this.instructions = `**I'm deleting your tweets based on your criteria, starting with the earliest.**`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished deleting your tweets.";
 
         // Load the tweets to delete
         try {
@@ -1418,13 +1357,11 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
         let tweetsToDelete: XDeleteTweetsStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
-
-I'm deleting your retweets, starting with the earliest.
-`;
+        this.instructions = `**I'm deleting your retweets, starting with the earliest.**`;
         this.showAutomationNotice = true;
         let alreadyDeleted = false;
+
+        this.actionFinishedString = "I've finished deleting your retweets.";
 
         // Load the retweets to delete
         try {
@@ -1535,12 +1472,10 @@ I'm deleting your retweets, starting with the earliest.
         let alreadyDeleted = false;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
-
-I'm deleting your likes, starting with the earliest.
-`;
+        this.instructions = `**I'm deleting your likes, starting with the earliest.**`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished deleting your likes.";
 
         // Load the likes to delete
         try {
@@ -1624,10 +1559,10 @@ I'm deleting your likes, starting with the earliest.
         let reloadDMsPage = true;
 
         this.showBrowser = true;
-        this.instructions = `**${this.actionString}**
-
-I'm deleting all of your direct message conversations, start with the most recent.`;
+        this.instructions = `**I'm deleting all of your direct message conversations, start with the most recent.**`;
         this.showAutomationNotice = true;
+
+        this.actionFinishedString = "I've finished deleting your direct messages.";
 
         // Start the progress
         await this.syncProgress();
