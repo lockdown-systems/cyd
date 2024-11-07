@@ -382,23 +382,8 @@ const wizardReviewBackClicked = async () => {
 const wizardReviewNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
-    // TODO: fix this logic
-    if (saveMyData.value) {
-        if (deleteMyData.value) {
-            if (chanceToReview.value) {
-                accountXViewModel.value.state = State.RunJobs;
-            } else {
-                accountXViewModel.value.state = State.WizardDeleteReview;
-            }
-        } else {
-            accountXViewModel.value.state = State.RunJobs;
-        }
-    } else {
-        if (chanceToReview.value) {
-            accountXViewModel.value.state = State.RunJobs;
-        } else {
-            accountXViewModel.value.state = State.WizardDeleteReview;
-        }
+    if (accountXViewModel.value) {
+        await accountXViewModel.value.defineJobs(chanceToReview.value);
     }
     await startStateLoop();
 };
