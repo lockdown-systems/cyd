@@ -7,7 +7,8 @@ import {
     XIndexMessagesStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo,
-    XDeleteTweetsStartResponse
+    XDeleteTweetsStartResponse,
+    XDatabaseStats, emptyXDatabaseStats
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
@@ -43,6 +44,7 @@ export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
+    public databaseStats: XDatabaseStats = emptyXDatabaseStats();
     public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
@@ -58,6 +60,10 @@ export class AccountXViewModel extends BaseViewModel {
         this.currentJobIndex = 0;
 
         super.init();
+    }
+
+    async refreshDatabaseStats() {
+        this.databaseStats = await window.electron.X.getDatabaseStats(this.account.id);
     }
 
     async defineJobs(justDelete: boolean = false) {
@@ -494,6 +500,35 @@ export class AccountXViewModel extends BaseViewModel {
         this.progress.tweetsArchived += 1;
         this.progress.newTweetsArchived += 1;
         return true;
+    }
+
+    async getDatabaseStatsString(): Promise<string> {
+        await this.refreshDatabaseStats();
+        const tweetsCount = this.databaseStats.tweetsSaved - this.databaseStats.tweetsDeleted;
+        const retweetsCount = this.databaseStats.retweetsSaved - this.databaseStats.retweetsDeleted;
+        const likesCount = this.databaseStats.likesSaved - this.databaseStats.likesDeleted;
+
+        const statsComponents = [];
+        if (this.account.xAccount?.deleteTweets) {
+            statsComponents.push(`${tweetsCount} tweets`);
+        }
+        if (this.account.xAccount?.deleteRetweets) {
+            statsComponents.push(`${retweetsCount} retweets`);
+        }
+        if (this.account.xAccount?.deleteLikes) {
+            statsComponents.push(`${likesCount} likes`);
+        }
+
+        let statsString = "";
+        for (let i = 0; i < statsComponents.length; i++) {
+            statsString += statsComponents[i];
+            if (i < statsComponents.length - 2) {
+                statsString += ", ";
+            } else if (i < statsComponents.length - 1) {
+                statsString += " and ";
+            }
+        }
+        return statsString;
     }
 
     async runJobLogin(jobIndex: number): Promise<boolean> {
@@ -1847,9 +1882,9 @@ database.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-I've finished saving all the data I need before I can start deleting. The database of your X data contains: ...
+I've finished saving all the data I need before I can start deleting. I've saved: **${await this.getDatabaseStatsString()}**.
 
-**Next, I'm going to delete the following data:**`;
+**Based on your settings, I'm going to delete the following data:**`;
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
@@ -1867,6 +1902,8 @@ I've finished saving all the data I need before I can start deleting. The databa
                         }
                     }
                     this.currentJobIndex = 0;
+
+                    await this.refreshDatabaseStats();
 
                     if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview) {
                         this.state = State.WizardDeleteReview;

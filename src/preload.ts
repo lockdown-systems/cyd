@@ -8,7 +8,8 @@ import {
     XDeleteTweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
-    ResponseData
+    XDatabaseStats,
+    ResponseData,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -178,6 +179,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         getProgressInfo: (accountID: number): Promise<XProgressInfo> => {
             return ipcRenderer.invoke('X:getProgressInfo', accountID);
+        },
+        getDatabaseStats: (accountID: number): Promise<XDatabaseStats> => {
+            return ipcRenderer.invoke('X:getDatabaseStats', accountID);
         },
         saveProfileImage: (accountID: number, url: string): Promise<void> => {
             return ipcRenderer.invoke('X:saveProfileImage', accountID, url);

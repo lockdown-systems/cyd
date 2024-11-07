@@ -7,7 +7,6 @@ import {
     onUnmounted,
     inject,
     getCurrentInstance,
-    computed,
 } from 'vue'
 import Electron from 'electron';
 
@@ -19,7 +18,14 @@ import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
 import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
 
-import type { Account, XProgress, XJob, XRateLimitInfo } from '../../../shared_types';
+import type {
+    Account,
+    XProgress,
+    XJob,
+    XRateLimitInfo,
+    XDatabaseStats
+} from '../../../shared_types';
+import { emptyXDatabaseStats } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 import { AutomationErrorType } from '../automation_errors';
 
@@ -47,6 +53,8 @@ const progress = ref<XProgress | null>(null);
 const rateLimitInfo = ref<XRateLimitInfo | null>(null);
 const currentJobs = ref<XJob[]>([]);
 const isPaused = ref<boolean>(false);
+
+const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
@@ -88,6 +96,17 @@ watch(
 watch(
     () => accountXViewModel.value?.isPaused,
     (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
+    { deep: true, }
+);
+
+// Keep databaseStats in sync
+watch(
+    () => accountXViewModel.value?.databaseStats,
+    (newDatabaseStats) => {
+        if (newDatabaseStats) {
+            databaseStats.value = newDatabaseStats as XDatabaseStats;
+        }
+    },
     { deep: true, }
 );
 
@@ -206,6 +225,9 @@ const startStateLoop = async () => {
             if (accountXViewModel.value?.state === State.WizardReviewDisplay) {
                 await wizardReviewUpdateButtonsText();
             }
+            if (accountXViewModel.value?.state == State.WizardDeleteReviewDisplay) {
+                await wizardDeleteReviewUpdateButtonsText();
+            }
 
             await updateArchivePath();
             break;
@@ -308,6 +330,9 @@ const wizardReviewUpdateButtonsText = async () => {
     } else {
         wizardBackText.value = 'Back to Save Options';
     }
+}
+
+const wizardDeleteReviewUpdateButtonsText = async () => {
 }
 
 const wizardStartNextClicked = async () => {
@@ -943,6 +968,31 @@ onUnmounted(async () => {
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="buttons">
+                                    <button type="submit" class="btn btn-outline-secondary"
+                                        @click="wizardReviewBackClicked">
+                                        <i class="fa-solid fa-backward" />
+                                        {{ wizardBackText }}
+                                    </button>
+
+                                    <button type="submit" class="btn btn-primary"
+                                        :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                        @click="wizardReviewNextClicked">
+                                        <i class="fa-solid fa-forward" />
+                                        {{ wizardNextText }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Wizard: delete review -->
+                        <div v-if="accountXViewModel?.state == State.WizardDeleteReviewDisplay"
+                            class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
+                            <form @submit.prevent>
+                                <ul>
+                                    <li>TK: add stuff here</li>
+                                </ul>
 
                                 <div class="buttons">
                                     <button type="submit" class="btn btn-outline-secondary"
