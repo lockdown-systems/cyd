@@ -1025,7 +1025,8 @@ onUnmounted(async () => {
                                         </li>
                                     </ul>
 
-                                    <p>Your X archive is stored locally on your computer at
+                                    <p>
+                                        Your X archive is stored locally on your computer at
                                         <code>{{ archivePath }}</code>.
                                     </p>
 
@@ -1033,9 +1034,7 @@ onUnmounted(async () => {
 
                                     <p>
                                         Every time you have new tweets or DMs to archive, run this tool again and it
-                                        will resume from
-                                        last
-                                        time you performed an archive.
+                                        will resume from last time you performed an archive.
                                     </p>
 
                                     <p>

@@ -14,11 +14,11 @@ const openArchive = async () => {
 
 <template>
     <p class="d-flex gap-2">
-        <button class="btn btn-success btn-sm" @click="openArchive">
+        <button class="btn btn-outline-success btn-sm" @click="openArchive">
             Browse Archive
         </button>
 
-        <button class="btn btn-secondary btn-sm" @click="openArchiveFolder">
+        <button class="btn btn-outline-secondary btn-sm" @click="openArchiveFolder">
             Open Folder
         </button>
     </p>
