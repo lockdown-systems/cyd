@@ -892,7 +892,7 @@ onUnmounted(async () => {
 
                         <!-- Wizard: review -->
                         <div v-if="accountXViewModel?.state == State.WizardReviewDisplay"
-                            class="wizard-content container mb-4 mt-3 mx-auto">
+                            class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
                             <div class="mb-4">
                                 <h2>
                                     Review your choices
@@ -901,7 +901,7 @@ onUnmounted(async () => {
                             <form @submit.prevent>
                                 <div v-if="saveMyData">
                                     <h3>
-                                        <i class="fa-solid fa-floppy-disk" />
+                                        <i class="fa-solid fa-floppy-disk me-1" />
                                         Save my data
                                     </h3>
                                     <ul>
@@ -924,12 +924,12 @@ onUnmounted(async () => {
 
                                 <div v-if="deleteMyData">
                                     <h3>
-                                        <i class="fa-solid fa-fire" />
+                                        <i class="fa-solid fa-fire me-1" />
                                         Delete my data
                                     </h3>
                                     <ul>
                                         <li v-if="deleteTweets">
-                                            Delete tweets
+                                            Delete tweets older than {{ deleteTweetsDaysOld }} days
                                             <ul>
                                                 <li v-if="deleteTweetsRetweetsThresholdEnabled">
                                                     Keep tweets with at least {{ deleteTweetsRetweetsThreshold }}
@@ -944,10 +944,10 @@ onUnmounted(async () => {
                                             </ul>
                                         </li>
                                         <li v-if="deleteRetweets">
-                                            Unretweet tweets
+                                            Unretweet tweets older than {{ deleteRetweetsDaysOld }} days
                                         </li>
                                         <li v-if="deleteLikes">
-                                            Unlike tweets
+                                            Unlike tweets older than {{ deleteLikesDaysOld }} days
                                         </li>
                                         <li v-if="deleteDMs">
                                             Delete direct messages
@@ -988,6 +988,148 @@ onUnmounted(async () => {
                                 </div>
                             </form>
                         </div>
+
+                        <!-- Finished running jobs -->
+                        <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
+                            <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
+                                <div class="finished-archive">
+                                    <p>You just archived:</p>
+                                    <ul>
+                                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
+                                            saved as HTML
+                                            archives
+                                        </li>
+                                        <li
+                                            v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                                        </li>
+                                        <li
+                                            v-if="account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
+                                        </li>
+                                        <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                                        </li>
+                                        <li
+                                            v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong>
+                                            conversations,
+                                            including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong>
+                                            messages
+                                        </li>
+                                    </ul>
+
+                                    <p>Your X archive is stored locally on your computer at
+                                        <code>{{ archivePath }}</code>.
+                                    </p>
+
+                                    <ShowArchiveComponent :account-i-d="account.id" />
+
+                                    <p>
+                                        Every time you have new tweets or DMs to archive, run this tool again and it
+                                        will resume from
+                                        last
+                                        time you performed an archive.
+                                    </p>
+
+                                    <p>
+                                        If you want to recreate an archive of an individual tweet, delete its HTML file
+                                        first.
+                                    </p>
+                                </div>
+                            </div>
+                            <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
+                                <div class="finished-delete">
+                                    <div v-if="showArchivedOnFinishedDelete">
+                                        <p>You just archived:</p>
+                                        <ul>
+                                            <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                                <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong>
+                                                tweets saved as HTML
+                                                archives
+                                            </li>
+                                            <li v-if="(progress?.tweetsIndexed ?? 0) > 0">
+                                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                                <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                                            </li>
+                                            <li v-if="(progress?.retweetsIndexed ?? 0) > 0">
+                                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                                <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong>
+                                                retweets
+                                            </li>
+                                            <li v-if="(progress?.likesIndexed ?? 0) > 0">
+                                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                                <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                                            </li>
+                                            <li
+                                                v-if="(progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
+                                                <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong>
+                                                conversations,
+                                                including <strong>{{ progress?.messagesIndexed.toLocaleString()
+                                                    }}</strong> messages
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <p>You just deleted:</p>
+                                    <ul>
+                                        <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
+                                            <i class="fa-solid fa-fire delete-bullet" />
+                                            <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
+                                        </li>
+                                        <li
+                                            v-if="account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
+                                            <i class="fa-solid fa-fire delete-bullet" />
+                                            <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
+                                        </li>
+                                        <li v-if="account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
+                                            <i class="fa-solid fa-fire delete-bullet" />
+                                            <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
+                                        </li>
+                                        <li
+                                            v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
+                                            <i class="fa-solid fa-fire delete-bullet" />
+                                            <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong>
+                                            conversations,
+                                            including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong>
+                                            messages
+                                        </li>
+                                    </ul>
+
+                                    <ShowArchiveComponent :account-i-d="account.id" />
+                                </div>
+                            </div>
+                            <div>
+                                <div class="container mt-3">
+                                    <button class="btn btn-primary" @click="reset()">
+                                        Back to the dashboard
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Debug state -->
+                        <div v-if="accountXViewModel?.state == State.Debug">
+                            <p>Debug debug debug!!!</p>
+                            <p>
+                                <button class="btn btn-danger" @click="debugModeTriggerError">
+                                    Trigger Error
+                                </button>
+                            </p>
+                            <p>
+                                <button class="btn btn-primary" @click="debugModeDisable">
+                                    Cancel Debug Mode
+                                </button>
+                            </p>
+                        </div>
                     </div>
 
                     <!-- wizard side bar -->
@@ -1007,132 +1149,6 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Finished running jobs -->
-        <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
-            <div v-if="accountXViewModel.action == 'archive'" class="container mt-3">
-                <div class="finished-archive">
-                    <p>You just archived:</p>
-                    <ul>
-                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets saved as HTML
-                            archives
-                        </li>
-                        <li v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
-                        </li>
-                        <li v-if="account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
-                        </li>
-                        <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
-                        </li>
-                        <li
-                            v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations,
-                            including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
-                        </li>
-                    </ul>
-
-                    <p>Your X archive is stored locally on your computer at <code>{{ archivePath }}</code>.</p>
-
-                    <ShowArchiveComponent :account-i-d="account.id" />
-
-                    <p>
-                        Every time you have new tweets or DMs to archive, run this tool again and it will resume from
-                        last
-                        time you performed an archive.
-                    </p>
-
-                    <p>
-                        If you want to recreate an archive of an individual tweet, delete its HTML file first.
-                    </p>
-                </div>
-            </div>
-            <div v-if="accountXViewModel.action == 'delete'" class="container mt-3">
-                <div class="finished-delete">
-                    <div v-if="showArchivedOnFinishedDelete">
-                        <p>You just archived:</p>
-                        <ul>
-                            <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets saved as HTML
-                                archives
-                            </li>
-                            <li v-if="(progress?.tweetsIndexed ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
-                            </li>
-                            <li v-if="(progress?.retweetsIndexed ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
-                            </li>
-                            <li v-if="(progress?.likesIndexed ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
-                            </li>
-                            <li
-                                v-if="(progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
-                                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong> conversations,
-                                including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong> messages
-                            </li>
-                        </ul>
-                    </div>
-
-                    <p>You just deleted:</p>
-                    <ul>
-                        <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
-                            <i class="fa-solid fa-fire delete-bullet" />
-                            <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
-                        </li>
-                        <li v-if="account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
-                            <i class="fa-solid fa-fire delete-bullet" />
-                            <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
-                        </li>
-                        <li v-if="account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
-                            <i class="fa-solid fa-fire delete-bullet" />
-                            <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
-                        </li>
-                        <li
-                            v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
-                            <i class="fa-solid fa-fire delete-bullet" />
-                            <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong> conversations,
-                            including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong> messages
-                        </li>
-                    </ul>
-
-                    <ShowArchiveComponent :account-i-d="account.id" />
-                </div>
-            </div>
-            <div>
-                <div class="container mt-3">
-                    <button class="btn btn-primary" @click="reset()">
-                        Back to the dashboard
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Debug state -->
-        <div v-if="accountXViewModel?.state == State.Debug">
-            <p>Debug debug debug!!!</p>
-            <p>
-                <button class="btn btn-danger" @click="debugModeTriggerError">
-                    Trigger Error
-                </button>
-            </p>
-            <p>
-                <button class="btn btn-primary" @click="debugModeDisable">
-                    Cancel Debug Mode
-                </button>
-            </p>
         </div>
     </div>
 </template>
@@ -1228,5 +1244,15 @@ onUnmounted(async () => {
 
 .indent {
     margin-left: 1.5rem;
+}
+
+.wizard-review ul {
+    list-style-type: circle;
+    padding-left: 2.5rem;
+}
+
+.wizard-review ul ul {
+    list-style-type: circle;
+    padding-left: 1.5rem;
 }
 </style>
