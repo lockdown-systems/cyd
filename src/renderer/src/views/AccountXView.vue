@@ -516,7 +516,7 @@ onUnmounted(async () => {
 
 <template>
     <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
-        <AccountHeader :account="account" :show-dashboard-button="currentState != State.wizardStartDisplay"
+        <AccountHeader :account="account" :show-dashboard-button="currentState != State.WizardStartDisplay"
             @on-dashboard-clicked="emit('onRefreshClicked')" @on-remove-clicked="emit('onRemoveClicked')" />
 
         <div class="d-flex">
@@ -569,8 +569,7 @@ onUnmounted(async () => {
             }" />
 
         <!-- Wizard -->
-        <div v-if="accountXViewModel?.state == State.WizardStartDisplay || accountXViewModel?.state == State.WizardSaveOptionsDisplay || accountXViewModel?.state == State.WizardDeleteOptionsDisplay || accountXViewModel?.state == State.WizardReviewDisplay || accountXViewModel?.state == State.WizardDeleteReviewDisplay"
-            class="wizard">
+        <div :class="{ 'hidden': accountXViewModel?.showBrowser, 'wizard': true }">
             <div class="container">
                 <div class="row">
                     <!-- wizard main content -->
