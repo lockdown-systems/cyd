@@ -113,7 +113,6 @@ const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
-
 const chanceToReview = ref(true);
 
 const showArchivedOnFinishedDelete = computed(() => {
@@ -159,6 +158,7 @@ const updateSettings = async () => {
             deleteLikes: deleteLikes.value,
             deleteLikesDaysOld: deleteLikesDaysOld.value,
             deleteDMs: deleteDMs.value,
+            chanceToReview: chanceToReview.value,
         }
     };
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
@@ -441,6 +441,7 @@ onMounted(async () => {
         deleteLikes.value = props.account.xAccount.deleteLikes;
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = props.account.xAccount.deleteDMs;
+        chanceToReview.value = props.account.xAccount.chanceToReview;
     }
 
     if (webviewComponent.value !== null) {

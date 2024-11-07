@@ -80,7 +80,10 @@ export const runMainMigrations = () => {
     accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     username TEXT,
     profileImageDataURI TEXT,
+    saveMyData BOOLEAN DEFAULT 1,
+    deleteMyData BOOLEAN DEFAULT 0,
     archiveTweets BOOLEAN DEFAULT 1,
+    archiveTweetsHTML BOOLEAN DEFAULT 0,
     archiveLikes BOOLEAN DEFAULT 0,
     archiveDMs BOOLEAN DEFAULT 1,
     deleteTweets BOOLEAN DEFAULT 1,
@@ -94,16 +97,9 @@ export const runMainMigrations = () => {
     deleteRetweetsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 60,
-    deleteDMs BOOLEAN DEFAULT 0
+    deleteDMs BOOLEAN DEFAULT 0,
+    chanceToReview BOOLEAN DEFAULT 1
 );`,
-            ]
-        },
-        {
-            name: "add saveMyData, deleteMyData, and archiveTweetsHTML columns to xAccount",
-            sql: [
-                `ALTER TABLE xAccount ADD COLUMN saveMyData BOOLEAN DEFAULT 1;`,
-                `ALTER TABLE xAccount ADD COLUMN deleteMyData BOOLEAN DEFAULT 0;`,
-                `ALTER TABLE xAccount ADD COLUMN archiveTweetsHTML BOOLEAN DEFAULT 0;`,
             ]
         }
     ]);
@@ -156,6 +152,7 @@ interface XAccountRow {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
+    chanceToReview: boolean;
 }
 
 // Utils
@@ -240,6 +237,7 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
+        chanceToReview: !!row.chanceToReview
     };
 }
 
@@ -273,6 +271,7 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
+            chanceToReview: !!row.chanceToReview
         });
     }
     return accounts;
@@ -313,7 +312,8 @@ export const saveXAccount = (account: XAccount) => {
             deleteRetweetsDaysOld = ?,
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
-            deleteDMs = ?
+            deleteDMs = ?,
+            chanceToReview = ?
         WHERE id = ?
     `, [
         account.username,
@@ -336,6 +336,7 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
+        account.chanceToReview ? 1 : 0,
         account.id
     ]);
 }
