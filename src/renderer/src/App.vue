@@ -299,6 +299,11 @@ h2 {
   font-size: 1.25rem;
 }
 
+h3 {
+  font-size: 1.125rem;
+  color: #666666;
+}
+
 /* Bootstrap style that for some reason aren't making it */
 .mr-1 {
   margin-right: 0.25rem;

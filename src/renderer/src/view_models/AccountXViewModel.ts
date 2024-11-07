@@ -1924,8 +1924,9 @@ database.
                 case State.WizardReview:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-                    this.instructions = `
-TK TK replace this`;
+                    this.instructions = `I'm almost ready to start helping you claw back your data from X!
+
+**Here's what I'm planning on doing.**`;
                     this.state = State.WizardReviewDisplay;
                     break;
 

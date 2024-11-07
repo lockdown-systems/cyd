@@ -114,6 +114,8 @@ const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
 
+const chanceToReview = ref(true);
+
 const showArchivedOnFinishedDelete = computed(() => {
     return (
         accountXViewModel.value?.action === 'delete' &&
@@ -212,6 +214,9 @@ const startStateLoop = async () => {
             if (accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay) {
                 await wizardDeleteOptionsUpdateButtonsText();
             }
+            if (accountXViewModel.value?.state === State.WizardReviewDisplay) {
+                await wizardReviewUpdateButtonsText();
+            }
 
             await updateArchivePath();
             break;
@@ -290,6 +295,32 @@ const wizardDeleteOptionsUpdateButtonsText = async () => {
     }
 }
 
+const wizardReviewUpdateButtonsText = async () => {
+    if (saveMyData.value) {
+        if (deleteMyData.value) {
+            if (chanceToReview.value) {
+                wizardNextText.value = 'Start Saving and Build Database';
+            } else {
+                wizardNextText.value = 'Start Saving, Build Database, and Start Deleting';
+            }
+        } else {
+            wizardNextText.value = 'Start Saving';
+        }
+    } else {
+        if (chanceToReview.value) {
+            wizardNextText.value = 'Build Database';
+        } else {
+            wizardNextText.value = 'Build Database and Start Deleting';
+        }
+    }
+
+    if (deleteMyData.value) {
+        wizardBackText.value = 'Back to Delete Options';
+    } else {
+        wizardBackText.value = 'Back to Save Options';
+    }
+}
+
 const wizardStartNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
@@ -337,6 +368,41 @@ const wizardDeleteOptionsNextClicked = async () => {
     await startStateLoop();
 };
 
+const wizardReviewBackClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    if (deleteMyData.value) {
+        accountXViewModel.value.state = State.WizardDeleteOptions;
+    } else {
+        accountXViewModel.value.state = State.WizardSaveOptions;
+    }
+    await startStateLoop();
+};
+
+const wizardReviewNextClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    // TODO: fix this logic
+    if (saveMyData.value) {
+        if (deleteMyData.value) {
+            if (chanceToReview.value) {
+                accountXViewModel.value.state = State.RunJobs;
+            } else {
+                accountXViewModel.value.state = State.WizardDeleteReview;
+            }
+        } else {
+            accountXViewModel.value.state = State.RunJobs;
+        }
+    } else {
+        if (chanceToReview.value) {
+            accountXViewModel.value.state = State.RunJobs;
+        } else {
+            accountXViewModel.value.state = State.WizardDeleteReview;
+        }
+    }
+    await startStateLoop();
+};
+
 // Debug functions
 
 const shouldOpenDevtools = ref(false);
@@ -364,6 +430,8 @@ const debugModeDisable = async () => {
     }
 };
 
+// Lifecycle
+
 onMounted(async () => {
     shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
 
@@ -371,6 +439,7 @@ onMounted(async () => {
 
     if (props.account.xAccount !== null) {
         archiveTweets.value = props.account.xAccount.archiveTweets;
+        archiveTweetsHTML.value = props.account.xAccount.archiveTweetsHTML;
         archiveLikes.value = props.account.xAccount.archiveLikes;
         archiveDMs.value = props.account.xAccount.archiveDMs;
         saveMyData.value = props.account.xAccount.saveMyData;
@@ -787,6 +856,100 @@ onUnmounted(async () => {
                     <button type="submit" class="btn btn-primary"
                         :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
                         @click="wizardDeleteOptionsNextClicked">
+                        <i class="fa-solid fa-forward" />
+                        {{ wizardNextText }}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Wizard: review -->
+        <div v-if="accountXViewModel?.state == State.WizardReviewDisplay" class="wizard container mb-4 mt-3 mx-auto">
+            <div class="mb-4">
+                <h2>
+                    Review your choices
+                </h2>
+            </div>
+            <form @submit.prevent>
+                <div v-if="saveMyData">
+                    <h3>
+                        <i class="fa-solid fa-floppy-disk" />
+                        Save my data
+                    </h3>
+                    <ul>
+                        <li v-if="archiveTweets">
+                            Save tweets
+                            <ul>
+                                <li v-if="archiveTweetsHTML">
+                                    Save HTML versions of tweets
+                                </li>
+                            </ul>
+                        </li>
+                        <li v-if="archiveLikes">
+                            Save likes
+                        </li>
+                        <li v-if="archiveDMs">
+                            Save direct messages
+                        </li>
+                    </ul>
+                </div>
+
+                <div v-if="deleteMyData">
+                    <h3>
+                        <i class="fa-solid fa-fire" />
+                        Delete my data
+                    </h3>
+                    <ul>
+                        <li v-if="deleteTweets">
+                            Delete tweets
+                            <ul>
+                                <li v-if="deleteTweetsRetweetsThresholdEnabled">
+                                    Keep tweets with at least {{ deleteTweetsRetweetsThreshold }} retweets
+                                </li>
+                                <li v-if="deleteTweetsLikesThresholdEnabled">
+                                    Keep tweets with at least {{ deleteTweetsLikesThreshold }} likes
+                                </li>
+                                <li v-if="deleteTweetsArchiveEnabled">
+                                    Save an HTML version of each tweet before deleting it
+                                </li>
+                            </ul>
+                        </li>
+                        <li v-if="deleteRetweets">
+                            Unretweet tweets
+                        </li>
+                        <li v-if="deleteLikes">
+                            Unlike tweets
+                        </li>
+                        <li v-if="deleteDMs">
+                            Delete direct messages
+                        </li>
+                    </ul>
+
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input id="chanceToReview" v-model="chanceToReview" type="checkbox" class="form-check-input"
+                                @change="wizardReviewUpdateButtonsText">
+                            <label class="form-check-label mr-1 text-nowrap" for="chanceToReview">
+                                Give me a chance to review my data before deleting it
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small class="form-text text-muted">
+                                If you don't check this box, your data will be deleted as soon Cyd builds your local
+                                database.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <button type="submit" class="btn btn-outline-secondary" @click="wizardReviewBackClicked">
+                        <i class="fa-solid fa-backward" />
+                        {{ wizardBackText }}
+                    </button>
+
+                    <button type="submit" class="btn btn-primary"
+                        :disabled="!(archiveTweets || archiveLikes || archiveDMs)" @click="wizardReviewNextClicked">
                         <i class="fa-solid fa-forward" />
                         {{ wizardNextText }}
                     </button>
