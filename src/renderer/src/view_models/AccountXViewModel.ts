@@ -1849,7 +1849,7 @@ database.
                     this.instructions = `
 I've finished saving all the data I need before I can start deleting. The database of your X data contains: ...
 
-Next, I'm going to delete the following data:`;
+**Next, I'm going to delete the following data:**`;
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
@@ -1868,7 +1868,12 @@ Next, I'm going to delete the following data:`;
                     }
                     this.currentJobIndex = 0;
 
-                    this.state = State.FinishedRunningJobs;
+                    if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview) {
+                        this.state = State.WizardDeleteReview;
+                    } else {
+                        this.state = State.FinishedRunningJobs;
+                    }
+
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     break;
