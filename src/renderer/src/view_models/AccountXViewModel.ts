@@ -34,7 +34,6 @@ export type XViewModelState = {
     state: State;
     action: string;
     actionString: string;
-    actionFinishedString: string;
     progress: XProgress;
     jobs: XJob[];
     currentJobIndex: number;
@@ -61,7 +60,7 @@ export class AccountXViewModel extends BaseViewModel {
         super.init();
     }
 
-    async defineJobs(chanceToReview: boolean, justDelete: boolean = false) {
+    async defineJobs(justDelete: boolean = false) {
         if (this.account.xAccount?.deleteMyData) {
             // Ensure the user has paid for Premium
             const authenticated = await this.api.ping();
@@ -127,7 +126,7 @@ export class AccountXViewModel extends BaseViewModel {
                 }
             }
 
-            if (justDelete || !chanceToReview) {
+            if (justDelete || !this.account.xAccount?.chanceToReview) {
                 if (this.account.xAccount?.deleteTweets) {
                     jobTypes.push("deleteTweets");
                 }
@@ -500,8 +499,6 @@ export class AccountXViewModel extends BaseViewModel {
     async runJobLogin(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_LOGIN, navigator.userAgent);
 
-        this.actionFinishedString = "You're logged in.";
-
         this.showBrowser = true;
         this.instructions = `**${this.actionString}**
 
@@ -537,8 +534,6 @@ You've been logged out. Please log back into **@${this.account.xAccount?.usernam
 
 Hang on while I scroll down to your earliest tweets.`;
         this.showAutomationNotice = true;
-
-        this.actionFinishedString = "I've finished saving your tweets.";
 
         if (await window.electron.X.getConfig(this.account.id, "forceIndexTweets") == "true") {
             this.isFirstRun = true;
@@ -701,8 +696,6 @@ Hang on while I scroll down to your earliest tweets.`;
 This may take a while...`;
         this.showAutomationNotice = true;
 
-        this.actionFinishedString = "I've finished downloading HTML copies of your tweets.";
-
         // Initialize archiving of tweets
         try {
             archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
@@ -748,8 +741,6 @@ This may take a while...`;
 
 Hang on while I scroll down to your earliest direct message conversations...`;
         this.showAutomationNotice = true;
-
-        this.actionFinishedString = "I've finished saving your direct message conversations.";
 
         // Check if this is the first time indexing DMs has happened in this account
         if (await window.electron.X.getConfig(this.account.id, "forceIndexConversations") == "true") {
@@ -875,8 +866,6 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
 Please wait while I index all of the messages from each conversation...`;
         this.showAutomationNotice = true;
-
-        this.actionFinishedString = "I've finished saving your direct messages.";
 
         if (await window.electron.X.getConfig(this.account.id, "forceIndexMessages") == "true") {
             this.isFirstRun = true;
@@ -1037,8 +1026,6 @@ Please wait while I index all of the messages from each conversation...`;
         this.instructions = `**I'm building a searchable archive web page in HTML.**`;
         this.showAutomationNotice = true;
 
-        this.actionFinishedString = "I've finished building a searchable archive web page in HTML.";
-
         // Build the archive
         try {
             await window.electron.X.archiveBuild(this.account.id);
@@ -1079,8 +1066,6 @@ Please wait while I index all of the messages from each conversation...`;
 
 Hang on while I scroll down to your earliest likes.`;
         this.showAutomationNotice = true;
-
-        this.actionFinishedString = "I've finished saving your likes.";
 
         // Check if this is the first time indexing likes has happened in this account
         if (await window.electron.X.getConfig(this.account.id, "forceIndexLikes") == "true") {
@@ -1214,8 +1199,6 @@ Hang on while I scroll down to your earliest likes.`;
         this.showBrowser = true;
         this.instructions = `**I'm deleting your tweets based on your criteria, starting with the earliest.**`;
         this.showAutomationNotice = true;
-
-        this.actionFinishedString = "I've finished deleting your tweets.";
 
         // Load the tweets to delete
         try {
@@ -1361,8 +1344,6 @@ Hang on while I scroll down to your earliest likes.`;
         this.showAutomationNotice = true;
         let alreadyDeleted = false;
 
-        this.actionFinishedString = "I've finished deleting your retweets.";
-
         // Load the retweets to delete
         try {
             tweetsToDelete = await window.electron.X.deleteRetweetsStart(this.account.id);
@@ -1475,8 +1456,6 @@ Hang on while I scroll down to your earliest likes.`;
         this.instructions = `**I'm deleting your likes, starting with the earliest.**`;
         this.showAutomationNotice = true;
 
-        this.actionFinishedString = "I've finished deleting your likes.";
-
         // Load the likes to delete
         try {
             tweetsToDelete = await window.electron.X.deleteLikesStart(this.account.id);
@@ -1561,8 +1540,6 @@ Hang on while I scroll down to your earliest likes.`;
         this.showBrowser = true;
         this.instructions = `**I'm deleting all of your direct message conversations, start with the most recent.**`;
         this.showAutomationNotice = true;
-
-        this.actionFinishedString = "I've finished deleting your direct messages.";
 
         // Start the progress
         await this.syncProgress();
@@ -1894,8 +1871,6 @@ Next, I'm going to delete the following data:`;
                     this.state = State.FinishedRunningJobs;
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-
-                    this.instructions = `**${this.actionFinishedString}**`;
                     break;
 
                 case State.Debug:
@@ -1923,7 +1898,6 @@ Next, I'm going to delete the following data:`;
             "state": this.state as State,
             "action": this.action,
             "actionString": this.actionString,
-            "actionFinishedString": this.actionFinishedString,
             "progress": this.progress,
             "jobs": this.jobs,
             "currentJobIndex": this.currentJobIndex,
@@ -1934,7 +1908,6 @@ Next, I'm going to delete the following data:`;
         this.state = state.state;
         this.action = state.action;
         this.actionString = state.actionString;
-        this.actionFinishedString = state.actionFinishedString;
         this.progress = state.progress;
         this.jobs = state.jobs;
         this.currentJobIndex = state.currentJobIndex;

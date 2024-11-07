@@ -30,11 +30,11 @@ const getStatusIcon = (status: string) => {
 const getJobTypeText = (jobType: string) => {
     const jobTypeTexts: { [key: string]: string } = {
         login: 'Logging in',
-        indexTweets: 'Indexing tweets',
-        indexLikes: 'Indexing likes',
-        indexConversations: 'Indexing conversations',
-        indexMessages: 'Indexing messages',
-        archiveTweets: 'Archiving tweets',
+        indexTweets: 'Saving tweets',
+        indexLikes: 'Saving likes',
+        indexConversations: 'Saving conversations',
+        indexMessages: 'Saving messages',
+        archiveTweets: 'Saving tweets HTML',
         archiveBuild: 'Building archive',
         deleteTweets: 'Deleting tweets',
         deleteRetweets: 'Deleting retweets',

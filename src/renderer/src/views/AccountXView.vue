@@ -383,7 +383,7 @@ const wizardReviewNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
     if (accountXViewModel.value) {
-        await accountXViewModel.value.defineJobs(chanceToReview.value);
+        await accountXViewModel.value.defineJobs();
     }
     await startStateLoop();
 };
@@ -834,8 +834,7 @@ onUnmounted(async () => {
                                     <div class="indent">
                                         <small class="form-text text-muted">
                                             Likes are private on X. If you've liked a lot of tweets, it might take a
-                                            long time to delete
-                                            them all.
+                                            long time to delete them all.
                                         </small>
                                     </div>
                                 </div>
@@ -851,9 +850,7 @@ onUnmounted(async () => {
                                         <div class="indent">
                                             <small class="form-text text-muted">
                                                 This will only delete DMs from your account. The people you've sent
-                                                messages to will
-                                                still
-                                                have them unless they delete their DMs as well.
+                                                messages to will still have them unless they delete their DMs as well.
                                             </small>
                                         </div>
                                     </div>
