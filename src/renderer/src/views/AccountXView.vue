@@ -566,8 +566,8 @@ onUnmounted(async () => {
 
 <template>
     <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
-        <AccountHeader :account="account" :show-dashboard-button="currentState != State.WizardStartDisplay"
-            @on-dashboard-clicked="emit('onRefreshClicked')" @on-remove-clicked="emit('onRemoveClicked')" />
+        <AccountHeader :account="account" :show-refresh-button="currentState != State.WizardStartDisplay"
+            @on-refresh-clicked="emit('onRefreshClicked')" @on-remove-clicked="emit('onRemoveClicked')" />
 
         <div class="d-flex">
             <div class="d-flex flex-column flex-grow-1">

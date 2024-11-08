@@ -5,17 +5,17 @@ import type { Account } from '../../../shared_types';
 
 defineProps<{
     account: Account;
-    showDashboardButton: boolean;
+    showRefreshButton: boolean;
 }>();
 
 const emit = defineEmits([
-    'onDashboardClicked',
+    'onRefreshClicked',
     'onRemoveClicked'
 ]);
 
-const dashboardBtnShowInfo = ref(false);
-const onDashboardClicked = () => {
-    emit('onDashboardClicked');
+const refreshBtnShowInfo = ref(false);
+const onRefreshClicked = () => {
+    emit('onRefreshClicked');
 };
 
 const removeBtnShowInfo = ref(false);
@@ -26,7 +26,7 @@ const onRemoveClicked = () => {
 
 <template>
     <div class="account-header d-flex align-items-center justify-content-between">
-        <div class="label d-flex align-items-center">
+        <div class="label d-flex align-items-center mx-auto">
             <template v-if="account.type == 'X'">
                 <template
                     v-if="account.xAccount?.profileImageDataURI != '' && account.xAccount?.profileImageDataURI != null">
@@ -43,13 +43,13 @@ const onRemoveClicked = () => {
             </span>
         </div>
         <div class="d-flex">
-            <div v-if="showDashboardButton" class="btn-container">
-                <div class="dashboard-btn account-header-btn d-flex justify-content-center align-items-center"
-                    @mouseover="dashboardBtnShowInfo = true" @mouseleave="dashboardBtnShowInfo = false"
-                    @click="onDashboardClicked">
-                    <i class="fa-solid fa-gauge" />
+            <div v-if="showRefreshButton" class="btn-container">
+                <div class="refresh-btn account-header-btn d-flex justify-content-center align-items-center"
+                    @mouseover="refreshBtnShowInfo = true" @mouseleave="refreshBtnShowInfo = false"
+                    @click="onRefreshClicked">
+                    <i class="fa-solid fa-rotate" />
                 </div>
-                <div v-if="dashboardBtnShowInfo" class="info-popup info-popup-dashboard">
+                <div v-if="refreshBtnShowInfo" class="info-popup info-popup-refresh">
                     Back to start
                 </div>
             </div>
