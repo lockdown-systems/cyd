@@ -23,9 +23,13 @@ import type {
     XProgress,
     XJob,
     XRateLimitInfo,
-    XDatabaseStats
+    XDatabaseStats,
+    XDeleteReviewStats
 } from '../../../shared_types';
-import { emptyXDatabaseStats } from '../../../shared_types';
+import {
+    emptyXDatabaseStats,
+    emptyXDeleteReviewStats
+} from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 import { AutomationErrorType } from '../automation_errors';
 
@@ -55,6 +59,7 @@ const currentJobs = ref<XJob[]>([]);
 const isPaused = ref<boolean>(false);
 
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
+const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
@@ -105,6 +110,17 @@ watch(
     (newDatabaseStats) => {
         if (newDatabaseStats) {
             databaseStats.value = newDatabaseStats as XDatabaseStats;
+        }
+    },
+    { deep: true, }
+);
+
+// Keep deleteReviewStats in sync
+watch(
+    () => accountXViewModel.value?.deleteReviewStats,
+    (newDeleteReviewStats) => {
+        if (newDeleteReviewStats) {
+            deleteReviewStats.value = newDeleteReviewStats as XDeleteReviewStats;
         }
     },
     { deep: true, }
@@ -175,24 +191,6 @@ const updateSettings = async () => {
     }
     emitter?.emit('account-updated');
 };
-
-// const startArchivingClicked = async () => {
-//     await updateSettings();
-//     if (accountXViewModel.value) {
-//         await accountXViewModel.value.startArchiving(archiveForceIndexEverything.value);
-//     }
-//     archiveForceIndexEverything.value = false;
-//     await startStateLoop();
-// };
-
-// const startDeletingClicked = async () => {
-//     await updateSettings();
-//     if (accountXViewModel.value !== null) {
-//         await accountXViewModel.value.startDeleting(deleteForceIndexEverything.value);
-//     }
-//     deleteForceIndexEverything.value = false;
-//     await startStateLoop();
-// };
 
 const startStateLoop = async () => {
     console.log('State loop started');
@@ -333,6 +331,8 @@ const wizardReviewUpdateButtonsText = async () => {
 }
 
 const wizardDeleteReviewUpdateButtonsText = async () => {
+    wizardBackText.value = 'Back to Delete Options';
+    wizardNextText.value = 'Start Deleting'
 }
 
 const wizardStartNextClicked = async () => {
@@ -378,7 +378,11 @@ const wizardDeleteOptionsBackClicked = async () => {
 const wizardDeleteOptionsNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
-    accountXViewModel.value.state = State.WizardReview;
+    if (accountXViewModel.value.isDeleteReviewActive) {
+        accountXViewModel.value.state = State.WizardDeleteReview;
+    } else {
+        accountXViewModel.value.state = State.WizardReview;
+    }
     await startStateLoop();
 };
 
@@ -399,6 +403,24 @@ const wizardReviewNextClicked = async () => {
     if (accountXViewModel.value) {
         await accountXViewModel.value.defineJobs();
     }
+    accountXViewModel.value.isDeleteReviewActive = chanceToReview.value;
+    await startStateLoop();
+};
+
+const wizardDeleteReviewBackClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    accountXViewModel.value.state = State.WizardDeleteOptions;
+    await startStateLoop();
+};
+
+const wizardDeleteReviewNextClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    if (accountXViewModel.value) {
+        await accountXViewModel.value.defineJobs(true);
+    }
+    accountXViewModel.value.isDeleteReviewActive = false;
     await startStateLoop();
 };
 
@@ -871,8 +893,8 @@ onUnmounted(async () => {
                                 </div>
 
                                 <div class="buttons">
-                                    <button type="submit" class="btn btn-outline-secondary"
-                                        @click="wizardDeleteOptionsBackClicked">
+                                    <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
+                                        class="btn btn-outline-secondary" @click="wizardDeleteOptionsBackClicked">
                                         <i class="fa-solid fa-backward" />
                                         {{ wizardBackText }}
                                     </button>
@@ -989,21 +1011,51 @@ onUnmounted(async () => {
                         <!-- Wizard: delete review -->
                         <div v-if="accountXViewModel?.state == State.WizardDeleteReviewDisplay"
                             class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
+                            <h2>
+                                Based on your settings, you will delete:
+                            </h2>
                             <form @submit.prevent>
                                 <ul>
-                                    <li>TK: add stuff here</li>
+                                    <li v-if="deleteTweets">
+                                        <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
+                                        that are older than {{ deleteTweetsDaysOld }} days
+                                        <span
+                                            v-if="deleteTweetsRetweetsThresholdEnabled && !deleteTweetsLikesThresholdEnabled">
+                                            unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets
+                                        </span>
+                                        <span
+                                            v-if="!deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
+                                            unless they have at least {{ deleteTweetsLikesThreshold }} likes
+                                        </span>
+                                        <span
+                                            v-if="deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
+                                            unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets or {{
+                                                deleteTweetsLikesThreshold }} likes
+                                        </span>
+                                    </li>
+                                    <li v-if="deleteRetweets">
+                                        <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
+                                        that are older than {{ deleteRetweetsDaysOld }} days
+                                    </li>
+                                    <li v-if="deleteLikes">
+                                        <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
+                                        that are older than {{ deleteLikesDaysOld }} days
+                                    </li>
+                                    <li v-if="deleteDMs">
+                                        <b>All of your direct messages</b>
+                                    </li>
                                 </ul>
 
                                 <div class="buttons">
                                     <button type="submit" class="btn btn-outline-secondary"
-                                        @click="wizardReviewBackClicked">
+                                        @click="wizardDeleteReviewBackClicked">
                                         <i class="fa-solid fa-backward" />
                                         {{ wizardBackText }}
                                     </button>
 
                                     <button type="submit" class="btn btn-primary"
                                         :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                        @click="wizardReviewNextClicked">
+                                        @click="wizardDeleteReviewNextClicked">
                                         <i class="fa-solid fa-forward" />
                                         {{ wizardNextText }}
                                     </button>

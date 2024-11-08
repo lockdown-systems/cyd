@@ -266,3 +266,17 @@ export function emptyXDatabaseStats(): XDatabaseStats {
         messagesDeleted: 0
     }
 }
+
+export type XDeleteReviewStats = {
+    tweetsToDelete: number;
+    retweetsToDelete: number;
+    likesToDelete: number;
+}
+
+export function emptyXDeleteReviewStats(): XDeleteReviewStats {
+    return {
+        tweetsToDelete: 0,
+        retweetsToDelete: 0,
+        likesToDelete: 0
+    }
+}

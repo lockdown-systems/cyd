@@ -26,6 +26,7 @@ import {
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
+    XDeleteReviewStats, emptyXDeleteReviewStats
 } from './shared_types'
 import {
     runMigrations,
@@ -1455,16 +1456,18 @@ export class XAccountController {
     }
 
     async getDatabaseStats(): Promise<XDatabaseStats> {
-        const tweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ?", [0], "get") as Sqlite3Count;
-        const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [0], "get") as Sqlite3Count;
+        const username = this.account?.username || "";
+
+        const tweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND isLiked = ? AND username = ?", [0, 0, username], "get") as Sqlite3Count;
+        const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND isLiked = ? AND username = ? AND deletedAt IS NOT NULL", [0, 0, username], "get") as Sqlite3Count;
         const retweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ?", [1], "get") as Sqlite3Count;
         const retweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const likesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?", [1], "get") as Sqlite3Count;
         const likesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const conversationsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation", [], "get") as Sqlite3Count;
         const conversationsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
-        const messagesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM messages", [], "get") as Sqlite3Count;
-        const messagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM messages WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
+        const messagesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
+        const messagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
 
         const databaseStats = emptyXDatabaseStats();
         databaseStats.tweetsSaved = tweetsSaved.count;
@@ -1478,6 +1481,18 @@ export class XAccountController {
         databaseStats.messagesSaved = messagesSaved.count;
         databaseStats.messagesDeleted = messagesDeleted.count
         return databaseStats;
+    }
+
+    async getDeleteReviewStats(): Promise<XDeleteReviewStats> {
+        const deleteTweetsStartResponse = await this.deleteTweetsStart()
+        const deleteRetweetStartResponse = await this.deleteRetweetsStart()
+        const deleteLikesStartResponse = await this.deleteLikesStart()
+
+        const deleteReviewStats = emptyXDeleteReviewStats();
+        deleteReviewStats.tweetsToDelete = deleteTweetsStartResponse.tweets.length;
+        deleteReviewStats.retweetsToDelete = deleteRetweetStartResponse.tweets.length;
+        deleteReviewStats.likesToDelete = deleteLikesStartResponse.tweets.length;
+        return deleteReviewStats;
     }
 
     async saveProfileImage(url: string): Promise<void> {
@@ -1786,6 +1801,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.getDatabaseStats();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:getDeleteReviewStats', async (_, accountID: number): Promise<XDeleteReviewStats> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getDeleteReviewStats();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

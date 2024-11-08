@@ -9,6 +9,7 @@ import {
     XRateLimitInfo,
     XProgressInfo,
     XDatabaseStats,
+    XDeleteReviewStats,
     ResponseData,
 } from './shared_types'
 
@@ -182,6 +183,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         getDatabaseStats: (accountID: number): Promise<XDatabaseStats> => {
             return ipcRenderer.invoke('X:getDatabaseStats', accountID);
+        },
+        getDeleteReviewStats: (accountID: number): Promise<XDeleteReviewStats> => {
+            return ipcRenderer.invoke('X:getDeleteReviewStats', accountID);
         },
         saveProfileImage: (accountID: number, url: string): Promise<void> => {
             return ipcRenderer.invoke('X:saveProfileImage', accountID, url);

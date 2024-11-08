@@ -8,7 +8,8 @@ import {
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
-    XDatabaseStats, emptyXDatabaseStats
+    XDatabaseStats, emptyXDatabaseStats,
+    XDeleteReviewStats, emptyXDeleteReviewStats
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
@@ -45,10 +46,15 @@ export class AccountXViewModel extends BaseViewModel {
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
     public databaseStats: XDatabaseStats = emptyXDatabaseStats();
+    public deleteReviewStats: XDeleteReviewStats = emptyXDeleteReviewStats();
     public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
     private isFirstRun: boolean = false;
+
+    // This is used to track the user's progress through the wizard. If they want to review before 
+    // they delete, this lets them go back and change settings without starting over
+    public isDeleteReviewActive: boolean = false;
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
@@ -64,6 +70,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     async refreshDatabaseStats() {
         this.databaseStats = await window.electron.X.getDatabaseStats(this.account.id);
+        this.deleteReviewStats = await window.electron.X.getDeleteReviewStats(this.account.id);
     }
 
     async defineJobs(justDelete: boolean = false) {
@@ -510,13 +517,13 @@ export class AccountXViewModel extends BaseViewModel {
 
         const statsComponents = [];
         if (this.account.xAccount?.deleteTweets) {
-            statsComponents.push(`${tweetsCount} tweets`);
+            statsComponents.push(`${tweetsCount.toLocaleString()} tweets`);
         }
         if (this.account.xAccount?.deleteRetweets) {
-            statsComponents.push(`${retweetsCount} retweets`);
+            statsComponents.push(`${retweetsCount.toLocaleString()} retweets`);
         }
         if (this.account.xAccount?.deleteLikes) {
-            statsComponents.push(`${likesCount} likes`);
+            statsComponents.push(`${likesCount.toLocaleString()} likes`);
         }
 
         let statsString = "";
@@ -535,10 +542,7 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_LOGIN, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `**${this.actionString}**
-
-Checking to see if you're still logged in to your X account...
-`;
+        this.instructions = `Checking to see if you're still logged in to your X account...`;
 
         this.showAutomationNotice = true;
 
@@ -546,10 +550,7 @@ Checking to see if you're still logged in to your X account...
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
         if (this.webview.getURL().startsWith("https://x.com/i/flow/login")) {
             // Not logged in, so prompt the user to login
-            this.instructions = `**${this.actionString}**
-
-You've been logged out. Please log back into **@${this.account.xAccount?.username}**.
-`;
+            this.instructions = `You've been logged out. Please log back into **@${this.account.xAccount?.username}**.`;
 
             this.showAutomationNotice = false;
             await this.login();
@@ -1882,9 +1883,9 @@ database.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-I've finished saving all the data I need before I can start deleting. I've saved: **${await this.getDatabaseStatsString()}**.
+I've finished saving all the data I need before I can start deleting.
 
-**Based on your settings, I'm going to delete the following data:**`;
+I've saved: **${await this.getDatabaseStatsString()}**.`;
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 

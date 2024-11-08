@@ -15,7 +15,8 @@ import type {
     XRateLimitInfo,
     XProgressInfo,
     XDatabaseStats,
-    ResponseData
+    ResponseData,
+    XDeleteReviewStats
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -82,6 +83,7 @@ declare global {
                 getProgress: (accountID: number) => Promise<XProgress>;
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
                 getDatabaseStats: (accountID: number) => Promise<XDatabaseStats>;
+                getDeleteReviewStats: (accountID: number) => Promise<XDeleteReviewStats>;
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
                 getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
                 deleteTweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
