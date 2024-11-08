@@ -44,7 +44,9 @@ provide('refreshDeviceInfo', refreshDeviceInfo);
 
 // Refresh API client
 const refreshAPIClient = async () => {
-  apiClient.value = new CydAPIClient();
+  if (!apiClient.value) {
+    apiClient.value = new CydAPIClient();
+  }
   apiClient.value.initialize(await window.electron.getAPIURL());
   await refreshDeviceInfo();
 };
@@ -297,6 +299,11 @@ h1 {
 
 h2 {
   font-size: 1.25rem;
+}
+
+h3 {
+  font-size: 1.125rem;
+  color: #666666;
 }
 
 /* Bootstrap style that for some reason aren't making it */

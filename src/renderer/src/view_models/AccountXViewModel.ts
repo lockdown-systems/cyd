@@ -7,18 +7,32 @@ import {
     XIndexMessagesStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XProgressInfo, emptyXProgressInfo,
-    XDeleteTweetsStartResponse
+    XDeleteTweetsStartResponse,
+    XDatabaseStats, emptyXDatabaseStats,
+    XDeleteReviewStats, emptyXDeleteReviewStats,
+    XArchiveInfo, emptyXArchiveInfo
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse, UserPremiumAPIResponse } from "../../../cyd-api-client";
+import { APIErrorResponse } from "../../../cyd-api-client";
 
 export enum State {
     Login = "login",
-    Dashboard = "dashboard",
-    DashboardDisplay = "dashboardDisplay",
+    WizardStart = "wizardStart",
+    WizardStartDisplay = "wizardStartDisplay",
+    WizardSaveOptions = "wizardSaveOptions",
+    WizardSaveOptionsDisplay = "wizardSaveOptionsDisplay",
+    WizardDeleteOptions = "wizardDeleteOptions",
+    WizardDeleteOptionsDisplay = "wizardDeleteOptionsDisplay",
+    WizardReview = "wizardReview",
+    WizardReviewDisplay = "wizardReviewDisplay",
+    WizardDeleteReview = "wizardDeleteReview",
+    WizardDeleteReviewDisplay = "wizardDeleteReviewDisplay",
+    WizardCheckPremium = "wizardCheckPremium",
+    WizardCheckPremiumDisplay = "wizardCheckPremiumDisplay",
     RunJobs = "runJobs",
     FinishedRunningJobs = "finishedRunningJobs",
+    FinishedRunningJobsDisplay = "finishedRunningJobsDisplay",
     Debug = "debug",
 }
 
@@ -26,7 +40,6 @@ export type XViewModelState = {
     state: State;
     action: string;
     actionString: string;
-    actionFinishedString: string;
     progress: XProgress;
     jobs: XJob[];
     currentJobIndex: number;
@@ -36,111 +49,102 @@ export class AccountXViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
+    public databaseStats: XDatabaseStats = emptyXDatabaseStats();
+    public deleteReviewStats: XDeleteReviewStats = emptyXDeleteReviewStats();
+    public archiveInfo: XArchiveInfo = emptyXArchiveInfo();
     public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
     private isFirstRun: boolean = false;
 
+    // This is used to track the user's progress through the wizard. If they want to review before 
+    // they delete, this lets them go back and change settings without starting over
+    public isDeleteReviewActive: boolean = false;
+
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
-            this.state = State.Dashboard;
+            this.state = State.WizardStart;
         } else {
             this.state = State.Login;
         }
 
         this.currentJobIndex = 0;
 
+        await this.refreshDatabaseStats();
+
         super.init();
     }
 
-    async setAction(action: string) {
-        const actions = [];
-        const finishedActions = [];
+    async refreshDatabaseStats() {
+        this.databaseStats = await window.electron.X.getDatabaseStats(this.account.id);
+        this.deleteReviewStats = await window.electron.X.getDeleteReviewStats(this.account.id);
+        this.archiveInfo = await window.electron.X.getArchiveInfo(this.account.id);
+    }
 
-        this.action = action;
-        switch (action) {
-            case "archive":
-                if (this.account.xAccount?.archiveTweets) {
-                    actions.push("tweets");
-                    finishedActions.push("tweets");
-                }
-                if (this.account.xAccount?.archiveLikes) {
-                    actions.push("likes");
-                    finishedActions.push("likes");
-                }
-                if (this.account.xAccount?.archiveDMs) {
-                    actions.push("direct messages");
-                    finishedActions.push("direct messages");
-                }
+    async defineJobs(justDelete: boolean = false) {
+        const jobTypes = [];
+        jobTypes.push("login");
 
-                if (actions.length > 0) {
-                    this.actionString = `I'm archiving your ${actions.join(" and ")}.`;
-                    this.actionFinishedString = `I've finished archiving your ${finishedActions.join(" and ")}!`;
-                } else {
-                    this.actionString = "No archiving actions to perform.";
-                    this.actionFinishedString = "No archiving actions were performed.";
-                }
-                break;
-            case "delete":
-                if (this.account.xAccount?.deleteTweets) {
-                    actions.push("tweets");
-                    finishedActions.push("tweets");
-                }
-                if (this.account.xAccount?.deleteRetweets) {
-                    actions.push("retweets");
-                    finishedActions.push("retweets");
+        if (!justDelete && this.account.xAccount?.saveMyData) {
+            if (this.account.xAccount?.archiveTweets) {
+                jobTypes.push("indexTweets");
+                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
+            }
+            if (this.account.xAccount?.archiveTweetsHTML) {
+                jobTypes.push("archiveTweets");
+            }
+            if (this.account.xAccount?.archiveLikes) {
+                jobTypes.push("indexLikes");
+                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
+            }
+            if (this.account.xAccount?.archiveDMs) {
+                jobTypes.push("indexConversations");
+                jobTypes.push("indexMessages");
+                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
+                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
+            }
+        }
+
+        if (this.account.xAccount?.deleteMyData) {
+            if (!justDelete) {
+                // Build database first
+                if (this.account.xAccount?.deleteTweets || this.account.xAccount?.deleteRetweets) {
+                    if (!jobTypes.includes("indexTweets")) {
+                        jobTypes.push("indexTweets");
+                    }
+                    await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                 }
                 if (this.account.xAccount?.deleteLikes) {
-                    actions.push("likes");
-                    finishedActions.push("likes");
+                    if (!jobTypes.includes("indexLikes")) {
+                        jobTypes.push("indexLikes");
+                    }
+                    await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
+                }
+            }
+
+            if (justDelete || !this.account.xAccount?.chanceToReview) {
+                if (this.account.xAccount?.deleteTweets) {
+                    jobTypes.push("deleteTweets");
+                }
+                if (this.account.xAccount?.deleteRetweets) {
+                    jobTypes.push("deleteRetweets");
+                }
+                if (this.account.xAccount?.deleteLikes) {
+                    jobTypes.push("deleteLikes");
                 }
                 if (this.account.xAccount?.deleteDMs) {
-                    actions.push("direct messages");
-                    finishedActions.push("direct messages");
+                    jobTypes.push("deleteDMs");
+                    await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
+                    await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                 }
-
-                if (actions.length > 0) {
-                    this.actionString = `I'm deleting your ${actions.join(", ")}.`;
-                    this.actionFinishedString = `I've finished deleting your ${finishedActions.join(", ")}!`;
-                } else {
-                    this.actionString = "No actions to perform.";
-                    this.actionFinishedString = "No actions were performed.";
-                }
-                break;
-        }
-    }
-
-    async startArchiving(forceIndex: boolean) {
-        this.setAction("archive");
-
-        const jobTypes = [];
-        jobTypes.push("login");
-        if (this.account.xAccount?.archiveTweets) {
-            jobTypes.push("indexTweets");
-            jobTypes.push("archiveTweets");
-            if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
             }
         }
-        if (this.account.xAccount?.archiveLikes) {
-            jobTypes.push("indexLikes");
-            if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
-            }
-        }
-        if (this.account.xAccount?.archiveDMs) {
-            jobTypes.push("indexConversations");
-            jobTypes.push("indexMessages");
-            if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
-                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
-            }
-        }
+
         jobTypes.push("archiveBuild");
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
-            this.log("startArchiving", JSON.parse(JSON.stringify(this.jobs)));
+            this.log("defineJobs", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -150,82 +154,6 @@ export class AccountXViewModel extends BaseViewModel {
             return;
         }
         this.state = State.RunJobs;
-
-        await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_STARTED, navigator.userAgent);
-    }
-
-    async startDeleting(forceIndex: boolean) {
-        // Ensure the user has paid for Premium
-        const authenticated = await this.api.ping();
-        if (!authenticated) {
-            this.emitter?.emit("show-sign-in");
-            return;
-        }
-
-        // Check if the user has premium
-        let userPremium: UserPremiumAPIResponse;
-        const resp = await this.api.getUserPremium();
-        if (resp && 'error' in resp === false) {
-            userPremium = resp;
-        } else {
-            await window.electron.showMessage("Failed to check if you have Premium access. Please try again later.");
-            return;
-        }
-
-        if (userPremium.premium_access === false) {
-            await window.electron.showMessage("Deleting data from X is a Premium feature. Please upgrade to Premium to use this feature.");
-            this.emitter?.emit("show-manage-account");
-            return;
-        }
-
-        this.setAction("delete");
-
-        const jobTypes = [];
-        jobTypes.push("login");
-        if (this.account.xAccount?.deleteTweets || this.account.xAccount?.deleteRetweets) {
-            jobTypes.push("indexTweets");
-            if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
-            }
-        }
-        if (this.account.xAccount?.deleteTweets) {
-            jobTypes.push("deleteTweets");
-        }
-        if (this.account.xAccount?.deleteRetweets) {
-            jobTypes.push("deleteRetweets");
-        }
-        if (this.account.xAccount?.deleteLikes) {
-            jobTypes.push("indexLikes");
-            jobTypes.push("deleteLikes");
-            if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
-            }
-        }
-        if (this.account.xAccount?.deleteDMs) {
-            jobTypes.push("indexConversations");
-            jobTypes.push("indexMessages");
-            jobTypes.push("deleteDMs");
-            if (forceIndex) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
-                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
-            }
-        }
-        jobTypes.push("archiveBuild");
-
-        try {
-            this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
-            this.log("startDeleting", JSON.parse(JSON.stringify(this.jobs)));
-        } catch (e) {
-            await this.error(AutomationErrorType.x_unknownError, {
-                exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview.getURL()
-            });
-            return;
-        }
-        this.state = State.RunJobs;
-
-        await window.electron.trackEvent(PlausibleEvents.X_DELETE_STARTED, navigator.userAgent);
     }
 
     async reset() {
@@ -233,7 +161,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
         this.isFirstRun = false;
-        this.state = State.Dashboard;
+        this.state = State.WizardStart;
     }
 
     async waitForRateLimit() {
@@ -564,13 +492,40 @@ export class AccountXViewModel extends BaseViewModel {
         return true;
     }
 
-    async runJobLogin(jobIndex: number): Promise<boolean> {
-        this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+    async getDatabaseStatsString(): Promise<string> {
+        await this.refreshDatabaseStats();
+        const tweetsCount = this.databaseStats.tweetsSaved - this.databaseStats.tweetsDeleted;
+        const retweetsCount = this.databaseStats.retweetsSaved - this.databaseStats.retweetsDeleted;
+        const likesCount = this.databaseStats.likesSaved - this.databaseStats.likesDeleted;
 
-Checking to see if you're still logged in to your X account...
-`;
+        const statsComponents = [];
+        if (this.account.xAccount?.deleteTweets) {
+            statsComponents.push(`${tweetsCount.toLocaleString()} tweets`);
+        }
+        if (this.account.xAccount?.deleteRetweets) {
+            statsComponents.push(`${retweetsCount.toLocaleString()} retweets`);
+        }
+        if (this.account.xAccount?.deleteLikes) {
+            statsComponents.push(`${likesCount.toLocaleString()} likes`);
+        }
+
+        let statsString = "";
+        for (let i = 0; i < statsComponents.length; i++) {
+            statsString += statsComponents[i];
+            if (i < statsComponents.length - 2) {
+                statsString += ", ";
+            } else if (i < statsComponents.length - 1) {
+                statsString += " and ";
+            }
+        }
+        return statsString;
+    }
+
+    async runJobLogin(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_LOGIN, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `Checking to see if you're still logged in to your X account...`;
 
         this.showAutomationNotice = true;
 
@@ -578,11 +533,7 @@ Checking to see if you're still logged in to your X account...
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
         if (this.webview.getURL().startsWith("https://x.com/i/flow/login")) {
             // Not logged in, so prompt the user to login
-            this.instructions = `
-**${this.actionString}**
-
-You've been logged out. Please log back into **@${this.account.xAccount?.username}**.
-`;
+            this.instructions = `You've been logged out. Please log back into **@${this.account.xAccount?.username}**.`;
 
             this.showAutomationNotice = false;
             await this.login();
@@ -593,14 +544,14 @@ You've been logged out. Please log back into **@${this.account.xAccount?.usernam
     }
 
     async runJobIndexTweets(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS, navigator.userAgent);
+
         let tries: number, success: boolean;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm saving your tweets.**
 
-Hang on while I scroll down to your earliest tweets that I've seen.
-`;
+Hang on while I scroll down to your earliest tweets.`;
         this.showAutomationNotice = true;
 
         if (await window.electron.X.getConfig(this.account.id, "forceIndexTweets") == "true") {
@@ -754,14 +705,14 @@ Hang on while I scroll down to your earliest tweets that I've seen.
     }
 
     async runJobArchiveTweets(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_ARCHIVE_TWEETS, navigator.userAgent);
+
         let archiveStartResponse: XArchiveStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm download HTML copies of your tweets, starting with the oldest.**
 
-I'm archiving your tweets, starting with the oldest. This may take a while...
-`;
+This may take a while...`;
         this.showAutomationNotice = true;
 
         // Initialize archiving of tweets
@@ -802,12 +753,12 @@ I'm archiving your tweets, starting with the oldest. This may take a while...
     }
 
     async runJobIndexConversations(jobIndex: number): Promise<boolean> {
-        this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_CONVERSATIONS, navigator.userAgent);
 
-Hang on while I scroll down to your earliest direct message conversations that I've seen.
-`;
+        this.showBrowser = true;
+        this.instructions = `**I'm saving your direct message conversations.**
+
+Hang on while I scroll down to your earliest direct message conversations...`;
         this.showAutomationNotice = true;
 
         // Check if this is the first time indexing DMs has happened in this account
@@ -922,17 +873,17 @@ Hang on while I scroll down to your earliest direct message conversations that I
     }
 
     async runJobIndexMessages(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_MESSAGES, navigator.userAgent);
+
         let tries: number, success: boolean, error: null | Error = null;
 
         let indexMessagesStartResponse: XIndexMessagesStartResponse;
         let url = '';
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        this.instructions = `**I'm saving your direct messages.**
 
-Please wait while I index all of the messages from each conversation.
-`;
+Please wait while I index all of the messages from each conversation...`;
         this.showAutomationNotice = true;
 
         if (await window.electron.X.getConfig(this.account.id, "forceIndexMessages") == "true") {
@@ -1088,12 +1039,10 @@ Please wait while I index all of the messages from each conversation.
     }
 
     async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
-        this.showBrowser = false;
-        this.instructions = `
-**${this.actionString}**
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_ARCHIVE_BUILD, navigator.userAgent);
 
-I'm building a searchable archive web page in HTML.
-`;
+        this.showBrowser = false;
+        this.instructions = `**I'm building a searchable archive web page in HTML.**`;
         this.showAutomationNotice = true;
 
         // Build the archive
@@ -1105,9 +1054,6 @@ I'm building a searchable archive web page in HTML.
             })
             return false;
         }
-
-        // Archiving complete
-        await window.electron.trackEvent(PlausibleEvents.X_ARCHIVE_COMPLETED, navigator.userAgent);
 
         // Submit progress to the API
         this.progressInfo = await window.electron.X.getProgressInfo(this.account?.id);
@@ -1132,12 +1078,12 @@ I'm building a searchable archive web page in HTML.
     }
 
     async runJobIndexLikes(jobIndex: number): Promise<boolean> {
-        this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_LIKES, navigator.userAgent);
 
-Hang on while I scroll down to your earliest likes that I've seen.
-`;
+        this.showBrowser = true;
+        this.instructions = `**I'm saving your likes.**
+
+Hang on while I scroll down to your earliest likes.`;
         this.showAutomationNotice = true;
 
         // Check if this is the first time indexing likes has happened in this account
@@ -1261,6 +1207,8 @@ Hang on while I scroll down to your earliest likes that I've seen.
     }
 
     async runJobDeleteTweets(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
+
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
@@ -1268,11 +1216,7 @@ Hang on while I scroll down to your earliest likes that I've seen.
         let tweetsToDelete: XDeleteTweetsStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
-
-I'm deleting your tweets based on your criteria, starting with the earliest.
-`;
+        this.instructions = `**I'm deleting your tweets based on your criteria, starting with the earliest.**`;
         this.showAutomationNotice = true;
 
         // Load the tweets to delete
@@ -1317,7 +1261,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
 
                 // Wait for the menu button to appear
                 try {
-                    await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                    await this.waitForSelector('article[tabindex="-1"] button[aria-label="More"]');
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
@@ -1328,7 +1272,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
                 await this.sleep(200);
 
                 // Click the menu button
-                await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                await this.scriptClickElement('article[tabindex="-1"] button[aria-label="More"]');
 
                 // Wait for the menu to appear
                 try {
@@ -1406,6 +1350,8 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
     }
 
     async runJobDeleteRetweets(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_RETWEETS, navigator.userAgent);
+
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteRetweets_UnknownError;
@@ -1413,11 +1359,7 @@ I'm deleting your tweets based on your criteria, starting with the earliest.
         let tweetsToDelete: XDeleteTweetsStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
-
-I'm deleting your retweets, starting with the earliest.
-`;
+        this.instructions = `**I'm deleting your retweets, starting with the earliest.**`;
         this.showAutomationNotice = true;
         let alreadyDeleted = false;
 
@@ -1452,7 +1394,7 @@ I'm deleting your retweets, starting with the earliest.
 
                 // Wait for the retweet menu button to appear
                 try {
-                    await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unretweet"]');
+                    await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
                 } catch (e) {
                     // If it doesn't appear, let's assume this retweet was already deleted
                     alreadyDeleted = true;
@@ -1461,7 +1403,7 @@ I'm deleting your retweets, starting with the earliest.
 
                 if (!alreadyDeleted) {
                     // Click the retweet menu button
-                    await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unretweet"]');
+                    await this.scriptClickElement('article[tabindex="-1"] button[data-testid="unretweet"]');
 
                     // Wait for the unretweet menu to appear
                     try {
@@ -1524,15 +1466,13 @@ I'm deleting your retweets, starting with the earliest.
     }
 
     async runJobDeleteLikes(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_LIKES, navigator.userAgent);
+
         let tweetsToDelete: XDeleteTweetsStartResponse;
         let alreadyDeleted = false;
 
         this.showBrowser = true;
-        this.instructions = `
-**${this.actionString}**
-
-I'm deleting your likes, starting with the earliest.
-`;
+        this.instructions = `**I'm deleting your likes, starting with the earliest.**`;
         this.showAutomationNotice = true;
 
         // Load the likes to delete
@@ -1563,7 +1503,7 @@ I'm deleting your likes, starting with the earliest.
 
             // Wait for the unlike button to appear
             try {
-                await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
+                await this.waitForSelector('article[tabindex="-1"] button[data-testid="unlike"]');
             } catch (e) {
                 // If it doesn't appear, let's assume this like was already deleted
                 alreadyDeleted = true;
@@ -1572,12 +1512,11 @@ I'm deleting your likes, starting with the earliest.
 
             if (!alreadyDeleted) {
                 // Click the unlike button
-                await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
+                await this.scriptClickElement('article[tabindex="-1"] button[data-testid="unlike"]');
                 await this.sleep(200);
             } else {
                 this.log("Already unliked", tweetsToDelete.tweets[i].tweetID);
             }
-
 
             // Mark the tweet as deleted
             try {
@@ -1607,6 +1546,8 @@ I'm deleting your likes, starting with the earliest.
     }
 
     async runJobDeleteDMs(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_DMS, navigator.userAgent);
+
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteDMs_UnknownError;
@@ -1615,9 +1556,7 @@ I'm deleting your likes, starting with the earliest.
         let reloadDMsPage = true;
 
         this.showBrowser = true;
-        this.instructions = `**${this.actionString}**
-
-I'm deleting all of your direct message conversations, start with the most recent.`;
+        this.instructions = `**I'm deleting all of your direct message conversations, start with the most recent.**`;
         this.showAutomationNotice = true;
 
         // Start the progress
@@ -1866,32 +1805,92 @@ I'm deleting all of your direct message conversations, start with the most recen
 
         this.log("run", `running state: ${this.state}`);
         try {
-            this.progress = await window.electron.X.resetProgress(this.account.id);
-
             switch (this.state) {
                 case State.Login:
-                    this.actionString = `Cyd can help you archive your tweets and direct messages. It can also help delete your tweets, retweets, likes, and direct messages.`;
+                    this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
                     this.instructions = `${this.actionString}
 
 **To get started, log in to your X account below.**`;
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
-                    this.state = State.Dashboard;
+                    this.state = State.WizardStart;
                     break;
 
-                case State.Dashboard:
+                case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-You're signed into **@${this.account.xAccount?.username}** on X.
+You're signed into **@${this.account.xAccount?.username}** on X. After you anwer a few quick question, I will help you take control of your data on X.
 
-You can make a local archive of your data, or you delete exactly what you choose to. What would you like to do?
-`;
-                    this.state = State.DashboardDisplay;
+**What would you like to do?**`;
+                    this.state = State.WizardStartDisplay;
+                    break;
+
+                case State.WizardSaveOptions:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I'll help you build a private local database of your X data to the \`Documents\` folder on your computer. 
+You'll be able to access it even after you delete it from X.
+
+**Which data do you want to save?**`;
+                    this.state = State.WizardSaveOptionsDisplay;
+                    break;
+
+                case State.WizardDeleteOptions:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I'll help you delete your data from X. Before I can delete your tweets, retweets, or likes, I will need 
+to build a local database of them. I can delete your direct messages right away without building a local 
+database.
+
+**Which data do you want to delete?**`;
+                    this.state = State.WizardDeleteOptionsDisplay;
+                    break;
+
+                case State.WizardReview:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `I'm almost ready to start helping you claw back your data from X!
+
+**Here's what I'm planning on doing.**`;
+                    this.state = State.WizardReviewDisplay;
+                    break;
+
+                case State.WizardDeleteReview:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I've finished saving all the data I need before I can start deleting.
+
+I've saved: **${await this.getDatabaseStatsString()}**.`;
+                    this.state = State.WizardDeleteReviewDisplay;
+                    break;
+
+                case State.FinishedRunningJobs:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+All done!
+
+**Here's what I did.**`;
+                    this.state = State.FinishedRunningJobsDisplay;
+                    break;
+
+                case State.WizardCheckPremium:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `**I'm almost ready to delete your data from X!**
+
+You can save all your data for free, but you need a Premium plan to delete your data.`;
+                    this.state = State.WizardCheckPremiumDisplay;
                     break;
 
                 case State.RunJobs:
+                    this.progress = await window.electron.X.resetProgress(this.account.id);
+
                     // i is starting at currentJobIndex instead of 0, in case we restored state
                     for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
                         this.currentJobIndex = i;
@@ -1906,11 +1905,16 @@ You can make a local archive of your data, or you delete exactly what you choose
                     }
                     this.currentJobIndex = 0;
 
-                    this.state = State.FinishedRunningJobs;
+                    await this.refreshDatabaseStats();
+
+                    if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview && this.isDeleteReviewActive) {
+                        this.state = State.WizardDeleteReview;
+                    } else {
+                        this.state = State.FinishedRunningJobs;
+                    }
+
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-
-                    this.instructions = `**${this.actionFinishedString}**`;
                     break;
 
                 case State.Debug:
@@ -1938,7 +1942,6 @@ You can make a local archive of your data, or you delete exactly what you choose
             "state": this.state as State,
             "action": this.action,
             "actionString": this.actionString,
-            "actionFinishedString": this.actionFinishedString,
             "progress": this.progress,
             "jobs": this.jobs,
             "currentJobIndex": this.currentJobIndex,
@@ -1949,7 +1952,6 @@ You can make a local archive of your data, or you delete exactly what you choose
         this.state = state.state;
         this.action = state.action;
         this.actionString = state.actionString;
-        this.actionFinishedString = state.actionFinishedString;
         this.progress = state.progress;
         this.jobs = state.jobs;
         this.currentJobIndex = state.currentJobIndex;

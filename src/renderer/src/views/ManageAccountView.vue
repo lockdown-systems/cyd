@@ -7,6 +7,10 @@ const props = defineProps<{
     shouldShow: boolean;
 }>();
 
+const emit = defineEmits<{
+    redirectToAccount: [accountID: number],
+}>()
+
 // Watch for changes in shouldShow
 watch(() => props.shouldShow, async (newValue) => {
     if (newValue) {
@@ -44,7 +48,9 @@ const loadDash = async () => {
     await waitForWebview();
     if (webviewComponent.value !== null) {
         const dashURL = await window.electron.getDashURL();
-        const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}`;
+        const mode = localStorage.getItem('manageAccountMode');
+        const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}/${mode}`;
+        console.log('ManageAccountView: Loading dash', mode, nativeLoginURL);
 
         const webview = webviewComponent.value;
         await webview.loadURL(nativeLoginURL);
@@ -53,8 +59,33 @@ const loadDash = async () => {
     }
 };
 
+const waitForRedirect = async () => {
+    if (localStorage.getItem("manageAccountMode") == "premium") {
+        const url = webviewComponent.value?.getURL();
+        if (url && url.includes('/native-app-premium-enabled')) {
+            // Redirect
+            const accountID = localStorage.getItem('manageAccountRedirectAccountID');
+            if (!accountID) {
+                console.error('ManageAccountView: No account ID found in localStorage');
+                loadDash();
+                return;
+            }
+            const accountIDNumber = parseInt(accountID, 10);
+
+            console.log('ManageAccountView: Redirecting to account', accountIDNumber);
+            emit('redirectToAccount', accountIDNumber);
+            await webviewComponent.value?.loadURL('about:blank');
+        } else {
+            if (props.shouldShow) {
+                console.log('ManageAccountView: URL is not ready for redirect', url);
+            }
+        }
+    }
+};
+
 onMounted(async () => {
     await loadDash();
+    setInterval(waitForRedirect, 1000);
 });
 
 onUnmounted(async () => {

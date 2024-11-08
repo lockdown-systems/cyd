@@ -8,7 +8,10 @@ import {
     XDeleteTweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
-    ResponseData
+    XDatabaseStats,
+    XDeleteReviewStats,
+    ResponseData,
+    XArchiveInfo,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -167,6 +170,9 @@ contextBridge.exposeInMainWorld('electron', {
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);
         },
+        getArchiveInfo: (accountID: number): Promise<XArchiveInfo> => {
+            return ipcRenderer.invoke('X:getArchiveInfo', accountID);
+        },
         resetRateLimitInfo: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:resetRateLimitInfo', accountID);
         },
@@ -178,6 +184,12 @@ contextBridge.exposeInMainWorld('electron', {
         },
         getProgressInfo: (accountID: number): Promise<XProgressInfo> => {
             return ipcRenderer.invoke('X:getProgressInfo', accountID);
+        },
+        getDatabaseStats: (accountID: number): Promise<XDatabaseStats> => {
+            return ipcRenderer.invoke('X:getDatabaseStats', accountID);
+        },
+        getDeleteReviewStats: (accountID: number): Promise<XDeleteReviewStats> => {
+            return ipcRenderer.invoke('X:getDeleteReviewStats', accountID);
         },
         saveProfileImage: (accountID: number, url: string): Promise<void> => {
             return ipcRenderer.invoke('X:saveProfileImage', accountID, url);

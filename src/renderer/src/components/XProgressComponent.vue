@@ -55,11 +55,11 @@ onUnmounted(() => {
             <!-- Index tweets -->
             <template v-if="progress.currentJob == 'indexTweets'">
                 <p>
-                    Indexed
+                    Saved
                     <b>{{ progress.tweetsIndexed.toLocaleString() }} tweets</b> and
                     <b>{{ progress.retweetsIndexed.toLocaleString() }} retweets</b>.
                     <template v-if="progress.isIndexTweetsFinished">
-                        Indexing complete!
+                        Saving complete!
                     </template>
                 </p>
             </template>
@@ -67,10 +67,10 @@ onUnmounted(() => {
             <!-- Index conversations -->
             <template v-if="progress.currentJob == 'indexConversations'">
                 <p>
-                    Indexed
+                    Saved
                     <b>{{ progress.conversationsIndexed.toLocaleString() }} conversations</b>.
                     <template v-if="progress.isIndexConversationsFinished">
-                        Indexing complete!
+                        Saving complete!
                     </template>
                 </p>
             </template>
@@ -78,11 +78,11 @@ onUnmounted(() => {
             <!-- Index messages -->
             <template v-if="progress.currentJob == 'indexMessages'">
                 <p v-if="progress.totalConversations">
-                    Indexed <b>{{ progress.messagesIndexed.toLocaleString() }} messages</b> from <b>{{
+                    Saved <b>{{ progress.messagesIndexed.toLocaleString() }} messages</b> from <b>{{
                         progress.conversationMessagesIndexed.toLocaleString() }} out of {{
                             progress.totalConversations.toLocaleString() }} conversations</b>.
                     <template v-if="progress.isIndexMessagesFinished">
-                        Indexing complete!
+                        Saving complete!
                     </template>
                 </p>
                 <div v-if="progress.totalConversations" class="d-flex align-items-center justify-content-between">
@@ -101,10 +101,10 @@ onUnmounted(() => {
             <!-- Index likes -->
             <template v-if="progress.currentJob == 'indexLikes'">
                 <p>
-                    Indexed
+                    Saved
                     <b>{{ progress.likesIndexed.toLocaleString() }} likes</b>.
                     <template v-if="progress.isIndexLikesFinished">
-                        Indexing complete!
+                        Saving complete!
                     </template>
                 </p>
             </template>
@@ -112,11 +112,11 @@ onUnmounted(() => {
             <!-- Archive Tweets -->
             <template v-if="progress.currentJob == 'archiveTweets'">
                 <p>
-                    Archived
+                    Saved
                     <b>{{ progress.tweetsArchived.toLocaleString() }} out of
-                        {{ progress.totalTweetsToArchive.toLocaleString() }} tweets</b>.
+                        {{ progress.totalTweetsToArchive.toLocaleString() }} tweets</b> as HTML.
                     <template v-if="progress.isArchiveTweetsFinished">
-                        Finished archiving tweets!
+                        Finished saving tweets as HTML!
                     </template>
                 </p>
                 <div class="d-flex align-items-center justify-content-between">

@@ -14,7 +14,10 @@ import type {
     XDeleteTweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
-    ResponseData
+    XDatabaseStats,
+    ResponseData,
+    XDeleteReviewStats,
+    XArchiveInfo
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -76,10 +79,13 @@ declare global {
                 archiveBuild: (accountID: number) => Promise<boolean>;
                 syncProgress: (accountID: number, progressJSON: string) => void;
                 openFolder: (accountID: number, folderName: string) => void;
+                getArchiveInfo: (accountID: number) => Promise<XArchiveInfo>;
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
                 getProgress: (accountID: number) => Promise<XProgress>;
                 getProgressInfo: (accountID: number) => Promise<XProgressInfo>;
+                getDatabaseStats: (accountID: number) => Promise<XDatabaseStats>;
+                getDeleteReviewStats: (accountID: number) => Promise<XDeleteReviewStats>;
                 saveProfileImage: (accountID: number, url: string) => Promise<void>;
                 getLatestResponseData: (accountID: number) => Promise<ResponseData | null>;
                 deleteTweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;

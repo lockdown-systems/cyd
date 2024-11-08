@@ -24,7 +24,10 @@ export type XAccount = {
     accessedAt: Date;
     username: string;
     profileImageDataURI: string;
+    saveMyData: boolean;
+    deleteMyData: boolean;
     archiveTweets: boolean;
+    archiveTweetsHTML: boolean;
     archiveLikes: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;
@@ -39,6 +42,7 @@ export type XAccount = {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
+    chanceToReview: boolean;
 };
 
 // X models
@@ -233,4 +237,58 @@ export function emptyXProgressInfo(): XProgressInfo {
 
 export type XDeleteTweetsStartResponse = {
     tweets: XTweetItem[];
+}
+
+export type XDatabaseStats = {
+    tweetsSaved: number;
+    tweetsDeleted: number;
+    retweetsSaved: number;
+    retweetsDeleted: number;
+    likesSaved: number;
+    likesDeleted: number;
+    conversationsSaved: number;
+    conversationsDeleted: number;
+    messagesSaved: number;
+    messagesDeleted: number;
+}
+
+export function emptyXDatabaseStats(): XDatabaseStats {
+    return {
+        tweetsSaved: 0,
+        tweetsDeleted: 0,
+        retweetsSaved: 0,
+        retweetsDeleted: 0,
+        likesSaved: 0,
+        likesDeleted: 0,
+        conversationsSaved: 0,
+        conversationsDeleted: 0,
+        messagesSaved: 0,
+        messagesDeleted: 0
+    }
+}
+
+export type XDeleteReviewStats = {
+    tweetsToDelete: number;
+    retweetsToDelete: number;
+    likesToDelete: number;
+}
+
+export function emptyXDeleteReviewStats(): XDeleteReviewStats {
+    return {
+        tweetsToDelete: 0,
+        retweetsToDelete: 0,
+        likesToDelete: 0
+    }
+}
+
+export type XArchiveInfo = {
+    folderEmpty: boolean;
+    indexHTMLExists: boolean;
+}
+
+export function emptyXArchiveInfo(): XArchiveInfo {
+    return {
+        folderEmpty: true,
+        indexHTMLExists: false
+    }
 }

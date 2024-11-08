@@ -80,21 +80,25 @@ export const runMainMigrations = () => {
     accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     username TEXT,
     profileImageDataURI TEXT,
+    saveMyData BOOLEAN DEFAULT 1,
+    deleteMyData BOOLEAN DEFAULT 0,
     archiveTweets BOOLEAN DEFAULT 1,
-    archiveLikes BOOLEAN DEFAULT 1,
+    archiveTweetsHTML BOOLEAN DEFAULT 0,
+    archiveLikes BOOLEAN DEFAULT 0,
     archiveDMs BOOLEAN DEFAULT 1,
-    deleteTweets BOOLEAN DEFAULT 0,
-    deleteTweetsDaysOld INTEGER DEFAULT 30,
-    deleteTweetsLikesThresholdEnabled BOOLEAN DEFAULT 1,
+    deleteTweets BOOLEAN DEFAULT 1,
+    deleteTweetsDaysOld INTEGER DEFAULT 0,
+    deleteTweetsLikesThresholdEnabled BOOLEAN DEFAULT 0,
     deleteTweetsLikesThreshold INTEGER DEFAULT 20,
-    deleteTweetsRetweetsThresholdEnabled BOOLEAN DEFAULT 1,
+    deleteTweetsRetweetsThresholdEnabled BOOLEAN DEFAULT 0,
     deleteTweetsRetweetsThreshold INTEGER DEFAULT 20,
     deleteTweetsArchiveEnabled BOOLEAN DEFAULT 0,
-    deleteRetweets BOOLEAN DEFAULT 0,
-    deleteRetweetsDaysOld INTEGER DEFAULT 30,
+    deleteRetweets BOOLEAN DEFAULT 1,
+    deleteRetweetsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 60,
-    deleteDMs BOOLEAN DEFAULT 0
+    deleteDMs BOOLEAN DEFAULT 0,
+    chanceToReview BOOLEAN DEFAULT 1
 );`,
             ]
         }
@@ -130,21 +134,25 @@ interface XAccountRow {
     accessedAt: string;
     username: string;
     profileImageDataURI: string;
-    archiveTweets: number;
-    archiveLikes: number;
-    archiveDMs: number;
-    deleteTweets: number;
+    saveMyData: boolean;
+    deleteMyData: boolean;
+    archiveTweets: boolean;
+    archiveTweetsHTML: boolean;
+    archiveLikes: boolean;
+    archiveDMs: boolean;
+    deleteTweets: boolean;
     deleteTweetsDaysOld: number;
-    deleteTweetsLikesThresholdEnabled: number;
+    deleteTweetsLikesThresholdEnabled: boolean;
     deleteTweetsLikesThreshold: number;
-    deleteTweetsRetweetsThresholdEnabled: number;
+    deleteTweetsRetweetsThresholdEnabled: boolean;
     deleteTweetsRetweetsThreshold: number;
     deleteTweetsArchiveEnabled: boolean;
-    deleteRetweets: number;
+    deleteRetweets: boolean;
     deleteRetweetsDaysOld: number;
-    deleteLikes: number;
+    deleteLikes: boolean;
     deleteLikesDaysOld: number;
-    deleteDMs: number;
+    deleteDMs: boolean;
+    chanceToReview: boolean;
 }
 
 // Utils
@@ -211,7 +219,10 @@ export const getXAccount = (id: number): XAccount | null => {
         accessedAt: new Date(row.accessedAt),
         username: row.username,
         profileImageDataURI: row.profileImageDataURI,
+        saveMyData: !!row.saveMyData,
+        deleteMyData: !!row.deleteMyData,
         archiveTweets: !!row.archiveTweets,
+        archiveTweetsHTML: !!row.archiveTweetsHTML,
         archiveLikes: !!row.archiveLikes,
         archiveDMs: !!row.archiveDMs,
         deleteTweets: !!row.deleteTweets,
@@ -226,6 +237,7 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
+        chanceToReview: !!row.chanceToReview
     };
 }
 
@@ -241,7 +253,10 @@ export const getXAccounts = (): XAccount[] => {
             accessedAt: new Date(row.accessedAt),
             username: row.username,
             profileImageDataURI: row.profileImageDataURI,
+            saveMyData: !!row.saveMyData,
+            deleteMyData: !!row.deleteMyData,
             archiveTweets: !!row.archiveTweets,
+            archiveTweetsHTML: !!row.archiveTweetsHTML,
             archiveLikes: !!row.archiveLikes,
             archiveDMs: !!row.archiveDMs,
             deleteTweets: !!row.deleteTweets,
@@ -256,6 +271,7 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
+            chanceToReview: !!row.chanceToReview
         });
     }
     return accounts;
@@ -279,7 +295,10 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             profileImageDataURI = ?,
+            saveMyData = ?,
+            deleteMyData = ?,
             archiveTweets = ?,
+            archiveTweetsHTML = ?,
             archiveLikes = ?,
             archiveDMs = ?,
             deleteTweets = ?,
@@ -293,12 +312,16 @@ export const saveXAccount = (account: XAccount) => {
             deleteRetweetsDaysOld = ?,
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
-            deleteDMs = ?
+            deleteDMs = ?,
+            chanceToReview = ?
         WHERE id = ?
     `, [
         account.username,
         account.profileImageDataURI,
+        account.saveMyData ? 1 : 0,
+        account.deleteMyData ? 1 : 0,
         account.archiveTweets ? 1 : 0,
+        account.archiveTweetsHTML ? 1 : 0,
         account.archiveLikes ? 1 : 0,
         account.archiveDMs ? 1 : 0,
         account.deleteTweets ? 1 : 0,
@@ -313,6 +336,7 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
+        account.chanceToReview ? 1 : 0,
         account.id
     ]);
 }
