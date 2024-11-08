@@ -210,6 +210,10 @@ const updateSettings = async () => {
 const userAuthenticated = ref(false);
 const userPremium = ref(false);
 
+const updateUserAuthenticated = async () => {
+    userAuthenticated.value = await apiClient.value.ping() && deviceInfo.value?.valid ? true : false;
+};
+
 const updateUserPremium = async () => {
     if (!userAuthenticated.value) {
         return;
@@ -229,8 +233,7 @@ const updateUserPremium = async () => {
 
 emitter?.on('signed-in', async () => {
     console.log('AccountXView: User signed in');
-    userAuthenticated.value = true;
-
+    await updateUserAuthenticated();
     await updateUserPremium();
     if (!userPremium.value) {
         emitter?.emit('show-manage-account');
@@ -470,7 +473,8 @@ const wizardReviewNextClicked = async () => {
 
     // Premium check
     if (deleteMyData.value) {
-        userAuthenticated.value = await apiClient.value.ping();
+        await updateUserAuthenticated();
+        console.log("userAuthenticated", userAuthenticated.value);
         if (!userAuthenticated.value) {
             accountXViewModel.value.state = State.WizardCheckPremium;
             await startStateLoop();
@@ -478,6 +482,7 @@ const wizardReviewNextClicked = async () => {
         }
 
         await updateUserPremium();
+        console.log("userPremium", userPremium.value);
         if (!userPremium.value) {
             accountXViewModel.value.state = State.WizardCheckPremium;
             await startStateLoop();
@@ -485,6 +490,8 @@ const wizardReviewNextClicked = async () => {
         }
     }
 
+    // All good, start the jobs
+    console.log('Starting jobs');
     if (accountXViewModel.value) {
         await accountXViewModel.value.defineJobs();
     }

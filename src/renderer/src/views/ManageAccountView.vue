@@ -16,7 +16,6 @@ watch(() => props.shouldShow, async (newValue) => {
     if (newValue) {
         if (newValue) {
             console.log('ManageAccountView', 'shouldShow is true, loading dash...');
-            shouldRedirect.value = true;
             await loadDash();
         } else {
             console.log('ManageAccountView', 'shouldShow is false, loading about:blank');
@@ -30,8 +29,6 @@ const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const isWebviewMounted = ref(true);
-
-const shouldRedirect = ref(false);
 
 const waitForWebview = async () => {
     while (webviewComponent.value === null) {
@@ -65,7 +62,7 @@ const loadDash = async () => {
 const waitForRedirect = async () => {
     // eslint-disable-next-line no-constant-condition
     while (true) {
-        if (shouldRedirect.value && localStorage.getItem("manageAccountMode") == "premium") {
+        if (localStorage.getItem("manageAccountMode") == "premium") {
             const url = webviewComponent.value?.getURL();
             if (url && url.includes('/native-app-premium-enabled')) {
                 // Redirect
@@ -76,15 +73,15 @@ const waitForRedirect = async () => {
                     return;
                 }
                 const accountIDNumber = parseInt(accountID, 10);
-                shouldRedirect.value = false;
 
                 console.log('ManageAccountView: Redirecting to account', accountIDNumber);
                 emit('redirectToAccount', accountIDNumber);
+                await webviewComponent.value?.loadURL('about:blank');
             } else {
                 console.log('ManageAccountView: URL is not ready', url);
             }
         } else {
-            console.log('ManageAccountView: Not redirecting');
+            console.log('ManageAccountView: Not redirecting', localStorage.getItem("manageAccountMode"));
         }
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
