@@ -662,7 +662,7 @@ onUnmounted(async () => {
                                     </div>
                                 </div>
 
-                                <div class="buttons">
+                                <div class="buttons d-flex gap-3">
                                     <button type="submit" class="btn btn-primary"
                                         :disabled="!(saveMyData || deleteMyData)" @click="wizardStartNextClicked">
                                         <i class="fa-solid fa-forward" />
@@ -725,7 +725,7 @@ onUnmounted(async () => {
                                     </div>
                                 </div>
 
-                                <div class="buttons">
+                                <div class="buttons d-flex gap-3">
                                     <button type="submit" class="btn btn-outline-secondary"
                                         @click="wizardSaveOptionsBackClicked">
                                         <i class="fa-solid fa-backward" />
@@ -920,7 +920,7 @@ onUnmounted(async () => {
                                     </div>
                                 </div>
 
-                                <div class="buttons">
+                                <div class="buttons d-flex gap-3">
                                     <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
                                         class="btn btn-outline-secondary" @click="wizardDeleteOptionsBackClicked">
                                         <i class="fa-solid fa-backward" />
@@ -1019,7 +1019,7 @@ onUnmounted(async () => {
                                     </div>
                                 </div>
 
-                                <div class="buttons">
+                                <div class="buttons d-flex gap-3">
                                     <button type="submit" class="btn btn-outline-secondary"
                                         @click="wizardReviewBackClicked">
                                         <i class="fa-solid fa-backward" />
@@ -1074,7 +1074,7 @@ onUnmounted(async () => {
                                     </li>
                                 </ul>
 
-                                <div class="buttons">
+                                <div class="buttons d-flex gap-3">
                                     <button type="submit" class="btn btn-outline-secondary"
                                         @click="wizardDeleteReviewBackClicked">
                                         <i class="fa-solid fa-backward" />
@@ -1243,13 +1243,16 @@ onUnmounted(async () => {
 }
 
 .wizard-sidebar {
-    width: 300px;
+    width: 250px;
     overflow-y: auto;
 }
 
 .wizard-sidebar .stats .card-header {
     font-size: 0.8rem;
-    padding: 0.2rem;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .wizard-sidebar .stats .card-body {
@@ -1264,10 +1267,6 @@ onUnmounted(async () => {
 
 .wizard .buttons {
     margin-top: 3rem;
-}
-
-.wizard .buttons button {
-    margin-right: 1rem;
 }
 
 .form-short {
