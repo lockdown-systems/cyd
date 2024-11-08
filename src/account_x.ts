@@ -1435,6 +1435,10 @@ export class XAccountController {
     }
 
     async getProgressInfo(): Promise<XProgressInfo> {
+        if (!this.db) {
+            this.initDB();
+        }
+
         const totalTweetsArchived: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get") as Sqlite3Count;
         const totalMessagesIndexed: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
         const totalTweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
@@ -1456,6 +1460,10 @@ export class XAccountController {
     }
 
     async getDatabaseStats(): Promise<XDatabaseStats> {
+        if (!this.db) {
+            this.initDB();
+        }
+
         const username = this.account?.username || "";
 
         const tweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND isLiked = ? AND username = ?", [0, 0, username], "get") as Sqlite3Count;
@@ -1484,6 +1492,10 @@ export class XAccountController {
     }
 
     async getDeleteReviewStats(): Promise<XDeleteReviewStats> {
+        if (!this.db) {
+            this.initDB();
+        }
+
         const deleteTweetsStartResponse = await this.deleteTweetsStart()
         const deleteRetweetStartResponse = await this.deleteRetweetsStart()
         const deleteLikesStartResponse = await this.deleteLikesStart()

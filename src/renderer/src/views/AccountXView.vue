@@ -271,6 +271,13 @@ const u2fInfoClicked = () => {
     window.electron.openURL('https://semiphemeral.com/docs-u2f');
 };
 
+function formatStatsNumber(num: number): string {
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+    }
+    return num.toString();
+}
+
 // Wizard functions
 
 const wizardNextText = ref('Continue');
@@ -1160,15 +1167,26 @@ onUnmounted(async () => {
 
                     <!-- wizard side bar -->
                     <div class="col-2 wizard-sidebar">
-                        <p>
-                            TODO: add stats here
-                        </p>
-
                         <ShowArchiveComponent :account-i-d="account.id" />
 
-                        <!-- debug mode -->
-                        <p v-if="shouldOpenDevtools">
-                            <button class="btn btn-primary" @click="enableDebugMode">
+                        <div class="stats container mt-4">
+                            <div class="row g-2">
+                                <div v-for="(value, key) in databaseStats" :key="key" class="col-12 col-md-6">
+                                    <div v-if="value > 0" class="card text-center">
+                                        <div class="card-header">
+                                            {{ key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) }}
+                                        </div>
+                                        <div class="card-body">
+                                            <h1>{{ formatStatsNumber(value) }}</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Debug mode -->
+                        <p v-if="shouldOpenDevtools" class="text-center mt-4">
+                            <button class="btn btn-sm btn-danger" @click="enableDebugMode">
                                 Debug Mode
                             </button>
                         </p>
@@ -1194,7 +1212,23 @@ onUnmounted(async () => {
 }
 
 .wizard-sidebar {
-    width: 200px;
+    width: 300px;
+    overflow-y: auto;
+}
+
+.wizard-sidebar .stats .card-header {
+    font-size: 0.8rem;
+    padding: 0.2rem;
+}
+
+.wizard-sidebar .stats .card-body {
+    padding: 0.2rem;
+}
+
+.wizard-sidebar .stats .card-body h1 {
+    font-size: 1.7em;
+    margin-bottom: 0;
+    padding: 0.5rem 0 0.5rem 0;
 }
 
 .wizard .buttons {

@@ -13,7 +13,7 @@ const openArchive = async () => {
 </script>
 
 <template>
-    <p class="d-flex gap-2">
+    <p class="d-flex gap-2 justify-content-center">
         <button class="btn btn-outline-success btn-sm" @click="openArchive">
             Browse Archive
         </button>

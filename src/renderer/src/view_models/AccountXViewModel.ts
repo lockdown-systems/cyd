@@ -66,6 +66,8 @@ export class AccountXViewModel extends BaseViewModel {
 
         this.currentJobIndex = 0;
 
+        await this.refreshDatabaseStats();
+
         super.init();
     }
 
