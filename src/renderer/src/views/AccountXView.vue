@@ -1184,8 +1184,11 @@ onUnmounted(async () => {
                         <template v-if="!userAuthenticated">
                             <p>First, sign in to your Cyd account.</p>
                         </template>
-                        <template v-else>
+                        <template v-else-if="userAuthenticated && !userPremium">
                             <p>Manage your account to upgrade to Premium.</p>
+                        </template>
+                        <template v-else>
+                            <p>Thanks for upgrading to Premium!</p>
                         </template>
 
                         <form @submit.prevent>
@@ -1197,15 +1200,21 @@ onUnmounted(async () => {
                                     Sign In
                                 </button>
 
-                                <button v-if="userAuthenticated" type="submit"
+                                <button v-else-if="userAuthenticated && !userPremium" type="submit"
                                     class="btn btn-lg btn-primary text-nowrap m-1"
                                     @click="wizardCheckPremiumManageAccountClicked">
                                     <i class="fa-solid fa-user-ninja" />
                                     Manage My Account
                                 </button>
+
+                                <button v-else type="submit" class="btn btn-lg btn-primary text-nowrap m-1"
+                                    @click="wizardCheckPremiumBackClicked">
+                                    <i class="fa-solid fa-user-ninja" />
+                                    Review Your Choices
+                                </button>
                             </div>
 
-                            <div class="buttons">
+                            <div v-if="!userPremium" class="buttons">
                                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
                                     @click="wizardCheckPremiumBackClicked">
                                     <i class="fa-solid fa-backward" />
