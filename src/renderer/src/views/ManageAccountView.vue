@@ -50,7 +50,7 @@ const loadDash = async () => {
         const dashURL = await window.electron.getDashURL();
         const mode = localStorage.getItem('manageAccountMode');
         const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}/${mode}`;
-        console.log('ManageAccountView: Loading dash', nativeLoginURL);
+        console.log('ManageAccountView: Loading dash', mode, nativeLoginURL);
 
         const webview = webviewComponent.value;
         await webview.loadURL(nativeLoginURL);
@@ -60,36 +60,32 @@ const loadDash = async () => {
 };
 
 const waitForRedirect = async () => {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        if (localStorage.getItem("manageAccountMode") == "premium") {
-            const url = webviewComponent.value?.getURL();
-            if (url && url.includes('/native-app-premium-enabled')) {
-                // Redirect
-                const accountID = localStorage.getItem('manageAccountRedirectAccountID');
-                if (!accountID) {
-                    console.error('ManageAccountView: No account ID found in localStorage');
-                    loadDash();
-                    return;
-                }
-                const accountIDNumber = parseInt(accountID, 10);
-
-                console.log('ManageAccountView: Redirecting to account', accountIDNumber);
-                emit('redirectToAccount', accountIDNumber);
-                await webviewComponent.value?.loadURL('about:blank');
-            } else {
-                console.log('ManageAccountView: URL is not ready', url);
+    if (localStorage.getItem("manageAccountMode") == "premium") {
+        const url = webviewComponent.value?.getURL();
+        if (url && url.includes('/native-app-premium-enabled')) {
+            // Redirect
+            const accountID = localStorage.getItem('manageAccountRedirectAccountID');
+            if (!accountID) {
+                console.error('ManageAccountView: No account ID found in localStorage');
+                loadDash();
+                return;
             }
+            const accountIDNumber = parseInt(accountID, 10);
+
+            console.log('ManageAccountView: Redirecting to account', accountIDNumber);
+            emit('redirectToAccount', accountIDNumber);
+            await webviewComponent.value?.loadURL('about:blank');
         } else {
-            console.log('ManageAccountView: Not redirecting', localStorage.getItem("manageAccountMode"));
+            if (props.shouldShow) {
+                console.log('ManageAccountView: URL is not ready for redirect', url);
+            }
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 };
 
 onMounted(async () => {
     await loadDash();
-    setTimeout(waitForRedirect, 1);
+    setInterval(waitForRedirect, 1000);
 });
 
 onUnmounted(async () => {

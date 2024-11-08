@@ -1184,7 +1184,11 @@ onUnmounted(async () => {
                     <!-- Wizard: check premium -->
                     <div v-if="accountXViewModel?.state == State.WizardCheckPremiumDisplay"
                         class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
-                        <h2>
+                        <h2 v-if="userAuthenticated && userPremium">
+                            Thanks for upgrading to Premium
+                            <i class="fa-solid fa-heart" />
+                        </h2>
+                        <h2 v-else>
                             Upgrade to Premium to delete data
                         </h2>
 
@@ -1195,7 +1199,7 @@ onUnmounted(async () => {
                             <p>Manage your account to upgrade to Premium.</p>
                         </template>
                         <template v-else>
-                            <p>Thanks for upgrading to Premium!</p>
+                            <p>Ready to delete your data from X? <em>Let's go!</em></p>
                         </template>
 
                         <form @submit.prevent>
@@ -1497,5 +1501,9 @@ onUnmounted(async () => {
 .wizard-review ul ul {
     list-style-type: circle;
     padding-left: 1.5rem;
+}
+
+.fa-heart {
+    color: red;
 }
 </style>

@@ -242,7 +242,7 @@ onMounted(async () => {
   document.addEventListener('click', outsideUserMenuClicked);
   document.addEventListener('auxclick', outsideUserMenuClicked);
 
-  emitter?.on('signed-in', manageAccountClicked);
+  emitter?.on('signed-in', showManageAccountView);
   emitter?.on('account-updated', reloadAccounts);
 });
 
