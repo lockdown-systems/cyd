@@ -629,7 +629,7 @@ onUnmounted(async () => {
                             class="wizard container mb-4 mt-3 mx-auto">
                             <div class="mb-4">
                                 <h2>
-                                    Choose your adventure
+                                    It's time to claw back your data from X
                                 </h2>
                                 <p class="text-muted">
                                     Choose what you want to do with your X data.
