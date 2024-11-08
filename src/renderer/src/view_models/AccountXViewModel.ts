@@ -1413,11 +1413,13 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
                 await this.sleep(200);
 
+                this.pause();
+
                 await this.waitForPause();
 
                 // Wait for the retweet menu button to appear
                 try {
-                    await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unretweet"]');
+                    await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
                 } catch (e) {
                     // If it doesn't appear, let's assume this retweet was already deleted
                     alreadyDeleted = true;
@@ -1426,7 +1428,7 @@ Hang on while I scroll down to your earliest likes.`;
 
                 if (!alreadyDeleted) {
                     // Click the retweet menu button
-                    await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unretweet"]');
+                    await this.scriptClickElement('article[tabindex="-1"] button[data-testid="unretweet"]');
 
                     // Wait for the unretweet menu to appear
                     try {
