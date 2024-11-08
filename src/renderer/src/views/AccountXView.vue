@@ -661,9 +661,9 @@ onUnmounted(async () => {
                                 </div>
                             </div>
 
-                            <div class="buttons d-flex gap-3">
-                                <button type="submit" class="btn btn-primary" :disabled="!(saveMyData || deleteMyData)"
-                                    @click="wizardStartNextClicked">
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                    :disabled="!(saveMyData || deleteMyData)" @click="wizardStartNextClicked">
                                     <i class="fa-solid fa-forward" />
                                     {{ wizardNextText }}
                                 </button>
@@ -724,14 +724,14 @@ onUnmounted(async () => {
                                 </div>
                             </div>
 
-                            <div class="buttons d-flex gap-3">
-                                <button type="submit" class="btn btn-outline-secondary"
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
                                     @click="wizardSaveOptionsBackClicked">
                                     <i class="fa-solid fa-backward" />
                                     {{ wizardBackText }}
                                 </button>
 
-                                <button type="submit" class="btn btn-primary"
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
                                     :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
                                     @click="wizardSaveOptionsNextClicked">
                                     <i class="fa-solid fa-forward" />
@@ -747,6 +747,7 @@ onUnmounted(async () => {
                         <div class="mb-4">
                             <h2>
                                 Delete options
+                                <span class="premium badge badge-primary">Premium</span>
                             </h2>
                             <p class="text-muted">
                                 Delete your data from X, except for what you want to keep.
@@ -915,14 +916,15 @@ onUnmounted(async () => {
                                 </div>
                             </div>
 
-                            <div class="buttons d-flex gap-3">
+                            <div class="buttons">
                                 <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
-                                    class="btn btn-outline-secondary" @click="wizardDeleteOptionsBackClicked">
+                                    class="btn btn-outline-secondary text-nowrap m-1"
+                                    @click="wizardDeleteOptionsBackClicked">
                                     <i class="fa-solid fa-backward" />
                                     {{ wizardBackText }}
                                 </button>
 
-                                <button type="submit" class="btn btn-primary"
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
                                     :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
                                     @click="wizardDeleteOptionsNextClicked">
                                     <i class="fa-solid fa-forward" />
@@ -1014,14 +1016,14 @@ onUnmounted(async () => {
                                 </div>
                             </div>
 
-                            <div class="buttons d-flex gap-3">
-                                <button type="submit" class="btn btn-outline-secondary"
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
                                     @click="wizardReviewBackClicked">
                                     <i class="fa-solid fa-backward" />
                                     {{ wizardBackText }}
                                 </button>
 
-                                <button type="submit" class="btn btn-primary"
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
                                     :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
                                     @click="wizardReviewNextClicked">
                                     <i class="fa-solid fa-forward" />
@@ -1069,14 +1071,14 @@ onUnmounted(async () => {
                                 </li>
                             </ul>
 
-                            <div class="buttons d-flex gap-3">
-                                <button type="submit" class="btn btn-outline-secondary"
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
                                     @click="wizardDeleteReviewBackClicked">
                                     <i class="fa-solid fa-backward" />
                                     {{ wizardBackText }}
                                 </button>
 
-                                <button type="submit" class="btn btn-primary"
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
                                     :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
                                     @click="wizardDeleteReviewNextClicked">
                                     <i class="fa-solid fa-forward" />
@@ -1271,6 +1273,7 @@ onUnmounted(async () => {
 
 .wizard .buttons {
     margin-top: 3rem;
+    text-align: center;
 }
 
 .form-short {
