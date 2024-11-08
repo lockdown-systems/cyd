@@ -1829,8 +1829,6 @@ Hang on while I scroll down to your earliest likes.`;
 
         this.log("run", `running state: ${this.state}`);
         try {
-            this.progress = await window.electron.X.resetProgress(this.account.id);
-
             switch (this.state) {
                 case State.Login:
                     this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
@@ -1906,6 +1904,8 @@ All done!
                     break;
 
                 case State.RunJobs:
+                    this.progress = await window.electron.X.resetProgress(this.account.id);
+
                     // i is starting at currentJobIndex instead of 0, in case we restored state
                     for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
                         this.currentJobIndex = i;

@@ -50,7 +50,7 @@ const onRemoveClicked = () => {
                     <i class="fa-solid fa-gauge" />
                 </div>
                 <div v-if="dashboardBtnShowInfo" class="info-popup info-popup-dashboard">
-                    Back to dashboard
+                    Back to start
                 </div>
             </div>
             <div class="btn-container">

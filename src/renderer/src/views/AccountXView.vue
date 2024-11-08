@@ -215,7 +215,7 @@ const startStateLoop = async () => {
             await accountXViewModel.value.run();
         }
 
-        // Break out of the state loop if the view model is in a final state
+        // Break out of the state loop if the view model is in a display state
         if (
             accountXViewModel.value?.state === State.WizardStartDisplay ||
             accountXViewModel.value?.state === State.WizardSaveOptionsDisplay ||
@@ -1100,8 +1100,7 @@ onUnmounted(async () => {
                                         <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
                                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                                             <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
-                                            saved as HTML
-                                            archives
+                                            saved as HTML archives
                                         </li>
                                         <li
                                             v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
