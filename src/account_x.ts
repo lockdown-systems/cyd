@@ -1460,11 +1460,17 @@ export class XAccountController {
     }
 
     async getDatabaseStats(): Promise<XDatabaseStats> {
+        const databaseStats = emptyXDatabaseStats();
+        if (!this.account?.username) {
+            log.info('XAccountController.getDatabaseStats: no account');
+            return databaseStats;
+        }
+
         if (!this.db) {
             this.initDB();
         }
 
-        const username = this.account?.username || "";
+        const username = this.account.username;
 
         const tweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND isLiked = ? AND username = ?", [0, 0, username], "get") as Sqlite3Count;
         const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND isLiked = ? AND username = ? AND deletedAt IS NOT NULL", [0, 0, username], "get") as Sqlite3Count;
@@ -1477,7 +1483,6 @@ export class XAccountController {
         const messagesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
         const messagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
 
-        const databaseStats = emptyXDatabaseStats();
         databaseStats.tweetsSaved = tweetsSaved.count;
         databaseStats.tweetsDeleted = tweetsDeleted.count;
         databaseStats.retweetsSaved = retweetsSaved.count;
@@ -1492,6 +1497,12 @@ export class XAccountController {
     }
 
     async getDeleteReviewStats(): Promise<XDeleteReviewStats> {
+        const deleteReviewStats = emptyXDeleteReviewStats();
+        if (!this.account?.username) {
+            log.info('XAccountController.getDeleteReviewStats: no account');
+            return deleteReviewStats;
+        }
+
         if (!this.db) {
             this.initDB();
         }
@@ -1500,7 +1511,6 @@ export class XAccountController {
         const deleteRetweetStartResponse = await this.deleteRetweetsStart()
         const deleteLikesStartResponse = await this.deleteLikesStart()
 
-        const deleteReviewStats = emptyXDeleteReviewStats();
         deleteReviewStats.tweetsToDelete = deleteTweetsStartResponse.tweets.length;
         deleteReviewStats.retweetsToDelete = deleteRetweetStartResponse.tweets.length;
         deleteReviewStats.likesToDelete = deleteLikesStartResponse.tweets.length;
