@@ -1143,13 +1143,9 @@ onUnmounted(async () => {
                                         <i class="fa-solid fa-fire delete-bullet" />
                                         <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
                                     </li>
-                                    <li
-                                        v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
+                                    <li v-if="account.xAccount?.deleteDMs">
                                         <i class="fa-solid fa-fire delete-bullet" />
-                                        <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong>
-                                        conversations,
-                                        including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong>
-                                        messages
+                                        All of your direct messages
                                     </li>
                                 </ul>
                             </div>
