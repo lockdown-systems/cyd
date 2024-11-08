@@ -11,6 +11,7 @@ import {
     XDatabaseStats,
     XDeleteReviewStats,
     ResponseData,
+    XArchiveInfo,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -168,6 +169,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         openFolder: (accountID: number, folderName: string) => {
             ipcRenderer.invoke('X:openFolder', accountID, folderName);
+        },
+        getArchiveInfo: (accountID: number): Promise<XArchiveInfo> => {
+            return ipcRenderer.invoke('X:getArchiveInfo', accountID);
         },
         resetRateLimitInfo: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:resetRateLimitInfo', accountID);

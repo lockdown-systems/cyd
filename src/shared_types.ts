@@ -280,3 +280,15 @@ export function emptyXDeleteReviewStats(): XDeleteReviewStats {
         likesToDelete: 0
     }
 }
+
+export type XArchiveInfo = {
+    folderEmpty: boolean;
+    indexHTMLExists: boolean;
+}
+
+export function emptyXArchiveInfo(): XArchiveInfo {
+    return {
+        folderEmpty: true,
+        indexHTMLExists: false
+    }
+}

@@ -26,7 +26,8 @@ import {
     XProgressInfo, emptyXProgressInfo,
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
-    XDeleteReviewStats, emptyXDeleteReviewStats
+    XDeleteReviewStats, emptyXDeleteReviewStats,
+    XArchiveInfo, emptyXArchiveInfo
 } from './shared_types'
 import {
     runMigrations,
@@ -1416,10 +1417,24 @@ export class XAccountController {
     }
 
     async openFolder(folderName: string) {
-        if (this.account) {
-            const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
-            await shell.openPath(folderPath);
+        if (!this.account) {
+            return;
         }
+        const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
+        await shell.openPath(folderPath);
+    }
+
+    async getArchiveInfo(): Promise<XArchiveInfo> {
+        const archiveInfo = emptyXArchiveInfo();
+        if (!this.account || !this.account.username) {
+            return archiveInfo;
+        }
+        const accountDataPath = getAccountDataPath("X", this.account?.username);
+        const indexHTMLFilename = path.join(accountDataPath, "index.html");
+
+        archiveInfo.folderEmpty = !fs.existsSync(accountDataPath) || fs.readdirSync(accountDataPath).length === 0;
+        archiveInfo.indexHTMLExists = fs.existsSync(indexHTMLFilename);
+        return archiveInfo;
     }
 
     async resetRateLimitInfo(): Promise<void> {
@@ -1778,6 +1793,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.openFolder(folderName);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:getArchiveInfo', async (_, accountID: number): Promise<XArchiveInfo> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getArchiveInfo();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

@@ -16,7 +16,6 @@ import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
-import ShowArchiveComponent from '../components/ShowArchiveComponent.vue';
 
 import type {
     Account,
@@ -24,11 +23,13 @@ import type {
     XJob,
     XRateLimitInfo,
     XDatabaseStats,
-    XDeleteReviewStats
+    XDeleteReviewStats,
+    XArchiveInfo,
 } from '../../../shared_types';
 import {
     emptyXDatabaseStats,
-    emptyXDeleteReviewStats
+    emptyXDeleteReviewStats,
+    emptyXArchiveInfo
 } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 import { AutomationErrorType } from '../automation_errors';
@@ -60,6 +61,7 @@ const isPaused = ref<boolean>(false);
 
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
 const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
+const archiveInfo = ref<XArchiveInfo>(emptyXArchiveInfo());
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
@@ -121,6 +123,17 @@ watch(
     (newDeleteReviewStats) => {
         if (newDeleteReviewStats) {
             deleteReviewStats.value = newDeleteReviewStats as XDeleteReviewStats;
+        }
+    },
+    { deep: true, }
+);
+
+// Keep archiveInfo in sync
+watch(
+    () => accountXViewModel.value?.archiveInfo,
+    (newArchiveInfo) => {
+        if (newArchiveInfo) {
+            archiveInfo.value = newArchiveInfo as XArchiveInfo;
         }
     },
     { deep: true, }
@@ -277,6 +290,14 @@ function formatStatsNumber(num: number): string {
     }
     return num.toString();
 }
+
+const openArchiveFolder = async () => {
+    await window.electron.X.openFolder(props.account.id, "");
+};
+
+const openArchive = async () => {
+    await window.electron.X.openFolder(props.account.id, "index.html");
+};
 
 // Wizard functions
 
@@ -1167,20 +1188,31 @@ onUnmounted(async () => {
 
                     <!-- wizard side bar -->
                     <div class="col-2 wizard-sidebar">
-                        <ShowArchiveComponent :account-i-d="account.id" />
+                        <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-outline-success btn-sm" @click="openArchive">
+                                Browse Archive
+                            </button>
+
+                            <button class="btn btn-outline-secondary btn-sm" @click="openArchiveFolder">
+                                Open Folder
+                            </button>
+                        </p>
 
                         <div class="stats container mt-4">
                             <div class="row g-2">
-                                <div v-for="(value, key) in databaseStats" :key="key" class="col-12 col-md-6">
-                                    <div v-if="value > 0" class="card text-center">
-                                        <div class="card-header">
-                                            {{ key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) }}
-                                        </div>
-                                        <div class="card-body">
-                                            <h1>{{ formatStatsNumber(value) }}</h1>
+                                <template v-for="(value, key) in databaseStats" :key="key">
+                                    <div v-if="value > 0" class="col-12 col-md-6">
+                                        <div class="card text-center">
+                                            <div class="card-header">
+                                                {{ key.replace(/([A-Z])/g, ' $1').replace(/^./, str =>
+                                                    str.toUpperCase()) }}
+                                            </div>
+                                            <div class="card-body">
+                                                <h1>{{ formatStatsNumber(value) }}</h1>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </template>
                             </div>
                         </div>
 

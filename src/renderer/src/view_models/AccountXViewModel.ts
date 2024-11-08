@@ -9,7 +9,8 @@ import {
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
-    XDeleteReviewStats, emptyXDeleteReviewStats
+    XDeleteReviewStats, emptyXDeleteReviewStats,
+    XArchiveInfo, emptyXArchiveInfo
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
@@ -48,6 +49,7 @@ export class AccountXViewModel extends BaseViewModel {
     public progressInfo: XProgressInfo = emptyXProgressInfo();
     public databaseStats: XDatabaseStats = emptyXDatabaseStats();
     public deleteReviewStats: XDeleteReviewStats = emptyXDeleteReviewStats();
+    public archiveInfo: XArchiveInfo = emptyXArchiveInfo();
     public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
@@ -74,6 +76,7 @@ export class AccountXViewModel extends BaseViewModel {
     async refreshDatabaseStats() {
         this.databaseStats = await window.electron.X.getDatabaseStats(this.account.id);
         this.deleteReviewStats = await window.electron.X.getDeleteReviewStats(this.account.id);
+        this.archiveInfo = await window.electron.X.getArchiveInfo(this.account.id);
     }
 
     async defineJobs(justDelete: boolean = false) {
