@@ -1413,8 +1413,6 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
                 await this.sleep(200);
 
-                this.pause();
-
                 await this.waitForPause();
 
                 // Wait for the retweet menu button to appear
@@ -1528,7 +1526,7 @@ Hang on while I scroll down to your earliest likes.`;
 
             // Wait for the unlike button to appear
             try {
-                await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
+                await this.waitForSelector('article[tabindex="-1"] button[data-testid="unlike"]');
             } catch (e) {
                 // If it doesn't appear, let's assume this like was already deleted
                 alreadyDeleted = true;
@@ -1537,12 +1535,11 @@ Hang on while I scroll down to your earliest likes.`;
 
             if (!alreadyDeleted) {
                 // Click the unlike button
-                await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[data-testid="unlike"]');
+                await this.scriptClickElement('article[tabindex="-1"] button[data-testid="unlike"]');
                 await this.sleep(200);
             } else {
                 this.log("Already unliked", tweetsToDelete.tweets[i].tweetID);
             }
-
 
             // Mark the tweet as deleted
             try {
