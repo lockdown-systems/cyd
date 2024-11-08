@@ -1284,7 +1284,7 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // Wait for the menu button to appear
                 try {
-                    await this.waitForSelector('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                    await this.waitForSelector('article[tabindex="-1"] button[aria-label="More"]');
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
@@ -1295,7 +1295,7 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.sleep(200);
 
                 // Click the menu button
-                await this.scriptClickElement('article:has(+ div[data-testid="inline_reply_offscreen"]) button[aria-label="More"]');
+                await this.scriptClickElement('article[tabindex="-1"] button[aria-label="More"]');
 
                 // Wait for the menu to appear
                 try {
