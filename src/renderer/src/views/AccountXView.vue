@@ -209,7 +209,7 @@ const startStateLoop = async () => {
             accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay ||
             accountXViewModel.value?.state === State.WizardReviewDisplay ||
             accountXViewModel.value?.state === State.WizardDeleteReviewDisplay ||
-            accountXViewModel.value?.state === State.FinishedRunningJobs
+            accountXViewModel.value?.state === State.FinishedRunningJobsDisplay
         ) {
             if (accountXViewModel.value?.state === State.WizardStartDisplay) {
                 await wizardStartUpdateButtonsText();
@@ -1064,10 +1064,10 @@ onUnmounted(async () => {
                         </div>
 
                         <!-- Finished running jobs -->
-                        <div v-if="accountXViewModel?.state == State.FinishedRunningJobs" class="finished">
+                        <div v-if="accountXViewModel?.state == State.FinishedRunningJobsDisplay" class="finished">
                             <div v-if="saveMyData" class="container mt-3">
                                 <div class="finished-archive">
-                                    <p>You just saved:</p>
+                                    <h2>You just saved:</h2>
                                     <ul>
                                         <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
                                             <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -1107,7 +1107,7 @@ onUnmounted(async () => {
                             </div>
                             <div v-if="deleteMyData" class="container mt-3">
                                 <div class="finished-delete">
-                                    <p>You just deleted:</p>
+                                    <h2>You just deleted:</h2>
                                     <ul>
                                         <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
                                             <i class="fa-solid fa-fire delete-bullet" />

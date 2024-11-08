@@ -29,6 +29,7 @@ export enum State {
     WizardDeleteReviewDisplay = "wizardDeleteReviewDisplay",
     RunJobs = "runJobs",
     FinishedRunningJobs = "finishedRunningJobs",
+    FinishedRunningJobsDisplay = "finishedRunningJobsDisplay",
     Debug = "debug",
 }
 
@@ -1889,6 +1890,16 @@ I've saved: **${await this.getDatabaseStatsString()}**.`;
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
+                case State.FinishedRunningJobs:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+All done!
+
+**Here's what I did.**`;
+                    this.state = State.FinishedRunningJobsDisplay;
+                    break;
+
                 case State.RunJobs:
                     // i is starting at currentJobIndex instead of 0, in case we restored state
                     for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
@@ -1906,7 +1917,7 @@ I've saved: **${await this.getDatabaseStatsString()}**.`;
 
                     await this.refreshDatabaseStats();
 
-                    if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview) {
+                    if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview && this.isDeleteReviewActive) {
                         this.state = State.WizardDeleteReview;
                     } else {
                         this.state = State.FinishedRunningJobs;
