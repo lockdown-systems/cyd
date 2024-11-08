@@ -82,31 +82,6 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async defineJobs(justDelete: boolean = false) {
-        if (this.account.xAccount?.deleteMyData) {
-            // Ensure the user has paid for Premium
-            const authenticated = await this.api.ping();
-            if (!authenticated) {
-                this.emitter?.emit("show-sign-in");
-                return;
-            }
-
-            // Check if the user has premium
-            let userPremium: UserPremiumAPIResponse;
-            const resp = await this.api.getUserPremium();
-            if (resp && 'error' in resp === false) {
-                userPremium = resp;
-            } else {
-                await window.electron.showMessage("Failed to check if you have Premium access. Please try again later.");
-                return;
-            }
-
-            if (userPremium.premium_access === false) {
-                await window.electron.showMessage("Deleting data from X is a Premium feature. Please upgrade to Premium to use this feature.");
-                this.emitter?.emit("show-manage-account");
-                return;
-            }
-        }
-
         const jobTypes = [];
         jobTypes.push("login");
 

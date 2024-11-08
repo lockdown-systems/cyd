@@ -16,7 +16,7 @@ import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
-import { APIErrorResponse, UserPremiumAPIResponse } from "../../../cyd-api-client";
+import { UserPremiumAPIResponse } from "../../../cyd-api-client";
 
 import type {
     Account,
@@ -228,6 +228,7 @@ const updateUserPremium = async () => {
 };
 
 emitter?.on('signed-in', async () => {
+    console.log('AccountXView: User signed in');
     userAuthenticated.value = true;
 
     await updateUserPremium();
@@ -237,6 +238,7 @@ emitter?.on('signed-in', async () => {
 });
 
 emitter?.on('signed-out', async () => {
+    console.log('AccountXView: User signed out');
     userAuthenticated.value = false;
     userPremium.value = false;
 });
@@ -491,7 +493,15 @@ const wizardReviewNextClicked = async () => {
 };
 
 const wizardCheckPremiumSignInClicked = async () => {
+    localStorage.setItem('manageAccountMode', 'premium');
+    localStorage.setItem('manageAccountRedirectAccountID', props.account.id.toString());
     emitter?.emit("show-sign-in");
+};
+
+const wizardCheckPremiumManageAccountClicked = async () => {
+    localStorage.setItem('manageAccountMode', 'premium');
+    localStorage.setItem('manageAccountRedirectAccountID', props.account.id.toString());
+    emitter?.emit("show-manage-account");
 };
 
 const wizardCheckPremiumBackClicked = async () => {
@@ -1174,6 +1184,9 @@ onUnmounted(async () => {
                         <template v-if="!userAuthenticated">
                             <p>First, sign in to your Cyd account.</p>
                         </template>
+                        <template v-else>
+                            <p>Manage your account to upgrade to Premium.</p>
+                        </template>
 
                         <form @submit.prevent>
                             <div class="buttons">
@@ -1182,6 +1195,13 @@ onUnmounted(async () => {
                                     @click="wizardCheckPremiumSignInClicked">
                                     <i class="fa-solid fa-user-ninja" />
                                     Sign In
+                                </button>
+
+                                <button v-if="userAuthenticated" type="submit"
+                                    class="btn btn-lg btn-primary text-nowrap m-1"
+                                    @click="wizardCheckPremiumManageAccountClicked">
+                                    <i class="fa-solid fa-user-ninja" />
+                                    Manage My Account
                                 </button>
                             </div>
 

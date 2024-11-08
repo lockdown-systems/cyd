@@ -16,7 +16,7 @@ const addAccountBtnShowInfo = ref(false);
 const userBtnShowInfo = ref(false);
 const userBtnShowMenu = ref(false);
 const accounts = ref<Account[]>([]);
-const activeAccountId = ref<number | null>(null);
+const activeAccountID = ref<number | null>(null);
 
 const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
@@ -25,13 +25,14 @@ const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 
 const hideAllAccounts = ref(false);
 const showManageAccount = ref(false);
+
 const showAbout = ref(false);
 
 const accountClicked = async (account: Account) => {
   hideManageAccountView();
   hideAboutView();
 
-  activeAccountId.value = account.id;
+  activeAccountID.value = account.id;
 
   // If we clicked out of an unknown account, remove the unknown account
   if (account.type !== 'unknown') {
@@ -54,14 +55,14 @@ const addAccountClicked = async () => {
   const unknownAccount = accounts.value.find((account) => account.type === 'unknown');
   if (unknownAccount) {
     console.log('Already have an unknown account, setting it as active');
-    activeAccountId.value = unknownAccount.id;
+    activeAccountID.value = unknownAccount.id;
     return;
   }
 
   // Create a new account
   const account = await window.electron.database.createAccount();
   accounts.value = await window.electron.database.getAccounts();
-  activeAccountId.value = account.id;
+  activeAccountID.value = account.id;
   console.log('Added new account', account);
 };
 
@@ -80,8 +81,8 @@ const removeAccount = async (accountID: number) => {
       await addAccountClicked();
     } else {
       console.log(`Setting active account to first account`);
-      if (activeAccountId.value == accountID) {
-        activeAccountId.value = accounts.value[0].id;
+      if (activeAccountID.value == accountID) {
+        activeAccountID.value = accounts.value[0].id;
       }
     }
 
@@ -147,7 +148,16 @@ const hideManageAccountView = () => {
 emitter?.on('show-manage-account', showManageAccountView);
 
 const manageAccountClicked = async () => {
+  localStorage.setItem('manageAccountMode', 'manage');
   showManageAccountView();
+};
+
+const redirectToAccount = (accountID: number) => {
+  // This forces the account to re-check if the user is signed in and if premium is enabled
+  emitter?.emit('signed-in');
+
+  activeAccountID.value = accountID;
+  hideManageAccountView();
 };
 
 const showAboutView = () => {
@@ -168,6 +178,7 @@ const aboutClicked = async () => {
 };
 
 const signInClicked = async () => {
+  localStorage.setItem('manageAccountMode', 'manage');
   emitter?.emit('show-sign-in');
 };
 
@@ -200,6 +211,8 @@ const signOutClicked = async () => {
   userBtnShowMenu.value = false;
 
   emitter?.emit('signed-out');
+
+  hideManageAccountView();
 };
 
 const checkForUpdatesClicked = async () => {
@@ -223,7 +236,7 @@ onMounted(async () => {
   if (accounts.value.length === 0) {
     await addAccountClicked();
   } else {
-    activeAccountId.value = accounts.value[0].id;
+    activeAccountID.value = accounts.value[0].id;
   }
 
   document.addEventListener('click', outsideUserMenuClicked);
@@ -246,7 +259,7 @@ onUnmounted(async () => {
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
           <AccountButton v-for="account in accounts" :key="account.id"
             :class="['account-button', `account-button-${account.id}`]" :account="account"
-            :active="account.id === activeAccountId" @click="accountClicked(account)"
+            :active="account.id === activeAccountID" @click="accountClicked(account)"
             @on-remove-clicked="removeAccount(account.id)" />
         </div>
 
@@ -323,11 +336,11 @@ onUnmounted(async () => {
       <div class="main-content col">
         <!-- Accounts -->
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
-          :class="{ 'hide': hideAllAccounts || activeAccountId !== account.id }" @account-selected="accountSelected"
+          :class="{ 'hide': hideAllAccounts || activeAccountID !== account.id }" @account-selected="accountSelected"
           @on-remove-clicked="removeAccount(account.id)" />
 
         <!-- Manay my Cyd account -->
-        <ManageAccountView :should-show="showManageAccount" />
+        <ManageAccountView :should-show="showManageAccount" @redirect-to-account="redirectToAccount" />
 
         <!-- About -->
         <AboutView :should-show="showAbout" />
