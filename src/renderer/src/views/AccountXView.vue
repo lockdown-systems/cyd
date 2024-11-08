@@ -620,608 +620,599 @@ onUnmounted(async () => {
 
         <!-- Wizard -->
         <div :class="{ 'hidden': accountXViewModel?.showBrowser, 'wizard': true }">
-            <div class="container">
-                <div class="row">
-                    <!-- wizard main content -->
-                    <div class="col wizard-content">
-                        <!-- Wizard: start -->
-                        <div v-if="accountXViewModel?.state == State.WizardStartDisplay"
-                            class="wizard container mb-4 mt-3 mx-auto">
-                            <div class="mb-4">
-                                <h2>
-                                    It's time to claw back your data from X
-                                </h2>
-                                <p class="text-muted">
-                                    Choose what you want to do with your X data.
-                                </p>
-                            </div>
-                            <form @submit.prevent>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input id="saveMyData" v-model="saveMyData" type="checkbox"
-                                            class="form-check-input" @change="wizardStartUpdateButtonsText">
-                                        <label class="form-check-label" for="saveMyData">Save my data</label>
-                                    </div>
-                                    <div class="indent">
-                                        <small class="form-text text-muted">
-                                            Create a local archive of tweets, retweets, likes, and/or direct messages
-                                        </small>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input id="deleteMyData" v-model="deleteMyData" type="checkbox"
-                                            class="form-check-input" @change="wizardStartUpdateButtonsText">
-                                        <label class="form-check-label" for="deleteMyData">Delete my data</label>
-                                        <span class="premium badge badge-primary">Premium</span>
-                                    </div>
-                                    <div class="indent">
-                                        <small class="form-text text-muted">
-                                            Delete my tweets, retweets, likes, and/or direct messages
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <div class="buttons d-flex gap-3">
-                                    <button type="submit" class="btn btn-primary"
-                                        :disabled="!(saveMyData || deleteMyData)" @click="wizardStartNextClicked">
-                                        <i class="fa-solid fa-forward" />
-                                        {{ wizardNextText }}
-                                    </button>
-                                </div>
-                            </form>
+            <div class="wizard-container d-flex">
+                <!-- wizard main content -->
+                <div class="wizard-content flex-grow-1">
+                    <!-- Wizard: start -->
+                    <div v-if="accountXViewModel?.state == State.WizardStartDisplay"
+                        class="wizard container mb-4 mt-3 mx-auto">
+                        <div class="mb-4">
+                            <h2>
+                                It's time to claw back your data from X
+                            </h2>
+                            <p class="text-muted">
+                                Choose what you want to do with your X data.
+                            </p>
                         </div>
-
-                        <!-- Wizard: save options -->
-                        <div v-if="accountXViewModel?.state == State.WizardSaveOptionsDisplay"
-                            class="wizard-content container mb-4 mt-3 mx-auto">
-                            <div class="mb-4">
-                                <h2>
-                                    Save options
-                                </h2>
-                                <p class="text-muted">
-                                    You can save your tweets, likes, and direct messages.
-                                </p>
-                            </div>
-                            <form @submit.prevent>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input id="archiveTweets" v-model="archiveTweets" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label" for="archiveTweets">Save my tweets</label>
-                                    </div>
+                        <form @submit.prevent>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input id="saveMyData" v-model="saveMyData" type="checkbox" class="form-check-input"
+                                        @change="wizardStartUpdateButtonsText">
+                                    <label class="form-check-label" for="saveMyData">Save my data</label>
                                 </div>
                                 <div class="indent">
-                                    <div class="mb-3">
+                                    <small class="form-text text-muted">
+                                        Create a local archive of tweets, retweets, likes, and/or direct messages
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input id="deleteMyData" v-model="deleteMyData" type="checkbox"
+                                        class="form-check-input" @change="wizardStartUpdateButtonsText">
+                                    <label class="form-check-label" for="deleteMyData">Delete my data</label>
+                                    <span class="premium badge badge-primary">Premium</span>
+                                </div>
+                                <div class="indent">
+                                    <small class="form-text text-muted">
+                                        Delete my tweets, retweets, likes, and/or direct messages
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="buttons d-flex gap-3">
+                                <button type="submit" class="btn btn-primary" :disabled="!(saveMyData || deleteMyData)"
+                                    @click="wizardStartNextClicked">
+                                    <i class="fa-solid fa-forward" />
+                                    {{ wizardNextText }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Wizard: save options -->
+                    <div v-if="accountXViewModel?.state == State.WizardSaveOptionsDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto">
+                        <div class="mb-4">
+                            <h2>
+                                Save options
+                            </h2>
+                            <p class="text-muted">
+                                You can save your tweets, likes, and direct messages.
+                            </p>
+                        </div>
+                        <form @submit.prevent>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input id="archiveTweets" v-model="archiveTweets" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label" for="archiveTweets">Save my tweets</label>
+                                </div>
+                            </div>
+                            <div class="indent">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox"
+                                            class="form-check-input" :disabled="!archiveTweets">
+                                        <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version
+                                            of each
+                                            tweet</label>
+                                    </div>
+                                    <div class="indent">
+                                        <small class="form-text text-muted">
+                                            Make an HTML archive of each tweet, including its replies, which is good
+                                            for taking
+                                            screenshots
+                                            <em>(takes longer)</em>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input id="archiveLikes" v-model="archiveLikes" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label" for="archiveLikes">Save my likes</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input id="archiveDMs" v-model="archiveDMs" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
+                                </div>
+                            </div>
+
+                            <div class="buttons d-flex gap-3">
+                                <button type="submit" class="btn btn-outline-secondary"
+                                    @click="wizardSaveOptionsBackClicked">
+                                    <i class="fa-solid fa-backward" />
+                                    {{ wizardBackText }}
+                                </button>
+
+                                <button type="submit" class="btn btn-primary"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardSaveOptionsNextClicked">
+                                    <i class="fa-solid fa-forward" />
+                                    {{ wizardNextText }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Wizard: delete options -->
+                    <div v-if="accountXViewModel?.state == State.WizardDeleteOptionsDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto">
+                        <div class="mb-4">
+                            <h2>
+                                Delete options
+                            </h2>
+                            <p class="text-muted">
+                                Delete your data from X, except for what you want to keep.
+                            </p>
+                        </div>
+                        <form @submit.prevent>
+                            <div class="d-flex align-items-center">
+                                <div class="form-check mb-2">
+                                    <input id="deleteTweets" v-model="deleteTweets" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
+                                        Delete tweets
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteTweetsDaysOld">
+                                        older than
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
+                                            class="form-control form-short">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">days</span>
+                                        </div>
+                                    </div>
+                                    <span class="ms-2 text-muted">(recommended)</span>
+                                </div>
+                            </div>
+                            <div class="indent">
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check mb-2">
+                                        <input id="deleteTweetsRetweetsThresholdEnabled"
+                                            v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
+                                            class="form-check-input" :disabled="!deleteTweets">
+                                        <label class="form-check-label mr-1 text-nowrap"
+                                            for="deleteTweetsRetweetsThresholdEnabled">
+                                            Unless they have at least
+                                        </label>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label class="form-check-label mr-1 sr-only"
+                                            for="deleteTweetsRetweetsThreshold">
+                                            retweets
+                                        </label>
+                                        <div class="input-group flex-nowrap">
+                                            <input id="deleteTweetsRetweetsThreshold"
+                                                v-model="deleteTweetsRetweetsThreshold" type="text"
+                                                class="form-control form-short" :disabled="!deleteTweets">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">retweets</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check mb-2">
+                                        <input id="deleteTweetsLikesThresholdEnabled"
+                                            v-model="deleteTweetsLikesThresholdEnabled" type="checkbox"
+                                            class="form-check-input" :disabled="!deleteTweets">
+                                        <label class="form-check-label mr-1 text-nowrap"
+                                            for="deleteTweetsLikesThresholdEnabled">
+                                            Or at least
+                                        </label>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label class="form-check-label mr-1 sr-only" for="deleteTweetsLikesThreshold">
+                                            likes
+                                        </label>
+                                        <div class="input-group flex-nowrap">
+                                            <input id="deleteTweetsLikesThreshold" v-model="deleteTweetsLikesThreshold"
+                                                type="text" class="form-control form-short" :disabled="!deleteTweets">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">likes</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="mb-2">
                                         <div class="form-check">
-                                            <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox"
-                                                class="form-check-input" :disabled="!archiveTweets">
-                                            <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version
-                                                of each
-                                                tweet</label>
+                                            <input id="deleteTweetsArchiveEnabled" v-model="deleteTweetsArchiveEnabled"
+                                                type="checkbox" class="form-check-input" :disabled="!deleteTweets">
+                                            <label class="form-check-label mr-1 text-nowrap"
+                                                for="deleteTweetsArchiveEnabled">
+                                                Save an HTML version of each tweet before deleting it
+                                            </label>
                                         </div>
                                         <div class="indent">
                                             <small class="form-text text-muted">
-                                                Make an HTML archive of each tweet, including its replies, which is good
-                                                for taking
-                                                screenshots
-                                                <em>(takes longer)</em>
+                                                Make an HTML archive of each tweet, including its replies, which is
+                                                good for taking
+                                                screenshots <em>(takes longer)</em>
                                             </small>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input id="archiveLikes" v-model="archiveLikes" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label" for="archiveLikes">Save my likes</label>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input id="archiveDMs" v-model="archiveDMs" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
-                                    </div>
-                                </div>
-
-                                <div class="buttons d-flex gap-3">
-                                    <button type="submit" class="btn btn-outline-secondary"
-                                        @click="wizardSaveOptionsBackClicked">
-                                        <i class="fa-solid fa-backward" />
-                                        {{ wizardBackText }}
-                                    </button>
-
-                                    <button type="submit" class="btn btn-primary"
-                                        :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                        @click="wizardSaveOptionsNextClicked">
-                                        <i class="fa-solid fa-forward" />
-                                        {{ wizardNextText }}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Wizard: delete options -->
-                        <div v-if="accountXViewModel?.state == State.WizardDeleteOptionsDisplay"
-                            class="wizard-content container mb-4 mt-3 mx-auto">
-                            <div class="mb-4">
-                                <h2>
-                                    Delete options
-                                </h2>
-                                <p class="text-muted">
-                                    Delete your data from X, except for what you want to keep.
-                                </p>
                             </div>
-                            <form @submit.prevent>
+                            <div class="d-flex align-items-center">
+                                <div class="form-check mb-2">
+                                    <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox"
+                                        class="form-check-input">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
+                                        Unretweet tweets
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <label class="form-check-label mr-1 no-wrap text-nowrap"
+                                        for="deleteRetweetsDaysOld">
+                                        older than
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld" type="text"
+                                            class="form-control form-short">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">days</span>
+                                        </div>
+                                    </div>
+                                    <span class="ms-2 text-muted">(recommended)</span>
+                                </div>
+                            </div>
+                            <div class="mb-2">
                                 <div class="d-flex align-items-center">
-                                    <div class="form-check mb-2">
-                                        <input id="deleteTweets" v-model="deleteTweets" type="checkbox"
+                                    <div class="form-check">
+                                        <input id="deleteLikes" v-model="deleteLikes" type="checkbox"
                                             class="form-check-input">
-                                        <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
-                                            Delete tweets
+                                        <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
+                                            Unlike tweets
                                         </label>
                                     </div>
-                                    <div class="d-flex align-items-center mb-2">
+                                    <div class="d-flex align-items-center">
                                         <label class="form-check-label mr-1 no-wrap text-nowrap"
-                                            for="deleteTweetsDaysOld">
+                                            for="deleteLikesDaysOld">
                                             older than
                                         </label>
                                         <div class="input-group flex-nowrap">
-                                            <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
+                                            <input id="deleteLikesDaysOld" v-model="deleteLikesDaysOld" type="text"
                                                 class="form-control form-short">
                                             <div class="input-group-append">
                                                 <span class="input-group-text">days</span>
                                             </div>
                                         </div>
-                                        <span class="ms-2 text-muted">(recommended)</span>
                                     </div>
                                 </div>
                                 <div class="indent">
-                                    <div class="d-flex align-items-center">
-                                        <div class="form-check mb-2">
-                                            <input id="deleteTweetsRetweetsThresholdEnabled"
-                                                v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
-                                                class="form-check-input" :disabled="!deleteTweets">
-                                            <label class="form-check-label mr-1 text-nowrap"
-                                                for="deleteTweetsRetweetsThresholdEnabled">
-                                                Unless they have at least
-                                            </label>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <label class="form-check-label mr-1 sr-only"
-                                                for="deleteTweetsRetweetsThreshold">
-                                                retweets
-                                            </label>
-                                            <div class="input-group flex-nowrap">
-                                                <input id="deleteTweetsRetweetsThreshold"
-                                                    v-model="deleteTweetsRetweetsThreshold" type="text"
-                                                    class="form-control form-short" :disabled="!deleteTweets">
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text">retweets</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <div class="form-check mb-2">
-                                            <input id="deleteTweetsLikesThresholdEnabled"
-                                                v-model="deleteTweetsLikesThresholdEnabled" type="checkbox"
-                                                class="form-check-input" :disabled="!deleteTweets">
-                                            <label class="form-check-label mr-1 text-nowrap"
-                                                for="deleteTweetsLikesThresholdEnabled">
-                                                Or at least
-                                            </label>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <label class="form-check-label mr-1 sr-only"
-                                                for="deleteTweetsLikesThreshold">
-                                                likes
-                                            </label>
-                                            <div class="input-group flex-nowrap">
-                                                <input id="deleteTweetsLikesThreshold"
-                                                    v-model="deleteTweetsLikesThreshold" type="text"
-                                                    class="form-control form-short" :disabled="!deleteTweets">
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text">likes</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <div class="mb-2">
-                                            <div class="form-check">
-                                                <input id="deleteTweetsArchiveEnabled"
-                                                    v-model="deleteTweetsArchiveEnabled" type="checkbox"
-                                                    class="form-check-input" :disabled="!deleteTweets">
-                                                <label class="form-check-label mr-1 text-nowrap"
-                                                    for="deleteTweetsArchiveEnabled">
-                                                    Save an HTML version of each tweet before deleting it
-                                                </label>
-                                            </div>
-                                            <div class="indent">
-                                                <small class="form-text text-muted">
-                                                    Make an HTML archive of each tweet, including its replies, which is
-                                                    good for taking
-                                                    screenshots <em>(takes longer)</em>
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <small class="form-text text-muted">
+                                        Likes are private on X. If you've liked a lot of tweets, it might take a
+                                        long time to delete them all.
+                                    </small>
                                 </div>
-                                <div class="d-flex align-items-center">
-                                    <div class="form-check mb-2">
-                                        <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
-                                            Unretweet tweets
-                                        </label>
-                                    </div>
-                                    <div class="d-flex align-items-center mb-2">
-                                        <label class="form-check-label mr-1 no-wrap text-nowrap"
-                                            for="deleteRetweetsDaysOld">
-                                            older than
-                                        </label>
-                                        <div class="input-group flex-nowrap">
-                                            <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld"
-                                                type="text" class="form-control form-short">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">days</span>
-                                            </div>
-                                        </div>
-                                        <span class="ms-2 text-muted">(recommended)</span>
-                                    </div>
-                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
                                 <div class="mb-2">
-                                    <div class="d-flex align-items-center">
-                                        <div class="form-check">
-                                            <input id="deleteLikes" v-model="deleteLikes" type="checkbox"
-                                                class="form-check-input">
-                                            <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
-                                                Unlike tweets
-                                            </label>
-                                        </div>
-                                        <div class="d-flex align-items-center">
-                                            <label class="form-check-label mr-1 no-wrap text-nowrap"
-                                                for="deleteLikesDaysOld">
-                                                older than
-                                            </label>
-                                            <div class="input-group flex-nowrap">
-                                                <input id="deleteLikesDaysOld" v-model="deleteLikesDaysOld" type="text"
-                                                    class="form-control form-short">
-                                                <div class="input-group-append">
-                                                    <span class="input-group-text">days</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="form-check">
+                                        <input id="deleteDMs" v-model="deleteDMs" type="checkbox"
+                                            class="form-check-input">
+                                        <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
+                                            Delete all direct messages
+                                        </label>
                                     </div>
                                     <div class="indent">
                                         <small class="form-text text-muted">
-                                            Likes are private on X. If you've liked a lot of tweets, it might take a
-                                            long time to delete them all.
+                                            This will only delete DMs from your account. The people you've sent
+                                            messages to will still have them unless they delete their DMs as well.
                                         </small>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center">
-                                    <div class="mb-2">
-                                        <div class="form-check">
-                                            <input id="deleteDMs" v-model="deleteDMs" type="checkbox"
-                                                class="form-check-input">
-                                            <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
-                                                Delete all direct messages
-                                            </label>
-                                        </div>
-                                        <div class="indent">
-                                            <small class="form-text text-muted">
-                                                This will only delete DMs from your account. The people you've sent
-                                                messages to will still have them unless they delete their DMs as well.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="buttons d-flex gap-3">
-                                    <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
-                                        class="btn btn-outline-secondary" @click="wizardDeleteOptionsBackClicked">
-                                        <i class="fa-solid fa-backward" />
-                                        {{ wizardBackText }}
-                                    </button>
-
-                                    <button type="submit" class="btn btn-primary"
-                                        :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                        @click="wizardDeleteOptionsNextClicked">
-                                        <i class="fa-solid fa-forward" />
-                                        {{ wizardNextText }}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Wizard: review -->
-                        <div v-if="accountXViewModel?.state == State.WizardReviewDisplay"
-                            class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
-                            <div class="mb-4">
-                                <h2>
-                                    Review your choices
-                                </h2>
                             </div>
-                            <form @submit.prevent>
-                                <div v-if="saveMyData">
-                                    <h3>
-                                        <i class="fa-solid fa-floppy-disk me-1" />
-                                        Save my data
-                                    </h3>
-                                    <ul>
-                                        <li v-if="archiveTweets">
-                                            Save tweets
-                                            <ul>
-                                                <li v-if="archiveTweetsHTML">
-                                                    Save HTML versions of tweets
-                                                </li>
-                                            </ul>
-                                        </li>
-                                        <li v-if="archiveLikes">
-                                            Save likes
-                                        </li>
-                                        <li v-if="archiveDMs">
-                                            Save direct messages
-                                        </li>
-                                    </ul>
-                                </div>
 
-                                <div v-if="deleteMyData">
-                                    <h3>
-                                        <i class="fa-solid fa-fire me-1" />
-                                        Delete my data
-                                    </h3>
-                                    <ul>
-                                        <li v-if="deleteTweets">
-                                            Delete tweets older than {{ deleteTweetsDaysOld }} days
-                                            <ul>
-                                                <li v-if="deleteTweetsRetweetsThresholdEnabled">
-                                                    Keep tweets with at least {{ deleteTweetsRetweetsThreshold }}
-                                                    retweets
-                                                </li>
-                                                <li v-if="deleteTweetsLikesThresholdEnabled">
-                                                    Keep tweets with at least {{ deleteTweetsLikesThreshold }} likes
-                                                </li>
-                                                <li v-if="deleteTweetsArchiveEnabled">
-                                                    Save an HTML version of each tweet before deleting it
-                                                </li>
-                                            </ul>
-                                        </li>
-                                        <li v-if="deleteRetweets">
-                                            Unretweet tweets older than {{ deleteRetweetsDaysOld }} days
-                                        </li>
-                                        <li v-if="deleteLikes">
-                                            Unlike tweets older than {{ deleteLikesDaysOld }} days
-                                        </li>
-                                        <li v-if="deleteDMs">
-                                            Delete direct messages
-                                        </li>
-                                    </ul>
+                            <div class="buttons d-flex gap-3">
+                                <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
+                                    class="btn btn-outline-secondary" @click="wizardDeleteOptionsBackClicked">
+                                    <i class="fa-solid fa-backward" />
+                                    {{ wizardBackText }}
+                                </button>
 
-                                    <div class="mb-2">
-                                        <div class="form-check">
-                                            <input id="chanceToReview" v-model="chanceToReview" type="checkbox"
-                                                class="form-check-input" @change="wizardReviewUpdateButtonsText">
-                                            <label class="form-check-label mr-1 text-nowrap" for="chanceToReview">
-                                                Give me a chance to review my data before deleting it
-                                            </label>
-                                        </div>
-                                        <div class="indent">
-                                            <small class="form-text text-muted">
-                                                If you don't check this box, your data will be deleted as soon Cyd
-                                                builds your local
-                                                database.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
+                                <button type="submit" class="btn btn-primary"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardDeleteOptionsNextClicked">
+                                    <i class="fa-solid fa-forward" />
+                                    {{ wizardNextText }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
 
-                                <div class="buttons d-flex gap-3">
-                                    <button type="submit" class="btn btn-outline-secondary"
-                                        @click="wizardReviewBackClicked">
-                                        <i class="fa-solid fa-backward" />
-                                        {{ wizardBackText }}
-                                    </button>
-
-                                    <button type="submit" class="btn btn-primary"
-                                        :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                        @click="wizardReviewNextClicked">
-                                        <i class="fa-solid fa-forward" />
-                                        {{ wizardNextText }}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Wizard: delete review -->
-                        <div v-if="accountXViewModel?.state == State.WizardDeleteReviewDisplay"
-                            class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
+                    <!-- Wizard: review -->
+                    <div v-if="accountXViewModel?.state == State.WizardReviewDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
+                        <div class="mb-4">
                             <h2>
-                                Based on your settings, you will delete:
+                                Review your choices
                             </h2>
-                            <form @submit.prevent>
+                        </div>
+                        <form @submit.prevent>
+                            <div v-if="saveMyData">
+                                <h3>
+                                    <i class="fa-solid fa-floppy-disk me-1" />
+                                    Save my data
+                                </h3>
+                                <ul>
+                                    <li v-if="archiveTweets">
+                                        Save tweets
+                                        <ul>
+                                            <li v-if="archiveTweetsHTML">
+                                                Save HTML versions of tweets
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li v-if="archiveLikes">
+                                        Save likes
+                                    </li>
+                                    <li v-if="archiveDMs">
+                                        Save direct messages
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div v-if="deleteMyData">
+                                <h3>
+                                    <i class="fa-solid fa-fire me-1" />
+                                    Delete my data
+                                </h3>
                                 <ul>
                                     <li v-if="deleteTweets">
-                                        <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
-                                        that are older than {{ deleteTweetsDaysOld }} days
-                                        <span
-                                            v-if="deleteTweetsRetweetsThresholdEnabled && !deleteTweetsLikesThresholdEnabled">
-                                            unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets
-                                        </span>
-                                        <span
-                                            v-if="!deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
-                                            unless they have at least {{ deleteTweetsLikesThreshold }} likes
-                                        </span>
-                                        <span
-                                            v-if="deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
-                                            unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets or {{
-                                                deleteTweetsLikesThreshold }} likes
-                                        </span>
+                                        Delete tweets older than {{ deleteTweetsDaysOld }} days
+                                        <ul>
+                                            <li v-if="deleteTweetsRetweetsThresholdEnabled">
+                                                Keep tweets with at least {{ deleteTweetsRetweetsThreshold }}
+                                                retweets
+                                            </li>
+                                            <li v-if="deleteTweetsLikesThresholdEnabled">
+                                                Keep tweets with at least {{ deleteTweetsLikesThreshold }} likes
+                                            </li>
+                                            <li v-if="deleteTweetsArchiveEnabled">
+                                                Save an HTML version of each tweet before deleting it
+                                            </li>
+                                        </ul>
                                     </li>
                                     <li v-if="deleteRetweets">
-                                        <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
-                                        that are older than {{ deleteRetweetsDaysOld }} days
+                                        Unretweet tweets older than {{ deleteRetweetsDaysOld }} days
                                     </li>
                                     <li v-if="deleteLikes">
-                                        <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
-                                        that are older than {{ deleteLikesDaysOld }} days
+                                        Unlike tweets older than {{ deleteLikesDaysOld }} days
                                     </li>
                                     <li v-if="deleteDMs">
-                                        <b>All of your direct messages</b>
+                                        Delete direct messages
                                     </li>
                                 </ul>
 
-                                <div class="buttons d-flex gap-3">
-                                    <button type="submit" class="btn btn-outline-secondary"
-                                        @click="wizardDeleteReviewBackClicked">
-                                        <i class="fa-solid fa-backward" />
-                                        {{ wizardBackText }}
-                                    </button>
-
-                                    <button type="submit" class="btn btn-primary"
-                                        :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                        @click="wizardDeleteReviewNextClicked">
-                                        <i class="fa-solid fa-forward" />
-                                        {{ wizardNextText }}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Finished running jobs -->
-                        <div v-if="accountXViewModel?.state == State.FinishedRunningJobsDisplay" class="finished">
-                            <div v-if="saveMyData" class="container mt-3">
-                                <div class="finished-archive">
-                                    <h2>You just saved:</h2>
-                                    <ul>
-                                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
-                                            saved as HTML archives
-                                        </li>
-                                        <li
-                                            v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
-                                        </li>
-                                        <li
-                                            v-if="account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
-                                        </li>
-                                        <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
-                                        </li>
-                                        <li
-                                            v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong>
-                                            conversations,
-                                            including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong>
-                                            messages
-                                        </li>
-                                    </ul>
-
-                                    <p>
-                                        Your X archive is stored locally on your computer at
-                                        <code>{{ archivePath }}</code>.
-                                    </p>
+                                <div class="mb-2">
+                                    <div class="form-check">
+                                        <input id="chanceToReview" v-model="chanceToReview" type="checkbox"
+                                            class="form-check-input" @change="wizardReviewUpdateButtonsText">
+                                        <label class="form-check-label mr-1 text-nowrap" for="chanceToReview">
+                                            Give me a chance to review my data before deleting it
+                                        </label>
+                                    </div>
+                                    <div class="indent">
+                                        <small class="form-text text-muted">
+                                            If you don't check this box, your data will be deleted as soon Cyd
+                                            builds your local
+                                            database.
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
-                            <div v-if="deleteMyData" class="container mt-3">
-                                <div class="finished-delete">
-                                    <h2>You just deleted:</h2>
-                                    <ul>
-                                        <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
-                                            <i class="fa-solid fa-fire delete-bullet" />
-                                            <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
-                                        </li>
-                                        <li
-                                            v-if="account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
-                                            <i class="fa-solid fa-fire delete-bullet" />
-                                            <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
-                                        </li>
-                                        <li v-if="account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
-                                            <i class="fa-solid fa-fire delete-bullet" />
-                                            <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
-                                        </li>
-                                        <li
-                                            v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
-                                            <i class="fa-solid fa-fire delete-bullet" />
-                                            <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong>
-                                            conversations,
-                                            including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong>
-                                            messages
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="container mt-3">
-                                    <button class="btn btn-primary" @click="reset()">
-                                        Back to Start
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Debug state -->
-                        <div v-if="accountXViewModel?.state == State.Debug">
-                            <p>Debug debug debug!!!</p>
-                            <p>
-                                <button class="btn btn-danger" @click="debugModeTriggerError">
-                                    Trigger Error
+                            <div class="buttons d-flex gap-3">
+                                <button type="submit" class="btn btn-outline-secondary"
+                                    @click="wizardReviewBackClicked">
+                                    <i class="fa-solid fa-backward" />
+                                    {{ wizardBackText }}
                                 </button>
-                            </p>
-                            <p>
-                                <button class="btn btn-primary" @click="debugModeDisable">
-                                    Cancel Debug Mode
+
+                                <button type="submit" class="btn btn-primary"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardReviewNextClicked">
+                                    <i class="fa-solid fa-forward" />
+                                    {{ wizardNextText }}
                                 </button>
-                            </p>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Wizard: delete review -->
+                    <div v-if="accountXViewModel?.state == State.WizardDeleteReviewDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
+                        <h2>
+                            Based on your settings, you will delete:
+                        </h2>
+                        <form @submit.prevent>
+                            <ul>
+                                <li v-if="deleteTweets">
+                                    <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
+                                    that are older than {{ deleteTweetsDaysOld }} days
+                                    <span
+                                        v-if="deleteTweetsRetweetsThresholdEnabled && !deleteTweetsLikesThresholdEnabled">
+                                        unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets
+                                    </span>
+                                    <span
+                                        v-if="!deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
+                                        unless they have at least {{ deleteTweetsLikesThreshold }} likes
+                                    </span>
+                                    <span
+                                        v-if="deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
+                                        unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets or {{
+                                            deleteTweetsLikesThreshold }} likes
+                                    </span>
+                                </li>
+                                <li v-if="deleteRetweets">
+                                    <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
+                                    that are older than {{ deleteRetweetsDaysOld }} days
+                                </li>
+                                <li v-if="deleteLikes">
+                                    <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
+                                    that are older than {{ deleteLikesDaysOld }} days
+                                </li>
+                                <li v-if="deleteDMs">
+                                    <b>All of your direct messages</b>
+                                </li>
+                            </ul>
+
+                            <div class="buttons d-flex gap-3">
+                                <button type="submit" class="btn btn-outline-secondary"
+                                    @click="wizardDeleteReviewBackClicked">
+                                    <i class="fa-solid fa-backward" />
+                                    {{ wizardBackText }}
+                                </button>
+
+                                <button type="submit" class="btn btn-primary"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardDeleteReviewNextClicked">
+                                    <i class="fa-solid fa-forward" />
+                                    {{ wizardNextText }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Finished running jobs -->
+                    <div v-if="accountXViewModel?.state == State.FinishedRunningJobsDisplay" class="finished">
+                        <div v-if="saveMyData" class="container mt-3">
+                            <div class="finished-archive">
+                                <h2>You just saved:</h2>
+                                <ul>
+                                    <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                        <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
+                                        saved as HTML archives
+                                    </li>
+                                    <li v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
+                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                        <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                                    </li>
+                                    <li v-if="account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
+                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                        <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
+                                    </li>
+                                    <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
+                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                        <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                                    </li>
+                                    <li
+                                        v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
+                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                        <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong>
+                                        conversations,
+                                        including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong>
+                                        messages
+                                    </li>
+                                </ul>
+
+                                <p>
+                                    Your X archive is stored locally on your computer at
+                                    <code>{{ archivePath }}</code>.
+                                </p>
+                            </div>
+                        </div>
+                        <div v-if="deleteMyData" class="container mt-3">
+                            <div class="finished-delete">
+                                <h2>You just deleted:</h2>
+                                <ul>
+                                    <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
+                                        <i class="fa-solid fa-fire delete-bullet" />
+                                        <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
+                                    </li>
+                                    <li v-if="account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
+                                        <i class="fa-solid fa-fire delete-bullet" />
+                                        <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
+                                    </li>
+                                    <li v-if="account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
+                                        <i class="fa-solid fa-fire delete-bullet" />
+                                        <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
+                                    </li>
+                                    <li
+                                        v-if="account.xAccount?.deleteDMs || (progress?.conversationsDeleted ?? 0) > 0 || (progress?.messagesDeleted ?? 0) > 0">
+                                        <i class="fa-solid fa-fire delete-bullet" />
+                                        <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong>
+                                        conversations,
+                                        including <strong>{{ progress?.messagesDeleted.toLocaleString() }}</strong>
+                                        messages
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="container mt-3">
+                                <button class="btn btn-primary" @click="reset()">
+                                    Back to Start
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- wizard side bar -->
-                    <div class="col-2 wizard-sidebar">
-                        <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
-                            <button class="btn btn-outline-success btn-sm" @click="openArchive">
-                                Browse Archive
-                            </button>
-
-                            <button class="btn btn-outline-secondary btn-sm" @click="openArchiveFolder">
-                                Open Folder
+                    <!-- Debug state -->
+                    <div v-if="accountXViewModel?.state == State.Debug">
+                        <p>Debug debug debug!!!</p>
+                        <p>
+                            <button class="btn btn-danger" @click="debugModeTriggerError">
+                                Trigger Error
                             </button>
                         </p>
+                        <p>
+                            <button class="btn btn-primary" @click="debugModeDisable">
+                                Cancel Debug Mode
+                            </button>
+                        </p>
+                    </div>
+                </div>
 
-                        <div class="stats container mt-4">
-                            <div class="row g-2">
-                                <template v-for="(value, key) in databaseStats" :key="key">
-                                    <div v-if="value > 0" class="col-12 col-md-6">
-                                        <div class="card text-center">
-                                            <div class="card-header">
-                                                {{ key.replace(/([A-Z])/g, ' $1').replace(/^./, str =>
-                                                    str.toUpperCase()) }}
-                                            </div>
-                                            <div class="card-body">
-                                                <h1>{{ formatStatsNumber(value) }}</h1>
-                                            </div>
+                <!-- wizard side bar -->
+                <div class="wizard-sidebar">
+                    <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
+                        <button class="btn btn-outline-success btn-sm" @click="openArchive">
+                            Browse Archive
+                        </button>
+
+                        <button class="btn btn-outline-secondary btn-sm" @click="openArchiveFolder">
+                            Open Folder
+                        </button>
+                    </p>
+
+                    <div class="stats container mt-4">
+                        <div class="row g-2">
+                            <template v-for="(value, key) in databaseStats" :key="key">
+                                <div v-if="value > 0" class="col-12 col-md-6">
+                                    <div class="card text-center">
+                                        <div class="card-header">
+                                            {{ key.replace(/([A-Z])/g, ' $1').replace(/^./, str =>
+                                                str.toUpperCase()) }}
+                                        </div>
+                                        <div class="card-body">
+                                            <h1>{{ formatStatsNumber(value) }}</h1>
                                         </div>
                                     </div>
-                                </template>
-                            </div>
+                                </div>
+                            </template>
                         </div>
-
-                        <!-- Debug mode -->
-                        <p v-if="shouldOpenDevtools" class="text-center mt-4">
-                            <button class="btn btn-sm btn-danger" @click="enableDebugMode">
-                                Debug Mode
-                            </button>
-                        </p>
                     </div>
+
+                    <!-- Debug mode -->
+                    <p v-if="shouldOpenDevtools" class="text-center mt-4">
+                        <button class="btn btn-sm btn-danger" @click="enableDebugMode">
+                            Debug Mode
+                        </button>
+                    </p>
                 </div>
             </div>
         </div>
@@ -1242,9 +1233,22 @@ onUnmounted(async () => {
     overflow: auto;
 }
 
-.wizard-sidebar {
-    width: 250px;
+.wizard-container {
+    display: flex;
+    height: 100%;
+}
+
+.wizard-content {
+    flex-grow: 1;
     overflow-y: auto;
+    min-width: 0;
+}
+
+.wizard-sidebar {
+    min-width: 280px;
+    flex-basis: 280px;
+    overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .wizard-sidebar .stats .card-header {
