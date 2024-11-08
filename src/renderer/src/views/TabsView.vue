@@ -198,6 +198,8 @@ const signOutClicked = async () => {
 
   showManageAccount.value = false;
   userBtnShowMenu.value = false;
+
+  emitter?.emit('signed-out');
 };
 
 const checkForUpdatesClicked = async () => {

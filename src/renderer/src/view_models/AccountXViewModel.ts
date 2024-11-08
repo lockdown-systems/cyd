@@ -28,6 +28,8 @@ export enum State {
     WizardReviewDisplay = "wizardReviewDisplay",
     WizardDeleteReview = "wizardDeleteReview",
     WizardDeleteReviewDisplay = "wizardDeleteReviewDisplay",
+    WizardCheckPremium = "wizardCheckPremium",
+    WizardCheckPremiumDisplay = "wizardCheckPremiumDisplay",
     RunJobs = "runJobs",
     FinishedRunningJobs = "finishedRunningJobs",
     FinishedRunningJobsDisplay = "finishedRunningJobsDisplay",
@@ -1900,6 +1902,15 @@ All done!
 
 **Here's what I did.**`;
                     this.state = State.FinishedRunningJobsDisplay;
+                    break;
+
+                case State.WizardCheckPremium:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `**I'm almost ready to delete your data from X!**
+
+You can save all your data for free, but you need a Premium plan to delete your data.`;
+                    this.state = State.WizardCheckPremiumDisplay;
                     break;
 
                 case State.RunJobs:

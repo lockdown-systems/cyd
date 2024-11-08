@@ -16,6 +16,7 @@ import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
+import { APIErrorResponse, UserPremiumAPIResponse } from "../../../cyd-api-client";
 
 import type {
     Account,
@@ -205,6 +206,41 @@ const updateSettings = async () => {
     emitter?.emit('account-updated');
 };
 
+// User variables
+const userAuthenticated = ref(false);
+const userPremium = ref(false);
+
+const updateUserPremium = async () => {
+    if (!userAuthenticated.value) {
+        return;
+    }
+
+    // Check if the user has premium
+    let userPremiumResp: UserPremiumAPIResponse;
+    const resp = await apiClient.value.getUserPremium();
+    if (resp && 'error' in resp === false) {
+        userPremiumResp = resp;
+    } else {
+        await window.electron.showMessage("Failed to check if you have Premium access. Please try again later.");
+        return;
+    }
+    userPremium.value = userPremiumResp.premium_access;
+};
+
+emitter?.on('signed-in', async () => {
+    userAuthenticated.value = true;
+
+    await updateUserPremium();
+    if (!userPremium.value) {
+        emitter?.emit('show-manage-account');
+    }
+});
+
+emitter?.on('signed-out', async () => {
+    userAuthenticated.value = false;
+    userPremium.value = false;
+});
+
 const startStateLoop = async () => {
     console.log('State loop started');
     await setAccountRunning(props.account.id, true);
@@ -222,6 +258,7 @@ const startStateLoop = async () => {
             accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay ||
             accountXViewModel.value?.state === State.WizardReviewDisplay ||
             accountXViewModel.value?.state === State.WizardDeleteReviewDisplay ||
+            accountXViewModel.value?.state === State.WizardCheckPremiumDisplay ||
             accountXViewModel.value?.state === State.FinishedRunningJobsDisplay
         ) {
             if (accountXViewModel.value?.state === State.WizardStartDisplay) {
@@ -428,10 +465,49 @@ const wizardReviewBackClicked = async () => {
 const wizardReviewNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
+
+    // Premium check
+    if (deleteMyData.value) {
+        userAuthenticated.value = await apiClient.value.ping();
+        if (!userAuthenticated.value) {
+            accountXViewModel.value.state = State.WizardCheckPremium;
+            await startStateLoop();
+            return;
+        }
+
+        await updateUserPremium();
+        if (!userPremium.value) {
+            accountXViewModel.value.state = State.WizardCheckPremium;
+            await startStateLoop();
+            return;
+        }
+    }
+
     if (accountXViewModel.value) {
         await accountXViewModel.value.defineJobs();
     }
     accountXViewModel.value.isDeleteReviewActive = chanceToReview.value;
+    await startStateLoop();
+};
+
+const wizardCheckPremiumSignInClicked = async () => {
+    emitter?.emit("show-sign-in");
+};
+
+const wizardCheckPremiumBackClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    accountXViewModel.value.state = State.WizardReview;
+    await startStateLoop();
+};
+
+const wizardCheckPremiumJustSaveClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+
+    saveMyData.value = true;
+    deleteMyData.value = false;
+    await updateSettings();
+
+    accountXViewModel.value.state = State.WizardReview;
     await startStateLoop();
 };
 
@@ -1083,6 +1159,44 @@ onUnmounted(async () => {
                                     @click="wizardDeleteReviewNextClicked">
                                     <i class="fa-solid fa-forward" />
                                     {{ wizardNextText }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Wizard: check premium -->
+                    <div v-if="accountXViewModel?.state == State.WizardCheckPremiumDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
+                        <h2>
+                            Upgrade to Premium to delete data
+                        </h2>
+
+                        <template v-if="!userAuthenticated">
+                            <p>First, sign in to your Cyd account.</p>
+                        </template>
+
+                        <form @submit.prevent>
+                            <div class="buttons">
+                                <button v-if="!userAuthenticated" type="submit"
+                                    class="btn btn-lg btn-primary text-nowrap m-1"
+                                    @click="wizardCheckPremiumSignInClicked">
+                                    <i class="fa-solid fa-user-ninja" />
+                                    Sign In
+                                </button>
+                            </div>
+
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                                    @click="wizardCheckPremiumBackClicked">
+                                    <i class="fa-solid fa-backward" />
+                                    Back to Review
+                                </button>
+
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardCheckPremiumJustSaveClicked">
+                                    <i class="fa-solid fa-floppy-disk" />
+                                    Just Save My Data for Now
                                 </button>
                             </div>
                         </form>
