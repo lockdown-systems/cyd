@@ -44,7 +44,9 @@ provide('refreshDeviceInfo', refreshDeviceInfo);
 
 // Refresh API client
 const refreshAPIClient = async () => {
-  apiClient.value = new CydAPIClient();
+  if (!apiClient.value) {
+    apiClient.value = new CydAPIClient();
+  }
   apiClient.value.initialize(await window.electron.getAPIURL());
   await refreshDeviceInfo();
 };

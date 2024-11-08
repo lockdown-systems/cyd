@@ -970,6 +970,7 @@ onUnmounted(async () => {
                                 <h3>
                                     <i class="fa-solid fa-fire me-1" />
                                     Delete my data
+                                    <span class="premium badge badge-primary">Premium</span>
                                 </h3>
                                 <ul>
                                     <li v-if="deleteTweets">
@@ -1009,8 +1010,7 @@ onUnmounted(async () => {
                                     <div class="indent">
                                         <small class="form-text text-muted">
                                             If you don't check this box, your data will be deleted as soon Cyd
-                                            builds your local
-                                            database.
+                                            builds your local database.
                                         </small>
                                     </div>
                                 </div>
