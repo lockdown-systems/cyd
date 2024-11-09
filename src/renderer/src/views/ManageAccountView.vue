@@ -47,8 +47,12 @@ const loadEmpty = async () => {
 const loadDash = async () => {
     await waitForWebview();
     if (webviewComponent.value !== null) {
-        const dashURL = await window.electron.getDashURL();
         const mode = localStorage.getItem('manageAccountMode');
+        if (mode == "premium") {
+            // Add event listener
+            webviewComponent.value.addEventListener('load-commit', onLoadCommit);
+        }
+        const dashURL = await window.electron.getDashURL();
         const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}/${mode}`;
         console.log('ManageAccountView: Loading dash', mode, nativeLoginURL);
 
@@ -59,10 +63,10 @@ const loadDash = async () => {
     }
 };
 
-const waitForRedirect = async () => {
+const onLoadCommit = async (event: Electron.LoadCommitEvent) => {
+    const url = event.url;
     if (localStorage.getItem("manageAccountMode") == "premium") {
-        const url = webviewComponent.value?.getURL();
-        if (url && url.includes('/native-app-premium-enabled')) {
+        if (url.includes('/native-app-premium-enabled')) {
             // Redirect
             const accountID = localStorage.getItem('manageAccountRedirectAccountID');
             if (!accountID) {
@@ -74,6 +78,11 @@ const waitForRedirect = async () => {
 
             console.log('ManageAccountView: Redirecting to account', accountIDNumber);
             emit('redirectToAccount', accountIDNumber);
+
+            // Remove event listener, and load about:blank
+            if (webviewComponent.value !== null) {
+                webviewComponent.value.removeEventListener('load-commit', onLoadCommit);
+            }
             await webviewComponent.value?.loadURL('about:blank');
         } else {
             if (props.shouldShow) {
@@ -85,11 +94,14 @@ const waitForRedirect = async () => {
 
 onMounted(async () => {
     await loadDash();
-    setInterval(waitForRedirect, 1000);
 });
 
 onUnmounted(async () => {
     isWebviewMounted.value = false;
+
+    if (webviewComponent.value !== null) {
+        webviewComponent.value.removeEventListener('load-commit', onLoadCommit);
+    }
 });
 </script>
 
