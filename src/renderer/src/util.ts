@@ -94,13 +94,13 @@ export async function openPreventSleepURL() {
     const platform = await window.electron.getPlatform();
     let url: string;
     if (platform === 'darwin') {
-        url = 'https://semiphemeral.com/docs-disable-sleep-in-macos/';
+        url = 'https://cyd.social/docs-disable-sleep-in-macos/';
     } else if (platform == 'win32') {
-        url = 'https://semiphemeral.com/docs-disable-sleep-in-windows/';
+        url = 'https://cyd.social/docs-disable-sleep-in-windows/';
     } else if (platform == 'linux') {
-        url = 'https://semiphemeral.com/docs-disable-sleep-in-linux/';
+        url = 'https://cyd.social/docs-disable-sleep-in-linux/';
     } else {
-        url = 'https://semiphemeral.com/';
+        url = 'https://cyd.social/';
     }
     await window.electron.openURL(url);
 }

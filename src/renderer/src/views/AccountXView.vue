@@ -323,7 +323,7 @@ const onCancelAutomation = () => {
 };
 
 const u2fInfoClicked = () => {
-    window.electron.openURL('https://semiphemeral.com/docs-u2f');
+    window.electron.openURL('https://cyd.social/docs-u2f');
 };
 
 function formatStatsNumber(num: number): string {
