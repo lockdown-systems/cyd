@@ -180,7 +180,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("waitForRateLimit", "finished waiting for pause");
     }
 
-    async loadURLWithRateLimit(url: string, expectedURLs: string[] = [], redirectOk: boolean = false) {
+    async loadURLWithRateLimit(url: string, expectedURLs: (string | RegExp)[] = [], redirectOk: boolean = false) {
         this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
 
         // eslint-disable-next-line no-constant-condition
@@ -216,7 +216,10 @@ export class AccountXViewModel extends BaseViewModel {
                 if (newURL != url) {
                     let changedToUnexpected = true;
                     for (const expectedURL of expectedURLs) {
-                        if (newURL.startsWith(expectedURL)) {
+                        if (typeof expectedURL === 'string' && newURL.startsWith(expectedURL)) {
+                            changedToUnexpected = false;
+                            break;
+                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL)) {
                             changedToUnexpected = false;
                             break;
                         }
@@ -1502,7 +1505,12 @@ Hang on while I scroll down to your earliest likes.`;
             alreadyDeleted = false;
 
             // Load the URL
-            await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
+            await this.loadURLWithRateLimit(
+                `https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`,
+                // It's okay if the URL changes as long as the tweetID is the same
+                // This happens if the user has changed their username
+                [RegExp(`https://x\\.com/.*/status/${tweetsToDelete.tweets[i].tweetID}`)]
+            );
             await this.sleep(200);
 
             await this.waitForPause();
