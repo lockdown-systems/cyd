@@ -627,6 +627,12 @@ Hang on while I scroll down to your earliest tweets.`;
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
 
+                // Before trying to click the retry button, scroll up a bit and then down again, just to be safe
+                await this.scrollUp(1000);
+                await this.sleep(500);
+                await this.scrollToBottom();
+                await this.sleep(500);
+
                 // Try to handle the rate limit
                 success = false;
                 for (tries = 0; tries < 3; tries++) {
