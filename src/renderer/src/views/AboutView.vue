@@ -23,6 +23,9 @@ onMounted(async () => {
             </div>
         </div>
         <div class="text-center">
+            <p>
+                Find a bug or need help? Email help@cyd.social.
+            </p>
             <p class="text-muted">
                 <img src="/assets/logotext.svg" class="cyd-logotext mr-2" alt="Cyd">
                 version {{ appVersion }}
