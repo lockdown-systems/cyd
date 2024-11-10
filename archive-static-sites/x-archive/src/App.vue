@@ -20,7 +20,7 @@ onMounted(() => {
       <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
           <a class="navbar-brand" href="https://cyd.social" target="_blank">
-            <img src="./assets/icon.png" alt="Cyd" class="icon" style="height: 40px;">
+            <img src="./assets/icon.svg" alt="Cyd" class="icon" style="height: 40px;">
           </a>
           <span class="navbar-text">
             <i class="fa-brands fa-x-twitter"></i> Archive: <b>@{{ archiveData.username }}</b>
@@ -60,7 +60,7 @@ onMounted(() => {
     <div class="archive-data-missing d-flex justify-content-center align-items-center vh-100">
       <div class="container">
         <div class="text-center">
-          <img src="./assets/icon.png" alt="Cyd" class="img-fluid mb-4">
+          <img src="./assets/icon.svg" alt="Cyd" class="img-fluid mb-4">
           <i class="fa-solid fa-triangle-exclamation" />
         </div>
         <p class="text-center">
