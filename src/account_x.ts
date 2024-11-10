@@ -1262,32 +1262,32 @@ export class XAccountController {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
-                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? AND text NOT LIKE ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold, "RT @%"],
                 "all"
             ) as XTweetRow[];
         } else if (this.account.deleteTweetsLikesThresholdEnabled) {
             // Just likes threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
-                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND text NOT LIKE ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, "RT @%"],
                 "all"
             ) as XTweetRow[];
         } else if (this.account.deleteTweetsRetweetsThreshold) {
             // Just retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
-                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND retweetCount <= ? AND text NOT LIKE ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold, "RT @%"],
                 "all"
             ) as XTweetRow[];
         } else {
             // Neither likes nor retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
-                [0, this.account.username, daysOldTimestamp],
+                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND isRetweeted = ? AND username = ? AND createdAt <= ? AND text NOT LIKE ? ORDER BY createdAt DESC',
+                [0, this.account.username, daysOldTimestamp, "RT @%"],
                 "all"
             ) as XTweetRow[];
         }
