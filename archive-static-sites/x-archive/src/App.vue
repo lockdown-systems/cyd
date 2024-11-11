@@ -35,6 +35,9 @@ onMounted(() => {
                 <router-link to="/" class="nav-link">Tweets</router-link>
               </li>
               <li class="nav-item">
+                <router-link to="/retweets" class="nav-link">Retweets</router-link>
+              </li>
+              <li class="nav-item">
                 <router-link to="/likes" class="nav-link">Likes</router-link>
               </li>
               <li class="nav-item">
