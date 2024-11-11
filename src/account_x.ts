@@ -32,7 +32,6 @@ import {
 import {
     runMigrations,
     getAccount,
-    getXAccount,
     saveXAccount,
     exec,
     Sqlite3Count,
@@ -154,7 +153,8 @@ function convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
 export class XAccountController {
     private accountUUID: string = "";
     // Making this public so it can be accessed in tests
-    public account: XAccount | null;
+    public account: XAccount | null = null;
+    private accountID: number = 0;
     private accountDataPath: string = "";
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     private thereIsMore: boolean = false;
@@ -171,24 +171,11 @@ export class XAccountController {
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
 
-        // Load the X account
-        this.account = getXAccount(accountID);
-        if (!this.account) {
-            log.error(`XAccountController: account ${accountID} not found`);
-            return;
-        }
-
-        // Load the account to get the UUID
-        const account = getAccount(accountID);
-        if (!account) {
-            log.error(`XAccountController: account ${accountID} not found`);
-            return;
-        }
-        this.accountUUID = account.uuid;
-        log.debug(`XAccountController: accountUUID=${this.accountUUID}`);
+        this.accountID = accountID;
+        this.refreshAccount();
 
         // Monitor web request metadata
-        const ses = session.fromPartition(`persist:account-${this.account.id}`);
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
         ses.webRequest.onCompleted((details) => {
             // Monitor for rate limits
             if (details.statusCode == 429) {
@@ -223,23 +210,40 @@ export class XAccountController {
     }
 
     refreshAccount() {
-        if (this.account) {
-            this.account = getXAccount(this.account.id);
-            if (!this.account) {
-                log.error(`XAccountController: error refreshing account`);
-                return;
-            }
+        // Load the account
+        const account = getAccount(this.accountID);
+        if (!account) {
+            log.error(`XAccountController.refreshAccount: account ${this.accountID} not found`);
+            return;
+        }
+
+        // Make sure it's an X account
+        if (account.type != "X") {
+            log.error(`XAccountController.refreshAccount: account ${this.accountID} is not an X account`);
+            return;
+        }
+
+        // Get the account UUID
+        this.accountUUID = account.uuid;
+        log.debug(`XAccountController.refreshAccount: accountUUID=${this.accountUUID}`);
+
+        // Load the X account
+        this.account = account.xAccount;
+        if (!this.account) {
+            log.error(`XAccountController.refreshAccount: xAccount ${this.accountID} not found`);
+            return;
         }
     }
 
     initDB() {
         if (!this.account || !this.account.username) {
-            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found");
+            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found", this.account, this.account?.username);
             return;
         }
 
         // Make sure the account data folder exists
         this.accountDataPath = getAccountDataPath('X', this.account.username);
+        log.info(`XAccountController.initDB: accountDataPath=${this.accountDataPath}`);
 
         // Open the database
         this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
@@ -318,6 +322,7 @@ export class XAccountController {
                 ]
             }
         ])
+        log.info("XAccountController.initDB: database initialized");
     }
 
     resetProgress(): XProgress {
@@ -382,7 +387,7 @@ export class XAccountController {
     }
 
     async indexStart() {
-        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await ses.clearCache();
         await this.mitmController.startMonitoring();
         await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
@@ -391,7 +396,7 @@ export class XAccountController {
 
     async indexStop() {
         await this.mitmController.stopMonitoring();
-        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await this.mitmController.stopMITM(ses);
     }
 
@@ -1573,6 +1578,7 @@ export class XAccountController {
 const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
+    log.info(`getXAccountController: accountID=${accountID}`);
     if (!controllers[accountID]) {
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
