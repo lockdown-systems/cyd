@@ -134,7 +134,7 @@ const config: ForgeConfig = {
     // macOS DMG
     new MakerDMG({
       name: `Cyd ${version}`,
-      background: path.join(assetsPath, 'dmg-background-540x290.png'),
+      background: path.join(assetsPath, 'dmg-background.png'),
       icon: path.join(assetsPath, 'installer-icon.icns'),
       iconSize: 110,
       overwrite: true,
