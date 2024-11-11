@@ -116,23 +116,23 @@ contextBridge.exposeInMainWorld('electron', {
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
         },
-        indexParseTweets: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseTweets', accountID, isFirstRun)
+        indexParseTweets: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseTweets', accountID)
         },
-        indexParseLikes: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseLikes', accountID, isFirstRun)
+        indexParseLikes: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseLikes', accountID)
         },
-        indexParseConversations: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseConversations', accountID, isFirstRun)
+        indexParseConversations: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseConversations', accountID)
         },
         indexIsThereMore: (accountID: number): Promise<boolean> => {
             return ipcRenderer.invoke('X:indexIsThereMore', accountID)
         },
-        indexMessagesStart: (accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {
-            return ipcRenderer.invoke('X:indexMessagesStart', accountID, isFirstRun);
+        indexMessagesStart: (accountID: number): Promise<XIndexMessagesStartResponse> => {
+            return ipcRenderer.invoke('X:indexMessagesStart', accountID);
         },
-        indexParseMessages: (accountID: number, isFirstRun: boolean): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexParseMessages', accountID, isFirstRun)
+        indexParseMessages: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseMessages', accountID)
         },
         indexTweetsFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexTweetsFinished', accountID)
@@ -143,7 +143,7 @@ contextBridge.exposeInMainWorld('electron', {
         indexMessagesFinished: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexMessagesFinished', accountID)
         },
-        indexConversationFinished: (accountID: number, conversationID: string): Promise<boolean> => {
+        indexConversationFinished: (accountID: number, conversationID: string): Promise<void> => {
             return ipcRenderer.invoke('X:indexConversationFinished', accountID, conversationID)
         },
         indexLikesFinished: (accountID: number): Promise<XProgress> => {
@@ -155,13 +155,13 @@ contextBridge.exposeInMainWorld('electron', {
         archiveTweetsOutputPath: (accountID: number): Promise<string> => {
             return ipcRenderer.invoke('X:archiveTweetsOutputPath', accountID)
         },
-        archiveTweet: (accountID: number, tweetID: string): Promise<boolean> => {
+        archiveTweet: (accountID: number, tweetID: string): Promise<void> => {
             return ipcRenderer.invoke('X:archiveTweet', accountID, tweetID)
         },
-        archiveTweetCheckDate: (accountID: number, tweetID: string): Promise<boolean> => {
+        archiveTweetCheckDate: (accountID: number, tweetID: string): Promise<void> => {
             return ipcRenderer.invoke('X:archiveTweetCheckDate', accountID, tweetID)
         },
-        archiveBuild: (accountID: number): Promise<boolean> => {
+        archiveBuild: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:archiveBuild', accountID)
         },
         syncProgress: (accountID: number, progressJSON: string) => {
@@ -206,7 +206,7 @@ contextBridge.exposeInMainWorld('electron', {
         deleteLikesStart: (accountID: number): Promise<XDeleteTweetsStartResponse> => {
             return ipcRenderer.invoke('X:deleteLikesStart', accountID);
         },
-        deleteTweet: (accountID: number, tweetID: string): Promise<boolean> => {
+        deleteTweet: (accountID: number, tweetID: string): Promise<void> => {
             return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID);
         },
         deleteDMsStart: (accountID: number): Promise<XProgress> => {
