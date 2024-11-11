@@ -252,6 +252,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("indexTweetsHandleRateLimit", this.progress);
 
         if (await this.doesSelectorExist('[data-testid="cellInnerDiv"]')) {
+            this.log("indexTweetsHandleRateLimit", "tweets have loaded");
             // Tweets have loaded. If there are tweets, the HTML looks like of like this:
             // <div>
             //     <div data-testid="cellInnerDiv"></div>
@@ -269,6 +270,7 @@ export class AccountXViewModel extends BaseViewModel {
             // If the scroll height increased, this means more tweets loaded
             return scrollHeightEnd > scrollHeightStart;
         } else {
+            this.log("indexTweetsHandleRateLimit", "no tweets have loaded");
             // No tweets have loaded. If there are no tweets, the HTML looks kind of like this:
             // <div>
             //     <nav aria-label="Profile timelines">
@@ -540,8 +542,6 @@ export class AccountXViewModel extends BaseViewModel {
     async runJobIndexTweets(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS, navigator.userAgent);
 
-        let tries: number, success: boolean;
-
         this.showBrowser = true;
         this.instructions = `**I'm saving your tweets.**
 
@@ -621,26 +621,8 @@ Hang on while I scroll down to your earliest tweets.`;
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
 
-                // Before trying to click the retry button, scroll up a bit and then down again, just to be safe
-                await this.scrollUp(1000);
-                await this.sleep(500);
-                await this.scrollToBottom();
-                await this.sleep(500);
-
                 // Try to handle the rate limit
-                success = false;
-                for (tries = 0; tries < 3; tries++) {
-                    if (await this.indexTweetsHandleRateLimit()) {
-                        success = true;
-                        break;
-                    } else {
-                        this.log("runJobIndexTweets", ["handleRateLimit failed, try #", tries]);
-                        await this.sleep(1000);
-                    }
-                }
-
-                // If rate limit failed, error out
-                if (!success) {
+                if (!await this.indexTweetsHandleRateLimit()) {
                     await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
                         currentURL: this.webview.getURL()
                     });
