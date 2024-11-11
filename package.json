@@ -27,8 +27,8 @@
     "lint": "eslint ./src",
     "lint-fix": "eslint ./src --fix",
     "config-local": "./archive-static-sites/build.sh && cp ./config/local.json ./build/config.json",
-    "config-dev": "./archive-static-sites/build.sh && cp ./config/dev.json ./build/dev.json",
-    "config-prod": "./archive-static-sites/build.sh && cp ./config/prod.json ./build/prod.json"
+    "config-dev": "./archive-static-sites/build.sh && cp ./config/dev.json ./build/config.json",
+    "config-prod": "./archive-static-sites/build.sh && cp ./config/prod.json ./build/config.json"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.2",
