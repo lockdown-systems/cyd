@@ -60,8 +60,7 @@ onMounted(() => {
     <div class="archive-data-missing d-flex justify-content-center align-items-center vh-100">
       <div class="container">
         <div class="text-center">
-          <img src="./assets/icon.svg" alt="Cyd" class="img-fluid mb-4">
-          <i class="fa-solid fa-triangle-exclamation" />
+          <img src="./assets/omgkevin.svg" alt="Error" class="img-fluid mb-4 error-image">
         </div>
         <p class="text-center">
           Uh oh! <code>assets/archive.js</code> is missing, so I cannot display your archive.
@@ -105,5 +104,9 @@ footer p {
 
 .main-content {
   margin-top: 80px;
+}
+
+.error-image {
+  height: 300px;
 }
 </style>
