@@ -211,7 +211,6 @@ export type XProgressInfo = {
     totalRetweetsDeleted: number;
     totalLikesDeleted: number;
     totalConversationsDeleted: number;
-    totalMessagesDeleted: number;
 }
 
 export function emptyXProgressInfo(): XProgressInfo {
@@ -223,7 +222,6 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
         totalConversationsDeleted: 0,
-        totalMessagesDeleted: 0
     }
 }
 

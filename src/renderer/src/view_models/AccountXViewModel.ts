@@ -1010,7 +1010,6 @@ Please wait while I index all of the messages from each conversation...`;
             total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
             total_likes_deleted: this.progressInfo.totalLikesDeleted,
             total_conversations_deleted: this.progressInfo.totalConversationsDeleted,
-            total_messages_deleted: this.progressInfo.totalMessagesDeleted
         }, this.deviceInfo?.valid ? true : false)
         if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
             // Silently log the error and continue
