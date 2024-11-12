@@ -32,7 +32,6 @@ import {
 import {
     runMigrations,
     getAccount,
-    getXAccount,
     saveXAccount,
     exec,
     Sqlite3Count,
@@ -154,7 +153,8 @@ function convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
 export class XAccountController {
     private accountUUID: string = "";
     // Making this public so it can be accessed in tests
-    public account: XAccount | null;
+    public account: XAccount | null = null;
+    private accountID: number = 0;
     private accountDataPath: string = "";
     private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     private thereIsMore: boolean = false;
@@ -171,24 +171,11 @@ export class XAccountController {
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
 
-        // Load the X account
-        this.account = getXAccount(accountID);
-        if (!this.account) {
-            log.error(`XAccountController: account ${accountID} not found`);
-            return;
-        }
-
-        // Load the account to get the UUID
-        const account = getAccount(accountID);
-        if (!account) {
-            log.error(`XAccountController: account ${accountID} not found`);
-            return;
-        }
-        this.accountUUID = account.uuid;
-        log.debug(`XAccountController: accountUUID=${this.accountUUID}`);
+        this.accountID = accountID;
+        this.refreshAccount();
 
         // Monitor web request metadata
-        const ses = session.fromPartition(`persist:account-${this.account.id}`);
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
         ses.webRequest.onCompleted((details) => {
             // Monitor for rate limits
             if (details.statusCode == 429) {
@@ -223,23 +210,40 @@ export class XAccountController {
     }
 
     refreshAccount() {
-        if (this.account) {
-            this.account = getXAccount(this.account.id);
-            if (!this.account) {
-                log.error(`XAccountController: error refreshing account`);
-                return;
-            }
+        // Load the account
+        const account = getAccount(this.accountID);
+        if (!account) {
+            log.error(`XAccountController.refreshAccount: account ${this.accountID} not found`);
+            return;
+        }
+
+        // Make sure it's an X account
+        if (account.type != "X") {
+            log.error(`XAccountController.refreshAccount: account ${this.accountID} is not an X account`);
+            return;
+        }
+
+        // Get the account UUID
+        this.accountUUID = account.uuid;
+        log.debug(`XAccountController.refreshAccount: accountUUID=${this.accountUUID}`);
+
+        // Load the X account
+        this.account = account.xAccount;
+        if (!this.account) {
+            log.error(`XAccountController.refreshAccount: xAccount ${this.accountID} not found`);
+            return;
         }
     }
 
     initDB() {
         if (!this.account || !this.account.username) {
-            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found");
+            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found", this.account, this.account?.username);
             return;
         }
 
         // Make sure the account data folder exists
         this.accountDataPath = getAccountDataPath('X', this.account.username);
+        log.info(`XAccountController.initDB: accountDataPath=${this.accountDataPath}`);
 
         // Open the database
         this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
@@ -318,6 +322,7 @@ export class XAccountController {
                 ]
             }
         ])
+        log.info("XAccountController.initDB: database initialized");
     }
 
     resetProgress(): XProgress {
@@ -382,7 +387,7 @@ export class XAccountController {
     }
 
     async indexStart() {
-        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await ses.clearCache();
         await this.mitmController.startMonitoring();
         await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
@@ -391,12 +396,11 @@ export class XAccountController {
 
     async indexStop() {
         await this.mitmController.stopMonitoring();
-        const ses = session.fromPartition(`persist:account-${this.account?.id}`);
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await this.mitmController.stopMITM(ses);
     }
 
-    // Returns false if the loop should stop
-    indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet, isFirstRun: boolean): boolean {
+    indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
         if (!this.db) {
             this.initDB();
         }
@@ -404,14 +408,8 @@ export class XAccountController {
         // Have we seen this tweet before?
         const existing: XTweetRow[] = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all") as XTweetRow[];
         if (existing.length > 0) {
-            if (isFirstRun) {
-                // Delete it, so we can re-add it
-                exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
-            } else {
-                // We have seen this tweet, so return early
-                this.mitmController.responseData[responseIndex].processed = true;
-                return false;
-            }
+            // Delete it, so we can re-add it
+            exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
         }
 
         // Add the tweet
@@ -441,13 +439,10 @@ export class XAccountController {
         if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
             this.progress.tweetsIndexed++;
         }
-
-        return true;
     }
 
     // Returns false if the loop should stop
-    indexParseTweetsResponseData(responseIndex: number, isFirstRun: boolean): boolean {
-        let shouldReturnFalse = false;
+    indexParseTweetsResponseData(responseIndex: number) {
         const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
@@ -514,9 +509,8 @@ export class XAccountController {
                                 tweetLegacy = item.item.itemContent.tweet_results.result.tweet.legacy;
                             }
 
-                            if (userLegacy && tweetLegacy && !this.indexTweet(responseIndex, userLegacy, tweetLegacy, isFirstRun)) {
-                                shouldReturnFalse = true;
-                                return;
+                            if (userLegacy && tweetLegacy) {
+                                this.indexTweet(responseIndex, userLegacy, tweetLegacy)
                             }
                         });
                     } else if (entries.content.entryType == "TimelineTimelineItem") {
@@ -548,50 +542,32 @@ export class XAccountController {
                             tweetLegacy = entries.content.itemContent.tweet_results.result.tweet.legacy;
                         }
 
-                        if (userLegacy && tweetLegacy && !this.indexTweet(responseIndex, userLegacy, tweetLegacy, isFirstRun)) {
-                            shouldReturnFalse = true;
-                            return;
+                        if (userLegacy && tweetLegacy) {
+                            this.indexTweet(responseIndex, userLegacy, tweetLegacy);
                         }
                     }
 
 
                 });
-
-                if (shouldReturnFalse) {
-                    return false;
-                }
             });
 
             this.mitmController.responseData[responseIndex].processed = true;
             log.debug('XAccountController.indexParseTweetsResponseData: processed', responseIndex);
-
-            if (shouldReturnFalse) {
-                return false;
-            }
         } else {
             // Skip response
             this.mitmController.responseData[responseIndex].processed = true;
         }
-
-        return true;
     }
 
     // Parses the response data so far to index tweets that have been collected
     // Returns the progress object
-    async indexParseTweets(isFirstRun: boolean): Promise<XProgress> {
+    async indexParseTweets(): Promise<XProgress> {
         log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         await this.mitmController.clearProcessed();
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
-                // If this is not the first run, we should stop early
-                if (!isFirstRun) {
-                    this.progress.isIndexTweetsFinished = true;
-                }
-
-                return this.progress;
-            }
+            this.indexParseTweetsResponseData(i);
         }
 
         return this.progress;
@@ -599,20 +575,14 @@ export class XAccountController {
 
     // Parses the response data so far to index likes that have been collected
     // Returns the progress object
-    async indexParseLikes(isFirstRun: boolean): Promise<XProgress> {
+    async indexParseLikes(): Promise<XProgress> {
         log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
 
         await this.mitmController.clearProcessed();
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
-            if (!this.indexParseTweetsResponseData(i, isFirstRun)) {
-                // If this is not the first run, we should stop early
-                if (!isFirstRun) {
-                    this.progress.isIndexLikesFinished = true;
-                }
-                return this.progress;
-            }
+            this.indexParseTweetsResponseData(i);
         }
 
         return this.progress;
@@ -669,8 +639,7 @@ export class XAccountController {
         }
     }
 
-    // Returns false if the loop should stop
-    indexConversation(conversation: XAPIConversation, isFirstRun: boolean): boolean {
+    indexConversation(conversation: XAPIConversation) {
         log.debug("XAccountController.indexConversation", conversation);
         if (!this.db) {
             this.initDB();
@@ -679,18 +648,6 @@ export class XAccountController {
         // Have we seen this conversation before?
         const existing: XConversationRow[] = exec(this.db, 'SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?', [conversation.conversation_id], "all") as XConversationRow[];
         if (existing.length > 0) {
-            // Have we seen this exact conversation before?
-            if (
-                !isFirstRun &&
-                existing[0].minEntryID == conversation.min_entry_id &&
-                existing[0].maxEntryID == conversation.max_entry_id
-            ) {
-                log.debug("XAccountController.indexConversation: conversation already indexed", conversation.conversation_id);
-                this.mitmController.responseData[0].processed = true;
-                this.progress.isIndexConversationsFinished = true;
-                return false;
-            }
-
             log.debug("XAccountController.indexConversation: conversation already indexed, but needs to be updated", {
                 oldMinEntryID: existing[0].minEntryID,
                 oldMaxEntryID: existing[0].maxEntryID,
@@ -736,13 +693,9 @@ export class XAccountController {
 
         // Update progress
         this.progress.conversationsIndexed++;
-
-        return true;
     }
 
-    // Returns false if the loop should stop
-    async indexParseConversationsResponseData(responseIndex: number, isFirstRun: boolean): Promise<boolean> {
-        let shouldReturnFalse = false;
+    async indexParseConversationsResponseData(responseIndex: number) {
         const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
@@ -807,10 +760,7 @@ export class XAccountController {
                 log.info(`XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`);
                 for (const conversationID in conversations) {
                     const conversation = conversations[conversationID];
-                    if (!this.indexConversation(conversation, isFirstRun)) {
-                        shouldReturnFalse = true;
-                        break;
-                    }
+                    this.indexConversation(conversation);
                 }
             } else {
                 log.info('XAccountController.indexParseConversationsResponseData: no conversations');
@@ -818,21 +768,15 @@ export class XAccountController {
 
             this.mitmController.responseData[responseIndex].processed = true;
             log.debug('XAccountController.indexParseConversationsResponseData: processed', responseIndex);
-
-            if (shouldReturnFalse) {
-                return false;
-            }
         } else {
             // Skip response
             this.mitmController.responseData[responseIndex].processed = true;
         }
-
-        return true;
     }
 
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
-    async indexParseConversations(isFirstRun: boolean): Promise<XProgress> {
+    async indexParseConversations(): Promise<XProgress> {
         log.info(`XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexConversations";
@@ -841,9 +785,7 @@ export class XAccountController {
         await this.mitmController.clearProcessed();
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.indexParseConversationsResponseData(i, isFirstRun)) {
-                return this.progress;
-            }
+            await this.indexParseConversationsResponseData(i);
         }
 
         return this.progress;
@@ -854,23 +796,9 @@ export class XAccountController {
     }
 
     // When you start indexing DMs, return a list of DM conversationIDs to index
-    async indexMessagesStart(isFirstRun: boolean): Promise<XIndexMessagesStartResponse> {
+    async indexMessagesStart(): Promise<XIndexMessagesStartResponse> {
         if (!this.db) {
             this.initDB();
-        }
-
-        // On first run, we need to index all conversations
-        if (isFirstRun) {
-            // Keep track of the message IDs indexed this time
-            this.messageIDsIndexed = [];
-
-            exec(this.db, 'UPDATE conversation SET shouldIndexMessages = 1 WHERE deletedAt IS NULL');
-
-            const conversationIDs: XConversationRow[] = exec(this.db, 'SELECT conversationID FROM conversation WHERE deletedAt IS NULL', [], "all") as XConversationRow[];
-            return {
-                conversationIDs: conversationIDs.map((row) => row.conversationID),
-                totalConversations: conversationIDs.length
-            };
         }
 
         // Select just the conversations that need to be indexed
@@ -883,8 +811,7 @@ export class XAccountController {
         };
     }
 
-    // Returns false if the loop should stop
-    indexMessage(message: XAPIMessage, isFirstRun: boolean): boolean {
+    indexMessage(message: XAPIMessage) {
         log.debug("XAccountController.indexMessage", message);
         if (!this.db) {
             this.initDB();
@@ -892,13 +819,12 @@ export class XAccountController {
 
         if (!message.message) {
             // skip
-            return true;
+            return;
         }
 
         // Have we seen this message before?
         const existingCount: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM message WHERE messageID = ?', [message.message.id], "get") as Sqlite3Count;
         log.debug("XAccountController.indexMessage: existingCount", existingCount);
-        const isInsert = existingCount.count === 0;
 
         // Insert of replace message
         exec(this.db, 'INSERT OR REPLACE INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)', [
@@ -911,25 +837,15 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (isFirstRun) {
-            const insertMessageID: string = message.message.id;
-            if (!this.messageIDsIndexed.some(messageID => messageID === insertMessageID)) {
-                this.messageIDsIndexed.push(insertMessageID);
-            }
-
-            this.progress.messagesIndexed = this.messageIDsIndexed.length;
-        } else {
-            if (isInsert) {
-                this.progress.messagesIndexed++;
-            }
+        const insertMessageID: string = message.message.id;
+        if (!this.messageIDsIndexed.some(messageID => messageID === insertMessageID)) {
+            this.messageIDsIndexed.push(insertMessageID);
         }
 
-        return true;
+        this.progress.messagesIndexed = this.messageIDsIndexed.length;
     }
 
-    // Returns false if the loop should stop
-    async indexParseMessagesResponseData(responseIndex: number, isFirstRun: boolean): Promise<boolean> {
-        let shouldReturnFalse = false;
+    async indexParseMessagesResponseData(responseIndex: number) {
         const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
@@ -981,10 +897,7 @@ export class XAccountController {
                 log.info(`XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`);
                 for (let i = 0; i < entries.length; i++) {
                     const message = entries[i];
-                    if (!this.indexMessage(message, isFirstRun)) {
-                        shouldReturnFalse = true;
-                        break;
-                    }
+                    this.indexMessage(message);
                 }
             } else {
                 log.info('XAccountController.indexParseMessagesResponseData: no entries');
@@ -992,10 +905,6 @@ export class XAccountController {
 
             this.mitmController.responseData[responseIndex].processed = true;
             log.debug('XAccountController.indexParseMessagesResponseData: processed', responseIndex);
-
-            if (shouldReturnFalse) {
-                return false;
-            }
         } else {
             // Skip response
             log.debug('XAccountController.indexParseMessagesResponseData: skipping response', responseData.url);
@@ -1005,19 +914,14 @@ export class XAccountController {
         return true;
     }
 
-    // Returns true if more data needs to be indexed
-    // Returns false if we are caught up
-    async indexParseMessages(isFirstRun: boolean): Promise<XProgress> {
+    async indexParseMessages(): Promise<XProgress> {
         log.info(`XAccountController.indexParseMessages: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexMessages";
         this.progress.isIndexMessagesFinished = false;
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            if (!await this.indexParseMessagesResponseData(i, isFirstRun)) {
-                this.progress.shouldStopEarly = true;
-                return this.progress;
-            }
+            await this.indexParseMessagesResponseData(i);
         }
 
         return this.progress;
@@ -1042,13 +946,12 @@ export class XAccountController {
     }
 
     // Set the conversation's shouldIndexMessages to false
-    async indexConversationFinished(conversationID: string): Promise<boolean> {
+    async indexConversationFinished(conversationID: string) {
         if (!this.db) {
             this.initDB();
         }
 
         exec(this.db, 'UPDATE conversation SET shouldIndexMessages = ? WHERE conversationID = ?', [0, conversationID]);
-        return true;
     }
 
     async indexLikesFinished(): Promise<XProgress> {
@@ -1099,17 +1002,16 @@ export class XAccountController {
     }
 
     // Save the tweet's archivedAt timestamp
-    async archiveTweet(tweetID: string): Promise<boolean> {
+    async archiveTweet(tweetID: string) {
         if (!this.db) {
             this.initDB();
         }
 
         exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
-        return true;
     }
 
     // If the tweet doesn't have an archivedAt timestamp, set one
-    async archiveTweetCheckDate(tweetID: string): Promise<boolean> {
+    async archiveTweetCheckDate(tweetID: string) {
         if (!this.db) {
             this.initDB();
         }
@@ -1118,10 +1020,9 @@ export class XAccountController {
         if (!tweet.archivedAt) {
             exec(this.db, 'UPDATE tweet SET archivedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
         }
-        return true;
     }
 
-    async archiveBuild(): Promise<boolean> {
+    async archiveBuild() {
         if (!this.db) {
             this.initDB();
         }
@@ -1131,12 +1032,48 @@ export class XAccountController {
         }
 
         // Select everything from database
-        const tweets: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE username = ? ORDER BY createdAt DESC", [this.account.username], "all") as XTweetRow[];
-        const likes: XTweetRow[] = exec(this.db, "SELECT * FROM tweet WHERE isLiked = ? ORDER BY createdAt DESC", [1], "all") as XTweetRow[];
-        const users: XUserRow[] = exec(this.db, 'SELECT * FROM user', [], "all") as XUserRow[];
-        const conversations: XConversationRow[] = exec(this.db, 'SELECT * FROM conversation ORDER BY sortTimestamp DESC', [], "all") as XConversationRow[];
-        const conversationParticipants: XConversationParticipantRow[] = exec(this.db, 'SELECT * FROM conversation_participant', [], "all") as XConversationParticipantRow[];
-        const messages: XMessageRow[] = exec(this.db, 'SELECT * FROM message ORDER BY createdAt', [], "all") as XMessageRow[];
+        const tweets: XTweetRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet WHERE isRetweeted = ? AND username = ? ORDER BY createdAt DESC",
+            [0, this.account.username],
+            "all"
+        ) as XTweetRow[];
+        const retweets: XTweetRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet WHERE isRetweeted = ? ORDER BY createdAt DESC",
+            [1],
+            "all"
+        ) as XTweetRow[];
+        const likes: XTweetRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet WHERE isLiked = ? ORDER BY createdAt DESC",
+            [1],
+            "all"
+        ) as XTweetRow[];
+        const users: XUserRow[] = exec(
+            this.db,
+            'SELECT * FROM user',
+            [],
+            "all"
+        ) as XUserRow[];
+        const conversations: XConversationRow[] = exec(
+            this.db,
+            'SELECT * FROM conversation ORDER BY sortTimestamp DESC',
+            [],
+            "all"
+        ) as XConversationRow[];
+        const conversationParticipants: XConversationParticipantRow[] = exec(
+            this.db,
+            'SELECT * FROM conversation_participant',
+            [],
+            "all"
+        ) as XConversationParticipantRow[];
+        const messages: XMessageRow[] = exec(
+            this.db,
+            'SELECT * FROM message ORDER BY createdAt',
+            [],
+            "all"
+        ) as XMessageRow[];
 
         // Get the current account's userID
         const accountUser = users.find((user) => user.screenName == this.account?.username);
@@ -1144,6 +1081,23 @@ export class XAccountController {
 
         // Build the archive object
         const formattedTweets: XArchiveTypes.Tweet[] = tweets.map((tweet) => {
+            return {
+                tweetID: tweet.tweetID,
+                username: tweet.username,
+                createdAt: tweet.createdAt,
+                likeCount: tweet.likeCount,
+                quoteCount: tweet.quoteCount,
+                replyCount: tweet.replyCount,
+                retweetCount: tweet.retweetCount,
+                isLiked: tweet.isLiked,
+                isRetweeted: tweet.isRetweeted,
+                text: tweet.text,
+                path: tweet.path,
+                archivedAt: tweet.archivedAt,
+                deletedAt: tweet.deletedAt,
+            }
+        });
+        const formattedRetweets: XArchiveTypes.Tweet[] = retweets.map((tweet) => {
             return {
                 tweetID: tweet.tweetID,
                 username: tweet.username,
@@ -1223,6 +1177,7 @@ export class XAccountController {
             username: this.account.username,
             createdAt: new Date().toLocaleString(),
             tweets: formattedTweets,
+            retweets: formattedRetweets,
             likes: formattedLikes,
             users: formattedUsers,
             conversations: formattedConversations,
@@ -1235,14 +1190,12 @@ export class XAccountController {
             fs.mkdirSync(assetsPath);
         }
         const archivePath = path.join(assetsPath, "archive.js");
-        fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive)};`);
+        fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive, null, 2)};`);
 
         // Unzip x-archive.zip to the account data folder using unzipper
         const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: getAccountDataPath("X", this.account.username) });
-
-        return true;
     }
 
     // When you start deleting tweets, return a list of tweets to delete
@@ -1349,33 +1302,12 @@ export class XAccountController {
     }
 
     // Save the tweet's deletedAt timestamp
-    async deleteTweet(tweetID: string): Promise<boolean> {
+    async deleteTweet(tweetID: string) {
         if (!this.db) {
             this.initDB();
         }
 
         exec(this.db, 'UPDATE tweet SET deletedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
-        return true;
-    }
-
-    // When you start deleting DMs, return a XProgress object with total conversations and message counts
-    async deleteDMsStart(): Promise<XProgress> {
-        if (!this.db) {
-            this.initDB();
-        }
-
-        // Select the count of conversations
-        const totalConversations: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NULL', [], "get") as Sqlite3Count;
-        const totalMessages: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NULL', [], "get") as Sqlite3Count;
-
-        // Define the progress
-        this.progress.totalConversationsToDelete = totalConversations.count;
-        this.progress.totalMessagesToDelete = totalMessages.count;
-        this.progress.conversationsDeleted = 0;
-        this.progress.messagesDeleted = 0;
-        this.progress.isDeleteDMsFinished = false;
-
-        return this.progress;
     }
 
     deleteDMsMarkDeleted(conversationID: string) {
@@ -1388,15 +1320,11 @@ export class XAccountController {
         // Mark the conversation as deleted
         exec(this.db, 'UPDATE conversation SET deletedAt = ? WHERE conversationID = ?', [new Date(), conversationID]);
 
-        // Count the number of messages that are deleted
-        const totalMessagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE conversationID = ? AND deletedAt is NULL", [conversationID], "get") as Sqlite3Count;
-
         // Mark all the messages as deleted
         exec(this.db, 'UPDATE message SET deletedAt = ? WHERE conversationID = ? AND deletedAt is NULL', [new Date(), conversationID]);
 
         // Update the progress
         this.progress.conversationsDeleted++;
-        this.progress.messagesDeleted += totalMessagesDeleted.count;
     }
 
     async deleteDMsMarkAllDeleted(): Promise<void> {
@@ -1460,7 +1388,6 @@ export class XAccountController {
         const totalRetweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isRetweeted = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const totalLikesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const totalConversationsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
-        const totalMessagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
 
         const progressInfo = emptyXProgressInfo();
         progressInfo.accountUUID = this.accountUUID;
@@ -1470,7 +1397,6 @@ export class XAccountController {
         progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
         progressInfo.totalLikesDeleted = totalLikesDeleted.count;
         progressInfo.totalConversationsDeleted = totalConversationsDeleted.count;
-        progressInfo.totalMessagesDeleted = totalMessagesDeleted.count;
         return progressInfo;
     }
 
@@ -1573,6 +1499,7 @@ export class XAccountController {
 const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
+    log.info(`getXAccountController: accountID=${accountID}`);
     if (!controllers[accountID]) {
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
@@ -1636,19 +1563,19 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexParseTweets', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseTweets', async (_, accountID: number): Promise<XProgress> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.indexParseTweets(isFirstRun);
+            return await controller.indexParseTweets();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
 
-    ipcMain.handle('X:indexParseLikes', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseLikes', async (_, accountID: number): Promise<XProgress> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.indexParseLikes(isFirstRun);
+            return await controller.indexParseLikes();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -1663,10 +1590,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexParseConversations', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseConversations', async (_, accountID: number): Promise<XProgress> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.indexParseConversations(isFirstRun);
+            return await controller.indexParseConversations();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -1681,19 +1608,19 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexMessagesStart', async (_, accountID: number, isFirstRun: boolean): Promise<XIndexMessagesStartResponse> => {
+    ipcMain.handle('X:indexMessagesStart', async (_, accountID: number): Promise<XIndexMessagesStartResponse> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.indexMessagesStart(isFirstRun);
+            return await controller.indexMessagesStart();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
 
-    ipcMain.handle('X:indexParseMessages', async (_, accountID: number, isFirstRun: boolean): Promise<XProgress> => {
+    ipcMain.handle('X:indexParseMessages', async (_, accountID: number): Promise<XProgress> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.indexParseMessages(isFirstRun);
+            return await controller.indexParseMessages();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -1717,10 +1644,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexConversationFinished', async (_, accountID: number, conversationID: string): Promise<boolean> => {
+    ipcMain.handle('X:indexConversationFinished', async (_, accountID: number, conversationID: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.indexConversationFinished(conversationID);
+            await controller.indexConversationFinished(conversationID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -1753,28 +1680,28 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+    ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.archiveTweet(tweetID);
+            await controller.archiveTweet(tweetID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
 
-    ipcMain.handle('X:archiveTweetCheckDate', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+    ipcMain.handle('X:archiveTweetCheckDate', async (_, accountID: number, tweetID: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.archiveTweetCheckDate(tweetID);
+            await controller.archiveTweetCheckDate(tweetID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
 
-    ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<boolean> => {
+    ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.archiveBuild();
+            await controller.archiveBuild();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -1906,19 +1833,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.deleteTweet(tweetID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteDMsStart', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteDMsStart();
+            await controller.deleteTweet(tweetID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

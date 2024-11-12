@@ -109,7 +109,6 @@ export type XProgress = {
 
     totalConversations: number;
     conversationMessagesIndexed: number;
-    shouldStopEarly: boolean;
 
     totalTweetsToDelete: number;
     tweetsDeleted: number;
@@ -120,10 +119,7 @@ export type XProgress = {
     totalLikesToDelete: number;
     likesDeleted: number;
 
-    totalConversationsToDelete: number;
-    totalMessagesToDelete: number;
     conversationsDeleted: number;
-    messagesDeleted: number;
 }
 
 export function emptyXProgress(): XProgress {
@@ -157,7 +153,6 @@ export function emptyXProgress(): XProgress {
 
         totalConversations: 0,
         conversationMessagesIndexed: 0,
-        shouldStopEarly: false,
 
         totalTweetsToDelete: 0,
         tweetsDeleted: 0,
@@ -168,10 +163,7 @@ export function emptyXProgress(): XProgress {
         totalLikesToDelete: 0,
         likesDeleted: 0,
 
-        totalConversationsToDelete: 0,
-        totalMessagesToDelete: 0,
         conversationsDeleted: 0,
-        messagesDeleted: 0
     };
 }
 
@@ -219,7 +211,6 @@ export type XProgressInfo = {
     totalRetweetsDeleted: number;
     totalLikesDeleted: number;
     totalConversationsDeleted: number;
-    totalMessagesDeleted: number;
 }
 
 export function emptyXProgressInfo(): XProgressInfo {
@@ -231,7 +222,6 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
         totalConversationsDeleted: 0,
-        totalMessagesDeleted: 0
     }
 }
 

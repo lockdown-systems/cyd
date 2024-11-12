@@ -74,7 +74,7 @@ onMounted(async () => {
           <CydAvatarComponent :height="200" />
         </div>
         <p class="lead">
-          With <img src="/assets/logotext.svg" class="cyd-logotext" alt="Cyd">, you can automatically delete your data
+          With <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd">, you can automatically delete your data
           in tech platforms, except for what you want to keep.
         </p>
         <p class="lead fw-bold">
@@ -134,7 +134,7 @@ onMounted(async () => {
   width: 150px;
 }
 
-.cyd-logotext {
+.cyd-wordmark {
   height: 1em;
 }
 

@@ -1299,7 +1299,8 @@ onUnmounted(async () => {
                                     </li>
                                     <li v-if="account.xAccount?.deleteDMs">
                                         <i class="fa-solid fa-fire delete-bullet" />
-                                        All of your direct messages
+                                        <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong> direct
+                                        message conversations
                                     </li>
                                 </ul>
                             </div>
@@ -1343,19 +1344,66 @@ onUnmounted(async () => {
 
                     <div class="stats container mt-4">
                         <div class="row g-2">
-                            <template v-for="(value, key) in databaseStats" :key="key">
-                                <div v-if="value > 0" class="col-12 col-md-6">
-                                    <div class="card text-center">
-                                        <div class="card-header">
-                                            {{ key.replace(/([A-Z])/g, ' $1').replace(/^./, str =>
-                                                str.toUpperCase()) }}
-                                        </div>
-                                        <div class="card-body">
-                                            <h1>{{ formatStatsNumber(value) }}</h1>
-                                        </div>
+                            <div v-if="databaseStats.tweetsSaved > 0" class="col-12 col-md-6">
+                                <div class="card text-center">
+                                    <div class="card-header">
+                                        Tweets Saved
+                                    </div>
+                                    <div class="card-body">
+                                        <h1>{{ formatStatsNumber(databaseStats.tweetsSaved) }}</h1>
                                     </div>
                                 </div>
-                            </template>
+                            </div>
+                            <div v-if="databaseStats.tweetsDeleted > 0" class="col-12 col-md-6">
+                                <div class="card text-center">
+                                    <div class="card-header">
+                                        Tweets Deleted
+                                    </div>
+                                    <div class="card-body">
+                                        <h1>{{ formatStatsNumber(databaseStats.tweetsDeleted) }}</h1>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="databaseStats.retweetsSaved > 0" class="col-12 col-md-6">
+                                <div class="card text-center">
+                                    <div class="card-header">
+                                        Retweets Saved
+                                    </div>
+                                    <div class="card-body">
+                                        <h1>{{ formatStatsNumber(databaseStats.retweetsSaved) }}</h1>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="databaseStats.retweetsDeleted > 0" class="col-12 col-md-6">
+                                <div class="card text-center">
+                                    <div class="card-header">
+                                        Retweets Deleted
+                                    </div>
+                                    <div class="card-body">
+                                        <h1>{{ formatStatsNumber(databaseStats.retweetsDeleted) }}</h1>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="databaseStats.likesSaved > 0" class="col-12 col-md-6">
+                                <div class="card text-center">
+                                    <div class="card-header">
+                                        Likes Saved
+                                    </div>
+                                    <div class="card-body">
+                                        <h1>{{ formatStatsNumber(databaseStats.likesSaved) }}</h1>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="databaseStats.likesDeleted > 0" class="col-12 col-md-6">
+                                <div class="card text-center">
+                                    <div class="card-header">
+                                        Likes Deleted
+                                    </div>
+                                    <div class="card-body">
+                                        <h1>{{ formatStatsNumber(databaseStats.likesDeleted) }}</h1>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

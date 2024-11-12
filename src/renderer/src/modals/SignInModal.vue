@@ -138,8 +138,7 @@ async function registerDevice() {
                     total_tweets_deleted: progressInfo.totalTweetsDeleted,
                     total_retweets_deleted: progressInfo.totalRetweetsDeleted,
                     total_likes_deleted: progressInfo.totalLikesDeleted,
-                    total_conversations_deleted: progressInfo.totalConversationsDeleted,
-                    total_messages_deleted: progressInfo.totalMessagesDeleted
+                    total_conversations_deleted: progressInfo.totalConversationsDeleted
                 }, true);
                 if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
                     // Silently log the error and continue

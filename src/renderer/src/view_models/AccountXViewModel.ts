@@ -55,7 +55,6 @@ export class AccountXViewModel extends BaseViewModel {
     public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
-    private isFirstRun: boolean = false;
 
     // This is used to track the user's progress through the wizard. If they want to review before 
     // they delete, this lets them go back and change settings without starting over
@@ -88,20 +87,16 @@ export class AccountXViewModel extends BaseViewModel {
         if (!justDelete && this.account.xAccount?.saveMyData) {
             if (this.account.xAccount?.archiveTweets) {
                 jobTypes.push("indexTweets");
-                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
             }
             if (this.account.xAccount?.archiveTweetsHTML) {
                 jobTypes.push("archiveTweets");
             }
             if (this.account.xAccount?.archiveLikes) {
                 jobTypes.push("indexLikes");
-                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
             }
             if (this.account.xAccount?.archiveDMs) {
                 jobTypes.push("indexConversations");
                 jobTypes.push("indexMessages");
-                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
-                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
             }
         }
 
@@ -112,13 +107,11 @@ export class AccountXViewModel extends BaseViewModel {
                     if (!jobTypes.includes("indexTweets")) {
                         jobTypes.push("indexTweets");
                     }
-                    await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                 }
                 if (this.account.xAccount?.deleteLikes) {
                     if (!jobTypes.includes("indexLikes")) {
                         jobTypes.push("indexLikes");
                     }
-                    await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                 }
             }
 
@@ -134,8 +127,6 @@ export class AccountXViewModel extends BaseViewModel {
                 }
                 if (this.account.xAccount?.deleteDMs) {
                     jobTypes.push("deleteDMs");
-                    await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
-                    await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                 }
             }
         }
@@ -160,7 +151,6 @@ export class AccountXViewModel extends BaseViewModel {
         this.progress = emptyXProgress();
         this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
-        this.isFirstRun = false;
         this.state = State.WizardStart;
     }
 
@@ -180,7 +170,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("waitForRateLimit", "finished waiting for pause");
     }
 
-    async loadURLWithRateLimit(url: string, expectedURLs: string[] = [], redirectOk: boolean = false) {
+    async loadURLWithRateLimit(url: string, expectedURLs: (string | RegExp)[] = [], redirectOk: boolean = false) {
         this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
 
         // eslint-disable-next-line no-constant-condition
@@ -216,7 +206,10 @@ export class AccountXViewModel extends BaseViewModel {
                 if (newURL != url) {
                     let changedToUnexpected = true;
                     for (const expectedURL of expectedURLs) {
-                        if (newURL.startsWith(expectedURL)) {
+                        if (typeof expectedURL === 'string' && newURL.startsWith(expectedURL)) {
+                            changedToUnexpected = false;
+                            break;
+                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL)) {
                             changedToUnexpected = false;
                             break;
                         }
@@ -249,6 +242,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("indexTweetsHandleRateLimit", this.progress);
 
         if (await this.doesSelectorExist('[data-testid="cellInnerDiv"]')) {
+            this.log("indexTweetsHandleRateLimit", "tweets have loaded");
             // Tweets have loaded. If there are tweets, the HTML looks like of like this:
             // <div>
             //     <div data-testid="cellInnerDiv"></div>
@@ -266,6 +260,7 @@ export class AccountXViewModel extends BaseViewModel {
             // If the scroll height increased, this means more tweets loaded
             return scrollHeightEnd > scrollHeightStart;
         } else {
+            this.log("indexTweetsHandleRateLimit", "no tweets have loaded");
             // No tweets have loaded. If there are no tweets, the HTML looks kind of like this:
             // <div>
             //     <nav aria-label="Profile timelines">
@@ -392,6 +387,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     // Load the DMs page, and return true if an error was triggered
     async deleteDMsLoadDMsPage(): Promise<boolean> {
+        this.log("deleteDMsLoadDMsPage", "loading DMs page");
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteDMs_OtherError;
@@ -402,6 +398,7 @@ export class AccountXViewModel extends BaseViewModel {
             await this.loadURLWithRateLimit("https://x.com/messages");
             try {
                 await window.electron.X.resetRateLimitInfo(this.account.id);
+                this.log("deleteDMsLoadDMsPage", "waiting for selector after loading messages page");
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                 success = true;
                 break;
@@ -527,17 +524,8 @@ export class AccountXViewModel extends BaseViewModel {
         this.showBrowser = true;
         this.instructions = `Checking to see if you're still logged in to your X account...`;
 
-        this.showAutomationNotice = true;
-
-        // Load https://x.com/home and see if it redirects
-        await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
-        if (this.webview.getURL().startsWith("https://x.com/i/flow/login")) {
-            // Not logged in, so prompt the user to login
-            this.instructions = `You've been logged out. Please log back into **@${this.account.xAccount?.username}**.`;
-
-            this.showAutomationNotice = false;
-            await this.login();
-        }
+        this.showAutomationNotice = false;
+        await this.login();
 
         await this.finishJob(jobIndex);
         return true;
@@ -546,17 +534,11 @@ export class AccountXViewModel extends BaseViewModel {
     async runJobIndexTweets(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS, navigator.userAgent);
 
-        let tries: number, success: boolean;
-
         this.showBrowser = true;
         this.instructions = `**I'm saving your tweets.**
 
 Hang on while I scroll down to your earliest tweets.`;
         this.showAutomationNotice = true;
-
-        if (await window.electron.X.getConfig(this.account.id, "forceIndexTweets") == "true") {
-            this.isFirstRun = true;
-        }
 
         // Start monitoring network requests
         await this.loadBlank();
@@ -627,31 +609,12 @@ Hang on while I scroll down to your earliest tweets.`;
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
 
-                // Before trying to click the retry button, scroll up a bit and then down again, just to be safe
-                await this.scrollUp(1000);
-                await this.sleep(500);
-                await this.scrollToBottom();
-                await this.sleep(500);
-
                 // Try to handle the rate limit
-                success = false;
-                for (tries = 0; tries < 3; tries++) {
-                    if (await this.indexTweetsHandleRateLimit()) {
-                        success = true;
-                        break;
-                    } else {
-                        this.log("runJobIndexTweets", ["handleRateLimit failed, try #", tries]);
-                        await this.sleep(1000);
-                    }
-                }
-
-                // If rate limit failed, error out
-                if (!success) {
+                if (!await this.indexTweetsHandleRateLimit()) {
                     await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
                         currentURL: this.webview.getURL()
                     });
                     errorTriggered = true;
-                    await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                     break;
                 }
 
@@ -667,7 +630,7 @@ Hang on while I scroll down to your earliest tweets.`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseTweets(this.account.id, this.isFirstRun);
+                this.progress = await window.electron.X.indexParseTweets(this.account.id);
                 this.log("runJobIndexTweets", ["parsed tweets", this.progress]);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
@@ -678,7 +641,6 @@ Hang on while I scroll down to your earliest tweets.`;
                     currentURL: this.webview.getURL()
                 });
                 errorTriggered = true;
-                await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "true");
                 break;
             }
             this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
@@ -703,8 +665,6 @@ Hang on while I scroll down to your earliest tweets.`;
         if (errorTriggered) {
             return false;
         }
-
-        await window.electron.X.setConfig(this.account.id, "forceIndexTweets", "false");
 
         await this.finishJob(jobIndex);
         return true;
@@ -766,11 +726,6 @@ This may take a while...`;
 
 Hang on while I scroll down to your earliest direct message conversations...`;
         this.showAutomationNotice = true;
-
-        // Check if this is the first time indexing DMs has happened in this account
-        if (await window.electron.X.getConfig(this.account.id, "forceIndexConversations") == "true") {
-            this.isFirstRun = true;
-        }
 
         // Start monitoring network requests
         await this.loadBlank();
@@ -837,7 +792,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseConversations(this.account.id, this.isFirstRun);
+                this.progress = await window.electron.X.indexParseConversations(this.account.id);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexConversations_ParseConversationsError, {
@@ -846,7 +801,6 @@ Hang on while I scroll down to your earliest direct message conversations...`;
                     latestResponseData: latestResponseData
                 });
                 errorTriggered = true;
-                await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "true");
                 break;
             }
             this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
@@ -872,8 +826,6 @@ Hang on while I scroll down to your earliest direct message conversations...`;
             return false;
         }
 
-        await window.electron.X.setConfig(this.account.id, "forceIndexConversations", "false");
-
         await this.finishJob(jobIndex);
         return true;
     }
@@ -892,12 +844,6 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 Please wait while I index all of the messages from each conversation...`;
         this.showAutomationNotice = true;
 
-        if (await window.electron.X.getConfig(this.account.id, "forceIndexMessages") == "true") {
-            this.isFirstRun = true;
-        }
-        // We want indexMessages to resume where it left off, so turn off forceIndexMessages right away
-        await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "false")
-
         // Start monitoring network requests
         await this.loadBlank();
         await window.electron.X.indexStart(this.account.id);
@@ -905,7 +851,7 @@ Please wait while I index all of the messages from each conversation...`;
 
         // Load the conversations
         try {
-            indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id, this.isFirstRun);
+            indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
                 exception: (e as Error).toString()
@@ -968,7 +914,6 @@ Please wait while I index all of the messages from each conversation...`;
             }
 
             if (!success) {
-                await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                 await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
                     exception: (error as Error).toString(),
                 });
@@ -1001,7 +946,7 @@ Please wait while I index all of the messages from each conversation...`;
 
                 // Parse so far
                 try {
-                    this.progress = await window.electron.X.indexParseMessages(this.account.id, this.isFirstRun);
+                    this.progress = await window.electron.X.indexParseMessages(this.account.id);
                 } catch (e) {
                     const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                     await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
@@ -1011,18 +956,13 @@ Please wait while I index all of the messages from each conversation...`;
                         currentURL: this.webview.getURL()
                     });
                     errorTriggered = true;
-                    await window.electron.X.setConfig(this.account.id, "forceIndexMessages", "true");
                     break;
                 }
                 this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
                 await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
 
                 // Check if we're done
-                if (!moreToScroll || this.progress.shouldStopEarly) {
-                    if (this.progress.shouldStopEarly) {
-                        this.progress.shouldStopEarly = false;
-                    }
-
+                if (!moreToScroll) {
                     this.progress.conversationMessagesIndexed += 1;
                     await this.syncProgress();
                     break;
@@ -1072,7 +1012,6 @@ Please wait while I index all of the messages from each conversation...`;
             total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
             total_likes_deleted: this.progressInfo.totalLikesDeleted,
             total_conversations_deleted: this.progressInfo.totalConversationsDeleted,
-            total_messages_deleted: this.progressInfo.totalMessagesDeleted
         }, this.deviceInfo?.valid ? true : false)
         if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
             // Silently log the error and continue
@@ -1091,11 +1030,6 @@ Please wait while I index all of the messages from each conversation...`;
 
 Hang on while I scroll down to your earliest likes.`;
         this.showAutomationNotice = true;
-
-        // Check if this is the first time indexing likes has happened in this account
-        if (await window.electron.X.getConfig(this.account.id, "forceIndexLikes") == "true") {
-            this.isFirstRun = true;
-        }
 
         // Start monitoring network requests
         await this.loadBlank();
@@ -1162,7 +1096,6 @@ Hang on while I scroll down to your earliest likes.`;
                 if (!await this.indexTweetsHandleRateLimit()) {
                     await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, {});
                     errorTriggered = true;
-                    await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                     break;
                 }
                 await this.sleep(500);
@@ -1171,7 +1104,7 @@ Hang on while I scroll down to your earliest likes.`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseLikes(this.account.id, this.isFirstRun);
+                this.progress = await window.electron.X.indexParseLikes(this.account.id);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
@@ -1180,7 +1113,6 @@ Hang on while I scroll down to your earliest likes.`;
                     latestResponseData: latestResponseData
                 });
                 errorTriggered = true;
-                await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "true");
                 break;
             }
             this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
@@ -1205,8 +1137,6 @@ Hang on while I scroll down to your earliest likes.`;
         if (errorTriggered) {
             return false;
         }
-
-        await window.electron.X.setConfig(this.account.id, "forceIndexLikes", "false");
 
         await this.finishJob(jobIndex);
         return true;
@@ -1502,7 +1432,12 @@ Hang on while I scroll down to your earliest likes.`;
             alreadyDeleted = false;
 
             // Load the URL
-            await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
+            await this.loadURLWithRateLimit(
+                `https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`,
+                // It's okay if the URL changes as long as the tweetID is the same
+                // This happens if the user has changed their username
+                [RegExp(`https://x\\.com/.*/status/${tweetsToDelete.tweets[i].tweetID}`)]
+            );
             await this.sleep(200);
 
             await this.waitForPause();
@@ -1562,174 +1497,182 @@ Hang on while I scroll down to your earliest likes.`;
         let reloadDMsPage = true;
 
         this.showBrowser = true;
-        this.instructions = `**I'm deleting all of your direct message conversations, start with the most recent.**`;
+        this.instructions = `**I'm deleting all of your direct message conversations, starting with the most recent.**`;
         this.showAutomationNotice = true;
 
         // Start the progress
         await this.syncProgress();
-        this.progress = await window.electron.X.deleteDMsStart(this.account.id);
+        this.progress.isDeleteDMsFinished = false;
+        this.progress.conversationsDeleted = 0;
 
-        if (this.progress.totalConversationsToDelete == 0) {
-            await this.finishJob(jobIndex);
-            return true;
-        }
+        // Loop through all of the conversations, deleting them one at a time until they are gone
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            error = null;
+            success = false;
 
-        if (!this.progress.isDeleteDMsFinished) {
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
-                await this.waitForPause();
+            await this.waitForPause();
 
-                error = null;
-                success = false;
-                for (tries = 0; tries < 3; tries++) {
-                    // Load the DMs page, if necessary
-                    if (reloadDMsPage) {
-                        if (await this.deleteDMsLoadDMsPage()) {
-                            return false;
-                        }
-                        reloadDMsPage = false;
+            // Try 3 times, in case of rate limit or error
+            for (tries = 0; tries < 3; tries++) {
+                errorTriggered = false;
+
+                // Load the DMs page, if necessary
+                if (reloadDMsPage) {
+                    if (await this.deleteDMsLoadDMsPage()) {
+                        return false;
                     }
+                    reloadDMsPage = false;
+                }
 
-                    if (this.progress.isDeleteDMsFinished) {
-                        this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
-                        this.progress.totalConversationsToDelete = this.progress.conversationsDeleted;
-                        this.progress.isDeleteDMsFinished = true;
-                        await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
-                        success = true;
-                        break;
-                    }
-
-                    // Wait for conversation selector
-                    try {
-                        await this.waitForSelector('div[data-testid="conversation"]');
-                    } catch (e) {
-                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                        if (this.rateLimitInfo.isRateLimited) {
-                            await this.waitForRateLimit();
-                            reloadDMsPage = true;
-                            tries--;
-                            continue;
-                        } else {
-                            error = e as Error;
-                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed;
-                            this.log("runJobDeleteDMs", ["wait for conversation selector failed, try #", tries]);
-                            reloadDMsPage = true;
-                            continue;
-                        }
-                    }
-
-                    // Mouseover the first conversation
-                    if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
-                        errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
-                        reloadDMsPage = true;
-                        continue;
-                    }
-
-                    // Wait for menu button selector
-                    try {
-                        await this.waitForSelectorWithinSelector(
-                            'div[data-testid="conversation"]',
-                            'button[aria-label="More"]',
-                        )
-                    } catch (e) {
-                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                        if (this.rateLimitInfo.isRateLimited) {
-                            await this.waitForRateLimit();
-                            reloadDMsPage = true;
-                            tries--;
-                            continue;
-                        } else {
-                            error = e as Error;
-                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed;
-                            this.log("runJobDeleteDMs", ["wait for menu button selector failed, try #", tries]);
-                            reloadDMsPage = true;
-                            continue;
-                        }
-                    }
-
-                    // Click the menu button
-                    if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
-                        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed;
-                        reloadDMsPage = true;
-                        continue;
-                    }
-
-                    // Wait for delete button selector
-                    try {
-                        await this.waitForSelector(
-                            'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
-                        )
-                    } catch (e) {
-                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                        if (this.rateLimitInfo.isRateLimited) {
-                            await this.waitForRateLimit();
-                            reloadDMsPage = true;
-                            tries--;
-                            continue;
-                        } else {
-                            error = e as Error;
-                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed;
-                            this.log("runJobDeleteDMs", ["wait for delete button selector failed, try #", tries]);
-                            reloadDMsPage = true;
-                            continue;
-                        }
-                    }
-
-                    // Click the delete button
-                    if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
-                        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed;
-                        reloadDMsPage = true;
-                        continue;
-                    }
-
-                    // Wait for delete confirm selector
-                    try {
-                        await this.waitForSelector(
-                            'button[data-testid="confirmationSheetConfirm"]',
-                        )
-                    } catch (e) {
-                        this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                        if (this.rateLimitInfo.isRateLimited) {
-                            await this.waitForRateLimit();
-                            reloadDMsPage = true;
-                            tries--;
-                            continue;
-                        } else {
-                            error = e as Error;
-                            errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed;
-                            this.log("runJobDeleteDMs", ["wait for confirm button selector failed, try #", tries]);
-                            reloadDMsPage = true;
-                            continue;
-                        }
-                    }
-
-                    // Click the confirm button
-                    if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
-                        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed;
-                        reloadDMsPage = true;
-                        continue;
-                    }
-
-                    await this.sleep(500);
-                    await this.waitForLoadingToFinish();
-
+                // When loading the DMs page in the previous step, if there are no conversations it sets isDeleteDMsFinished to true
+                if (this.progress.isDeleteDMsFinished) {
+                    this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
+                    await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
                     success = true;
-                }
-
-                if (success) {
-                    // Update the progress
-                    this.progress = await window.electron.X.getProgress(this.account.id);
                     break;
-                } else {
-                    const errorReportData = {};
-                    if (error) {
-                        // @ts-expect-error errorReportData object isn't defined
-                        errorReportData.exception = (error as Error).toString()
-                    }
-                    await this.error(errorType, errorReportData);
-                    errorTriggered = true;
                 }
 
+                // Wait for conversation selector
+                try {
+                    await this.waitForSelector('div[data-testid="conversation"]');
+                } catch (e) {
+                    errorTriggered = true;
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        reloadDMsPage = true;
+                        tries--;
+                        continue;
+                    } else {
+                        error = e as Error;
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed;
+                        this.log("runJobDeleteDMs", ["wait for conversation selector failed, try #", tries]);
+                        reloadDMsPage = true;
+                        continue;
+                    }
+                }
+
+                // Mouseover the first conversation
+                if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
+                    reloadDMsPage = true;
+                    continue;
+                }
+
+                // Wait for menu button selector
+                try {
+                    await this.waitForSelectorWithinSelector(
+                        'div[data-testid="conversation"]',
+                        'button[aria-label="More"]',
+                    )
+                } catch (e) {
+                    errorTriggered = true;
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        reloadDMsPage = true;
+                        tries--;
+                        continue;
+                    } else {
+                        error = e as Error;
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed;
+                        this.log("runJobDeleteDMs", ["wait for menu button selector failed, try #", tries]);
+                        reloadDMsPage = true;
+                        continue;
+                    }
+                }
+
+                // Click the menu button
+                if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed;
+                    reloadDMsPage = true;
+                    continue;
+                }
+
+                // Wait for delete button selector
+                try {
+                    await this.waitForSelector(
+                        'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
+                    )
+                } catch (e) {
+                    errorTriggered = true;
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        reloadDMsPage = true;
+                        tries--;
+                        continue;
+                    } else {
+                        error = e as Error;
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed;
+                        this.log("runJobDeleteDMs", ["wait for delete button selector failed, try #", tries]);
+                        reloadDMsPage = true;
+                        continue;
+                    }
+                }
+
+                // Click the delete button
+                if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed;
+                    reloadDMsPage = true;
+                    continue;
+                }
+
+                // Wait for delete confirm selector
+                try {
+                    await this.waitForSelector(
+                        'button[data-testid="confirmationSheetConfirm"]',
+                    )
+                } catch (e) {
+                    errorTriggered = true;
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        reloadDMsPage = true;
+                        tries--;
+                        continue;
+                    } else {
+                        error = e as Error;
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed;
+                        this.log("runJobDeleteDMs", ["wait for confirm button selector failed, try #", tries]);
+                        reloadDMsPage = true;
+                        continue;
+                    }
+                }
+
+                // Click the confirm button
+                if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed;
+                    reloadDMsPage = true;
+                    continue;
+                }
+
+                if (!errorTriggered) {
+                    // Update progress
+                    this.progress.conversationsDeleted += 1;
+                    break;
+                }
+            }
+
+            await this.sleep(500);
+            await this.waitForLoadingToFinish();
+
+            if (success) {
+                break;
+            }
+
+            if (errorTriggered) {
+                if (error) {
+                    await this.error(errorType, { exception: (error as Error).toString() });
+                } else {
+                    await this.error(errorType, {});
+                }
+                break;
             }
         }
 
