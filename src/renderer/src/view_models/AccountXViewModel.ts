@@ -387,6 +387,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     // Load the DMs page, and return true if an error was triggered
     async deleteDMsLoadDMsPage(): Promise<boolean> {
+        this.log("deleteDMsLoadDMsPage", "loading DMs page");
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteDMs_OtherError;
@@ -397,6 +398,7 @@ export class AccountXViewModel extends BaseViewModel {
             await this.loadURLWithRateLimit("https://x.com/messages");
             try {
                 await window.electron.X.resetRateLimitInfo(this.account.id);
+                this.log("deleteDMsLoadDMsPage", "waiting for selector after loading messages page");
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                 success = true;
                 break;
@@ -1511,25 +1513,25 @@ Hang on while I scroll down to your earliest likes.`;
 
             await this.waitForPause();
 
-            // Load the DMs page, if necessary
-            if (reloadDMsPage) {
-                if (await this.deleteDMsLoadDMsPage()) {
-                    return false;
-                }
-                reloadDMsPage = false;
-            }
-
-            // When loading the DMs page in the previous step, if there are no conversations it sets isDeleteDMsFinished to true
-            if (this.progress.isDeleteDMsFinished) {
-                this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
-                await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
-                success = true;
-                break;
-            }
-
             // Try 3 times, in case of rate limit or error
             for (tries = 0; tries < 3; tries++) {
                 errorTriggered = false;
+
+                // Load the DMs page, if necessary
+                if (reloadDMsPage) {
+                    if (await this.deleteDMsLoadDMsPage()) {
+                        return false;
+                    }
+                    reloadDMsPage = false;
+                }
+
+                // When loading the DMs page in the previous step, if there are no conversations it sets isDeleteDMsFinished to true
+                if (this.progress.isDeleteDMsFinished) {
+                    this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
+                    await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
+                    success = true;
+                    break;
+                }
 
                 // Wait for conversation selector
                 try {
