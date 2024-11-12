@@ -1503,34 +1503,39 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.isDeleteDMsFinished = false;
         this.progress.conversationsDeleted = 0;
 
+        // Loop through all of the conversations, deleting them one at a time until they are gone
         // eslint-disable-next-line no-constant-condition
         while (true) {
-            await this.waitForPause();
-
-            // Try to delete the latest conversation 3 times, in case of rate limit
             error = null;
             success = false;
-            for (tries = 0; tries < 3; tries++) {
-                // Load the DMs page, if necessary
-                if (reloadDMsPage) {
-                    if (await this.deleteDMsLoadDMsPage()) {
-                        return false;
-                    }
-                    reloadDMsPage = false;
-                }
 
-                // When loading the DMs page in the previous step, if there are no conversations it sets isDeleteDMsFinished to true
-                if (this.progress.isDeleteDMsFinished) {
-                    this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
-                    await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
-                    success = true;
-                    break;
+            await this.waitForPause();
+
+            // Load the DMs page, if necessary
+            if (reloadDMsPage) {
+                if (await this.deleteDMsLoadDMsPage()) {
+                    return false;
                 }
+                reloadDMsPage = false;
+            }
+
+            // When loading the DMs page in the previous step, if there are no conversations it sets isDeleteDMsFinished to true
+            if (this.progress.isDeleteDMsFinished) {
+                this.log('runJobDeleteDMs', ["no more conversations, so ending deleteDMS"]);
+                await window.electron.X.deleteDMsMarkAllDeleted(this.account.id);
+                success = true;
+                break;
+            }
+
+            // Try 3 times, in case of rate limit or error
+            for (tries = 0; tries < 3; tries++) {
+                errorTriggered = false;
 
                 // Wait for conversation selector
                 try {
                     await this.waitForSelector('div[data-testid="conversation"]');
                 } catch (e) {
+                    errorTriggered = true;
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.waitForRateLimit();
@@ -1547,10 +1552,13 @@ Hang on while I scroll down to your earliest likes.`;
                 }
 
                 // Mouseover the first conversation
-                if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
-                    errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
-                    reloadDMsPage = true;
-                    continue;
+                for (tries = 0; tries < 3; tries++) {
+                    if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
+                        errorTriggered = true;
+                        errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
+                        reloadDMsPage = true;
+                        continue;
+                    }
                 }
 
                 // Wait for menu button selector
@@ -1560,6 +1568,7 @@ Hang on while I scroll down to your earliest likes.`;
                         'button[aria-label="More"]',
                     )
                 } catch (e) {
+                    errorTriggered = true;
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.waitForRateLimit();
@@ -1577,6 +1586,7 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // Click the menu button
                 if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
+                    errorTriggered = true;
                     errorType = AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed;
                     reloadDMsPage = true;
                     continue;
@@ -1588,6 +1598,7 @@ Hang on while I scroll down to your earliest likes.`;
                         'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
                     )
                 } catch (e) {
+                    errorTriggered = true;
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.waitForRateLimit();
@@ -1605,6 +1616,7 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // Click the delete button
                 if (!await this.scriptClickElement('div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type')) {
+                    errorTriggered = true;
                     errorType = AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed;
                     reloadDMsPage = true;
                     continue;
@@ -1616,6 +1628,7 @@ Hang on while I scroll down to your earliest likes.`;
                         'button[data-testid="confirmationSheetConfirm"]',
                     )
                 } catch (e) {
+                    errorTriggered = true;
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.waitForRateLimit();
@@ -1633,28 +1646,33 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // Click the confirm button
                 if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
+                    errorTriggered = true;
                     errorType = AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed;
                     reloadDMsPage = true;
                     continue;
                 }
 
-                await this.sleep(500);
-                await this.waitForLoadingToFinish();
-
-                // Update progress
-                this.progress.conversationsDeleted += 1;
+                if (!errorTriggered) {
+                    // Update progress
+                    this.progress.conversationsDeleted += 1;
+                    break;
+                }
             }
+
+            await this.sleep(500);
+            await this.waitForLoadingToFinish();
 
             if (success) {
                 break;
-            } else {
-                const errorReportData = {};
+            }
+
+            if (errorTriggered) {
                 if (error) {
-                    // @ts-expect-error errorReportData object isn't defined
-                    errorReportData.exception = (error as Error).toString()
+                    await this.error(errorType, { exception: (error as Error).toString() });
+                } else {
+                    await this.error(errorType, {});
                 }
-                await this.error(errorType, errorReportData);
-                errorTriggered = true;
+                break;
             }
         }
 
