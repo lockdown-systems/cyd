@@ -1554,13 +1554,11 @@ Hang on while I scroll down to your earliest likes.`;
                 }
 
                 // Mouseover the first conversation
-                for (tries = 0; tries < 3; tries++) {
-                    if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
-                        errorTriggered = true;
-                        errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
-                        reloadDMsPage = true;
-                        continue;
-                    }
+                if (!await this.scriptMouseoverElementFirst('div[data-testid="conversation"]')) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
+                    reloadDMsPage = true;
+                    continue;
                 }
 
                 // Wait for menu button selector
