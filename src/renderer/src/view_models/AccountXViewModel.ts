@@ -1180,7 +1180,12 @@ Hang on while I scroll down to your earliest likes.`;
             success = false;
             for (tries = 0; tries < 3; tries++) {
                 // Load the URL
-                await this.loadURLWithRateLimit(`https://x.com/${this.account.xAccount?.username}/status/${tweetsToDelete.tweets[i].tweetID}`);
+                await this.loadURLWithRateLimit(
+                    `https://x.com/${this.account.xAccount?.username}/status/${tweetsToDelete.tweets[i].tweetID}`,
+                    // It's okay if the URL changes as long as the tweetID is the same
+                    // This happens if the user has changed their username
+                    [RegExp(`https://x\\.com/.*/status/${tweetsToDelete.tweets[i].tweetID}`)]
+                );
                 await this.sleep(200);
 
                 await this.waitForPause();
@@ -1323,7 +1328,12 @@ Hang on while I scroll down to your earliest likes.`;
             success = false;
             for (tries = 0; tries < 3; tries++) {
                 // Load the URL
-                await this.loadURLWithRateLimit(`https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`);
+                await this.loadURLWithRateLimit(
+                    `https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`,
+                    // It's okay if the URL changes as long as the tweetID is the same
+                    // This happens if the user has changed their username
+                    [RegExp(`https://x\\.com/.*/status/${tweetsToDelete.tweets[i].tweetID}`)]
+                );
                 await this.sleep(200);
 
                 await this.waitForPause();
