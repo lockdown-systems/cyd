@@ -428,7 +428,7 @@ test('XAccountController.constructor() creates a database for the user', async (
 test('XAccountController.indexTweet() should add a tweet', async () => {
     mitmController.setTestdata("indexTweets");
 
-    controller.indexTweet(0, userLegacy, tweetLegacy, false)
+    controller.indexTweet(0, userLegacy, tweetLegacy)
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].text).toBe(tweetLegacy.full_text);
@@ -437,13 +437,11 @@ test('XAccountController.indexTweet() should add a tweet', async () => {
 test("XAccountController.indexTweet() should not add a tweet if it's already there", async () => {
     mitmController.setTestdata("indexTweets");
 
-    let ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
-    expect(ret).toBe(true);
+    controller.indexTweet(0, userLegacy, tweetLegacy)
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows.length).toBe(1);
 
-    ret = controller.indexTweet(0, userLegacy, tweetLegacy, false)
-    expect(ret).toBe(false);
+    controller.indexTweet(0, userLegacy, tweetLegacy)
     const rows2: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
     expect(rows2.length).toBe(1);
 })
@@ -454,7 +452,7 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
         controller.account.username = 'nexamind91325';
     }
 
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(2);
     expect(progress.tweetsIndexed).toBe(22);
     expect(progress.retweetsIndexed).toBe(5);
@@ -504,7 +502,7 @@ test('XAccountController.indexUser() with different users should add different u
 test('XAccountController.indexConversation() should add a conversation and participants', async () => {
     mitmController.setTestdata("indexDMs");
 
-    await controller.indexConversation(dmConversation, true)
+    await controller.indexConversation(dmConversation,)
     const rows: XConversationRow[] = database.exec(controller.db, "SELECT * FROM conversation", [], "all") as XConversationRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].conversationID).toBe(dmConversation.conversation_id);
@@ -519,7 +517,7 @@ test(
     async () => {
         mitmController.setTestdata("indexDMs");
 
-        const progress: XProgress = await controller.indexParseConversations(true);
+        const progress: XProgress = await controller.indexParseConversations();
         expect(progress.usersIndexed).toBe(78);
         expect(progress.conversationsIndexed).toBe(44);
 
@@ -576,7 +574,7 @@ test(
             "processed": false
         }];
 
-        const progress: XProgress = await controller.indexParseConversations(true);
+        const progress: XProgress = await controller.indexParseConversations();
         expect(progress.usersIndexed).toBe(0);
         expect(progress.conversationsIndexed).toBe(0);
 
@@ -590,10 +588,10 @@ test(
         expect(participantRows.length).toBe(0);
     })
 
-test("XAccountController.indexParseMessages() should add all the messages on first run", async () => {
+test("XAccountController.indexParseMessages() should add all the messages", async () => {
     mitmController.setTestdata("indexDMs");
 
-    const progress: XProgress = await controller.indexParseMessages(true);
+    const progress: XProgress = await controller.indexParseMessages();
     expect(progress.messagesIndexed).toBe(116);
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
@@ -603,22 +601,15 @@ test("XAccountController.indexParseMessages() should add all the messages on fir
 test("XAccountController.indexParseMessages() should add all the messages, on re-index", async () => {
     // Index messages the first time
     mitmController.setTestdata("indexDMs");
-    controller.indexMessagesStart(true);
-    let progress: XProgress = await controller.indexParseMessages(true);
+    controller.indexMessagesStart();
+    let progress: XProgress = await controller.indexParseMessages();
     expect(progress.messagesIndexed).toBe(116);
 
-    // Re-index them
+    // Index them again, the progress should still be the same
     controller.resetProgress();
     mitmController.setTestdata("indexDMs");
-    controller.indexMessagesStart(false);
-    progress = await controller.indexParseMessages(false);
-    expect(progress.messagesIndexed).toBe(0);
-
-    // Re-index, but this time set isFirstRun to true
-    controller.resetProgress();
-    mitmController.setTestdata("indexDMs");
-    controller.indexMessagesStart(true);
-    progress = await controller.indexParseMessages(true);
+    controller.indexMessagesStart();
+    progress = await controller.indexParseMessages();
     expect(progress.messagesIndexed).toBe(116);
 
     const rows: XMessageRow[] = database.exec(controller.db, "SELECT * FROM message", [], "all") as XMessageRow[];
@@ -628,7 +619,7 @@ test("XAccountController.indexParseMessages() should add all the messages, on re
 test("XAccountController.indexParseTweets() should succeed with automation error dev-4", async () => {
     // https://dev-admin.cyd.social/#/error/4
     mitmController.setAutomationErrorReportTestdata("dev-4.json")
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
 })
@@ -636,7 +627,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 test("XAccountController.indexParseTweets() should succeed with automation error dev-10", async () => {
     // https://dev-admin.cyd.social/#/error/10
     mitmController.setAutomationErrorReportTestdata("dev-10.json")
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
 })
@@ -644,7 +635,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 test("XAccountController.indexParseTweets() should succeed with automation error dev-25", async () => {
     // https://dev-admin.cyd.social/#/error/25
     mitmController.setAutomationErrorReportTestdata("dev-25.json")
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
 })
@@ -652,7 +643,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 test("XAccountController.indexParseTweets() should succeed with automation error dev-34", async () => {
     // https://dev-admin.cyd.social/#/error/34
     mitmController.setAutomationErrorReportTestdata("dev-34.json")
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
 })
@@ -660,7 +651,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 test("XAccountController.indexParseTweets() should succeed with automation error dev-51", async () => {
     // https://dev-admin.cyd.social/#/error/51
     mitmController.setAutomationErrorReportTestdata("dev-51.json")
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
 })
@@ -668,7 +659,7 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 test("XAccountController.indexParseTweets() should succeed with automation error dev-54", async () => {
     // https://dev-admin.cyd.social/#/error/54
     mitmController.setAutomationErrorReportTestdata("dev-54.json")
-    const progress: XProgress = await controller.indexParseTweets(false)
+    const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(0)
     controller.cleanup();
 })

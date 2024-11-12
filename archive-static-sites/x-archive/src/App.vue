@@ -20,7 +20,7 @@ onMounted(() => {
       <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
           <a class="navbar-brand" href="https://cyd.social" target="_blank">
-            <img src="./assets/logo.png" alt="Cyd" class="logo" style="height: 40px;">
+            <img src="./assets/icon.svg" alt="Cyd" class="icon" style="height: 40px;">
           </a>
           <span class="navbar-text">
             <i class="fa-brands fa-x-twitter"></i> Archive: <b>@{{ archiveData.username }}</b>
@@ -33,6 +33,9 @@ onMounted(() => {
             <ul class="navbar-nav ms-auto">
               <li class="nav-item">
                 <router-link to="/" class="nav-link">Tweets</router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/retweets" class="nav-link">Retweets</router-link>
               </li>
               <li class="nav-item">
                 <router-link to="/likes" class="nav-link">Likes</router-link>
@@ -60,8 +63,7 @@ onMounted(() => {
     <div class="archive-data-missing d-flex justify-content-center align-items-center vh-100">
       <div class="container">
         <div class="text-center">
-          <img src="./assets/logo.png" alt="Cyd" class="img-fluid mb-4">
-          <i class="fa-solid fa-triangle-exclamation" />
+          <img src="./assets/omgkevin.svg" alt="Error" class="img-fluid mb-4 error-image">
         </div>
         <p class="text-center">
           Uh oh! <code>assets/archive.js</code> is missing, so I cannot display your archive.
@@ -105,5 +107,9 @@ footer p {
 
 .main-content {
   margin-top: 80px;
+}
+
+.error-image {
+  height: 300px;
 }
 </style>

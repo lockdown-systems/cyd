@@ -27,7 +27,7 @@ onMounted(async () => {
                 Find a bug or need help? Email help@cyd.social.
             </p>
             <p class="text-muted">
-                <img src="/assets/logotext.svg" class="cyd-logotext mr-2" alt="Cyd">
+                <img src="/assets/wordmark.svg" class="cyd-wordmark mr-2" alt="Cyd">
                 version {{ appVersion }}
             </p>
             <p class="text-muted">
@@ -42,7 +42,7 @@ onMounted(async () => {
     width: 350px;
 }
 
-.cyd-logotext {
+.cyd-wordmark {
     height: 2em;
 }
 </style>
