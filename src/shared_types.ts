@@ -119,10 +119,7 @@ export type XProgress = {
     totalLikesToDelete: number;
     likesDeleted: number;
 
-    totalConversationsToDelete: number;
-    totalMessagesToDelete: number;
     conversationsDeleted: number;
-    messagesDeleted: number;
 }
 
 export function emptyXProgress(): XProgress {
@@ -166,10 +163,7 @@ export function emptyXProgress(): XProgress {
         totalLikesToDelete: 0,
         likesDeleted: 0,
 
-        totalConversationsToDelete: 0,
-        totalMessagesToDelete: 0,
         conversationsDeleted: 0,
-        messagesDeleted: 0
     };
 }
 

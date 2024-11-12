@@ -1310,26 +1310,6 @@ export class XAccountController {
         exec(this.db, 'UPDATE tweet SET deletedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
     }
 
-    // When you start deleting DMs, return a XProgress object with total conversations and message counts
-    async deleteDMsStart(): Promise<XProgress> {
-        if (!this.db) {
-            this.initDB();
-        }
-
-        // Select the count of conversations
-        const totalConversations: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NULL', [], "get") as Sqlite3Count;
-        const totalMessages: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NULL', [], "get") as Sqlite3Count;
-
-        // Define the progress
-        this.progress.totalConversationsToDelete = totalConversations.count;
-        this.progress.totalMessagesToDelete = totalMessages.count;
-        this.progress.conversationsDeleted = 0;
-        this.progress.messagesDeleted = 0;
-        this.progress.isDeleteDMsFinished = false;
-
-        return this.progress;
-    }
-
     deleteDMsMarkDeleted(conversationID: string) {
         log.info(`XAccountController.deleteDMsMarkDeleted: conversationID=${conversationID}`);
 
@@ -1340,15 +1320,11 @@ export class XAccountController {
         // Mark the conversation as deleted
         exec(this.db, 'UPDATE conversation SET deletedAt = ? WHERE conversationID = ?', [new Date(), conversationID]);
 
-        // Count the number of messages that are deleted
-        const totalMessagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE conversationID = ? AND deletedAt is NULL", [conversationID], "get") as Sqlite3Count;
-
         // Mark all the messages as deleted
         exec(this.db, 'UPDATE message SET deletedAt = ? WHERE conversationID = ? AND deletedAt is NULL', [new Date(), conversationID]);
 
         // Update the progress
         this.progress.conversationsDeleted++;
-        this.progress.messagesDeleted += totalMessagesDeleted.count;
     }
 
     async deleteDMsMarkAllDeleted(): Promise<void> {
@@ -1863,15 +1839,6 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.deleteTweet(tweetID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteDMsStart', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteDMsStart();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
