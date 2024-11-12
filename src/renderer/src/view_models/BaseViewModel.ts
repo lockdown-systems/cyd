@@ -275,7 +275,7 @@ export class BaseViewModel {
         while (true) {
             // Check if the URL has changed
             if (this.webview.getURL() !== startingURL) {
-                console.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
+                this.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
                 throw new URLChangedError(startingURL, this.webview.getURL());
             }
 
@@ -287,7 +287,7 @@ export class BaseViewModel {
             // Did we find the selector?
             const found = await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
             if (found) {
-                console.log("waitForSelector", `found: ${selector}`);
+                this.log("waitForSelector", `found: ${selector}`);
                 break;
             }
             await this.sleep(200);
@@ -318,14 +318,14 @@ export class BaseViewModel {
                 })()
             `);
             if (found) {
-                console.log("waitForSelectorWithinSelector", `found: ${selector}`);
+                this.log("waitForSelectorWithinSelector", `found: ${selector}`);
                 break;
             }
             await this.sleep(200);
 
             // Check if the URL has changed
             if (this.webview.getURL() !== startingURL) {
-                console.log("waitForSelectorWithinSelector", `URL changed: ${this.webview.getURL()}`);
+                this.log("waitForSelectorWithinSelector", `URL changed: ${this.webview.getURL()}`);
                 throw new URLChangedError(startingURL, this.webview.getURL());
             }
         }
@@ -339,7 +339,7 @@ export class BaseViewModel {
         }
         try {
             await fetch(testURL, { method: "HEAD", signal: AbortSignal.timeout(2000) });
-            console.log("checkInternetConnectivity", "internet is up");
+            this.log("checkInternetConnectivity", "internet is up");
             return true;
         } catch (error) {
             console.error("checkInternetConnectivity", "internet is down", (error as Error).toString());
@@ -348,7 +348,7 @@ export class BaseViewModel {
     }
 
     async loadBlank() {
-        console.log("AccountXViewModel.loadBlank");
+        this.log("AccountXViewModel.loadBlank");
         const webview = this.getWebview();
         if (webview) {
             // Note: We need to wait for the page to finish loading before and after this to prevent
@@ -361,7 +361,7 @@ export class BaseViewModel {
     }
 
     async loadURL(url: string) {
-        console.log("AccountXViewModel.loadURL", url);
+        this.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
         if (webview) {
             let tries = 0;

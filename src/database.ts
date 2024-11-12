@@ -96,7 +96,7 @@ export const runMainMigrations = () => {
     deleteRetweets BOOLEAN DEFAULT 1,
     deleteRetweetsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
-    deleteLikesDaysOld INTEGER DEFAULT 60,
+    deleteLikesDaysOld INTEGER DEFAULT 0,
     deleteDMs BOOLEAN DEFAULT 0,
     chanceToReview BOOLEAN DEFAULT 1
 );`,

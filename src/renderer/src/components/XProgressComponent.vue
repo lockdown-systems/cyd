@@ -201,25 +201,11 @@ onUnmounted(() => {
             <template v-if="progress.currentJob == 'deleteDMs'">
                 <p>
                     Deleted
-                    <b>{{ progress.conversationsDeleted.toLocaleString() }} out of
-                        {{ progress.totalConversationsToDelete.toLocaleString() }} conversations</b> and <b>{{
-                            progress.messagesDeleted.toLocaleString() }} out of
-                        {{ progress.totalMessagesToDelete.toLocaleString() }} messages</b>.
+                    <b>{{ progress.conversationsDeleted.toLocaleString() }} conversations</b>.
                     <template v-if="progress.isDeleteDMsFinished">
                         Finished deleting direct messages!
                     </template>
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="progress flex-grow-1 me-2">
-                        <div class="progress-bar" role="progressbar"
-                            :style="{ width: `${(progress.conversationsDeleted / progress.totalConversationsToDelete) * 100}%` }"
-                            :aria-valuenow="(progress.conversationsDeleted / progress.totalConversationsToDelete) * 100"
-                            aria-valuemin="0" aria-valuemax="100">
-                            {{ Math.round((progress.conversationsDeleted / progress.totalConversationsToDelete) * 100)
-                            }}%
-                        </div>
-                    </div>
-                </div>
             </template>
 
             <!-- Build archive -->
