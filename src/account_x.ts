@@ -1211,7 +1211,7 @@ export class XAccountController {
         // Select just the tweets that need to be deleted based on the settings
         let tweets: XTweetRow[];
         const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteTweetsDaysOld);
-        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThreshold) {
+        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
@@ -1219,7 +1219,7 @@ export class XAccountController {
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
-        } else if (this.account.deleteTweetsLikesThresholdEnabled) {
+        } else if (this.account.deleteTweetsLikesThresholdEnabled && !this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Just likes threshold
             tweets = exec(
                 this.db,
@@ -1227,7 +1227,7 @@ export class XAccountController {
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
                 "all"
             ) as XTweetRow[];
-        } else if (this.account.deleteTweetsRetweetsThreshold) {
+        } else if (!this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Just retweets threshold
             tweets = exec(
                 this.db,
@@ -1414,7 +1414,7 @@ export class XAccountController {
         const username = this.account.username;
 
         const tweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ?", ["RT @%", 0, username], "get") as Sqlite3Count;
-        const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND isLiked = ? AND username = ? AND deletedAt IS NOT NULL", ["RT @%", 0, username], "get") as Sqlite3Count;
+        const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ? AND deletedAt IS NOT NULL", ["RT @%", 0, username], "get") as Sqlite3Count;
         const retweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ?", ["RT @%"], "get") as Sqlite3Count;
         const retweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedAt IS NOT NULL", ["RT @%"], "get") as Sqlite3Count;
         const likesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?", [1], "get") as Sqlite3Count;
