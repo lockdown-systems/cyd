@@ -1762,6 +1762,9 @@ Hang on while I scroll down to your earliest likes.`;
         // Reset logs before running any state
         this.resetLogs();
 
+        // Temp variables
+        let databaseStatsString: string = "";
+
         this.log("run", `running state: ${this.state}`);
         try {
             switch (this.state) {
@@ -1821,10 +1824,11 @@ database.
                 case State.WizardDeleteReview:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-                    this.instructions = `
-I've finished saving all the data I need before I can start deleting.
-
-I've saved: **${await this.getDatabaseStatsString()}**.`;
+                    databaseStatsString = await this.getDatabaseStatsString();
+                    this.instructions = "I've finished saving all the data I need before I can start deleting."
+                    if (databaseStatsString != "") {
+                        this.instructions += `\n\nI've saved: **${await this.getDatabaseStatsString()}**.`
+                    }
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
