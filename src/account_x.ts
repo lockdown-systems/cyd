@@ -1211,7 +1211,7 @@ export class XAccountController {
         // Select just the tweets that need to be deleted based on the settings
         let tweets: XTweetRow[];
         const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteTweetsDaysOld);
-        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThreshold) {
+        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
@@ -1219,7 +1219,7 @@ export class XAccountController {
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
-        } else if (this.account.deleteTweetsLikesThresholdEnabled) {
+        } else if (this.account.deleteTweetsLikesThresholdEnabled && !this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Just likes threshold
             tweets = exec(
                 this.db,
@@ -1227,7 +1227,7 @@ export class XAccountController {
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
                 "all"
             ) as XTweetRow[];
-        } else if (this.account.deleteTweetsRetweetsThreshold) {
+        } else if (!this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Just retweets threshold
             tweets = exec(
                 this.db,
