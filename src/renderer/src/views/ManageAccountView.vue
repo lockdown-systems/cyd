@@ -48,10 +48,10 @@ const loadDash = async () => {
     await waitForWebview();
     if (webviewComponent.value !== null) {
         const mode = localStorage.getItem('manageAccountMode');
-        if (mode == "premium") {
-            // Add event listener
-            webviewComponent.value.addEventListener('load-commit', onLoadCommit);
-        }
+
+        // Add event listener
+        webviewComponent.value.addEventListener('load-commit', onLoadCommit);
+
         const dashURL = await window.electron.getDashURL();
         const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}/${mode}`;
         console.log('ManageAccountView: Loading dash', mode, nativeLoginURL);
@@ -65,9 +65,26 @@ const loadDash = async () => {
 
 const onLoadCommit = async (event: Electron.LoadCommitEvent) => {
     const url = event.url;
+    console.log("ManageAccountView: onLoadCommit", url)
+
+    // Check for open receipt in external browser
+    if (url.includes('/native-app-open-receipt/')) {
+        console.log("ManageAccountView: intercepted receipt open")
+        const hashIndex = url.indexOf('#/native-app-open-receipt/');
+        if (hashIndex !== -1) {
+            const receiptURLB64 = url.substring(hashIndex + '#/native-app-open-receipt/'.length);
+            const receiptURL = atob(receiptURLB64);
+            console.log("ManageAccountView: opening URL", receiptURL)
+            await window.electron.openURL(receiptURL);
+        } else {
+            console.error("ManageAccountView: Invalid URL format")
+        }
+        loadDash();
+    }
+
+    // Check for redirect
     if (localStorage.getItem("manageAccountMode") == "premium") {
         if (url.includes('/native-app-premium-enabled')) {
-            // Redirect
             const accountID = localStorage.getItem('manageAccountRedirectAccountID');
             if (!accountID) {
                 console.error('ManageAccountView: No account ID found in localStorage');
@@ -84,10 +101,6 @@ const onLoadCommit = async (event: Electron.LoadCommitEvent) => {
                 webviewComponent.value.removeEventListener('load-commit', onLoadCommit);
             }
             await webviewComponent.value?.loadURL('about:blank');
-        } else {
-            if (props.shouldShow) {
-                console.log('ManageAccountView: URL is not ready for redirect', url);
-            }
         }
     }
 };
