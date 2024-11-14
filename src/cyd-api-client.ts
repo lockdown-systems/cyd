@@ -15,6 +15,7 @@ export type RegisterDeviceAPIRequest = {
     email: string;
     verification_code: string;
     description: string;
+    device_type: string;
 };
 
 export type RegisterDeviceAPIResponse = {
@@ -73,6 +74,14 @@ export type UserPremiumAPIResponse = {
     business_organizations: string[];
 };
 
+// API models for POST /user/invoices (an array of these)
+export type GetUserInvoicesAPIResponse = {
+    created_at: string;
+    hosted_invoice_url: string;
+    status: string;
+    total: number;
+};
+
 // API models for POST /user/premium
 export type PostUserPremiumAPIResponse = {
     redirect_url: string;
@@ -86,7 +95,6 @@ export type UserStatsAPIResponse = {
     total_retweets_deleted: number;
     total_likes_deleted: number;
     total_conversations_deleted: number;
-    total_messages_deleted: number;
 };
 
 // API models for POST /automation-error-report
@@ -99,6 +107,11 @@ export type PostAutomationErrorReportAPIRequest = {
     account_username?: string;
     screenshot_data_uri?: string;
     sensitive_context_data?: object;
+};
+
+// API models for POST /newsletter
+export type PostNewsletterAPIRequest = {
+    email: string;
 };
 
 // The API client
@@ -374,6 +387,23 @@ export default class CydAPIClient {
         }
     }
 
+    async getUserInvoices(): Promise<GetUserInvoicesAPIResponse[] | APIErrorResponse> {
+        console.log("GET /user/invoices");
+        if (!await this.validateAPIToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("GET", `${this.apiURL}/user/invoices`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to get invoices.", response.status)
+            }
+            const data: GetUserInvoicesAPIResponse[] = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to get invoices. Maybe the server is down?")
+        }
+    }
+
     async postUserPremium(): Promise<PostUserPremiumAPIResponse | APIErrorResponse> {
         console.log("POST /user/premium");
         if (!await this.validateAPIToken()) {
@@ -475,5 +505,20 @@ export default class CydAPIClient {
         }
 
         return true;
+    }
+
+    // Subscribe to newsletter
+
+    async postNewsletter(request: PostNewsletterAPIRequest): Promise<boolean | APIErrorResponse> {
+        console.log("POST /newsletter");
+        try {
+            const response = await this.fetch("POST", `${this.apiURL}/newsletter`, request);
+            if (response.status != 200) {
+                return this.returnError("Failed to subscribe to newsletter.", response.status)
+            }
+            return true;
+        } catch {
+            return this.returnError("Failed to subscribe to newsletter. Maybe the server is down?")
+        }
     }
 }
