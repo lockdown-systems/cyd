@@ -762,15 +762,23 @@ onUnmounted(async () => {
                                 </button>
                             </div>
 
-                            <div class="alert alert-info mt-5" role="alert">
-                                <p class="fw-bold">
+                            <div class="alert alert-info mt-4" role="alert">
+                                <p class="fw-bold mb-0">
                                     X restricts how fast you can access your data using <span class="fst-italic">rate
                                         limits</span>.
                                 </p>
-                                <p class="rate-limit-details">
+                                <p class="alert-details mb-0">
                                     If you have much data in your account, you will probably hit rate limits while Cyd
                                     works. Cyd will pause and wait for the rate limit to reset before continuing, but
                                     it might take a while to finish.
+                                </p>
+                            </div>
+                            <div class="alert alert-info" role="alert">
+                                <p class="fw-bold mb-0">
+                                    X's interface can be finicky.
+                                </p>
+                                <p class="alert-details mb-0">
+                                    If Cyd doesn't find or delete all of your data the first time, try running it again.
                                 </p>
                             </div>
                         </form>
@@ -1567,9 +1575,8 @@ onUnmounted(async () => {
     color: red;
 }
 
-.rate-limit-details {
+.alert-details {
     margin-top: .25rem;
-    margin-bottom: 0;
     font-size: .875em;
 }
 </style>
