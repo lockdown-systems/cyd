@@ -15,6 +15,7 @@ export type RegisterDeviceAPIRequest = {
     email: string;
     verification_code: string;
     description: string;
+    device_type: string;
 };
 
 export type RegisterDeviceAPIResponse = {
@@ -73,6 +74,14 @@ export type UserPremiumAPIResponse = {
     business_organizations: string[];
 };
 
+// API models for POST /user/invoices (an array of these)
+export type GetUserInvoicesAPIResponse = {
+    created_at: string;
+    hosted_invoice_url: string;
+    status: string;
+    total: number;
+};
+
 // API models for POST /user/premium
 export type PostUserPremiumAPIResponse = {
     redirect_url: string;
@@ -86,7 +95,6 @@ export type UserStatsAPIResponse = {
     total_retweets_deleted: number;
     total_likes_deleted: number;
     total_conversations_deleted: number;
-    total_messages_deleted: number;
 };
 
 // API models for POST /automation-error-report
@@ -371,6 +379,23 @@ export default class CydAPIClient {
             return data;
         } catch {
             return this.returnError("Failed to get user premium status. Maybe the server is down?")
+        }
+    }
+
+    async getUserInvoices(): Promise<GetUserInvoicesAPIResponse[] | APIErrorResponse> {
+        console.log("GET /user/invoices");
+        if (!await this.validateAPIToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("GET", `${this.apiURL}/user/invoices`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to get invoices.", response.status)
+            }
+            const data: GetUserInvoicesAPIResponse[] = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to get invoices. Maybe the server is down?")
         }
     }
 

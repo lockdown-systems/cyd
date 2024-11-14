@@ -94,6 +94,7 @@ async function registerDevice() {
         email: userEmail.value,
         verification_code: verificationCode.value,
         description: deviceInfo.value?.deviceDescription,
+        device_type: "app",
     });
     if ("error" in registerDeviceResp) {
         verificationCode.value = '';
