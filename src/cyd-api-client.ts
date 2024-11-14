@@ -109,6 +109,11 @@ export type PostAutomationErrorReportAPIRequest = {
     sensitive_context_data?: object;
 };
 
+// API models for POST /newsletter
+export type PostNewsletterAPIRequest = {
+    email: string;
+};
+
 // The API client
 export default class CydAPIClient {
     public apiURL: string | null = null;
@@ -500,5 +505,20 @@ export default class CydAPIClient {
         }
 
         return true;
+    }
+
+    // Subscribe to newsletter
+
+    async postNewsletter(request: PostNewsletterAPIRequest): Promise<boolean | APIErrorResponse> {
+        console.log("POST /newsletter");
+        try {
+            const response = await this.fetch("POST", `${this.apiURL}/newsletter`, request);
+            if (response.status != 200) {
+                return this.returnError("Failed to subscribe to newsletter.", response.status)
+            }
+            return true;
+        } catch {
+            return this.returnError("Failed to subscribe to newsletter. Maybe the server is down?")
+        }
     }
 }
