@@ -36,12 +36,17 @@ Do all of these before making a release:
 - [ ] Manually test with `npm run start` and make sure it runs
 - [ ] Make a release, install it, and run the installed binary, and make sure it runs
 
-To make the release:
+**To make the release:**
 
-- [ ] Windows x64: Ubuntu build machine, in Windows VM
-- [ ] Windows arm64: Mac build machine, in Windows VM (arm64)
-- [ ] macOS universal: Mac build machine, host
-- [ ] Linux amd64 and Linux arm64: Mac build machine, Docker
+Ubuntu build machine:
+
+- [ ] Linux amd64 and Linux arm64: Docker
+- [ ] Windows x64: Windows VM
+
+Mac build machine:
+
+- [ ] macOS universal: host
+- [ ] Windows arm64: Windows VM (arm64)
 
 ### Windows
 

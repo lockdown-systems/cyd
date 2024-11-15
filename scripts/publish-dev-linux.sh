@@ -20,5 +20,4 @@ echo "======================================="
 echo "Copy binaries to linux-repos like this:"
 echo "======================================="
 echo cd ../linux-repos/
-echo ./copy-binaries.sh dev
-echo docker compose --env-file .env-dev up --build
+echo ./scripts/release-dev.sh
