@@ -693,8 +693,8 @@ onUnmounted(async () => {
         <!-- Automation notice -->
         <p v-if="(accountXViewModel?.showBrowser && accountXViewModel?.showAutomationNotice)"
             class="text-muted text-center automation-notice">
-            <i class="fa-solid fa-robot" /> Automation in Progress: Feel free to switch windows and use your computer
-            for other things.
+            <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
+            your computer for other things.
         </p>
 
         <!-- Ready for input -->
