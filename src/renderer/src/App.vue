@@ -248,7 +248,7 @@ body {
 /* Webview styles */
 
 .automation-notice {
-  font-size: 0.8em;
+  font-size: 0.7em;
   padding: 0.3em 0.5em 0.5em 0.5em;
   background-color: #ffea9b;
   font-family: monospace;
