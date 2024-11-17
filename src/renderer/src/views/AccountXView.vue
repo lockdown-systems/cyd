@@ -37,7 +37,7 @@ import { AutomationErrorType } from '../automation_errors';
 
 import { AccountXViewModel, State, XViewModelState } from '../view_models/AccountXViewModel'
 
-import { setAccountRunning } from '../util';
+import { setAccountRunning, openPreventSleepURL } from '../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -332,6 +332,10 @@ function formatStatsNumber(num: number): string {
     }
     return num.toString();
 }
+
+const preventSleepLearnMore = async () => {
+    await openPreventSleepURL();
+};
 
 const openArchiveFolder = async () => {
     await window.electron.X.openFolder(props.account.id, "");
@@ -779,6 +783,15 @@ onUnmounted(async () => {
                                 </p>
                                 <p class="alert-details mb-0">
                                     If Cyd doesn't find or delete all of your data the first time, try running it again.
+                                </p>
+                            </div>
+                            <div class="alert alert-info" role="alert">
+                                <p class="fw-bold mb-0">
+                                    Your computer needs to be awake to use Cyd.
+                                </p>
+                                <p class="alert-details mb-0">
+                                    Don't close the lid, keep it plugged in, and disable sleep while plugged in.
+                                    <a href="#" @click="preventSleepLearnMore">Learn more.</a>
                                 </p>
                             </div>
                         </form>
