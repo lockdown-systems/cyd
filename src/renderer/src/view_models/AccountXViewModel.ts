@@ -1190,6 +1190,13 @@ Hang on while I scroll down to your earliest likes.`;
 
                 await this.waitForPause();
 
+                // Check if tweet is already deleted
+                if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+                    this.log("runJobDeleteTweets", ["tweet is already deleted", tweetsToDelete.tweets[i].tweetID]);
+                    success = true;
+                    break;
+                }
+
                 if (this.account.xAccount?.deleteTweetsArchiveEnabled) {
                     // Archive the tweet
                     if (!await this.archiveSaveTweet(await window.electron.X.archiveTweetsOutputPath(this.account.id), tweetsToDelete.tweets[i])) {
