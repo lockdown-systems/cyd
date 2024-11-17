@@ -41,12 +41,25 @@ Do all of these before making a release:
 Ubuntu build machine:
 
 - [ ] Linux amd64 and Linux arm64: Docker
+  - `./scripts/publish-dev-linux.sh`
+  - `cd ../linux-repos`
+  - need the PGP passphrase
+  - `./scripts/release-dev.sh`
 - [ ] Windows x64: Windows VM
+  - need the HARICA token PIN
+  - `npm run publish-dev-windows`
 
 Mac build machine:
 
 - [ ] macOS universal: host
+  - `npm run publish-dev-macos`
 - [ ] Windows arm64: Windows VM (arm64)
+  - need the HARICA token PIN
+  - `npm run publish-dev-windows`
+
+Finally:
+
+- [ ] Login to admin site and update the version string to the new version
 
 ### Windows
 
