@@ -1345,14 +1345,23 @@ Hang on while I scroll down to your earliest likes.`;
 
                 await this.waitForPause();
 
-                // Wait for the retweet menu button to appear
-                try {
-                    await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
-                } catch (e) {
-                    // If it doesn't appear, let's assume this retweet was already deleted
+                // Check if retweet is already deleted
+                if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+                    this.log("runJobDeleteTweets", ["retweet is already deleted", tweetsToDelete.tweets[i].tweetID]);
                     alreadyDeleted = true;
                 }
-                await this.sleep(200);
+
+                if (!alreadyDeleted) {
+                    // Wait for the retweet menu button to appear
+                    try {
+                        await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
+                    } catch (e) {
+                        // If it doesn't appear, let's assume this retweet was already deleted and for some reason
+                        // the previous check didn't catch it
+                        alreadyDeleted = true;
+                    }
+                    await this.sleep(200);
+                }
 
                 if (!alreadyDeleted) {
                     // Click the retweet menu button
