@@ -550,42 +550,58 @@ Hang on while I scroll down to your earliest tweets.`;
         this.progress.tweetsIndexed = 0;
         await this.syncProgress();
 
-        // Load the timeline and wait for tweets to appear
+        await window.electron.X.resetRateLimitInfo(this.account.id);
+
+        // Load the timeline
         let errorTriggered = false;
         await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
-        await window.electron.X.resetRateLimitInfo(this.account.id);
-        try {
-            await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/with_replies");
-        } catch (e) {
-            this.log("runJobIndexTweets", ["selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                if (this.rateLimitInfo.isRateLimited) {
-                    await this.waitForRateLimit();
+
+        // Check if tweets list is empty
+        if (await this.doesSelectorExist('section[aria-labelledby="accessible-list-0"]')) {
+            if (await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] article') == 0) {
+                // There are no tweets
+                this.log("runJobIndexTweets", "no tweets found");
+                this.progress.isIndexTweetsFinished = true;
+                this.progress.tweetsIndexed = 0;
+                await this.syncProgress();
+            }
+        }
+
+        if (!this.progress.isIndexTweetsFinished) {
+            // Wait for tweets to appear
+            try {
+                await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/with_replies");
+            } catch (e) {
+                this.log("runJobIndexTweets", ["selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // If the page isn't loading, we assume the user has no conversations yet
+                        await this.waitForLoadingToFinish();
+                        this.progress.isIndexTweetsFinished = true;
+                        this.progress.tweetsIndexed = 0;
+                        await this.syncProgress();
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview.getURL();
+                    await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
+                    })
+                    errorTriggered = true;
                 } else {
-                    // If the page isn't loading, we assume the user has no conversations yet
-                    await this.waitForLoadingToFinish();
-                    this.progress.isIndexTweetsFinished = true;
-                    this.progress.tweetsIndexed = 0;
-                    await this.syncProgress();
+                    await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
+                    })
+                    errorTriggered = true;
                 }
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview.getURL();
-                await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
-                    newURL: newURL,
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                errorTriggered = true;
-            } else {
-                await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                errorTriggered = true;
             }
         }
 

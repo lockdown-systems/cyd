@@ -298,6 +298,10 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
     }
 
+    async countSelectorsFound(selector: string): Promise<number> {
+        return await this.getWebview()?.executeJavaScript(`document.querySelectorAll('${selector}').length`);
+    }
+
     // wait for containerSelector to exist, and also selector within containerSelector to exist
     async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = DEFAULT_TIMEOUT) {
         const startingURL = this.webview.getURL();
