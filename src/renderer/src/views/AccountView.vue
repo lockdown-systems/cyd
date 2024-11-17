@@ -4,7 +4,7 @@ import AccountXView from './AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
-import { getAccountRunning, setAccountRunning, openPreventSleepURL } from '../util';
+import { getAccountRunning, setAccountRunning } from '../util';
 
 import CydAvatarComponent from '../components/CydAvatarComponent.vue';
 
@@ -19,8 +19,6 @@ const emit = defineEmits<{
 
 const isRefreshing = ref(false);
 
-const showPreventSleepMessage = ref(false);
-
 const refresh = async () => {
   await setAccountRunning(props.account.id, false);
   isRefreshing.value = true;
@@ -33,31 +31,7 @@ const accountClicked = (accountType: string) => {
   emit('accountSelected', props.account, accountType);
 };
 
-const preventSleepLearnMore = async () => {
-  await openPreventSleepURL();
-};
-
-const preventSleepDontShowAgain = async () => {
-  showPreventSleepMessage.value = false;
-  await window.electron.database.setConfig("showPreventSleepMessage", "false");
-};
-
-const preventSleepDismiss = async () => {
-  showPreventSleepMessage.value = false;
-};
-
 onMounted(async () => {
-  // See if we should show the prevent sleep message
-  const showPreventSleepMessageConfig = await window.electron.database.getConfig("showPreventSleepMessage");
-  if (showPreventSleepMessageConfig === null) {
-    showPreventSleepMessage.value = true;
-    await window.electron.database.setConfig("showPreventSleepMessage", "true");
-  } else if (showPreventSleepMessageConfig == "true") {
-    showPreventSleepMessage.value = true;
-  } else {
-    showPreventSleepMessage.value = false;
-  }
-
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {
     console.error('Account was running and got interrupted');
@@ -107,20 +81,6 @@ onMounted(async () => {
 
     <template v-else-if="account.type == 'X'">
       <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
-
-      <div v-if="showPreventSleepMessage" class="prevent-sleep alert d-flex align-items-center">
-        <div>
-          <p class="mb-2">
-            Your computer needs to be awake to use Cyd. Don't close the
-            lid, keep it plugged in, and disable sleep while plugged in.
-          </p>
-          <p class="text-center">
-            <span class="fw-bold"><a href="#" @click="preventSleepLearnMore">Learn more</a></span>
-            <span><a href="#" @click="preventSleepDontShowAgain">Don't show this again</a></span>
-            <span><a href="#" @click="preventSleepDismiss">Dismiss</a></span>
-          </p>
-        </div>
-      </div>
     </template>
 
     <template v-else>
@@ -157,26 +117,5 @@ onMounted(async () => {
 
 .select-account .description .info {
   font-size: 1rem;
-}
-
-.prevent-sleep {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
-  font-size: 0.8em;
-  min-width: 500px;
-  background-color: #fef3de;
-  border-color: #f8a712;
-}
-
-.prevent-sleep p {
-  margin: 0;
-}
-
-.prevent-sleep span a {
-  margin: 0 10px;
-  text-wrap: nowrap;
 }
 </style>
