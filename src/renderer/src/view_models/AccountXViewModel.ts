@@ -1057,39 +1057,51 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.likesIndexed = 0;
         await this.syncProgress();
 
-        // Load the likes and wait for tweets to appear
+        // Load the likes
         let errorTriggered = false;
         await this.waitForPause();
-        await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
         await window.electron.X.resetRateLimitInfo(this.account.id);
-        try {
-            await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/likes");
-        } catch (e) {
-            this.log("runJobIndexLikes", ["selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                if (this.rateLimitInfo.isRateLimited) {
-                    await this.waitForRateLimit();
+        await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
+
+        // Check if likes list is empty
+        if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
+            this.log("runJobIndexLikes", "no likes found");
+            this.progress.isIndexLikesFinished = true;
+            this.progress.likesIndexed = 0;
+            await this.syncProgress();
+        }
+
+        if (!this.progress.isIndexLikesFinished) {
+            // Wait for tweets to appear
+            try {
+                await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/likes");
+            } catch (e) {
+                this.log("runJobIndexLikes", ["selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // If the page isn't loading, we assume the user has no likes yet
+                        await this.waitForLoadingToFinish();
+                        this.progress.isIndexLikesFinished = true;
+                        this.progress.likesIndexed = 0;
+                        await this.syncProgress();
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview.getURL();
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
                 } else {
-                    // If the page isn't loading, we assume the user has no likes yet
-                    await this.waitForLoadingToFinish();
-                    this.progress.isIndexLikesFinished = true;
-                    this.progress.likesIndexed = 0;
-                    await this.syncProgress();
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
                 }
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview.getURL();
-                await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
-                    newURL: newURL,
-                    exception: (e as Error).toString()
-                })
-                errorTriggered = true;
-            } else {
-                await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
-                    exception: (e as Error).toString()
-                })
-                errorTriggered = true;
             }
         }
 
