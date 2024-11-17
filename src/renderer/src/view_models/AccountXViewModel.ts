@@ -87,9 +87,9 @@ export class AccountXViewModel extends BaseViewModel {
         if (!justDelete && this.account.xAccount?.saveMyData) {
             if (this.account.xAccount?.archiveTweets) {
                 jobTypes.push("indexTweets");
-            }
-            if (this.account.xAccount?.archiveTweetsHTML) {
-                jobTypes.push("archiveTweets");
+                if (this.account.xAccount?.archiveTweetsHTML) {
+                    jobTypes.push("archiveTweets");
+                }
             }
             if (this.account.xAccount?.archiveLikes) {
                 jobTypes.push("indexLikes");
@@ -396,6 +396,19 @@ export class AccountXViewModel extends BaseViewModel {
         success = false;
         for (tries = 0; tries < 3; tries++) {
             await this.loadURLWithRateLimit("https://x.com/messages");
+
+            // If the conversations list is empty, there is no search text field
+            try {
+                // Wait for the search text field to appear with a 2 second timeout
+                await this.waitForSelector('section[aria-labelledby="accessible-list-0"] input[type="text"]', "https://x.com/messages", 2000);
+            } catch (e) {
+                // There are no conversations
+                await this.waitForLoadingToFinish();
+                this.progress.isDeleteDMsFinished = true;
+                await this.syncProgress();
+                return false;
+            }
+
             try {
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 this.log("deleteDMsLoadDMsPage", "waiting for selector after loading messages page");
@@ -550,42 +563,58 @@ Hang on while I scroll down to your earliest tweets.`;
         this.progress.tweetsIndexed = 0;
         await this.syncProgress();
 
-        // Load the timeline and wait for tweets to appear
+        await window.electron.X.resetRateLimitInfo(this.account.id);
+
+        // Load the timeline
         let errorTriggered = false;
         await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
-        await window.electron.X.resetRateLimitInfo(this.account.id);
-        try {
-            await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/with_replies");
-        } catch (e) {
-            this.log("runJobIndexTweets", ["selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                if (this.rateLimitInfo.isRateLimited) {
-                    await this.waitForRateLimit();
+
+        // Check if tweets list is empty
+        if (await this.doesSelectorExist('section[aria-labelledby="accessible-list-0"]')) {
+            if (await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] article') == 0) {
+                // There are no tweets
+                this.log("runJobIndexTweets", "no tweets found");
+                this.progress.isIndexTweetsFinished = true;
+                this.progress.tweetsIndexed = 0;
+                await this.syncProgress();
+            }
+        }
+
+        if (!this.progress.isIndexTweetsFinished) {
+            // Wait for tweets to appear
+            try {
+                await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/with_replies");
+            } catch (e) {
+                this.log("runJobIndexTweets", ["selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // If the page isn't loading, we assume the user has no conversations yet
+                        await this.waitForLoadingToFinish();
+                        this.progress.isIndexTweetsFinished = true;
+                        this.progress.tweetsIndexed = 0;
+                        await this.syncProgress();
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview.getURL();
+                    await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
+                    })
+                    errorTriggered = true;
                 } else {
-                    // If the page isn't loading, we assume the user has no conversations yet
-                    await this.waitForLoadingToFinish();
-                    this.progress.isIndexTweetsFinished = true;
-                    this.progress.tweetsIndexed = 0;
-                    await this.syncProgress();
+                    await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview.getURL()
+                    })
+                    errorTriggered = true;
                 }
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview.getURL();
-                await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
-                    newURL: newURL,
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                errorTriggered = true;
-            } else {
-                await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                    exception: (e as Error).toString()
-                }, {
-                    currentURL: this.webview.getURL()
-                })
-                errorTriggered = true;
             }
         }
 
@@ -732,13 +761,29 @@ Hang on while I scroll down to your earliest direct message conversations...`;
         await window.electron.X.indexStart(this.account.id);
         await this.sleep(2000);
 
-        // Load the messages page and wait for conversations to appear
         let errorTriggered = false;
         // eslint-disable-next-line no-constant-condition
         while (true) {
             await this.waitForPause();
-            await this.loadURLWithRateLimit("https://x.com/messages");
             await window.electron.X.resetRateLimitInfo(this.account.id);
+
+            // Load the messages page
+            await this.loadURLWithRateLimit("https://x.com/messages");
+
+            // If the conversations list is empty, there is no search text field
+            try {
+                // Wait for the search text field to appear with a 2 second timeout
+                await this.waitForSelector('section[aria-labelledby="accessible-list-0"] input[type="text"]', "https://x.com/messages", 2000);
+            } catch (e) {
+                // There are no conversations
+                await this.waitForLoadingToFinish();
+                this.progress.isIndexConversationsFinished = true;
+                this.progress.conversationsIndexed = 0;
+                await this.syncProgress();
+                break;
+            }
+
+            // Wait for conversations to appear
             try {
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                 break;
@@ -1041,39 +1086,51 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.likesIndexed = 0;
         await this.syncProgress();
 
-        // Load the likes and wait for tweets to appear
+        // Load the likes
         let errorTriggered = false;
         await this.waitForPause();
-        await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
         await window.electron.X.resetRateLimitInfo(this.account.id);
-        try {
-            await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/likes");
-        } catch (e) {
-            this.log("runJobIndexLikes", ["selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
-                if (this.rateLimitInfo.isRateLimited) {
-                    await this.waitForRateLimit();
+        await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/likes");
+
+        // Check if likes list is empty
+        if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
+            this.log("runJobIndexLikes", "no likes found");
+            this.progress.isIndexLikesFinished = true;
+            this.progress.likesIndexed = 0;
+            await this.syncProgress();
+        }
+
+        if (!this.progress.isIndexLikesFinished) {
+            // Wait for tweets to appear
+            try {
+                await this.waitForSelector('article', "https://x.com/" + this.account.xAccount?.username + "/likes");
+            } catch (e) {
+                this.log("runJobIndexLikes", ["selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // If the page isn't loading, we assume the user has no likes yet
+                        await this.waitForLoadingToFinish();
+                        this.progress.isIndexLikesFinished = true;
+                        this.progress.likesIndexed = 0;
+                        await this.syncProgress();
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview.getURL();
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
                 } else {
-                    // If the page isn't loading, we assume the user has no likes yet
-                    await this.waitForLoadingToFinish();
-                    this.progress.isIndexLikesFinished = true;
-                    this.progress.likesIndexed = 0;
-                    await this.syncProgress();
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
                 }
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview.getURL();
-                await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
-                    newURL: newURL,
-                    exception: (e as Error).toString()
-                })
-                errorTriggered = true;
-            } else {
-                await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
-                    exception: (e as Error).toString()
-                })
-                errorTriggered = true;
             }
         }
 
@@ -1189,6 +1246,13 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.sleep(200);
 
                 await this.waitForPause();
+
+                // Check if tweet is already deleted
+                if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+                    this.log("runJobDeleteTweets", ["tweet is already deleted", tweetsToDelete.tweets[i].tweetID]);
+                    success = true;
+                    break;
+                }
 
                 if (this.account.xAccount?.deleteTweetsArchiveEnabled) {
                     // Archive the tweet
@@ -1338,14 +1402,23 @@ Hang on while I scroll down to your earliest likes.`;
 
                 await this.waitForPause();
 
-                // Wait for the retweet menu button to appear
-                try {
-                    await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
-                } catch (e) {
-                    // If it doesn't appear, let's assume this retweet was already deleted
+                // Check if retweet is already deleted
+                if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+                    this.log("runJobDeleteTweets", ["retweet is already deleted", tweetsToDelete.tweets[i].tweetID]);
                     alreadyDeleted = true;
                 }
-                await this.sleep(200);
+
+                if (!alreadyDeleted) {
+                    // Wait for the retweet menu button to appear
+                    try {
+                        await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
+                    } catch (e) {
+                        // If it doesn't appear, let's assume this retweet was already deleted and for some reason
+                        // the previous check didn't catch it
+                        alreadyDeleted = true;
+                    }
+                    await this.sleep(200);
+                }
 
                 if (!alreadyDeleted) {
                     // Click the retweet menu button

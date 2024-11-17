@@ -298,6 +298,10 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
     }
 
+    async countSelectorsFound(selector: string): Promise<number> {
+        return await this.getWebview()?.executeJavaScript(`document.querySelectorAll('${selector}').length`);
+    }
+
     // wait for containerSelector to exist, and also selector within containerSelector to exist
     async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = DEFAULT_TIMEOUT) {
         const startingURL = this.webview.getURL();
@@ -369,6 +373,9 @@ export class BaseViewModel {
             while (true) {
                 try {
                     await webview.loadURL(url);
+                    // Sleep 2 seconds after loading each URL, to make everything more stable.
+                    // The X rate limits are intense, so this should not slow anything down.
+                    this.sleep(2000);
                     break;
                 } catch (error) {
                     console.error(`Failed to load URL: ${error}`);
@@ -420,7 +427,7 @@ export class BaseViewModel {
         // Scroll to the bottom
         this.log("scrollToBottom", "scrolling to bottom")
         await this.getWebview()?.executeJavaScript("window.scrollTo(0, document.body.scrollHeight)");
-        await this.sleep(500);
+        await this.sleep(1000);
         await this.waitForLoadingToFinish();
 
         // Have we scrolled?
@@ -486,6 +493,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -500,6 +508,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -514,6 +523,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -530,6 +540,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -546,6 +557,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -558,6 +570,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -572,6 +585,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -586,6 +600,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
+        await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
