@@ -396,6 +396,19 @@ export class AccountXViewModel extends BaseViewModel {
         success = false;
         for (tries = 0; tries < 3; tries++) {
             await this.loadURLWithRateLimit("https://x.com/messages");
+
+            // If the conversations list is empty, there is no search text field
+            try {
+                // Wait for the search text field to appear with a 2 second timeout
+                await this.waitForSelector('section[aria-labelledby="accessible-list-0"] input[type="text"]', "https://x.com/messages", 2000);
+            } catch (e) {
+                // There are no conversations
+                await this.waitForLoadingToFinish();
+                this.progress.isDeleteDMsFinished = true;
+                await this.syncProgress();
+                return false;
+            }
+
             try {
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 this.log("deleteDMsLoadDMsPage", "waiting for selector after loading messages page");
@@ -748,13 +761,29 @@ Hang on while I scroll down to your earliest direct message conversations...`;
         await window.electron.X.indexStart(this.account.id);
         await this.sleep(2000);
 
-        // Load the messages page and wait for conversations to appear
         let errorTriggered = false;
         // eslint-disable-next-line no-constant-condition
         while (true) {
             await this.waitForPause();
-            await this.loadURLWithRateLimit("https://x.com/messages");
             await window.electron.X.resetRateLimitInfo(this.account.id);
+
+            // Load the messages page
+            await this.loadURLWithRateLimit("https://x.com/messages");
+
+            // If the conversations list is empty, there is no search text field
+            try {
+                // Wait for the search text field to appear with a 2 second timeout
+                await this.waitForSelector('section[aria-labelledby="accessible-list-0"] input[type="text"]', "https://x.com/messages", 2000);
+            } catch (e) {
+                // There are no conversations
+                await this.waitForLoadingToFinish();
+                this.progress.isIndexConversationsFinished = true;
+                this.progress.conversationsIndexed = 0;
+                await this.syncProgress();
+                break;
+            }
+
+            // Wait for conversations to appear
             try {
                 await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
                 break;
