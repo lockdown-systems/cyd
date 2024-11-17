@@ -87,9 +87,9 @@ export class AccountXViewModel extends BaseViewModel {
         if (!justDelete && this.account.xAccount?.saveMyData) {
             if (this.account.xAccount?.archiveTweets) {
                 jobTypes.push("indexTweets");
-            }
-            if (this.account.xAccount?.archiveTweetsHTML) {
-                jobTypes.push("archiveTweets");
+                if (this.account.xAccount?.archiveTweetsHTML) {
+                    jobTypes.push("archiveTweets");
+                }
             }
             if (this.account.xAccount?.archiveLikes) {
                 jobTypes.push("indexLikes");
