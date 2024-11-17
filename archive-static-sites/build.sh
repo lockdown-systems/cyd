@@ -12,5 +12,6 @@ npm run build
 
 # Zip it up
 cd dist
+mkdir -p ../../../build/
 zip -r ../../../build/x-archive.zip .
 cd ../..
