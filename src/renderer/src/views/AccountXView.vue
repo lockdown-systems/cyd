@@ -1229,7 +1229,7 @@ onUnmounted(async () => {
                             </ul>
 
                             <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                class="alert alert-warning" role="alert">
+                                class="alert alert-danger mt-4" role="alert">
                                 <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
                                     class="fw-bold mb-0">
                                     Cyd wasn't able to scroll through all of your tweets and likes this time.
@@ -1243,7 +1243,7 @@ onUnmounted(async () => {
                                     Cyd wasn't able to scroll through all of your likes this time.
                                 </p>
                                 <p class="alert-details mb-0">
-                                    Unfortunately, X can be finicky. Go ahead and delete some of your data now, and
+                                    Sorry, X can be annoying sometimes. Go ahead and delete some of your data now, and
                                     then run Cyd again to delete more.
                                 </p>
                             </div>
