@@ -101,6 +101,12 @@ export const runMainMigrations = () => {
     chanceToReview BOOLEAN DEFAULT 1
 );`,
             ]
+        },
+        {
+            name: "add deleteFromDatabase to xAccount",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN deleteFromDatabase BOOLEAN DEFAULT 0;`
+            ]
         }
     ]);
 }
@@ -152,6 +158,7 @@ interface XAccountRow {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
+    deleteFromDatabase: boolean;
     chanceToReview: boolean;
 }
 
@@ -237,6 +244,7 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
+        deleteFromDatabase: !!row.deleteFromDatabase,
         chanceToReview: !!row.chanceToReview
     };
 }
@@ -271,6 +279,7 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
+            deleteFromDatabase: !!row.deleteFromDatabase,
             chanceToReview: !!row.chanceToReview
         });
     }
@@ -313,6 +322,7 @@ export const saveXAccount = (account: XAccount) => {
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
             deleteDMs = ?,
+            deleteFromDatabase = ?,
             chanceToReview = ?
         WHERE id = ?
     `, [
@@ -336,6 +346,7 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
+        account.deleteFromDatabase ? 1 : 0,
         account.chanceToReview ? 1 : 0,
         account.id
     ]);

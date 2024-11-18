@@ -106,7 +106,7 @@ export class AccountXViewModel extends BaseViewModel {
         }
 
         if (this.account.xAccount?.deleteMyData) {
-            if (!justDelete) {
+            if (!justDelete && !this.account.xAccount?.deleteFromDatabase) {
                 // Build database first
                 if (this.account.xAccount?.deleteTweets || this.account.xAccount?.deleteRetweets) {
                     if (!jobTypes.includes("indexTweets")) {
@@ -149,7 +149,6 @@ export class AccountXViewModel extends BaseViewModel {
             });
             return;
         }
-        this.state = State.RunJobs;
     }
 
     async reset() {
@@ -1945,7 +1944,7 @@ database.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     databaseStatsString = await this.getDatabaseStatsString();
-                    this.instructions = "I've finished saving all the data I need before I can start deleting."
+                    this.instructions = "I've finished saving the data I need before I can start deleting."
                     if (databaseStatsString != "") {
                         this.instructions += `\n\nI've saved: **${await this.getDatabaseStatsString()}**.`
                     }

@@ -168,6 +168,8 @@ const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
+
+const deleteFromDatabase = ref(false);
 const chanceToReview = ref(true);
 
 const updateSettings = async () => {
@@ -202,6 +204,7 @@ const updateSettings = async () => {
             deleteLikes: deleteLikes.value,
             deleteLikesDaysOld: deleteLikesDaysOld.value,
             deleteDMs: deleteDMs.value,
+            deleteFromDatabase: deleteFromDatabase.value,
             chanceToReview: chanceToReview.value,
         }
     };
@@ -397,9 +400,17 @@ const wizardReviewUpdateButtonsText = async () => {
         }
     } else {
         if (chanceToReview.value) {
-            wizardNextText.value = 'Build Database';
+            if (deleteFromDatabase.value) {
+                wizardNextText.value = 'Review Before Deleting';
+            } else {
+                wizardNextText.value = 'Build Database';
+            }
         } else {
-            wizardNextText.value = 'Build Database and Start Deleting';
+            if (deleteFromDatabase.value) {
+                wizardNextText.value = 'Start Deleting';
+            } else {
+                wizardNextText.value = 'Build Database and Start Deleting';
+            }
         }
     }
 
@@ -500,12 +511,19 @@ const wizardReviewNextClicked = async () => {
         }
     }
 
+    // If chance to review is checked, make isDeleteReview active
+    accountXViewModel.value.isDeleteReviewActive = chanceToReview.value;
+
     // All good, start the jobs
     console.log('Starting jobs');
     if (accountXViewModel.value) {
         await accountXViewModel.value.defineJobs();
     }
-    accountXViewModel.value.isDeleteReviewActive = chanceToReview.value;
+    if (deleteMyData.value && deleteFromDatabase.value) {
+        accountXViewModel.value.state = State.WizardDeleteReview;
+    } else {
+        accountXViewModel.value.state = State.RunJobs;
+    }
     await startStateLoop();
 };
 
@@ -552,6 +570,7 @@ const wizardDeleteReviewNextClicked = async () => {
         await accountXViewModel.value.defineJobs(true);
     }
     accountXViewModel.value.isDeleteReviewActive = false;
+    accountXViewModel.value.state = State.RunJobs;
     await startStateLoop();
 };
 
@@ -1074,8 +1093,7 @@ onUnmounted(async () => {
                             </div>
 
                             <div class="buttons">
-                                <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
-                                    class="btn btn-outline-secondary text-nowrap m-1"
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
                                     @click="wizardDeleteOptionsBackClicked">
                                     <i class="fa-solid fa-backward" />
                                     {{ wizardBackText }}
@@ -1129,7 +1147,7 @@ onUnmounted(async () => {
                                     Delete my data
                                     <span class="premium badge badge-primary">Premium</span>
                                 </h3>
-                                <ul>
+                                <ul class="mb-4">
                                     <li v-if="deleteTweets">
                                         Delete tweets older than {{ deleteTweetsDaysOld }} days
                                         <ul>
@@ -1155,6 +1173,21 @@ onUnmounted(async () => {
                                         Delete direct messages
                                     </li>
                                 </ul>
+
+                                <div v-if="!saveMyData" class="mb-2">
+                                    <div class="form-check">
+                                        <input id="deleteFromDatabase" v-model="deleteFromDatabase" type="checkbox"
+                                            class="form-check-input" @change="wizardReviewUpdateButtonsText">
+                                        <label class="form-check-label mr-1 text-nowrap" for="deleteFromDatabase">
+                                            Use my existing database
+                                        </label>
+                                    </div>
+                                    <div class="indent">
+                                        <small class="form-text text-muted">
+                                            Delete data based on what Cyd has already saved in your local database.
+                                        </small>
+                                    </div>
+                                </div>
 
                                 <div class="mb-2">
                                     <div class="form-check">
