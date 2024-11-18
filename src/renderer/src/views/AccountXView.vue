@@ -511,6 +511,9 @@ const wizardReviewNextClicked = async () => {
         }
     }
 
+    // If chance to review is checked, make isDeleteReview active
+    accountXViewModel.value.isDeleteReviewActive = chanceToReview.value;
+
     // All good, start the jobs
     console.log('Starting jobs');
     if (accountXViewModel.value) {
@@ -1090,8 +1093,7 @@ onUnmounted(async () => {
                             </div>
 
                             <div class="buttons">
-                                <button v-if="!accountXViewModel.isDeleteReviewActive" type="submit"
-                                    class="btn btn-outline-secondary text-nowrap m-1"
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
                                     @click="wizardDeleteOptionsBackClicked">
                                     <i class="fa-solid fa-backward" />
                                     {{ wizardBackText }}
