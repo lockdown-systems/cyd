@@ -249,22 +249,10 @@ export class AccountXViewModel extends BaseViewModel {
 
         await this.waitForPause();
 
-        // If the retry button does not exist, try scrolling and and down again to trigger it
-        if (!await this.doesSelectorWithinElementLastExist('section[aria-labelledby="accessible-list-0"]', 'button')) {
-            await this.scrollUp(2000);
-            await this.sleep(2000);
-            await this.scrollToBottom();
-            await this.sleep(2000);
-            if (!await this.doesSelectorWithinElementLastExist('section[aria-labelledby="accessible-list-0"]', 'button')) {
-                this.log("indexTweetsHandleRateLimit", "retry button does not exist");
-                return false;
-            }
-        }
-
-        if (await this.doesSelectorExist('section[aria-labelledby="accessible-list-0"] [data-testid="cellInnerDiv"]')) {
+        if (await this.doesSelectorExist('section [data-testid="cellInnerDiv"]')) {
             this.log("indexTweetsHandleRateLimit", "tweets have loaded");
             // Tweets have loaded. If there are tweets, the HTML looks like of like this:
-            // <section aria-labelledby="accessible-list-0">
+            // <section>
             //     <div>
             //         <div>
             //             <div data-testid="cellInnerDiv"></div>
@@ -277,40 +265,66 @@ export class AccountXViewModel extends BaseViewModel {
             //     </div>
             // </section>
 
-            let numberOfDivsBefore = await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] div[data-testid=cellInnerDiv]');
+            // If the retry button does not exist, try scrolling up and down again to trigger it
+            if (!await this.doesSelectorWithinElementLastExist('main[role="main"] nav[role="navigation"] + section', 'button')) {
+                await this.scrollUp(2000);
+                await this.sleep(2000);
+                await this.scrollToBottom();
+                await this.sleep(2000);
+                if (!await this.doesSelectorWithinElementLastExist('main[role="main"] nav[role="navigation"] + section', 'button')) {
+                    this.log("indexTweetsHandleRateLimit", "retry button does not exist");
+                    return false;
+                }
+            }
+
+            // Count divs before clicking retry button
+            let numberOfDivsBefore = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
             if (numberOfDivsBefore > 0) {
                 // The last one is the one with the button
                 numberOfDivsBefore--;
             }
 
-            await this.scriptClickElementWithinElementLast('section[aria-labelledby="accessible-list-0"] div[data-testid=cellInnerDiv]', 'button');
+            // Click the retry button
+            await this.scriptClickElementWithinElementLast('main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]', 'button');
             await this.sleep(2000);
 
-            const numberOfDivsAfter = await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] div[data-testid=cellInnerDiv]');
+            // Count divs after clicking retry button
+            const numberOfDivsAfter = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
 
             // If there are more divs after, it means more tweets loaded
             return numberOfDivsAfter > numberOfDivsBefore;
+
         } else {
             this.log("indexTweetsHandleRateLimit", "no tweets have loaded");
             // No tweets have loaded. If there are no tweets, the HTML looks kind of like this:
-            // <div>
-            //     <nav aria-label="Profile timelines">
+            // <main role="main">
             //     <div>
-            //         <div>...</div>
-            //         <button>...</button>
+            //         <div>
+            //             <div>
+            //                 <div>
+            //                     <div>
+            //                         <nav role="navigation">
+            //                         <div>
+            //                             <div>...</div>
+            //                             <button>...</button>
+            //                         </div>
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //         </div>
             //     </div>
-            // </div>
-            return await this.getWebview()?.executeJavaScript(`(() => {
-                let el = document.querySelector('[aria-label="Profile timelines"]');
-                if(el === null) { return false; }
-                el = el.parentNode.children[el.parentNode.children.length - 1];
-                if(el === null) { return false; }
-                el = el.querySelector('button');
-                if(el === null) { return false; }
-                el.click();
-                return true;
-            })()`);
+            // </main>
+
+            // Click retry button
+            await this.scriptClickElement('main[role="main"] nav[role="navigation"] + div > button');
+
+            // Count divs after clicking retry button
+            const numberOfDivsAfter = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
+
+            // If there are more divs after, it means more tweets loaded
+            return numberOfDivsAfter > 0;
         }
+
     }
 
     async login() {
@@ -359,8 +373,8 @@ export class AccountXViewModel extends BaseViewModel {
         }
 
         // Wait for profile button to appear, and click it
-        await this.waitForSelector('a[aria-label="Profile"]', "https://x.com/home");
-        await this.scriptClickElement('a[aria-label="Profile"]');
+        await this.waitForSelector('a[data-testid="AppTabBar_Profile_Link"]', "https://x.com/home");
+        await this.scriptClickElement('a[data-testid="AppTabBar_Profile_Link"]');
 
         // Wait for profile page to load, and get the username from the URL
         await this.waitForSelector('div[data-testid="UserName"]');
@@ -389,9 +403,9 @@ export class AccountXViewModel extends BaseViewModel {
         this.instructions = `You're logged in as **@${username}**. I'm scraping your profile image...`;
 
         await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
-        await this.waitForSelector('div[aria-label="Image"]', `https://x.com/${username}/photo`);
+        await this.waitForSelector('div[data-testid="swipe-to-dismiss"]', `https://x.com/${username}/photo`);
 
-        const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[aria-label="Image"]').querySelector('img').src`);
+        const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[data-testid="swipe-to-dismiss"]').querySelector('img').src`);
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
         this.log("login", ["saved profile image", profileImageURL]);
 
@@ -431,7 +445,7 @@ export class AccountXViewModel extends BaseViewModel {
             // If the conversations list is empty, there is no search text field
             try {
                 // Wait for the search text field to appear with a 2 second timeout
-                await this.waitForSelector('section[aria-labelledby="accessible-list-0"] input[type="text"]', "https://x.com/messages", 2000);
+                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 2000);
             } catch (e) {
                 // There are no conversations
                 await this.waitForLoadingToFinish();
@@ -443,7 +457,7 @@ export class AccountXViewModel extends BaseViewModel {
             try {
                 await window.electron.X.resetRateLimitInfo(this.account.id);
                 this.log("deleteDMsLoadDMsPage", "waiting for selector after loading messages page");
-                await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
+                await this.waitForSelector('section div div[role="tablist"] div[data-testid="cellInnerDiv"]', "https://x.com/messages");
                 success = true;
                 break;
             } catch (e) {
@@ -601,8 +615,8 @@ Hang on while I scroll down to your earliest tweets.`;
         await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
 
         // Check if tweets list is empty
-        if (await this.doesSelectorExist('section[aria-labelledby="accessible-list-0"]')) {
-            if (await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] article') == 0) {
+        if (await this.doesSelectorExist('section')) {
+            if (await this.countSelectorsFound('section article') == 0) {
                 // There are no tweets
                 this.log("runJobIndexTweets", "no tweets found");
                 this.progress.isIndexTweetsFinished = true;
@@ -803,7 +817,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
             // If the conversations list is empty, there is no search text field
             try {
                 // Wait for the search text field to appear with a 2 second timeout
-                await this.waitForSelector('section[aria-labelledby="accessible-list-0"] input[type="text"]', "https://x.com/messages", 2000);
+                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 2000);
             } catch (e) {
                 // There are no conversations
                 await this.waitForLoadingToFinish();
@@ -815,7 +829,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
             // Wait for conversations to appear
             try {
-                await this.waitForSelector('div[aria-label="Timeline: Messages"]', "https://x.com/messages");
+                await this.waitForSelector('section div div[role="tablist"] div[data-testid="cellInnerDiv"]', "https://x.com/messages");
                 break;
             } catch (e) {
                 this.log("runJobIndexConversations", ["selector never appeared", e]);
@@ -1299,7 +1313,7 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // Wait for the menu button to appear
                 try {
-                    await this.waitForSelector('article[tabindex="-1"] button[aria-label="More"]');
+                    await this.waitForSelector('article[tabindex="-1"] button[data-testid="caret"]');
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
@@ -1310,7 +1324,7 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.sleep(200);
 
                 // Click the menu button
-                await this.scriptClickElement('article[tabindex="-1"] button[aria-label="More"]');
+                await this.scriptClickElement('article[tabindex="-1"] button[data-testid="caret"]');
 
                 // Wait for the menu to appear
                 try {
@@ -1681,7 +1695,7 @@ Hang on while I scroll down to your earliest likes.`;
                 try {
                     await this.waitForSelectorWithinSelector(
                         'div[data-testid="conversation"]',
-                        'button[aria-label="More"]',
+                        'button',
                     )
                 } catch (e) {
                     errorTriggered = true;
@@ -1701,7 +1715,7 @@ Hang on while I scroll down to your earliest likes.`;
                 }
 
                 // Click the menu button
-                if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button[aria-label="More"]')) {
+                if (!await this.scriptClickElementWithinElementFirst('div[data-testid="conversation"]', 'button')) {
                     errorTriggered = true;
                     errorType = AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed;
                     reloadDMsPage = true;
