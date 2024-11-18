@@ -63,7 +63,7 @@ Finally:
 
 ### Windows
 
-Do this process in a Windows VM in both x64 with VirtualBox and arm64 [with UTM](https://docs.getutm.app/guides/windows/).
+Do this process in a Windows VM in both x64 with VirtualBox and arm64 VMWare Fusion.
 
 To set up Windows:
 
