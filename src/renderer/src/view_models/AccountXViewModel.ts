@@ -36,6 +36,11 @@ export enum State {
     Debug = "debug",
 }
 
+export enum FailureState {
+    indexTweets_FailedToRetryAfterRateLimit = "indexTweets_FailedToRetryAfterRateLimit",
+    indexLikes_FailedToRetryAfterRateLimit = "indexLikes_FailedToRetryAfterRateLimit",
+}
+
 export type XViewModelState = {
     state: State;
     action: string;
@@ -156,6 +161,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     async waitForRateLimit() {
         this.log("waitForRateLimit", this.rateLimitInfo);
+
         let seconds = 0;
         if (this.rateLimitInfo.rateLimitReset) {
             seconds = this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
@@ -241,24 +247,49 @@ export class AccountXViewModel extends BaseViewModel {
     async indexTweetsHandleRateLimit(): Promise<boolean> {
         this.log("indexTweetsHandleRateLimit", this.progress);
 
-        if (await this.doesSelectorExist('[data-testid="cellInnerDiv"]')) {
+        await this.waitForPause();
+
+        // If the retry button does not exist, try scrolling and and down again to trigger it
+        if (!await this.doesSelectorWithinElementLastExist('section[aria-labelledby="accessible-list-0"]', 'button')) {
+            await this.scrollUp(2000);
+            await this.sleep(2000);
+            await this.scrollToBottom();
+            await this.sleep(2000);
+            if (!await this.doesSelectorWithinElementLastExist('section[aria-labelledby="accessible-list-0"]', 'button')) {
+                this.log("indexTweetsHandleRateLimit", "retry button does not exist");
+                return false;
+            }
+        }
+
+        if (await this.doesSelectorExist('section[aria-labelledby="accessible-list-0"] [data-testid="cellInnerDiv"]')) {
             this.log("indexTweetsHandleRateLimit", "tweets have loaded");
             // Tweets have loaded. If there are tweets, the HTML looks like of like this:
-            // <div>
-            //     <div data-testid="cellInnerDiv"></div>
-            //     <div data-testid="cellInnerDiv"></div>
-            //     <div data-testid="cellInnerDiv>...</div>
-            //         <div>...</div>
-            //         <button>...</button>
+            // <section aria-labelledby="accessible-list-0">
+            //     <div>
+            //         <div>
+            //             <div data-testid="cellInnerDiv"></div>
+            //             <div data-testid="cellInnerDiv"></div>
+            //             <div data-testid="cellInnerDiv>...</div>
+            //                 <div>...</div>
+            //                 <button>...</button>
+            //             </div>
+            //         </div>
             //     </div>
-            // </div>
-            const scrollHeightStart = await this.getScrollHeight();
-            await this.scriptClickElementWithinElementLast('[data-testid="cellInnerDiv"]', 'button');
-            await this.sleep(2000);
-            const scrollHeightEnd = await this.getScrollHeight();
+            // </section>
 
-            // If the scroll height increased, this means more tweets loaded
-            return scrollHeightEnd > scrollHeightStart;
+            let numberOfDivsBefore = await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] div[data-testid=cellInnerDiv]');
+            if (numberOfDivsBefore > 0) {
+                // The last one is the one with the button
+                numberOfDivsBefore--;
+            }
+
+            await this.scriptClickElementWithinElementLast('section[aria-labelledby="accessible-list-0"] div[data-testid=cellInnerDiv]', 'button');
+            await this.sleep(2000);
+
+            const numberOfDivsAfter = await this.countSelectorsFound('section[aria-labelledby="accessible-list-0"] div[data-testid=cellInnerDiv]');
+
+            // If there are more divs after, it means more tweets loaded
+            return numberOfDivsAfter > numberOfDivsBefore;
         } else {
             this.log("indexTweetsHandleRateLimit", "no tweets have loaded");
             // No tweets have loaded. If there are no tweets, the HTML looks kind of like this:
@@ -640,10 +671,8 @@ Hang on while I scroll down to your earliest tweets.`;
 
                 // Try to handle the rate limit
                 if (!await this.indexTweetsHandleRateLimit()) {
-                    await this.error(AutomationErrorType.x_runJob_indexTweets_FailedToRetryAfterRateLimit, {}, {
-                        currentURL: this.webview.getURL()
-                    });
-                    errorTriggered = true;
+                    // On fail, update the failure state and move on
+                    await window.electron.X.setConfig(this.account.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "true");
                     break;
                 }
 
@@ -651,8 +680,6 @@ Hang on while I scroll down to your earliest tweets.`;
                 moreToScroll = true;
 
                 // Continue on the next iteration of the infinite loop.
-                // If we don't do this, `window.electron.X.indexParseTweets`, and it will see the same tweets again,
-                // which will trigger it to end the step early.
                 this.log("runJobIndexTweets", ["finished waiting for rate limit"]);
                 continue;
             }
@@ -678,6 +705,9 @@ Hang on while I scroll down to your earliest tweets.`;
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
                 this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
+
+                // On success, set the failure state to false
+                await window.electron.X.setConfig(this.account.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "fail");
                 break;
             } else {
                 if (!moreToScroll) {
@@ -1151,8 +1181,8 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.scrollToBottom();
                 await this.waitForRateLimit();
                 if (!await this.indexTweetsHandleRateLimit()) {
-                    await this.error(AutomationErrorType.x_runJob_indexLikes_FailedToRetryAfterRateLimit, {});
-                    errorTriggered = true;
+                    // On fail, update the failure state and move on
+                    await window.electron.X.setConfig(this.account.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "true");
                     break;
                 }
                 await this.sleep(500);
@@ -1178,6 +1208,9 @@ Hang on while I scroll down to your earliest likes.`;
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
                 this.progress = await window.electron.X.indexLikesFinished(this.account.id);
+
+                // On success, set the failure state to false
+                await window.electron.X.setConfig(this.account.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "fail");
                 break;
             } else {
                 if (!moreToScroll) {
