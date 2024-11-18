@@ -778,6 +778,25 @@ onUnmounted(async () => {
                                 </button>
                             </div>
 
+                            <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                                class="alert alert-danger mt-4" role="alert">
+                                <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                                    class="fw-bold mb-0">
+                                    During a recent run, Cyd wasn't able to scroll through all of your tweets and likes.
+                                </p>
+                                <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                                    class="fw-bold mb-0">
+                                    During a recent run, Cyd wasn't able to scroll through all of your tweets.
+                                </p>
+                                <p v-if="!(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                                    class="fw-bold mb-0">
+                                    During a recent run, Cyd wasn't able to scroll through all of your likes.
+                                </p>
+                                <p class="alert-details mb-0">
+                                    Sorry, X can be annoying sometimes. Run Cyd again to try again.
+                                </p>
+                            </div>
+
                             <div class="alert alert-info mt-4" role="alert">
                                 <p class="fw-bold mb-0">
                                     X restricts how fast you can access your data using <span class="fst-italic">rate
@@ -1372,7 +1391,7 @@ onUnmounted(async () => {
                         </div>
 
                         <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                            class="alert alert-warning" role="alert">
+                            class="alert alert-danger mt-4" role="alert">
                             <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
                                 class="fw-bold mb-0">
                                 Cyd wasn't able to scroll through all of your tweets and likes this time.
@@ -1389,22 +1408,28 @@ onUnmounted(async () => {
                                 Run Cyd again with the same settings to delete more.
                             </p>
                             <p v-else class="alert-details mb-0">
-                                Run Cyd again with the same settings to try again.
+                                Run Cyd again with the same settings to try again from the beginning.
                             </p>
                         </div>
 
                         <div class="buttons">
-                            <button
-                                v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                @click="finishedRunAgainClicked">
-                                <i class="fa-solid fa-repeat" />
-                                Run Again with Same Settings
-                            </button>
+                            <template
+                                v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))">
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                    @click="finishedRunAgainClicked">
+                                    <i class="fa-solid fa-repeat" />
+                                    Run Again with Same Settings
+                                </button>
 
-                            <button class="btn btn-primary" @click="reset()">
-                                Back to Start
-                            </button>
+                                <button class="btn btn-secondary" @click="reset()">
+                                    Back to Start
+                                </button>
+                            </template>
+                            <template v-else>
+                                <button class="btn btn-primary" @click="reset()">
+                                    Back to Start
+                                </button>
+                            </template>
                         </div>
                     </div>
 

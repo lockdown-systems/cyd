@@ -161,6 +161,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     async waitForRateLimit() {
         this.log("waitForRateLimit", this.rateLimitInfo);
+
         let seconds = 0;
         if (this.rateLimitInfo.rateLimitReset) {
             seconds = this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
