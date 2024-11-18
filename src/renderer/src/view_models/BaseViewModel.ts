@@ -298,6 +298,22 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(`document.querySelector('${selector}') !== null`);
     }
 
+    // if the last element in the list of elements that match containerSelector, and check if selector exists
+    async doesSelectorWithinElementLastExist(containerSelector: string, selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${containerSelector}');
+            if(els.length == 0) { return false; }
+            const lastEl = els[els.length - 1];
+            const innerEl = lastEl.querySelector('${selector}');
+            if(innerEl === null) { return false; }
+            return true;
+        })()
+        `;
+        await this.sleep(500);
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
     async countSelectorsFound(selector: string): Promise<number> {
         return await this.getWebview()?.executeJavaScript(`document.querySelectorAll('${selector}').length`);
     }
