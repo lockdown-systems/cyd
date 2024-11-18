@@ -1390,17 +1390,17 @@ onUnmounted(async () => {
                             </div>
                         </div>
 
-                        <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                        <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))"
                             class="alert alert-danger mt-4" role="alert">
                             <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
                                 class="fw-bold mb-0">
                                 Cyd wasn't able to scroll through all of your tweets and likes this time.
                             </p>
-                            <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                            <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))"
                                 class="fw-bold mb-0">
                                 Cyd wasn't able to scroll through all of your tweets this time.
                             </p>
-                            <p v-if="!(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
+                            <p v-if="!(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))"
                                 class="fw-bold mb-0">
                                 Cyd wasn't able to scroll through all of your likes this time.
                             </p>
@@ -1414,7 +1414,7 @@ onUnmounted(async () => {
 
                         <div class="buttons">
                             <template
-                                v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))">
+                                v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))">
                                 <button type="submit" class="btn btn-primary text-nowrap m-1"
                                     @click="finishedRunAgainClicked">
                                     <i class="fa-solid fa-repeat" />
