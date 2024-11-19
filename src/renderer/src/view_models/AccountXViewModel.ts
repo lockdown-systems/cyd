@@ -366,7 +366,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the username
         this.log("login", "getting username");
-        this.instructions = `I'm scraping your username...`;
+        this.instructions = `I'm discovering your username...`;
         if (this.webview.getURL() != "https://x.com/home") {
             await this.loadURLWithRateLimit("https://x.com/home");
         }
@@ -399,7 +399,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the profile image
         this.log("login", "getting profile image");
-        this.instructions = `You're logged in as **@${username}**. I'm scraping your profile image...`;
+        this.instructions = `You're logged in as **@${username}**. I'm downloading your profile image...`;
 
         await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
         await this.waitForSelector('div[data-testid="swipe-to-dismiss"]', `https://x.com/${username}/photo`);
