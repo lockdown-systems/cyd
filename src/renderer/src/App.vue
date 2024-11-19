@@ -286,6 +286,8 @@ body {
 
 .webview-automation-border {
   border: 5px solid #ffea9b;
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 .webview-input-border {
