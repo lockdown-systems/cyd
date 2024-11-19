@@ -366,7 +366,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the username
         this.log("login", "getting username");
-        this.instructions = `I'm scraping your username...`;
+        this.instructions = `I'm discovering your username...`;
         if (this.webview.getURL() != "https://x.com/home") {
             await this.loadURLWithRateLimit("https://x.com/home");
         }
@@ -399,7 +399,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get the profile image
         this.log("login", "getting profile image");
-        this.instructions = `You're logged in as **@${username}**. I'm scraping your profile image...`;
+        this.instructions = `You're logged in as **@${username}**. I'm downloading your profile image...`;
 
         await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
         await this.waitForSelector('div[data-testid="swipe-to-dismiss"]', `https://x.com/${username}/photo`);
@@ -929,7 +929,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
         this.showBrowser = true;
         this.instructions = `**I'm saving your direct messages.**
 
-Please wait while I index all of the messages from each conversation...`;
+Please wait while I index all the messages from each conversation...`;
         this.showAutomationNotice = true;
 
         // Start monitoring network requests
@@ -1626,7 +1626,7 @@ Hang on while I scroll down to your earliest likes.`;
         let reloadDMsPage = true;
 
         this.showBrowser = true;
-        this.instructions = `**I'm deleting all of your direct message conversations, starting with the most recent.**`;
+        this.instructions = `**I'm deleting all your direct message conversations, starting with the most recent.**`;
         this.showAutomationNotice = true;
 
         // Start the progress
@@ -1902,7 +1902,7 @@ Hang on while I scroll down to your earliest likes.`;
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-You're signed into **@${this.account.xAccount?.username}** on X. After you anwer a few quick question, I will help you take control of your data on X.
+You're signed into **@${this.account.xAccount?.username}** on X. After you answer a few quick questions, I will help you take control of your data on X.
 
 **What would you like to do?**`;
                     this.state = State.WizardStartDisplay;
