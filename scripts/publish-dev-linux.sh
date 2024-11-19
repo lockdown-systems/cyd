@@ -13,6 +13,8 @@ docker build --platform linux/arm64 -f Dockerfile-linux-release -t cyd-linux-rel
 docker run --platform linux/arm64 --rm -v $(pwd):/app cyd-linux-release npm run make-dev-linux
 mv ./out/ ./out-arm64
 
+sudo chown -R $USER:$USER .
+
 # Copy binaries to linux-repos
 echo ""
 echo "======================================="
