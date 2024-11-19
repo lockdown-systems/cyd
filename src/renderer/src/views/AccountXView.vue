@@ -829,7 +829,7 @@ onUnmounted(async () => {
                             </div>
                             <div class="alert alert-info" role="alert">
                                 <p class="fw-bold mb-0">
-                                    X's interface can be finicky.
+                                    You might need to run Cyd more than once.
                                 </p>
                                 <p class="alert-details mb-0">
                                     If Cyd doesn't find or delete all of your data the first time, try running it again.

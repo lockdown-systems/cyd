@@ -56,7 +56,9 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
 export function getAccountIcon(accountType: string): string {
     switch (accountType) {
         case "X":
-            return "fa-brands fa-x-twitter";
+            // Not using the real X logo to avoid trademark issues
+            // return "fa-brands fa-x-twitter";
+            return "fa-solid fa-xmark";
         default:
             return "fa-solid fa-gears";
     }
