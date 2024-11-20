@@ -1,7 +1,7 @@
 {
   "name": "cyd",
   "private": true,
-  "version": "0.3.6-dev",
+  "version": "0.3.7-dev",
   "main": ".vite/build/main.js",
   "description": "Automatically delete your data from tech platforms, except for what you want to keep",
   "license": "proprietary",
