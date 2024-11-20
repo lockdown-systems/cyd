@@ -1384,7 +1384,7 @@ onUnmounted(async () => {
                                     </li>
                                     <li v-if="(progress?.unknownIndexed ?? 0) > 0">
                                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> unknown items
+                                        <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other tweets
                                     </li>
                                     <li
                                         v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
@@ -1430,8 +1430,8 @@ onUnmounted(async () => {
                                         </li>
                                         <li v-if="(progress?.unknownIndexed ?? 0) > 0">
                                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> unknown
-                                            items
+                                            <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other
+                                            tweets
                                         </li>
                                     </ul>
                                 </template>
