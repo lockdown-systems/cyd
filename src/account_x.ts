@@ -430,13 +430,13 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (tweetLegacy["retweeted"]) {
+        if (tweetLegacy["full_text"].startsWith("RT @")) {
             this.progress.retweetsIndexed++;
         }
         if (tweetLegacy["favorited"]) {
             this.progress.likesIndexed++;
         }
-        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["retweeted"]) {
+        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
             this.progress.tweetsIndexed++;
         }
     }
