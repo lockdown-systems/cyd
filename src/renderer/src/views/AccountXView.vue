@@ -335,6 +335,10 @@ const u2fInfoClicked = () => {
     window.electron.openURL('https://cyd.social/docs-u2f');
 };
 
+const otherTweetsClicked = () => {
+    window.electron.openURL('https://cyd.social/docs-other-tweets');
+};
+
 function formatStatsNumber(num: number): string {
     if (num >= 1000) {
         return (num / 1000).toFixed(1) + 'k';
@@ -1385,6 +1389,9 @@ onUnmounted(async () => {
                                     <li v-if="(progress?.unknownIndexed ?? 0) > 0">
                                         <i class="fa-solid fa-floppy-disk archive-bullet" />
                                         <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other tweets
+                                        <span class="ms-3 small text-muted">(<a href="#"
+                                                @click="otherTweetsClicked">what's
+                                                this?</a>)</span>
                                     </li>
                                     <li
                                         v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
@@ -1431,7 +1438,7 @@ onUnmounted(async () => {
                                         <li v-if="(progress?.unknownIndexed ?? 0) > 0">
                                             <i class="fa-solid fa-floppy-disk archive-bullet" />
                                             <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other
-                                            tweets
+                                            tweets (<a href="#">learn more</a>)
                                         </li>
                                     </ul>
                                 </template>

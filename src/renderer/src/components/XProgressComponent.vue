@@ -107,7 +107,7 @@ onUnmounted(() => {
                     Saved
                     <b>{{ progress.likesIndexed.toLocaleString() }} likes</b>.
                     <span v-if="progress.unknownIndexed > 0" class="text-muted">
-                        Also saved {{ progress.unknownIndexed.toLocaleString() }} unknown items.
+                        Also saved {{ progress.unknownIndexed.toLocaleString() }} other tweets.
                     </span>
                     <template v-if="progress.isIndexLikesFinished">
                         Saving complete!
