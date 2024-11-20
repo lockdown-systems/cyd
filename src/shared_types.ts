@@ -100,6 +100,7 @@ export type XProgress = {
     conversationsIndexed: number;
     messagesIndexed: number;
     likesIndexed: number;
+    unknownIndexed: number;
 
     totalTweetsToArchive: number;
     tweetsArchived: number;
@@ -144,6 +145,7 @@ export function emptyXProgress(): XProgress {
         conversationsIndexed: 0,
         messagesIndexed: 0,
         likesIndexed: 0,
+        unknownIndexed: 0,
 
         totalTweetsToArchive: 0,
         tweetsArchived: 0,

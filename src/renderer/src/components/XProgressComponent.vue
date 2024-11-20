@@ -58,6 +58,9 @@ onUnmounted(() => {
                     Saved
                     <b>{{ progress.tweetsIndexed.toLocaleString() }} tweets</b> and
                     <b>{{ progress.retweetsIndexed.toLocaleString() }} retweets</b>.
+                    <span v-if="progress.unknownIndexed > 0" class="text-muted">
+                        Also saved {{ progress.unknownIndexed.toLocaleString() }} other tweets.
+                    </span>
                     <template v-if="progress.isIndexTweetsFinished">
                         Saving complete!
                     </template>
@@ -103,6 +106,9 @@ onUnmounted(() => {
                 <p>
                     Saved
                     <b>{{ progress.likesIndexed.toLocaleString() }} likes</b>.
+                    <span v-if="progress.unknownIndexed > 0" class="text-muted">
+                        Also saved {{ progress.unknownIndexed.toLocaleString() }} other tweets.
+                    </span>
                     <template v-if="progress.isIndexLikesFinished">
                         Saving complete!
                     </template>
