@@ -318,6 +318,21 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(`document.querySelectorAll('${selector}').length`);
     }
 
+    // Count the number of selector elements within the last element in the list of elements that match containerSelector
+    async countSelectorsWithinElementLastFound(containerSelector: string, selector: string): Promise<number> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${containerSelector}');
+            if(els.length == 0) { return 0; }
+            const lastEl = els[els.length - 1];
+            const innerEls = lastEl.querySelectorAll('${selector}');
+            return innerEls.length;
+        })()
+        `;
+        await this.sleep(500);
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
     // wait for containerSelector to exist, and also selector within containerSelector to exist
     async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = DEFAULT_TIMEOUT) {
         const startingURL = this.webview.getURL();

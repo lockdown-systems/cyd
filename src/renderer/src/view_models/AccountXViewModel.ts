@@ -265,12 +265,13 @@ export class AccountXViewModel extends BaseViewModel {
             // </section>
 
             // If the retry button does not exist, try scrolling up and down again to trigger it
-            if (!await this.doesSelectorWithinElementLastExist('main[role="main"] nav[role="navigation"] + section', 'button')) {
+            // The retry button should be in the last cellInnerDiv, and it should have only 1 button in it
+            if (await this.countSelectorsWithinElementLastFound('main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]', 'button') != 1) {
                 await this.scrollUp(2000);
                 await this.sleep(2000);
                 await this.scrollToBottom();
                 await this.sleep(2000);
-                if (!await this.doesSelectorWithinElementLastExist('main[role="main"] nav[role="navigation"] + section', 'button')) {
+                if (await this.countSelectorsWithinElementLastFound('main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]', 'button') != 1) {
                     this.log("indexTweetsHandleRateLimit", "retry button does not exist");
                     return false;
                 }
@@ -323,7 +324,21 @@ export class AccountXViewModel extends BaseViewModel {
             // If there are more divs after, it means more tweets loaded
             return numberOfDivsAfter > 0;
         }
+    }
 
+    // Check if there is a "Something went wrong" message, and click retry if there is
+    async indexTweetsCheckForSomethingWrong(): Promise<void> {
+        // X might show a "Something went wrong" message if an AJAX request fails for a reason other than
+        // being rate limited. If this happens, we need to click the retry button to try again.
+        if (
+            await this.doesSelectorExist('section div[data-testid="cellInnerDiv"]') &&
+            // If the last cellInnerDiv has just one button, that should be the retry button
+            await this.countSelectorsWithinElementLastFound('main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]', 'button') == 1
+        ) {
+            // Click retry
+            await this.scriptClickElementWithinElementLast('main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]', 'button');
+            await this.sleep(2000);
+        }
     }
 
     async login() {
@@ -673,6 +688,8 @@ Hang on while I scroll down to your earliest tweets.`;
             // Scroll to bottom
             await window.electron.X.resetRateLimitInfo(this.account.id);
             let moreToScroll = await this.scrollToBottom();
+
+            // Check for rate limit
             this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
             if (this.rateLimitInfo.isRateLimited) {
                 this.log("runJobIndexTweets", ["rate limited", this.progress]);
@@ -729,6 +746,9 @@ Hang on while I scroll down to your earliest tweets.`;
                     await this.scrollUp(1000);
                 }
             }
+
+            // Check if there is a "Something went wrong" message
+            await this.indexTweetsCheckForSomethingWrong();
         }
 
         // Stop monitoring network requests
@@ -1232,6 +1252,9 @@ Hang on while I scroll down to your earliest likes.`;
                     await this.scrollUp(1000);
                 }
             }
+
+            // Check if there is a "Something went wrong" message
+            await this.indexTweetsCheckForSomethingWrong();
         }
 
         // Stop monitoring network requests
