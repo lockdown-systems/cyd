@@ -471,7 +471,13 @@ export class XAccountController {
                 }
 
                 // If we only have two entries, they both have entryType of TimelineTimelineCursor (one cursorType of Top and the other of Bottom), this means there are no more tweets
-                if (instructions.entries?.length == 2 && instructions.entries[0].content.entryType == "TimelineTimelineCursor" && instructions.entries[1].content.entryType == "TimelineTimelineCursor") {
+                if (
+                    instructions.entries?.length == 2 &&
+                    instructions.entries[0].content.entryType == "TimelineTimelineCursor" &&
+                    instructions.entries[0].content.cursorType == "Top" &&
+                    instructions.entries[1].content.entryType == "TimelineTimelineCursor" &&
+                    instructions.entries[1].content.cursorType == "Bottom"
+                ) {
                     this.thereIsMore = false;
                     return;
                 }
@@ -793,6 +799,10 @@ export class XAccountController {
 
     async indexIsThereMore(): Promise<boolean> {
         return this.thereIsMore;
+    }
+
+    async resetThereIsMore(): Promise<void> {
+        this.thereIsMore = true;
     }
 
     // When you start indexing DMs, return a list of DM conversationIDs to index
@@ -1603,6 +1613,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexIsThereMore();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:resetThereIsMore', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.resetThereIsMore();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

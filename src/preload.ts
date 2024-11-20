@@ -128,6 +128,9 @@ contextBridge.exposeInMainWorld('electron', {
         indexIsThereMore: (accountID: number): Promise<boolean> => {
             return ipcRenderer.invoke('X:indexIsThereMore', accountID)
         },
+        resetThereIsMore: (accountID: number) => {
+            ipcRenderer.invoke('X:resetThereIsMore', accountID)
+        },
         indexMessagesStart: (accountID: number): Promise<XIndexMessagesStartResponse> => {
             return ipcRenderer.invoke('X:indexMessagesStart', accountID);
         },
