@@ -1382,6 +1382,10 @@ onUnmounted(async () => {
                                         <i class="fa-solid fa-floppy-disk archive-bullet" />
                                         <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
                                     </li>
+                                    <li v-if="(progress?.unknownIndexed ?? 0) > 0">
+                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                        <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> unknown items
+                                    </li>
                                     <li
                                         v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
                                         <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -1400,6 +1404,38 @@ onUnmounted(async () => {
                         </div>
                         <div v-if="deleteMyData" class="container mt-3">
                             <div class="finished-delete">
+                                <template
+                                    v-if="!saveMyData && (account.xAccount?.deleteTweets || account.xAccount?.deleteRetweets || account.xAccount?.deleteLikes)">
+                                    <h2>You just saved:</h2>
+                                    <ul>
+                                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
+                                            saved
+                                            as HTML archives
+                                        </li>
+                                        <li
+                                            v-if="(account.xAccount?.deleteTweets || account.xAccount?.deleteRetweets) || (progress?.tweetsIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                                        </li>
+                                        <li
+                                            v-if="(account.xAccount?.deleteTweets || account.xAccount?.deleteRetweets) || (progress?.retweetsIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
+                                        </li>
+                                        <li v-if="account.xAccount?.deleteLikes || (progress?.likesIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                                        </li>
+                                        <li v-if="(progress?.unknownIndexed ?? 0) > 0">
+                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
+                                            <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> unknown
+                                            items
+                                        </li>
+                                    </ul>
+                                </template>
+
                                 <h2>You just deleted:</h2>
                                 <ul>
                                     <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">

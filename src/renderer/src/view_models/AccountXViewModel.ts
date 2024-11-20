@@ -353,6 +353,7 @@ export class AccountXViewModel extends BaseViewModel {
         const currentTweetsIndexed = this.progress.tweetsIndexed;
         const currentRetweetsIndexed = this.progress.retweetsIndexed;
         const currentLikesIndexed = this.progress.likesIndexed;
+        const currentUnknownIndex = this.progress.unknownIndexed;
 
         // Reset the thereIsMore flag
         await window.electron.X.resetThereIsMore(this.account.id);
@@ -379,7 +380,8 @@ export class AccountXViewModel extends BaseViewModel {
         if (
             this.progress.tweetsIndexed == currentTweetsIndexed &&
             this.progress.retweetsIndexed == currentRetweetsIndexed &&
-            this.progress.likesIndexed == currentLikesIndexed
+            this.progress.likesIndexed == currentLikesIndexed &&
+            this.progress.unknownIndexed == currentUnknownIndex
         ) {
             this.log("indexTweetsVerifyThereIsNoMore", "the progress was not updated, we are done");
             return true;

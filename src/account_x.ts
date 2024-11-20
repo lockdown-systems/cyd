@@ -433,11 +433,14 @@ export class XAccountController {
         if (tweetLegacy["full_text"].startsWith("RT @")) {
             this.progress.retweetsIndexed++;
         }
-        if (tweetLegacy["favorited"]) {
+        else if (tweetLegacy["favorited"]) {
             this.progress.likesIndexed++;
         }
-        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
+        else if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
             this.progress.tweetsIndexed++;
+        }
+        else {
+            this.progress.unknownIndexed++;
         }
     }
 
