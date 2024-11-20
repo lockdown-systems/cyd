@@ -341,6 +341,54 @@ export class AccountXViewModel extends BaseViewModel {
         }
     }
 
+    // When we get to the bottom of a tweets or likes feed, verify that we're actually
+    // at the bottom. Do this by scrolling up, then down again, and making sure we still got the
+    // final API response.
+    // Returns true if we're actually at the bottom, false if we're not.
+    async indexTweetsVerifyThereIsNoMore(): Promise<boolean> {
+        this.log("indexTweetsVerifyThereIsNoMore", "verifying there is no more tweets");
+        await this.scrollToBottom();
+
+        // Record the current number of tweets, retweets, and likes
+        const currentTweetsIndexed = this.progress.tweetsIndexed;
+        const currentRetweetsIndexed = this.progress.retweetsIndexed;
+        const currentLikesIndexed = this.progress.likesIndexed;
+
+        // Reset the thereIsMore flag
+        await window.electron.X.resetThereIsMore(this.account.id);
+
+        // Try to trigger more API requests by scrolling up and down
+        await this.sleep(500);
+        await this.scrollUp(2000);
+        await this.sleep(1500);
+        await this.scrollToBottom();
+        await this.sleep(1500);
+
+        // Parse so far
+        this.progress = await window.electron.X.indexParseTweets(this.account.id);
+        this.log("indexTweetsVerifyThereIsNoMore", ["parsed tweets", this.progress]);
+
+        // Check if we're done again
+        if (!await window.electron.X.indexIsThereMore(this.account.id)) {
+            this.log("indexTweetsVerifyThereIsNoMore", "got the final API response again, so we are done");
+            return true;
+        }
+
+        // It's also possible that the final API response did not load, in which case we can see if the
+        // progress was updated. If it was not, we're done.
+        if (
+            this.progress.tweetsIndexed == currentTweetsIndexed &&
+            this.progress.retweetsIndexed == currentRetweetsIndexed &&
+            this.progress.likesIndexed == currentLikesIndexed
+        ) {
+            this.log("indexTweetsVerifyThereIsNoMore", "the progress was not updated, we are done");
+            return true;
+        }
+
+        this.log("indexTweetsVerifyThereIsNoMore", "we are not done, good thing we checked");
+        return false;
+    }
+
     async login() {
         const originalUsername = this.account && this.account.xAccount && this.account.xAccount.username ? this.account.xAccount.username : null;
 
@@ -734,16 +782,41 @@ Hang on while I scroll down to your earliest tweets.`;
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
-                this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
 
-                // On success, set the failure state to false
-                await window.electron.X.setConfig(this.account.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "fail");
-                break;
+                // Verify that we're actually done
+                let verifyResult = true;
+                try {
+                    verifyResult = await this.indexTweetsVerifyThereIsNoMore();
+                } catch (e) {
+                    const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+                    await this.error(AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError, {
+                        exception: (e as Error).toString()
+                    }, {
+                        latestResponseData: latestResponseData,
+                        currentURL: this.webview.getURL()
+                    });
+                    errorTriggered = true;
+                    break;
+                }
+
+                // If we verified that there are no more tweets, we're done
+                if (verifyResult) {
+                    this.progress = await window.electron.X.indexTweetsFinished(this.account.id);
+
+                    // On success, set the failure state to false
+                    await window.electron.X.setConfig(this.account.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "fail");
+                    break;
+                }
+
+                // Otherwise, update the job and keep going
+                this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
+
             } else {
                 if (!moreToScroll) {
                     // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
                     await this.sleep(500);
-                    await this.scrollUp(1000);
+                    await this.scrollUp(2000);
                 }
             }
 
@@ -1240,11 +1313,36 @@ Hang on while I scroll down to your earliest likes.`;
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account.id)) {
-                this.progress = await window.electron.X.indexLikesFinished(this.account.id);
 
-                // On success, set the failure state to false
-                await window.electron.X.setConfig(this.account.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "fail");
-                break;
+                // Verify that we're actually done
+                let verifyResult = true;
+                try {
+                    verifyResult = await this.indexTweetsVerifyThereIsNoMore();
+                } catch (e) {
+                    const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError, {
+                        exception: (e as Error).toString()
+                    }, {
+                        latestResponseData: latestResponseData,
+                        currentURL: this.webview.getURL()
+                    });
+                    errorTriggered = true;
+                    break;
+                }
+
+                // If we verified that there are no more tweets, we're done
+                if (verifyResult) {
+                    this.progress = await window.electron.X.indexLikesFinished(this.account.id);
+
+                    // On success, set the failure state to false
+                    await window.electron.X.setConfig(this.account.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "fail");
+                    break;
+                }
+
+                // Otherwise, update the job and keep going
+                this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
+
             } else {
                 if (!moreToScroll) {
                     // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time

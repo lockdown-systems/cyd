@@ -801,6 +801,10 @@ export class XAccountController {
         return this.thereIsMore;
     }
 
+    async resetThereIsMore(): Promise<void> {
+        this.thereIsMore = true;
+    }
+
     // When you start indexing DMs, return a list of DM conversationIDs to index
     async indexMessagesStart(): Promise<XIndexMessagesStartResponse> {
         if (!this.db) {
@@ -1609,6 +1613,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexIsThereMore();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:resetThereIsMore', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.resetThereIsMore();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
