@@ -587,6 +587,21 @@ export class AccountXViewModel extends BaseViewModel {
         // Load the URL
         await this.loadURLWithRateLimit(tweetItem.url);
 
+        // Wait for the tweet to appear
+        try {
+            await this.waitForSelector('article[tabindex="-1"]', tweetItem.url);
+            // Wait another second for replies, etc. to load
+            await this.sleep(1000);
+        } catch (e) {
+            await this.error(AutomationErrorType.x_runJob_archiveTweets_WaitForSelectorError, {
+                exception: (e as Error).toString()
+            }, {
+                tweetItem: tweetItem,
+                currentURL: this.webview.getURL()
+            })
+            return false;
+        }
+
         // Save the page
         if (this.webContentsID) {
             await window.electron.archive.savePage(this.webContentsID, outputPath, tweetItem.basename);
