@@ -65,6 +65,9 @@ export class AccountXViewModel extends BaseViewModel {
     // they delete, this lets them go back and change settings without starting over
     public isDeleteReviewActive: boolean = false;
 
+    // Debug variables
+    public debugAutopauseEndOfStep: boolean = false;
+
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
             this.state = State.WizardStart;
@@ -699,6 +702,7 @@ Hang on while I scroll down to your earliest tweets.`;
         // Load the timeline
         let errorTriggered = false;
         await this.loadURLWithRateLimit("https://x.com/" + this.account.xAccount?.username + "/with_replies");
+        await this.sleep(500);
 
         // Check if tweets list is empty
         if (await this.doesSelectorExist('section')) {
@@ -2123,6 +2127,10 @@ You can save all your data for free, but you need a Premium plan to delete your 
                         this.currentJobIndex = i;
                         try {
                             await this.runJob(i);
+                            if (this.debugAutopauseEndOfStep) {
+                                this.pause();
+                                await this.waitForPause();
+                            }
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_UnknownError, {
                                 exception: (e as Error).toString()
