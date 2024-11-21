@@ -429,11 +429,18 @@ export class AccountXViewModel extends BaseViewModel {
 
         await this.waitForPause();
 
-        // Get the username
+        // Load home
         this.log("login", "getting username");
         this.instructions = `I'm discovering your username...`;
         if (this.webview.getURL() != "https://x.com/home") {
             await this.loadURLWithRateLimit("https://x.com/home");
+        }
+
+        // See if cookie overlay is present, and if so click "Refuse non-essential cookies"
+        if (await this.doesSelectorExist('div[data-testid="BottomBar"]')) {
+            await this.scriptClickElementWithinElementLast('div[data-testid="BottomBar"]', 'button');
+            await this.sleep(500);
+            await this.scriptClickElementWithinElementLast('div[data-testid="BottomBar"]', 'button');
         }
 
         // Wait for profile button to appear, and click it
