@@ -588,6 +588,14 @@ const finishedRunAgainClicked = async () => {
 
 const shouldOpenDevtools = ref(false);
 
+const debugAutopauseEndOfStep = ref(false);
+
+const debugAutopauseEndOfStepChanged = async () => {
+    if (accountXViewModel.value !== null) {
+        accountXViewModel.value.debugAutopauseEndOfStep = debugAutopauseEndOfStep.value;
+    }
+};
+
 const enableDebugMode = async () => {
     if (accountXViewModel.value !== null) {
         accountXViewModel.value.state = State.Debug;
@@ -1603,11 +1611,23 @@ onUnmounted(async () => {
                     </div>
 
                     <!-- Debug mode -->
-                    <p v-if="shouldOpenDevtools" class="text-center mt-4">
-                        <button class="btn btn-sm btn-danger" @click="enableDebugMode">
-                            Debug Mode
-                        </button>
-                    </p>
+                    <div v-if="shouldOpenDevtools" class="p-3 small">
+                        <hr>
+
+                        <div class="mb-3">
+                            <button class="btn btn-sm btn-danger" @click="enableDebugMode">
+                                Debug Mode
+                            </button>
+                        </div>
+
+                        <div class="form-check">
+                            <input id="debugAutopauseEndOfStep" v-model="debugAutopauseEndOfStep" type="checkbox"
+                                class="form-check-input" @change="debugAutopauseEndOfStepChanged">
+                            <label class="form-check-label" for="debugAutopauseEndOfStep">
+                                Automatically pause before finishing each step
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
