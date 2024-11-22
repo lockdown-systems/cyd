@@ -135,12 +135,14 @@ async function registerDevice() {
                 const progressInfo: XProgressInfo = await window.electron.X.getProgressInfo(accounts[i].id);
                 const postXProgresResp = await apiClient.value.postXProgress({
                     account_uuid: progressInfo.accountUUID,
+                    total_tweets_indexed: progressInfo.totalTweetsIndexed,
                     total_tweets_archived: progressInfo.totalTweetsArchived,
-                    total_messages_indexed: progressInfo.totalMessagesIndexed,
+                    total_retweets_indexed: progressInfo.totalRetweetsIndexed,
+                    total_likes_indexed: progressInfo.totalLikesIndexed,
+                    total_unknown_indexed: progressInfo.totalUnknownIndexed,
                     total_tweets_deleted: progressInfo.totalTweetsDeleted,
                     total_retweets_deleted: progressInfo.totalRetweetsDeleted,
                     total_likes_deleted: progressInfo.totalLikesDeleted,
-                    total_conversations_deleted: progressInfo.totalConversationsDeleted
                 }, true);
                 if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
                     // Silently log the error and continue

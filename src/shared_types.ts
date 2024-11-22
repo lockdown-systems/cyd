@@ -208,23 +208,27 @@ export function emptyXRateLimitInfo(): XRateLimitInfo {
 
 export type XProgressInfo = {
     accountUUID: string;
+    totalTweetsIndexed: number;
     totalTweetsArchived: number;
-    totalMessagesIndexed: number;
+    totalRetweetsIndexed: number;
+    totalLikesIndexed: number;
+    totalUnknownIndexed: number;
     totalTweetsDeleted: number;
     totalRetweetsDeleted: number;
     totalLikesDeleted: number;
-    totalConversationsDeleted: number;
 }
 
 export function emptyXProgressInfo(): XProgressInfo {
     return {
         accountUUID: "",
+        totalTweetsIndexed: 0,
         totalTweetsArchived: 0,
-        totalMessagesIndexed: 0,
+        totalRetweetsIndexed: 0,
+        totalLikesIndexed: 0,
+        totalUnknownIndexed: 0,
         totalTweetsDeleted: 0,
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
-        totalConversationsDeleted: 0,
     }
 }
 

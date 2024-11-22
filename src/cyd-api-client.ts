@@ -54,12 +54,14 @@ export type DeleteDeviceAPIRequest = {
 // API models for POST /x-progress
 export type PostXProgressAPIRequest = {
     account_uuid: string;
+    total_tweets_indexed: number;
     total_tweets_archived: number;
-    total_messages_indexed: number;
+    total_retweets_indexed: number;
+    total_likes_indexed: number;
+    total_unknown_indexed: number;
     total_tweets_deleted: number;
     total_retweets_deleted: number;
     total_likes_deleted: number;
-    total_conversations_deleted: number;
 };
 
 // API models for GET /user/premium

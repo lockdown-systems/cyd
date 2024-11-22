@@ -1399,21 +1399,72 @@ export class XAccountController {
             this.initDB();
         }
 
-        const totalTweetsArchived: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL", [], "get") as Sqlite3Count;
-        const totalMessagesIndexed: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
-        const totalTweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND deletedAt IS NOT NULL", ["RT @%"], "get") as Sqlite3Count;
-        const totalRetweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedAt IS NOT NULL", ["RT @%"], "get") as Sqlite3Count;
-        const totalLikesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
-        const totalConversationsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
+        const totalTweetsIndexed: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ?",
+            [this.account?.username || "", "RT @%", 0],
+            "get"
+        ) as Sqlite3Count;
+        const totalTweetsArchived: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL",
+            [],
+            "get"
+        ) as Sqlite3Count;
+        const totalRetweetsIndexed: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ?",
+            ["RT @%"],
+            "get"
+        ) as Sqlite3Count;
+        const totalLikesIndexed: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?",
+            [1],
+            "get"
+        ) as Sqlite3Count;
+        const totalUnknownIndexed: Sqlite3Count = exec(
+            this.db,
+            `SELECT COUNT(*) AS count FROM tweet 
+             WHERE id NOT IN (
+                 SELECT id FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ?
+                 UNION
+                 SELECT id FROM tweet WHERE text LIKE ?
+                 UNION
+                 SELECT id FROM tweet WHERE isLiked = ?
+             )`,
+            [this.account?.username || "", "RT @%", 0, "RT @%", 1],
+            "get"
+        ) as Sqlite3Count;
+        const totalTweetsDeleted: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ? AND deletedAt IS NOT NULL",
+            [this.account?.username || "", "RT @%", 0],
+            "get"
+        ) as Sqlite3Count;
+        const totalRetweetsDeleted: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedAt IS NOT NULL",
+            ["RT @%"],
+            "get"
+        ) as Sqlite3Count;
+        const totalLikesDeleted: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL",
+            [1],
+            "get"
+        ) as Sqlite3Count;
 
         const progressInfo = emptyXProgressInfo();
         progressInfo.accountUUID = this.accountUUID;
+        progressInfo.totalTweetsIndexed = totalTweetsIndexed.count;
         progressInfo.totalTweetsArchived = totalTweetsArchived.count;
-        progressInfo.totalMessagesIndexed = totalMessagesIndexed.count;
+        progressInfo.totalRetweetsIndexed = totalRetweetsIndexed.count;
+        progressInfo.totalLikesIndexed = totalLikesIndexed.count;
+        progressInfo.totalUnknownIndexed = totalUnknownIndexed.count;
         progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
         progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
         progressInfo.totalLikesDeleted = totalLikesDeleted.count;
-        progressInfo.totalConversationsDeleted = totalConversationsDeleted.count;
         return progressInfo;
     }
 
