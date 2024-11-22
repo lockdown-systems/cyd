@@ -51,6 +51,16 @@ const sensitiveContextData = () => {
     return "";
 };
 
+// User description
+
+const userDescription = ref('');
+
+const onUserDescriptionChange = (_event: Event) => {
+    if (details.value) {
+        details.value.errorReportData.userDescription = userDescription.value;
+    }
+};
+
 const showDetailsYesText = "Hide information included in report";
 const showDetailsNoText = "Show information included in report";
 const showDetailsLabel = ref(showDetailsNoText);
@@ -176,7 +186,7 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Submit an automation error report
+                        Submit an error report
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
                         @click="doNotSubmitReport" />
@@ -187,6 +197,11 @@ onUnmounted(() => {
                             <h5 class="mb-3">
                                 {{ automationErrorType() }}
                             </h5>
+                            <div class="mb-3">
+                                <textarea v-model="userDescription" class="form-control w-100"
+                                    placeholder="Describe what happened (optional)" aria-label="Describe what happened"
+                                    @input="onUserDescriptionChange" />
+                            </div>
                             <div class="mb-3 form-check">
                                 <input id="includeSensitiveData" v-model="includeSensitiveData" type="checkbox"
                                     class="form-check-input">

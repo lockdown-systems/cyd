@@ -358,6 +358,23 @@ const openArchive = async () => {
     await window.electron.X.openFolder(props.account.id, "index.html");
 };
 
+const onReportBug = async () => {
+    console.log('Report bug clicked');
+
+    // Pause
+    accountXViewModel.value?.pause();
+
+    // Submit error report
+    if (accountXViewModel.value !== null) {
+        await accountXViewModel.value.error(AutomationErrorType.X_manualBugReport, {
+            message: 'User is manually reporting a bug',
+            state: accountXViewModel.value.saveState()
+        }, {
+            currentURL: accountXViewModel.value.webview.getURL()
+        });
+    }
+}
+
 // Wizard functions
 
 const wizardNextText = ref('Continue');
@@ -726,7 +743,7 @@ onUnmounted(async () => {
                 <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
                     :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
                     @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()"
-                    @on-cancel="emit('onRefreshClicked')" />
+                    @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
             </div>
         </div>
 
