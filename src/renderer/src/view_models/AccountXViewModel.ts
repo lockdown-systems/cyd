@@ -596,6 +596,13 @@ export class AccountXViewModel extends BaseViewModel {
         // Load the URL
         await this.loadURLWithRateLimit(tweetItem.url);
 
+        // Check if tweet is already deleted
+        if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+            this.log("archiveSaveTweet", "tweet is already deleted, skipping");
+            this.progress.tweetsArchived += 1;
+            return true;
+        }
+
         // Wait for the tweet to appear
         try {
             await this.waitForSelector('article[tabindex="-1"]', tweetItem.url);
