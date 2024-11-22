@@ -7,7 +7,7 @@ defineProps<{
     isPaused: boolean
 }>();
 
-const emit = defineEmits(['onPause', 'onResume', 'onCancel']);
+const emit = defineEmits(['onPause', 'onResume', 'onCancel', 'onReportBug']);
 
 const runningIconIndex = ref(0);
 const runningIcons = [
@@ -73,14 +73,19 @@ onBeforeUnmount(() => {
             </div>
         </div>
         <div class="d-flex justify-content-center mt-2">
-            <button v-if="!isPaused" class="btn btn-secondary btn-sm" @click="emit('onPause')">
+            <button v-if="!isPaused" class="btn btn-outline-secondary btn-sm" @click="emit('onPause')">
                 <i class="fa-solid fa-pause" /> Pause
             </button>
             <button v-if="isPaused" class="btn btn-primary btn-sm" @click="emit('onResume')">
                 <i class="fa-solid fa-play" /> Resume
             </button>
-            <button class="btn btn-danger btn-sm btn-cancel" @click="emit('onCancel')">
+            <button class="btn btn-outline-danger btn-sm btn-cancel" @click="emit('onCancel')">
                 <i class="fa-regular fa-circle-xmark" /> Cancel
+            </button>
+        </div>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-link btn-sm" @click="emit('onReportBug')">
+                Report a Bug
             </button>
         </div>
     </div>

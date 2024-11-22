@@ -183,16 +183,16 @@ export class AccountXViewModel extends BaseViewModel {
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
-            this.log("loadURLWithRateLimit", "resetting rate limit info and loading the URL");
-
             // Reset the rate limit checker
             await window.electron.X.resetRateLimitInfo(this.account.id);
 
             // Load the URL
             try {
                 await this.loadURL(url);
+                this.log("loadURLWithRateLimit", "URL loaded successfully");
             } catch (e) {
                 if (e instanceof InternetDownError) {
+                    this.log("loadURLWithRateLimit", "internet is down");
                     this.emitter?.emit(`cancel-automation-${this.account.id}`);
                 } else {
                     await this.error(AutomationErrorType.x_loadURLError, {
@@ -204,8 +204,6 @@ export class AccountXViewModel extends BaseViewModel {
                 }
                 break;
             }
-            await this.sleep(1000);
-            await this.waitForLoadingToFinish();
 
             // Did the URL change?
             if (!redirectOk) {
@@ -224,8 +222,10 @@ export class AccountXViewModel extends BaseViewModel {
                     }
 
                     if (changedToUnexpected) {
-                        this.log("loadURLWithRateLimit", `URL changed: ${this.webview.getURL()}`);
+                        this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview.getURL()}`);
                         throw new URLChangedError(url, this.webview.getURL());
+                    } else {
+                        this.log("loadURLWithRateLimit", `expected, URL change to ${this.webview.getURL()}`);
                     }
                 }
             }
@@ -235,10 +235,13 @@ export class AccountXViewModel extends BaseViewModel {
             if (this.rateLimitInfo.isRateLimited) {
                 await this.waitForRateLimit();
                 this.log("loadURLWithRateLimit", "waiting for rate limit finished, trying to load the URL again");
-            } else {
-                this.log("loadURLWithRateLimit", "finished loading URL");
-                break;
+                // Continue on the next iteration of the loop to try again
+                continue;
             }
+
+            // Finished successfully so break out of the loop
+            this.log("loadURLWithRateLimit", "finished loading URL");
+            break;
         }
     }
 

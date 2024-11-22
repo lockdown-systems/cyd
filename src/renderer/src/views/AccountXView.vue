@@ -326,6 +326,11 @@ const onAutomationErrorCancel = () => {
     emit('onRefreshClicked');
 };
 
+const onAutomationErrorResume = () => {
+    console.log('Resuming after after error');
+    accountXViewModel.value?.resume();
+};
+
 const onCancelAutomation = () => {
     console.log('Cancelling automation');
     emit('onRefreshClicked');
@@ -357,6 +362,23 @@ const openArchiveFolder = async () => {
 const openArchive = async () => {
     await window.electron.X.openFolder(props.account.id, "index.html");
 };
+
+const onReportBug = async () => {
+    console.log('Report bug clicked');
+
+    // Pause
+    accountXViewModel.value?.pause();
+
+    // Submit error report
+    if (accountXViewModel.value !== null) {
+        await accountXViewModel.value.error(AutomationErrorType.X_manualBugReport, {
+            message: 'User is manually reporting a bug',
+            state: accountXViewModel.value.saveState()
+        }, {
+            currentURL: accountXViewModel.value.webview.getURL()
+        });
+    }
+}
 
 // Wizard functions
 
@@ -682,6 +704,7 @@ onMounted(async () => {
     // Define automation error handlers on the global emitter for this account
     emitter?.on(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
+    emitter?.on(`automation-error-${props.account.id}-resume`, onAutomationErrorResume);
 });
 
 onUnmounted(async () => {
@@ -726,7 +749,7 @@ onUnmounted(async () => {
                 <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
                     :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
                     @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()"
-                    @on-cancel="emit('onRefreshClicked')" />
+                    @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
             </div>
         </div>
 

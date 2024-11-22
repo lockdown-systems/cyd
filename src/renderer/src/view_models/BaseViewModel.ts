@@ -252,6 +252,7 @@ export class BaseViewModel {
     }
 
     async waitForLoadingToFinish(timeout: number = DEFAULT_TIMEOUT) {
+        this.log("waitForLoadingToFinish", "waiting for loading to finish");
         const startTime = Date.now();
         do {
             await new Promise(resolve => setTimeout(resolve, 200));
@@ -260,6 +261,7 @@ export class BaseViewModel {
                 return;
             }
         } while (this.getWebview()?.isLoading());
+        this.log("waitForLoadingToFinish", "loading finished");
     }
 
     async sleep(ms: number) {
@@ -374,7 +376,7 @@ export class BaseViewModel {
     async checkInternetConnectivity(): Promise<boolean> {
         const testURL = this.api.apiURL + "/health";
         if (!testURL) {
-            console.error("checkInternetConnectivity", "apiURL is not set");
+            this.log("checkInternetConnectivity", "apiURL is not set");
             return false;
         }
         try {
@@ -382,13 +384,13 @@ export class BaseViewModel {
             this.log("checkInternetConnectivity", "internet is up");
             return true;
         } catch (error) {
-            console.error("checkInternetConnectivity", "internet is down", (error as Error).toString());
+            this.log("checkInternetConnectivity", `internet is down: ${(error as Error).toString()}`);
             return false;
         }
     }
 
     async loadBlank() {
-        this.log("AccountXViewModel.loadBlank");
+        this.log("loadBlank");
         const webview = this.getWebview();
         if (webview) {
             // Note: We need to wait for the page to finish loading before and after this to prevent
@@ -401,21 +403,21 @@ export class BaseViewModel {
     }
 
     async loadURL(url: string) {
-        this.log("AccountXViewModel.loadURL", url);
         const webview = this.getWebview();
         if (webview) {
             let tries = 0;
             // eslint-disable-next-line no-constant-condition
             while (true) {
                 try {
+                    this.log("loadURL", `try #${tries}, ${url}`);
                     await webview.loadURL(url);
                     // Sleep 2 seconds after loading each URL, to make everything more stable.
                     // The X rate limits are intense, so this should not slow anything down.
                     this.sleep(2000);
+                    this.log("loadURL", "URL loaded successfully");
                     break;
                 } catch (error) {
-                    console.error(`Failed to load URL: ${error}`);
-
+                    this.log("loadURL", ["Failed to load URL", error]);
                     tries++;
                     if (tries >= 3) {
                         if (await this.checkInternetConnectivity()) {
@@ -431,6 +433,8 @@ export class BaseViewModel {
                     }
                 }
             }
+        } else {
+            this.log("loadURL", "webview is null");
         }
         await this.waitForLoadingToFinish();
     }

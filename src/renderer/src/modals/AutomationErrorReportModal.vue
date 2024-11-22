@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
-import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
+import { AutomationErrorTypeToMessage, AutomationErrorDetails, AutomationErrorType } from '../automation_errors';
 import { PlausibleEvents } from "../types";
 import CydAPIClient from '../../../cyd-api-client';
 import { PostAutomationErrorReportAPIRequest } from '../../../cyd-api-client';
@@ -51,6 +51,16 @@ const sensitiveContextData = () => {
     return "";
 };
 
+// User description
+
+const userDescription = ref('');
+
+const onUserDescriptionChange = (_event: Event) => {
+    if (details.value) {
+        details.value.errorReportData.userDescription = userDescription.value;
+    }
+};
+
 const showDetailsYesText = "Hide information included in report";
 const showDetailsNoText = "Show information included in report";
 const showDetailsLabel = ref(showDetailsNoText);
@@ -68,6 +78,12 @@ const toggleShowDetails = () => {
 const shouldRetry = async () => {
     if (!details.value) {
         console.error("No details provided for automation error report");
+        return;
+    }
+
+    // If this is a manual action, instead of retrying, we should just resume
+    if (details.value.automationErrorType == AutomationErrorType.X_manualBugReport) {
+        emitter.emit(`automation-error-${details.value?.accountID}-resume`);
         return;
     }
 
@@ -176,7 +192,7 @@ onUnmounted(() => {
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        Submit an automation error report
+                        Submit an error report
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
                         @click="doNotSubmitReport" />
@@ -187,6 +203,11 @@ onUnmounted(() => {
                             <h5 class="mb-3">
                                 {{ automationErrorType() }}
                             </h5>
+                            <div class="mb-3">
+                                <textarea v-model="userDescription" class="form-control w-100"
+                                    placeholder="Describe what happened (optional)" aria-label="Describe what happened"
+                                    @input="onUserDescriptionChange" />
+                            </div>
                             <div class="mb-3 form-check">
                                 <input id="includeSensitiveData" v-model="includeSensitiveData" type="checkbox"
                                     class="form-check-input">
