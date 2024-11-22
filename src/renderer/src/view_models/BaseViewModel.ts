@@ -251,9 +251,14 @@ export class BaseViewModel {
         await this.waitForPause();
     }
 
-    async waitForLoadingToFinish() {
+    async waitForLoadingToFinish(timeout: number = DEFAULT_TIMEOUT) {
+        const startTime = Date.now();
         do {
             await new Promise(resolve => setTimeout(resolve, 200));
+            if (Date.now() - startTime >= timeout) {
+                this.log("waitForLoadingToFinish", "timeout reached while waiting for loading to finish");
+                return;
+            }
         } while (this.getWebview()?.isLoading());
     }
 
