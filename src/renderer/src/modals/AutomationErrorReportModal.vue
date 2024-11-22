@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
-import { AutomationErrorTypeToMessage, AutomationErrorDetails } from '../automation_errors';
+import { AutomationErrorTypeToMessage, AutomationErrorDetails, AutomationErrorType } from '../automation_errors';
 import { PlausibleEvents } from "../types";
 import CydAPIClient from '../../../cyd-api-client';
 import { PostAutomationErrorReportAPIRequest } from '../../../cyd-api-client';
@@ -78,6 +78,12 @@ const toggleShowDetails = () => {
 const shouldRetry = async () => {
     if (!details.value) {
         console.error("No details provided for automation error report");
+        return;
+    }
+
+    // If this is a manual action, instead of retrying, we should just resume
+    if (details.value.automationErrorType == AutomationErrorType.X_manualBugReport) {
+        emitter.emit(`automation-error-${details.value?.accountID}-resume`);
         return;
     }
 

@@ -326,6 +326,11 @@ const onAutomationErrorCancel = () => {
     emit('onRefreshClicked');
 };
 
+const onAutomationErrorResume = () => {
+    console.log('Resuming after after error');
+    accountXViewModel.value?.resume();
+};
+
 const onCancelAutomation = () => {
     console.log('Cancelling automation');
     emit('onRefreshClicked');
@@ -699,6 +704,7 @@ onMounted(async () => {
     // Define automation error handlers on the global emitter for this account
     emitter?.on(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
+    emitter?.on(`automation-error-${props.account.id}-resume`, onAutomationErrorResume);
 });
 
 onUnmounted(async () => {
