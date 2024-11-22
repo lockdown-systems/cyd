@@ -208,14 +208,17 @@ export class AccountXViewModel extends BaseViewModel {
             // Did the URL change?
             if (!redirectOk) {
                 this.log("loadURLWithRateLimit", "checking if URL changed");
-                const newURL = this.webview.getURL();
-                if (newURL != url) {
+                const newURL = new URL(this.webview.getURL());
+                const originalURL = new URL(url);
+                // Check if the URL has changed, ignoring query strings
+                // e.g. a change from https://x.com/login to https://x.com/login?mx=2 is ok
+                if (newURL.origin + newURL.pathname !== originalURL.origin + originalURL.pathname) {
                     let changedToUnexpected = true;
                     for (const expectedURL of expectedURLs) {
-                        if (typeof expectedURL === 'string' && newURL.startsWith(expectedURL)) {
+                        if (typeof expectedURL === 'string' && newURL.toString().startsWith(expectedURL)) {
                             changedToUnexpected = false;
                             break;
-                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL)) {
+                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL.toString())) {
                             changedToUnexpected = false;
                             break;
                         }
