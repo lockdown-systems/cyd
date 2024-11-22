@@ -596,19 +596,23 @@ export class AccountXViewModel extends BaseViewModel {
         // Load the URL
         await this.loadURLWithRateLimit(tweetItem.url);
 
+        // Check if tweet is already deleted
+        let alreadyDeleted = false;
+        await this.sleep(200);
+        if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+            this.log("archiveSaveTweet", "tweet is already deleted");
+            alreadyDeleted = true;
+        }
+
         // Wait for the tweet to appear
-        try {
-            await this.waitForSelector('article[tabindex="-1"]', tweetItem.url);
-            // Wait another second for replies, etc. to load
-            await this.sleep(1000);
-        } catch (e) {
-            await this.error(AutomationErrorType.x_runJob_archiveTweets_WaitForSelectorError, {
-                exception: (e as Error).toString()
-            }, {
-                tweetItem: tweetItem,
-                currentURL: this.webview.getURL()
-            })
-            return false;
+        if (!alreadyDeleted) {
+            try {
+                await this.waitForSelector('article[tabindex="-1"]', tweetItem.url, 10000);
+                // Wait another second for replies, etc. to load
+                await this.sleep(1000);
+            } catch (e) {
+                this.log("archiveSaveTweet", ["selector never appeared, but saving anyway", e]);
+            }
         }
 
         // Save the page
