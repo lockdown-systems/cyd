@@ -390,7 +390,7 @@ export class BaseViewModel {
     }
 
     async loadBlank() {
-        this.log("AccountXViewModel.loadBlank");
+        this.log("loadBlank");
         const webview = this.getWebview();
         if (webview) {
             // Note: We need to wait for the page to finish loading before and after this to prevent
@@ -409,15 +409,15 @@ export class BaseViewModel {
             // eslint-disable-next-line no-constant-condition
             while (true) {
                 try {
-                    this.log("AccountXViewModel.loadURL", `try #${tries}, ${url}`);
+                    this.log("loadURL", `try #${tries}, ${url}`);
                     await webview.loadURL(url);
                     // Sleep 2 seconds after loading each URL, to make everything more stable.
                     // The X rate limits are intense, so this should not slow anything down.
                     this.sleep(2000);
-                    this.log("AccountXViewModel.loadURL", "URL loaded successfully");
+                    this.log("loadURL", "URL loaded successfully");
                     break;
                 } catch (error) {
-                    this.log("AccountXViewModel.loadURL", ["Failed to load URL", error]);
+                    this.log("loadURL", ["Failed to load URL", error]);
                     tries++;
                     if (tries >= 3) {
                         if (await this.checkInternetConnectivity()) {
@@ -433,6 +433,8 @@ export class BaseViewModel {
                     }
                 }
             }
+        } else {
+            this.log("loadURL", "webview is null");
         }
         await this.waitForLoadingToFinish();
     }
