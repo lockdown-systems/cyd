@@ -605,17 +605,11 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Wait for the tweet to appear
         try {
-            await this.waitForSelector('article[tabindex="-1"]', tweetItem.url);
+            await this.waitForSelector('article[tabindex="-1"]', tweetItem.url, 10000);
             // Wait another second for replies, etc. to load
             await this.sleep(1000);
         } catch (e) {
-            await this.error(AutomationErrorType.x_runJob_archiveTweets_WaitForSelectorError, {
-                exception: (e as Error).toString()
-            }, {
-                tweetItem: tweetItem,
-                currentURL: this.webview.getURL()
-            })
-            return false;
+            this.log("archiveSaveTweet", ["selector never appeared, but saving anyway", e]);
         }
 
         // Save the page
