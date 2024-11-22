@@ -83,8 +83,27 @@ export type GetUserInvoicesAPIResponse = {
 };
 
 // API models for POST /user/premium
+export type PostUserPremiumAPIRequest = {
+    promotion_code: string;
+};
+
 export type PostUserPremiumAPIResponse = {
     redirect_url: string;
+};
+
+// API models for POST /user/coupon-code
+export type PostUserCouponCodeAPIRequest = {
+    promotion_code: string;
+};
+
+export type PostUserCouponCodeAPIResponse = {
+    valid: boolean;
+    currency?: string;
+    duration?: string;
+    duration_in_months?: number;
+    amount_off?: number;
+    percent_off?: number;
+    name?: string;
 };
 
 // API models for GET /user/stats
@@ -404,13 +423,15 @@ export default class CydAPIClient {
         }
     }
 
-    async postUserPremium(): Promise<PostUserPremiumAPIResponse | APIErrorResponse> {
-        console.log("POST /user/premium");
+    async postUserPremium(promotion_code: string): Promise<PostUserPremiumAPIResponse | APIErrorResponse> {
+        console.log(`POST /user/premium ${promotion_code}`);
         if (!await this.validateAPIToken()) {
             return this.returnError("Failed to get a new API token.")
         }
         try {
-            const response = await this.fetchAuthenticated("POST", `${this.apiURL}/user/premium`, null);
+            const response = await this.fetchAuthenticated("POST", `${this.apiURL}/user/premium`, {
+                promotion_code: promotion_code
+            });
             if (response.status != 200) {
                 return this.returnError("Failed to upgrade user to premium.", response.status)
             }
@@ -434,6 +455,25 @@ export default class CydAPIClient {
             return true;
         } catch {
             return this.returnError("Failed to update subscription. Maybe the server is down?")
+        }
+    }
+
+    async postUserCouponCode(promotion_code: string): Promise<PostUserCouponCodeAPIResponse | APIErrorResponse> {
+        console.log("POST /user/coupon-code");
+        if (!await this.validateAPIToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+        try {
+            const response = await this.fetchAuthenticated("POST", `${this.apiURL}/user/coupon-code`, {
+                promotion_code: promotion_code
+            });
+            if (response.status != 200) {
+                return this.returnError("Failed to apply coupon code.", response.status)
+            }
+            const data: PostUserCouponCodeAPIResponse = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to apply coupon code. Maybe the server is down?")
         }
     }
 
