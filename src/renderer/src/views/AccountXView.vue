@@ -355,6 +355,10 @@ const preventSleepLearnMore = async () => {
     await openPreventSleepURL();
 };
 
+const runAgainLearnMore = async () => {
+    await window.electron.openURL('https://cyd.social/docs-run-again');
+};
+
 const openArchiveFolder = async () => {
     await window.electron.X.openFolder(props.account.id, "");
 };
@@ -867,7 +871,9 @@ onUnmounted(async () => {
                                     You might need to run Cyd more than once.
                                 </p>
                                 <p class="alert-details mb-0">
-                                    If Cyd doesn't find or delete all of your data the first time, try running it again.
+                                    X might only let you access your most recent ~2,000 tweets or likes. If
+                                    Cyd doesn't find or delete all of your data the first time, try running it again. <a
+                                        href="#" @click="runAgainLearnMore">Learn more.</a>
                                 </p>
                             </div>
                             <div class="alert alert-info" role="alert">
