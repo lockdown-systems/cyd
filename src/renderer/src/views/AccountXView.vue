@@ -1219,7 +1219,8 @@ onUnmounted(async () => {
                                     </div>
                                     <div class="indent">
                                         <small class="form-text text-muted">
-                                            Delete data based on what Cyd has already saved in your local database.
+                                            Delete data based on what Cyd has already saved in your local database. If
+                                            you don't check this box, Cyd will save a new copy of your data.
                                         </small>
                                     </div>
                                 </div>
