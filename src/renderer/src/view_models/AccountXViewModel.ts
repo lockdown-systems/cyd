@@ -1225,12 +1225,14 @@ Please wait while I index all the messages from each conversation...`;
         this.log("runJobArchiveBuild", ["progressInfo", JSON.parse(JSON.stringify(this.progressInfo))]);
         this.postXProgresResp = await this.api.postXProgress({
             account_uuid: this.progressInfo.accountUUID,
+            total_tweets_indexed: this.progressInfo.totalTweetsIndexed,
             total_tweets_archived: this.progressInfo.totalTweetsArchived,
-            total_messages_indexed: this.progressInfo.totalMessagesIndexed,
+            total_retweets_indexed: this.progressInfo.totalRetweetsIndexed,
+            total_likes_indexed: this.progressInfo.totalLikesIndexed,
+            total_unknown_indexed: this.progressInfo.totalUnknownIndexed,
             total_tweets_deleted: this.progressInfo.totalTweetsDeleted,
             total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
             total_likes_deleted: this.progressInfo.totalLikesDeleted,
-            total_conversations_deleted: this.progressInfo.totalConversationsDeleted,
         }, this.deviceInfo?.valid ? true : false)
         if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
             // Silently log the error and continue
