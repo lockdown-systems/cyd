@@ -183,16 +183,16 @@ export class AccountXViewModel extends BaseViewModel {
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
-            this.log("loadURLWithRateLimit", "resetting rate limit info and loading the URL");
-
             // Reset the rate limit checker
             await window.electron.X.resetRateLimitInfo(this.account.id);
 
             // Load the URL
             try {
                 await this.loadURL(url);
+                this.log("loadURLWithRateLimit", "URL loaded successfully");
             } catch (e) {
                 if (e instanceof InternetDownError) {
+                    this.log("loadURLWithRateLimit", "internet is down");
                     this.emitter?.emit(`cancel-automation-${this.account.id}`);
                 } else {
                     await this.error(AutomationErrorType.x_loadURLError, {
@@ -204,28 +204,31 @@ export class AccountXViewModel extends BaseViewModel {
                 }
                 break;
             }
-            await this.sleep(1000);
-            await this.waitForLoadingToFinish();
 
             // Did the URL change?
             if (!redirectOk) {
                 this.log("loadURLWithRateLimit", "checking if URL changed");
-                const newURL = this.webview.getURL();
-                if (newURL != url) {
+                const newURL = new URL(this.webview.getURL());
+                const originalURL = new URL(url);
+                // Check if the URL has changed, ignoring query strings
+                // e.g. a change from https://x.com/login to https://x.com/login?mx=2 is ok
+                if (newURL.origin + newURL.pathname !== originalURL.origin + originalURL.pathname) {
                     let changedToUnexpected = true;
                     for (const expectedURL of expectedURLs) {
-                        if (typeof expectedURL === 'string' && newURL.startsWith(expectedURL)) {
+                        if (typeof expectedURL === 'string' && newURL.toString().startsWith(expectedURL)) {
                             changedToUnexpected = false;
                             break;
-                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL)) {
+                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL.toString())) {
                             changedToUnexpected = false;
                             break;
                         }
                     }
 
                     if (changedToUnexpected) {
-                        this.log("loadURLWithRateLimit", `URL changed: ${this.webview.getURL()}`);
+                        this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview.getURL()}`);
                         throw new URLChangedError(url, this.webview.getURL());
+                    } else {
+                        this.log("loadURLWithRateLimit", `expected, URL change to ${this.webview.getURL()}`);
                     }
                 }
             }
@@ -235,10 +238,13 @@ export class AccountXViewModel extends BaseViewModel {
             if (this.rateLimitInfo.isRateLimited) {
                 await this.waitForRateLimit();
                 this.log("loadURLWithRateLimit", "waiting for rate limit finished, trying to load the URL again");
-            } else {
-                this.log("loadURLWithRateLimit", "finished loading URL");
-                break;
+                // Continue on the next iteration of the loop to try again
+                continue;
             }
+
+            // Finished successfully so break out of the loop
+            this.log("loadURLWithRateLimit", "finished loading URL");
+            break;
         }
     }
 
@@ -590,19 +596,23 @@ export class AccountXViewModel extends BaseViewModel {
         // Load the URL
         await this.loadURLWithRateLimit(tweetItem.url);
 
+        // Check if tweet is already deleted
+        let alreadyDeleted = false;
+        await this.sleep(200);
+        if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
+            this.log("archiveSaveTweet", "tweet is already deleted");
+            alreadyDeleted = true;
+        }
+
         // Wait for the tweet to appear
-        try {
-            await this.waitForSelector('article[tabindex="-1"]', tweetItem.url);
-            // Wait another second for replies, etc. to load
-            await this.sleep(1000);
-        } catch (e) {
-            await this.error(AutomationErrorType.x_runJob_archiveTweets_WaitForSelectorError, {
-                exception: (e as Error).toString()
-            }, {
-                tweetItem: tweetItem,
-                currentURL: this.webview.getURL()
-            })
-            return false;
+        if (!alreadyDeleted) {
+            try {
+                await this.waitForSelector('article[tabindex="-1"]', tweetItem.url, 10000);
+                // Wait another second for replies, etc. to load
+                await this.sleep(1000);
+            } catch (e) {
+                this.log("archiveSaveTweet", ["selector never appeared, but saving anyway", e]);
+            }
         }
 
         // Save the page
@@ -1215,12 +1225,14 @@ Please wait while I index all the messages from each conversation...`;
         this.log("runJobArchiveBuild", ["progressInfo", JSON.parse(JSON.stringify(this.progressInfo))]);
         this.postXProgresResp = await this.api.postXProgress({
             account_uuid: this.progressInfo.accountUUID,
+            total_tweets_indexed: this.progressInfo.totalTweetsIndexed,
             total_tweets_archived: this.progressInfo.totalTweetsArchived,
-            total_messages_indexed: this.progressInfo.totalMessagesIndexed,
+            total_retweets_indexed: this.progressInfo.totalRetweetsIndexed,
+            total_likes_indexed: this.progressInfo.totalLikesIndexed,
+            total_unknown_indexed: this.progressInfo.totalUnknownIndexed,
             total_tweets_deleted: this.progressInfo.totalTweetsDeleted,
             total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
             total_likes_deleted: this.progressInfo.totalLikesDeleted,
-            total_conversations_deleted: this.progressInfo.totalConversationsDeleted,
         }, this.deviceInfo?.valid ? true : false)
         if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
             // Silently log the error and continue

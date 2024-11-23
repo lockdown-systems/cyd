@@ -1,5 +1,5 @@
 export enum AutomationErrorType {
-
+    X_manualBugReport = "X_manualBugReport",
     X_login_FailedToGetUsername = "X_login_FailedToGetUsername",
     X_login_URLChanged = "X_login_URLChanged",
     X_login_WaitingForURLFailed = "X_login_WaitingForURLFailed",
@@ -59,6 +59,7 @@ export enum AutomationErrorType {
 }
 
 export const AutomationErrorTypeToMessage = {
+    [AutomationErrorType.X_manualBugReport]: "You're manually reporting a bug",
     [AutomationErrorType.X_login_FailedToGetUsername]: "Failed to get username on login",
     [AutomationErrorType.X_login_URLChanged]: "URL changed on login",
     [AutomationErrorType.X_login_WaitingForURLFailed]: "Waiting for URL failed on login",
