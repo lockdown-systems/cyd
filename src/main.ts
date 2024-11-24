@@ -158,12 +158,20 @@ async function createWindow() {
 
     powerMonitor.on('suspend', () => {
         log.info('System is suspending');
-        win.webContents.send('powerMonitor:suspend');
+        try {
+            win.webContents.send('powerMonitor:suspend');
+        } catch (error) {
+            log.error('Failed to send powerMonitor:suspend to renderer:', error);
+        }
     });
 
     powerMonitor.on('resume', () => {
         log.info('System has resumed');
-        win.webContents.send('powerMonitor:resume');
+        try {
+            win.webContents.send('powerMonitor:resume');
+        } catch (error) {
+            log.error('Failed to send powerMonitor:resume to renderer:', error);
+        }
     });
 
     // IPC events
