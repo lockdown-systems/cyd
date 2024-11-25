@@ -423,6 +423,9 @@ export class XAccountController {
                 responseData.status == 200
             ) {
                 const body: XAPIAll = JSON.parse(responseData.body);
+                if (!body.globalObjects || !body.globalObjects.users) {
+                    continue;
+                }
 
                 // Loop through the users
                 Object.values(body.globalObjects.users).forEach((user: XAPIUser) => {

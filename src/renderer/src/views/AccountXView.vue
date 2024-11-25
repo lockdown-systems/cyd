@@ -400,14 +400,12 @@ const wizardNextText = ref('Continue');
 const wizardBackText = ref('Back');
 
 const wizardStartUpdateButtonsText = async () => {
-    if (importFromArchive.value) {
-        wizardNextText.value = 'Continue to Import Options';
-    } else if (saveMyData.value) {
+    if (saveMyData.value) {
         wizardNextText.value = 'Continue to Save Options';
     } else if (deleteMyData.value) {
         wizardNextText.value = 'Continue to Delete Options';
     } else {
-        wizardNextText.value = 'Choose Import, Save or Delete to Continue';
+        wizardNextText.value = 'Choose Save or Delete to Continue';
     }
 }
 
@@ -482,9 +480,7 @@ const wizardDeleteReviewUpdateButtonsText = async () => {
 const wizardStartNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
-    if (importFromArchive.value) {
-        accountXViewModel.value.state = State.WizardImportStart;
-    } else if (saveMyData.value) {
+    if (saveMyData.value) {
         accountXViewModel.value.state = State.WizardSaveOptions;
     } else if (deleteMyData.value) {
         accountXViewModel.value.state = State.WizardDeleteOptions;
@@ -869,36 +865,11 @@ onUnmounted(async () => {
                         <form @submit.prevent>
                             <div class="mb-3">
                                 <div class="form-check">
-                                    <input id="importFromArchive" v-model="importFromArchive" type="checkbox"
-                                        class="form-check-input" @change="wizardStartUpdateButtonsText">
-                                    <label class="form-check-label" for="importFromArchive">
-                                        Import an X archive
-                                        <span class="ms-2 text-muted">(recommended)</span>
-                                    </label>
-                                </div>
-                                <div class="indent">
-                                    <small class="form-text text-muted">
-                                        Cyd needs a local database of your X data to delete it. If you have a lot of
-                                        data, importing is much faster than letting Cyd create the database from
-                                        scratch.
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
                                     <input id="saveMyData" v-model="saveMyData" type="checkbox" class="form-check-input"
                                         @change="wizardStartUpdateButtonsText">
                                     <label class="form-check-label" for="saveMyData">
-                                        Create a local database from scrach
+                                        Save my data
                                     </label>
-                                </div>
-                                <div class="indent">
-                                    <small class="form-text text-muted">
-                                        Create a local database from scratch by scrolling through your profile. This
-                                        might not get all of your data.
-                                        <a href="#" @click="openURL('https://cyd.social/docs-save-data-limits')">Read
-                                            more</a>.
-                                    </small>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -907,21 +878,14 @@ onUnmounted(async () => {
                                         class="form-check-input" @change="wizardStartUpdateButtonsText">
                                     <label class="form-check-label" for="deleteMyData">
                                         Delete my data
-                                        <span class="ms-2 text-muted">(recommended)</span>
                                     </label>
                                     <span class="premium badge badge-primary">Premium</span>
-                                </div>
-                                <div class="indent">
-                                    <small class="form-text text-muted">
-                                        Delete my tweets, retweets, likes, and/or direct messages.
-                                    </small>
                                 </div>
                             </div>
 
                             <div class="buttons">
                                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(importFromArchive || saveMyData || deleteMyData)"
-                                    @click="wizardStartNextClicked">
+                                    :disabled="!(saveMyData || deleteMyData)" @click="wizardStartNextClicked">
                                     <i class="fa-solid fa-forward" />
                                     {{ wizardNextText }}
                                 </button>
