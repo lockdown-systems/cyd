@@ -45,6 +45,10 @@ export type XAccount = {
     deleteDMs: boolean;
     deleteFromDatabase: boolean;
     chanceToReview: boolean;
+    followingCount: number;
+    followersCount: number;
+    tweetsCount: number;
+    likesCount: number;
 };
 
 // X models

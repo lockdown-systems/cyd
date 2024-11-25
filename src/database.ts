@@ -109,9 +109,13 @@ export const runMainMigrations = () => {
             ]
         },
         {
-            name: "add importFromArchive to xAccount",
+            name: "add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount",
             sql: [
-                `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`
+                `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN followingCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN followersCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT 0;`,
             ]
         }
     ]);
@@ -167,6 +171,10 @@ interface XAccountRow {
     deleteDMs: boolean;
     deleteFromDatabase: boolean;
     chanceToReview: boolean;
+    followingCount: number;
+    followersCount: number;
+    tweetsCount: number;
+    likesCount: number;
 }
 
 // Utils
@@ -253,7 +261,11 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
         deleteFromDatabase: !!row.deleteFromDatabase,
-        chanceToReview: !!row.chanceToReview
+        chanceToReview: !!row.chanceToReview,
+        followingCount: row.followingCount,
+        followersCount: row.followersCount,
+        tweetsCount: row.tweetsCount,
+        likesCount: row.likesCount
     };
 }
 
@@ -289,7 +301,11 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
             deleteFromDatabase: !!row.deleteFromDatabase,
-            chanceToReview: !!row.chanceToReview
+            chanceToReview: !!row.chanceToReview,
+            followingCount: row.followingCount,
+            followersCount: row.followersCount,
+            tweetsCount: row.tweetsCount,
+            likesCount: row.likesCount
         });
     }
     return accounts;
@@ -333,7 +349,11 @@ export const saveXAccount = (account: XAccount) => {
             deleteLikesDaysOld = ?,
             deleteDMs = ?,
             deleteFromDatabase = ?,
-            chanceToReview = ?
+            chanceToReview = ?,
+            followingCount = ?,
+            followersCount = ?,
+            tweetsCount = ?,
+            likesCount = ?
         WHERE id = ?
     `, [
         account.username,
@@ -359,6 +379,10 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteDMs ? 1 : 0,
         account.deleteFromDatabase ? 1 : 0,
         account.chanceToReview ? 1 : 0,
+        account.followingCount,
+        account.followersCount,
+        account.tweetsCount,
+        account.likesCount,
         account.id
     ]);
 }

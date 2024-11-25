@@ -175,6 +175,12 @@ const chanceToReview = ref(true);
 
 const importFromArchivePath = ref('');
 
+// User stats
+const followingCount = ref(0);
+const followersCount = ref(0);
+const tweetsCount = ref(0);
+const likesCount = ref(0);
+
 const importFromArchiveBrowserClicked = async () => {
     const path = await window.electron.showSelectFolderDialog();
     if (path) {
@@ -217,6 +223,10 @@ const updateSettings = async () => {
             deleteDMs: deleteDMs.value,
             deleteFromDatabase: deleteFromDatabase.value,
             chanceToReview: chanceToReview.value,
+            followingCount: followingCount.value,
+            followersCount: followersCount.value,
+            tweetsCount: tweetsCount.value,
+            likesCount: likesCount.value,
         }
     };
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
@@ -723,6 +733,10 @@ onMounted(async () => {
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = props.account.xAccount.deleteDMs;
         chanceToReview.value = props.account.xAccount.chanceToReview;
+        followingCount.value = props.account.xAccount.followingCount;
+        followersCount.value = props.account.xAccount.followersCount;
+        tweetsCount.value = props.account.xAccount.tweetsCount;
+        likesCount.value = props.account.xAccount.likesCount;
     }
 
     if (webviewComponent.value !== null) {
