@@ -294,10 +294,3 @@ export function emptyXArchiveInfo(): XArchiveInfo {
         indexHTMLExists: false
     }
 }
-
-export type XUserStats = {
-    followingCount: number;
-    followersCount: number;
-    tweetsCount: number;
-    likesCount: number;
-};

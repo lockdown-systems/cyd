@@ -27,8 +27,7 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo,
-    XUserStats
+    XArchiveInfo, emptyXArchiveInfo
 } from './shared_types'
 import {
     runMigrations,
@@ -403,16 +402,13 @@ export class XAccountController {
     }
 
     // Parse all.json and returns stats about the user
-    async indexParseAllJSON(): Promise<XUserStats> {
+    async indexParseAllJSON(): Promise<XAccount> {
+        if (!this.account) {
+            throw new Error("XAccountController.indexParseAllJSON: account not found");
+        }
+
         await this.mitmController.clearProcessed();
         log.info(`XAccountController.indexParseAllJSON: parsing ${this.mitmController.responseData.length} responses`);
-
-        const userStats: XUserStats = {
-            followingCount: 0,
-            followersCount: 0,
-            tweetsCount: 0,
-            likesCount: 0,
-        };
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             const responseData = this.mitmController.responseData[i];
@@ -432,10 +428,12 @@ export class XAccountController {
                 Object.values(body.globalObjects.users).forEach((user: XAPIUser) => {
                     // If it's the logged in user, get the stats
                     if (user.screen_name == this.account?.username) {
-                        userStats.followingCount = user.friends_count;
-                        userStats.followersCount = user.followers_count;
-                        userStats.tweetsCount = user.statuses_count;
-                        userStats.likesCount = user.favourites_count;
+                        // Update the account
+                        this.account.followingCount = user.friends_count;
+                        this.account.followersCount = user.followers_count;
+                        this.account.tweetsCount = user.statuses_count;
+                        this.account.likesCount = user.favourites_count;
+                        saveXAccount(this.account);
                     }
                 });
             }
@@ -444,7 +442,7 @@ export class XAccountController {
             log.info('XAccountController.indexParseAllJSON: processed', i);
         }
 
-        return userStats;
+        return this.account;
     }
 
     indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
@@ -1674,7 +1672,7 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexParseAllJSON', async (_, accountID: number): Promise<XUserStats> => {
+    ipcMain.handle('X:indexParseAllJSON', async (_, accountID: number): Promise<XAccount> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexParseAllJSON();

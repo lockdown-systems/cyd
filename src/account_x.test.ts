@@ -17,7 +17,7 @@ import {
     XConversationParticipantRow,
     XMessageRow,
 } from './account_x';
-import { XUserStats } from './shared_types'
+import { XAccount } from './shared_types';
 
 // Mock the util module
 vi.mock('./util', () => ({
@@ -695,11 +695,11 @@ test('XAccountController.indexParseAllJSON() should return user stats', async ()
     if (controller.account) {
         controller.account.username = "nexamind91326";
     }
-    const userStats: XUserStats = await controller.indexParseAllJSON();
-    expect(userStats.followingCount).toBe(11);
-    expect(userStats.followersCount).toBe(45);
-    expect(userStats.tweetsCount).toBe(327);
-    expect(userStats.likesCount).toBe(177);
+    const account: XAccount = await controller.indexParseAllJSON();
+    expect(account.followingCount).toBe(11);
+    expect(account.followersCount).toBe(45);
+    expect(account.tweetsCount).toBe(327);
+    expect(account.likesCount).toBe(177);
 })
 
 // Testing the X migrations

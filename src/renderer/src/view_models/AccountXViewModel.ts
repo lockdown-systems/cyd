@@ -11,7 +11,7 @@ import {
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
     XArchiveInfo, emptyXArchiveInfo,
-    XUserStats
+    XAccount
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
@@ -527,8 +527,8 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.X.indexStop(this.account.id);
 
         // Get user stats
-        const userStats: XUserStats = await window.electron.X.indexParseAllJSON(this.account.id);
-        console.log("userStats", userStats);
+        const account: XAccount = await window.electron.X.indexParseAllJSON(this.account.id);
+        console.log("account", account);
         this.pause();
         await this.waitForPause();
 
