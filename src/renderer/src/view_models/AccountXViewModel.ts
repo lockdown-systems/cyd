@@ -20,6 +20,11 @@ export enum State {
     Login = "login",
     WizardStart = "wizardStart",
     WizardStartDisplay = "wizardStartDisplay",
+    WizardImportStart = "WizardImportStart",
+    WizardImportStartDisplay = "WizardImportStartDisplay",
+    WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
+    WizardImportOptions = "WizardImportOptions",
+    WizardImportOptionsDisplay = "WizardImportOptionsDisplay",
     WizardSaveOptions = "wizardSaveOptions",
     WizardSaveOptionsDisplay = "wizardSaveOptionsDisplay",
     WizardDeleteOptions = "wizardDeleteOptions",
@@ -144,6 +149,22 @@ export class AccountXViewModel extends BaseViewModel {
         try {
             this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
             this.log("defineJobs", JSON.parse(JSON.stringify(this.jobs)));
+        } catch (e) {
+            await this.error(AutomationErrorType.x_unknownError, {
+                exception: (e as Error).toString()
+            }, {
+                currentURL: this.webview.getURL()
+            });
+            return;
+        }
+    }
+
+    async defineJobsDownloadArchive() {
+        const jobTypes = ["login", "downloadArchive"];
+
+        try {
+            this.jobs = await window.electron.X.createJobs(this.account.id, jobTypes);
+            this.log("defineJobsDownloadArchive", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
@@ -1974,6 +1995,35 @@ Hang on while I scroll down to your earliest likes.`;
         return true;
     }
 
+    async runJobDownloadArchive(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DOWNLOAD_ARCHIVE, navigator.userAgent);
+
+        this.showBrowser = false;
+        this.showAutomationNotice = false;
+        this.instructions = `
+Follow the instructions below to request your archive from X. You will need to verify your identity with X to download your data.`;
+
+        await this.loadURL("https://x.com/settings/download_your_data");
+
+        // Wait for the user to request the archive
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            // Check the URL
+            const currentURL = this.webview.getURL();
+            if (currentURL == "https://x.com/settings/download_your_data") {
+                if (await this.isSelectorLastDisabled('main div div button')) {
+                    // The request archive button is disabled, which means we have requested the archive
+                    await this.sleep(1000);
+                    break;
+                }
+            }
+            await this.sleep(1000);
+        }
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
     async runJob(jobIndex: number) {
         // Reset logs before each job, so the sensitive context data in error reports will only includes
         // logs from the current job
@@ -2035,6 +2085,10 @@ Hang on while I scroll down to your earliest likes.`;
             case "deleteDMs":
                 await this.runJobDeleteDMs(jobIndex);
                 break;
+
+            case "downloadArchive":
+                await this.runJobDownloadArchive(jobIndex);
+                break;
         }
     }
 
@@ -2044,6 +2098,7 @@ Hang on while I scroll down to your earliest likes.`;
 
         // Temp variables
         let databaseStatsString: string = "";
+        let downloadArchiveInJobs = false;
 
         this.log("run", `running state: ${this.state}`);
         try {
@@ -2067,6 +2122,24 @@ You're signed into **@${this.account.xAccount?.username}** on X. After you answe
 
 **What would you like to do?**`;
                     this.state = State.WizardStartDisplay;
+                    break;
+
+                case State.WizardImportStart:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+Importing your data from an X archive is much faster than me building a local database from scratch. But first, you need to download your data from X.
+
+**Have you already downloaded your archive from X?**`;
+                    this.state = State.WizardImportStartDisplay;
+                    break;
+
+                case State.WizardImportOptions:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+Unzip your X archive and then browse for the folder that it's in below. Then I'll build up a local database of your tweets, retweets, likes, and direct messages from your X archive.`;
+                    this.state = State.WizardImportOptionsDisplay;
                     break;
 
                 case State.WizardSaveOptions:
@@ -2154,8 +2227,20 @@ You can save all your data for free, but you need a Premium plan to delete your 
 
                     await this.refreshDatabaseStats();
 
+                    // See if the jobs include downloadArchives
+                    downloadArchiveInJobs = false;
+                    for (let i = 0; i < this.jobs.length; i++) {
+                        if (this.jobs[i].jobType === "downloadArchive") {
+                            downloadArchiveInJobs = true;
+                            break;
+                        }
+                    }
+
+                    // Determine the next state
                     if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview && this.isDeleteReviewActive) {
                         this.state = State.WizardDeleteReview;
+                    } else if (downloadArchiveInJobs) {
+                        this.state = State.WizardImportDownloadDisplay;
                     } else {
                         this.state = State.FinishedRunningJobs;
                     }

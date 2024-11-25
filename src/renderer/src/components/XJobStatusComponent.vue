@@ -30,6 +30,7 @@ const getStatusIcon = (status: string) => {
 const getJobTypeText = (jobType: string) => {
     const jobTypeTexts: { [key: string]: string } = {
         login: 'Logging in',
+        downloadArchive: 'Downloading archive',
         indexTweets: 'Saving tweets',
         indexLikes: 'Saving likes',
         indexConversations: 'Saving conversations',

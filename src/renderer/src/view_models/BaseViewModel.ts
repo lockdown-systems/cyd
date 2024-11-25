@@ -321,6 +321,19 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
+    async isSelectorLastDisabled(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            if(els.length == 0) { return false; }
+            const lastEl = els[els.length - 1];
+            return lastEl.disabled;
+        })()
+        `;
+        await this.sleep(500);
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
     async countSelectorsFound(selector: string): Promise<number> {
         return await this.getWebview()?.executeJavaScript(`document.querySelectorAll('${selector}').length`);
     }

@@ -50,7 +50,7 @@ export type XAccount = {
 
 export type XJob = {
     id: number | null;
-    jobType: string; // "login", "index", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs"
+    jobType: string; // "login", "index", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs", "downloadArchive"
     status: string; // "pending", "running", "finished", "failed", "canceled"
     scheduledAt: Date;
     startedAt: Date | null;

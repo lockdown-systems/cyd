@@ -37,7 +37,7 @@ import { AutomationErrorType } from '../automation_errors';
 
 import { AccountXViewModel, State, FailureState, XViewModelState } from '../view_models/AccountXViewModel'
 
-import { setAccountRunning, openPreventSleepURL } from '../util';
+import { setAccountRunning, openURL, openPreventSleepURL } from '../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -150,6 +150,7 @@ watch(
 const archivePath = ref('');
 
 // Settings
+const importFromArchive = ref(false);
 const saveMyData = ref(true);
 const deleteMyData = ref(true);
 const archiveTweets = ref(false);
@@ -171,6 +172,15 @@ const deleteDMs = ref(false);
 
 const deleteFromDatabase = ref(false);
 const chanceToReview = ref(true);
+
+const importFromArchivePath = ref('');
+
+const importFromArchiveBrowserClicked = async () => {
+    const path = await window.electron.showSelectFolderDialog();
+    if (path) {
+        importFromArchivePath.value = path;
+    }
+};
 
 const updateSettings = async () => {
     console.log('Updating settings')
@@ -268,6 +278,8 @@ const startStateLoop = async () => {
         // Break out of the state loop if the view model is in a display state
         if (
             accountXViewModel.value?.state === State.WizardStartDisplay ||
+            accountXViewModel.value?.state === State.WizardImportOptionsDisplay ||
+            accountXViewModel.value?.state === State.WizardImportStartDisplay ||
             accountXViewModel.value?.state === State.WizardSaveOptionsDisplay ||
             accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay ||
             accountXViewModel.value?.state === State.WizardReviewDisplay ||
@@ -277,6 +289,9 @@ const startStateLoop = async () => {
         ) {
             if (accountXViewModel.value?.state === State.WizardStartDisplay) {
                 await wizardStartUpdateButtonsText();
+            }
+            if (accountXViewModel.value?.state === State.WizardImportOptionsDisplay) {
+                await wizardImportOptionsUpdateButtonsText();
             }
             if (accountXViewModel?.value.state === State.WizardSaveOptionsDisplay) {
                 await wizardSaveOptionsUpdateButtonsText();
@@ -336,28 +351,12 @@ const onCancelAutomation = () => {
     emit('onRefreshClicked');
 };
 
-const u2fInfoClicked = () => {
-    window.electron.openURL('https://cyd.social/docs-u2f');
-};
-
-const otherTweetsClicked = () => {
-    window.electron.openURL('https://cyd.social/docs-other-tweets');
-};
-
 function formatStatsNumber(num: number): string {
     if (num >= 1000) {
         return (num / 1000).toFixed(1) + 'k';
     }
     return num.toString();
 }
-
-const preventSleepLearnMore = async () => {
-    await openPreventSleepURL();
-};
-
-const runAgainLearnMore = async () => {
-    await window.electron.openURL('https://cyd.social/docs-run-again');
-};
 
 const openArchiveFolder = async () => {
     await window.electron.X.openFolder(props.account.id, "");
@@ -390,13 +389,26 @@ const wizardNextText = ref('Continue');
 const wizardBackText = ref('Back');
 
 const wizardStartUpdateButtonsText = async () => {
+    if (importFromArchive.value) {
+        wizardNextText.value = 'Continue to Import Options';
+    } else if (saveMyData.value) {
+        wizardNextText.value = 'Continue to Save Options';
+    } else if (deleteMyData.value) {
+        wizardNextText.value = 'Continue to Delete Options';
+    } else {
+        wizardNextText.value = 'Choose Import, Save or Delete to Continue';
+    }
+}
+
+const wizardImportOptionsUpdateButtonsText = async () => {
     if (saveMyData.value) {
         wizardNextText.value = 'Continue to Save Options';
     } else if (deleteMyData.value) {
         wizardNextText.value = 'Continue to Delete Options';
     } else {
-        wizardNextText.value = 'Choose Save or Delete to Continue';
+        wizardNextText.value = 'Continue to Review';
     }
+    wizardBackText.value = 'Back';
 }
 
 const wizardSaveOptionsUpdateButtonsText = async () => {
@@ -459,7 +471,9 @@ const wizardDeleteReviewUpdateButtonsText = async () => {
 const wizardStartNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
-    if (saveMyData.value) {
+    if (importFromArchive.value) {
+        accountXViewModel.value.state = State.WizardImportStart;
+    } else if (saveMyData.value) {
         accountXViewModel.value.state = State.WizardSaveOptions;
     } else if (deleteMyData.value) {
         accountXViewModel.value.state = State.WizardDeleteOptions;
@@ -467,7 +481,22 @@ const wizardStartNextClicked = async () => {
     await startStateLoop();
 };
 
-const wizardSaveOptionsBackClicked = async () => {
+const wizardImportStartDownloadClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    await accountXViewModel.value.defineJobsDownloadArchive();
+    accountXViewModel.value.state = State.RunJobs;
+    await startStateLoop();
+};
+
+const wizardImportStartImportClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    accountXViewModel.value.state = State.WizardImportOptions;
+    await startStateLoop();
+};
+
+const wizardBackToStartClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
     accountXViewModel.value.state = State.WizardStart;
@@ -478,6 +507,26 @@ const wizardSaveOptionsNextClicked = async () => {
     if (!accountXViewModel.value) { return; }
     await updateSettings();
     if (deleteMyData.value) {
+        accountXViewModel.value.state = State.WizardDeleteOptions;
+    } else {
+        accountXViewModel.value.state = State.WizardReview;
+    }
+    await startStateLoop();
+};
+
+const wizardImportOptionsBackClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    accountXViewModel.value.state = State.WizardImportStart;
+    await startStateLoop();
+};
+
+const wizardImportOptionsNextClicked = async () => {
+    if (!accountXViewModel.value) { return; }
+    await updateSettings();
+    if (saveMyData.value) {
+        accountXViewModel.value.state = State.WizardSaveOptions;
+    } else if (deleteMyData.value) {
         accountXViewModel.value.state = State.WizardDeleteOptions;
     } else {
         accountXViewModel.value.state = State.WizardReview;
@@ -761,7 +810,7 @@ onUnmounted(async () => {
         <p v-if="accountXViewModel?.state == State.Login" class="u2f-info text-center text-muted small">
             <i class="fa-solid fa-circle-info me-2" />
             If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
-            screen. <a href="#" @click="u2fInfoClicked">Read more</a>.
+            screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
         </p>
 
         <!-- Automation notice -->
@@ -804,13 +853,29 @@ onUnmounted(async () => {
                         <form @submit.prevent>
                             <div class="mb-3">
                                 <div class="form-check">
+                                    <input id="importFromArchive" v-model="importFromArchive" type="checkbox"
+                                        class="form-check-input" @change="wizardStartUpdateButtonsText">
+                                    <label class="form-check-label" for="importFromArchive">
+                                        Import data from an X archive
+                                    </label>
+                                </div>
+                                <div class="indent">
+                                    <small class="form-text text-muted">
+                                        Cyd needs a local database of your X data to delete it. If you have a lot of
+                                        data, importing is much faster than letting Cyd build the database from scratch.
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
                                     <input id="saveMyData" v-model="saveMyData" type="checkbox" class="form-check-input"
                                         @change="wizardStartUpdateButtonsText">
                                     <label class="form-check-label" for="saveMyData">Save my data</label>
                                 </div>
                                 <div class="indent">
                                     <small class="form-text text-muted">
-                                        Create a local archive of tweets, retweets, likes, and/or direct messages
+                                        Create a local archive of tweets, retweets, likes, and/or direct messages from
+                                        scratch.
                                     </small>
                                 </div>
                             </div>
@@ -823,14 +888,15 @@ onUnmounted(async () => {
                                 </div>
                                 <div class="indent">
                                     <small class="form-text text-muted">
-                                        Delete my tweets, retweets, likes, and/or direct messages
+                                        Delete my tweets, retweets, likes, and/or direct messages.
                                     </small>
                                 </div>
                             </div>
 
                             <div class="buttons">
                                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(saveMyData || deleteMyData)" @click="wizardStartNextClicked">
+                                    :disabled="!(importFromArchive || saveMyData || deleteMyData)"
+                                    @click="wizardStartNextClicked">
                                     <i class="fa-solid fa-forward" />
                                     {{ wizardNextText }}
                                 </button>
@@ -873,7 +939,7 @@ onUnmounted(async () => {
                                 <p class="alert-details mb-0">
                                     X might only let you access your most recent ~2,000 tweets or likes. If
                                     Cyd doesn't find or delete all of your data the first time, try running it again. <a
-                                        href="#" @click="runAgainLearnMore">Learn more.</a>
+                                        href="#" @click="openURL('https://cyd.social/docs-run-again')">Learn more.</a>
                                 </p>
                             </div>
                             <div class="alert alert-info" role="alert">
@@ -882,10 +948,105 @@ onUnmounted(async () => {
                                 </p>
                                 <p class="alert-details mb-0">
                                     Don't close the lid, keep it plugged in, and disable sleep while plugged in.
-                                    <a href="#" @click="preventSleepLearnMore">Learn more.</a>
+                                    <a href="#" @click="openPreventSleepURL()">Learn more.</a>
                                 </p>
                             </div>
                         </form>
+                    </div>
+
+                    <!-- Wizard: import options -->
+                    <div v-if="accountXViewModel?.state == State.WizardImportStartDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto">
+                        <div class="mb-4">
+                            <h2>
+                                Import your X archive
+                            </h2>
+                            <p class="text-muted">
+                                Before you can import your X archive, you need to download it. Have you already done
+                                this?
+                            </p>
+
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardImportStartDownloadClicked">
+                                    <i class="fa-solid fa-download" />
+                                    Help Me Download My Archive from X
+                                </button>
+                                <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                    @click="wizardImportStartImportClicked">
+                                    <i class="fa-solid fa-folder-tree" />
+                                    I've Already Downloaded My Archive
+                                </button>
+                            </div>
+
+                            <div class="buttons">
+                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                                    @click="wizardBackToStartClicked">
+                                    <i class="fa-solid fa-backward" />
+                                    Back to Start
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wizard: import download display -->
+                    <div v-if="accountXViewModel?.state == State.WizardImportDownloadDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto">
+                        <h2>
+                            Import your X archive
+                        </h2>
+                        <p class="text-muted">
+                            Run Cyd again after you've downloaded your X archive.
+                        </p>
+
+                        <p>
+                            In awhile, X should send you an email with a link to download your archive. Download it,
+                            unzip it, and then run Cyd again to import it.
+                        </p>
+
+                        <div class="buttons">
+                            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                                @click="wizardBackToStartClicked">
+                                <i class="fa-solid fa-backward" />
+                                Back to Start
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Wizard: import options -->
+                    <div v-if="accountXViewModel?.state == State.WizardImportOptionsDisplay"
+                        class="wizard-content container mb-4 mt-3 mx-auto">
+                        <h2>
+                            Import options
+                        </h2>
+                        <p class="text-muted">
+                            Unzip your archive and choose the folder that it's in.
+                        </p>
+
+                        <div class="input-group">
+                            <input v-model="importFromArchivePath" type="text" class="form-control"
+                                placeholder="Import your X archive" readonly>
+                            <button class="btn btn-secondary" @click="importFromArchiveBrowserClicked">
+                                Browse for Archive
+                            </button>
+                        </div>
+
+                        <div class="buttons">
+                            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                                @click="wizardImportOptionsBackClicked">
+                                <i class="fa-solid fa-backward" />
+                                {{ wizardBackText }}
+                            </button>
+
+                            <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
+                                @click="wizardImportOptionsNextClicked">
+                                <i class="fa-solid fa-forward" />
+                                {{ wizardNextText }}
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Wizard: save options -->
@@ -912,15 +1073,15 @@ onUnmounted(async () => {
                                     <div class="form-check">
                                         <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox"
                                             class="form-check-input" :disabled="!archiveTweets">
-                                        <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version
-                                            of each
-                                            tweet</label>
+                                        <label class="form-check-label" for="archiveTweetsHTML">
+                                            Save an HTML version of each tweet
+                                        </label>
                                     </div>
                                     <div class="indent">
                                         <small class="form-text text-muted">
                                             Make an HTML archive of each tweet, including its replies, which is good
-                                            for taking
-                                            screenshots
+                                            for
+                                            taking screenshots
                                             <em>(takes longer)</em>
                                         </small>
                                     </div>
@@ -943,9 +1104,9 @@ onUnmounted(async () => {
 
                             <div class="buttons">
                                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardSaveOptionsBackClicked">
+                                    @click="wizardBackToStartClicked">
                                     <i class="fa-solid fa-backward" />
-                                    {{ wizardBackText }}
+                                    Back to Start
                                 </button>
 
                                 <button type="submit" class="btn btn-primary text-nowrap m-1"
@@ -1427,9 +1588,11 @@ onUnmounted(async () => {
                                     <li v-if="(progress?.unknownIndexed ?? 0) > 0">
                                         <i class="fa-solid fa-floppy-disk archive-bullet" />
                                         <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other tweets
-                                        <span class="ms-3 small text-muted">(<a href="#"
-                                                @click="otherTweetsClicked">what's
-                                                this?</a>)</span>
+                                        <span class="ms-3 small text-muted">
+                                            (<a href="#"
+                                                @click="openURL('https://cyd.social/docs-other-tweets');">what's
+                                                this?</a>)
+                                        </span>
                                     </li>
                                     <li
                                         v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">

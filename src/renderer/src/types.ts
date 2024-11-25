@@ -25,4 +25,5 @@ export const PlausibleEvents = Object.freeze({
     X_JOB_STARTED_DELETE_LIKES: 'X Job Started: deleteLikes',
     X_JOB_STARTED_DELETE_DMS: 'X Job Started: deleteDMs',
     X_JOB_STARTED_ARCHIVE_BUILD: 'X Job Started: archiveBuild',
+    X_JOB_STARTED_DOWNLOAD_ARCHIVE: 'X Job Started: downloadArchive',
 });
