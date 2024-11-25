@@ -1004,8 +1004,11 @@ onUnmounted(async () => {
                         </p>
 
                         <p>
-                            In awhile, X should send you an email with a link to download your archive. Download it,
-                            unzip it, and then run Cyd again to import it.
+                            Eventually X should send you an email with a link to download your archive. Hopefully this
+                            will be within 24 hours, but it might take a few days (sorry).
+                        </p>
+                        <p>
+                            When you get it, download it, unzip it, and then run Cyd again to import it.
                         </p>
 
                         <div class="buttons">

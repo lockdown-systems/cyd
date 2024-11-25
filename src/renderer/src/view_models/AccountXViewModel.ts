@@ -22,6 +22,7 @@ export enum State {
     WizardStartDisplay = "wizardStartDisplay",
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
+    WizardImportDownload = "WizardImportDownload",
     WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
     WizardImportOptions = "WizardImportOptions",
     WizardImportOptionsDisplay = "WizardImportOptionsDisplay",
@@ -1998,13 +1999,13 @@ Hang on while I scroll down to your earliest likes.`;
     async runJobDownloadArchive(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DOWNLOAD_ARCHIVE, navigator.userAgent);
 
-        this.showBrowser = false;
+        this.showBrowser = true;
         this.showAutomationNotice = false;
         this.instructions = `
 Follow the instructions below to request your archive from X. You will need to verify your identity with X to download your data.`;
 
         await this.loadURL("https://x.com/settings/download_your_data");
-        await this.sleep(5000);
+        await this.sleep(1000);
 
         // Wait for the user to request the archive
         // eslint-disable-next-line no-constant-condition
@@ -2135,11 +2136,18 @@ Importing your data from an X archive is much faster than me building a local da
                     this.state = State.WizardImportStartDisplay;
                     break;
 
+                case State.WizardImportDownload:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `You have requested your X archive, so now we wait.`;
+                    this.state = State.WizardImportDownloadDisplay;
+                    break;
+
                 case State.WizardImportOptions:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-Unzip your X archive and then browse for the folder that it's in below. Then I'll build up a local database of your tweets, retweets, likes, and direct messages from your X archive.`;
+Unzip your X archive and choose the folder that it's in below. I will use it to build up a local database of your tweets, retweets, likes, and direct messages from your X archive.`;
                     this.state = State.WizardImportOptionsDisplay;
                     break;
 
@@ -2241,7 +2249,7 @@ You can save all your data for free, but you need a Premium plan to delete your 
                     if (this.account.xAccount?.deleteMyData && this.account.xAccount?.chanceToReview && this.isDeleteReviewActive) {
                         this.state = State.WizardDeleteReview;
                     } else if (downloadArchiveInJobs) {
-                        this.state = State.WizardImportDownloadDisplay;
+                        this.state = State.WizardImportDownload;
                     } else {
                         this.state = State.FinishedRunningJobs;
                     }
