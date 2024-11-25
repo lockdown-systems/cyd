@@ -19,6 +19,7 @@ import { APIErrorResponse } from "../../../cyd-api-client";
 
 export enum State {
     Login = "login",
+    WizardPrestart = "wizardPrestart",
     WizardStart = "wizardStart",
     WizardStartDisplay = "wizardStartDisplay",
     WizardImportStart = "WizardImportStart",
@@ -77,7 +78,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     async init() {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
-            this.state = State.WizardStart;
+            this.state = State.WizardPrestart;
         } else {
             this.state = State.Login;
         }
@@ -181,7 +182,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.progress = emptyXProgress();
         this.rateLimitInfo = emptyXRateLimitInfo();
         this.jobs = [];
-        this.state = State.WizardStart;
+        this.state = State.WizardPrestart;
     }
 
     async waitForRateLimit() {
@@ -512,15 +513,27 @@ export class AccountXViewModel extends BaseViewModel {
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
         this.log("login", ["saved profile image", profileImageURL]);
 
+        await this.waitForPause();
+    }
+
+    async loadUserStats() {
+        this.log("loadUserStats", "loading user stats");
+        this.showBrowser = true;
+        this.showAutomationNotice = true;
+
         // Start monitoring network requests so we can detect all.json, which should include user stats like tweet count, like count, etc.
         await window.electron.X.indexStart(this.account.id);
 
         // Load notifications
         this.log("login", "getting user stats");
-        this.instructions = `You're logged in as **@${username}**. I'm trying to determine your total tweets and likes...`;
+        this.instructions = `You're logged in as **@${this.account.xAccount?.username}**. I'm trying to determine your total tweets and likes...`;
 
         await this.loadURLWithRateLimit('https://x.com/notifications');
-        await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications');
+        try {
+            await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications');
+        } catch (e) {
+            this.log("loadUserStats", ["selector never appeared", e]);
+        }
         await this.sleep(3000);
 
         // Stop monitoring network requests
@@ -528,11 +541,9 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get user stats
         const account: XAccount = await window.electron.X.indexParseAllJSON(this.account.id);
-        console.log("account", account);
-        this.pause();
-        await this.waitForPause();
+        this.emitter?.emit("account-updated");
 
-        this.emitter?.emit("account-updated", this.account);
+        this.log("loadUserStats", `${account.tweetsCount} tweets, ${account.likesCount} likes, ${account.followingCount} following, ${account.followersCount} followers`);
 
         await this.waitForPause();
     }
@@ -2134,6 +2145,11 @@ Follow the instructions below to request your archive from X. You will need to v
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
+                    this.state = State.WizardPrestart;
+                    break;
+
+                case State.WizardPrestart:
+                    await this.loadUserStats();
                     this.state = State.WizardStart;
                     break;
 
@@ -2141,7 +2157,7 @@ Follow the instructions below to request your archive from X. You will need to v
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-You're signed into **@${this.account.xAccount?.username}** on X. After you answer a few quick questions, I will help you take control of your data on X.
+You're signed into **@${this.account.xAccount?.username}** on X. It looks like you currently have **${this.account.xAccount?.tweetsCount.toLocaleString()} tweets** and **${this.account.xAccount?.likesCount.toLocaleString()} likes**.
 
 **What would you like to do?**`;
                     this.state = State.WizardStartDisplay;

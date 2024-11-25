@@ -701,7 +701,7 @@ const debugModeTriggerError = async () => {
 
 const debugModeDisable = async () => {
     if (accountXViewModel.value !== null) {
-        accountXViewModel.value.state = State.WizardStart;
+        accountXViewModel.value.state = State.WizardPrestart;
     }
 };
 
