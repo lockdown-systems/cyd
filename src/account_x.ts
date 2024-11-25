@@ -27,7 +27,8 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo
+    XArchiveInfo, emptyXArchiveInfo,
+    XUserStats
 } from './shared_types'
 import {
     runMigrations,
@@ -49,6 +50,7 @@ import {
     XAPIConversationTimeline,
     XAPIMessage,
     XAPIUser,
+    XAPIAll,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -390,7 +392,7 @@ export class XAccountController {
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await ses.clearCache();
         await this.mitmController.startMonitoring();
-        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
+        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm", "x.com/i/api/2/notifications/all.json"]);
         this.thereIsMore = true;
     }
 
@@ -398,6 +400,51 @@ export class XAccountController {
         await this.mitmController.stopMonitoring();
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await this.mitmController.stopMITM(ses);
+    }
+
+    // Parse all.json and returns stats about the user
+    async indexParseAllJSON(): Promise<XUserStats> {
+        await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseAllJSON: parsing ${this.mitmController.responseData.length} responses`);
+
+        const userStats: XUserStats = {
+            followingCount: 0,
+            followersCount: 0,
+            tweetsCount: 0,
+            likesCount: 0,
+        };
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            const responseData = this.mitmController.responseData[i];
+            log.info('XAccountController.indexParseAllJSON: processing', responseData.url);
+
+            if (responseData.processed) {
+                continue;
+            }
+
+            if (
+                responseData.url.includes("/i/api/2/notifications/all.json?") &&
+                responseData.status == 200
+            ) {
+                const body: XAPIAll = JSON.parse(responseData.body);
+
+                // Loop through the users
+                Object.values(body.globalObjects.users).forEach((user: XAPIUser) => {
+                    // If it's the logged in user, get the stats
+                    if (user.screen_name == this.account?.username) {
+                        userStats.followingCount = user.friends_count;
+                        userStats.followersCount = user.followers_count;
+                        userStats.tweetsCount = user.statuses_count;
+                        userStats.likesCount = user.favourites_count;
+                    }
+                });
+            }
+
+            this.mitmController.responseData[i].processed = true;
+            log.info('XAccountController.indexParseTweetsResponseData: processed', i);
+        }
+
+        return userStats;
     }
 
     indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
@@ -575,9 +622,8 @@ export class XAccountController {
     // Parses the response data so far to index tweets that have been collected
     // Returns the progress object
     async indexParseTweets(): Promise<XProgress> {
-        log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
-
         await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             this.indexParseTweetsResponseData(i);
@@ -589,9 +635,8 @@ export class XAccountController {
     // Parses the response data so far to index likes that have been collected
     // Returns the progress object
     async indexParseLikes(): Promise<XProgress> {
-        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
-
         await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
@@ -790,12 +835,11 @@ export class XAccountController {
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
     async indexParseConversations(): Promise<XProgress> {
+        await this.mitmController.clearProcessed();
         log.info(`XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexConversations";
         this.progress.isIndexMessagesFinished = false;
-
-        await this.mitmController.clearProcessed();
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             await this.indexParseConversationsResponseData(i);
@@ -1567,7 +1611,6 @@ export class XAccountController {
 const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
-    log.info(`getXAccountController: accountID=${accountID}`);
     if (!controllers[accountID]) {
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
@@ -1626,6 +1669,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.indexStop();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:indexParseAllJSON', async (_, accountID: number): Promise<XUserStats> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseAllJSON();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

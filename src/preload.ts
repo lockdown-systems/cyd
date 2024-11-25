@@ -12,6 +12,7 @@ import {
     XDeleteReviewStats,
     ResponseData,
     XArchiveInfo,
+    XUserStats,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -115,6 +116,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
+        },
+        indexParseAllJSON: (accountID: number): Promise<XUserStats> => {
+            return ipcRenderer.invoke('X:indexParseAllJSON', accountID)
         },
         indexParseTweets: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseTweets', accountID)

@@ -354,3 +354,15 @@ export interface XAPIConversationTimeline {
         },
     }
 }
+
+// Gather user stats
+
+export interface XAPIAll {
+    globalObjects: {
+        users: {
+            [key: string]: XAPIUser
+        }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    timeline: any
+}

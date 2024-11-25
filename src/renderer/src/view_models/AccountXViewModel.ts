@@ -10,7 +10,8 @@ import {
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo
+    XArchiveInfo, emptyXArchiveInfo,
+    XUserStats
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
@@ -510,6 +511,26 @@ export class AccountXViewModel extends BaseViewModel {
         const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[data-testid="swipe-to-dismiss"]').querySelector('img').src`);
         await window.electron.X.saveProfileImage(this.account.id, profileImageURL);
         this.log("login", ["saved profile image", profileImageURL]);
+
+        // Start monitoring network requests so we can detect all.json, which should include user stats like tweet count, like count, etc.
+        await window.electron.X.indexStart(this.account.id);
+
+        // Load notifications
+        this.log("login", "getting user stats");
+        this.instructions = `You're logged in as **@${username}**. I'm trying to determine your total tweets and likes...`;
+
+        await this.loadURLWithRateLimit('https://x.com/notifications');
+        await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications');
+        await this.sleep(3000);
+
+        // Stop monitoring network requests
+        await window.electron.X.indexStop(this.account.id);
+
+        // Get user stats
+        const userStats: XUserStats = await window.electron.X.indexParseAllJSON(this.account.id);
+        console.log("userStats", userStats);
+        this.pause();
+        await this.waitForPause();
 
         this.emitter?.emit("account-updated", this.account);
 
