@@ -2163,7 +2163,7 @@ Follow the instructions below to request your archive from X. You will need to v
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-You're signed into **@${this.account.xAccount?.username}** on X. You currently have **${this.account.xAccount?.tweetsCount.toLocaleString()} tweets** and **${this.account.xAccount?.likesCount.toLocaleString()} likes**.
+You're signed into **@${this.account.xAccount?.username}** on X.
 
 **What would you like to do?**`;
                     this.state = State.WizardStartDisplay;

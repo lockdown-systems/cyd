@@ -175,12 +175,6 @@ const chanceToReview = ref(true);
 
 const importFromArchivePath = ref('');
 
-// User stats
-const followingCount = ref(0);
-const followersCount = ref(0);
-const tweetsCount = ref(0);
-const likesCount = ref(0);
-
 // Last finished job timestamps
 const lastFinishedJobImportArchive = ref<Date | null>(null);
 const lastFinishedJobIndexTweets = ref<Date | null>(null);
@@ -257,10 +251,10 @@ const updateSettings = async () => {
             deleteDMs: deleteDMs.value,
             deleteFromDatabase: deleteFromDatabase.value,
             chanceToReview: chanceToReview.value,
-            followingCount: followingCount.value,
-            followersCount: followersCount.value,
-            tweetsCount: tweetsCount.value,
-            likesCount: likesCount.value,
+            followingCount: props.account.xAccount?.followingCount || 0,
+            followersCount: props.account.xAccount?.followersCount || 0,
+            tweetsCount: props.account.xAccount?.tweetsCount || 0,
+            likesCount: props.account.xAccount?.likesCount || 0,
         }
     };
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
@@ -738,12 +732,8 @@ const debugModeDisable = async () => {
 
 // Lifecycle
 
-onMounted(async () => {
-    shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
-
-    await updateLastFinishedJobs();
-    await updateArchivePath();
-
+const reloadXAccountData = () => {
+    // Update the variables
     if (props.account.xAccount !== null) {
         archiveTweets.value = props.account.xAccount.archiveTweets;
         archiveTweetsHTML.value = props.account.xAccount.archiveTweetsHTML;
@@ -765,11 +755,19 @@ onMounted(async () => {
         deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = props.account.xAccount.deleteDMs;
         chanceToReview.value = props.account.xAccount.chanceToReview;
-        followingCount.value = props.account.xAccount.followingCount;
-        followersCount.value = props.account.xAccount.followersCount;
-        tweetsCount.value = props.account.xAccount.tweetsCount;
-        likesCount.value = props.account.xAccount.likesCount;
     }
+    // Update the account in the view model
+    if (accountXViewModel.value) {
+        accountXViewModel.value.account = props.account;
+    }
+};
+
+onMounted(async () => {
+    shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
+
+    await updateLastFinishedJobs();
+    await updateArchivePath();
+    reloadXAccountData();
 
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
@@ -806,6 +804,9 @@ onMounted(async () => {
     emitter?.on(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
     emitter?.on(`automation-error-${props.account.id}-resume`, onAutomationErrorResume);
+
+    // Make sure to keep the account data up to date
+    emitter?.on('account-updated', reloadXAccountData);
 });
 
 onUnmounted(async () => {
@@ -1746,6 +1747,11 @@ onUnmounted(async () => {
 
                 <!-- wizard side bar -->
                 <div class="wizard-sidebar">
+                    <p>
+                        Your X account, <strong>@{{ account.xAccount?.username }}</strong>, has
+                        <strong>{{ account.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
+                        <strong>{{ account.xAccount?.likesCount.toLocaleString() }} likes</strong>.
+                    </p>
                     <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
                         <button class="btn btn-outline-success btn-sm" @click="openArchive">
                             Browse Archive
