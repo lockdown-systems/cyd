@@ -441,7 +441,7 @@ export class XAccountController {
             }
 
             this.mitmController.responseData[i].processed = true;
-            log.info('XAccountController.indexParseTweetsResponseData: processed', i);
+            log.info('XAccountController.indexParseAllJSON: processed', i);
         }
 
         return userStats;

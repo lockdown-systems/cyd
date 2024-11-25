@@ -692,6 +692,9 @@ test("XAccountController.indexParseTweets() should succeed with automation error
 test('XAccountController.indexParseAllJSON() should return user stats', async () => {
     mitmController.setTestdata("userStatsAll");
 
+    if (controller.account) {
+        controller.account.username = "nexamind91326";
+    }
     const userStats: XUserStats = await controller.indexParseAllJSON();
     expect(userStats.followingCount).toBe(11);
     expect(userStats.followersCount).toBe(45);
