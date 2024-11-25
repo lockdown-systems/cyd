@@ -858,13 +858,15 @@ onUnmounted(async () => {
                                     <input id="importFromArchive" v-model="importFromArchive" type="checkbox"
                                         class="form-check-input" @change="wizardStartUpdateButtonsText">
                                     <label class="form-check-label" for="importFromArchive">
-                                        Import data from an X archive
+                                        Import an X archive
+                                        <span class="ms-2 text-muted">(recommended)</span>
                                     </label>
                                 </div>
                                 <div class="indent">
                                     <small class="form-text text-muted">
                                         Cyd needs a local database of your X data to delete it. If you have a lot of
-                                        data, importing is much faster than letting Cyd build the database from scratch.
+                                        data, importing is much faster than letting Cyd create the database from
+                                        scratch.
                                     </small>
                                 </div>
                             </div>
@@ -872,12 +874,16 @@ onUnmounted(async () => {
                                 <div class="form-check">
                                     <input id="saveMyData" v-model="saveMyData" type="checkbox" class="form-check-input"
                                         @change="wizardStartUpdateButtonsText">
-                                    <label class="form-check-label" for="saveMyData">Save my data</label>
+                                    <label class="form-check-label" for="saveMyData">
+                                        Create a local database from scrach
+                                    </label>
                                 </div>
                                 <div class="indent">
                                     <small class="form-text text-muted">
-                                        Create a local archive of tweets, retweets, likes, and/or direct messages from
-                                        scratch.
+                                        Create a local database from scratch by scrolling through your profile. This
+                                        might not get all of your data.
+                                        <a href="#" @click="openURL('https://cyd.social/docs-save-data-limits')">Read
+                                            more</a>.
                                     </small>
                                 </div>
                             </div>
@@ -885,7 +891,10 @@ onUnmounted(async () => {
                                 <div class="form-check">
                                     <input id="deleteMyData" v-model="deleteMyData" type="checkbox"
                                         class="form-check-input" @change="wizardStartUpdateButtonsText">
-                                    <label class="form-check-label" for="deleteMyData">Delete my data</label>
+                                    <label class="form-check-label" for="deleteMyData">
+                                        Delete my data
+                                        <span class="ms-2 text-muted">(recommended)</span>
+                                    </label>
                                     <span class="premium badge badge-primary">Premium</span>
                                 </div>
                                 <div class="indent">
@@ -932,16 +941,6 @@ onUnmounted(async () => {
                                     If you have much data in your account, you will probably hit rate limits while Cyd
                                     works. Cyd will pause and wait for the rate limit to reset before continuing, but
                                     it might take a while to finish.
-                                </p>
-                            </div>
-                            <div class="alert alert-info" role="alert">
-                                <p class="fw-bold mb-0">
-                                    You might need to run Cyd more than once.
-                                </p>
-                                <p class="alert-details mb-0">
-                                    X might only let you access your most recent ~2,000 tweets or likes. If
-                                    Cyd doesn't find or delete all of your data the first time, try running it again. <a
-                                        href="#" @click="openURL('https://cyd.social/docs-run-again')">Learn more.</a>
                                 </p>
                             </div>
                             <div class="alert alert-info" role="alert">
