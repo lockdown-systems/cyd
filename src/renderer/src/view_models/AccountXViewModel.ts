@@ -549,10 +549,16 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async finishJob(jobIndex: number) {
-        this.jobs[jobIndex].finishedAt = new Date();
+        const finishedAt = new Date();
+        this.jobs[jobIndex].finishedAt = finishedAt;
         this.jobs[jobIndex].status = "finished";
         this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
         await window.electron.X.updateJob(this.account.id, JSON.stringify(this.jobs[jobIndex]));
+        await window.electron.X.setConfig(
+            this.account.id,
+            `lastFinishedJob_${this.jobs[jobIndex].jobType}`,
+            finishedAt.toISOString()
+        );
         this.log("finishJob", this.jobs[jobIndex].jobType);
     }
 

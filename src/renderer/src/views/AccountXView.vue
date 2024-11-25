@@ -181,6 +181,40 @@ const followersCount = ref(0);
 const tweetsCount = ref(0);
 const likesCount = ref(0);
 
+// Last finished job timestamps
+const lastFinishedJobImportArchive = ref<Date | null>(null);
+const lastFinishedJobIndexTweets = ref<Date | null>(null);
+const lastFinishedJobIndexLikes = ref<Date | null>(null);
+const lastFinishedJobIndexConversations = ref<Date | null>(null);
+const lastFinishedJobIndexMessages = ref<Date | null>(null);
+
+const updateLastFinishedJobs = async () => {
+    const importArchiveTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_importArchive')
+    if (importArchiveTimestamp) {
+        lastFinishedJobImportArchive.value = new Date(importArchiveTimestamp);
+    }
+
+    const indexTweetsTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexTweets')
+    if (indexTweetsTimestamp) {
+        lastFinishedJobIndexTweets.value = new Date(indexTweetsTimestamp);
+    }
+
+    const indexLikesTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexLikes')
+    if (indexLikesTimestamp) {
+        lastFinishedJobIndexLikes.value = new Date(indexLikesTimestamp);
+    }
+
+    const indexConversationsTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexConversations')
+    if (indexConversationsTimestamp) {
+        lastFinishedJobIndexConversations.value = new Date(indexConversationsTimestamp);
+    }
+
+    const indexMessagesTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexMessages')
+    if (indexMessagesTimestamp) {
+        lastFinishedJobIndexMessages.value = new Date(indexMessagesTimestamp);
+    }
+}
+
 const importFromArchiveBrowserClicked = async () => {
     const path = await window.electron.showSelectFolderDialog();
     if (path) {
@@ -325,6 +359,7 @@ const startStateLoop = async () => {
     }
 
     await setAccountRunning(props.account.id, false);
+    await updateLastFinishedJobs();
     console.log('State loop ended');
 };
 
@@ -706,6 +741,7 @@ const debugModeDisable = async () => {
 onMounted(async () => {
     shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
 
+    await updateLastFinishedJobs();
     await updateArchivePath();
 
     if (props.account.xAccount !== null) {
