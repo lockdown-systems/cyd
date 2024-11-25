@@ -196,6 +196,7 @@ const updateSettings = async () => {
             accessedAt: new Date(),
             username: props.account.xAccount?.username || '',
             profileImageDataURI: props.account.xAccount?.profileImageDataURI || '',
+            importFromArchive: importFromArchive.value,
             saveMyData: saveMyData.value,
             deleteMyData: deleteMyData.value,
             archiveTweets: archiveTweets.value,
@@ -706,6 +707,7 @@ onMounted(async () => {
         archiveTweetsHTML.value = props.account.xAccount.archiveTweetsHTML;
         archiveLikes.value = props.account.xAccount.archiveLikes;
         archiveDMs.value = props.account.xAccount.archiveDMs;
+        importFromArchive.value = props.account.xAccount.importFromArchive;
         saveMyData.value = props.account.xAccount.saveMyData;
         deleteMyData.value = props.account.xAccount.deleteMyData;
         deleteTweets.value = props.account.xAccount.deleteTweets;

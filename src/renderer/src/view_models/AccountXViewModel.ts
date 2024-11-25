@@ -2004,6 +2004,7 @@ Hang on while I scroll down to your earliest likes.`;
 Follow the instructions below to request your archive from X. You will need to verify your identity with X to download your data.`;
 
         await this.loadURL("https://x.com/settings/download_your_data");
+        await this.sleep(5000);
 
         // Wait for the user to request the archive
         // eslint-disable-next-line no-constant-condition

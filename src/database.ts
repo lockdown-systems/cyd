@@ -107,6 +107,12 @@ export const runMainMigrations = () => {
             sql: [
                 `ALTER TABLE xAccount ADD COLUMN deleteFromDatabase BOOLEAN DEFAULT 0;`
             ]
+        },
+        {
+            name: "add importFromArchive to xAccount",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`
+            ]
         }
     ]);
 }
@@ -140,6 +146,7 @@ interface XAccountRow {
     accessedAt: string;
     username: string;
     profileImageDataURI: string;
+    importFromArchive: boolean;
     saveMyData: boolean;
     deleteMyData: boolean;
     archiveTweets: boolean;
@@ -226,6 +233,7 @@ export const getXAccount = (id: number): XAccount | null => {
         accessedAt: new Date(row.accessedAt),
         username: row.username,
         profileImageDataURI: row.profileImageDataURI,
+        importFromArchive: !!row.importFromArchive,
         saveMyData: !!row.saveMyData,
         deleteMyData: !!row.deleteMyData,
         archiveTweets: !!row.archiveTweets,
@@ -261,6 +269,7 @@ export const getXAccounts = (): XAccount[] => {
             accessedAt: new Date(row.accessedAt),
             username: row.username,
             profileImageDataURI: row.profileImageDataURI,
+            importFromArchive: !!row.importFromArchive,
             saveMyData: !!row.saveMyData,
             deleteMyData: !!row.deleteMyData,
             archiveTweets: !!row.archiveTweets,
@@ -304,6 +313,7 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             profileImageDataURI = ?,
+            importFromArchive = ?,
             saveMyData = ?,
             deleteMyData = ?,
             archiveTweets = ?,
@@ -328,6 +338,7 @@ export const saveXAccount = (account: XAccount) => {
     `, [
         account.username,
         account.profileImageDataURI,
+        account.importFromArchive ? 1 : 0,
         account.saveMyData ? 1 : 0,
         account.deleteMyData ? 1 : 0,
         account.archiveTweets ? 1 : 0,

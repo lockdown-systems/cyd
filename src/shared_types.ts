@@ -24,6 +24,7 @@ export type XAccount = {
     accessedAt: Date;
     username: string;
     profileImageDataURI: string;
+    importFromArchive: boolean;
     saveMyData: boolean;
     deleteMyData: boolean;
     archiveTweets: boolean;
