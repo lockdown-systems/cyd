@@ -268,13 +268,6 @@ const startJobs = async () => {
     await startStateLoop();
 };
 
-const startJobsDeleteReview = async () => {
-    await model.value.defineJobs(true);
-    model.value.isDeleteReviewActive = false;
-    model.value.state = State.RunJobs;
-    await startStateLoop();
-};
-
 const startJobsJustSave = async () => {
     if (model.value.account.xAccount == null) {
         console.error('startJobsJustSave', 'Account is null');
