@@ -21,7 +21,7 @@ import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
 import XWizardStartPage from './XWizardStartPage.vue';
-import XWizardBuildDatabasePage from './XWizardBuildDatabasePage.vue';
+import XWizardImportOrBuildPage from './XWizardImportOrBuildPage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportOptionsPage from './XWizardImportOptionsPage.vue';
@@ -447,7 +447,7 @@ onUnmounted(async () => {
                         @update-account="updateAccount" @set-state="setState($event)"
                         @start-state-loop="startStateLoop" />
 
-                    <XWizardBuildDatabasePage v-if="model.state == State.WizardImportOrBuildDisplay"
+                    <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
                         :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
                     <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
