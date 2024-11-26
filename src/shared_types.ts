@@ -43,8 +43,6 @@ export type XAccount = {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
-    deleteFromDatabase: boolean;
-    chanceToReview: boolean;
     followingCount: number;
     followersCount: number;
     tweetsCount: number;

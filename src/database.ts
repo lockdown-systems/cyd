@@ -97,15 +97,8 @@ export const runMainMigrations = () => {
     deleteRetweetsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 0,
-    deleteDMs BOOLEAN DEFAULT 0,
-    chanceToReview BOOLEAN DEFAULT 1
+    deleteDMs BOOLEAN DEFAULT 0
 );`,
-            ]
-        },
-        {
-            name: "add deleteFromDatabase to xAccount",
-            sql: [
-                `ALTER TABLE xAccount ADD COLUMN deleteFromDatabase BOOLEAN DEFAULT 0;`
             ]
         },
         {
@@ -169,8 +162,6 @@ interface XAccountRow {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
-    deleteFromDatabase: boolean;
-    chanceToReview: boolean;
     followingCount: number;
     followersCount: number;
     tweetsCount: number;
@@ -260,8 +251,6 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
-        deleteFromDatabase: !!row.deleteFromDatabase,
-        chanceToReview: !!row.chanceToReview,
         followingCount: row.followingCount,
         followersCount: row.followersCount,
         tweetsCount: row.tweetsCount,
@@ -300,8 +289,6 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
-            deleteFromDatabase: !!row.deleteFromDatabase,
-            chanceToReview: !!row.chanceToReview,
             followingCount: row.followingCount,
             followersCount: row.followersCount,
             tweetsCount: row.tweetsCount,
@@ -348,8 +335,6 @@ export const saveXAccount = (account: XAccount) => {
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
             deleteDMs = ?,
-            deleteFromDatabase = ?,
-            chanceToReview = ?,
             followingCount = ?,
             followersCount = ?,
             tweetsCount = ?,
@@ -377,8 +362,6 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
-        account.deleteFromDatabase ? 1 : 0,
-        account.chanceToReview ? 1 : 0,
         account.followingCount,
         account.followersCount,
         account.tweetsCount,

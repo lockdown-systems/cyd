@@ -107,11 +107,11 @@ export class AccountXViewModel extends BaseViewModel {
         this.archiveInfo = await window.electron.X.getArchiveInfo(this.account?.id);
     }
 
-    async defineJobs(justDelete: boolean = false) {
+    async defineJobs() {
         const jobTypes = [];
         jobTypes.push("login");
 
-        if (!justDelete && this.account?.xAccount?.saveMyData) {
+        if (this.account?.xAccount?.saveMyData) {
             if (this.account?.xAccount?.archiveTweets) {
                 jobTypes.push("indexTweets");
                 if (this.account?.xAccount?.archiveTweetsHTML) {
@@ -128,33 +128,17 @@ export class AccountXViewModel extends BaseViewModel {
         }
 
         if (this.account?.xAccount?.deleteMyData) {
-            if (!justDelete && !this.account?.xAccount?.deleteFromDatabase) {
-                // Build database first
-                if (this.account?.xAccount?.deleteTweets || this.account?.xAccount?.deleteRetweets) {
-                    if (!jobTypes.includes("indexTweets")) {
-                        jobTypes.push("indexTweets");
-                    }
-                }
-                if (this.account?.xAccount?.deleteLikes) {
-                    if (!jobTypes.includes("indexLikes")) {
-                        jobTypes.push("indexLikes");
-                    }
-                }
+            if (this.account?.xAccount?.deleteTweets) {
+                jobTypes.push("deleteTweets");
             }
-
-            if (justDelete || !this.account?.xAccount?.chanceToReview) {
-                if (this.account?.xAccount?.deleteTweets) {
-                    jobTypes.push("deleteTweets");
-                }
-                if (this.account?.xAccount?.deleteRetweets) {
-                    jobTypes.push("deleteRetweets");
-                }
-                if (this.account?.xAccount?.deleteLikes) {
-                    jobTypes.push("deleteLikes");
-                }
-                if (this.account?.xAccount?.deleteDMs) {
-                    jobTypes.push("deleteDMs");
-                }
+            if (this.account?.xAccount?.deleteRetweets) {
+                jobTypes.push("deleteRetweets");
+            }
+            if (this.account?.xAccount?.deleteLikes) {
+                jobTypes.push("deleteLikes");
+            }
+            if (this.account?.xAccount?.deleteDMs) {
+                jobTypes.push("deleteDMs");
             }
         }
 
@@ -2297,9 +2281,7 @@ You can save all your data for free, but you need a Premium plan to delete your 
                     }
 
                     // Determine the next state
-                    if (this.account?.xAccount?.deleteMyData && this.account?.xAccount?.chanceToReview && this.isDeleteReviewActive) {
-                        this.state = State.WizardDeleteReview;
-                    } else if (downloadArchiveInJobs) {
+                    if (downloadArchiveInJobs) {
                         this.state = State.WizardImportDownload;
                     } else {
                         this.state = State.FinishedRunningJobs;
