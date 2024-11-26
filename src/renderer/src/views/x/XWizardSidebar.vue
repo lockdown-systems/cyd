@@ -95,7 +95,7 @@ onMounted(async () => {
             According to X, your account has <strong class="text-nowrap">{{
                 model.account?.xAccount?.tweetsCount.toLocaleString() }}
                 tweets</strong> and <strong class="text-nowrap">{{ model.account?.xAccount?.likesCount.toLocaleString()
-                }} likes</strong>.
+                }} likes</strong>. These numbers aren't always accurate.
         </p>
         <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
             <button class="btn btn-outline-success btn-sm" @click="openArchive">
