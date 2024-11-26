@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import AccountXView from './AccountXView.vue';
+import AccountXView from './x/AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
 import { getAccountRunning, setAccountRunning } from '../util';
 
-import CydAvatarComponent from '../components/CydAvatarComponent.vue';
+import CydAvatarComponent from './shared_components/CydAvatarComponent.vue';
 
 const props = defineProps<{
   account: Account;

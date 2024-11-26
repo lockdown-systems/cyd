@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import type { XJob } from '../../../shared_types';
+import type { XJob } from '../../../../shared_types';
 
 defineProps<{
     jobs: XJob[],

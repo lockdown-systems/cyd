@@ -7,9 +7,9 @@ import {
 import {
     AccountXViewModel,
     State
-} from '../view_models/AccountXViewModel'
-import type { XProgress } from '../../../shared_types';
-import { openURL } from '../util';
+} from '../../view_models/AccountXViewModel'
+import type { XProgress } from '../../../../shared_types';
+import { openURL } from '../../util';
 
 // Props
 const props = defineProps<{

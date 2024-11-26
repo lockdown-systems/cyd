@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { marked } from 'marked';
 
-import CydAvatarComponent from '../components/CydAvatarComponent.vue';
+import CydAvatarComponent from './CydAvatarComponent.vue';
 
 const props = defineProps<{
   message: string;

@@ -11,38 +11,37 @@ import {
 } from 'vue'
 import Electron from 'electron';
 
-import CydAPIClient from '../../../cyd-api-client';
-import { UserPremiumAPIResponse } from "../../../cyd-api-client";
+import CydAPIClient from '../../../../cyd-api-client';
+import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
-import AccountHeader from '../components/AccountHeader.vue';
-import SpeechBubble from '../components/SpeechBubble.vue';
-import XProgressComponent from '../components/XProgressComponent.vue';
-import XJobStatusComponent from '../components/XJobStatusComponent.vue';
+import AccountHeader from '../shared_components/AccountHeader.vue';
+import SpeechBubble from '../shared_components/SpeechBubble.vue';
+
+import XProgressComponent from './XProgressComponent.vue';
+import XJobStatusComponent from './XJobStatusComponent.vue';
+
+import XWizardStartPage from './XWizardStartPage.vue';
+import XWizardImportPage from './XWizardImportPage.vue';
+import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
+import XWizardImportOptionsPage from './XWizardImportOptionsPage.vue';
+import XWizardSaveOptionsPage from './XWizardSaveOptionsPage.vue';
+import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
+import XWizardReviewPage from './XWizardReviewPage.vue';
+import XWizardDeleteReviewPage from './XWizardDeleteReviewPage.vue';
+import XWizardCheckPremium from './XWizardCheckPremium.vue';
+import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
+import XWizardSidebar from './XWizardSidebar.vue';
 
 import type {
     Account,
     XProgress,
     XJob,
     XRateLimitInfo,
-} from '../../../shared_types';
-import type { DeviceInfo } from '../types';
-import { AutomationErrorType } from '../automation_errors';
-
-import { AccountXViewModel, State, FailureState, XViewModelState } from '../view_models/AccountXViewModel'
-
-import { setAccountRunning, openURL } from '../util';
-
-import XWizardStartPage from '../components/XWizardStartPage.vue';
-import XWizardImportPage from '../components/XWizardImportPage.vue';
-import XWizardImportDownloadPage from '../components/XWizardImportDownloadPage.vue';
-import XWizardImportOptionsPage from '../components/XWizardImportOptionsPage.vue';
-import XWizardSaveOptionsPage from '../components/XWizardSaveOptionsPage.vue';
-import XWizardDeleteOptionsPage from '../components/XWizardDeleteOptionsPage.vue';
-import XWizardReviewPage from '../components/XWizardReviewPage.vue';
-import XWizardDeleteReviewPage from '../components/XWizardDeleteReviewPage.vue';
-import XWizardCheckPremium from '../components/XWizardCheckPremium.vue';
-import XFinishedRunningJobsPage from '../components/XFinishedRunningJobsPage.vue';
-import XWizardSidebar from '../components/XWizardSidebar.vue';
+} from '../../../../shared_types';
+import type { DeviceInfo } from '../../types';
+import { AutomationErrorType } from '../../automation_errors';
+import { AccountXViewModel, State, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
+import { setAccountRunning, openURL } from '../../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();

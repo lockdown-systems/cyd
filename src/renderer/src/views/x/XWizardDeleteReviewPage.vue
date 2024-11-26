@@ -6,9 +6,9 @@ import {
 import {
     AccountXViewModel,
     State
-} from '../view_models/AccountXViewModel'
-import { emptyXDeleteReviewStats } from '../../../shared_types';
-import type { XDeleteReviewStats } from '../../../shared_types';
+} from '../../view_models/AccountXViewModel'
+import { emptyXDeleteReviewStats } from '../../../../shared_types';
+import type { XDeleteReviewStats } from '../../../../shared_types';
 
 // Props
 const props = defineProps<{

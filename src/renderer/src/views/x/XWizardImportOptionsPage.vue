@@ -5,7 +5,7 @@ import {
 import {
     AccountXViewModel,
     State
-} from '../view_models/AccountXViewModel'
+} from '../../view_models/AccountXViewModel'
 
 // Props
 const props = defineProps<{

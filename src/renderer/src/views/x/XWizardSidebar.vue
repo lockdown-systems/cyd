@@ -7,15 +7,15 @@ import {
 import {
     State,
     AccountXViewModel,
-} from '../view_models/AccountXViewModel'
+} from '../../view_models/AccountXViewModel'
 import type {
     XArchiveInfo,
     XDatabaseStats
-} from '../../../shared_types';
+} from '../../../../shared_types';
 import {
     emptyXArchiveInfo,
     emptyXDatabaseStats
-} from '../../../shared_types';
+} from '../../../../shared_types';
 
 // Props
 const props = defineProps<{

@@ -3,7 +3,7 @@ import { getCurrentInstance } from 'vue';
 import {
     AccountXViewModel,
     State
-} from '../view_models/AccountXViewModel'
+} from '../../view_models/AccountXViewModel'
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();

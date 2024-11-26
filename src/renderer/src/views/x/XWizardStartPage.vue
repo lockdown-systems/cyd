@@ -6,9 +6,9 @@ import {
 import {
     AccountXViewModel,
     State
-} from '../view_models/AccountXViewModel'
-import type { Account } from '../../../shared_types';
-import { openPreventSleepURL } from '../util';
+} from '../../view_models/AccountXViewModel'
+import type { Account } from '../../../../shared_types';
+import { openPreventSleepURL } from '../../util';
 
 // Props
 const props = defineProps<{
