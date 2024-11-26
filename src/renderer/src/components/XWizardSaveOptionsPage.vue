@@ -11,7 +11,7 @@ import type { Account } from '../../../shared_types';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: AccountXViewModel | null;
 }>();
 
 // Emits
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
-    if (props.model.account.xAccount?.deleteMyData) {
+    if (props.model?.account.xAccount?.deleteMyData) {
         emit('setState', State.WizardDeleteOptions);
     } else {
         emit('setState', State.WizardReview);
@@ -45,7 +45,7 @@ const archiveLikes = ref(true);
 const archiveDMs = ref(true);
 
 const loadSettings = async () => {
-    if (props.model.account.xAccount !== null) {
+    if (props.model && props.model.account.xAccount !== null) {
         archiveTweets.value = props.model.account.xAccount.archiveTweets;
         archiveTweetsHTML.value = props.model.account.xAccount.archiveTweetsHTML;
         archiveLikes.value = props.model.account.xAccount.archiveLikes;
@@ -54,14 +54,14 @@ const loadSettings = async () => {
 };
 
 const saveSettings = async () => {
-    if (props.model.account.xAccount == null) {
+    if (props.model?.account.xAccount == null) {
         console.error('saveSettings', 'Account is null');
         return;
     }
     const updatedAccount: Account = {
-        ...props.model.account,
+        ...props.model?.account,
         xAccount: {
-            ...props.model.account.xAccount,
+            ...props.model?.account.xAccount,
             archiveTweets: archiveTweets.value,
             archiveTweetsHTML: archiveTweetsHTML.value,
             archiveLikes: archiveLikes.value,
@@ -135,7 +135,7 @@ onMounted(async () => {
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
                     :disabled="!(archiveTweets || archiveLikes || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    <template v-if="props.model.account.xAccount?.deleteMyData">
+                    <template v-if="props.model?.account.xAccount?.deleteMyData">
                         Continue to Delete Options
                     </template>
                     <template v-else>

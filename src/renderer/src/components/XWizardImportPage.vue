@@ -6,7 +6,7 @@ import {
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: AccountXViewModel | null;
 }>();
 
 // Emits
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 // Buttons
 
 const downloadClicked = async () => {
-    await props.model.defineJobsDownloadArchive();
+    await props.model?.defineJobsDownloadArchive();
     emit('setState', State.RunJobs);
     emit('startStateLoop');
 };
@@ -47,16 +47,16 @@ const backClicked = async () => {
 
             <div class="buttons">
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    model.account.xAccount?.archiveTweets ||
-                    model.account.xAccount?.archiveLikes ||
-                    model.account.xAccount?.archiveDMs)" @click="downloadClicked">
+                    model?.account.xAccount?.archiveTweets ||
+                    model?.account.xAccount?.archiveLikes ||
+                    model?.account.xAccount?.archiveDMs)" @click="downloadClicked">
                     <i class="fa-solid fa-download" />
                     Help Me Download My Archive from X
                 </button>
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    model.account.xAccount?.archiveTweets ||
-                    model.account.xAccount?.archiveLikes ||
-                    model.account.xAccount?.archiveDMs)" @click="importClicked">
+                    model?.account.xAccount?.archiveTweets ||
+                    model?.account.xAccount?.archiveLikes ||
+                    model?.account.xAccount?.archiveDMs)" @click="importClicked">
                     <i class="fa-solid fa-folder-tree" />
                     I've Already Downloaded My Archive
                 </button>

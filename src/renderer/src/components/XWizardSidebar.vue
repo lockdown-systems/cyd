@@ -19,7 +19,7 @@ import {
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: AccountXViewModel | null;
 }>();
 
 // Emits
@@ -32,11 +32,15 @@ const emit = defineEmits<{
 
 // Buttons
 const openArchiveFolder = async () => {
-    await window.electron.X.openFolder(props.model.account.id, "");
+    if (props.model) {
+        await window.electron.X.openFolder(props.model?.account.id, "");
+    }
 };
 
 const openArchive = async () => {
-    await window.electron.X.openFolder(props.model.account.id, "index.html");
+    if (props.model) {
+        await window.electron.X.openFolder(props.model?.account.id, "index.html");
+    }
 };
 
 // Util
@@ -50,7 +54,7 @@ function formatStatsNumber(num: number): string {
 // Keep archiveInfo in sync
 const archiveInfo = ref<XArchiveInfo>(emptyXArchiveInfo());
 watch(
-    () => props.model.archiveInfo,
+    () => props.model?.archiveInfo,
     (newArchiveInfo) => {
         if (newArchiveInfo) {
             archiveInfo.value = newArchiveInfo as XArchiveInfo;
@@ -62,7 +66,7 @@ watch(
 // Keep databaseStats in sync
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
 watch(
-    () => props.model.databaseStats,
+    () => props.model?.databaseStats,
     (newDatabaseStats) => {
         if (newDatabaseStats) {
             databaseStats.value = newDatabaseStats as XDatabaseStats;
@@ -92,9 +96,9 @@ onMounted(async () => {
 <template>
     <div class="wizard-sidebar">
         <p>
-            Your X account, <strong>@{{ model.account.xAccount?.username }}</strong>, has
-            <strong>{{ model.account.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
-            <strong>{{ model.account.xAccount?.likesCount.toLocaleString() }} likes</strong>.
+            Your X account, <strong>@{{ model?.account.xAccount?.username }}</strong>, has
+            <strong>{{ model?.account.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
+            <strong>{{ model?.account.xAccount?.likesCount.toLocaleString() }} likes</strong>.
         </p>
         <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
             <button class="btn btn-outline-success btn-sm" @click="openArchive">
