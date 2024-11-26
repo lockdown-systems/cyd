@@ -320,10 +320,6 @@ const finishedRunAgainClicked = async () => {
     await startStateLoop();
 };
 
-const updateAccountInViewModel = (account: Account) => {
-    model.value.account = account;
-};
-
 // Debug functions
 
 const debugAutopauseEndOfStepChanged = async (value: boolean) => {
@@ -379,9 +375,6 @@ onMounted(async () => {
     emitter?.on(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.on(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
     emitter?.on(`automation-error-${props.account.id}-resume`, onAutomationErrorResume);
-
-    // Make sure to keep the account data up to date
-    emitter?.on('account-updated', updateAccountInViewModel);
 });
 
 onUnmounted(async () => {

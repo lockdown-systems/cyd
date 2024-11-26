@@ -18,7 +18,7 @@ import type {
     ResponseData,
     XDeleteReviewStats,
     XArchiveInfo,
-    XUserStats
+    XAccount
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -45,6 +45,7 @@ declare global {
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
+                getAccount: (accountID: number) => Promise<Account | null>;
                 getAccounts: () => Promise<Account[]>;
                 createAccount: () => Promise<Account>;
                 selectAccountType: (accountID: number, type: string) => Promise<Account>;
@@ -62,7 +63,7 @@ declare global {
                 updateJob: (accountID: number, jobJSON: string) => void;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
-                indexParseAllJSON: (accountID: number) => Promise<XUserStats>;
+                indexParseAllJSON: (accountID: number) => Promise<XAccount>;
                 indexParseTweets: (accountID: number) => Promise<XProgress>;
                 indexParseLikes: (accountID: number) => Promise<XProgress>;
                 indexParseConversations: (accountID: number) => Promise<XProgress>;

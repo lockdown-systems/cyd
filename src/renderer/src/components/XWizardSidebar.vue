@@ -91,7 +91,7 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-sidebar">
-        <p>
+        <p v-if="model.account && model.account.xAccount">
             Your X account, <strong>@{{ model.account?.xAccount?.username }}</strong>, has
             <strong>{{ model.account?.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
             <strong>{{ model.account?.xAccount?.likesCount.toLocaleString() }} likes</strong>.

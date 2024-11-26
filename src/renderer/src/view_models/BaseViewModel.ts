@@ -202,9 +202,9 @@ export class BaseViewModel {
 
         // Get username
         let username = "";
-        switch (this.account.type) {
+        switch (this.account?.type) {
             case "X":
-                username = this.account.xAccount?.username ? this.account.xAccount.username : "";
+                username = this.account?.xAccount?.username ? this.account?.xAccount.username : "";
                 break;
             default:
                 break;
@@ -228,8 +228,8 @@ export class BaseViewModel {
         }
 
         const details: AutomationErrorDetails = {
-            accountID: this.account.id,
-            accountType: this.account.type,
+            accountID: this.account?.id,
+            accountType: this.account?.type,
             automationErrorType: automationErrorType,
             errorReportData: errorReportData,
             username: username,

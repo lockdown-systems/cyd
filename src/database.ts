@@ -556,7 +556,15 @@ export const defineIPCDatabase = () => {
         }
     });
 
-    ipcMain.handle('database:getAccounts', async (_) => {
+    ipcMain.handle('database:getAccount', async (_, accountID): Promise<Account | null> => {
+        try {
+            return getAccount(accountID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:getAccounts', async (_): Promise<Account[]> => {
         try {
             return getAccounts();
         } catch (error) {

@@ -7,7 +7,6 @@ import {
     AccountXViewModel,
     State
 } from '../view_models/AccountXViewModel'
-import type { Account } from '../../../shared_types';
 
 // Props
 const props = defineProps<{
@@ -45,30 +44,30 @@ const archiveLikes = ref(true);
 const archiveDMs = ref(true);
 
 const loadSettings = async () => {
-    if (props.model.account?.xAccount !== null) {
-        archiveTweets.value = props.model.account?.xAccount.archiveTweets;
-        archiveTweetsHTML.value = props.model.account?.xAccount.archiveTweetsHTML;
-        archiveLikes.value = props.model.account?.xAccount.archiveLikes;
-        archiveDMs.value = props.model.account?.xAccount.archiveDMs;
+    console.log('XWizardSaveOptionsPage', 'loadSettings');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        archiveTweets.value = account.xAccount.archiveTweets;
+        archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
+        archiveLikes.value = account.xAccount.archiveLikes;
+        archiveDMs.value = account.xAccount.archiveDMs;
     }
 };
 
 const saveSettings = async () => {
+    console.log('XWizardSaveOptionsPage', 'saveSettings');
     if (props.model.account?.xAccount == null) {
         console.error('saveSettings', 'Account is null');
         return;
     }
-    const updatedAccount: Account = {
-        ...props.model.account,
-        xAccount: {
-            ...props.model.account?.xAccount,
-            archiveTweets: archiveTweets.value,
-            archiveTweetsHTML: archiveTweetsHTML.value,
-            archiveLikes: archiveLikes.value,
-            archiveDMs: archiveDMs.value
-        }
-    };
-    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        account.xAccount.archiveTweets = archiveTweets.value;
+        account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
+        account.xAccount.archiveLikes = archiveLikes.value;
+        account.xAccount.archiveDMs = archiveDMs.value;
+    }
+    await window.electron.database.saveAccount(JSON.stringify(account));
     emit('updateAccount');
 };
 

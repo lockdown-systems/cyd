@@ -12,7 +12,7 @@ import {
     XDeleteReviewStats,
     ResponseData,
     XArchiveInfo,
-    XUserStats,
+    XAccount,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -74,6 +74,9 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (key: string, value: string) => {
             ipcRenderer.invoke('database:setConfig', key, value)
         },
+        getAccount: (accountID: number): Promise<Account | null> => {
+            return ipcRenderer.invoke('database:getAccount', accountID)
+        },
         getAccounts: (): Promise<Account[]> => {
             return ipcRenderer.invoke('database:getAccounts')
         },
@@ -117,7 +120,7 @@ contextBridge.exposeInMainWorld('electron', {
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
         },
-        indexParseAllJSON: (accountID: number): Promise<XUserStats> => {
+        indexParseAllJSON: (accountID: number): Promise<XAccount> => {
             return ipcRenderer.invoke('X:indexParseAllJSON', accountID)
         },
         indexParseTweets: (accountID: number): Promise<XProgress> => {
