@@ -8,6 +8,8 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 
+import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
@@ -27,16 +29,6 @@ const nextClicked = async () => {
         emit('setState', State.WizardDeleteReview);
     } else {
         emit('setState', State.WizardReview);
-    }
-    emit('startStateLoop');
-};
-
-const backClicked = async () => {
-    await saveSettings();
-    if (props.model.account?.xAccount?.saveMyData) {
-        emit('setState', State.WizardSaveOptions);
-    } else {
-        emit('setState', State.WizardStart);
     }
     emit('startStateLoop');
 };
@@ -115,6 +107,9 @@ onMounted(async () => {
                 Delete your data from X, except for what you want to keep.
             </p>
         </div>
+        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Import or Build Database Again'"
+            :button-state="State.WizardImportOrBuild" @set-state="emit('setState', $event)"
+            @start-state-loop="emit('startStateLoop')" />
         <form @submit.prevent>
             <div class="d-flex align-items-center">
                 <div class="form-check mb-2">
@@ -266,16 +261,6 @@ onMounted(async () => {
             </div>
 
             <div class="buttons">
-                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
-                    <i class="fa-solid fa-backward" />
-                    <template v-if="props.model.account?.xAccount?.saveMyData">
-                        Back to Save Options
-                    </template>
-                    <template v-else>
-                        Back to Start
-                    </template>
-                </button>
-
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
                     model.account?.xAccount?.archiveTweets ||
                     model.account?.xAccount?.archiveLikes ||

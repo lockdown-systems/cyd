@@ -38,6 +38,7 @@
     "better-sqlite3": "^11.2.1",
     "bootstrap": "^5.3.3",
     "cheerio": "^1.0.0-rc.12",
+    "date-fns": "^4.1.0",
     "electron-log": "^5.1.4",
     "electron-squirrel-startup": "^1.0.1",
     "extract-zip": "^2.0.1",

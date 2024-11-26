@@ -2219,9 +2219,7 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-I'll help you delete your data from X. Before I can delete your tweets, retweets, or likes, I will need 
-to build a local database of them. I can delete your direct messages right away without building a local 
-database.
+I'll help you delete your data from X!
 
 **Which data do you want to delete?**`;
                     this.state = State.WizardDeleteOptionsDisplay;

@@ -8,6 +8,8 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 
+import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
@@ -58,6 +60,10 @@ onMounted(() => {
             <p class="text-muted">
                 How would you like to proceed?
             </p>
+
+            <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
+                :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)"
+                @start-state-loop="emit('startStateLoop')" />
 
             <form @submit.prevent>
                 <div class="mb-3">
