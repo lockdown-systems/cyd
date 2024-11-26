@@ -7,7 +7,6 @@ import {
     AccountXViewModel,
     State
 } from '../view_models/AccountXViewModel'
-import type { Account } from '../../../shared_types';
 
 // Props
 const props = defineProps<{
@@ -57,47 +56,47 @@ const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(true);
 
 const loadSettings = async () => {
-    if (props.model.account?.xAccount !== null) {
-        deleteTweets.value = props.model.account?.xAccount.deleteTweets;
-        deleteTweetsDaysOld.value = props.model.account?.xAccount.deleteTweetsDaysOld;
-        deleteTweetsRetweetsThresholdEnabled.value = props.model.account?.xAccount.deleteTweetsRetweetsThresholdEnabled;
-        deleteTweetsRetweetsThreshold.value = props.model.account?.xAccount.deleteTweetsRetweetsThreshold;
-        deleteTweetsLikesThresholdEnabled.value = props.model.account?.xAccount.deleteTweetsLikesThresholdEnabled;
-        deleteTweetsLikesThreshold.value = props.model.account?.xAccount.deleteTweetsLikesThreshold;
-        deleteTweetsArchiveEnabled.value = props.model.account?.xAccount.deleteTweetsArchiveEnabled;
-        deleteRetweets.value = props.model.account?.xAccount.deleteRetweets;
-        deleteRetweetsDaysOld.value = props.model.account?.xAccount.deleteRetweetsDaysOld;
-        deleteLikes.value = props.model.account?.xAccount.deleteLikes;
-        deleteLikesDaysOld.value = props.model.account?.xAccount.deleteLikesDaysOld;
-        deleteDMs.value = props.model.account?.xAccount.deleteDMs;
+    console.log('XWizardDeleteOptionsPage', 'loadSettings');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        deleteTweets.value = account.xAccount.deleteTweets;
+        deleteTweetsDaysOld.value = account.xAccount.deleteTweetsDaysOld;
+        deleteTweetsRetweetsThresholdEnabled.value = account.xAccount.deleteTweetsRetweetsThresholdEnabled;
+        deleteTweetsRetweetsThreshold.value = account.xAccount.deleteTweetsRetweetsThreshold;
+        deleteTweetsLikesThresholdEnabled.value = account.xAccount.deleteTweetsLikesThresholdEnabled;
+        deleteTweetsLikesThreshold.value = account.xAccount.deleteTweetsLikesThreshold;
+        deleteTweetsArchiveEnabled.value = account.xAccount.deleteTweetsArchiveEnabled;
+        deleteRetweets.value = account.xAccount.deleteRetweets;
+        deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
+        deleteLikes.value = account.xAccount.deleteLikes;
+        deleteLikesDaysOld.value = account.xAccount.deleteLikesDaysOld;
+        deleteDMs.value = account.xAccount.deleteDMs;
     }
 };
 
 const saveSettings = async () => {
-    if (props.model.account?.xAccount == null) {
-        console.error('saveSettings', 'Account is null');
+    console.log('XWizardDeleteOptionsPage', 'saveSettings');
+    if (!props.model.account) {
+        console.error('XWizardDeleteOptionsPage', 'saveSettings', 'account is null');
         return;
     }
-    const updatedAccount: Account = {
-        ...props.model.account,
-        xAccount: {
-            ...props.model.account?.xAccount,
-            deleteTweets: deleteTweets.value,
-            deleteTweetsDaysOld: deleteTweetsDaysOld.value,
-            deleteTweetsRetweetsThresholdEnabled: deleteTweetsRetweetsThresholdEnabled.value,
-            deleteTweetsRetweetsThreshold: deleteTweetsRetweetsThreshold.value,
-            deleteTweetsLikesThresholdEnabled: deleteTweetsLikesThresholdEnabled.value,
-            deleteTweetsLikesThreshold: deleteTweetsLikesThreshold.value,
-            deleteTweetsArchiveEnabled: deleteTweetsArchiveEnabled.value,
-            deleteRetweets: deleteRetweets.value,
-            deleteRetweetsDaysOld: deleteRetweetsDaysOld.value,
-            deleteLikes: deleteLikes.value,
-            deleteLikesDaysOld: deleteLikesDaysOld.value,
-            deleteDMs: deleteDMs.value
-        }
-    };
-    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
-    emit('updateAccount');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        account.xAccount.deleteTweets = deleteTweets.value;
+        account.xAccount.deleteTweetsDaysOld = deleteTweetsDaysOld.value;
+        account.xAccount.deleteTweetsRetweetsThresholdEnabled = deleteTweetsRetweetsThresholdEnabled.value;
+        account.xAccount.deleteTweetsRetweetsThreshold = deleteTweetsRetweetsThreshold.value;
+        account.xAccount.deleteTweetsLikesThresholdEnabled = deleteTweetsLikesThresholdEnabled.value;
+        account.xAccount.deleteTweetsLikesThreshold = deleteTweetsLikesThreshold.value;
+        account.xAccount.deleteTweetsArchiveEnabled = deleteTweetsArchiveEnabled.value;
+        account.xAccount.deleteRetweets = deleteRetweets.value;
+        account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
+        account.xAccount.deleteLikes = deleteLikes.value;
+        account.xAccount.deleteLikesDaysOld = deleteLikesDaysOld.value;
+        account.xAccount.deleteDMs = deleteDMs.value;
+        await window.electron.database.saveAccount(JSON.stringify(account));
+        emit('updateAccount');
+    }
 };
 
 onMounted(async () => {

@@ -56,8 +56,8 @@ const loadSettings = async () => {
 
 const saveSettings = async () => {
     console.log('XWizardSaveOptionsPage', 'saveSettings');
-    if (props.model.account?.xAccount == null) {
-        console.error('saveSettings', 'Account is null');
+    if (!props.model.account) {
+        console.error('XWizardSaveOptionsPage', 'saveSettings', 'account is null');
         return;
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
@@ -66,9 +66,9 @@ const saveSettings = async () => {
         account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
         account.xAccount.archiveLikes = archiveLikes.value;
         account.xAccount.archiveDMs = archiveDMs.value;
+        await window.electron.database.saveAccount(JSON.stringify(account));
+        emit('updateAccount');
     }
-    await window.electron.database.saveAccount(JSON.stringify(account));
-    emit('updateAccount');
 };
 
 onMounted(async () => {

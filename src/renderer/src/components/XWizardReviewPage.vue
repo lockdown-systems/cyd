@@ -7,7 +7,6 @@ import {
     AccountXViewModel,
     State
 } from '../view_models/AccountXViewModel'
-import type { Account } from '../../../shared_types';
 
 // Props
 const props = defineProps<{
@@ -43,27 +42,27 @@ const deleteFromDatabase = ref(false);
 const chanceToReview = ref(false);
 
 const loadSettings = async () => {
-    if (props.model.account?.xAccount !== null) {
-        deleteFromDatabase.value = props.model.account?.xAccount.deleteFromDatabase;
-        chanceToReview.value = props.model.account?.xAccount.chanceToReview;
+    console.log('XWizardDeleteOptionsPage', 'loadSettings');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        deleteFromDatabase.value = account.xAccount.deleteFromDatabase;
+        chanceToReview.value = account.xAccount.chanceToReview;
     }
 };
 
 const saveSettings = async () => {
-    if (props.model.account?.xAccount == null) {
-        console.error('saveSettings', 'Account is null');
+    console.log('XWizardDeleteOptionsPage', 'saveSettings');
+    if (!props.model.account) {
+        console.error('XWizardDeleteOptionsPage', 'saveSettings', 'account is null');
         return;
     }
-    const updatedAccount: Account = {
-        ...props.model.account,
-        xAccount: {
-            ...props.model.account?.xAccount,
-            deleteFromDatabase: deleteFromDatabase.value,
-            chanceToReview: chanceToReview.value
-        }
-    };
-    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
-    emit('updateAccount');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        account.xAccount.deleteFromDatabase = deleteFromDatabase.value;
+        account.xAccount.chanceToReview = chanceToReview.value;
+        await window.electron.database.saveAccount(JSON.stringify(account));
+        emit('updateAccount');
+    }
 };
 
 onMounted(async () => {
