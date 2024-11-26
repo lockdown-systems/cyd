@@ -22,8 +22,8 @@ export enum State {
     WizardPrestart = "wizardPrestart",
     WizardStart = "wizardStart",
     WizardStartDisplay = "wizardStartDisplay",
-    // WizardBuildDatabase = "wizardBuildDatabase",
-    // WizardBuildDatabaseDisplay = "wizardBuildDatabaseDisplay",
+    WizardBuildDatabase = "wizardBuildDatabase",
+    WizardBuildDatabaseDisplay = "wizardBuildDatabaseDisplay",
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
     WizardImportDownload = "WizardImportDownload",
@@ -2148,28 +2148,26 @@ Follow the instructions below to request your archive from X. You will need to v
                 case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-                    this.instructions = `
-You're signed into **@${this.account?.xAccount?.username}** on X.
-
-**What would you like to do?**`;
-                    this.state = State.WizardStartDisplay;
-                    // if (
-                    //     await window.electron.X.getConfig(this.account?.id, 'lastFinishedJob_importArchive') ||
-                    //     await window.electron.X.getConfig(this.account?.id, 'lastFinishedJob_indexTweets') ||
-                    //     await window.electron.X.getConfig(this.account?.id, 'lastFinishedJob_indexLikes')
-                    // ) {
-                    //     this.state = State.WizardDeleteOptions;
-                    // } else {
-                    //     this.state = State.WizardBuildDatabase;
-                    // }
+                    if (
+                        await window.electron.X.getConfig(this.account?.id, 'lastFinishedJob_importArchive') ||
+                        await window.electron.X.getConfig(this.account?.id, 'lastFinishedJob_indexTweets') ||
+                        await window.electron.X.getConfig(this.account?.id, 'lastFinishedJob_indexLikes')
+                    ) {
+                        this.state = State.WizardDeleteOptions;
+                    } else {
+                        this.state = State.WizardBuildDatabase;
+                    }
                     break;
 
-                // case State.WizardBuildDatabase:
-                //     this.showBrowser = false;
-                //     await this.loadURL("about:blank");
-                //     this.instructions = `I need a local database of your tweets, likes, and other data in X before I can delete it. `;
-                //     this.state = State.WizardBuildDatabaseDisplay;
-                //     break;
+                case State.WizardBuildDatabase:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+**I need a local database of the data in your X account before I can delete it.**
+
+You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
+                    this.state = State.WizardBuildDatabaseDisplay;
+                    break;
 
                 case State.WizardImportStart:
                     this.showBrowser = false;

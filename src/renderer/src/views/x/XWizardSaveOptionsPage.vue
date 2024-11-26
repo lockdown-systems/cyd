@@ -33,7 +33,7 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    emit('setState', State.WizardStart);
+    emit('setState', State.WizardBuildDatabase);
     emit('startStateLoop');
 };
 
@@ -128,7 +128,7 @@ onMounted(async () => {
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    Back to Start
+                    Back to Import or Build Database
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"

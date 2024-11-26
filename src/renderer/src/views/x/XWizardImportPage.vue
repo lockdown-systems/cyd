@@ -29,7 +29,7 @@ const importClicked = async () => {
 };
 
 const backClicked = async () => {
-    emit('setState', State.WizardStart);
+    emit('setState', State.WizardBuildDatabase);
     emit('startStateLoop');
 };
 </script>
@@ -65,7 +65,7 @@ const backClicked = async () => {
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    Back to Start
+                    Back to Import or Build Database
                 </button>
             </div>
         </div>
