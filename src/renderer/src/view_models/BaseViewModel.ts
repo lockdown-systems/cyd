@@ -44,7 +44,7 @@ export class BaseViewModel {
     public logs: Log[] = [];
 
     public account: Account;
-    public webview: WebviewTag;
+    public webview: WebviewTag | null;
     public api: CydAPIClient;
     public deviceInfo: DeviceInfo | null;
     public webContentsID: number | null;
@@ -71,9 +71,9 @@ export class BaseViewModel {
 
     private domReadyHandler: () => void;
 
-    constructor(account: Account, webview: WebviewTag, api: CydAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
+    constructor(account: Account, api: CydAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
         this.account = account;
-        this.webview = webview;
+        this.webview = null;
         this.api = api;
         this.deviceInfo = deviceInfo;
         this.webContentsID = null;
@@ -152,7 +152,9 @@ export class BaseViewModel {
         }
     }
 
-    async init() {
+    async init(webview: WebviewTag) {
+        this.webview = webview;
+
         // Open devtools if needed
         const shouldOpenDevtools = await window.electron.shouldOpenDevtools();
 
@@ -273,6 +275,11 @@ export class BaseViewModel {
     }
 
     async waitForSelector(selector: string, startingURL: string = '', timeout: number = DEFAULT_TIMEOUT) {
+        if (this.webview === null) {
+            this.log("waitForSelector", "webview is null");
+            return;
+        }
+
         if (startingURL == '') {
             startingURL = this.webview.getURL();
         }
@@ -355,6 +362,11 @@ export class BaseViewModel {
 
     // wait for containerSelector to exist, and also selector within containerSelector to exist
     async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = DEFAULT_TIMEOUT) {
+        if (this.webview === null) {
+            this.log("waitForSelector", "webview is null");
+            return;
+        }
+
         const startingURL = this.webview.getURL();
 
         const startTime = Date.now();

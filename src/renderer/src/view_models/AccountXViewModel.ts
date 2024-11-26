@@ -1,3 +1,4 @@
+import { WebviewTag } from 'electron';
 import { BaseViewModel, TimeoutError, URLChangedError, InternetDownError } from './BaseViewModel';
 import {
     XJob,
@@ -78,7 +79,7 @@ export class AccountXViewModel extends BaseViewModel {
     // Debug variables
     public debugAutopauseEndOfStep: boolean = false;
 
-    async init() {
+    async init(webview: WebviewTag) {
         if (this.account && this.account.xAccount && this.account.xAccount.username) {
             this.state = State.WizardPrestart;
         } else {
@@ -89,7 +90,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         await this.refreshDatabaseStats();
 
-        super.init();
+        super.init(webview);
     }
 
     async refreshDatabaseStats() {
@@ -158,7 +159,7 @@ export class AccountXViewModel extends BaseViewModel {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
             }, {
-                currentURL: this.webview.getURL()
+                currentURL: this.webview?.getURL()
             });
             return;
         }
@@ -174,7 +175,7 @@ export class AccountXViewModel extends BaseViewModel {
             await this.error(AutomationErrorType.x_unknownError, {
                 exception: (e as Error).toString()
             }, {
-                currentURL: this.webview.getURL()
+                currentURL: this.webview?.getURL()
             });
             return;
         }
@@ -225,7 +226,7 @@ export class AccountXViewModel extends BaseViewModel {
                         url: url,
                         exception: (e as Error).toString()
                     }, {
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     });
                 }
                 break;
@@ -234,7 +235,7 @@ export class AccountXViewModel extends BaseViewModel {
             // Did the URL change?
             if (!redirectOk) {
                 this.log("loadURLWithRateLimit", "checking if URL changed");
-                const newURL = new URL(this.webview.getURL());
+                const newURL = new URL(this.webview?.getURL() || '');
                 const originalURL = new URL(url);
                 // Check if the URL has changed, ignoring query strings
                 // e.g. a change from https://x.com/login to https://x.com/login?mx=2 is ok
@@ -251,10 +252,10 @@ export class AccountXViewModel extends BaseViewModel {
                     }
 
                     if (changedToUnexpected) {
-                        this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview.getURL()}`);
-                        throw new URLChangedError(url, this.webview.getURL());
+                        this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
+                        throw new URLChangedError(url, this.webview?.getURL() || '');
                     } else {
-                        this.log("loadURLWithRateLimit", `expected, URL change to ${this.webview.getURL()}`);
+                        this.log("loadURLWithRateLimit", `expected, URL change to ${this.webview?.getURL()}`);
                     }
                 }
             }
@@ -442,13 +443,13 @@ export class AccountXViewModel extends BaseViewModel {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
                     exception: (e as Error).toString()
                 }, {
-                    currentURL: this.webview.getURL()
+                    currentURL: this.webview?.getURL()
                 });
             } else {
                 await this.error(AutomationErrorType.X_login_WaitingForURLFailed, {
                     exception: (e as Error).toString()
                 }, {
-                    currentURL: this.webview.getURL()
+                    currentURL: this.webview?.getURL()
                 });
             }
         }
@@ -467,7 +468,7 @@ export class AccountXViewModel extends BaseViewModel {
         // Load home
         this.log("login", "getting username");
         this.instructions = `I'm discovering your username...`;
-        if (this.webview.getURL() != "https://x.com/home") {
+        if (this.webview?.getURL() != "https://x.com/home") {
             await this.loadURLWithRateLimit("https://x.com/home");
         }
 
@@ -484,7 +485,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Wait for profile page to load, and get the username from the URL
         await this.waitForSelector('div[data-testid="UserName"]');
-        const url = this.webview.getURL();
+        const url = this.webview?.getURL() || '';
         const urlObj = new URL(url);
         const username = urlObj.pathname.substring(1);
 
@@ -617,7 +618,7 @@ export class AccountXViewModel extends BaseViewModel {
                         return false;
                     }
                 } else if (e instanceof URLChangedError) {
-                    newURL = this.webview.getURL();
+                    newURL = this.webview?.getURL() || '';
                     error = e;
                     errorType = AutomationErrorType.x_runJob_deleteDMs_URLChanged;
                     this.log("deleteDMsLoadDMsPage", ["URL changed", newURL]);
@@ -635,7 +636,7 @@ export class AccountXViewModel extends BaseViewModel {
         if (!success) {
             await this.error(errorType, {
                 exception: (error as Error).toString(),
-                currentURL: this.webview.getURL(),
+                currentURL: this.webview?.getURL(),
                 newURL: newURL,
             })
             return true;
@@ -684,7 +685,7 @@ export class AccountXViewModel extends BaseViewModel {
             this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
                 message: "webContentsID is null"
             }, {
-                currentURL: this.webview.getURL()
+                currentURL: this.webview?.getURL()
             });
             return false;
         }
@@ -697,7 +698,7 @@ export class AccountXViewModel extends BaseViewModel {
                 exception: (e as Error).toString()
             }, {
                 tweetItem: tweetItem,
-                currentURL: this.webview.getURL()
+                currentURL: this.webview?.getURL()
             })
             return false;
         }
@@ -806,19 +807,19 @@ Hang on while I scroll down to your earliest tweets.`;
                         await this.syncProgress();
                     }
                 } else if (e instanceof URLChangedError) {
-                    const newURL = this.webview.getURL();
+                    const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
                         newURL: newURL,
                         exception: (e as Error).toString()
                     }, {
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
                 } else {
                     await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
                         exception: (e as Error).toString()
                     }, {
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
                 }
@@ -872,7 +873,7 @@ Hang on while I scroll down to your earliest tweets.`;
                     exception: (e as Error).toString()
                 }, {
                     latestResponseData: latestResponseData,
-                    currentURL: this.webview.getURL()
+                    currentURL: this.webview?.getURL()
                 });
                 errorTriggered = true;
                 break;
@@ -893,7 +894,7 @@ Hang on while I scroll down to your earliest tweets.`;
                         exception: (e as Error).toString()
                     }, {
                         latestResponseData: latestResponseData,
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     });
                     errorTriggered = true;
                     break;
@@ -1039,17 +1040,17 @@ Hang on while I scroll down to your earliest direct message conversations...`;
                         break;
                     }
                 } else if (e instanceof URLChangedError) {
-                    const newURL = this.webview.getURL();
+                    const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
                         newURL: newURL,
                         exception: (e as Error).toString(),
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
                 } else {
                     await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
                         exception: (e as Error).toString(),
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
                 }
@@ -1234,7 +1235,7 @@ Please wait while I index all the messages from each conversation...`;
                         exception: (e as Error).toString()
                     }, {
                         latestResponseData: latestResponseData,
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     });
                     errorTriggered = true;
                     break;
@@ -1357,7 +1358,7 @@ Hang on while I scroll down to your earliest likes.`;
                         await this.syncProgress();
                     }
                 } else if (e instanceof URLChangedError) {
-                    const newURL = this.webview.getURL();
+                    const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
                         newURL: newURL,
                         exception: (e as Error).toString()
@@ -1426,7 +1427,7 @@ Hang on while I scroll down to your earliest likes.`;
                         exception: (e as Error).toString()
                     }, {
                         latestResponseData: latestResponseData,
-                        currentURL: this.webview.getURL()
+                        currentURL: this.webview?.getURL()
                     });
                     errorTriggered = true;
                     break;
@@ -2051,7 +2052,7 @@ Follow the instructions below to request your archive from X. You will need to v
         // eslint-disable-next-line no-constant-condition
         while (true) {
             // Check the URL
-            const currentURL = this.webview.getURL();
+            const currentURL = this.webview?.getURL();
             if (currentURL == "https://x.com/settings/download_your_data") {
                 if (await this.isSelectorLastDisabled('main div div button')) {
                     // The request archive button is disabled, which means we have requested the archive

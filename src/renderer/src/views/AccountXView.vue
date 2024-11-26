@@ -56,8 +56,6 @@ const emit = defineEmits(['onRefreshClicked', 'onRemoveClicked']);
 const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
-const model = ref<AccountXViewModel | null>(null);
-
 const currentState = ref<State>(State.Login);
 const failureStateIndexTweets_FailedToRetryAfterRateLimit = ref(false);
 const failureStateIndexLikes_FailedToRetryAfterRateLimit = ref(false);
@@ -71,9 +69,13 @@ const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
+// The X view model
+const model: AccountXViewModel = new AccountXViewModel(props.account, apiClient.value, deviceInfo.value, emitter);
+
+
 // Keep currentState in sync
 watch(
-    () => model.value?.state,
+    () => model.state,
     async (newState) => {
         if (newState) {
             currentState.value = newState as State;
@@ -87,28 +89,28 @@ watch(
 
 // Keep progress updated
 watch(
-    () => model.value?.progress,
+    () => model.progress,
     (newProgress) => { if (newProgress) progress.value = newProgress; },
     { deep: true, }
 );
 
 // Keep rateLimitInfo updated
 watch(
-    () => model.value?.rateLimitInfo,
+    () => model.rateLimitInfo,
     (newRateLimitInfo) => { if (newRateLimitInfo) rateLimitInfo.value = newRateLimitInfo; },
     { deep: true, }
 );
 
 // Keep jobs status updated
 watch(
-    () => model.value?.jobs,
+    () => model.jobs,
     (newJobs) => { if (newJobs) currentJobs.value = newJobs; },
     { deep: true, }
 );
 
 // Keep isPaused updated
 watch(
-    () => model.value?.isPaused,
+    () => model.isPaused,
     (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
     { deep: true, }
 );
@@ -118,8 +120,8 @@ const updateAccount = async () => {
 };
 
 const setState = async (state: State) => {
-    if (model.value !== null) {
-        model.value.state = state;
+    if (model !== null) {
+        model.state = state;
     }
 };
 
@@ -129,21 +131,21 @@ const startStateLoop = async () => {
 
     while (canStateLoopRun.value) {
         // Run next state
-        if (model.value !== null) {
-            await model.value.run();
+        if (model !== null) {
+            await model.run();
         }
 
         // Break out of the state loop if the view model is in a display state
         if (
-            model.value?.state === State.WizardStartDisplay ||
-            model.value?.state === State.WizardImportOptionsDisplay ||
-            model.value?.state === State.WizardImportStartDisplay ||
-            model.value?.state === State.WizardSaveOptionsDisplay ||
-            model.value?.state === State.WizardDeleteOptionsDisplay ||
-            model.value?.state === State.WizardReviewDisplay ||
-            model.value?.state === State.WizardDeleteReviewDisplay ||
-            model.value?.state === State.WizardCheckPremiumDisplay ||
-            model.value?.state === State.FinishedRunningJobsDisplay
+            model.state === State.WizardStartDisplay ||
+            model.state === State.WizardImportOptionsDisplay ||
+            model.state === State.WizardImportStartDisplay ||
+            model.state === State.WizardSaveOptionsDisplay ||
+            model.state === State.WizardDeleteOptionsDisplay ||
+            model.state === State.WizardReviewDisplay ||
+            model.state === State.WizardDeleteReviewDisplay ||
+            model.state === State.WizardCheckPremiumDisplay ||
+            model.state === State.FinishedRunningJobsDisplay
         ) {
             break;
         }
@@ -159,7 +161,7 @@ const onAutomationErrorRetry = () => {
     console.log('Retrying automation after error');
 
     // Store the state of the view model before the error
-    const state: XViewModelState | undefined = model.value?.saveState();
+    const state: XViewModelState | undefined = model.saveState();
     localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
     emit('onRefreshClicked');
 };
@@ -171,7 +173,7 @@ const onAutomationErrorCancel = () => {
 
 const onAutomationErrorResume = () => {
     console.log('Resuming after after error');
-    model.value?.resume();
+    model.resume();
 };
 
 const onCancelAutomation = () => {
@@ -183,15 +185,15 @@ const onReportBug = async () => {
     console.log('Report bug clicked');
 
     // Pause
-    model.value?.pause();
+    model.pause();
 
     // Submit error report
-    if (model.value !== null) {
-        await model.value.error(AutomationErrorType.X_manualBugReport, {
+    if (model !== null) {
+        await model.error(AutomationErrorType.X_manualBugReport, {
             message: 'User is manually reporting a bug',
-            state: model.value.saveState()
+            state: model.saveState()
         }, {
-            currentURL: model.value.webview.getURL()
+            currentURL: model.webview?.getURL()
         });
     }
 }
@@ -237,14 +239,12 @@ emitter?.on('signed-out', async () => {
 });
 
 const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) => {
-    if (!model.value) { return; }
-
     // Premium check
-    if (model.value.account.xAccount?.deleteMyData) {
+    if (model.account.xAccount?.deleteMyData) {
         await updateUserAuthenticated();
         console.log("userAuthenticated", userAuthenticated.value);
         if (!userAuthenticated.value) {
-            model.value.state = State.WizardCheckPremium;
+            model.state = State.WizardCheckPremium;
             await startStateLoop();
             return;
         }
@@ -252,46 +252,43 @@ const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) =
         await updateUserPremium();
         console.log("userPremium", userPremium.value);
         if (!userPremium.value) {
-            model.value.state = State.WizardCheckPremium;
+            model.state = State.WizardCheckPremium;
             await startStateLoop();
             return;
         }
     }
 
     // If chance to review is checked, make isDeleteReview active
-    model.value.isDeleteReviewActive = chanceToReview;
+    model.isDeleteReviewActive = chanceToReview;
 
     // All good, start the jobs
     console.log('Starting jobs');
-    if (model.value) {
-        await model.value.defineJobs();
-    }
-    if (model.value.account.xAccount?.deleteMyData && deleteFromDatabase) {
-        model.value.state = State.WizardDeleteReview;
+    await model.defineJobs();
+    if (model.account.xAccount?.deleteMyData && deleteFromDatabase) {
+        model.state = State.WizardDeleteReview;
     } else {
-        model.value.state = State.RunJobs;
+        model.state = State.RunJobs;
     }
     await startStateLoop();
 };
 
 const startJobsDeleteReview = async () => {
-    if (!model.value) { return; }
-    await model.value.defineJobs(true);
-    model.value.isDeleteReviewActive = false;
-    model.value.state = State.RunJobs;
+    await model.defineJobs(true);
+    model.isDeleteReviewActive = false;
+    model.state = State.RunJobs;
     await startStateLoop();
 };
 
 const startJobsJustSave = async () => {
-    if (model.value?.account.xAccount == null) {
+    if (model.account.xAccount == null) {
         console.error('startJobsJustSave', 'Account is null');
         return;
     }
 
     const updatedAccount: Account = {
-        ...model.value.account,
+        ...model.account,
         xAccount: {
-            ...model.value.account.xAccount,
+            ...model.account.xAccount,
             saveMyData: true,
             deleteMyData: false,
         }
@@ -300,43 +297,40 @@ const startJobsJustSave = async () => {
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
     await updateAccount();
 
-    model.value.state = State.WizardReview;
+    model.state = State.WizardReview;
     await startStateLoop();
 };
 
 const finishedRunAgainClicked = async () => {
-    if (!model.value) { return; }
-    model.value.state = State.WizardReview;
+    model.state = State.WizardReview;
     await startStateLoop();
 };
 
 const updateAccountInViewModel = (account: Account) => {
-    if (model.value) {
-        model.value.account = account;
-    }
+    model.account = account;
 };
 
 // Debug functions
 
 const debugAutopauseEndOfStepChanged = async (value: boolean) => {
-    if (model.value !== null) {
-        model.value.debugAutopauseEndOfStep = value;
+    if (model !== null) {
+        model.debugAutopauseEndOfStep = value;
     }
 };
 
 const debugModeTriggerError = async () => {
-    if (model.value !== null) {
-        await model.value.error(AutomationErrorType.x_unknownError, {
+    if (model !== null) {
+        await model.error(AutomationErrorType.x_unknownError, {
             message: 'Debug mode error triggered'
         }, {
-            currentURL: model.value.webview.getURL()
+            currentURL: model.webview?.getURL()
         });
     }
 };
 
 const debugModeDisable = async () => {
-    if (model.value !== null) {
-        model.value.state = State.WizardPrestart;
+    if (model !== null) {
+        model.state = State.WizardPrestart;
     }
 };
 
@@ -348,8 +342,7 @@ onMounted(async () => {
 
         // Start the state loop
         if (props.account.xAccount !== null) {
-            model.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value, emitter);
-            await model.value.init();
+            await model.init(webview);
 
             // If there's a saved state from a retry, restore it
             const savedState = localStorage.getItem(`account-${props.account.id}-state`);
@@ -357,7 +350,7 @@ onMounted(async () => {
                 console.log('Restoring saved state', savedState);
                 const savedStateObj: XViewModelState = JSON.parse(savedState);
 
-                model.value.restoreState(savedStateObj);
+                model.restoreState(savedStateObj);
                 currentState.value = savedStateObj.state as State;
                 progress.value = savedStateObj.progress;
                 currentJobs.value = savedStateObj.jobs;
@@ -397,8 +390,8 @@ onUnmounted(async () => {
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 
     // Cleanup the view controller
-    if (model.value !== null) {
-        await model.value.cleanup();
+    if (model !== null) {
+        await model.cleanup();
     }
 });
 </script>
@@ -411,93 +404,93 @@ onUnmounted(async () => {
         <div class="d-flex">
             <div class="d-flex flex-column flex-grow-1">
                 <!-- Speech bubble -->
-                <SpeechBubble ref="speechBubbleComponent" :message="model?.instructions || ''" class="mb-2"
+                <SpeechBubble ref="speechBubbleComponent" :message="model.instructions || ''" class="mb-2"
                     :class="{ 'w-100': currentJobs.length === 0 }" />
 
                 <!-- Progress -->
                 <XProgressComponent
-                    v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && model?.state == State.RunJobs"
+                    v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && model.state == State.RunJobs"
                     :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
             </div>
 
             <div class="d-flex align-items-center">
                 <!-- Job status -->
-                <XJobStatusComponent v-if="currentJobs.length > 0 && model?.state == State.RunJobs" :jobs="currentJobs"
-                    :is-paused="isPaused" class="job-status-component" @on-pause="model?.pause()"
-                    @on-resume="model?.resume()" @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
+                <XJobStatusComponent v-if="currentJobs.length > 0 && model.state == State.RunJobs" :jobs="currentJobs"
+                    :is-paused="isPaused" class="job-status-component" @on-pause="model.pause()"
+                    @on-resume="model.resume()" @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
             </div>
         </div>
 
         <!-- U2F security key notice -->
-        <p v-if="model?.state == State.Login" class="u2f-info text-center text-muted small">
+        <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small">
             <i class="fa-solid fa-circle-info me-2" />
             If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
             screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
         </p>
 
         <!-- Automation notice -->
-        <p v-if="(model?.showBrowser && model?.showAutomationNotice)" class="text-muted text-center automation-notice">
+        <p v-if="(model.showBrowser && model.showAutomationNotice)" class="text-muted text-center automation-notice">
             <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
             your computer for other things.
         </p>
 
         <!-- Ready for input -->
-        <p v-if="(model?.showBrowser && !model?.showAutomationNotice)" class="text-muted text-center ready-for-input">
+        <p v-if="(model.showBrowser && !model.showAutomationNotice)" class="text-muted text-center ready-for-input">
             <i class="fa-solid fa-computer-mouse" /> Ready for input.
         </p>
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
             :class="{
-                'hidden': !model?.showBrowser,
-                'webview-automation-border': model?.showAutomationNotice,
-                'webview-input-border': !model?.showAutomationNotice
+                'hidden': !model.showBrowser,
+                'webview-automation-border': model.showAutomationNotice,
+                'webview-input-border': !model.showAutomationNotice
             }" />
 
         <!-- Wizard -->
-        <div :class="{ 'hidden': model?.showBrowser, 'wizard': true }">
+        <div :class="{ 'hidden': model.showBrowser, 'wizard': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
-                    <XWizardStartPage v-if="model?.state == State.WizardStartDisplay" :account="account" :model="model"
+                    <XWizardStartPage v-if="model.state == State.WizardStartDisplay" :account="account" :model="model"
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @update-account="updateAccount" @set-state="setState($event)"
                         @start-state-loop="startStateLoop" />
 
-                    <XWizardImportPage v-if="model?.state == State.WizardImportStartDisplay" :model="model"
+                    <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardImportDownloadPage v-if="model?.state == State.WizardImportDownloadDisplay"
+                    <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardImportOptionsPage v-if="model?.state == State.WizardImportOptionsDisplay" :model="model"
+                    <XWizardImportOptionsPage v-if="model.state == State.WizardImportOptionsDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardSaveOptionsPage v-if="model?.state == State.WizardSaveOptionsDisplay" :model="model"
+                    <XWizardSaveOptionsPage v-if="model.state == State.WizardSaveOptionsDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardDeleteOptionsPage v-if="model?.state == State.WizardDeleteOptionsDisplay" :model="model"
+                    <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardReviewPage v-if="model?.state == State.WizardReviewDisplay" :model="model"
+                    <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
                         @start-jobs="startJobs" />
 
-                    <XWizardDeleteReviewPage v-if="model?.state == State.WizardDeleteReviewDisplay" :model="model"
+                    <XWizardDeleteReviewPage v-if="model.state == State.WizardDeleteReviewDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
                         @start-jobs-delete-review="startJobsDeleteReview" />
 
-                    <XWizardCheckPremium v-if="model?.state == State.WizardCheckPremiumDisplay" :model="model"
+                    <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="model"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
                         @start-jobs-just-save="startJobsJustSave" />
 
-                    <XFinishedRunningJobsPage v-if="model?.state == State.FinishedRunningJobsDisplay" :model="model"
+                    <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay" :model="model"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
                         @finished-run-again-clicked="finishedRunAgainClicked" />
 
                     <!-- Debug state -->
-                    <div v-if="model?.state == State.Debug">
+                    <div v-if="model.state == State.Debug">
                         <p>Debug debug debug!!!</p>
                         <p>
                             <button class="btn btn-danger" @click="debugModeTriggerError">
