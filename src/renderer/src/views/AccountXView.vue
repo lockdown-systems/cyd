@@ -477,6 +477,8 @@ onUnmounted(async () => {
                         @start-jobs="startJobs" />
 
                     <XWizardDeleteReviewPage v-if="model.state == State.WizardDeleteReviewDisplay" :model="model"
+                        :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
+                        :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
                         @start-jobs-delete-review="startJobsDeleteReview" />
 
@@ -486,6 +488,8 @@ onUnmounted(async () => {
                         @start-jobs-just-save="startJobsJustSave" />
 
                     <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay" :model="model"
+                        :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
+                        :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
                         @finished-run-again-clicked="finishedRunAgainClicked" />
 
