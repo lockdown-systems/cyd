@@ -11,7 +11,7 @@ import type { Account } from '../../../shared_types';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel | null;
+    model: AccountXViewModel;
 }>();
 
 // Emits
@@ -30,7 +30,7 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    if (props.model?.account.xAccount?.deleteMyData) {
+    if (props.model.account.xAccount?.deleteMyData) {
         emit('setState', State.WizardDeleteOptions);
     } else {
         emit('setState', State.WizardSaveOptions);
@@ -43,21 +43,21 @@ const deleteFromDatabase = ref(false);
 const chanceToReview = ref(false);
 
 const loadSettings = async () => {
-    if (props.model && props.model.account.xAccount !== null) {
+    if (props.model.account.xAccount !== null) {
         deleteFromDatabase.value = props.model.account.xAccount.deleteFromDatabase;
         chanceToReview.value = props.model.account.xAccount.chanceToReview;
     }
 };
 
 const saveSettings = async () => {
-    if (props.model?.account.xAccount == null) {
+    if (props.model.account.xAccount == null) {
         console.error('saveSettings', 'Account is null');
         return;
     }
     const updatedAccount: Account = {
-        ...props.model?.account,
+        ...props.model.account,
         xAccount: {
-            ...props.model?.account.xAccount,
+            ...props.model.account.xAccount,
             deleteFromDatabase: deleteFromDatabase.value,
             chanceToReview: chanceToReview.value
         }
@@ -79,65 +79,65 @@ onMounted(async () => {
             </h2>
         </div>
         <form @submit.prevent>
-            <div v-if="model?.account.xAccount?.saveMyData">
+            <div v-if="model.account.xAccount?.saveMyData">
                 <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
                     Save my data
                 </h3>
                 <ul>
-                    <li v-if="model?.account.xAccount?.archiveTweets">
+                    <li v-if="model.account.xAccount?.archiveTweets">
                         Save tweets
                         <ul>
-                            <li v-if="model?.account.xAccount?.archiveTweetsHTML">
+                            <li v-if="model.account.xAccount?.archiveTweetsHTML">
                                 Save HTML versions of tweets
                             </li>
                         </ul>
                     </li>
-                    <li v-if="model?.account.xAccount?.archiveLikes">
+                    <li v-if="model.account.xAccount?.archiveLikes">
                         Save likes
                     </li>
-                    <li v-if="model?.account.xAccount?.archiveDMs">
+                    <li v-if="model.account.xAccount?.archiveDMs">
                         Save direct messages
                     </li>
                 </ul>
             </div>
 
-            <div v-if="model?.account.xAccount?.deleteMyData">
+            <div v-if="model.account.xAccount?.deleteMyData">
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
                     Delete my data
                     <span class="premium badge badge-primary">Premium</span>
                 </h3>
                 <ul class="mb-4">
-                    <li v-if="model?.account.xAccount?.deleteTweets">
-                        Delete tweets older than {{ model?.account.xAccount?.deleteTweetsDaysOld }} days
+                    <li v-if="model.account.xAccount?.deleteTweets">
+                        Delete tweets older than {{ model.account.xAccount?.deleteTweetsDaysOld }} days
                         <ul>
-                            <li v-if="model?.account.xAccount?.deleteTweetsRetweetsThresholdEnabled">
+                            <li v-if="model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled">
                                 Keep tweets with at least {{
-                                    model?.account.xAccount?.deleteTweetsRetweetsThreshold }}
+                                    model.account.xAccount?.deleteTweetsRetweetsThreshold }}
                                 retweets
                             </li>
-                            <li v-if="model?.account.xAccount?.deleteTweetsLikesThresholdEnabled">
+                            <li v-if="model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
                                 Keep tweets with at least {{
-                                    model?.account.xAccount?.deleteTweetsLikesThreshold }} likes
+                                    model.account.xAccount?.deleteTweetsLikesThreshold }} likes
                             </li>
-                            <li v-if="model?.account.xAccount?.deleteTweetsArchiveEnabled">
+                            <li v-if="model.account.xAccount?.deleteTweetsArchiveEnabled">
                                 Save an HTML version of each tweet before deleting it
                             </li>
                         </ul>
                     </li>
-                    <li v-if="model?.account.xAccount?.deleteRetweets">
-                        Unretweet tweets older than {{ model?.account.xAccount?.deleteRetweetsDaysOld }} days
+                    <li v-if="model.account.xAccount?.deleteRetweets">
+                        Unretweet tweets older than {{ model.account.xAccount?.deleteRetweetsDaysOld }} days
                     </li>
-                    <li v-if="model?.account.xAccount?.deleteLikes">
-                        Unlike tweets older than {{ model?.account.xAccount?.deleteLikesDaysOld }} days
+                    <li v-if="model.account.xAccount?.deleteLikes">
+                        Unlike tweets older than {{ model.account.xAccount?.deleteLikesDaysOld }} days
                     </li>
-                    <li v-if="model?.account.xAccount?.deleteDMs">
+                    <li v-if="model.account.xAccount?.deleteDMs">
                         Delete direct messages
                     </li>
                 </ul>
 
-                <div v-if="!model?.account.xAccount?.saveMyData" class="mb-2">
+                <div v-if="!model.account.xAccount?.saveMyData" class="mb-2">
                     <div class="form-check">
                         <input id="deleteFromDatabase" v-model="deleteFromDatabase" type="checkbox"
                             class="form-check-input">
@@ -172,7 +172,7 @@ onMounted(async () => {
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    <template v-if="model?.account.xAccount?.deleteMyData">
+                    <template v-if="model.account.xAccount?.deleteMyData">
                         Back to Delete Options
                     </template>
                     <template v-else>
@@ -181,10 +181,10 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(model?.account.xAccount?.archiveTweets || model?.account.xAccount?.archiveLikes || model?.account.xAccount?.archiveDMs)"
+                    :disabled="!(model.account.xAccount?.archiveTweets || model.account.xAccount?.archiveLikes || model.account.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    <template v-if="model?.account.xAccount?.saveMyData">
+                    <template v-if="model.account.xAccount?.saveMyData">
                         <template v-if="deleteFromDatabase">
                             Review Before Deleting
                         </template>

@@ -11,7 +11,7 @@ import type { Account } from '../../../shared_types';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel | null;
+    model: AccountXViewModel;
 }>();
 
 // Emits
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
-    if (props.model?.isDeleteReviewActive) {
+    if (props.model.isDeleteReviewActive) {
         emit('setState', State.WizardDeleteReview);
     } else {
         emit('setState', State.WizardReview);
@@ -34,7 +34,7 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    if (props.model?.account.xAccount?.saveMyData) {
+    if (props.model.account.xAccount?.saveMyData) {
         emit('setState', State.WizardSaveOptions);
     } else {
         emit('setState', State.WizardStart);
@@ -57,7 +57,7 @@ const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(true);
 
 const loadSettings = async () => {
-    if (props.model && props.model.account.xAccount !== null) {
+    if (props.model.account.xAccount !== null) {
         deleteTweets.value = props.model.account.xAccount.deleteTweets;
         deleteTweetsDaysOld.value = props.model.account.xAccount.deleteTweetsDaysOld;
         deleteTweetsRetweetsThresholdEnabled.value = props.model.account.xAccount.deleteTweetsRetweetsThresholdEnabled;
@@ -74,14 +74,14 @@ const loadSettings = async () => {
 };
 
 const saveSettings = async () => {
-    if (props.model?.account.xAccount == null) {
+    if (props.model.account.xAccount == null) {
         console.error('saveSettings', 'Account is null');
         return;
     }
     const updatedAccount: Account = {
-        ...props.model?.account,
+        ...props.model.account,
         xAccount: {
-            ...props.model?.account.xAccount,
+            ...props.model.account.xAccount,
             deleteTweets: deleteTweets.value,
             deleteTweetsDaysOld: deleteTweetsDaysOld.value,
             deleteTweetsRetweetsThresholdEnabled: deleteTweetsRetweetsThresholdEnabled.value,
@@ -269,7 +269,7 @@ onMounted(async () => {
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    <template v-if="model?.account.xAccount?.saveMyData">
+                    <template v-if="props.model.account.xAccount?.saveMyData">
                         Back to Save Options
                     </template>
                     <template v-else>
@@ -278,9 +278,9 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    model?.account.xAccount?.archiveTweets ||
-                    model?.account.xAccount?.archiveLikes ||
-                    model?.account.xAccount?.archiveDMs)" @click="nextClicked">
+                    model.account.xAccount?.archiveTweets ||
+                    model.account.xAccount?.archiveLikes ||
+                    model.account.xAccount?.archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

@@ -11,7 +11,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel | null;
+    model: AccountXViewModel;
     userAuthenticated: boolean;
     userPremium: boolean;
 }>();
@@ -26,17 +26,13 @@ const emit = defineEmits<{
 // Buttons
 const signInClicked = async () => {
     localStorage.setItem('manageAccountMode', 'premium');
-    if (props.model) {
-        localStorage.setItem('manageAccountRedirectAccountID', props.model.account.id.toString());
-    }
+    localStorage.setItem('manageAccountRedirectAccountID', props.model.account.id.toString());
     emitter?.emit("show-sign-in");
 };
 
 const manageAccountClicked = async () => {
     localStorage.setItem('manageAccountMode', 'premium');
-    if (props.model) {
-        localStorage.setItem('manageAccountRedirectAccountID', props.model.account.id.toString());
-    }
+    localStorage.setItem('manageAccountRedirectAccountID', props.model.account.id.toString());
     emitter?.emit("show-manage-account");
 };
 
@@ -97,9 +93,9 @@ const backClicked = async () => {
                 </button>
 
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" :disabled="!(
-                    model?.account.xAccount?.archiveTweets ||
-                    model?.account.xAccount?.archiveLikes ||
-                    model?.account.xAccount?.archiveDMs)" @click="justSaveClicked">
+                    model.account.xAccount?.archiveTweets ||
+                    model.account.xAccount?.archiveLikes ||
+                    model.account.xAccount?.archiveDMs)" @click="justSaveClicked">
                     <i class="fa-solid fa-floppy-disk" />
                     Just Save My Data for Now
                 </button>
