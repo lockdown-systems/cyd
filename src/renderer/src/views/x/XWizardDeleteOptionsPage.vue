@@ -42,18 +42,18 @@ const backClicked = async () => {
 };
 
 // Settings
-const deleteTweets = ref(true);
+const deleteTweets = ref(false);
 const deleteTweetsDaysOld = ref(0);
-const deleteTweetsRetweetsThresholdEnabled = ref(true);
+const deleteTweetsRetweetsThresholdEnabled = ref(false);
 const deleteTweetsRetweetsThreshold = ref(0);
-const deleteTweetsLikesThresholdEnabled = ref(true);
+const deleteTweetsLikesThresholdEnabled = ref(false);
 const deleteTweetsLikesThreshold = ref(0);
-const deleteTweetsArchiveEnabled = ref(true);
-const deleteRetweets = ref(true);
+const deleteTweetsArchiveEnabled = ref(false);
+const deleteRetweets = ref(false);
 const deleteRetweetsDaysOld = ref(0);
-const deleteLikes = ref(true);
+const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
-const deleteDMs = ref(true);
+const deleteDMs = ref(false);
 
 const loadSettings = async () => {
     console.log('XWizardDeleteOptionsPage', 'loadSettings');

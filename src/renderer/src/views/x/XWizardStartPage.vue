@@ -7,7 +7,6 @@ import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
-import type { Account } from '../../../../shared_types';
 import { openPreventSleepURL } from '../../util';
 
 // Props
@@ -38,31 +37,31 @@ const nextClicked = async () => {
 };
 
 // Settings
-const saveMyData = ref(true);
-const deleteMyData = ref(true);
+const saveMyData = ref(false);
+const deleteMyData = ref(false);
 
 const loadSettings = async () => {
-    if (props.model.account?.xAccount !== null) {
-        saveMyData.value = props.model.account?.xAccount.saveMyData;
-        deleteMyData.value = props.model.account?.xAccount.deleteMyData;
+    console.log('XWizardStartPage', 'loadSettings');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        saveMyData.value = account.xAccount.saveMyData;
+        deleteMyData.value = account.xAccount.deleteMyData;
     }
 };
 
 const saveSettings = async () => {
-    if (props.model.account?.xAccount == null) {
-        console.error('saveSettings', 'Account is null');
+    console.log('XWizardSaveOptionsPage', 'saveSettings');
+    if (!props.model.account) {
+        console.error('XWizardSaveOptionsPage', 'saveSettings', 'account is null');
         return;
     }
-    const updatedAccount: Account = {
-        ...props.model.account,
-        xAccount: {
-            ...props.model.account?.xAccount,
-            saveMyData: saveMyData.value,
-            deleteMyData: deleteMyData.value
-        }
-    };
-    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
-    emit('updateAccount');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        account.xAccount.saveMyData = saveMyData.value;
+        account.xAccount.deleteMyData = deleteMyData.value;
+        await window.electron.database.saveAccount(JSON.stringify(account));
+        emit('updateAccount');
+    }
 };
 
 onMounted(async () => {

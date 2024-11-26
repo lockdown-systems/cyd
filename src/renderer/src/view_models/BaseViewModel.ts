@@ -119,6 +119,14 @@ export class BaseViewModel {
         this.getWebview()?.removeEventListener("dom-ready", this.domReadyHandler);
     }
 
+    async reloadAccount() {
+        this.log("reloadAccount");
+        const account = await window.electron.database.getAccount(this.account.id);
+        if (account) {
+            this.account = account;
+        }
+    }
+
     powerMonitorSuspend() {
         if (this.suspendLock) {
             this.log("powerMonitorSuspend", "already got the suspend event, so skipping");

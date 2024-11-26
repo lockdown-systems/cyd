@@ -115,6 +115,7 @@ watch(
 );
 
 const updateAccount = async () => {
+    await model.value.reloadAccount();
     emitter?.emit('account-updated');
 };
 
@@ -465,10 +466,12 @@ onUnmounted(async () => {
                         :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
                     <XWizardSaveOptionsPage v-if="model.state == State.WizardSaveOptionsDisplay" :model="unref(model)"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                        @set-state="setState($event)" @update-account="updateAccount"
+                        @start-state-loop="startStateLoop" />
 
                     <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
-                        :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                        :model="unref(model)" @update-account="updateAccount" @set-state="setState($event)"
+                        @start-state-loop="startStateLoop" />
 
                     <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"

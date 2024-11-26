@@ -38,10 +38,10 @@ const backClicked = async () => {
 };
 
 // Settings
-const archiveTweets = ref(true);
-const archiveTweetsHTML = ref(true);
-const archiveLikes = ref(true);
-const archiveDMs = ref(true);
+const archiveTweets = ref(false);
+const archiveTweetsHTML = ref(false);
+const archiveLikes = ref(false);
+const archiveDMs = ref(false);
 
 const loadSettings = async () => {
     console.log('XWizardSaveOptionsPage', 'loadSettings');
