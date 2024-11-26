@@ -896,9 +896,10 @@ onUnmounted(async () => {
                                 It's time to claw back your data from X
                             </h2>
                             <p class="text-muted">
-                                Choose what you want to do with your X data.
+                                Before you can delete your data from X, Cyd needs a local database of it.
                             </p>
                         </div>
+
                         <form @submit.prevent>
                             <div class="mb-3">
                                 <div class="form-check">

@@ -22,6 +22,8 @@ export enum State {
     WizardPrestart = "wizardPrestart",
     WizardStart = "wizardStart",
     WizardStartDisplay = "wizardStartDisplay",
+    // WizardBuildDatabase = "wizardBuildDatabase",
+    // WizardBuildDatabaseDisplay = "wizardBuildDatabaseDisplay",
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
     WizardImportDownload = "WizardImportDownload",
@@ -2167,7 +2169,23 @@ You're signed into **@${this.account.xAccount?.username}** on X.
 
 **What would you like to do?**`;
                     this.state = State.WizardStartDisplay;
+                    // if (
+                    //     await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_importArchive') ||
+                    //     await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexTweets') ||
+                    //     await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexLikes')
+                    // ) {
+                    //     this.state = State.WizardDeleteOptions;
+                    // } else {
+                    //     this.state = State.WizardBuildDatabase;
+                    // }
                     break;
+
+                // case State.WizardBuildDatabase:
+                //     this.showBrowser = false;
+                //     await this.loadURL("about:blank");
+                //     this.instructions = `I need a local database of your tweets, likes, and other data in X before I can delete it. `;
+                //     this.state = State.WizardBuildDatabaseDisplay;
+                //     break;
 
                 case State.WizardImportStart:
                     this.showBrowser = false;
