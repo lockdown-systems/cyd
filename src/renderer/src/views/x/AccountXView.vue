@@ -27,6 +27,7 @@ import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportOptionsPage from './XWizardImportOptionsPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
+import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
