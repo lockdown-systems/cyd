@@ -91,23 +91,7 @@ export class BaseViewModel {
 
         this.resetLogs();
 
-        this.domReadyHandler = async () => {
-            this.log("domReadyHandler", "dom-ready");
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            // dom-ready has been fired
-            this.domReady = true;
-
-            const webview = this.getWebview();
-            if (webview) {
-                // Set the webContentsID
-                this.webContentsID = webview.getWebContentsId();
-
-                // Remove the event listener
-                webview.removeEventListener("dom-ready", this.domReadyHandler);
-            }
-        }
-        this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
+        this.domReadyHandler = async () => { };
 
         // Suspend and resume
         window.electron.onPowerMonitorSuspend(() => this.powerMonitorSuspend());
@@ -157,6 +141,24 @@ export class BaseViewModel {
 
     async init(webview: WebviewTag) {
         this.webview = webview;
+
+        this.domReadyHandler = async () => {
+            this.log("domReadyHandler", "dom-ready");
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // dom-ready has been fired
+            this.domReady = true;
+
+            const webview = this.getWebview();
+            if (webview) {
+                // Set the webContentsID
+                this.webContentsID = webview.getWebContentsId();
+
+                // Remove the event listener
+                webview.removeEventListener("dom-ready", this.domReadyHandler);
+            }
+        }
+        this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
 
         // Open devtools if needed
         const shouldOpenDevtools = await window.electron.shouldOpenDevtools();
