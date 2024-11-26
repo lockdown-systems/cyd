@@ -16,7 +16,6 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { APIErrorResponse } from "../../../cyd-api-client";
 
 export enum State {
     Login = "login",
@@ -68,7 +67,6 @@ export class AccountXViewModel extends BaseViewModel {
     public databaseStats: XDatabaseStats = emptyXDatabaseStats();
     public deleteReviewStats: XDeleteReviewStats = emptyXDeleteReviewStats();
     public archiveInfo: XArchiveInfo = emptyXArchiveInfo();
-    public postXProgresResp: boolean | APIErrorResponse = false;
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
 
@@ -1284,23 +1282,7 @@ Please wait while I index all the messages from each conversation...`;
         }
 
         // Submit progress to the API
-        this.progressInfo = await window.electron.X.getProgressInfo(this.account?.id);
-        this.log("runJobArchiveBuild", ["progressInfo", JSON.parse(JSON.stringify(this.progressInfo))]);
-        this.postXProgresResp = await this.api.postXProgress({
-            account_uuid: this.progressInfo.accountUUID,
-            total_tweets_indexed: this.progressInfo.totalTweetsIndexed,
-            total_tweets_archived: this.progressInfo.totalTweetsArchived,
-            total_retweets_indexed: this.progressInfo.totalRetweetsIndexed,
-            total_likes_indexed: this.progressInfo.totalLikesIndexed,
-            total_unknown_indexed: this.progressInfo.totalUnknownIndexed,
-            total_tweets_deleted: this.progressInfo.totalTweetsDeleted,
-            total_retweets_deleted: this.progressInfo.totalRetweetsDeleted,
-            total_likes_deleted: this.progressInfo.totalLikesDeleted,
-        }, this.deviceInfo?.valid ? true : false)
-        if (this.postXProgresResp !== true && this.postXProgresResp !== false && this.postXProgresResp.error) {
-            // Silently log the error and continue
-            this.log("runJobArchiveBuild", ["failed to post progress to the API", this.postXProgresResp.message]);
-        }
+        this.emitter?.emit(`x-submit-progress-${this.account.id}`);
 
         await this.finishJob(jobIndex);
         return true;

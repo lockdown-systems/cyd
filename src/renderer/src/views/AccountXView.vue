@@ -70,12 +70,11 @@ const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
 // The X view model
-const model: AccountXViewModel = new AccountXViewModel(props.account, apiClient.value, deviceInfo.value, emitter);
-
+const model = ref<AccountXViewModel>(new AccountXViewModel(props.account, emitter));
 
 // Keep currentState in sync
 watch(
-    () => model.state,
+    () => model.value.state,
     async (newState) => {
         if (newState) {
             currentState.value = newState as State;
@@ -89,28 +88,28 @@ watch(
 
 // Keep progress updated
 watch(
-    () => model.progress,
+    () => model.value.progress,
     (newProgress) => { if (newProgress) progress.value = newProgress; },
     { deep: true, }
 );
 
 // Keep rateLimitInfo updated
 watch(
-    () => model.rateLimitInfo,
+    () => model.value.rateLimitInfo,
     (newRateLimitInfo) => { if (newRateLimitInfo) rateLimitInfo.value = newRateLimitInfo; },
     { deep: true, }
 );
 
 // Keep jobs status updated
 watch(
-    () => model.jobs,
+    () => model.value.jobs,
     (newJobs) => { if (newJobs) currentJobs.value = newJobs; },
     { deep: true, }
 );
 
 // Keep isPaused updated
 watch(
-    () => model.isPaused,
+    () => model.value.isPaused,
     (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
     { deep: true, }
 );
@@ -120,9 +119,7 @@ const updateAccount = async () => {
 };
 
 const setState = async (state: State) => {
-    if (model !== null) {
-        model.state = state;
-    }
+    model.value.state = state;
 };
 
 const startStateLoop = async () => {
@@ -131,21 +128,19 @@ const startStateLoop = async () => {
 
     while (canStateLoopRun.value) {
         // Run next state
-        if (model !== null) {
-            await model.run();
-        }
+        await model.value.run();
 
         // Break out of the state loop if the view model is in a display state
         if (
-            model.state === State.WizardStartDisplay ||
-            model.state === State.WizardImportOptionsDisplay ||
-            model.state === State.WizardImportStartDisplay ||
-            model.state === State.WizardSaveOptionsDisplay ||
-            model.state === State.WizardDeleteOptionsDisplay ||
-            model.state === State.WizardReviewDisplay ||
-            model.state === State.WizardDeleteReviewDisplay ||
-            model.state === State.WizardCheckPremiumDisplay ||
-            model.state === State.FinishedRunningJobsDisplay
+            model.value.state === State.WizardStartDisplay ||
+            model.value.state === State.WizardImportOptionsDisplay ||
+            model.value.state === State.WizardImportStartDisplay ||
+            model.value.state === State.WizardSaveOptionsDisplay ||
+            model.value.state === State.WizardDeleteOptionsDisplay ||
+            model.value.state === State.WizardReviewDisplay ||
+            model.value.state === State.WizardDeleteReviewDisplay ||
+            model.value.state === State.WizardCheckPremiumDisplay ||
+            model.value.state === State.FinishedRunningJobsDisplay
         ) {
             break;
         }
@@ -161,7 +156,7 @@ const onAutomationErrorRetry = () => {
     console.log('Retrying automation after error');
 
     // Store the state of the view model before the error
-    const state: XViewModelState | undefined = model.saveState();
+    const state: XViewModelState | undefined = model.value.saveState();
     localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
     emit('onRefreshClicked');
 };
@@ -173,7 +168,7 @@ const onAutomationErrorCancel = () => {
 
 const onAutomationErrorResume = () => {
     console.log('Resuming after after error');
-    model.resume();
+    model.value.resume();
 };
 
 const onCancelAutomation = () => {
@@ -185,17 +180,15 @@ const onReportBug = async () => {
     console.log('Report bug clicked');
 
     // Pause
-    model.pause();
+    model.value.pause();
 
     // Submit error report
-    if (model !== null) {
-        await model.error(AutomationErrorType.X_manualBugReport, {
-            message: 'User is manually reporting a bug',
-            state: model.saveState()
-        }, {
-            currentURL: model.webview?.getURL()
-        });
-    }
+    await model.value.error(AutomationErrorType.X_manualBugReport, {
+        message: 'User is manually reporting a bug',
+        state: model.value.saveState()
+    }, {
+        currentURL: model.value.webview?.getURL()
+    });
 }
 
 // User variables
@@ -238,13 +231,33 @@ emitter?.on('signed-out', async () => {
     userPremium.value = false;
 });
 
+emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
+    const progressInfo = await window.electron.X.getProgressInfo(props.account.id);
+    console.log("AccountXView: submitting progress", "progressInfo", JSON.parse(JSON.stringify(progressInfo)));
+    const postXProgresResp = await apiClient.value.postXProgress({
+        account_uuid: progressInfo.accountUUID,
+        total_tweets_indexed: progressInfo.totalTweetsIndexed,
+        total_tweets_archived: progressInfo.totalTweetsArchived,
+        total_retweets_indexed: progressInfo.totalRetweetsIndexed,
+        total_likes_indexed: progressInfo.totalLikesIndexed,
+        total_unknown_indexed: progressInfo.totalUnknownIndexed,
+        total_tweets_deleted: progressInfo.totalTweetsDeleted,
+        total_retweets_deleted: progressInfo.totalRetweetsDeleted,
+        total_likes_deleted: progressInfo.totalLikesDeleted,
+    }, deviceInfo.value?.valid ? true : false)
+    if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
+        // Silently log the error and continue
+        console.log("AccountXView: submitting progress", "failed to post progress to the API", postXProgresResp.message);
+    }
+});
+
 const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) => {
     // Premium check
-    if (model.account.xAccount?.deleteMyData) {
+    if (model.value.account.xAccount?.deleteMyData) {
         await updateUserAuthenticated();
         console.log("userAuthenticated", userAuthenticated.value);
         if (!userAuthenticated.value) {
-            model.state = State.WizardCheckPremium;
+            model.value.state = State.WizardCheckPremium;
             await startStateLoop();
             return;
         }
@@ -252,43 +265,43 @@ const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) =
         await updateUserPremium();
         console.log("userPremium", userPremium.value);
         if (!userPremium.value) {
-            model.state = State.WizardCheckPremium;
+            model.value.state = State.WizardCheckPremium;
             await startStateLoop();
             return;
         }
     }
 
     // If chance to review is checked, make isDeleteReview active
-    model.isDeleteReviewActive = chanceToReview;
+    model.value.isDeleteReviewActive = chanceToReview;
 
     // All good, start the jobs
     console.log('Starting jobs');
-    await model.defineJobs();
-    if (model.account.xAccount?.deleteMyData && deleteFromDatabase) {
-        model.state = State.WizardDeleteReview;
+    await model.value.defineJobs();
+    if (model.value.account.xAccount?.deleteMyData && deleteFromDatabase) {
+        model.value.state = State.WizardDeleteReview;
     } else {
-        model.state = State.RunJobs;
+        model.value.state = State.RunJobs;
     }
     await startStateLoop();
 };
 
 const startJobsDeleteReview = async () => {
-    await model.defineJobs(true);
-    model.isDeleteReviewActive = false;
-    model.state = State.RunJobs;
+    await model.value.defineJobs(true);
+    model.value.isDeleteReviewActive = false;
+    model.value.state = State.RunJobs;
     await startStateLoop();
 };
 
 const startJobsJustSave = async () => {
-    if (model.account.xAccount == null) {
+    if (model.value.account.xAccount == null) {
         console.error('startJobsJustSave', 'Account is null');
         return;
     }
 
     const updatedAccount: Account = {
-        ...model.account,
+        ...model.value.account,
         xAccount: {
-            ...model.account.xAccount,
+            ...model.value.account.xAccount,
             saveMyData: true,
             deleteMyData: false,
         }
@@ -297,41 +310,35 @@ const startJobsJustSave = async () => {
     await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
     await updateAccount();
 
-    model.state = State.WizardReview;
+    model.value.state = State.WizardReview;
     await startStateLoop();
 };
 
 const finishedRunAgainClicked = async () => {
-    model.state = State.WizardReview;
+    model.value.state = State.WizardReview;
     await startStateLoop();
 };
 
 const updateAccountInViewModel = (account: Account) => {
-    model.account = account;
+    model.value.account = account;
 };
 
 // Debug functions
 
 const debugAutopauseEndOfStepChanged = async (value: boolean) => {
-    if (model !== null) {
-        model.debugAutopauseEndOfStep = value;
-    }
+    model.value.debugAutopauseEndOfStep = value;
 };
 
 const debugModeTriggerError = async () => {
-    if (model !== null) {
-        await model.error(AutomationErrorType.x_unknownError, {
-            message: 'Debug mode error triggered'
-        }, {
-            currentURL: model.webview?.getURL()
-        });
-    }
+    await model.value.error(AutomationErrorType.x_unknownError, {
+        message: 'Debug mode error triggered'
+    }, {
+        currentURL: model.value.webview?.getURL()
+    });
 };
 
 const debugModeDisable = async () => {
-    if (model !== null) {
-        model.state = State.WizardPrestart;
-    }
+    model.value.state = State.WizardPrestart;
 };
 
 // Lifecycle
@@ -342,7 +349,7 @@ onMounted(async () => {
 
         // Start the state loop
         if (props.account.xAccount !== null) {
-            await model.init(webview);
+            await model.value.init(webview);
 
             // If there's a saved state from a retry, restore it
             const savedState = localStorage.getItem(`account-${props.account.id}-state`);
@@ -350,7 +357,7 @@ onMounted(async () => {
                 console.log('Restoring saved state', savedState);
                 const savedStateObj: XViewModelState = JSON.parse(savedState);
 
-                model.restoreState(savedStateObj);
+                model.value.restoreState(savedStateObj);
                 currentState.value = savedStateObj.state as State;
                 progress.value = savedStateObj.progress;
                 currentJobs.value = savedStateObj.jobs;
@@ -390,9 +397,7 @@ onUnmounted(async () => {
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 
     // Cleanup the view controller
-    if (model !== null) {
-        await model.cleanup();
-    }
+    await model.value.cleanup();
 });
 </script>
 

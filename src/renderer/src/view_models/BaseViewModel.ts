@@ -1,8 +1,7 @@
 import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
-import CydAPIClient from '../../../cyd-api-client';
-import { type DeviceInfo, PlausibleEvents } from '../types';
+import { PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
 
@@ -45,8 +44,6 @@ export class BaseViewModel {
 
     public account: Account;
     public webview: WebviewTag | null;
-    public api: CydAPIClient;
-    public deviceInfo: DeviceInfo | null;
     public webContentsID: number | null;
     public isWebviewDestroyed: boolean;
 
@@ -59,9 +56,9 @@ export class BaseViewModel {
     public isPaused: boolean;
 
     // If the computer resumes from sleep, should we resume the automation?
-    private shouldResumeOnResume: boolean;
+    public shouldResumeOnResume: boolean;
     // Only allow the suspend events to be triggerer once at a time
-    private suspendLock: boolean;
+    public suspendLock: boolean;
 
     public showBrowser: boolean;
     public showAutomationNotice: boolean;
@@ -69,13 +66,11 @@ export class BaseViewModel {
 
     public emitter: Emitter<Record<EventType, unknown>> | null;
 
-    private domReadyHandler: () => void;
+    public domReadyHandler: () => void;
 
-    constructor(account: Account, api: CydAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
+    constructor(account: Account, emitter: Emitter<Record<EventType, unknown>> | null) {
         this.account = account;
         this.webview = null;
-        this.api = api;
-        this.deviceInfo = deviceInfo;
         this.webContentsID = null;
         this.isWebviewDestroyed = false;
 
@@ -399,7 +394,7 @@ export class BaseViewModel {
     }
 
     async checkInternetConnectivity(): Promise<boolean> {
-        const testURL = this.api.apiURL + "/health";
+        const testURL = "https://api.cyd.social/health";
         if (!testURL) {
             this.log("checkInternetConnectivity", "apiURL is not set");
             return false;
