@@ -2,13 +2,11 @@
 import {
     ref,
     onMounted,
-    watch,
 } from 'vue';
 import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
-import type { XProgress } from '../../../../shared_types';
 import { openURL } from '../../util';
 
 // Props
@@ -26,14 +24,6 @@ const emit = defineEmits<{
     startStateLoop: []
 }>()
 
-// Keep progress updated
-const progress = ref<XProgress | null>(null);
-watch(
-    () => props.model.progress,
-    (newProgress) => { if (newProgress) progress.value = newProgress; },
-    { deep: true, }
-);
-
 // Buttons
 const runAgainClicked = async () => {
     emit('setState', State.WizardReview);
@@ -42,6 +32,7 @@ const runAgainClicked = async () => {
 
 const resetClicked = async () => {
     await props.model.reset()
+    emit('setState', State.WizardPrestart);
     emit('startStateLoop');
 };
 
@@ -64,37 +55,37 @@ onMounted(async () => {
             <div class="finished-archive">
                 <h2>You just saved:</h2>
                 <ul>
-                    <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                    <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                        <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
+                        <strong>{{ model.progress.newTweetsArchived.toLocaleString() }}</strong> tweets
                         saved as HTML archives
                     </li>
-                    <li v-if="model.account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
+                    <li v-if="model.account.xAccount?.archiveTweets || (model.progress.tweetsIndexed ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                        <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                        <strong>{{ model.progress.tweetsIndexed.toLocaleString() }}</strong> tweets
                     </li>
-                    <li v-if="model.account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
+                    <li v-if="model.account.xAccount?.archiveTweets || (model.progress.retweetsIndexed ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                        <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
+                        <strong>{{ model.progress.retweetsIndexed.toLocaleString() }}</strong> retweets
                     </li>
-                    <li v-if="model.account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
+                    <li v-if="model.account.xAccount?.archiveLikes || (model.progress.likesIndexed ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                        <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                        <strong>{{ model.progress.likesIndexed.toLocaleString() }}</strong> likes
                     </li>
-                    <li v-if="(progress?.unknownIndexed ?? 0) > 0">
+                    <li v-if="(model.progress.unknownIndexed ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                        <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other tweets
+                        <strong>{{ model.progress.unknownIndexed.toLocaleString() }}</strong> other tweets
                         <span class="ms-3 small text-muted">
                             (<a href="#" @click="openURL('https://cyd.social/docs-other-tweets');">what's
                                 this?</a>)
                         </span>
                     </li>
                     <li
-                        v-if="model.account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
+                        v-if="model.account.xAccount?.archiveDMs || (model.progress.conversationsIndexed ?? 0) > 0 || (model.progress.messagesIndexed ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
-                        <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong>
+                        <strong>{{ model.progress.conversationsIndexed.toLocaleString() }}</strong>
                         conversations,
-                        including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong>
+                        including <strong>{{ model.progress.messagesIndexed.toLocaleString() }}</strong>
                         messages
                     </li>
                 </ul>
@@ -112,29 +103,29 @@ onMounted(async () => {
                         (model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets || model.account.xAccount?.deleteLikes)">
                     <h2>You just saved:</h2>
                     <ul>
-                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
+                        <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
+                            <strong>{{ model.progress.newTweetsArchived.toLocaleString() }}</strong> tweets
                             saved
                             as HTML archives
                         </li>
                         <li
-                            v-if="(model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets) || (progress?.tweetsIndexed ?? 0) > 0">
+                            v-if="(model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets) || (model.progress.tweetsIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
+                            <strong>{{ model.progress.tweetsIndexed.toLocaleString() }}</strong> tweets
                         </li>
                         <li
-                            v-if="(model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets) || (progress?.retweetsIndexed ?? 0) > 0">
+                            v-if="(model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets) || (model.progress.retweetsIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
+                            <strong>{{ model.progress.retweetsIndexed.toLocaleString() }}</strong> retweets
                         </li>
-                        <li v-if="model.account.xAccount?.deleteLikes || (progress?.likesIndexed ?? 0) > 0">
+                        <li v-if="model.account.xAccount?.deleteLikes || (model.progress.likesIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
+                            <strong>{{ model.progress.likesIndexed.toLocaleString() }}</strong> likes
                         </li>
-                        <li v-if="(progress?.unknownIndexed ?? 0) > 0">
+                        <li v-if="(model.progress.unknownIndexed ?? 0) > 0">
                             <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other
+                            <strong>{{ model.progress.unknownIndexed.toLocaleString() }}</strong> other
                             tweets (<a href="#">learn more</a>)
                         </li>
                     </ul>
@@ -142,21 +133,21 @@ onMounted(async () => {
 
                 <h2>You just deleted:</h2>
                 <ul>
-                    <li v-if="model.account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
+                    <li v-if="model.account.xAccount?.deleteTweets || (model.progress.tweetsDeleted ?? 0) > 0">
                         <i class="fa-solid fa-fire delete-bullet" />
-                        <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
+                        <strong>{{ model.progress.tweetsDeleted.toLocaleString() }}</strong> tweets
                     </li>
-                    <li v-if="model.account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
+                    <li v-if="model.account.xAccount?.deleteRetweets || (model.progress.retweetsDeleted ?? 0) > 0">
                         <i class="fa-solid fa-fire delete-bullet" />
-                        <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
+                        <strong>{{ model.progress.retweetsDeleted.toLocaleString() }}</strong> retweets
                     </li>
-                    <li v-if="model.account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
+                    <li v-if="model.account.xAccount?.deleteLikes || (model.progress.likesDeleted ?? 0) > 0">
                         <i class="fa-solid fa-fire delete-bullet" />
-                        <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
+                        <strong>{{ model.progress.likesDeleted.toLocaleString() }}</strong> likes
                     </li>
                     <li v-if="model.account.xAccount?.deleteDMs">
                         <i class="fa-solid fa-fire delete-bullet" />
-                        <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong> direct
+                        <strong>{{ model.progress.conversationsDeleted.toLocaleString() }}</strong> direct
                         message conversations
                     </li>
                 </ul>
@@ -225,12 +216,12 @@ onMounted(async () => {
                 </button>
 
                 <button class="btn btn-secondary" @click="resetClicked">
-                    Back to Start
+                    Continue
                 </button>
             </template>
             <template v-else>
                 <button class="btn btn-primary" @click="resetClicked">
-                    Back to Start
+                    Continue
                 </button>
             </template>
         </div>

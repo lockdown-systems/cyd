@@ -91,10 +91,11 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-sidebar">
-        <p v-if="model.account && model.account.xAccount">
-            Your X account, <strong>@{{ model.account?.xAccount?.username }}</strong>, has
-            <strong>{{ model.account?.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
-            <strong>{{ model.account?.xAccount?.likesCount.toLocaleString() }} likes</strong>.
+        <p v-if="model.account && model.account.xAccount" class="p-3 small text-muted">
+            According to X, your account has <strong class="text-nowrap">{{
+                model.account?.xAccount?.tweetsCount.toLocaleString() }}
+                tweets</strong> and <strong class="text-nowrap">{{ model.account?.xAccount?.likesCount.toLocaleString()
+                }} likes</strong>.
         </p>
         <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
             <button class="btn btn-outline-success btn-sm" @click="openArchive">
