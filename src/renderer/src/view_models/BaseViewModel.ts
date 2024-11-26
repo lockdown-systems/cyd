@@ -404,7 +404,8 @@ export class BaseViewModel {
     }
 
     async checkInternetConnectivity(): Promise<boolean> {
-        const testURL = "https://api.cyd.social/health";
+        const apiURL = await window.electron.getAPIURL();
+        const testURL = `${apiURL}/health`;
         if (!testURL) {
             this.log("checkInternetConnectivity", "apiURL is not set");
             return false;
