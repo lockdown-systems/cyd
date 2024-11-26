@@ -28,7 +28,6 @@ import XWizardImportOptionsPage from './XWizardImportOptionsPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
-import XWizardDeleteReviewPage from './XWizardDeleteReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
@@ -243,7 +242,7 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
     }
 });
 
-const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) => {
+const startJobs = async () => {
     // Premium check
     if (model.value.account.xAccount?.deleteMyData) {
         await updateUserAuthenticated();
@@ -263,17 +262,10 @@ const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) =
         }
     }
 
-    // If chance to review is checked, make isDeleteReview active
-    model.value.isDeleteReviewActive = chanceToReview;
-
     // All good, start the jobs
     console.log('Starting jobs');
     await model.value.defineJobs();
-    if (model.value.account.xAccount?.deleteMyData && deleteFromDatabase) {
-        model.value.state = State.WizardDeleteReview;
-    } else {
-        model.value.state = State.RunJobs;
-    }
+    model.value.state = State.RunJobs;
     await startStateLoop();
 };
 
@@ -470,12 +462,6 @@ onUnmounted(async () => {
                     <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
                         @start-jobs="startJobs" />
-
-                    <XWizardDeleteReviewPage v-if="model.state == State.WizardDeleteReviewDisplay" :model="unref(model)"
-                        :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
-                        :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop"
-                        @start-jobs-delete-review="startJobsDeleteReview" />
 
                     <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"

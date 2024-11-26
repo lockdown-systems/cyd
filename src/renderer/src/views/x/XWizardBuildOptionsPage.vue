@@ -25,11 +25,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
-    if (props.model.account?.xAccount?.deleteMyData) {
-        emit('setState', State.WizardDeleteOptions);
-    } else {
-        emit('setState', State.WizardReview);
-    }
+    emit('setState', State.WizardReview);
     emit('startStateLoop');
 };
 
