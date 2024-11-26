@@ -8,6 +8,8 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 
+import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
@@ -62,6 +64,10 @@ const saveSettings = async () => {
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
+        // yes save data, don't delete data
+        account.xAccount.saveMyData = true;
+        account.xAccount.deleteMyData = false;
+
         account.xAccount.archiveTweets = archiveTweets.value;
         account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
         account.xAccount.archiveLikes = archiveLikes.value;
@@ -83,10 +89,14 @@ onMounted(async () => {
                 Build options
             </h2>
             <p class="text-muted">
-                When you build your local database, you can save tweets, likes, and direct messages. You'll need to save
-                tweets and likes before you can delete them. You can delete direct messages without saving them.
+                You can save tweets, likes, and direct messages.
             </p>
         </div>
+
+        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
+            :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)"
+            @start-state-loop="emit('startStateLoop')" />
+
         <form @submit.prevent>
             <div class="mb-3">
                 <div class="form-check">

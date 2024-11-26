@@ -81,7 +81,7 @@ onMounted(async () => {
             <div v-if="model.account?.xAccount?.saveMyData">
                 <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
-                    Save my data
+                    Build a local database
                 </h3>
                 <ul>
                     <li v-if="model.account?.xAccount?.archiveTweets">

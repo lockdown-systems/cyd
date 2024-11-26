@@ -362,10 +362,6 @@ body {
   margin-left: 1.5rem;
 }
 
-.form-short {
-  width: 55px;
-}
-
 .no-wrap {
   white-space: nowrap;
 }

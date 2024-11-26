@@ -74,6 +74,10 @@ const saveSettings = async () => {
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
+        // don't save data, yes delete data
+        account.xAccount.saveMyData = false;
+        account.xAccount.deleteMyData = true;
+
         account.xAccount.deleteTweets = deleteTweets.value;
         account.xAccount.deleteTweetsDaysOld = deleteTweetsDaysOld.value;
         account.xAccount.deleteTweetsRetweetsThresholdEnabled = deleteTweetsRetweetsThresholdEnabled.value;
@@ -107,9 +111,11 @@ onMounted(async () => {
                 Delete your data from X, except for what you want to keep.
             </p>
         </div>
+
         <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Import or Build Database Again'"
             :button-state="State.WizardImportOrBuild" @set-state="emit('setState', $event)"
             @start-state-loop="emit('startStateLoop')" />
+
         <form @submit.prevent>
             <div class="d-flex align-items-center">
                 <div class="form-check mb-2">
@@ -273,4 +279,8 @@ onMounted(async () => {
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.form-short {
+    width: 55px;
+}
+</style>
