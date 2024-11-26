@@ -21,6 +21,7 @@ import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
 import XWizardStartPage from './XWizardStartPage.vue';
+import XWizardBuildDatabasePage from './XWizardBuildDatabasePage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportOptionsPage from './XWizardImportOptionsPage.vue';
@@ -134,6 +135,7 @@ const startStateLoop = async () => {
         // Break out of the state loop if the view model is in a display state
         if (
             model.value.state === State.WizardStartDisplay ||
+            model.value.state === State.WizardBuildDatabaseDisplay ||
             model.value.state === State.WizardImportOptionsDisplay ||
             model.value.state === State.WizardImportStartDisplay ||
             model.value.state === State.WizardSaveOptionsDisplay ||
@@ -456,6 +458,9 @@ onUnmounted(async () => {
                         @update-account="updateAccount" @set-state="setState($event)"
                         @start-state-loop="startStateLoop" />
 
+                    <XWizardBuildDatabasePage v-if="model.state == State.WizardBuildDatabaseDisplay"
+                        :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
+
                     <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
@@ -520,143 +525,7 @@ onUnmounted(async () => {
 </template>
 
 <style scoped>
-.speech-bubble {
-    padding-bottom: 10px;
-}
-
-.hidden {
-    display: none;
-}
-
-.wizard {
-    flex: 1;
-    overflow: auto;
-}
-
-.wizard-container {
-    display: flex;
-    height: 100%;
-}
-
-.wizard-content {
-    flex-grow: 1;
-    overflow-y: auto;
-    min-width: 0;
-}
-
-.wizard-sidebar {
-    min-width: 280px;
-    flex-basis: 280px;
-    overflow-y: auto;
-    flex-shrink: 0;
-}
-
-.wizard-sidebar .stats .card-header {
-    font-size: 0.8rem;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.wizard-sidebar .stats .card-body {
-    padding: 0.2rem;
-}
-
-.wizard-sidebar .stats .card-body h1 {
-    font-size: 1.7em;
-    margin-bottom: 0;
-    padding: 0.5rem 0 0.5rem 0;
-}
-
-.wizard .buttons {
-    margin-top: 3rem;
-    text-align: center;
-}
-
-.form-short {
-    width: 55px;
-}
-
-.no-wrap {
-    white-space: nowrap;
-}
-
-.full-width {
-    width: 100%;
-}
-
 .job-status-component {
     width: 220px;
-}
-
-.filesystem-path {
-    font-family: monospace;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.force-reindex {
-    font-size: 0.9rem;
-    color: #333333;
-}
-
-.delete-icon {
-    color: rgb(250, 190, 79);
-}
-
-.delete-bullet {
-    color: rgb(218, 82, 41);
-    margin-right: 5px;
-}
-
-.archive-bullet {
-    color: rgb(50, 164, 164);
-    margin-right: 5px;
-}
-
-.premium {
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    margin-left: 1rem;
-    padding: 0.2em 0.5em;
-    background-color: #50a4ff;
-    color: white;
-    border-radius: 0.25rem;
-}
-
-.finished-archive ul,
-.finished-delete ul {
-    list-style-type: none;
-    padding-left: 0;
-    margin-left: 1.5em;
-}
-
-.finished-archive li,
-.finished-delete li {
-    margin-bottom: 0.2rem;
-}
-
-.indent {
-    margin-left: 1.5rem;
-}
-
-.wizard-review ul {
-    list-style-type: circle;
-    padding-left: 2.5rem;
-}
-
-.wizard-review ul ul {
-    list-style-type: circle;
-    padding-left: 1.5rem;
-}
-
-.fa-heart {
-    color: red;
-}
-
-.alert-details {
-    margin-top: .25rem;
-    font-size: .875em;
 }
 </style>
