@@ -52,7 +52,7 @@ onMounted(async () => {
         </div>
         <form @submit.prevent>
             <div v-if="model.account?.xAccount?.saveMyData">
-                - <h3>
+                <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
                     Build a local database
                 </h3>
@@ -100,6 +100,8 @@ onMounted(async () => {
                             or {{
                                 model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                         </span>
+                        <span v-if="model.account?.xAccount?.deleteTweetsArchiveEnabled" class="fst-italic">(after
+                            saving HTML versions of them)</span>
                     </li>
                     <li v-if="model.account?.xAccount?.deleteRetweets">
                         <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>

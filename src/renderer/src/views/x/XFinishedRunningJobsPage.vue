@@ -30,7 +30,7 @@ const runAgainClicked = async () => {
     emit('startStateLoop');
 };
 
-const resetClicked = async () => {
+const nextClicked = async () => {
     await props.model.reset()
     emit('setState', State.WizardPrestart);
     emit('startStateLoop');
@@ -215,12 +215,12 @@ onMounted(async () => {
                     Run Again with Same Settings
                 </button>
 
-                <button class="btn btn-secondary" @click="resetClicked">
+                <button class="btn btn-secondary" @click="nextClicked">
                     Continue
                 </button>
             </template>
             <template v-else>
-                <button class="btn btn-primary" @click="resetClicked">
+                <button class="btn btn-primary" @click="nextClicked">
                     Continue
                 </button>
             </template>

@@ -36,12 +36,8 @@ const manageAccountClicked = async () => {
     emitter?.emit("show-manage-account");
 };
 
-const justSaveClicked = async () => {
-    emit('startJobsJustSave');
-};
-
 const backClicked = async () => {
-    emit('setState', State.WizardStart);
+    emit('setState', State.WizardReview);
     emit('startStateLoop');
 };
 </script>
@@ -90,14 +86,6 @@ const backClicked = async () => {
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
                     Back to Review
-                </button>
-
-                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" :disabled="!(
-                    model.account?.xAccount?.archiveTweets ||
-                    model.account?.xAccount?.archiveLikes ||
-                    model.account?.xAccount?.archiveDMs)" @click="justSaveClicked">
-                    <i class="fa-solid fa-floppy-disk" />
-                    Just Save My Data for Now
                 </button>
             </div>
         </form>
