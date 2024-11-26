@@ -2,6 +2,7 @@
 import {
     Ref,
     ref,
+    unref,
     watch,
     onMounted,
     onUnmounted,
@@ -456,43 +457,44 @@ onUnmounted(async () => {
         <div :class="{ 'hidden': model.showBrowser, 'wizard': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
-                    <XWizardStartPage v-if="model.state == State.WizardStartDisplay" :account="account" :model="model"
+                    <XWizardStartPage v-if="model.state == State.WizardStartDisplay" :model="unref(model)"
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @update-account="updateAccount" @set-state="setState($event)"
                         @start-state-loop="startStateLoop" />
 
-                    <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="model"
+                    <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
                     <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardImportOptionsPage v-if="model.state == State.WizardImportOptionsDisplay" :model="model"
+                    <XWizardImportOptionsPage v-if="model.state == State.WizardImportOptionsDisplay"
+                        :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
+
+                    <XWizardSaveOptionsPage v-if="model.state == State.WizardSaveOptionsDisplay" :model="unref(model)"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardSaveOptionsPage v-if="model.state == State.WizardSaveOptionsDisplay" :model="model"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                    <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
+                        :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay" :model="model"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
-
-                    <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="model"
+                    <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
                         @start-jobs="startJobs" />
 
-                    <XWizardDeleteReviewPage v-if="model.state == State.WizardDeleteReviewDisplay" :model="model"
+                    <XWizardDeleteReviewPage v-if="model.state == State.WizardDeleteReviewDisplay" :model="unref(model)"
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
                         @start-jobs-delete-review="startJobsDeleteReview" />
 
-                    <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="model"
+                    <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
                         @start-jobs-just-save="startJobsJustSave" />
 
-                    <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay" :model="model"
+                    <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
+                        :model="unref(model)"
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
@@ -515,7 +517,7 @@ onUnmounted(async () => {
                 </div>
 
                 <!-- wizard side bar -->
-                <XWizardSidebar :model="model" @set-state="setState($event)" @start-state-loop="startStateLoop"
+                <XWizardSidebar :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop"
                     @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
             </div>
         </div>

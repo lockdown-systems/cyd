@@ -42,21 +42,21 @@ const saveMyData = ref(true);
 const deleteMyData = ref(true);
 
 const loadSettings = async () => {
-    if (props.model.account.xAccount !== null) {
-        saveMyData.value = props.model.account.xAccount.saveMyData;
-        deleteMyData.value = props.model.account.xAccount.deleteMyData;
+    if (props.model.account?.xAccount !== null) {
+        saveMyData.value = props.model.account?.xAccount.saveMyData;
+        deleteMyData.value = props.model.account?.xAccount.deleteMyData;
     }
 };
 
 const saveSettings = async () => {
-    if (props.model.account.xAccount == null) {
+    if (props.model.account?.xAccount == null) {
         console.error('saveSettings', 'Account is null');
         return;
     }
     const updatedAccount: Account = {
         ...props.model.account,
         xAccount: {
-            ...props.model.account.xAccount,
+            ...props.model.account?.xAccount,
             saveMyData: saveMyData.value,
             deleteMyData: deleteMyData.value
         }
@@ -118,36 +118,36 @@ onMounted(async () => {
 
             <div v-if="(
                 failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                (model.account.xAccount?.archiveTweets ||
-                    model.account.xAccount?.deleteTweets)) ||
+                (model.account?.xAccount?.archiveTweets ||
+                    model.account?.xAccount?.deleteTweets)) ||
                 (failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveLikes ||
-                        model.account.xAccount?.deleteLikes))" class="alert alert-danger mt-4" role="alert">
+                    (model.account?.xAccount?.archiveLikes ||
+                        model.account?.xAccount?.deleteLikes))" class="alert alert-danger mt-4" role="alert">
                 <p v-if="(
                     failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveTweets ||
-                        model.account.xAccount?.deleteTweets)) &&
+                    (model.account?.xAccount?.archiveTweets ||
+                        model.account?.xAccount?.deleteTweets)) &&
                     (failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                        (model.account.xAccount?.archiveLikes ||
-                            model.account.xAccount?.deleteLikes))" class="fw-bold mb-0">
+                        (model.account?.xAccount?.archiveLikes ||
+                            model.account?.xAccount?.deleteLikes))" class="fw-bold mb-0">
                     During a recent run, Cyd wasn't able to scroll through all of your tweets and likes.
                 </p>
                 <p v-if="(
                     failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveTweets ||
-                        model.account.xAccount?.deleteTweets)) &&
+                    (model.account?.xAccount?.archiveTweets ||
+                        model.account?.xAccount?.deleteTweets)) &&
                     !(failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                        (model.account.xAccount?.archiveLikes ||
-                            model.account.xAccount?.deleteLikes))" class="fw-bold mb-0">
+                        (model.account?.xAccount?.archiveLikes ||
+                            model.account?.xAccount?.deleteLikes))" class="fw-bold mb-0">
                     During a recent run, Cyd wasn't able to scroll through all of your tweets.
                 </p>
                 <p v-if="!(
                     failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveTweets ||
-                        model.account.xAccount?.deleteTweets)) &&
+                    (model.account?.xAccount?.archiveTweets ||
+                        model.account?.xAccount?.deleteTweets)) &&
                     (failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                        (model.account.xAccount?.archiveLikes ||
-                            model.account.xAccount?.deleteLikes))" class="fw-bold mb-0">
+                        (model.account?.xAccount?.archiveLikes ||
+                            model.account?.xAccount?.deleteLikes))" class="fw-bold mb-0">
                     During a recent run, Cyd wasn't able to scroll through all of your likes.
                 </p>
                 <p class="alert-details mb-0">

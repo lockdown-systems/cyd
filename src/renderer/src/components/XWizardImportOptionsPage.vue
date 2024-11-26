@@ -27,9 +27,9 @@ const backClicked = async () => {
 };
 
 const nextClicked = async () => {
-    if (props.model.account.xAccount?.saveMyData) {
+    if (props.model.account?.xAccount?.saveMyData) {
         emit('setState', State.WizardSaveOptions);
-    } else if (props.model.account.xAccount?.deleteMyData) {
+    } else if (props.model.account?.xAccount?.deleteMyData) {
         emit('setState', State.WizardDeleteOptions);
     } else {
         emit('setState', State.WizardReview);
@@ -72,14 +72,14 @@ const importFromArchivePath = ref('');
             </button>
 
             <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                model.account.xAccount?.archiveTweets ||
-                model.account.xAccount?.archiveLikes ||
-                model.account.xAccount?.archiveDMs)" @click="nextClicked">
+                model.account?.xAccount?.archiveTweets ||
+                model.account?.xAccount?.archiveLikes ||
+                model.account?.xAccount?.archiveDMs)" @click="nextClicked">
                 <i class="fa-solid fa-forward" />
-                <template v-if="model.account.xAccount?.saveMyData">
+                <template v-if="model.account?.xAccount?.saveMyData">
                     Continue to Save Options
                 </template>
-                <template v-else-if="model.account.xAccount?.deleteMyData">
+                <template v-else-if="model.account?.xAccount?.deleteMyData">
                     Continue to Delete Options
                 </template>
                 <template v-else>

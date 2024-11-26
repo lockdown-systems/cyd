@@ -34,7 +34,7 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    if (props.model.account.xAccount?.saveMyData) {
+    if (props.model.account?.xAccount?.saveMyData) {
         emit('setState', State.WizardSaveOptions);
     } else {
         emit('setState', State.WizardStart);
@@ -57,31 +57,31 @@ const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(true);
 
 const loadSettings = async () => {
-    if (props.model.account.xAccount !== null) {
-        deleteTweets.value = props.model.account.xAccount.deleteTweets;
-        deleteTweetsDaysOld.value = props.model.account.xAccount.deleteTweetsDaysOld;
-        deleteTweetsRetweetsThresholdEnabled.value = props.model.account.xAccount.deleteTweetsRetweetsThresholdEnabled;
-        deleteTweetsRetweetsThreshold.value = props.model.account.xAccount.deleteTweetsRetweetsThreshold;
-        deleteTweetsLikesThresholdEnabled.value = props.model.account.xAccount.deleteTweetsLikesThresholdEnabled;
-        deleteTweetsLikesThreshold.value = props.model.account.xAccount.deleteTweetsLikesThreshold;
-        deleteTweetsArchiveEnabled.value = props.model.account.xAccount.deleteTweetsArchiveEnabled;
-        deleteRetweets.value = props.model.account.xAccount.deleteRetweets;
-        deleteRetweetsDaysOld.value = props.model.account.xAccount.deleteRetweetsDaysOld;
-        deleteLikes.value = props.model.account.xAccount.deleteLikes;
-        deleteLikesDaysOld.value = props.model.account.xAccount.deleteLikesDaysOld;
-        deleteDMs.value = props.model.account.xAccount.deleteDMs;
+    if (props.model.account?.xAccount !== null) {
+        deleteTweets.value = props.model.account?.xAccount.deleteTweets;
+        deleteTweetsDaysOld.value = props.model.account?.xAccount.deleteTweetsDaysOld;
+        deleteTweetsRetweetsThresholdEnabled.value = props.model.account?.xAccount.deleteTweetsRetweetsThresholdEnabled;
+        deleteTweetsRetweetsThreshold.value = props.model.account?.xAccount.deleteTweetsRetweetsThreshold;
+        deleteTweetsLikesThresholdEnabled.value = props.model.account?.xAccount.deleteTweetsLikesThresholdEnabled;
+        deleteTweetsLikesThreshold.value = props.model.account?.xAccount.deleteTweetsLikesThreshold;
+        deleteTweetsArchiveEnabled.value = props.model.account?.xAccount.deleteTweetsArchiveEnabled;
+        deleteRetweets.value = props.model.account?.xAccount.deleteRetweets;
+        deleteRetweetsDaysOld.value = props.model.account?.xAccount.deleteRetweetsDaysOld;
+        deleteLikes.value = props.model.account?.xAccount.deleteLikes;
+        deleteLikesDaysOld.value = props.model.account?.xAccount.deleteLikesDaysOld;
+        deleteDMs.value = props.model.account?.xAccount.deleteDMs;
     }
 };
 
 const saveSettings = async () => {
-    if (props.model.account.xAccount == null) {
+    if (props.model.account?.xAccount == null) {
         console.error('saveSettings', 'Account is null');
         return;
     }
     const updatedAccount: Account = {
         ...props.model.account,
         xAccount: {
-            ...props.model.account.xAccount,
+            ...props.model.account?.xAccount,
             deleteTweets: deleteTweets.value,
             deleteTweetsDaysOld: deleteTweetsDaysOld.value,
             deleteTweetsRetweetsThresholdEnabled: deleteTweetsRetweetsThresholdEnabled.value,
@@ -269,7 +269,7 @@ onMounted(async () => {
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    <template v-if="props.model.account.xAccount?.saveMyData">
+                    <template v-if="props.model.account?.xAccount?.saveMyData">
                         Back to Save Options
                     </template>
                     <template v-else>
@@ -278,9 +278,9 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    model.account.xAccount?.archiveTweets ||
-                    model.account.xAccount?.archiveLikes ||
-                    model.account.xAccount?.archiveDMs)" @click="nextClicked">
+                    model.account?.xAccount?.archiveTweets ||
+                    model.account?.xAccount?.archiveLikes ||
+                    model.account?.xAccount?.archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

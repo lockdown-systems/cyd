@@ -183,9 +183,9 @@ export class BaseViewModel {
         });
 
         if (message === undefined) {
-            console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state})`);
+            console.log(`${this.account?.type}[${this.account?.id}] ${func} (${this.state})`);
         } else {
-            console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state}):`, logObj(message));
+            console.log(`${this.account?.type}[${this.account?.id}] ${func} (${this.state}):`, logObj(message));
         }
     }
 

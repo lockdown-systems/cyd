@@ -529,6 +529,7 @@ export class AccountXViewModel extends BaseViewModel {
         this.log("login", "getting user stats");
         this.instructions = `You're logged in as **@${this.account.xAccount?.username}**. I'm trying to determine your total tweets and likes...`;
 
+        await this.loadURLWithRateLimit('https://x.com/home');
         await this.loadURLWithRateLimit('https://x.com/notifications');
         try {
             await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications');

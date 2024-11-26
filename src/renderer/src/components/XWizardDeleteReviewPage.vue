@@ -56,33 +56,33 @@ const backClicked = async () => {
         </h2>
         <form @submit.prevent>
             <ul>
-                <li v-if="model.account.xAccount?.deleteTweets">
+                <li v-if="model.account?.xAccount?.deleteTweets">
                     <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
-                    that are older than {{ model.account.xAccount?.deleteTweetsDaysOld }} days
+                    that are older than {{ model.account?.xAccount?.deleteTweetsDaysOld }} days
                     <span
-                        v-if="model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled && !model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
-                        unless they have at least {{ model.account.xAccount?.deleteTweetsRetweetsThreshold }} retweets
+                        v-if="model.account?.xAccount?.deleteTweetsRetweetsThresholdEnabled && !model.account?.xAccount?.deleteTweetsLikesThresholdEnabled">
+                        unless they have at least {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }} retweets
                     </span>
                     <span
-                        v-if="!model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled && model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
-                        unless they have at least {{ model.account.xAccount?.deleteTweetsLikesThreshold }} likes
+                        v-if="!model.account?.xAccount?.deleteTweetsRetweetsThresholdEnabled && model.account?.xAccount?.deleteTweetsLikesThresholdEnabled">
+                        unless they have at least {{ model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                     </span>
                     <span
-                        v-if="model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled && model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
-                        unless they have at least {{ model.account.xAccount?.deleteTweetsRetweetsThreshold }} retweets
+                        v-if="model.account?.xAccount?.deleteTweetsRetweetsThresholdEnabled && model.account?.xAccount?.deleteTweetsLikesThresholdEnabled">
+                        unless they have at least {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }} retweets
                         or {{
-                            model.account.xAccount?.deleteTweetsLikesThreshold }} likes
+                            model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                     </span>
                 </li>
-                <li v-if="model.account.xAccount?.deleteRetweets">
+                <li v-if="model.account?.xAccount?.deleteRetweets">
                     <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
-                    that are older than {{ model.account.xAccount?.deleteRetweetsDaysOld }} days
+                    that are older than {{ model.account?.xAccount?.deleteRetweetsDaysOld }} days
                 </li>
-                <li v-if="model.account.xAccount?.deleteLikes">
+                <li v-if="model.account?.xAccount?.deleteLikes">
                     <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
-                    that are older than {{ model.account.xAccount?.deleteLikesDaysOld }} days
+                    that are older than {{ model.account?.xAccount?.deleteLikesDaysOld }} days
                 </li>
-                <li v-if="model.account.xAccount?.deleteDMs">
+                <li v-if="model.account?.xAccount?.deleteDMs">
                     <b>All of your direct messages</b>
                 </li>
             </ul>
@@ -90,31 +90,31 @@ const backClicked = async () => {
             <div v-if="
                 (
                     failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveTweets || model.account.xAccount?.deleteTweets)
+                    (model.account?.xAccount?.archiveTweets || model.account?.xAccount?.deleteTweets)
                 ) || (
                     failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveLikes || model.account.xAccount?.deleteLikes)
+                    (model.account?.xAccount?.archiveLikes || model.account?.xAccount?.deleteLikes)
                 )" class="alert alert-danger mt-4" role="alert">
                 <p v-if="
                     (
                         failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                        (model.account.xAccount?.archiveTweets || model.account.xAccount?.deleteTweets)
-                    ) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (model.account.xAccount?.archiveLikes || model.account.xAccount?.deleteLikes))"
+                        (model.account?.xAccount?.archiveTweets || model.account?.xAccount?.deleteTweets)
+                    ) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (model.account?.xAccount?.archiveLikes || model.account?.xAccount?.deleteLikes))"
                     class="fw-bold mb-0">
                     Cyd wasn't able to scroll through all of your tweets and likes this time.
                 </p>
                 <p v-if="(
                     failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveTweets || model.account.xAccount?.deleteTweets)
-                ) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && (model.account.xAccount?.archiveLikes || model.account.xAccount?.deleteLikes))"
+                    (model.account?.xAccount?.archiveTweets || model.account?.xAccount?.deleteTweets)
+                ) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && (model.account?.xAccount?.archiveLikes || model.account?.xAccount?.deleteLikes))"
                     class="fw-bold mb-0">
                     Cyd wasn't able to scroll through all of your tweets this time.
                 </p>
                 <p v-if="
                     !(
                         failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                        (model.account.xAccount?.archiveTweets || model.account.xAccount?.deleteTweets)
-                    ) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (model.account.xAccount?.archiveLikes || model.account.xAccount?.deleteLikes))"
+                        (model.account?.xAccount?.archiveTweets || model.account?.xAccount?.deleteTweets)
+                    ) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (model.account?.xAccount?.archiveLikes || model.account?.xAccount?.deleteLikes))"
                     class="fw-bold mb-0">
                     Cyd wasn't able to scroll through all of your likes this time.
                 </p>
@@ -131,7 +131,7 @@ const backClicked = async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(model.account.xAccount?.archiveTweets || model.account.xAccount?.archiveLikes || model.account.xAccount?.archiveDMs)"
+                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Start Deleting

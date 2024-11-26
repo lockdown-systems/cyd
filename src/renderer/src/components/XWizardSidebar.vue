@@ -32,11 +32,11 @@ const emit = defineEmits<{
 
 // Buttons
 const openArchiveFolder = async () => {
-    await window.electron.X.openFolder(props.model.account.id, "");
+    await window.electron.X.openFolder(props.model.account?.id, "");
 };
 
 const openArchive = async () => {
-    await window.electron.X.openFolder(props.model.account.id, "index.html");
+    await window.electron.X.openFolder(props.model.account?.id, "index.html");
 };
 
 // Util
@@ -92,9 +92,9 @@ onMounted(async () => {
 <template>
     <div class="wizard-sidebar">
         <p>
-            Your X account, <strong>@{{ model.account.xAccount?.username }}</strong>, has
-            <strong>{{ model.account.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
-            <strong>{{ model.account.xAccount?.likesCount.toLocaleString() }} likes</strong>.
+            Your X account, <strong>@{{ model.account?.xAccount?.username }}</strong>, has
+            <strong>{{ model.account?.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
+            <strong>{{ model.account?.xAccount?.likesCount.toLocaleString() }} likes</strong>.
         </p>
         <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
             <button class="btn btn-outline-success btn-sm" @click="openArchive">
