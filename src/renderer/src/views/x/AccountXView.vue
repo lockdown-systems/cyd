@@ -133,18 +133,7 @@ const startStateLoop = async () => {
         await model.value.run();
 
         // Break out of the state loop if the view model is in a display state
-        if (
-            model.value.state === State.WizardStartDisplay ||
-            model.value.state === State.WizardBuildDatabaseDisplay ||
-            model.value.state === State.WizardImportOptionsDisplay ||
-            model.value.state === State.WizardImportStartDisplay ||
-            model.value.state === State.WizardSaveOptionsDisplay ||
-            model.value.state === State.WizardDeleteOptionsDisplay ||
-            model.value.state === State.WizardReviewDisplay ||
-            model.value.state === State.WizardDeleteReviewDisplay ||
-            model.value.state === State.WizardCheckPremiumDisplay ||
-            model.value.state === State.FinishedRunningJobsDisplay
-        ) {
+        if ((model.value.state as string).endsWith('Display')) {
             break;
         }
 
@@ -458,7 +447,7 @@ onUnmounted(async () => {
                         @update-account="updateAccount" @set-state="setState($event)"
                         @start-state-loop="startStateLoop" />
 
-                    <XWizardBuildDatabasePage v-if="model.state == State.WizardBuildDatabaseDisplay"
+                    <XWizardBuildDatabasePage v-if="model.state == State.WizardImportOrBuildDisplay"
                         :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
                     <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"

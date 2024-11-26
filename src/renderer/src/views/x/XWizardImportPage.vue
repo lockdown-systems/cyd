@@ -29,7 +29,7 @@ const importClicked = async () => {
 };
 
 const backClicked = async () => {
-    emit('setState', State.WizardBuildDatabase);
+    emit('setState', State.WizardImportOrBuild);
     emit('startStateLoop');
 };
 </script>

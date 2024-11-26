@@ -33,7 +33,7 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    emit('setState', State.WizardBuildDatabase);
+    emit('setState', State.WizardImportOrBuild);
     emit('startStateLoop');
 };
 
