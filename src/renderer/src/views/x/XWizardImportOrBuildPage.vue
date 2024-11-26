@@ -24,7 +24,7 @@ const nextClicked = async () => {
     if (buildDatabaseStrategy.value == 'importArchive') {
         emit('setState', State.WizardImportStart);
     } else {
-        emit('setState', State.WizardSaveOptions);
+        emit('setState', State.WizardBuildOptions);
     }
     emit('startStateLoop');
 };
@@ -109,7 +109,7 @@ onMounted(() => {
                         Continue to Import Archive
                     </template>
                     <template v-else>
-                        Continue to Build Database
+                        Continue to Build Options
                     </template>
                 </button>
             </div>

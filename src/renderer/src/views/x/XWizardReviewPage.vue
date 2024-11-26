@@ -32,7 +32,7 @@ const backClicked = async () => {
     if (props.model.account?.xAccount?.deleteMyData) {
         emit('setState', State.WizardDeleteOptions);
     } else {
-        emit('setState', State.WizardSaveOptions);
+        emit('setState', State.WizardBuildOptions);
     }
     emit('startStateLoop');
 };
@@ -175,7 +175,7 @@ onMounted(async () => {
                         Back to Delete Options
                     </template>
                     <template v-else>
-                        Back to Save Options
+                        Back to Build Options
                     </template>
                 </button>
 

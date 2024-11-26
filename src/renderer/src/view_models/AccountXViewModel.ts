@@ -19,9 +19,11 @@ import { AutomationErrorType } from '../automation_errors';
 
 export enum State {
     Login = "login",
+
     WizardPrestart = "wizardPrestart",
     WizardStart = "wizardStart",
     WizardStartDisplay = "wizardStartDisplay",
+
     WizardImportOrBuild = "wizardImportOrBuild",
     WizardImportOrBuildDisplay = "wizardImportOrBuildDisplay",
     WizardImportStart = "WizardImportStart",
@@ -30,19 +32,27 @@ export enum State {
     WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
     WizardImportOptions = "WizardImportOptions",
     WizardImportOptionsDisplay = "WizardImportOptionsDisplay",
-    WizardSaveOptions = "wizardSaveOptions",
-    WizardSaveOptionsDisplay = "wizardSaveOptionsDisplay",
+
+    WizardBuildOptions = "wizardBuildOptions",
+    WizardBuildOptionsDisplay = "wizardBuildOptionsDisplay",
+
     WizardDeleteOptions = "wizardDeleteOptions",
     WizardDeleteOptionsDisplay = "wizardDeleteOptionsDisplay",
+
     WizardReview = "wizardReview",
     WizardReviewDisplay = "wizardReviewDisplay",
+
     WizardDeleteReview = "wizardDeleteReview",
     WizardDeleteReviewDisplay = "wizardDeleteReviewDisplay",
+
     WizardCheckPremium = "wizardCheckPremium",
     WizardCheckPremiumDisplay = "wizardCheckPremiumDisplay",
+
     RunJobs = "runJobs",
+
     FinishedRunningJobs = "finishedRunningJobs",
     FinishedRunningJobsDisplay = "finishedRunningJobsDisplay",
+
     Debug = "debug",
 }
 
@@ -2194,7 +2204,7 @@ Unzip your X archive and choose the folder that it's in below. I will use it to 
                     this.state = State.WizardImportOptionsDisplay;
                     break;
 
-                case State.WizardSaveOptions:
+                case State.WizardBuildOptions:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
@@ -2202,7 +2212,7 @@ I'll help you build a private local database of your X data to the \`Documents\`
 You'll be able to access it even after you delete it from X.
 
 **Which data do you want to save?**`;
-                    this.state = State.WizardSaveOptionsDisplay;
+                    this.state = State.WizardBuildOptionsDisplay;
                     break;
 
                 case State.WizardDeleteOptions:

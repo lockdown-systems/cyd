@@ -44,7 +44,7 @@ const archiveLikes = ref(false);
 const archiveDMs = ref(false);
 
 const loadSettings = async () => {
-    console.log('XWizardSaveOptionsPage', 'loadSettings');
+    console.log('XWizardBuildOptionsPage', 'loadSettings');
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
         archiveTweets.value = account.xAccount.archiveTweets;
@@ -55,9 +55,9 @@ const loadSettings = async () => {
 };
 
 const saveSettings = async () => {
-    console.log('XWizardSaveOptionsPage', 'saveSettings');
+    console.log('XWizardBuildOptionsPage', 'saveSettings');
     if (!props.model.account) {
-        console.error('XWizardSaveOptionsPage', 'saveSettings', 'account is null');
+        console.error('XWizardBuildOptionsPage', 'saveSettings', 'account is null');
         return;
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
@@ -80,10 +80,11 @@ onMounted(async () => {
     <div class="wizard-content container mb-4 mt-3 mx-auto">
         <div class="mb-4">
             <h2>
-                Save options
+                Build options
             </h2>
             <p class="text-muted">
-                You can save your tweets, likes, and direct messages.
+                When you build your local database, you can save tweets, likes, and direct messages. You'll need to save
+                tweets and likes before you can delete them. You can delete direct messages without saving them.
             </p>
         </div>
         <form @submit.prevent>
