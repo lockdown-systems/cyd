@@ -11,33 +11,37 @@ import {
 import Electron from 'electron';
 
 import CydAPIClient from '../../../cyd-api-client';
+import { UserPremiumAPIResponse } from "../../../cyd-api-client";
 
 import AccountHeader from '../components/AccountHeader.vue';
 import SpeechBubble from '../components/SpeechBubble.vue';
 import XProgressComponent from '../components/XProgressComponent.vue';
 import XJobStatusComponent from '../components/XJobStatusComponent.vue';
-import { UserPremiumAPIResponse } from "../../../cyd-api-client";
 
 import type {
     Account,
     XProgress,
     XJob,
     XRateLimitInfo,
-    XDatabaseStats,
-    XDeleteReviewStats,
-    XArchiveInfo,
-} from '../../../shared_types';
-import {
-    emptyXDatabaseStats,
-    emptyXDeleteReviewStats,
-    emptyXArchiveInfo
 } from '../../../shared_types';
 import type { DeviceInfo } from '../types';
 import { AutomationErrorType } from '../automation_errors';
 
 import { AccountXViewModel, State, FailureState, XViewModelState } from '../view_models/AccountXViewModel'
 
-import { setAccountRunning, openURL, openPreventSleepURL } from '../util';
+import { setAccountRunning, openURL } from '../util';
+
+import XWizardStartPage from '../components/XWizardStartPage.vue';
+import XWizardImportPage from '../components/XWizardImportPage.vue';
+import XWizardImportDownloadPage from '../components/XWizardImportDownloadPage.vue';
+import XWizardImportOptionsPage from '../components/XWizardImportOptionsPage.vue';
+import XWizardSaveOptionsPage from '../components/XWizardSaveOptionsPage.vue';
+import XWizardDeleteOptionsPage from '../components/XWizardDeleteOptionsPage.vue';
+import XWizardReviewPage from '../components/XWizardReviewPage.vue';
+import XWizardDeleteReviewPage from '../components/XWizardDeleteReviewPage.vue';
+import XWizardCheckPremium from '../components/XWizardCheckPremium.vue';
+import XFinishedRunningJobsPage from '../components/XFinishedRunningJobsPage.vue';
+import XWizardSidebar from '../components/XWizardSidebar.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -52,7 +56,7 @@ const emit = defineEmits(['onRefreshClicked', 'onRemoveClicked']);
 const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
-const accountXViewModel = ref<AccountXViewModel | null>(null);
+const model = ref<AccountXViewModel | null>(null);
 
 const currentState = ref<State>(State.Login);
 const failureStateIndexTweets_FailedToRetryAfterRateLimit = ref(false);
@@ -63,17 +67,13 @@ const rateLimitInfo = ref<XRateLimitInfo | null>(null);
 const currentJobs = ref<XJob[]>([]);
 const isPaused = ref<boolean>(false);
 
-const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
-const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
-const archiveInfo = ref<XArchiveInfo>(emptyXArchiveInfo());
-
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
 // Keep currentState in sync
 watch(
-    () => accountXViewModel.value?.state,
+    () => model.value?.state,
     async (newState) => {
         if (newState) {
             currentState.value = newState as State;
@@ -87,182 +87,114 @@ watch(
 
 // Keep progress updated
 watch(
-    () => accountXViewModel.value?.progress,
+    () => model.value?.progress,
     (newProgress) => { if (newProgress) progress.value = newProgress; },
     { deep: true, }
 );
 
 // Keep rateLimitInfo updated
 watch(
-    () => accountXViewModel.value?.rateLimitInfo,
+    () => model.value?.rateLimitInfo,
     (newRateLimitInfo) => { if (newRateLimitInfo) rateLimitInfo.value = newRateLimitInfo; },
     { deep: true, }
 );
 
 // Keep jobs status updated
 watch(
-    () => accountXViewModel.value?.jobs,
+    () => model.value?.jobs,
     (newJobs) => { if (newJobs) currentJobs.value = newJobs; },
     { deep: true, }
 );
 
 // Keep isPaused updated
 watch(
-    () => accountXViewModel.value?.isPaused,
+    () => model.value?.isPaused,
     (newIsPaused) => { if (newIsPaused !== undefined) isPaused.value = newIsPaused; },
     { deep: true, }
 );
 
-// Keep databaseStats in sync
-watch(
-    () => accountXViewModel.value?.databaseStats,
-    (newDatabaseStats) => {
-        if (newDatabaseStats) {
-            databaseStats.value = newDatabaseStats as XDatabaseStats;
-        }
-    },
-    { deep: true, }
-);
-
-// Keep deleteReviewStats in sync
-watch(
-    () => accountXViewModel.value?.deleteReviewStats,
-    (newDeleteReviewStats) => {
-        if (newDeleteReviewStats) {
-            deleteReviewStats.value = newDeleteReviewStats as XDeleteReviewStats;
-        }
-    },
-    { deep: true, }
-);
-
-// Keep archiveInfo in sync
-watch(
-    () => accountXViewModel.value?.archiveInfo,
-    (newArchiveInfo) => {
-        if (newArchiveInfo) {
-            archiveInfo.value = newArchiveInfo as XArchiveInfo;
-        }
-    },
-    { deep: true, }
-);
-
-// Paths
-const archivePath = ref('');
-
-// Settings
-const importFromArchive = ref(false);
-const saveMyData = ref(true);
-const deleteMyData = ref(true);
-const archiveTweets = ref(false);
-const archiveTweetsHTML = ref(false);
-const archiveLikes = ref(false);
-const archiveDMs = ref(false);
-const deleteTweets = ref(false);
-const deleteTweetsDaysOld = ref(0);
-const deleteTweetsLikesThresholdEnabled = ref(false);
-const deleteTweetsLikesThreshold = ref(0);
-const deleteTweetsRetweetsThresholdEnabled = ref(false);
-const deleteTweetsRetweetsThreshold = ref(0);
-const deleteTweetsArchiveEnabled = ref(false);
-const deleteRetweets = ref(false);
-const deleteRetweetsDaysOld = ref(0);
-const deleteLikes = ref(false);
-const deleteLikesDaysOld = ref(0);
-const deleteDMs = ref(false);
-
-const deleteFromDatabase = ref(false);
-const chanceToReview = ref(true);
-
-const importFromArchivePath = ref('');
-
-// Last finished job timestamps
-const lastFinishedJobImportArchive = ref<Date | null>(null);
-const lastFinishedJobIndexTweets = ref<Date | null>(null);
-const lastFinishedJobIndexLikes = ref<Date | null>(null);
-const lastFinishedJobIndexConversations = ref<Date | null>(null);
-const lastFinishedJobIndexMessages = ref<Date | null>(null);
-
-const updateLastFinishedJobs = async () => {
-    const importArchiveTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_importArchive')
-    if (importArchiveTimestamp) {
-        lastFinishedJobImportArchive.value = new Date(importArchiveTimestamp);
-    }
-
-    const indexTweetsTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexTweets')
-    if (indexTweetsTimestamp) {
-        lastFinishedJobIndexTweets.value = new Date(indexTweetsTimestamp);
-    }
-
-    const indexLikesTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexLikes')
-    if (indexLikesTimestamp) {
-        lastFinishedJobIndexLikes.value = new Date(indexLikesTimestamp);
-    }
-
-    const indexConversationsTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexConversations')
-    if (indexConversationsTimestamp) {
-        lastFinishedJobIndexConversations.value = new Date(indexConversationsTimestamp);
-    }
-
-    const indexMessagesTimestamp = await window.electron.X.getConfig(props.account.id, 'lastFinishedJob_indexMessages')
-    if (indexMessagesTimestamp) {
-        lastFinishedJobIndexMessages.value = new Date(indexMessagesTimestamp);
-    }
-}
-
-const importFromArchiveBrowserClicked = async () => {
-    const path = await window.electron.showSelectFolderDialog();
-    if (path) {
-        importFromArchivePath.value = path;
-    }
-};
-
-const updateSettings = async () => {
-    console.log('Updating settings')
-    const updatedAccount: Account = {
-        id: props.account.id,
-        type: props.account.type,
-        sortOrder: props.account.sortOrder,
-        uuid: props.account.uuid,
-        xAccount: {
-            id: props.account.xAccount?.id || 0,
-            createdAt: props.account.xAccount?.createdAt || new Date(),
-            updatedAt: new Date(),
-            accessedAt: new Date(),
-            username: props.account.xAccount?.username || '',
-            profileImageDataURI: props.account.xAccount?.profileImageDataURI || '',
-            importFromArchive: importFromArchive.value,
-            saveMyData: saveMyData.value,
-            deleteMyData: deleteMyData.value,
-            archiveTweets: archiveTweets.value,
-            archiveTweetsHTML: archiveTweetsHTML.value,
-            archiveLikes: archiveLikes.value,
-            archiveDMs: archiveDMs.value,
-            deleteTweets: deleteTweets.value,
-            deleteTweetsDaysOld: deleteTweetsDaysOld.value,
-            deleteTweetsLikesThresholdEnabled: deleteTweetsLikesThresholdEnabled.value,
-            deleteTweetsLikesThreshold: deleteTweetsLikesThreshold.value,
-            deleteTweetsRetweetsThresholdEnabled: deleteTweetsRetweetsThresholdEnabled.value,
-            deleteTweetsRetweetsThreshold: deleteTweetsRetweetsThreshold.value,
-            deleteTweetsArchiveEnabled: deleteTweetsArchiveEnabled.value,
-            deleteRetweets: deleteRetweets.value,
-            deleteRetweetsDaysOld: deleteRetweetsDaysOld.value,
-            deleteLikes: deleteLikes.value,
-            deleteLikesDaysOld: deleteLikesDaysOld.value,
-            deleteDMs: deleteDMs.value,
-            deleteFromDatabase: deleteFromDatabase.value,
-            chanceToReview: chanceToReview.value,
-            followingCount: props.account.xAccount?.followingCount || 0,
-            followersCount: props.account.xAccount?.followersCount || 0,
-            tweetsCount: props.account.xAccount?.tweetsCount || 0,
-            likesCount: props.account.xAccount?.likesCount || 0,
-        }
-    };
-    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
-    if (accountXViewModel.value !== null) {
-        accountXViewModel.value.account = updatedAccount;
-    }
+const updateAccount = async () => {
     emitter?.emit('account-updated');
 };
+
+const setState = async (state: State) => {
+    if (model.value !== null) {
+        model.value.state = state;
+    }
+};
+
+const startStateLoop = async () => {
+    console.log('State loop started');
+    await setAccountRunning(props.account.id, true);
+
+    while (canStateLoopRun.value) {
+        // Run next state
+        if (model.value !== null) {
+            await model.value.run();
+        }
+
+        // Break out of the state loop if the view model is in a display state
+        if (
+            model.value?.state === State.WizardStartDisplay ||
+            model.value?.state === State.WizardImportOptionsDisplay ||
+            model.value?.state === State.WizardImportStartDisplay ||
+            model.value?.state === State.WizardSaveOptionsDisplay ||
+            model.value?.state === State.WizardDeleteOptionsDisplay ||
+            model.value?.state === State.WizardReviewDisplay ||
+            model.value?.state === State.WizardDeleteReviewDisplay ||
+            model.value?.state === State.WizardCheckPremiumDisplay ||
+            model.value?.state === State.FinishedRunningJobsDisplay
+        ) {
+            break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    await setAccountRunning(props.account.id, false);
+    console.log('State loop ended');
+};
+
+const onAutomationErrorRetry = () => {
+    console.log('Retrying automation after error');
+
+    // Store the state of the view model before the error
+    const state: XViewModelState | undefined = model.value?.saveState();
+    localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
+    emit('onRefreshClicked');
+};
+
+const onAutomationErrorCancel = () => {
+    console.log('Cancelling automation after error');
+    emit('onRefreshClicked');
+};
+
+const onAutomationErrorResume = () => {
+    console.log('Resuming after after error');
+    model.value?.resume();
+};
+
+const onCancelAutomation = () => {
+    console.log('Cancelling automation');
+    emit('onRefreshClicked');
+};
+
+const onReportBug = async () => {
+    console.log('Report bug clicked');
+
+    // Pause
+    model.value?.pause();
+
+    // Submit error report
+    if (model.value !== null) {
+        await model.value.error(AutomationErrorType.X_manualBugReport, {
+            message: 'User is manually reporting a bug',
+            state: model.value.saveState()
+        }, {
+            currentURL: model.value.webview.getURL()
+        });
+    }
+}
 
 // User variables
 const userAuthenticated = ref(false);
@@ -304,315 +236,15 @@ emitter?.on('signed-out', async () => {
     userPremium.value = false;
 });
 
-const startStateLoop = async () => {
-    console.log('State loop started');
-    await setAccountRunning(props.account.id, true);
-
-    while (canStateLoopRun.value) {
-        // Run next state
-        if (accountXViewModel.value !== null) {
-            await accountXViewModel.value.run();
-        }
-
-        // Break out of the state loop if the view model is in a display state
-        if (
-            accountXViewModel.value?.state === State.WizardStartDisplay ||
-            accountXViewModel.value?.state === State.WizardImportOptionsDisplay ||
-            accountXViewModel.value?.state === State.WizardImportStartDisplay ||
-            accountXViewModel.value?.state === State.WizardSaveOptionsDisplay ||
-            accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay ||
-            accountXViewModel.value?.state === State.WizardReviewDisplay ||
-            accountXViewModel.value?.state === State.WizardDeleteReviewDisplay ||
-            accountXViewModel.value?.state === State.WizardCheckPremiumDisplay ||
-            accountXViewModel.value?.state === State.FinishedRunningJobsDisplay
-        ) {
-            if (accountXViewModel.value?.state === State.WizardStartDisplay) {
-                await wizardStartUpdateButtonsText();
-            }
-            if (accountXViewModel.value?.state === State.WizardImportOptionsDisplay) {
-                await wizardImportOptionsUpdateButtonsText();
-            }
-            if (accountXViewModel?.value.state === State.WizardSaveOptionsDisplay) {
-                await wizardSaveOptionsUpdateButtonsText();
-            }
-            if (accountXViewModel.value?.state === State.WizardDeleteOptionsDisplay) {
-                await wizardDeleteOptionsUpdateButtonsText();
-            }
-            if (accountXViewModel.value?.state === State.WizardReviewDisplay) {
-                await wizardReviewUpdateButtonsText();
-            }
-            if (accountXViewModel.value?.state == State.WizardDeleteReviewDisplay) {
-                await wizardDeleteReviewUpdateButtonsText();
-            }
-
-            await updateArchivePath();
-            break;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    await setAccountRunning(props.account.id, false);
-    await updateLastFinishedJobs();
-    console.log('State loop ended');
-};
-
-const reset = async () => {
-    await accountXViewModel.value?.reset()
-    await startStateLoop();
-};
-
-const updateArchivePath = async () => {
-    const path = await window.electron.getAccountDataPath(props.account.id, '');
-    archivePath.value = path ? path : '';
-};
-
-const onAutomationErrorRetry = () => {
-    console.log('Retrying automation after error');
-
-    // Store the state of the view model before the error
-    const state: XViewModelState | undefined = accountXViewModel.value?.saveState();
-    localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
-    emit('onRefreshClicked');
-};
-
-const onAutomationErrorCancel = () => {
-    console.log('Cancelling automation after error');
-    emit('onRefreshClicked');
-};
-
-const onAutomationErrorResume = () => {
-    console.log('Resuming after after error');
-    accountXViewModel.value?.resume();
-};
-
-const onCancelAutomation = () => {
-    console.log('Cancelling automation');
-    emit('onRefreshClicked');
-};
-
-function formatStatsNumber(num: number): string {
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'k';
-    }
-    return num.toString();
-}
-
-const openArchiveFolder = async () => {
-    await window.electron.X.openFolder(props.account.id, "");
-};
-
-const openArchive = async () => {
-    await window.electron.X.openFolder(props.account.id, "index.html");
-};
-
-const onReportBug = async () => {
-    console.log('Report bug clicked');
-
-    // Pause
-    accountXViewModel.value?.pause();
-
-    // Submit error report
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.error(AutomationErrorType.X_manualBugReport, {
-            message: 'User is manually reporting a bug',
-            state: accountXViewModel.value.saveState()
-        }, {
-            currentURL: accountXViewModel.value.webview.getURL()
-        });
-    }
-}
-
-// Wizard functions
-
-const wizardNextText = ref('Continue');
-const wizardBackText = ref('Back');
-
-const wizardStartUpdateButtonsText = async () => {
-    if (saveMyData.value) {
-        wizardNextText.value = 'Continue to Save Options';
-    } else if (deleteMyData.value) {
-        wizardNextText.value = 'Continue to Delete Options';
-    } else {
-        wizardNextText.value = 'Choose Save or Delete to Continue';
-    }
-}
-
-const wizardImportOptionsUpdateButtonsText = async () => {
-    if (saveMyData.value) {
-        wizardNextText.value = 'Continue to Save Options';
-    } else if (deleteMyData.value) {
-        wizardNextText.value = 'Continue to Delete Options';
-    } else {
-        wizardNextText.value = 'Continue to Review';
-    }
-    wizardBackText.value = 'Back';
-}
-
-const wizardSaveOptionsUpdateButtonsText = async () => {
-    if (deleteMyData.value) {
-        wizardNextText.value = 'Continue to Delete Options';
-    } else {
-        wizardNextText.value = 'Continue to Review';
-    }
-    wizardBackText.value = 'Back to Start';
-}
-
-const wizardDeleteOptionsUpdateButtonsText = async () => {
-    wizardNextText.value = 'Continue to Review';
-    if (saveMyData.value) {
-        wizardBackText.value = 'Back to Save Options';
-    } else {
-        wizardBackText.value = 'Back to Start';
-    }
-}
-
-const wizardReviewUpdateButtonsText = async () => {
-    if (saveMyData.value) {
-        if (deleteMyData.value) {
-            if (chanceToReview.value) {
-                wizardNextText.value = 'Start Saving and Build Database';
-            } else {
-                wizardNextText.value = 'Start Saving, Build Database, and Start Deleting';
-            }
-        } else {
-            wizardNextText.value = 'Start Saving';
-        }
-    } else {
-        if (chanceToReview.value) {
-            if (deleteFromDatabase.value) {
-                wizardNextText.value = 'Review Before Deleting';
-            } else {
-                wizardNextText.value = 'Build Database';
-            }
-        } else {
-            if (deleteFromDatabase.value) {
-                wizardNextText.value = 'Start Deleting';
-            } else {
-                wizardNextText.value = 'Build Database and Start Deleting';
-            }
-        }
-    }
-
-    if (deleteMyData.value) {
-        wizardBackText.value = 'Back to Delete Options';
-    } else {
-        wizardBackText.value = 'Back to Save Options';
-    }
-}
-
-const wizardDeleteReviewUpdateButtonsText = async () => {
-    wizardBackText.value = 'Back to Delete Options';
-    wizardNextText.value = 'Start Deleting'
-}
-
-const wizardStartNextClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (saveMyData.value) {
-        accountXViewModel.value.state = State.WizardSaveOptions;
-    } else if (deleteMyData.value) {
-        accountXViewModel.value.state = State.WizardDeleteOptions;
-    }
-    await startStateLoop();
-};
-
-const wizardImportStartDownloadClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    await accountXViewModel.value.defineJobsDownloadArchive();
-    accountXViewModel.value.state = State.RunJobs;
-    await startStateLoop();
-};
-
-const wizardImportStartImportClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    accountXViewModel.value.state = State.WizardImportOptions;
-    await startStateLoop();
-};
-
-const wizardBackToStartClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    accountXViewModel.value.state = State.WizardStart;
-    await startStateLoop();
-};
-
-const wizardSaveOptionsNextClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (deleteMyData.value) {
-        accountXViewModel.value.state = State.WizardDeleteOptions;
-    } else {
-        accountXViewModel.value.state = State.WizardReview;
-    }
-    await startStateLoop();
-};
-
-const wizardImportOptionsBackClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    accountXViewModel.value.state = State.WizardImportStart;
-    await startStateLoop();
-};
-
-const wizardImportOptionsNextClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (saveMyData.value) {
-        accountXViewModel.value.state = State.WizardSaveOptions;
-    } else if (deleteMyData.value) {
-        accountXViewModel.value.state = State.WizardDeleteOptions;
-    } else {
-        accountXViewModel.value.state = State.WizardReview;
-    }
-    await startStateLoop();
-};
-
-const wizardDeleteOptionsBackClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (saveMyData.value) {
-        accountXViewModel.value.state = State.WizardSaveOptions;
-    } else {
-        accountXViewModel.value.state = State.WizardStart;
-    }
-    await startStateLoop();
-};
-
-const wizardDeleteOptionsNextClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (accountXViewModel.value.isDeleteReviewActive) {
-        accountXViewModel.value.state = State.WizardDeleteReview;
-    } else {
-        accountXViewModel.value.state = State.WizardReview;
-    }
-    await startStateLoop();
-};
-
-const wizardReviewBackClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (deleteMyData.value) {
-        accountXViewModel.value.state = State.WizardDeleteOptions;
-    } else {
-        accountXViewModel.value.state = State.WizardSaveOptions;
-    }
-    await startStateLoop();
-};
-
-const wizardReviewNextClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
+const startJobs = async (deleteFromDatabase: boolean, chanceToReview: boolean) => {
+    if (!model.value) { return; }
 
     // Premium check
-    if (deleteMyData.value) {
+    if (model.value.account.xAccount?.deleteMyData) {
         await updateUserAuthenticated();
         console.log("userAuthenticated", userAuthenticated.value);
         if (!userAuthenticated.value) {
-            accountXViewModel.value.state = State.WizardCheckPremium;
+            model.value.state = State.WizardCheckPremium;
             await startStateLoop();
             return;
         }
@@ -620,162 +252,104 @@ const wizardReviewNextClicked = async () => {
         await updateUserPremium();
         console.log("userPremium", userPremium.value);
         if (!userPremium.value) {
-            accountXViewModel.value.state = State.WizardCheckPremium;
+            model.value.state = State.WizardCheckPremium;
             await startStateLoop();
             return;
         }
     }
 
     // If chance to review is checked, make isDeleteReview active
-    accountXViewModel.value.isDeleteReviewActive = chanceToReview.value;
+    model.value.isDeleteReviewActive = chanceToReview;
 
     // All good, start the jobs
     console.log('Starting jobs');
-    if (accountXViewModel.value) {
-        await accountXViewModel.value.defineJobs();
+    if (model.value) {
+        await model.value.defineJobs();
     }
-    if (deleteMyData.value && deleteFromDatabase.value) {
-        accountXViewModel.value.state = State.WizardDeleteReview;
+    if (model.value.account.xAccount?.deleteMyData && deleteFromDatabase) {
+        model.value.state = State.WizardDeleteReview;
     } else {
-        accountXViewModel.value.state = State.RunJobs;
+        model.value.state = State.RunJobs;
     }
     await startStateLoop();
 };
 
-const wizardCheckPremiumSignInClicked = async () => {
-    localStorage.setItem('manageAccountMode', 'premium');
-    localStorage.setItem('manageAccountRedirectAccountID', props.account.id.toString());
-    emitter?.emit("show-sign-in");
-};
-
-const wizardCheckPremiumManageAccountClicked = async () => {
-    localStorage.setItem('manageAccountMode', 'premium');
-    localStorage.setItem('manageAccountRedirectAccountID', props.account.id.toString());
-    emitter?.emit("show-manage-account");
-};
-
-const wizardCheckPremiumBackClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    accountXViewModel.value.state = State.WizardReview;
+const startJobsDeleteReview = async () => {
+    if (!model.value) { return; }
+    await model.value.defineJobs(true);
+    model.value.isDeleteReviewActive = false;
+    model.value.state = State.RunJobs;
     await startStateLoop();
 };
 
-const wizardCheckPremiumJustSaveClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-
-    saveMyData.value = true;
-    deleteMyData.value = false;
-    await updateSettings();
-
-    accountXViewModel.value.state = State.WizardReview;
-    await startStateLoop();
-};
-
-const wizardDeleteReviewBackClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    accountXViewModel.value.state = State.WizardDeleteOptions;
-    await startStateLoop();
-};
-
-const wizardDeleteReviewNextClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    await updateSettings();
-    if (accountXViewModel.value) {
-        await accountXViewModel.value.defineJobs(true);
+const startJobsJustSave = async () => {
+    if (model.value?.account.xAccount == null) {
+        console.error('startJobsJustSave', 'Account is null');
+        return;
     }
-    accountXViewModel.value.isDeleteReviewActive = false;
-    accountXViewModel.value.state = State.RunJobs;
+
+    const updatedAccount: Account = {
+        ...model.value.account,
+        xAccount: {
+            ...model.value.account.xAccount,
+            saveMyData: true,
+            deleteMyData: false,
+        }
+    };
+
+    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
+    await updateAccount();
+
+    model.value.state = State.WizardReview;
     await startStateLoop();
 };
 
 const finishedRunAgainClicked = async () => {
-    if (!accountXViewModel.value) { return; }
-    accountXViewModel.value.state = State.WizardReview;
+    if (!model.value) { return; }
+    model.value.state = State.WizardReview;
     await startStateLoop();
+};
+
+const updateAccountInViewModel = (account: Account) => {
+    if (model.value) {
+        model.value.account = account;
+    }
 };
 
 // Debug functions
 
-const shouldOpenDevtools = ref(false);
-
-const debugAutopauseEndOfStep = ref(false);
-
-const debugAutopauseEndOfStepChanged = async () => {
-    if (accountXViewModel.value !== null) {
-        accountXViewModel.value.debugAutopauseEndOfStep = debugAutopauseEndOfStep.value;
+const debugAutopauseEndOfStepChanged = async (value: boolean) => {
+    if (model.value !== null) {
+        model.value.debugAutopauseEndOfStep = value;
     }
-};
-
-const enableDebugMode = async () => {
-    if (accountXViewModel.value !== null) {
-        accountXViewModel.value.state = State.Debug;
-    }
-    await startStateLoop();
 };
 
 const debugModeTriggerError = async () => {
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.error(AutomationErrorType.x_unknownError, {
+    if (model.value !== null) {
+        await model.value.error(AutomationErrorType.x_unknownError, {
             message: 'Debug mode error triggered'
         }, {
-            currentURL: accountXViewModel.value.webview.getURL()
+            currentURL: model.value.webview.getURL()
         });
     }
 };
 
 const debugModeDisable = async () => {
-    if (accountXViewModel.value !== null) {
-        accountXViewModel.value.state = State.WizardPrestart;
+    if (model.value !== null) {
+        model.value.state = State.WizardPrestart;
     }
 };
 
 // Lifecycle
 
-const reloadXAccountData = () => {
-    // Update the variables
-    if (props.account.xAccount !== null) {
-        archiveTweets.value = props.account.xAccount.archiveTweets;
-        archiveTweetsHTML.value = props.account.xAccount.archiveTweetsHTML;
-        archiveLikes.value = props.account.xAccount.archiveLikes;
-        archiveDMs.value = props.account.xAccount.archiveDMs;
-        importFromArchive.value = props.account.xAccount.importFromArchive;
-        saveMyData.value = props.account.xAccount.saveMyData;
-        deleteMyData.value = props.account.xAccount.deleteMyData;
-        deleteTweets.value = props.account.xAccount.deleteTweets;
-        deleteTweetsDaysOld.value = props.account.xAccount.deleteTweetsDaysOld;
-        deleteTweetsLikesThresholdEnabled.value = props.account.xAccount.deleteTweetsLikesThresholdEnabled;
-        deleteTweetsLikesThreshold.value = props.account.xAccount.deleteTweetsLikesThreshold;
-        deleteTweetsRetweetsThresholdEnabled.value = props.account.xAccount.deleteTweetsRetweetsThresholdEnabled;
-        deleteTweetsRetweetsThreshold.value = props.account.xAccount.deleteTweetsRetweetsThreshold;
-        deleteTweetsArchiveEnabled.value = props.account.xAccount.deleteTweetsArchiveEnabled;
-        deleteRetweets.value = props.account.xAccount.deleteRetweets;
-        deleteRetweetsDaysOld.value = props.account.xAccount.deleteRetweetsDaysOld;
-        deleteLikes.value = props.account.xAccount.deleteLikes;
-        deleteLikesDaysOld.value = props.account.xAccount.deleteLikesDaysOld;
-        deleteDMs.value = props.account.xAccount.deleteDMs;
-        chanceToReview.value = props.account.xAccount.chanceToReview;
-    }
-    // Update the account in the view model
-    if (accountXViewModel.value) {
-        accountXViewModel.value.account = props.account;
-    }
-};
-
 onMounted(async () => {
-    shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
-
-    await updateLastFinishedJobs();
-    await updateArchivePath();
-    reloadXAccountData();
-
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
         // Start the state loop
         if (props.account.xAccount !== null) {
-            accountXViewModel.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value, emitter);
-            await accountXViewModel.value.init();
+            model.value = new AccountXViewModel(props.account, webview, apiClient.value, deviceInfo.value, emitter);
+            await model.value.init();
 
             // If there's a saved state from a retry, restore it
             const savedState = localStorage.getItem(`account-${props.account.id}-state`);
@@ -783,7 +357,7 @@ onMounted(async () => {
                 console.log('Restoring saved state', savedState);
                 const savedStateObj: XViewModelState = JSON.parse(savedState);
 
-                accountXViewModel.value.restoreState(savedStateObj);
+                model.value.restoreState(savedStateObj);
                 currentState.value = savedStateObj.state as State;
                 progress.value = savedStateObj.progress;
                 currentJobs.value = savedStateObj.jobs;
@@ -806,7 +380,7 @@ onMounted(async () => {
     emitter?.on(`automation-error-${props.account.id}-resume`, onAutomationErrorResume);
 
     // Make sure to keep the account data up to date
-    emitter?.on('account-updated', reloadXAccountData);
+    emitter?.on('account-updated', updateAccountInViewModel);
 });
 
 onUnmounted(async () => {
@@ -823,8 +397,8 @@ onUnmounted(async () => {
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
 
     // Cleanup the view controller
-    if (accountXViewModel.value !== null) {
-        await accountXViewModel.value.cleanup();
+    if (model.value !== null) {
+        await model.value.cleanup();
     }
 });
 </script>
@@ -837,901 +411,93 @@ onUnmounted(async () => {
         <div class="d-flex">
             <div class="d-flex flex-column flex-grow-1">
                 <!-- Speech bubble -->
-                <SpeechBubble ref="speechBubbleComponent" :message="accountXViewModel?.instructions || ''" class="mb-2"
+                <SpeechBubble ref="speechBubbleComponent" :message="model?.instructions || ''" class="mb-2"
                     :class="{ 'w-100': currentJobs.length === 0 }" />
 
                 <!-- Progress -->
                 <XProgressComponent
-                    v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && accountXViewModel?.state == State.RunJobs"
+                    v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && model?.state == State.RunJobs"
                     :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
             </div>
 
             <div class="d-flex align-items-center">
                 <!-- Job status -->
-                <XJobStatusComponent v-if="currentJobs.length > 0 && accountXViewModel?.state == State.RunJobs"
-                    :jobs="currentJobs" :is-paused="isPaused" class="job-status-component"
-                    @on-pause="accountXViewModel?.pause()" @on-resume="accountXViewModel?.resume()"
-                    @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
+                <XJobStatusComponent v-if="currentJobs.length > 0 && model?.state == State.RunJobs" :jobs="currentJobs"
+                    :is-paused="isPaused" class="job-status-component" @on-pause="model?.pause()"
+                    @on-resume="model?.resume()" @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
             </div>
         </div>
 
         <!-- U2F security key notice -->
-        <p v-if="accountXViewModel?.state == State.Login" class="u2f-info text-center text-muted small">
+        <p v-if="model?.state == State.Login" class="u2f-info text-center text-muted small">
             <i class="fa-solid fa-circle-info me-2" />
             If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
             screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
         </p>
 
         <!-- Automation notice -->
-        <p v-if="(accountXViewModel?.showBrowser && accountXViewModel?.showAutomationNotice)"
-            class="text-muted text-center automation-notice">
+        <p v-if="(model?.showBrowser && model?.showAutomationNotice)" class="text-muted text-center automation-notice">
             <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
             your computer for other things.
         </p>
 
         <!-- Ready for input -->
-        <p v-if="(accountXViewModel?.showBrowser && !accountXViewModel?.showAutomationNotice)"
-            class="text-muted text-center ready-for-input">
+        <p v-if="(model?.showBrowser && !model?.showAutomationNotice)" class="text-muted text-center ready-for-input">
             <i class="fa-solid fa-computer-mouse" /> Ready for input.
         </p>
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
             :class="{
-                'hidden': !accountXViewModel?.showBrowser,
-                'webview-automation-border': accountXViewModel?.showAutomationNotice,
-                'webview-input-border': !accountXViewModel?.showAutomationNotice
+                'hidden': !model?.showBrowser,
+                'webview-automation-border': model?.showAutomationNotice,
+                'webview-input-border': !model?.showAutomationNotice
             }" />
 
         <!-- Wizard -->
-        <div :class="{ 'hidden': accountXViewModel?.showBrowser, 'wizard': true }">
+        <div :class="{ 'hidden': model?.showBrowser, 'wizard': true }">
             <div class="wizard-container d-flex">
-                <!-- wizard main content -->
                 <div class="wizard-content flex-grow-1">
-                    <!-- Wizard: start -->
-                    <div v-if="accountXViewModel?.state == State.WizardStartDisplay"
-                        class="wizard container mb-4 mt-3 mx-auto">
-                        <div class="mb-4">
-                            <h2>
-                                It's time to claw back your data from X
-                            </h2>
-                            <p class="text-muted">
-                                Before you can delete your data from X, Cyd needs a local database of it.
-                            </p>
-                        </div>
+                    <XWizardStartPage v-if="model?.state == State.WizardStartDisplay" :account="account" :model="model"
+                        :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
+                        :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
+                        @update-account="updateAccount" @set-state="setState($event)"
+                        @start-state-loop="startStateLoop" />
 
-                        <form @submit.prevent>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input id="saveMyData" v-model="saveMyData" type="checkbox" class="form-check-input"
-                                        @change="wizardStartUpdateButtonsText">
-                                    <label class="form-check-label" for="saveMyData">
-                                        Save my data
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input id="deleteMyData" v-model="deleteMyData" type="checkbox"
-                                        class="form-check-input" @change="wizardStartUpdateButtonsText">
-                                    <label class="form-check-label" for="deleteMyData">
-                                        Delete my data
-                                    </label>
-                                    <span class="premium badge badge-primary">Premium</span>
-                                </div>
-                            </div>
+                    <XWizardImportPage v-if="model?.state == State.WizardImportStartDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(saveMyData || deleteMyData)" @click="wizardStartNextClicked">
-                                    <i class="fa-solid fa-forward" />
-                                    {{ wizardNextText }}
-                                </button>
-                            </div>
+                    <XWizardImportDownloadPage v-if="model?.state == State.WizardImportDownloadDisplay"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                            <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                class="alert alert-danger mt-4" role="alert">
-                                <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                    class="fw-bold mb-0">
-                                    During a recent run, Cyd wasn't able to scroll through all of your tweets and likes.
-                                </p>
-                                <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                    class="fw-bold mb-0">
-                                    During a recent run, Cyd wasn't able to scroll through all of your tweets.
-                                </p>
-                                <p v-if="!(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                    class="fw-bold mb-0">
-                                    During a recent run, Cyd wasn't able to scroll through all of your likes.
-                                </p>
-                                <p class="alert-details mb-0">
-                                    Sorry, X can be annoying sometimes. Run Cyd again to try again.
-                                </p>
-                            </div>
+                    <XWizardImportOptionsPage v-if="model?.state == State.WizardImportOptionsDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                            <div class="alert alert-info mt-4" role="alert">
-                                <p class="fw-bold mb-0">
-                                    X restricts how fast you can access your data using <span class="fst-italic">rate
-                                        limits</span>.
-                                </p>
-                                <p class="alert-details mb-0">
-                                    If you have much data in your account, you will probably hit rate limits while Cyd
-                                    works. Cyd will pause and wait for the rate limit to reset before continuing, but
-                                    it might take a while to finish.
-                                </p>
-                            </div>
-                            <div class="alert alert-info" role="alert">
-                                <p class="fw-bold mb-0">
-                                    Your computer needs to be awake to use Cyd.
-                                </p>
-                                <p class="alert-details mb-0">
-                                    Don't close the lid, keep it plugged in, and disable sleep while plugged in.
-                                    <a href="#" @click="openPreventSleepURL()">Learn more.</a>
-                                </p>
-                            </div>
-                        </form>
-                    </div>
+                    <XWizardSaveOptionsPage v-if="model?.state == State.WizardSaveOptionsDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                    <!-- Wizard: import options -->
-                    <div v-if="accountXViewModel?.state == State.WizardImportStartDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto">
-                        <div class="mb-4">
-                            <h2>
-                                Import your X archive
-                            </h2>
-                            <p class="text-muted">
-                                Before you can import your X archive, you need to download it. Have you already done
-                                this?
-                            </p>
+                    <XWizardDeleteOptionsPage v-if="model?.state == State.WizardDeleteOptionsDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
 
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardImportStartDownloadClicked">
-                                    <i class="fa-solid fa-download" />
-                                    Help Me Download My Archive from X
-                                </button>
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardImportStartImportClicked">
-                                    <i class="fa-solid fa-folder-tree" />
-                                    I've Already Downloaded My Archive
-                                </button>
-                            </div>
+                    <XWizardReviewPage v-if="model?.state == State.WizardReviewDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
+                        @start-jobs="startJobs" />
 
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardBackToStartClicked">
-                                    <i class="fa-solid fa-backward" />
-                                    Back to Start
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <XWizardDeleteReviewPage v-if="model?.state == State.WizardDeleteReviewDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop"
+                        @start-jobs-delete-review="startJobsDeleteReview" />
 
-                    <!-- Wizard: import download display -->
-                    <div v-if="accountXViewModel?.state == State.WizardImportDownloadDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto">
-                        <h2>
-                            Import your X archive
-                        </h2>
-                        <p class="text-muted">
-                            Run Cyd again after you've downloaded your X archive.
-                        </p>
+                    <XWizardCheckPremium v-if="model?.state == State.WizardCheckPremiumDisplay" :model="model"
+                        :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
+                        @start-jobs-just-save="startJobsJustSave" />
 
-                        <p>
-                            Eventually X should send you an email with a link to download your archive. Hopefully this
-                            will be within 24 hours, but it might take a few days (sorry).
-                        </p>
-                        <p>
-                            When you get it, download it, unzip it, and then run Cyd again to import it.
-                        </p>
-
-                        <div class="buttons">
-                            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                @click="wizardBackToStartClicked">
-                                <i class="fa-solid fa-backward" />
-                                Back to Start
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Wizard: import options -->
-                    <div v-if="accountXViewModel?.state == State.WizardImportOptionsDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto">
-                        <h2>
-                            Import options
-                        </h2>
-                        <p class="text-muted">
-                            Unzip your archive and choose the folder that it's in.
-                        </p>
-
-                        <div class="input-group">
-                            <input v-model="importFromArchivePath" type="text" class="form-control"
-                                placeholder="Import your X archive" readonly>
-                            <button class="btn btn-secondary" @click="importFromArchiveBrowserClicked">
-                                Browse for Archive
-                            </button>
-                        </div>
-
-                        <div class="buttons">
-                            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                @click="wizardImportOptionsBackClicked">
-                                <i class="fa-solid fa-backward" />
-                                {{ wizardBackText }}
-                            </button>
-
-                            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                @click="wizardImportOptionsNextClicked">
-                                <i class="fa-solid fa-forward" />
-                                {{ wizardNextText }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Wizard: save options -->
-                    <div v-if="accountXViewModel?.state == State.WizardSaveOptionsDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto">
-                        <div class="mb-4">
-                            <h2>
-                                Save options
-                            </h2>
-                            <p class="text-muted">
-                                You can save your tweets, likes, and direct messages.
-                            </p>
-                        </div>
-                        <form @submit.prevent>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input id="archiveTweets" v-model="archiveTweets" type="checkbox"
-                                        class="form-check-input">
-                                    <label class="form-check-label" for="archiveTweets">Save my tweets</label>
-                                </div>
-                            </div>
-                            <div class="indent">
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox"
-                                            class="form-check-input" :disabled="!archiveTweets">
-                                        <label class="form-check-label" for="archiveTweetsHTML">
-                                            Save an HTML version of each tweet
-                                        </label>
-                                    </div>
-                                    <div class="indent">
-                                        <small class="form-text text-muted">
-                                            Make an HTML archive of each tweet, including its replies, which is good
-                                            for
-                                            taking screenshots
-                                            <em>(takes longer)</em>
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input id="archiveLikes" v-model="archiveLikes" type="checkbox"
-                                        class="form-check-input">
-                                    <label class="form-check-label" for="archiveLikes">Save my likes</label>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input id="archiveDMs" v-model="archiveDMs" type="checkbox"
-                                        class="form-check-input">
-                                    <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
-                                </div>
-                            </div>
-
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardBackToStartClicked">
-                                    <i class="fa-solid fa-backward" />
-                                    Back to Start
-                                </button>
-
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardSaveOptionsNextClicked">
-                                    <i class="fa-solid fa-forward" />
-                                    {{ wizardNextText }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Wizard: delete options -->
-                    <div v-if="accountXViewModel?.state == State.WizardDeleteOptionsDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto">
-                        <div class="mb-4">
-                            <h2>
-                                Delete options
-                                <span class="premium badge badge-primary">Premium</span>
-                            </h2>
-                            <p class="text-muted">
-                                Delete your data from X, except for what you want to keep.
-                            </p>
-                        </div>
-                        <form @submit.prevent>
-                            <div class="d-flex align-items-center">
-                                <div class="form-check mb-2">
-                                    <input id="deleteTweets" v-model="deleteTweets" type="checkbox"
-                                        class="form-check-input">
-                                    <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
-                                        Delete tweets
-                                    </label>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <label class="form-check-label mr-1 no-wrap text-nowrap" for="deleteTweetsDaysOld">
-                                        older than
-                                    </label>
-                                    <div class="input-group flex-nowrap">
-                                        <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
-                                            class="form-control form-short">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text">days</span>
-                                        </div>
-                                    </div>
-                                    <span class="ms-2 text-muted">(recommended)</span>
-                                </div>
-                            </div>
-                            <div class="indent">
-                                <div class="d-flex align-items-center">
-                                    <div class="form-check mb-2">
-                                        <input id="deleteTweetsRetweetsThresholdEnabled"
-                                            v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
-                                            class="form-check-input" :disabled="!deleteTweets">
-                                        <label class="form-check-label mr-1 text-nowrap"
-                                            for="deleteTweetsRetweetsThresholdEnabled">
-                                            Unless they have at least
-                                        </label>
-                                    </div>
-                                    <div class="d-flex align-items-center mb-2">
-                                        <label class="form-check-label mr-1 sr-only"
-                                            for="deleteTweetsRetweetsThreshold">
-                                            retweets
-                                        </label>
-                                        <div class="input-group flex-nowrap">
-                                            <input id="deleteTweetsRetweetsThreshold"
-                                                v-model="deleteTweetsRetweetsThreshold" type="text"
-                                                class="form-control form-short" :disabled="!deleteTweets">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">retweets</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <div class="form-check mb-2">
-                                        <input id="deleteTweetsLikesThresholdEnabled"
-                                            v-model="deleteTweetsLikesThresholdEnabled" type="checkbox"
-                                            class="form-check-input" :disabled="!deleteTweets">
-                                        <label class="form-check-label mr-1 text-nowrap"
-                                            for="deleteTweetsLikesThresholdEnabled">
-                                            Or at least
-                                        </label>
-                                    </div>
-                                    <div class="d-flex align-items-center mb-2">
-                                        <label class="form-check-label mr-1 sr-only" for="deleteTweetsLikesThreshold">
-                                            likes
-                                        </label>
-                                        <div class="input-group flex-nowrap">
-                                            <input id="deleteTweetsLikesThreshold" v-model="deleteTweetsLikesThreshold"
-                                                type="text" class="form-control form-short" :disabled="!deleteTweets">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">likes</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <div class="mb-2">
-                                        <div class="form-check">
-                                            <input id="deleteTweetsArchiveEnabled" v-model="deleteTweetsArchiveEnabled"
-                                                type="checkbox" class="form-check-input" :disabled="!deleteTweets">
-                                            <label class="form-check-label mr-1 text-nowrap"
-                                                for="deleteTweetsArchiveEnabled">
-                                                Save an HTML version of each tweet before deleting it
-                                            </label>
-                                        </div>
-                                        <div class="indent">
-                                            <small class="form-text text-muted">
-                                                Make an HTML archive of each tweet, including its replies, which is
-                                                good for taking
-                                                screenshots <em>(takes longer)</em>
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <div class="form-check mb-2">
-                                    <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox"
-                                        class="form-check-input">
-                                    <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
-                                        Unretweet tweets
-                                    </label>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <label class="form-check-label mr-1 no-wrap text-nowrap"
-                                        for="deleteRetweetsDaysOld">
-                                        older than
-                                    </label>
-                                    <div class="input-group flex-nowrap">
-                                        <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld" type="text"
-                                            class="form-control form-short">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text">days</span>
-                                        </div>
-                                    </div>
-                                    <span class="ms-2 text-muted">(recommended)</span>
-                                </div>
-                            </div>
-                            <div class="mb-2">
-                                <div class="d-flex align-items-center">
-                                    <div class="form-check">
-                                        <input id="deleteLikes" v-model="deleteLikes" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
-                                            Unlike tweets
-                                        </label>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <label class="form-check-label mr-1 no-wrap text-nowrap"
-                                            for="deleteLikesDaysOld">
-                                            older than
-                                        </label>
-                                        <div class="input-group flex-nowrap">
-                                            <input id="deleteLikesDaysOld" v-model="deleteLikesDaysOld" type="text"
-                                                class="form-control form-short">
-                                            <div class="input-group-append">
-                                                <span class="input-group-text">days</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="indent">
-                                    <small class="form-text text-muted">
-                                        Likes are private on X. If you've liked a lot of tweets, it might take a
-                                        long time to delete them all.
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <div class="mb-2">
-                                    <div class="form-check">
-                                        <input id="deleteDMs" v-model="deleteDMs" type="checkbox"
-                                            class="form-check-input">
-                                        <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
-                                            Delete all direct messages
-                                        </label>
-                                    </div>
-                                    <div class="indent">
-                                        <small class="form-text text-muted">
-                                            This will only delete DMs from your account. The people you've sent
-                                            messages to will still have them unless they delete their DMs as well.
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardDeleteOptionsBackClicked">
-                                    <i class="fa-solid fa-backward" />
-                                    {{ wizardBackText }}
-                                </button>
-
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardDeleteOptionsNextClicked">
-                                    <i class="fa-solid fa-forward" />
-                                    {{ wizardNextText }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Wizard: review -->
-                    <div v-if="accountXViewModel?.state == State.WizardReviewDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
-                        <div class="mb-4">
-                            <h2>
-                                Review your choices
-                            </h2>
-                        </div>
-                        <form @submit.prevent>
-                            <div v-if="saveMyData">
-                                <h3>
-                                    <i class="fa-solid fa-floppy-disk me-1" />
-                                    Save my data
-                                </h3>
-                                <ul>
-                                    <li v-if="archiveTweets">
-                                        Save tweets
-                                        <ul>
-                                            <li v-if="archiveTweetsHTML">
-                                                Save HTML versions of tweets
-                                            </li>
-                                        </ul>
-                                    </li>
-                                    <li v-if="archiveLikes">
-                                        Save likes
-                                    </li>
-                                    <li v-if="archiveDMs">
-                                        Save direct messages
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div v-if="deleteMyData">
-                                <h3>
-                                    <i class="fa-solid fa-fire me-1" />
-                                    Delete my data
-                                    <span class="premium badge badge-primary">Premium</span>
-                                </h3>
-                                <ul class="mb-4">
-                                    <li v-if="deleteTweets">
-                                        Delete tweets older than {{ deleteTweetsDaysOld }} days
-                                        <ul>
-                                            <li v-if="deleteTweetsRetweetsThresholdEnabled">
-                                                Keep tweets with at least {{ deleteTweetsRetweetsThreshold }}
-                                                retweets
-                                            </li>
-                                            <li v-if="deleteTweetsLikesThresholdEnabled">
-                                                Keep tweets with at least {{ deleteTweetsLikesThreshold }} likes
-                                            </li>
-                                            <li v-if="deleteTweetsArchiveEnabled">
-                                                Save an HTML version of each tweet before deleting it
-                                            </li>
-                                        </ul>
-                                    </li>
-                                    <li v-if="deleteRetweets">
-                                        Unretweet tweets older than {{ deleteRetweetsDaysOld }} days
-                                    </li>
-                                    <li v-if="deleteLikes">
-                                        Unlike tweets older than {{ deleteLikesDaysOld }} days
-                                    </li>
-                                    <li v-if="deleteDMs">
-                                        Delete direct messages
-                                    </li>
-                                </ul>
-
-                                <div v-if="!saveMyData" class="mb-2">
-                                    <div class="form-check">
-                                        <input id="deleteFromDatabase" v-model="deleteFromDatabase" type="checkbox"
-                                            class="form-check-input" @change="wizardReviewUpdateButtonsText">
-                                        <label class="form-check-label mr-1 text-nowrap" for="deleteFromDatabase">
-                                            Use my existing database
-                                        </label>
-                                    </div>
-                                    <div class="indent">
-                                        <small class="form-text text-muted">
-                                            Delete data based on what Cyd has already saved in your local database. If
-                                            you don't check this box, Cyd will save a new copy of your data.
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="form-check">
-                                        <input id="chanceToReview" v-model="chanceToReview" type="checkbox"
-                                            class="form-check-input" @change="wizardReviewUpdateButtonsText">
-                                        <label class="form-check-label mr-1 text-nowrap" for="chanceToReview">
-                                            Give me a chance to review my data before deleting it
-                                        </label>
-                                    </div>
-                                    <div class="indent">
-                                        <small class="form-text text-muted">
-                                            If you don't check this box, your data will be deleted as soon Cyd
-                                            builds your local database.
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardReviewBackClicked">
-                                    <i class="fa-solid fa-backward" />
-                                    {{ wizardBackText }}
-                                </button>
-
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardReviewNextClicked">
-                                    <i class="fa-solid fa-forward" />
-                                    {{ wizardNextText }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Wizard: delete review -->
-                    <div v-if="accountXViewModel?.state == State.WizardDeleteReviewDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
-                        <h2>
-                            Based on your settings, you will delete:
-                        </h2>
-                        <form @submit.prevent>
-                            <ul>
-                                <li v-if="deleteTweets">
-                                    <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
-                                    that are older than {{ deleteTweetsDaysOld }} days
-                                    <span
-                                        v-if="deleteTweetsRetweetsThresholdEnabled && !deleteTweetsLikesThresholdEnabled">
-                                        unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets
-                                    </span>
-                                    <span
-                                        v-if="!deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
-                                        unless they have at least {{ deleteTweetsLikesThreshold }} likes
-                                    </span>
-                                    <span
-                                        v-if="deleteTweetsRetweetsThresholdEnabled && deleteTweetsLikesThresholdEnabled">
-                                        unless they have at least {{ deleteTweetsRetweetsThreshold }} retweets or {{
-                                            deleteTweetsLikesThreshold }} likes
-                                    </span>
-                                </li>
-                                <li v-if="deleteRetweets">
-                                    <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
-                                    that are older than {{ deleteRetweetsDaysOld }} days
-                                </li>
-                                <li v-if="deleteLikes">
-                                    <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
-                                    that are older than {{ deleteLikesDaysOld }} days
-                                </li>
-                                <li v-if="deleteDMs">
-                                    <b>All of your direct messages</b>
-                                </li>
-                            </ul>
-
-                            <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                class="alert alert-danger mt-4" role="alert">
-                                <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                    class="fw-bold mb-0">
-                                    Cyd wasn't able to scroll through all of your tweets and likes this time.
-                                </p>
-                                <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                    class="fw-bold mb-0">
-                                    Cyd wasn't able to scroll through all of your tweets this time.
-                                </p>
-                                <p v-if="!(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                    class="fw-bold mb-0">
-                                    Cyd wasn't able to scroll through all of your likes this time.
-                                </p>
-                                <p class="alert-details mb-0">
-                                    Sorry, X can be annoying sometimes. Go ahead and delete some of your data now, and
-                                    then run Cyd again to delete more.
-                                </p>
-                            </div>
-
-                            <div class="buttons">
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardDeleteReviewBackClicked">
-                                    <i class="fa-solid fa-backward" />
-                                    {{ wizardBackText }}
-                                </button>
-
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardDeleteReviewNextClicked">
-                                    <i class="fa-solid fa-forward" />
-                                    {{ wizardNextText }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Wizard: check premium -->
-                    <div v-if="accountXViewModel?.state == State.WizardCheckPremiumDisplay"
-                        class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
-                        <h2 v-if="userAuthenticated && userPremium">
-                            Thanks for upgrading to Premium
-                            <i class="fa-solid fa-heart" />
-                        </h2>
-                        <h2 v-else>
-                            Upgrade to Premium to delete data
-                        </h2>
-
-                        <template v-if="!userAuthenticated">
-                            <p>First, sign in to your Cyd account.</p>
-                        </template>
-                        <template v-else-if="userAuthenticated && !userPremium">
-                            <p>Manage your account to upgrade to Premium.</p>
-                        </template>
-                        <template v-else>
-                            <p>Ready to delete your data from X? <em>Let's go!</em></p>
-                        </template>
-
-                        <form @submit.prevent>
-                            <div class="buttons">
-                                <button v-if="!userAuthenticated" type="submit"
-                                    class="btn btn-lg btn-primary text-nowrap m-1"
-                                    @click="wizardCheckPremiumSignInClicked">
-                                    <i class="fa-solid fa-user-ninja" />
-                                    Sign In
-                                </button>
-
-                                <button v-else-if="userAuthenticated && !userPremium" type="submit"
-                                    class="btn btn-lg btn-primary text-nowrap m-1"
-                                    @click="wizardCheckPremiumManageAccountClicked">
-                                    <i class="fa-solid fa-user-ninja" />
-                                    Manage My Account
-                                </button>
-
-                                <button v-else type="submit" class="btn btn-lg btn-primary text-nowrap m-1"
-                                    @click="wizardCheckPremiumBackClicked">
-                                    <i class="fa-solid fa-user-ninja" />
-                                    Review Your Choices
-                                </button>
-                            </div>
-
-                            <div v-if="!userPremium" class="buttons">
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    @click="wizardCheckPremiumBackClicked">
-                                    <i class="fa-solid fa-backward" />
-                                    Back to Review
-                                </button>
-
-                                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
-                                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)"
-                                    @click="wizardCheckPremiumJustSaveClicked">
-                                    <i class="fa-solid fa-floppy-disk" />
-                                    Just Save My Data for Now
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Finished running jobs -->
-                    <div v-if="accountXViewModel?.state == State.FinishedRunningJobsDisplay" class="finished">
-                        <div v-if="saveMyData" class="container mt-3">
-                            <div class="finished-archive">
-                                <h2>You just saved:</h2>
-                                <ul>
-                                    <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
-                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
-                                        saved as HTML archives
-                                    </li>
-                                    <li v-if="account.xAccount?.archiveTweets || (progress?.tweetsIndexed ?? 0) > 0">
-                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
-                                    </li>
-                                    <li v-if="account.xAccount?.archiveTweets || (progress?.retweetsIndexed ?? 0) > 0">
-                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
-                                    </li>
-                                    <li v-if="account.xAccount?.archiveLikes || (progress?.likesIndexed ?? 0) > 0">
-                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
-                                    </li>
-                                    <li v-if="(progress?.unknownIndexed ?? 0) > 0">
-                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other tweets
-                                        <span class="ms-3 small text-muted">
-                                            (<a href="#"
-                                                @click="openURL('https://cyd.social/docs-other-tweets');">what's
-                                                this?</a>)
-                                        </span>
-                                    </li>
-                                    <li
-                                        v-if="account.xAccount?.archiveDMs || (progress?.conversationsIndexed ?? 0) > 0 || (progress?.messagesIndexed ?? 0) > 0">
-                                        <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                        <strong>{{ progress?.conversationsIndexed.toLocaleString() }}</strong>
-                                        conversations,
-                                        including <strong>{{ progress?.messagesIndexed.toLocaleString() }}</strong>
-                                        messages
-                                    </li>
-                                </ul>
-
-                                <p>
-                                    Your X archive is stored locally on your computer at
-                                    <code>{{ archivePath }}</code>.
-                                </p>
-                            </div>
-                        </div>
-                        <div v-if="deleteMyData" class="container mt-3">
-                            <div class="finished-delete">
-                                <template
-                                    v-if="!saveMyData && (account.xAccount?.deleteTweets || account.xAccount?.deleteRetweets || account.xAccount?.deleteLikes)">
-                                    <h2>You just saved:</h2>
-                                    <ul>
-                                        <li v-if="(progress?.newTweetsArchived ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.newTweetsArchived.toLocaleString() }}</strong> tweets
-                                            saved
-                                            as HTML archives
-                                        </li>
-                                        <li
-                                            v-if="(account.xAccount?.deleteTweets || account.xAccount?.deleteRetweets) || (progress?.tweetsIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.tweetsIndexed.toLocaleString() }}</strong> tweets
-                                        </li>
-                                        <li
-                                            v-if="(account.xAccount?.deleteTweets || account.xAccount?.deleteRetweets) || (progress?.retweetsIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.retweetsIndexed.toLocaleString() }}</strong> retweets
-                                        </li>
-                                        <li v-if="account.xAccount?.deleteLikes || (progress?.likesIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.likesIndexed.toLocaleString() }}</strong> likes
-                                        </li>
-                                        <li v-if="(progress?.unknownIndexed ?? 0) > 0">
-                                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                                            <strong>{{ progress?.unknownIndexed.toLocaleString() }}</strong> other
-                                            tweets (<a href="#">learn more</a>)
-                                        </li>
-                                    </ul>
-                                </template>
-
-                                <h2>You just deleted:</h2>
-                                <ul>
-                                    <li v-if="account.xAccount?.deleteTweets || (progress?.tweetsDeleted ?? 0) > 0">
-                                        <i class="fa-solid fa-fire delete-bullet" />
-                                        <strong>{{ progress?.tweetsDeleted.toLocaleString() }}</strong> tweets
-                                    </li>
-                                    <li v-if="account.xAccount?.deleteRetweets || (progress?.retweetsDeleted ?? 0) > 0">
-                                        <i class="fa-solid fa-fire delete-bullet" />
-                                        <strong>{{ progress?.retweetsDeleted.toLocaleString() }}</strong> retweets
-                                    </li>
-                                    <li v-if="account.xAccount?.deleteLikes || (progress?.likesDeleted ?? 0) > 0">
-                                        <i class="fa-solid fa-fire delete-bullet" />
-                                        <strong>{{ progress?.likesDeleted.toLocaleString() }}</strong> likes
-                                    </li>
-                                    <li v-if="account.xAccount?.deleteDMs">
-                                        <i class="fa-solid fa-fire delete-bullet" />
-                                        <strong>{{ progress?.conversationsDeleted.toLocaleString() }}</strong> direct
-                                        message conversations
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))"
-                            class="alert alert-danger mt-4" role="alert">
-                            <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && (archiveTweets || deleteTweets)) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && (archiveLikes || deleteLikes))"
-                                class="fw-bold mb-0">
-                                Cyd wasn't able to scroll through all of your tweets and likes this time.
-                            </p>
-                            <p v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) && !(failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))"
-                                class="fw-bold mb-0">
-                                Cyd wasn't able to scroll through all of your tweets this time.
-                            </p>
-                            <p v-if="!(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) && (failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))"
-                                class="fw-bold mb-0">
-                                Cyd wasn't able to scroll through all of your likes this time.
-                            </p>
-                            <p v-if="deleteMyData && (deleteTweets || deleteLikes)" class="alert-details mb-0">
-                                Run Cyd again with the same settings to delete more.
-                            </p>
-                            <p v-else class="alert-details mb-0">
-                                Run Cyd again with the same settings to try again from the beginning.
-                            </p>
-                        </div>
-
-                        <div class="buttons">
-                            <template
-                                v-if="(failureStateIndexTweets_FailedToRetryAfterRateLimit && ((saveMyData && archiveTweets) || (deleteMyData && deleteTweets))) || (failureStateIndexLikes_FailedToRetryAfterRateLimit && ((saveMyData && archiveLikes) || (deleteMyData && deleteLikes)))">
-                                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                    @click="finishedRunAgainClicked">
-                                    <i class="fa-solid fa-repeat" />
-                                    Run Again with Same Settings
-                                </button>
-
-                                <button class="btn btn-secondary" @click="reset()">
-                                    Back to Start
-                                </button>
-                            </template>
-                            <template v-else>
-                                <button class="btn btn-primary" @click="reset()">
-                                    Back to Start
-                                </button>
-                            </template>
-                        </div>
-                    </div>
+                    <XFinishedRunningJobsPage v-if="model?.state == State.FinishedRunningJobsDisplay" :model="model"
+                        @set-state="setState($event)" @start-state-loop="startStateLoop"
+                        @finished-run-again-clicked="finishedRunAgainClicked" />
 
                     <!-- Debug state -->
-                    <div v-if="accountXViewModel?.state == State.Debug">
+                    <div v-if="model?.state == State.Debug">
                         <p>Debug debug debug!!!</p>
                         <p>
                             <button class="btn btn-danger" @click="debugModeTriggerError">
@@ -1747,106 +513,8 @@ onUnmounted(async () => {
                 </div>
 
                 <!-- wizard side bar -->
-                <div class="wizard-sidebar">
-                    <p>
-                        Your X account, <strong>@{{ account.xAccount?.username }}</strong>, has
-                        <strong>{{ account.xAccount?.tweetsCount.toLocaleString() }} tweets</strong> and
-                        <strong>{{ account.xAccount?.likesCount.toLocaleString() }} likes</strong>.
-                    </p>
-                    <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
-                        <button class="btn btn-outline-success btn-sm" @click="openArchive">
-                            Browse Archive
-                        </button>
-
-                        <button class="btn btn-outline-secondary btn-sm" @click="openArchiveFolder">
-                            Open Folder
-                        </button>
-                    </p>
-
-                    <div class="stats container mt-4">
-                        <div class="row g-2">
-                            <div v-if="databaseStats.tweetsSaved > 0" class="col-12 col-md-6">
-                                <div class="card text-center">
-                                    <div class="card-header">
-                                        Tweets Saved
-                                    </div>
-                                    <div class="card-body">
-                                        <h1>{{ formatStatsNumber(databaseStats.tweetsSaved) }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="databaseStats.tweetsDeleted > 0" class="col-12 col-md-6">
-                                <div class="card text-center">
-                                    <div class="card-header">
-                                        Tweets Deleted
-                                    </div>
-                                    <div class="card-body">
-                                        <h1>{{ formatStatsNumber(databaseStats.tweetsDeleted) }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="databaseStats.retweetsSaved > 0" class="col-12 col-md-6">
-                                <div class="card text-center">
-                                    <div class="card-header">
-                                        Retweets Saved
-                                    </div>
-                                    <div class="card-body">
-                                        <h1>{{ formatStatsNumber(databaseStats.retweetsSaved) }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="databaseStats.retweetsDeleted > 0" class="col-12 col-md-6">
-                                <div class="card text-center">
-                                    <div class="card-header">
-                                        Retweets Deleted
-                                    </div>
-                                    <div class="card-body">
-                                        <h1>{{ formatStatsNumber(databaseStats.retweetsDeleted) }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="databaseStats.likesSaved > 0" class="col-12 col-md-6">
-                                <div class="card text-center">
-                                    <div class="card-header">
-                                        Likes Saved
-                                    </div>
-                                    <div class="card-body">
-                                        <h1>{{ formatStatsNumber(databaseStats.likesSaved) }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="databaseStats.likesDeleted > 0" class="col-12 col-md-6">
-                                <div class="card text-center">
-                                    <div class="card-header">
-                                        Likes Deleted
-                                    </div>
-                                    <div class="card-body">
-                                        <h1>{{ formatStatsNumber(databaseStats.likesDeleted) }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Debug mode -->
-                    <div v-if="shouldOpenDevtools" class="p-3 small">
-                        <hr>
-
-                        <div class="mb-3">
-                            <button class="btn btn-sm btn-danger" @click="enableDebugMode">
-                                Debug Mode
-                            </button>
-                        </div>
-
-                        <div class="form-check">
-                            <input id="debugAutopauseEndOfStep" v-model="debugAutopauseEndOfStep" type="checkbox"
-                                class="form-check-input" @change="debugAutopauseEndOfStepChanged">
-                            <label class="form-check-label" for="debugAutopauseEndOfStep">
-                                Automatically pause before finishing each step
-                            </label>
-                        </div>
-                    </div>
-                </div>
+                <XWizardSidebar :model="model" @set-state="setState($event)" @start-state-loop="startStateLoop"
+                    @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
             </div>
         </div>
     </div>
