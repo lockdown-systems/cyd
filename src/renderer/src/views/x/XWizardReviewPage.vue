@@ -16,7 +16,6 @@ const props = defineProps<{
 const emit = defineEmits<{
     updateAccount: []
     setState: [value: State]
-    startStateLoop: []
     startJobs: []
 }>()
 
@@ -31,7 +30,6 @@ const backClicked = async () => {
     } else {
         emit('setState', State.WizardBuildOptions);
     }
-    emit('startStateLoop');
 };
 
 // Settings

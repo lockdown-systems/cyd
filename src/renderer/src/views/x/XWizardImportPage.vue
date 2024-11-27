@@ -12,7 +12,6 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
 }>()
 
 // Buttons
@@ -20,17 +19,14 @@ const emit = defineEmits<{
 const downloadClicked = async () => {
     await props.model.defineJobsDownloadArchive();
     emit('setState', State.RunJobs);
-    emit('startStateLoop');
 };
 
 const importClicked = async () => {
     emit('setState', State.WizardImportOptions);
-    emit('startStateLoop');
 };
 
 const backClicked = async () => {
     emit('setState', State.WizardImportOrBuild);
-    emit('startStateLoop');
 };
 </script>
 

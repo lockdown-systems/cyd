@@ -19,7 +19,6 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
     startJobsJustSave: []
 }>()
 
@@ -38,7 +37,6 @@ const manageAccountClicked = async () => {
 
 const backClicked = async () => {
     emit('setState', State.WizardReview);
-    emit('startStateLoop');
 };
 </script>
 

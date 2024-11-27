@@ -120,7 +120,9 @@ const updateAccount = async () => {
 };
 
 const setState = async (state: State) => {
+    console.log('Setting state', state);
     model.value.state = state;
+    await startStateLoop();
 };
 
 const startStateLoop = async () => {
@@ -429,44 +431,39 @@ onUnmounted(async () => {
                     <XWizardStartPage v-if="model.state == State.WizardStartDisplay" :model="unref(model)"
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
-                        @update-account="updateAccount" @set-state="setState($event)"
-                        @start-state-loop="startStateLoop" />
+                        @update-account="updateAccount" @set-state="setState($event)" />
 
                     <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
-                        :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                        :model="unref(model)" @set-state="setState($event)" />
 
                     <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                        @set-state="setState($event)" />
 
                     <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                        @set-state="setState($event)" />
 
                     <XWizardImportOptionsPage v-if="model.state == State.WizardImportOptionsDisplay"
-                        :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop" />
+                        :model="unref(model)" @set-state="setState($event)" />
 
                     <XWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay" :model="unref(model)"
-                        @set-state="setState($event)" @update-account="updateAccount"
-                        @start-state-loop="startStateLoop" />
+                        @set-state="setState($event)" @update-account="updateAccount" />
 
                     <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
-                        :model="unref(model)" @update-account="updateAccount" @set-state="setState($event)"
-                        @start-state-loop="startStateLoop" />
+                        :model="unref(model)" @update-account="updateAccount" @set-state="setState($event)" />
 
                     <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
-                        @start-jobs="startJobs" />
+                        @set-state="setState($event)" @update-account="updateAccount" @start-jobs="startJobs" />
 
                     <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop" @update-account="updateAccount"
+                        @set-state="setState($event)" @update-account="updateAccount"
                         @start-jobs-just-save="startJobsJustSave" />
 
                     <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                         :model="unref(model)"
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
-                        @set-state="setState($event)" @start-state-loop="startStateLoop"
-                        @finished-run-again-clicked="finishedRunAgainClicked"
+                        @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"
                         @on-refresh-clicked="emit('onRefreshClicked')" />
 
                     <!-- Debug state -->

@@ -8,7 +8,7 @@ import {
 } from '../../view_models/AccountXViewModel'
 
 // Props
-const props = defineProps<{
+defineProps<{
     model: AccountXViewModel;
 }>();
 
@@ -16,25 +16,17 @@ const props = defineProps<{
 const emit = defineEmits<{
     updateAccount: []
     setState: [value: State]
-    startStateLoop: []
 }>()
 
 // Buttons
 
 const backClicked = async () => {
     emit('setState', State.WizardImportStart);
-    emit('startStateLoop');
 };
 
 const nextClicked = async () => {
-    if (props.model.account?.xAccount?.saveMyData) {
-        emit('setState', State.WizardSaveOptions);
-    } else if (props.model.account?.xAccount?.deleteMyData) {
-        emit('setState', State.WizardDeleteOptions);
-    } else {
-        emit('setState', State.WizardReview);
-    }
-    emit('startStateLoop');
+    // TODO: Import from archive
+    // emit('setState', State.WizardImportStart);
 };
 
 const importFromArchiveBrowserClicked = async () => {

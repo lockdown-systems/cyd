@@ -21,18 +21,20 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: [],
     onRefreshClicked: [],
 }>()
 
 // Buttons
 const runAgainClicked = async () => {
     emit('setState', State.WizardReview);
-    emit('startStateLoop');
 };
 
 const nextClicked = async () => {
-    emit('onRefreshClicked');
+    if (props.model.account.xAccount?.saveMyData) {
+        emit('setState', State.WizardStart);
+    } else {
+        emit('onRefreshClicked');
+    }
 };
 
 // Settings
@@ -44,6 +46,7 @@ const updateArchivePath = async () => {
 };
 
 onMounted(async () => {
+    await props.model.reloadAccount();
     await updateArchivePath();
 });
 </script>

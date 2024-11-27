@@ -18,7 +18,6 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
 }>()
 
 // Buttons
@@ -28,7 +27,6 @@ const nextClicked = async () => {
     } else {
         emit('setState', State.WizardBuildOptions);
     }
-    emit('startStateLoop');
 };
 
 // Settings
@@ -62,8 +60,7 @@ onMounted(() => {
             </p>
 
             <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
-                :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)"
-                @start-state-loop="emit('startStateLoop')" />
+                :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)" />
 
             <form @submit.prevent>
                 <div class="mb-3">

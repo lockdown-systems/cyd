@@ -13,7 +13,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
 }>()
 
 const lastImportArchive = ref<Date | null>(null);
@@ -22,7 +21,6 @@ const lastBuildDatabase = ref<Date | null>(null);
 const buttonClicked = async () => {
     console.log('XLastImportOrBuildComponent', 'buttonClicked', props.buttonText, props.buttonState);
     emit('setState', props.buttonState);
-    emit('startStateLoop');
 };
 
 onMounted(async () => {

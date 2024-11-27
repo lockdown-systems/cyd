@@ -19,18 +19,12 @@ const props = defineProps<{
 const emit = defineEmits<{
     updateAccount: []
     setState: [value: State]
-    startStateLoop: []
 }>()
 
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
-    if (props.model.isDeleteReviewActive) {
-        emit('setState', State.WizardDeleteReview);
-    } else {
-        emit('setState', State.WizardReview);
-    }
-    emit('startStateLoop');
+    emit('setState', State.WizardReview);
 };
 
 // Settings
@@ -113,8 +107,7 @@ onMounted(async () => {
         </div>
 
         <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Import or Build Database Again'"
-            :button-state="State.WizardImportOrBuild" @set-state="emit('setState', $event)"
-            @start-state-loop="emit('startStateLoop')" />
+            :button-state="State.WizardImportOrBuild" @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>
             <div class="d-flex align-items-center">
@@ -268,9 +261,10 @@ onMounted(async () => {
 
             <div class="buttons">
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    model.account?.xAccount?.archiveTweets ||
-                    model.account?.xAccount?.archiveLikes ||
-                    model.account?.xAccount?.archiveDMs)" @click="nextClicked">
+                    deleteTweets ||
+                    deleteRetweets ||
+                    deleteLikes ||
+                    deleteDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

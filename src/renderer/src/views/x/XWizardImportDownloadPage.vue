@@ -6,14 +6,12 @@ import {
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
 }>()
 
 // Buttons
 
 const backClicked = async () => {
     emit('setState', State.WizardStart);
-    emit('startStateLoop');
 };
 </script>
 
