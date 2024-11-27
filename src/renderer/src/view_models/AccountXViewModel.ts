@@ -18,14 +18,13 @@ import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
 
 export enum State {
-    Login = "login",
+    Login = "Login",
 
-    WizardPrestart = "wizardPrestart",
-    WizardStart = "wizardStart",
-    WizardStartDisplay = "wizardStartDisplay",
+    WizardPrestart = "WizardPrestart",
+    WizardStart = "WizardStart",
 
-    WizardImportOrBuild = "wizardImportOrBuild",
-    WizardImportOrBuildDisplay = "wizardImportOrBuildDisplay",
+    WizardImportOrBuild = "WizardImportOrBuild",
+    WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
     WizardImportDownload = "WizardImportDownload",
@@ -33,27 +32,27 @@ export enum State {
     WizardImporting = "WizardImporting",
     WizardImportingDisplay = "WizardImportingDisplay",
 
-    WizardBuildOptions = "wizardBuildOptions",
-    WizardBuildOptionsDisplay = "wizardBuildOptionsDisplay",
+    WizardBuildOptions = "WizardBuildOptions",
+    WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
 
-    WizardDeleteOptions = "wizardDeleteOptions",
-    WizardDeleteOptionsDisplay = "wizardDeleteOptionsDisplay",
+    WizardDeleteOptions = "WizardDeleteOptions",
+    WizardDeleteOptionsDisplay = "WizardDeleteOptionsDisplay",
 
-    WizardReview = "wizardReview",
-    WizardReviewDisplay = "wizardReviewDisplay",
+    WizardReview = "WizardReview",
+    WizardReviewDisplay = "WizardReviewDisplay",
 
-    WizardDeleteReview = "wizardDeleteReview",
-    WizardDeleteReviewDisplay = "wizardDeleteReviewDisplay",
+    WizardDeleteReview = "WizardDeleteReview",
+    WizardDeleteReviewDisplay = "WizardDeleteReviewDisplay",
 
-    WizardCheckPremium = "wizardCheckPremium",
-    WizardCheckPremiumDisplay = "wizardCheckPremiumDisplay",
+    WizardCheckPremium = "WizardCheckPremium",
+    WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
 
-    RunJobs = "runJobs",
+    RunJobs = "RunJobs",
 
-    FinishedRunningJobs = "finishedRunningJobs",
-    FinishedRunningJobsDisplay = "finishedRunningJobsDisplay",
+    FinishedRunningJobs = "FinishedRunningJobs",
+    FinishedRunningJobsDisplay = "FinishedRunningJobsDisplay",
 
-    Debug = "debug",
+    Debug = "Debug",
 }
 
 export enum FailureState {
@@ -2182,7 +2181,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-**Show me where your X archive is.** I will use it to build up a local database of your tweets, retweets, likes, and direct messages.`;
+**I'll help you import your X archive into your local database.**`;
                     this.state = State.WizardImportingDisplay;
                     break;
 
