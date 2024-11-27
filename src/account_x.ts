@@ -55,7 +55,6 @@ import {
     XArchiveTweet,
     XArchiveLike,
     XArchiveDMConversation,
-    XArchiveDMMessage,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -1827,7 +1826,7 @@ export class XAccountController {
 
         // Import direct message groups
         else if (dataType == "dmGroups" || dataType == "dms") {
-            const dmsFilename = dataType == "dmGroups" ? "direct-message-group.js" : "direct-messages.js"
+            const dmsFilename = dataType == "dmGroups" ? "direct-messages-group.js" : "direct-messages.js"
 
             // Load the data
             const dmsPath = path.join(archivePath, "data", dmsFilename);
@@ -1869,7 +1868,7 @@ export class XAccountController {
                     }
 
                     // Is this conversation already there?
-                    const existingConversation = exec(this.db, 'SELECT * FROM conversation WHERE converversationID = ?', [conversation.dmConversation.conversationId], "get") as XConversationRow;
+                    const existingConversation = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.dmConversation.conversationId], "get") as XConversationRow;
                     if (existingConversation) {
                         // Update
                         const newMinEntryID = minEntryID ? minEntryID : existingConversation.minEntryID;

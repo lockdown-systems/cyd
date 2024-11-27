@@ -29,6 +29,18 @@ const backClicked = async () => {
     emit('setState', State.WizardImportStart);
 };
 
+const createCountString = (importCount: number, skipCount: number) => {
+    if (importCount > 0 && skipCount > 0) {
+        return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} skipped`;
+    } else if (importCount > 0 && skipCount == 0) {
+        return `${importCount.toLocaleString()} imported`;
+    } else if (importCount == 0 && skipCount > 0) {
+        return `${skipCount.toLocaleString()} skipped`;
+    } else {
+        return 'nothing imported';
+    }
+}
+
 const startClicked = async () => {
     importStarted.value = true;
 
@@ -46,15 +58,7 @@ const startClicked = async () => {
     // Import tweets
     statusImportingTweets.value = ImportStatus.Active;
     const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'tweets');
-    if (tweetsResp.importCount > 0 && tweetsResp.skipCount > 0) {
-        tweetCountString.value = `${tweetsResp.importCount} imported, ${tweetsResp.skipCount} skipped`;
-    } else if (tweetsResp.importCount > 0 && tweetsResp.skipCount == 0) {
-        tweetCountString.value = `${tweetsResp.importCount} imported`;
-    } else if (tweetsResp.importCount == 0 && tweetsResp.skipCount > 0) {
-        tweetCountString.value = `${tweetsResp.skipCount} skipped`;
-    } else {
-        tweetCountString.value = 'nothing imported';
-    }
+    tweetCountString.value = createCountString(tweetsResp.importCount, tweetsResp.skipCount);
     if (tweetsResp.status == 'error') {
         statusImportingTweets.value = ImportStatus.Failed;
         errorMessage.value = tweetsResp.errorMessage;
@@ -64,11 +68,59 @@ const startClicked = async () => {
     statusImportingTweets.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
+    // Import likes
+    statusImportingLikes.value = ImportStatus.Active;
+    const likesResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'likes');
+    likeCountString.value = createCountString(likesResp.importCount, likesResp.skipCount);
+    if (likesResp.status == 'error') {
+        statusImportingLikes.value = ImportStatus.Failed;
+        errorMessage.value = likesResp.errorMessage;
+        importFailed.value = true;
+        return;
+    }
+    statusImportingLikes.value = ImportStatus.Finished;
+    emitter.emit(`x-update-database-stats-${props.model.account.id}`);
+
+    // Import DM groups
+    statusImportingDMGroups.value = ImportStatus.Active;
+    const dmGroupsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dmGroups');
+    dmGroupCountString.value = createCountString(dmGroupsResp.importCount, dmGroupsResp.skipCount);
+    if (dmGroupsResp.status == 'error') {
+        statusImportingDMGroups.value = ImportStatus.Failed;
+        errorMessage.value = dmGroupsResp.errorMessage;
+        importFailed.value = true;
+        return;
+    }
+    statusImportingDMGroups.value = ImportStatus.Finished;
+    emitter.emit(`x-update-database-stats-${props.model.account.id}`);
+
+    // Import DMs
+    statusImportingDMs.value = ImportStatus.Active;
+    const dmsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dms');
+    dmCountString.value = createCountString(dmsResp.importCount, dmsResp.skipCount);
+    if (dmsResp.status == 'error') {
+        statusImportingDMs.value = ImportStatus.Failed;
+        errorMessage.value = dmsResp.errorMessage;
+        importFailed.value = true;
+        return;
+    }
+    statusImportingDMs.value = ImportStatus.Finished;
+    emitter.emit(`x-update-database-stats-${props.model.account.id}`);
+
     // Build Cyd archive
     statusBuildCydArchive.value = ImportStatus.Active;
-    await window.electron.X.archiveBuild(props.model.account.id);
+    try {
+        await window.electron.X.archiveBuild(props.model.account.id);
+    } catch (e) {
+        statusBuildCydArchive.value = ImportStatus.Failed;
+        errorMessage.value = `${e}`;
+        importFailed.value = true;
+        return;
+    }
     emitter.emit(`x-update-archive-info-${props.model.account.id}`);
     statusBuildCydArchive.value = ImportStatus.Finished;
+
+    importFinished.value = true;
 };
 
 const importFromArchiveBrowserClicked = async () => {
