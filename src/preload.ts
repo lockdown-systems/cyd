@@ -225,6 +225,9 @@ contextBridge.exposeInMainWorld('electron', {
         deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
         },
+        verifyXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:verifyXArchive', accountID, archivePath);
+        },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:getConfig', accountID, key);
         },

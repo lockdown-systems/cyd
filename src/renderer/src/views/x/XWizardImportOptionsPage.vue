@@ -8,7 +8,7 @@ import {
 } from '../../view_models/AccountXViewModel'
 
 // Props
-defineProps<{
+const props = defineProps<{
     model: AccountXViewModel;
 }>();
 
@@ -25,8 +25,17 @@ const backClicked = async () => {
 };
 
 const nextClicked = async () => {
-    // TODO: Import from archive
-    // emit('setState', State.WizardImportStart);
+    // Verify that the archive is valid
+    const resp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
+    if (resp == null) {
+        console.log('Archive is valid')
+        // TODO: import it
+        return;
+    } else {
+        console.log('Archive is invalid', resp)
+        await window.electron.showError(resp);
+        return;
+    }
 };
 
 const importFromArchiveBrowserClicked = async () => {

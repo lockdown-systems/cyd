@@ -366,3 +366,16 @@ export interface XAPIAll {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     timeline: any
 }
+
+// Official X Archive types
+
+export interface XArchiveAccount {
+    account: {
+        email: string;
+        createdVia: string;
+        username: string;
+        accountId: string;
+        createdAt: string;
+        accountDisplayName: string;
+    }
+}

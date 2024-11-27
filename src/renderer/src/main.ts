@@ -98,6 +98,7 @@ declare global {
                 deleteTweet: (accountID: number, tweetID: string) => Promise<void>;
                 deleteDMsMarkAllDeleted: (accountID: number) => Promise<void>;
                 deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
+                verifyXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
             };

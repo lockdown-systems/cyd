@@ -50,6 +50,7 @@ import {
     XAPIMessage,
     XAPIUser,
     XAPIAll,
+    XArchiveAccount,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -1600,6 +1601,62 @@ export class XAccountController {
         return null;
     }
 
+    // Return null on success, and a string (error message) on error
+    async verifyXArchive(archivePath: string): Promise<string | null> {
+        const foldersToCheck = [
+            archivePath,
+            path.join(archivePath, "data"),
+        ];
+
+        // Make sure folders exist
+        for (let i = 0; i < foldersToCheck.length; i++) {
+            if (!fs.existsSync(foldersToCheck[i])) {
+                log.error(`XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]}`);
+                return `The folder ${foldersToCheck[i]} doesn't exist.`;
+            }
+        }
+
+        const filesToCheck = [
+            path.join(archivePath, "data", "account.js"),
+            path.join(archivePath, "data", "direct-messages-group.js"),
+            path.join(archivePath, "data", "direct-messages.js"),
+            path.join(archivePath, "data", "like.js"),
+            path.join(archivePath, "data", "tweets.js"),
+        ];
+
+        // Make sure files exist and are readable
+        for (let i = 0; i < filesToCheck.length; i++) {
+            if (!fs.existsSync(filesToCheck[i])) {
+                log.error(`XAccountController.verifyXArchive: file does not exist: ${filesToCheck[i]}`);
+                return `The file ${filesToCheck[i]} doesn't exist.`;
+            }
+            try {
+                fs.accessSync(filesToCheck[i], fs.constants.R_OK);
+            } catch {
+                log.error(`XAccountController.verifyXArchive: file is not readable: ${filesToCheck[i]}`);
+                return `The file ${filesToCheck[i]} is not readable.`;
+            }
+        }
+
+        // Make sure the account.js file belongs to the right account
+        try {
+            const accountFile = fs.readFileSync(filesToCheck[0], 'utf8');
+            const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
+            if (accountData.length !== 1) {
+                log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
+                return `The account.js file has more than one account.`;
+            }
+            if (accountData[0].account.username !== this.account?.username) {
+                log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
+                return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
+            }
+        } catch {
+            return "Error reading account.js";
+        }
+
+        return null;
+    }
+
     async getConfig(key: string): Promise<string | null> {
         return getConfig(key, this.db);
     }
@@ -1976,6 +2033,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.deleteDMsMarkAllDeleted();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:verifyXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.verifyXArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
