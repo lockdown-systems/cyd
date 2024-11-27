@@ -29,6 +29,10 @@ const backClicked = async () => {
     emit('setState', State.WizardImportStart);
 };
 
+const nextClicked = async () => {
+    emit('setState', State.WizardDeleteOptions);
+};
+
 const createCountString = (importCount: number, skipCount: number) => {
     if (importCount > 0 && skipCount > 0) {
         return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} skipped`;
@@ -255,9 +259,9 @@ const iconFromStatus = (status: ImportStatus) => {
                     Import finished successfully!
                 </div>
                 <div class="buttons">
-                    <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
-                        <i class="fa-solid fa-backward" />
-                        Back
+                    <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
+                        <i class="fa-solid fa-forward" />
+                        Continue to Delete Options
                     </button>
                 </div>
             </template>

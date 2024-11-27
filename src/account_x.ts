@@ -1242,8 +1242,10 @@ export class XAccountController {
             let participantSearchString = "";
             for (let i = 0; i < participants.length; i++) {
                 const user = formattedUsers[participants[i]];
-                participantSearchString += user.name + " ";
-                participantSearchString += user.username + " ";
+                if (user) {
+                    participantSearchString += user.name + " ";
+                    participantSearchString += user.username + " ";
+                }
             }
             return {
                 conversationID: conversation.conversationID,
