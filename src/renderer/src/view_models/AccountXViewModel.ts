@@ -521,7 +521,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Load notifications
         this.log("login", "getting user stats");
-        this.instructions = `You're logged in as **@${this.account?.xAccount?.username}**. I'm trying to determine your total tweets and likes...`;
+        this.instructions = `I'm trying to determine your total tweets and likes...`;
 
         await this.loadURLWithRateLimit('https://x.com/home');
         await this.loadURLWithRateLimit('https://x.com/notifications');
@@ -2167,8 +2167,6 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-Importing your data from an X archive is much faster than me building a local database from scratch. But first, you need to download your data from X.
-
 **Have you already downloaded your archive from X?**`;
                     this.state = State.WizardImportStartDisplay;
                     break;
@@ -2184,7 +2182,7 @@ Importing your data from an X archive is much faster than me building a local da
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-Unzip your X archive and choose the folder that it's in below. I will use it to build up a local database of your tweets, retweets, likes, and direct messages from your X archive.`;
+**Show me where your X archive is.** I will use it to build up a local database of your tweets, retweets, likes, and direct messages.`;
                     this.state = State.WizardImportOptionsDisplay;
                     break;
 
@@ -2203,8 +2201,6 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-I'll help you delete your data from X!
-
 **Which data do you want to delete?**`;
                     this.state = State.WizardDeleteOptionsDisplay;
                     break;

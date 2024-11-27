@@ -4,6 +4,8 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 
+import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
@@ -41,22 +43,25 @@ const backClicked = async () => {
                 this?
             </p>
 
-            <div class="buttons">
+            <div class="buttons mb-4">
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
                     model.account?.xAccount?.archiveTweets ||
                     model.account?.xAccount?.archiveLikes ||
                     model.account?.xAccount?.archiveDMs)" @click="downloadClicked">
                     <i class="fa-solid fa-download" />
-                    Help Me Download My Archive from X
+                    Help Me Download My Archive
                 </button>
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
                     model.account?.xAccount?.archiveTweets ||
                     model.account?.xAccount?.archiveLikes ||
                     model.account?.xAccount?.archiveDMs)" @click="importClicked">
                     <i class="fa-solid fa-folder-tree" />
-                    I've Already Downloaded My Archive
+                    I Have My Archive
                 </button>
             </div>
+
+            <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
+                :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)" />
 
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">

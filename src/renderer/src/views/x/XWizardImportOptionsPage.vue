@@ -68,15 +68,7 @@ const importFromArchivePath = ref('');
                 model.account?.xAccount?.archiveLikes ||
                 model.account?.xAccount?.archiveDMs)" @click="nextClicked">
                 <i class="fa-solid fa-forward" />
-                <template v-if="model.account?.xAccount?.saveMyData">
-                    Continue to Save Options
-                </template>
-                <template v-else-if="model.account?.xAccount?.deleteMyData">
-                    Continue to Delete Options
-                </template>
-                <template v-else>
-                    Continue to Review
-                </template>
+                Start Import
             </button>
         </div>
     </div>
