@@ -4,6 +4,7 @@ import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
+import { openPreventSleepURL } from '../../util';
 import { emptyXDeleteReviewStats } from '../../../../shared_types';
 import type { XDeleteReviewStats } from '../../../../shared_types';
 
@@ -139,6 +140,25 @@ onMounted(async () => {
                 </button>
             </div>
         </form>
+
+        <div class="alert alert-info mt-4" role="alert">
+            <p class="fw-bold mb-0">
+                X restricts how fast you can access your data using <span class="fst-italic">rate limits</span>.
+            </p>
+            <p class="alert-details mb-0">
+                If you have much data in your account, you will probably hit rate limits while Cyd works. Cyd will pause
+                and wait for the rate limit to reset before continuing, but it might take a while to finish.
+            </p>
+        </div>
+        <div class="alert alert-info" role="alert">
+            <p class="fw-bold mb-0">
+                Your computer needs to be awake to use Cyd.
+            </p>
+            <p class="alert-details mb-0">
+                Don't close the lid, keep it plugged in, and disable sleep while plugged in.
+                <a href="#" @click="openPreventSleepURL">Learn more.</a>
+            </p>
+        </div>
     </div>
 </template>
 
