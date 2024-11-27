@@ -30,8 +30,8 @@ export enum State {
     WizardImportStartDisplay = "WizardImportStartDisplay",
     WizardImportDownload = "WizardImportDownload",
     WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
-    WizardImportOptions = "WizardImportOptions",
-    WizardImportOptionsDisplay = "WizardImportOptionsDisplay",
+    WizardImportBrowse = "WizardImportBrowse",
+    WizardImportBrowseDisplay = "WizardImportBrowseDisplay",
 
     WizardBuildOptions = "wizardBuildOptions",
     WizardBuildOptionsDisplay = "wizardBuildOptionsDisplay",
@@ -2178,12 +2178,12 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                     this.state = State.WizardImportDownloadDisplay;
                     break;
 
-                case State.WizardImportOptions:
+                case State.WizardImportBrowse:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
 **Show me where your X archive is.** I will use it to build up a local database of your tweets, retweets, likes, and direct messages.`;
-                    this.state = State.WizardImportOptionsDisplay;
+                    this.state = State.WizardImportBrowseDisplay;
                     break;
 
                 case State.WizardBuildOptions:
