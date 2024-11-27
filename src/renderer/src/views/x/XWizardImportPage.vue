@@ -24,7 +24,7 @@ const downloadClicked = async () => {
 };
 
 const importClicked = async () => {
-    emit('setState', State.WizardImportBrowse);
+    emit('setState', State.WizardImporting);
 };
 
 const backClicked = async () => {

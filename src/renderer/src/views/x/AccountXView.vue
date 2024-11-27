@@ -23,7 +23,7 @@ import XJobStatusComponent from './XJobStatusComponent.vue';
 import XWizardImportOrBuildPage from './XWizardImportOrBuildPage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
-import XWizardImportBrowsePage from './XWizardImportBrowsePage.vue';
+import XWizardImportingPage from './XWizardImportingPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
@@ -436,7 +436,7 @@ onUnmounted(async () => {
                     <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
                         @set-state="setState($event)" />
 
-                    <XWizardImportBrowsePage v-if="model.state == State.WizardImportBrowseDisplay" :model="unref(model)"
+                    <XWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
                         @set-state="setState($event)" />
 
                     <XWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay" :model="unref(model)"
