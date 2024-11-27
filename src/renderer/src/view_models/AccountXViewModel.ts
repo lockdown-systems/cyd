@@ -104,6 +104,8 @@ export class AccountXViewModel extends BaseViewModel {
         this.databaseStats = await window.electron.X.getDatabaseStats(this.account?.id);
         this.deleteReviewStats = await window.electron.X.getDeleteReviewStats(this.account?.id);
         this.archiveInfo = await window.electron.X.getArchiveInfo(this.account?.id);
+        this.emitter?.emit(`x-update-database-stats-${this.account?.id}`);
+        this.emitter?.emit(`x-update-archive-info-${this.account?.id}`);
     }
 
     async defineJobs() {
@@ -1268,6 +1270,7 @@ Please wait while I index all the messages from each conversation...`;
         // Build the archive
         try {
             await window.electron.X.archiveBuild(this.account?.id);
+            this.emitter?.emit(`x-update-archive-info-${this.account?.id}`);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError, {
                 exception: (e as Error).toString()

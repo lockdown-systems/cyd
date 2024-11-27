@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import {
     ref,
+    getCurrentInstance
 } from 'vue';
 import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
 import { XImportArchiveResponse } from '../../../../shared_types'
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
@@ -57,10 +62,12 @@ const startClicked = async () => {
         tweetCountString.value = 'nothing imported';
     }
     statusImportingTweets.value = ImportStatus.Finished;
+    emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Build Cyd archive
     statusBuildCydArchive.value = ImportStatus.Active;
     await window.electron.X.archiveBuild(props.model.account.id);
+    emitter.emit(`x-update-archive-info-${props.model.account.id}`);
     statusBuildCydArchive.value = ImportStatus.Finished;
 };
 

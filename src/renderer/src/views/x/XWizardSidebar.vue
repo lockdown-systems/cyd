@@ -2,7 +2,7 @@
 import {
     ref,
     onMounted,
-    watch,
+    getCurrentInstance,
 } from 'vue';
 import {
     State,
@@ -17,6 +17,10 @@ import {
     emptyXDatabaseStats
 } from '../../../../shared_types';
 
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
+
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
@@ -28,7 +32,6 @@ const emit = defineEmits<{
     startStateLoop: []
     setDebugAutopauseEndOfStep: [value: boolean]
 }>()
-
 
 // Buttons
 const openArchiveFolder = async () => {
@@ -49,27 +52,15 @@ function formatStatsNumber(num: number): string {
 
 // Keep archiveInfo in sync
 const archiveInfo = ref<XArchiveInfo>(emptyXArchiveInfo());
-watch(
-    () => props.model.archiveInfo,
-    (newArchiveInfo) => {
-        if (newArchiveInfo) {
-            archiveInfo.value = newArchiveInfo as XArchiveInfo;
-        }
-    },
-    { deep: true, }
-);
+emitter?.on(`x-update-archive-info-${props.model.account.id}`, async () => {
+    archiveInfo.value = await window.electron.X.getArchiveInfo(props.model.account.id);
+});
 
 // Keep databaseStats in sync
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
-watch(
-    () => props.model.databaseStats,
-    (newDatabaseStats) => {
-        if (newDatabaseStats) {
-            databaseStats.value = newDatabaseStats as XDatabaseStats;
-        }
-    },
-    { deep: true, }
-);
+emitter?.on(`x-update-database-stats-${props.model.account.id}`, async () => {
+    databaseStats.value = await window.electron.X.getDatabaseStats(props.model.account.id);
+});
 
 // Debug
 const shouldOpenDevtools = ref(false);
