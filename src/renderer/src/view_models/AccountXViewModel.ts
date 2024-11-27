@@ -522,12 +522,12 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Load notifications
         this.log("login", "getting user stats");
-        this.instructions = `I'm trying to determine your total tweets and likes...`;
+        this.instructions = `I'm trying to determine your total tweets and likes, according to X...`;
 
         await this.loadURLWithRateLimit('https://x.com/home');
         await this.loadURLWithRateLimit('https://x.com/notifications');
         try {
-            await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications');
+            await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications', 5000);
         } catch (e) {
             this.log("loadUserStats", ["selector never appeared", e]);
         }
