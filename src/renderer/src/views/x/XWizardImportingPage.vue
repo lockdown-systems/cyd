@@ -46,12 +46,6 @@ const startClicked = async () => {
     // Import tweets
     statusImportingTweets.value = ImportStatus.Active;
     const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'tweets');
-    if (tweetsResp.status == 'error') {
-        statusImportingTweets.value = ImportStatus.Failed;
-        errorMessage.value = tweetsResp.errorMessage;
-        importFailed.value = true;
-        return;
-    }
     if (tweetsResp.importCount > 0 && tweetsResp.skipCount > 0) {
         tweetCountString.value = `${tweetsResp.importCount} imported, ${tweetsResp.skipCount} skipped`;
     } else if (tweetsResp.importCount > 0 && tweetsResp.skipCount == 0) {
@@ -60,6 +54,12 @@ const startClicked = async () => {
         tweetCountString.value = `${tweetsResp.skipCount} skipped`;
     } else {
         tweetCountString.value = 'nothing imported';
+    }
+    if (tweetsResp.status == 'error') {
+        statusImportingTweets.value = ImportStatus.Failed;
+        errorMessage.value = tweetsResp.errorMessage;
+        importFailed.value = true;
+        return;
     }
     statusImportingTweets.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);

@@ -53,6 +53,7 @@ import {
     XAPIAll,
     XArchiveAccount,
     XArchiveTweet,
+    XArchiveLike,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -1707,7 +1708,6 @@ export class XAccountController {
 
         // Import tweets
         if (dataType == "tweets") {
-
             // Load the data
             const tweetsPath = path.join(archivePath, "data", "tweets.js");
             let tweetsData: XArchiveTweet[];
@@ -1742,6 +1742,65 @@ export class XAccountController {
                             tweet.tweet.retweeted ? 1 : 0,
                             tweet.tweet.full_text,
                             `${username}/status/${tweet.tweet.id_str}`,
+                            new Date(),
+                        ]);
+                        importCount++;
+                    }
+                });
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error importing tweets: " + e,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import likes
+        else if (dataType == "likes") {
+            // Load the data
+            const likesPath = path.join(archivePath, "data", "like.js");
+            let likesData: XArchiveLike[];
+            try {
+                const likesFile = fs.readFileSync(likesPath, 'utf8');
+                likesData = JSON.parse(likesFile.slice("window.YTD.like.part0 = ".length));
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error reading like.js",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Loop through the likes and add them to the database
+            try {
+                likesData.forEach((like) => {
+                    // Is this like already there?
+                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [like.like.tweetId], "get") as XTweetRow;
+                    if (existingTweet) {
+                        if (existingTweet.isLiked) {
+                            skipCount++;
+                        } else {
+                            // Set isLiked to true
+                            exec(this.db, 'UPDATE tweet SET isLiked = ? WHERE tweetID = ?', [1, like.like.tweetId]);
+                            importCount++;
+                        }
+                    } else {
+                        // Import it
+                        exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                            like.like.tweetId,
+                            1,
+                            like.like.fullText,
+                            like.like.expandedUrl,
                             new Date(),
                         ]);
                         importCount++;

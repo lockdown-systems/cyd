@@ -407,3 +407,11 @@ export interface XArchiveTweet {
         in_reply_to_user_id_str?: string;
     }
 }
+
+export interface XArchiveLike {
+    like: {
+        tweetId: string;
+        fullText: string;
+        expandedUrl: string;
+    }
+}
