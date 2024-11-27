@@ -100,39 +100,6 @@ onMounted(async () => {
         </div>
         <div v-if="model.account.xAccount?.deleteMyData" class="container mt-3">
             <div class="finished-delete">
-                <template
-                    v-if="!model.account.xAccount?.saveMyData &&
-                        (model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets || model.account.xAccount?.deleteLikes)">
-                    <h2>You just saved:</h2>
-                    <ul>
-                        <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ model.progress.newTweetsArchived.toLocaleString() }}</strong> tweets
-                            saved
-                            as HTML archives
-                        </li>
-                        <li
-                            v-if="(model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets) || (model.progress.tweetsIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ model.progress.tweetsIndexed.toLocaleString() }}</strong> tweets
-                        </li>
-                        <li
-                            v-if="(model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteRetweets) || (model.progress.retweetsIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ model.progress.retweetsIndexed.toLocaleString() }}</strong> retweets
-                        </li>
-                        <li v-if="model.account.xAccount?.deleteLikes || (model.progress.likesIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ model.progress.likesIndexed.toLocaleString() }}</strong> likes
-                        </li>
-                        <li v-if="(model.progress.unknownIndexed ?? 0) > 0">
-                            <i class="fa-solid fa-floppy-disk archive-bullet" />
-                            <strong>{{ model.progress.unknownIndexed.toLocaleString() }}</strong> other
-                            tweets (<a href="#">learn more</a>)
-                        </li>
-                    </ul>
-                </template>
-
                 <h2>You just deleted:</h2>
                 <ul>
                     <li v-if="model.account.xAccount?.deleteTweets || (model.progress.tweetsDeleted ?? 0) > 0">
