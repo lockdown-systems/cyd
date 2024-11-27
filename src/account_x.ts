@@ -54,6 +54,8 @@ import {
     XArchiveAccount,
     XArchiveTweet,
     XArchiveLike,
+    XArchiveDMConversation,
+    XArchiveDMMessage,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -1810,6 +1812,121 @@ export class XAccountController {
                 return {
                     status: "error",
                     errorMessage: "Error importing tweets: " + e,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import direct message groups
+        else if (dataType == "dmGroups" || dataType == "dms") {
+            const dmsFilename = dataType == "dmGroups" ? "direct-message-group.js" : "direct-messages.js"
+
+            // Load the data
+            const dmsPath = path.join(archivePath, "data", dmsFilename);
+            let dmsData: XArchiveDMConversation[];
+            try {
+                const dmsFile = fs.readFileSync(dmsPath, 'utf8');
+                if (dataType == "dmGroups") {
+                    dmsData = JSON.parse(dmsFile.slice("window.YTD.direct_messages_group.part0 = ".length));
+                } else {
+                    dmsData = JSON.parse(dmsFile.slice("window.YTD.direct_messages.part0 = ".length));
+                }
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: `Error reading ${dmsFilename}`,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Loop through the DM conversations/messages and add them to the database
+            try {
+                dmsData.forEach((conversation) => {
+                    // Find the min and max entry ID
+                    let minEntryID: string | null = null, maxEntryID: string | null = null;
+                    // Find the first messageCreate message
+                    for (let i = 0; i < conversation.dmConversation.messages.length; i++) {
+                        if (conversation.dmConversation.messages[i].messageCreate) {
+                            minEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
+                            break;
+                        }
+                    }
+                    // Find the last messageCreate message
+                    for (let i = conversation.dmConversation.messages.length - 1; i >= 0; i--) {
+                        if (conversation.dmConversation.messages[i].messageCreate) {
+                            maxEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
+                            break;
+                        }
+                    }
+
+                    // Is this conversation already there?
+                    const existingConversation = exec(this.db, 'SELECT * FROM conversation WHERE converversationID = ?', [conversation.dmConversation.conversationId], "get") as XConversationRow;
+                    if (existingConversation) {
+                        // Update
+                        const newMinEntryID = minEntryID ? minEntryID : existingConversation.minEntryID;
+                        const newMaxEntryID = maxEntryID ? maxEntryID : existingConversation.maxEntryID;
+                        exec(this.db, 'UPDATE conversation SET minEntryID = ?, maxEntryID = ?, updatedInDatabaseAt = ? WHERE conversationID = ?', [newMinEntryID, newMaxEntryID, new Date(), conversation.dmConversation.conversationId]);
+                    } else {
+                        // Create
+                        exec(this.db, 'INSERT INTO conversation (conversationID, type, minEntryID, maxEntryID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                            conversation.dmConversation.conversationId,
+                            dataType == "dmGroups" ? 'GROUP_DM' : 'ONE_TO_ONE',
+                            minEntryID,
+                            maxEntryID,
+                            new Date(),
+                        ]);
+                    }
+
+                    // Keep track of participant user IDs
+                    const participantUserIDs: string[] = [];
+
+                    // Add the messages
+                    conversation.dmConversation.messages.forEach((message => {
+                        if (message.messageCreate) {
+                            // Does this message exist?
+                            const existingMessage = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.messageCreate.id], "get") as XMessageRow;
+                            if (existingMessage) {
+                                skipCount++;
+                            } else {
+                                // Import it
+                                exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text) VALUES (?, ?, ?, ?, ?)', [
+                                    message.messageCreate.id,
+                                    conversation.dmConversation.conversationId,
+                                    message.messageCreate.createdAt,
+                                    message.messageCreate.senderId,
+                                    message.messageCreate.text
+                                ]);
+                                importCount++;
+
+                                // Add this to the list of participant user IDs, if it's not already there
+                                if (participantUserIDs.includes(message.messageCreate.senderId) == false) {
+                                    participantUserIDs.push(message.messageCreate.senderId);
+                                }
+                            }
+                        }
+                    }))
+
+                    // Add the participants
+                    participantUserIDs.forEach((userID) => {
+                        const existingParticipant = exec(this.db, 'SELECT * FROM conversation_participant WHERE conversationID = ? AND userID = ?', [conversation.dmConversation.conversationId, userID], "get") as XConversationParticipantRow;
+                        if (!existingParticipant) {
+                            exec(this.db, 'INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)', [conversation.dmConversation.conversationId, userID]);
+                        }
+                    });
+                });
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error importing direct messages: " + e,
                     importCount: importCount,
                     skipCount: skipCount,
                 };

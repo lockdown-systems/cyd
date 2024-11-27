@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Index tweets
 
 export interface XAPILegacyTweet {
@@ -20,7 +22,6 @@ export interface XAPILegacyTweet {
     retweeted: boolean;
     user_id_str: string;
     id_str: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entities: any;
 }
 
@@ -52,11 +53,8 @@ export interface XAPILegacyUser {
     translator_type: string;
     verified: boolean;
     want_retweets: boolean;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entities: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pinned_tweet_ids_str: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     withheld_in_countries: any;
 }
 
@@ -74,9 +72,7 @@ export interface XAPITweetResults {
                     legacy: XAPILegacyUser;
                     profile_image_shape?: string;
                     rest_id?: string;
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     tipjar_settings?: any;
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     affiliates_highlighted_label?: any;
                 }
             }
@@ -94,34 +90,25 @@ export interface XAPITweetResults {
                         legacy: XAPILegacyUser;
                         profile_image_shape?: string;
                         rest_id?: string;
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         tipjar_settings?: any;
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         affiliates_highlighted_label?: any;
                     }
                 }
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             unmention_data?: any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             edit_control?: any,
             is_translatable?: boolean,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             views?: any,
             source?: string,
             legacy?: XAPILegacyTweet;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             limitedActionResults?: any;
         };
         is_translatable?: boolean;
         legacy?: XAPILegacyTweet;
         rest_id?: string;
         source?: string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         edit_control?: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         unmention_data?: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         views?: any;
     }
 }
@@ -131,7 +118,6 @@ export interface XAPIItemContent {
     itemType: string; // "TimelineTweet", "TimelineUser"
     tweetDisplayType?: string;
     tweet_results?: XAPITweetResults;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user_results?: any;
 }
 
@@ -156,22 +142,18 @@ export interface XAPIData {
                                         entryId: string;
                                         item: {
                                             itemContent: XAPIItemContent;
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             clientEventInfo: any;
                                         };
                                     }[];
                                     // itemContent is there when entryType is "TimelineTimelineItem"
                                     itemContent?: XAPIItemContent;
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     clientEventInfo?: any;
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     metadata?: any;
                                 };
                                 entryId: string;
                                 sortIndex: string;
                             }[];
                         }[];
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         metadata: any;
                     }
                 }
@@ -210,13 +192,9 @@ export interface XAPIUser {
     id_str: string,
     name: string,
     screen_name: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     location: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     url: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entities: any,
     protected: boolean,
     followers_count: number,
@@ -224,14 +202,11 @@ export interface XAPIUser {
     listed_count: number,
     created_at: string,
     favourites_count: number,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     utc_offset: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     time_zone: any,
     geo_enabled: boolean,
     verified: boolean,
     statuses_count: number,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lang: any,
     contributors_enabled: boolean,
     is_translator: boolean,
@@ -250,9 +225,7 @@ export interface XAPIUser {
     profile_use_background_image: boolean,
     default_profile: boolean,
     default_profile_image: boolean,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     can_dm: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     can_secret_dm: any,
     can_media_tag: boolean,
     following: boolean,
@@ -264,7 +237,6 @@ export interface XAPIUser {
     want_retweets: boolean,
     business_profile_state: string,
     translator_type: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     withheld_in_countries: any,
     followed_by: boolean,
 }
@@ -273,7 +245,6 @@ export interface XAPIInboxTimeline {
     inbox_timeline: {
         status: string,
         min_entry_id: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entries: any,
         users: {
             [key: string]: XAPIUser
@@ -295,13 +266,11 @@ export interface XAPIInboxInitialState {
         trusted_last_seen_event_id: string,
         untrusted_last_seen_event_id: string,
         cursor: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         inbox_timelines: {
             trusted?: XAPIInboxInitialStateInboxTimeline,
             untrusted?: XAPIInboxInitialStateInboxTimeline,
             untrusted_low_quality?: XAPIInboxInitialStateInboxTimeline,
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entries: any,
         users: {
             [key: string]: XAPIUser
@@ -309,10 +278,9 @@ export interface XAPIInboxInitialState {
         conversations: {
             [key: string]: XAPIConversation
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         key_registry_state: any;
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     user_events: any
 }
 
@@ -330,13 +298,10 @@ export interface XAPIMessage {
             sender_id: string,
             text: string,
             edit_count?: number,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             entities?: any;
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         message_reactions: any
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     join_conversation?: any
 }
 
@@ -363,7 +328,6 @@ export interface XAPIAll {
             [key: string]: XAPIUser
         }
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     timeline: any
 }
 
@@ -382,13 +346,10 @@ export interface XArchiveAccount {
 
 export interface XArchiveTweet {
     tweet: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         edit_info: any;
         retweeted: boolean;
         source: string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entities: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         display_text_range: any;
         favorite_count: number;
         in_reply_to_status_id_str?: string;
@@ -413,5 +374,26 @@ export interface XArchiveLike {
         tweetId: string;
         fullText: string;
         expandedUrl: string;
+    }
+}
+
+export interface XArchiveDMMessage {
+    participantsLeave?: any;
+    joinConversation?: any,
+    messageCreate?: {
+        reactions: any,
+        urls: any,
+        text: string,
+        mediaUrls: any,
+        senderId: string,
+        id: string,
+        createdAt: string,
+    }
+}
+
+export interface XArchiveDMConversation {
+    dmConversation: {
+        conversationId: string,
+        messages: XArchiveDMMessage[],
     }
 }
