@@ -466,7 +466,8 @@ onUnmounted(async () => {
                         :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                         :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                         @set-state="setState($event)" @start-state-loop="startStateLoop"
-                        @finished-run-again-clicked="finishedRunAgainClicked" />
+                        @finished-run-again-clicked="finishedRunAgainClicked"
+                        @on-refresh-clicked="emit('onRefreshClicked')" />
 
                     <!-- Debug state -->
                     <div v-if="model.state == State.Debug">

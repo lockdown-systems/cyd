@@ -21,7 +21,8 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
+    startStateLoop: [],
+    onRefreshClicked: [],
 }>()
 
 // Buttons
@@ -31,9 +32,7 @@ const runAgainClicked = async () => {
 };
 
 const nextClicked = async () => {
-    await props.model.reset()
-    emit('setState', State.WizardPrestart);
-    emit('startStateLoop');
+    emit('onRefreshClicked');
 };
 
 // Settings
