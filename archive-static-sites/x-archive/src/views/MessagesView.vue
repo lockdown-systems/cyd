@@ -12,13 +12,15 @@ const messageFilterText = ref('');
 
 const filteredConversations = computed(() => {
   return archiveData.value.conversations.filter(conversation =>
-    conversation.participantSearchString.toLowerCase().includes(conversationFilterText.value.toLowerCase())
+    conversation.participantSearchString.toLowerCase().includes(conversationFilterText.value.toLowerCase()) &&
+    conversation.participants.length > 0
   );
 });
 
 const filteredMessages = computed(() => {
   return archiveData.value.messages.filter(message =>
-    message.text.toLowerCase().includes(messageFilterText.value.toLowerCase()) && message.conversationID === selectedConversationID.value ? selectedConversationID.value : ''
+    message.text.toLowerCase().includes(messageFilterText.value.toLowerCase()) &&
+      message.conversationID === selectedConversationID.value ? selectedConversationID.value : ''
   );
 });
 

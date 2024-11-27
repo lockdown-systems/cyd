@@ -3,15 +3,19 @@ import { defineProps } from 'vue'
 import { User } from '../types'
 
 defineProps<{
-    user: User;
+    userID: string
+    user: User | undefined;
 }>();
 </script>
 
 <template>
-    <div class="user">
+    <div class="user" v-if="user">
         <span class="avatar"><img :src="user.profileImageDataURI" alt="Avatar" /></span>
         <span class="name">{{ user.name }}</span>
         <span class="username">@{{ user.username }}</span>
+    </div>
+    <div v-else>
+        <span>{{ userID }}</span>
     </div>
 </template>
 
