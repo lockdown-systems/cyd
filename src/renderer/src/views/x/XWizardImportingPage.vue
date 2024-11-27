@@ -124,6 +124,9 @@ const startClicked = async () => {
     emitter.emit(`x-update-archive-info-${props.model.account.id}`);
     statusBuildCydArchive.value = ImportStatus.Finished;
 
+    // Success
+    await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
+
     importFinished.value = true;
 };
 
