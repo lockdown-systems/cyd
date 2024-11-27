@@ -27,7 +27,8 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo
+    XArchiveInfo, emptyXArchiveInfo,
+    XImportArchiveResponse
 } from './shared_types'
 import {
     runMigrations,
@@ -49,6 +50,11 @@ import {
     XAPIConversationTimeline,
     XAPIMessage,
     XAPIUser,
+    XAPIAll,
+    XArchiveAccount,
+    XArchiveTweet,
+    XArchiveLike,
+    XArchiveDMConversation,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -320,6 +326,32 @@ export class XAccountController {
     value TEXT NOT NULL
 );`
                 ]
+            },
+            {
+                name: "20241127_make_tweet_cols_nullable",
+                sql: [
+                    `CREATE TABLE tweet_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    tweetID TEXT NOT NULL UNIQUE,
+    conversationID TEXT,
+    createdAt DATETIME,
+    likeCount INTEGER,
+    quoteCount INTEGER,
+    replyCount INTEGER,
+    retweetCount INTEGER,
+    isLiked BOOLEAN,
+    isRetweeted BOOLEAN,
+    text TEXT,
+    path TEXT NOT NULL,
+    addedToDatabaseAt DATETIME NOT NULL,
+    archivedAt DATETIME,
+    deletedAt DATETIME
+);`,
+                    `INSERT INTO tweet_new SELECT * FROM tweet;`,
+                    `DROP TABLE tweet;`,
+                    `ALTER TABLE tweet_new RENAME TO tweet;`
+                ]
             }
         ])
         log.info("XAccountController.initDB: database initialized");
@@ -390,7 +422,7 @@ export class XAccountController {
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await ses.clearCache();
         await this.mitmController.startMonitoring();
-        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm"]);
+        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm", "x.com/i/api/2/notifications/all.json"]);
         this.thereIsMore = true;
     }
 
@@ -398,6 +430,53 @@ export class XAccountController {
         await this.mitmController.stopMonitoring();
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await this.mitmController.stopMITM(ses);
+    }
+
+    // Parse all.json and returns stats about the user
+    async indexParseAllJSON(): Promise<XAccount> {
+        if (!this.account) {
+            throw new Error("XAccountController.indexParseAllJSON: account not found");
+        }
+
+        await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseAllJSON: parsing ${this.mitmController.responseData.length} responses`);
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            const responseData = this.mitmController.responseData[i];
+            log.info('XAccountController.indexParseAllJSON: processing', responseData.url);
+
+            if (responseData.processed) {
+                continue;
+            }
+
+            if (
+                responseData.url.includes("/i/api/2/notifications/all.json?") &&
+                responseData.status == 200
+            ) {
+                const body: XAPIAll = JSON.parse(responseData.body);
+                if (!body.globalObjects || !body.globalObjects.users) {
+                    continue;
+                }
+
+                // Loop through the users
+                Object.values(body.globalObjects.users).forEach((user: XAPIUser) => {
+                    // If it's the logged in user, get the stats
+                    if (user.screen_name == this.account?.username) {
+                        // Update the account
+                        this.account.followingCount = user.friends_count;
+                        this.account.followersCount = user.followers_count;
+                        this.account.tweetsCount = user.statuses_count;
+                        this.account.likesCount = user.favourites_count;
+                        saveXAccount(this.account);
+                    }
+                });
+            }
+
+            this.mitmController.responseData[i].processed = true;
+            log.info('XAccountController.indexParseAllJSON: processed', i);
+        }
+
+        return this.account;
     }
 
     indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
@@ -575,9 +654,8 @@ export class XAccountController {
     // Parses the response data so far to index tweets that have been collected
     // Returns the progress object
     async indexParseTweets(): Promise<XProgress> {
-        log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
-
         await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             this.indexParseTweetsResponseData(i);
@@ -589,9 +667,8 @@ export class XAccountController {
     // Parses the response data so far to index likes that have been collected
     // Returns the progress object
     async indexParseLikes(): Promise<XProgress> {
-        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
-
         await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
@@ -790,12 +867,11 @@ export class XAccountController {
     // Returns true if more data needs to be indexed
     // Returns false if we are caught up
     async indexParseConversations(): Promise<XProgress> {
+        await this.mitmController.clearProcessed();
         log.info(`XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`);
 
         this.progress.currentJob = "indexConversations";
         this.progress.isIndexMessagesFinished = false;
-
-        await this.mitmController.clearProcessed();
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             await this.indexParseConversationsResponseData(i);
@@ -1166,8 +1242,10 @@ export class XAccountController {
             let participantSearchString = "";
             for (let i = 0; i < participants.length; i++) {
                 const user = formattedUsers[participants[i]];
-                participantSearchString += user.name + " ";
-                participantSearchString += user.username + " ";
+                if (user) {
+                    participantSearchString += user.name + " ";
+                    participantSearchString += user.username + " ";
+                }
             }
             return {
                 conversationID: conversation.conversationID,
@@ -1555,6 +1633,324 @@ export class XAccountController {
         return null;
     }
 
+    // Return null on success, and a string (error message) on error
+    async verifyXArchive(archivePath: string): Promise<string | null> {
+        const foldersToCheck = [
+            archivePath,
+            path.join(archivePath, "data"),
+        ];
+
+        // Make sure folders exist
+        for (let i = 0; i < foldersToCheck.length; i++) {
+            if (!fs.existsSync(foldersToCheck[i])) {
+                log.error(`XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]}`);
+                return `The folder ${foldersToCheck[i]} doesn't exist.`;
+            }
+        }
+
+        const filesToCheck = [
+            path.join(archivePath, "data", "account.js"),
+            path.join(archivePath, "data", "direct-messages-group.js"),
+            path.join(archivePath, "data", "direct-messages.js"),
+            path.join(archivePath, "data", "like.js"),
+            path.join(archivePath, "data", "tweets.js"),
+        ];
+
+        // Make sure files exist and are readable
+        for (let i = 0; i < filesToCheck.length; i++) {
+            if (!fs.existsSync(filesToCheck[i])) {
+                log.error(`XAccountController.verifyXArchive: file does not exist: ${filesToCheck[i]}`);
+                return `The file ${filesToCheck[i]} doesn't exist.`;
+            }
+            try {
+                fs.accessSync(filesToCheck[i], fs.constants.R_OK);
+            } catch {
+                log.error(`XAccountController.verifyXArchive: file is not readable: ${filesToCheck[i]}`);
+                return `The file ${filesToCheck[i]} is not readable.`;
+            }
+        }
+
+        // Make sure the account.js file belongs to the right account
+        try {
+            const accountFile = fs.readFileSync(path.join(archivePath, "data", "account.js"), 'utf8');
+            const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
+            if (accountData.length !== 1) {
+                log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
+                return `The account.js file has more than one account.`;
+            }
+            if (accountData[0].account.username !== this.account?.username) {
+                log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
+                return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
+            }
+        } catch {
+            return "Error reading account.js";
+        }
+
+        return null;
+    }
+
+    // Return null on success, and a string (error message) on error
+    async importXArchive(archivePath: string, dataType: string): Promise<XImportArchiveResponse> {
+        let importCount = 0;
+        let skipCount = 0;
+
+        // Load the username
+        let username: string;
+        try {
+            const accountFile = fs.readFileSync(path.join(archivePath, "data", "account.js"), 'utf8');
+            const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
+            username = accountData[0].account.username;
+        } catch {
+            return {
+                status: "error",
+                errorMessage: "Error reading account.js",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import tweets
+        if (dataType == "tweets") {
+            // Load the data
+            const tweetsPath = path.join(archivePath, "data", "tweets.js");
+            let tweetsData: XArchiveTweet[];
+            try {
+                const tweetsFile = fs.readFileSync(tweetsPath, 'utf8');
+                tweetsData = JSON.parse(tweetsFile.slice("window.YTD.tweets.part0 = ".length));
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error reading tweets.js",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Loop through the tweets and add them to the database
+            try {
+                tweetsData.forEach((tweet) => {
+                    // Is this tweet already there?
+                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.tweet.id_str], "get") as XTweetRow;
+                    if (existingTweet) {
+                        skipCount++;
+                    } else {
+                        // Import it
+                        exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            username,
+                            tweet.tweet.id_str,
+                            new Date(tweet.tweet.created_at),
+                            tweet.tweet.favorite_count,
+                            tweet.tweet.retweet_count,
+                            tweet.tweet.favorited ? 1 : 0,
+                            tweet.tweet.retweeted ? 1 : 0,
+                            tweet.tweet.full_text,
+                            `${username}/status/${tweet.tweet.id_str}`,
+                            new Date(),
+                        ]);
+                        importCount++;
+                    }
+                });
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error importing tweets: " + e,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import likes
+        else if (dataType == "likes") {
+            // Load the data
+            const likesPath = path.join(archivePath, "data", "like.js");
+            let likesData: XArchiveLike[];
+            try {
+                const likesFile = fs.readFileSync(likesPath, 'utf8');
+                likesData = JSON.parse(likesFile.slice("window.YTD.like.part0 = ".length));
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error reading like.js",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Loop through the likes and add them to the database
+            try {
+                likesData.forEach((like) => {
+                    // Is this like already there?
+                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [like.like.tweetId], "get") as XTweetRow;
+                    if (existingTweet) {
+                        if (existingTweet.isLiked) {
+                            skipCount++;
+                        } else {
+                            // Set isLiked to true
+                            exec(this.db, 'UPDATE tweet SET isLiked = ? WHERE tweetID = ?', [1, like.like.tweetId]);
+                            importCount++;
+                        }
+                    } else {
+                        // Import it
+                        const url = new URL(like.like.expandedUrl);
+                        const path = url.pathname + url.search + url.hash;
+                        exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                            like.like.tweetId,
+                            1,
+                            like.like.fullText,
+                            path,
+                            new Date(),
+                        ]);
+                        importCount++;
+                    }
+                });
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error importing tweets: " + e,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import direct message groups
+        else if (dataType == "dmGroups" || dataType == "dms") {
+            const dmsFilename = dataType == "dmGroups" ? "direct-messages-group.js" : "direct-messages.js"
+
+            // Load the data
+            const dmsPath = path.join(archivePath, "data", dmsFilename);
+            let dmsData: XArchiveDMConversation[];
+            try {
+                const dmsFile = fs.readFileSync(dmsPath, 'utf8');
+                if (dataType == "dmGroups") {
+                    dmsData = JSON.parse(dmsFile.slice("window.YTD.direct_messages_group.part0 = ".length));
+                } else {
+                    dmsData = JSON.parse(dmsFile.slice("window.YTD.direct_messages.part0 = ".length));
+                }
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: `Error reading ${dmsFilename}`,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Loop through the DM conversations/messages and add them to the database
+            try {
+                dmsData.forEach((conversation) => {
+                    // Find the min and max entry ID
+                    let minEntryID: string | null = null, maxEntryID: string | null = null;
+                    // Find the first messageCreate message
+                    for (let i = 0; i < conversation.dmConversation.messages.length; i++) {
+                        if (conversation.dmConversation.messages[i].messageCreate) {
+                            minEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
+                            break;
+                        }
+                    }
+                    // Find the last messageCreate message
+                    for (let i = conversation.dmConversation.messages.length - 1; i >= 0; i--) {
+                        if (conversation.dmConversation.messages[i].messageCreate) {
+                            maxEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
+                            break;
+                        }
+                    }
+
+                    // Is this conversation already there?
+                    const existingConversation = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.dmConversation.conversationId], "get") as XConversationRow;
+                    if (existingConversation) {
+                        // Update
+                        const newMinEntryID = minEntryID ? minEntryID : existingConversation.minEntryID;
+                        const newMaxEntryID = maxEntryID ? maxEntryID : existingConversation.maxEntryID;
+                        exec(this.db, 'UPDATE conversation SET minEntryID = ?, maxEntryID = ?, updatedInDatabaseAt = ? WHERE conversationID = ?', [newMinEntryID, newMaxEntryID, new Date(), conversation.dmConversation.conversationId]);
+                    } else {
+                        // Create
+                        exec(this.db, 'INSERT INTO conversation (conversationID, type, minEntryID, maxEntryID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                            conversation.dmConversation.conversationId,
+                            dataType == "dmGroups" ? 'GROUP_DM' : 'ONE_TO_ONE',
+                            minEntryID,
+                            maxEntryID,
+                            new Date(),
+                        ]);
+                    }
+
+                    // Keep track of participant user IDs
+                    const participantUserIDs: string[] = [];
+
+                    // Add the messages
+                    conversation.dmConversation.messages.forEach((message => {
+                        if (message.messageCreate) {
+                            // Does this message exist?
+                            const existingMessage = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.messageCreate.id], "get") as XMessageRow;
+                            if (existingMessage) {
+                                skipCount++;
+                            } else {
+                                // Import it
+                                exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text) VALUES (?, ?, ?, ?, ?)', [
+                                    message.messageCreate.id,
+                                    conversation.dmConversation.conversationId,
+                                    message.messageCreate.createdAt,
+                                    message.messageCreate.senderId,
+                                    message.messageCreate.text
+                                ]);
+                                importCount++;
+
+                                // Add this to the list of participant user IDs, if it's not already there
+                                if (participantUserIDs.includes(message.messageCreate.senderId) == false) {
+                                    participantUserIDs.push(message.messageCreate.senderId);
+                                }
+                            }
+                        }
+                    }))
+
+                    // Add the participants
+                    participantUserIDs.forEach((userID) => {
+                        const existingParticipant = exec(this.db, 'SELECT * FROM conversation_participant WHERE conversationID = ? AND userID = ?', [conversation.dmConversation.conversationId, userID], "get") as XConversationParticipantRow;
+                        if (!existingParticipant) {
+                            exec(this.db, 'INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)', [conversation.dmConversation.conversationId, userID]);
+                        }
+                    });
+                });
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error importing direct messages: " + e,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        return {
+            status: "error",
+            errorMessage: "Invalid data type.",
+            importCount: importCount,
+            skipCount: skipCount,
+        };
+    }
+
     async getConfig(key: string): Promise<string | null> {
         return getConfig(key, this.db);
     }
@@ -1567,7 +1963,6 @@ export class XAccountController {
 const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
-    log.info(`getXAccountController: accountID=${accountID}`);
     if (!controllers[accountID]) {
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
@@ -1626,6 +2021,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.indexStop();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:indexParseAllJSON', async (_, accountID: number): Promise<XAccount> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseAllJSON();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -1923,6 +2327,24 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.deleteDMsMarkAllDeleted();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:verifyXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.verifyXArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:importXArchive', async (_, accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.importXArchive(archivePath, dataType);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

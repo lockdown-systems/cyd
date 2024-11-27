@@ -106,3 +106,7 @@ export async function openPreventSleepURL() {
     }
     await window.electron.openURL(url);
 }
+
+export async function openURL(url: string) {
+    await window.electron.openURL(url);
+}

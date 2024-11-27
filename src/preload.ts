@@ -12,6 +12,8 @@ import {
     XDeleteReviewStats,
     ResponseData,
     XArchiveInfo,
+    XAccount,
+    XImportArchiveResponse,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -73,6 +75,9 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (key: string, value: string) => {
             ipcRenderer.invoke('database:setConfig', key, value)
         },
+        getAccount: (accountID: number): Promise<Account | null> => {
+            return ipcRenderer.invoke('database:getAccount', accountID)
+        },
         getAccounts: (): Promise<Account[]> => {
             return ipcRenderer.invoke('database:getAccounts')
         },
@@ -115,6 +120,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
+        },
+        indexParseAllJSON: (accountID: number): Promise<XAccount> => {
+            return ipcRenderer.invoke('X:indexParseAllJSON', accountID)
         },
         indexParseTweets: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseTweets', accountID)
@@ -217,6 +225,12 @@ contextBridge.exposeInMainWorld('electron', {
         },
         deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
+        },
+        verifyXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:verifyXArchive', accountID, archivePath);
+        },
+        importXArchive: (accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
+            return ipcRenderer.invoke('X:importXArchive', accountID, archivePath, dataType);
         },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:getConfig', accountID, key);

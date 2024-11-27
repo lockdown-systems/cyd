@@ -10,8 +10,9 @@ const filterText = ref('');
 const filteredTweets = computed(() => {
   return archiveData.value.tweets.filter(tweet => {
     const lowerCaseFilterText = filterText.value.toLowerCase();
-    return tweet.text.toLowerCase().includes(lowerCaseFilterText) ||
-      tweet.username.toLowerCase().includes(lowerCaseFilterText);
+    const tweetText = tweet.text ? tweet.text.toLowerCase() : '';
+    const tweetUsername = tweet.username ? tweet.username.toLowerCase() : '';
+    return tweetText.includes(lowerCaseFilterText) || tweetUsername.includes(lowerCaseFilterText);
   });
 });
 </script>

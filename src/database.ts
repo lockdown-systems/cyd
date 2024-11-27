@@ -97,15 +97,18 @@ export const runMainMigrations = () => {
     deleteRetweetsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 0,
-    deleteDMs BOOLEAN DEFAULT 0,
-    chanceToReview BOOLEAN DEFAULT 1
+    deleteDMs BOOLEAN DEFAULT 0
 );`,
             ]
         },
         {
-            name: "add deleteFromDatabase to xAccount",
+            name: "add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount",
             sql: [
-                `ALTER TABLE xAccount ADD COLUMN deleteFromDatabase BOOLEAN DEFAULT 0;`
+                `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN followingCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN followersCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT 0;`,
             ]
         }
     ]);
@@ -140,6 +143,7 @@ interface XAccountRow {
     accessedAt: string;
     username: string;
     profileImageDataURI: string;
+    importFromArchive: boolean;
     saveMyData: boolean;
     deleteMyData: boolean;
     archiveTweets: boolean;
@@ -158,8 +162,10 @@ interface XAccountRow {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
-    deleteFromDatabase: boolean;
-    chanceToReview: boolean;
+    followingCount: number;
+    followersCount: number;
+    tweetsCount: number;
+    likesCount: number;
 }
 
 // Utils
@@ -226,6 +232,7 @@ export const getXAccount = (id: number): XAccount | null => {
         accessedAt: new Date(row.accessedAt),
         username: row.username,
         profileImageDataURI: row.profileImageDataURI,
+        importFromArchive: !!row.importFromArchive,
         saveMyData: !!row.saveMyData,
         deleteMyData: !!row.deleteMyData,
         archiveTweets: !!row.archiveTweets,
@@ -244,8 +251,10 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
-        deleteFromDatabase: !!row.deleteFromDatabase,
-        chanceToReview: !!row.chanceToReview
+        followingCount: row.followingCount,
+        followersCount: row.followersCount,
+        tweetsCount: row.tweetsCount,
+        likesCount: row.likesCount
     };
 }
 
@@ -261,6 +270,7 @@ export const getXAccounts = (): XAccount[] => {
             accessedAt: new Date(row.accessedAt),
             username: row.username,
             profileImageDataURI: row.profileImageDataURI,
+            importFromArchive: !!row.importFromArchive,
             saveMyData: !!row.saveMyData,
             deleteMyData: !!row.deleteMyData,
             archiveTweets: !!row.archiveTweets,
@@ -279,8 +289,10 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
-            deleteFromDatabase: !!row.deleteFromDatabase,
-            chanceToReview: !!row.chanceToReview
+            followingCount: row.followingCount,
+            followersCount: row.followersCount,
+            tweetsCount: row.tweetsCount,
+            likesCount: row.likesCount
         });
     }
     return accounts;
@@ -304,6 +316,7 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             profileImageDataURI = ?,
+            importFromArchive = ?,
             saveMyData = ?,
             deleteMyData = ?,
             archiveTweets = ?,
@@ -322,12 +335,15 @@ export const saveXAccount = (account: XAccount) => {
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
             deleteDMs = ?,
-            deleteFromDatabase = ?,
-            chanceToReview = ?
+            followingCount = ?,
+            followersCount = ?,
+            tweetsCount = ?,
+            likesCount = ?
         WHERE id = ?
     `, [
         account.username,
         account.profileImageDataURI,
+        account.importFromArchive ? 1 : 0,
         account.saveMyData ? 1 : 0,
         account.deleteMyData ? 1 : 0,
         account.archiveTweets ? 1 : 0,
@@ -346,8 +362,10 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
-        account.deleteFromDatabase ? 1 : 0,
-        account.chanceToReview ? 1 : 0,
+        account.followingCount,
+        account.followersCount,
+        account.tweetsCount,
+        account.likesCount,
         account.id
     ]);
 }
@@ -521,7 +539,15 @@ export const defineIPCDatabase = () => {
         }
     });
 
-    ipcMain.handle('database:getAccounts', async (_) => {
+    ipcMain.handle('database:getAccount', async (_, accountID): Promise<Account | null> => {
+        try {
+            return getAccount(accountID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:getAccounts', async (_): Promise<Account[]> => {
         try {
             return getAccounts();
         } catch (error) {

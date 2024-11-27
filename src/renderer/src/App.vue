@@ -294,6 +294,101 @@ body {
   border: 5px solid #c1fac4;
 }
 
+/* Wizard styles */
+
+.wizard {
+  flex: 1;
+  overflow: auto;
+}
+
+.wizard-container {
+  display: flex;
+  height: 100%;
+}
+
+.wizard-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.wizard-sidebar {
+  min-width: 280px;
+  flex-basis: 280px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.wizard-sidebar .stats .card-header {
+  font-size: 0.8rem;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wizard-sidebar .stats .card-body {
+  padding: 0.2rem;
+}
+
+.wizard-sidebar .stats .card-body h1 {
+  font-size: 1.7em;
+  margin-bottom: 0;
+  padding: 0.5rem 0 0.5rem 0;
+}
+
+.wizard .buttons {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.wizard-review ul {
+  list-style-type: circle;
+  padding-left: 2.5rem;
+}
+
+.wizard-review ul ul {
+  list-style-type: circle;
+  padding-left: 1.5rem;
+}
+
+/* Misc */
+
+.hidden {
+  display: none;
+}
+
+.indent {
+  margin-left: 1.5rem;
+}
+
+.no-wrap {
+  white-space: nowrap;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.premium {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  margin-left: 1rem;
+  padding: 0.2em 0.5em;
+  background-color: #50a4ff;
+  color: white;
+  border-radius: 0.25rem;
+}
+
+.fa-heart {
+  color: red;
+}
+
+.alert-details {
+  margin-top: .25rem;
+  font-size: .875em;
+}
+
 /* Headers */
 h1 {
   font-size: 1.5rem;

@@ -17,7 +17,9 @@ import type {
     XDatabaseStats,
     ResponseData,
     XDeleteReviewStats,
-    XArchiveInfo
+    XArchiveInfo,
+    XAccount,
+    XImportArchiveResponse,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -44,6 +46,7 @@ declare global {
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
+                getAccount: (accountID: number) => Promise<Account | null>;
                 getAccounts: () => Promise<Account[]>;
                 createAccount: () => Promise<Account>;
                 selectAccountType: (accountID: number, type: string) => Promise<Account>;
@@ -61,6 +64,7 @@ declare global {
                 updateJob: (accountID: number, jobJSON: string) => void;
                 indexStart: (accountID: number) => void;
                 indexStop: (accountID: number) => void;
+                indexParseAllJSON: (accountID: number) => Promise<XAccount>;
                 indexParseTweets: (accountID: number) => Promise<XProgress>;
                 indexParseLikes: (accountID: number) => Promise<XProgress>;
                 indexParseConversations: (accountID: number) => Promise<XProgress>;
@@ -95,6 +99,8 @@ declare global {
                 deleteTweet: (accountID: number, tweetID: string) => Promise<void>;
                 deleteDMsMarkAllDeleted: (accountID: number) => Promise<void>;
                 deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
+                verifyXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
+                importXArchive: (accountID: number, archivePath: string, dataType: string) => Promise<XImportArchiveResponse>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
             };

@@ -1,8 +1,7 @@
 import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
-import CydAPIClient from '../../../cyd-api-client';
-import { type DeviceInfo, PlausibleEvents } from '../types';
+import { PlausibleEvents } from '../types';
 import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
 import { logObj } from '../util';
 
@@ -44,9 +43,7 @@ export class BaseViewModel {
     public logs: Log[] = [];
 
     public account: Account;
-    public webview: WebviewTag;
-    public api: CydAPIClient;
-    public deviceInfo: DeviceInfo | null;
+    public webview: WebviewTag | null;
     public webContentsID: number | null;
     public isWebviewDestroyed: boolean;
 
@@ -59,9 +56,9 @@ export class BaseViewModel {
     public isPaused: boolean;
 
     // If the computer resumes from sleep, should we resume the automation?
-    private shouldResumeOnResume: boolean;
+    public shouldResumeOnResume: boolean;
     // Only allow the suspend events to be triggerer once at a time
-    private suspendLock: boolean;
+    public suspendLock: boolean;
 
     public showBrowser: boolean;
     public showAutomationNotice: boolean;
@@ -69,13 +66,11 @@ export class BaseViewModel {
 
     public emitter: Emitter<Record<EventType, unknown>> | null;
 
-    private domReadyHandler: () => void;
+    public domReadyHandler: () => void;
 
-    constructor(account: Account, webview: WebviewTag, api: CydAPIClient, deviceInfo: DeviceInfo | null, emitter: Emitter<Record<EventType, unknown>> | null) {
+    constructor(account: Account, emitter: Emitter<Record<EventType, unknown>> | null) {
         this.account = account;
-        this.webview = webview;
-        this.api = api;
-        this.deviceInfo = deviceInfo;
+        this.webview = null;
         this.webContentsID = null;
         this.isWebviewDestroyed = false;
 
@@ -96,23 +91,7 @@ export class BaseViewModel {
 
         this.resetLogs();
 
-        this.domReadyHandler = async () => {
-            this.log("domReadyHandler", "dom-ready");
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            // dom-ready has been fired
-            this.domReady = true;
-
-            const webview = this.getWebview();
-            if (webview) {
-                // Set the webContentsID
-                this.webContentsID = webview.getWebContentsId();
-
-                // Remove the event listener
-                webview.removeEventListener("dom-ready", this.domReadyHandler);
-            }
-        }
-        this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
+        this.domReadyHandler = async () => { };
 
         // Suspend and resume
         window.electron.onPowerMonitorSuspend(() => this.powerMonitorSuspend());
@@ -122,6 +101,14 @@ export class BaseViewModel {
     cleanup() {
         // Remove the event listener
         this.getWebview()?.removeEventListener("dom-ready", this.domReadyHandler);
+    }
+
+    async reloadAccount() {
+        this.log("reloadAccount");
+        const account = await window.electron.database.getAccount(this.account.id);
+        if (account) {
+            this.account = account;
+        }
     }
 
     powerMonitorSuspend() {
@@ -152,7 +139,27 @@ export class BaseViewModel {
         }
     }
 
-    async init() {
+    async init(webview: WebviewTag) {
+        this.webview = webview;
+
+        this.domReadyHandler = async () => {
+            this.log("domReadyHandler", "dom-ready");
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // dom-ready has been fired
+            this.domReady = true;
+
+            const webview = this.getWebview();
+            if (webview) {
+                // Set the webContentsID
+                this.webContentsID = webview.getWebContentsId();
+
+                // Remove the event listener
+                webview.removeEventListener("dom-ready", this.domReadyHandler);
+            }
+        }
+        this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
+
         // Open devtools if needed
         const shouldOpenDevtools = await window.electron.shouldOpenDevtools();
 
@@ -186,9 +193,9 @@ export class BaseViewModel {
         });
 
         if (message === undefined) {
-            console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state})`);
+            console.log(`${this.account?.type}[${this.account?.id}] ${func} (${this.state})`);
         } else {
-            console.log(`${this.account.type}[${this.account.id}] ${func} (${this.state}):`, logObj(message));
+            console.log(`${this.account?.type}[${this.account?.id}] ${func} (${this.state}):`, logObj(message));
         }
     }
 
@@ -205,9 +212,9 @@ export class BaseViewModel {
 
         // Get username
         let username = "";
-        switch (this.account.type) {
+        switch (this.account?.type) {
             case "X":
-                username = this.account.xAccount?.username ? this.account.xAccount.username : "";
+                username = this.account?.xAccount?.username ? this.account?.xAccount.username : "";
                 break;
             default:
                 break;
@@ -231,8 +238,8 @@ export class BaseViewModel {
         }
 
         const details: AutomationErrorDetails = {
-            accountID: this.account.id,
-            accountType: this.account.type,
+            accountID: this.account?.id,
+            accountType: this.account?.type,
             automationErrorType: automationErrorType,
             errorReportData: errorReportData,
             username: username,
@@ -273,6 +280,11 @@ export class BaseViewModel {
     }
 
     async waitForSelector(selector: string, startingURL: string = '', timeout: number = DEFAULT_TIMEOUT) {
+        if (this.webview === null) {
+            this.log("waitForSelector", "webview is null");
+            return;
+        }
+
         if (startingURL == '') {
             startingURL = this.webview.getURL();
         }
@@ -321,6 +333,19 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
+    async isSelectorLastDisabled(selector: string): Promise<boolean> {
+        const code = `
+        (() => {
+            const els = document.querySelectorAll('${selector}');
+            if(els.length == 0) { return false; }
+            const lastEl = els[els.length - 1];
+            return lastEl.disabled;
+        })()
+        `;
+        await this.sleep(500);
+        return await this.getWebview()?.executeJavaScript(code);
+    }
+
     async countSelectorsFound(selector: string): Promise<number> {
         return await this.getWebview()?.executeJavaScript(`document.querySelectorAll('${selector}').length`);
     }
@@ -342,6 +367,11 @@ export class BaseViewModel {
 
     // wait for containerSelector to exist, and also selector within containerSelector to exist
     async waitForSelectorWithinSelector(containerSelector: string, selector: string, timeout: number = DEFAULT_TIMEOUT) {
+        if (this.webview === null) {
+            this.log("waitForSelector", "webview is null");
+            return;
+        }
+
         const startingURL = this.webview.getURL();
 
         const startTime = Date.now();
@@ -374,7 +404,8 @@ export class BaseViewModel {
     }
 
     async checkInternetConnectivity(): Promise<boolean> {
-        const testURL = this.api.apiURL + "/health";
+        const apiURL = await window.electron.getAPIURL();
+        const testURL = `${apiURL}/health`;
         if (!testURL) {
             this.log("checkInternetConnectivity", "apiURL is not set");
             return false;

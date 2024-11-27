@@ -14,8 +14,8 @@ defineProps<{
 <template>
     <div class="conversation p-3 mb-3 border rounded" :class="isSelected ? 'selected' : ''">
         <div class="d-flex flex-column gap-1">
-            <UserComponent v-for="userID in conversation.participants" :key="userID"
-                :user="archiveData.users[userID]" />
+            <UserComponent v-for="userID in conversation.participants" :key="userID" :user="archiveData.users[userID]"
+                :user-i-d="userID" />
         </div>
     </div>
 </template>

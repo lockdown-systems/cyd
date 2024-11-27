@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import AccountButton from '../components/AccountButton.vue';
+import AccountButton from './shared_components/AccountButton.vue';
 import AccountView from './AccountView.vue';
 import CydAPIClient from '../../../cyd-api-client';
 import type { DeviceInfo } from '../types';

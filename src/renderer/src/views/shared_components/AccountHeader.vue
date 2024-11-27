@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { getAccountIcon } from '../util';
-import type { Account } from '../../../shared_types';
+import { getAccountIcon } from '../../util';
+import type { Account } from '../../../../shared_types';
 
 defineProps<{
     account: Account;
