@@ -292,3 +292,10 @@ export function emptyXArchiveInfo(): XArchiveInfo {
         indexHTMLExists: false
     }
 }
+
+export interface XImportArchiveResponse {
+    status: string; // "success", "error"
+    errorMessage: string;
+    importCount: number;
+    skipCount: number;
+}

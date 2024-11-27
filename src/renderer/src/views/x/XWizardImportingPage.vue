@@ -6,6 +6,7 @@ import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
+import { XImportArchiveResponse } from '../../../../shared_types'
 
 // Props
 const props = defineProps<{
@@ -28,14 +29,39 @@ const startClicked = async () => {
 
     // Verify that the archive is valid
     statusValidating.value = ImportStatus.Active;
-    const resp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
-    if (resp !== null) {
+    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
+    if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
-        errorMessage.value = resp;
+        errorMessage.value = verifyResp;
         importFailed.value = true;
         return;
     }
     statusValidating.value = ImportStatus.Finished;
+
+    // Import tweets
+    statusImportingTweets.value = ImportStatus.Active;
+    const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'tweets');
+    if (tweetsResp.status == 'error') {
+        statusImportingTweets.value = ImportStatus.Failed;
+        errorMessage.value = tweetsResp.errorMessage;
+        importFailed.value = true;
+        return;
+    }
+    if (tweetsResp.importCount > 0 && tweetsResp.skipCount > 0) {
+        tweetCountString.value = `${tweetsResp.importCount} imported, ${tweetsResp.skipCount} skipped`;
+    } else if (tweetsResp.importCount > 0 && tweetsResp.skipCount == 0) {
+        tweetCountString.value = `${tweetsResp.importCount} imported`;
+    } else if (tweetsResp.importCount == 0 && tweetsResp.skipCount > 0) {
+        tweetCountString.value = `${tweetsResp.skipCount} skipped`;
+    } else {
+        tweetCountString.value = 'nothing imported';
+    }
+    statusImportingTweets.value = ImportStatus.Finished;
+
+    // Build Cyd archive
+    statusBuildCydArchive.value = ImportStatus.Active;
+    await window.electron.X.archiveBuild(props.model.account.id);
+    statusBuildCydArchive.value = ImportStatus.Finished;
 };
 
 const importFromArchiveBrowserClicked = async () => {
@@ -66,6 +92,12 @@ const statusImportingTweets = ref(ImportStatus.Pending);
 const statusImportingLikes = ref(ImportStatus.Pending);
 const statusImportingDMGroups = ref(ImportStatus.Pending);
 const statusImportingDMs = ref(ImportStatus.Pending);
+const statusBuildCydArchive = ref(ImportStatus.Pending);
+
+const tweetCountString = ref('');
+const likeCountString = ref('');
+const dmGroupCountString = ref('');
+const dmCountString = ref('');
 
 const iconFromStatus = (status: ImportStatus) => {
     switch (status) {
@@ -127,18 +159,34 @@ const iconFromStatus = (status: ImportStatus) => {
                 <li :class="statusImportingTweets == ImportStatus.Pending ? 'text-muted' : ''">
                     <i :class="['fa', iconFromStatus(statusImportingTweets)]" />
                     Importing tweets
+                    <span v-if="tweetCountString != ''" class="text-muted">
+                        ({{ tweetCountString }})
+                    </span>
                 </li>
                 <li :class="statusImportingLikes == ImportStatus.Pending ? 'text-muted' : ''">
                     <i :class="['fa', iconFromStatus(statusImportingLikes)]" />
                     Importing likes
+                    <span v-if="likeCountString != ''" class="text-muted">
+                        ({{ likeCountString }})
+                    </span>
                 </li>
                 <li :class="statusImportingDMGroups == ImportStatus.Pending ? 'text-muted' : ''">
                     <i :class="['fa', iconFromStatus(statusImportingDMGroups)]" />
                     Importing direct message groups
+                    <span v-if="dmGroupCountString != ''" class="text-muted">
+                        ({{ dmGroupCountString }})
+                    </span>
                 </li>
                 <li :class="statusImportingDMs == ImportStatus.Pending ? 'text-muted' : ''">
                     <i :class="['fa', iconFromStatus(statusImportingDMs)]" />
                     Importing one-to-one direct messages
+                    <span v-if="dmCountString != ''" class="text-muted">
+                        ({{ dmCountString }})
+                    </span>
+                </li>
+                <li :class="statusBuildCydArchive == ImportStatus.Pending ? 'text-muted' : ''">
+                    <i :class="['fa', iconFromStatus(statusBuildCydArchive)]" />
+                    Build Cyd archive
                 </li>
             </ul>
 

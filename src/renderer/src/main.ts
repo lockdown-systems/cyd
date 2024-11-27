@@ -18,7 +18,8 @@ import type {
     ResponseData,
     XDeleteReviewStats,
     XArchiveInfo,
-    XAccount
+    XAccount,
+    XImportArchiveResponse,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -99,6 +100,7 @@ declare global {
                 deleteDMsMarkAllDeleted: (accountID: number) => Promise<void>;
                 deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
                 verifyXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
+                importXArchive: (accountID: number, archivePath: string, dataType: string) => Promise<XImportArchiveResponse>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
             };

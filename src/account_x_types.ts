@@ -379,3 +379,31 @@ export interface XArchiveAccount {
         accountDisplayName: string;
     }
 }
+
+export interface XArchiveTweet {
+    tweet: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        edit_info: any;
+        retweeted: boolean;
+        source: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        entities: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        display_text_range: any;
+        favorite_count: number;
+        in_reply_to_status_id_str?: string;
+        id_str: string;
+        in_reply_to_user_id?: string;
+        truncated: boolean;
+        retweet_count: number;
+        id: string;
+        in_reply_to_status_id?: string;
+        possibly_sensitive?: boolean;
+        created_at: string;
+        favorited: boolean;
+        full_text: string;
+        lang: string;
+        in_reply_to_screen_name?: string;
+        in_reply_to_user_id_str?: string;
+    }
+}

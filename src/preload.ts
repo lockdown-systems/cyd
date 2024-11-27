@@ -13,6 +13,7 @@ import {
     ResponseData,
     XArchiveInfo,
     XAccount,
+    XImportArchiveResponse,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -227,6 +228,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         verifyXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:verifyXArchive', accountID, archivePath);
+        },
+        importXArchive: (accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
+            return ipcRenderer.invoke('X:importXArchive', accountID, archivePath, dataType);
         },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:getConfig', accountID, key);

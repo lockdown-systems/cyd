@@ -27,7 +27,8 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo
+    XArchiveInfo, emptyXArchiveInfo,
+    XImportArchiveResponse
 } from './shared_types'
 import {
     runMigrations,
@@ -51,6 +52,7 @@ import {
     XAPIUser,
     XAPIAll,
     XArchiveAccount,
+    XArchiveTweet,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
 
@@ -321,6 +323,32 @@ export class XAccountController {
     key TEXT NOT NULL UNIQUE,
     value TEXT NOT NULL
 );`
+                ]
+            },
+            {
+                name: "20241127_make_tweet_cols_nullable",
+                sql: [
+                    `CREATE TABLE tweet_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    tweetID TEXT NOT NULL UNIQUE,
+    conversationID TEXT,
+    createdAt DATETIME,
+    likeCount INTEGER,
+    quoteCount INTEGER,
+    replyCount INTEGER,
+    retweetCount INTEGER,
+    isLiked BOOLEAN,
+    isRetweeted BOOLEAN,
+    text TEXT,
+    path TEXT NOT NULL,
+    addedToDatabaseAt DATETIME NOT NULL,
+    archivedAt DATETIME,
+    deletedAt DATETIME
+);`,
+                    `INSERT INTO tweet_new SELECT * FROM tweet;`,
+                    `DROP TABLE tweet;`,
+                    `ALTER TABLE tweet_new RENAME TO tweet;`
                 ]
             }
         ])
@@ -1640,7 +1668,7 @@ export class XAccountController {
 
         // Make sure the account.js file belongs to the right account
         try {
-            const accountFile = fs.readFileSync(filesToCheck[0], 'utf8');
+            const accountFile = fs.readFileSync(path.join(archivePath, "data", "account.js"), 'utf8');
             const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
             if (accountData.length !== 1) {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
@@ -1655,6 +1683,93 @@ export class XAccountController {
         }
 
         return null;
+    }
+
+    // Return null on success, and a string (error message) on error
+    async importXArchive(archivePath: string, dataType: string): Promise<XImportArchiveResponse> {
+        let importCount = 0;
+        let skipCount = 0;
+
+        // Load the username
+        let username: string;
+        try {
+            const accountFile = fs.readFileSync(path.join(archivePath, "data", "account.js"), 'utf8');
+            const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
+            username = accountData[0].account.username;
+        } catch {
+            return {
+                status: "error",
+                errorMessage: "Error reading account.js",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import tweets
+        if (dataType == "tweets") {
+
+            // Load the data
+            const tweetsPath = path.join(archivePath, "data", "tweets.js");
+            let tweetsData: XArchiveTweet[];
+            try {
+                const tweetsFile = fs.readFileSync(tweetsPath, 'utf8');
+                tweetsData = JSON.parse(tweetsFile.slice("window.YTD.tweets.part0 = ".length));
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error reading tweets.js",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Loop through the tweets and add them to the database
+            try {
+                tweetsData.forEach((tweet) => {
+                    // Is this tweet already there?
+                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.tweet.id_str], "get") as XTweetRow;
+                    if (existingTweet) {
+                        skipCount++;
+                    } else {
+                        // Import it
+                        exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            username,
+                            tweet.tweet.id_str,
+                            new Date(tweet.tweet.created_at),
+                            tweet.tweet.favorite_count,
+                            tweet.tweet.retweet_count,
+                            tweet.tweet.favorited ? 1 : 0,
+                            tweet.tweet.retweeted ? 1 : 0,
+                            tweet.tweet.full_text,
+                            `${username}/status/${tweet.tweet.id_str}`,
+                            new Date(),
+                        ]);
+                        importCount++;
+                    }
+                });
+            } catch (e) {
+                return {
+                    status: "error",
+                    errorMessage: "Error importing tweets: " + e,
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        return {
+            status: "error",
+            errorMessage: "Invalid data type.",
+            importCount: importCount,
+            skipCount: skipCount,
+        };
     }
 
     async getConfig(key: string): Promise<string | null> {
@@ -2042,6 +2157,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.verifyXArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:importXArchive', async (_, accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.importXArchive(archivePath, dataType);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
