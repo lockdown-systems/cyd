@@ -7,6 +7,7 @@ import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
+import { openURL } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -32,6 +33,14 @@ const nextClicked = async () => {
 // Settings
 const buildDatabaseStrategy = ref('importArchive');
 const importArchiveRecommended = ref(true);
+
+const showMoreText = ref("Show other options");
+const showMore = ref(false);
+
+const showMoreClicked = () => {
+    showMore.value = !showMore.value;
+    showMoreText.value = showMore.value ? "Show less" : "Show other options";
+};
 
 onMounted(() => {
     // If the user has a lot of data, recommend importing the archive
@@ -63,46 +72,86 @@ onMounted(() => {
                 :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)" />
 
             <form @submit.prevent>
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
-                            class="form-check-input">
-                        <label class="form-check-label" for="importArchive">
-                            Import X archive
-                            <span v-if="importArchiveRecommended" class="ms-2 text-muted">(recommended)</span>
-                        </label>
+                <!-- import archive recommended -->
+                <template v-if="importArchiveRecommended">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
+                                class="form-check-input">
+                            <label class="form-check-label" for="importArchive">
+                                Import X archive
+                                <span class="ms-2 text-muted">(recommended)</span>
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small class="form-text text-muted">
+                                You have a lot of data so importing your X archive is definitely the way to go.
+                            </small>
+                        </div>
                     </div>
-                    <div class="indent">
-                        <small v-if="importArchiveRecommended" class="form-text text-muted">
-                            You have a lot of data so importing your X archive is definitely the way to go.
-                        </small>
-                        <small v-else>
-                            Importing your X archive will work great, but you'll need to wait at least a day for X to
-                            send it to you if you don't already have it.
-                        </small>
-                    </div>
-                </div>
 
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
-                            value="buildFromScratch" class="form-check-input">
-                        <label class="form-check-label" for="buildFromScratch">
-                            Build database from scratch
-                            <span v-if="!importArchiveRecommended" class="ms-2 text-muted">(recommended)</span>
-                        </label>
+                    <button class="btn btn-link btn-sm" @click="showMoreClicked">
+                        {{ showMoreText }}
+                    </button>
+
+                    <div v-if="showMore" class="mb-3 mt-3">
+                        <div class="form-check">
+                            <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
+                                value="buildFromScratch" class="form-check-input">
+                            <label class="form-check-label" for="buildFromScratch">
+                                Build database from scratch
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small class="form-text text-muted">
+                                X restricts how much of your data you can access. You likely won't get all of your data
+                                if you have Cyd build it from scratch. <a href="#"
+                                    @click="openURL('https://cyd.social/docs-building-database-limits/')">Read more</a>.
+                            </small>
+                        </div>
                     </div>
-                    <div class="indent">
-                        <small v-if="importArchiveRecommended" class="form-text text-muted">
-                            X restricts how much of your data you can access. You likely won't get all of your data if
-                            you have Cyd build it from scratch. Read more.
-                        </small>
-                        <small v-else>
-                            You don't have a lot of data in your X account, so having Cyd scroll through your profile
-                            will be faster. Read more.
-                        </small>
+                </template>
+
+                <!-- build from scratch recommended -->
+                <template v-else>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
+                                value="buildFromScratch" class="form-check-input">
+                            <label class="form-check-label" for="buildFromScratch">
+                                Build database from scratch
+                                <span class="ms-2 text-muted">(recommended)</span>
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                You don't have a lot of data in your X account, so having Cyd scroll through your
+                                profile will be faster. <a href="#"
+                                    @click="openURL('https://cyd.social/docs-building-database-limits/')">Read more</a>.
+                            </small>
+                        </div>
                     </div>
-                </div>
+
+                    <button class="btn btn-link btn-sm" @click="showMoreClicked">
+                        {{ showMoreText }}
+                    </button>
+
+                    <div v-if="showMore" class="mb-3 mt-3">
+                        <div class="form-check">
+                            <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
+                                class="form-check-input">
+                            <label class="form-check-label" for="importArchive">
+                                Import X archive
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                Importing your X archive will work great, but you'll need to wait at least a day for X
+                                to send it to you if you don't already have it.
+                            </small>
+                        </div>
+                    </div>
+                </template>
             </form>
 
             <div class="buttons">
