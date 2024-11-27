@@ -1799,11 +1799,13 @@ export class XAccountController {
                         }
                     } else {
                         // Import it
+                        const url = new URL(like.like.expandedUrl);
+                        const path = url.pathname + url.search + url.hash;
                         exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
                             like.like.tweetId,
                             1,
                             like.like.fullText,
-                            like.like.expandedUrl,
+                            path,
                             new Date(),
                         ]);
                         importCount++;
