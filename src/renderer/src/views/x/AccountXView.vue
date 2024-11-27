@@ -20,7 +20,6 @@ import SpeechBubble from '../shared_components/SpeechBubble.vue';
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
-import XWizardStartPage from './XWizardStartPage.vue';
 import XWizardImportOrBuildPage from './XWizardImportOrBuildPage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
@@ -428,11 +427,6 @@ onUnmounted(async () => {
         <div :class="{ 'hidden': model.showBrowser, 'wizard': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
-                    <XWizardStartPage v-if="model.state == State.WizardStartDisplay" :model="unref(model)"
-                        :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
-                        :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
-                        @update-account="updateAccount" @set-state="setState($event)" />
-
                     <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
                         :model="unref(model)" @set-state="setState($event)" />
 
