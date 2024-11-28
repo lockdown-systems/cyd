@@ -2176,7 +2176,6 @@ Follow the instructions below to request your archive from X. You will need to v
                     reloadFollowingPage = true;
                     continue;
                 }
-                await this.sleep(200);
 
                 // Click the unfollow button
                 if (!await this.scriptClickElementNth('div[data-testid="cellInnerDiv"] button button', accountToUnfollowIndex)) {

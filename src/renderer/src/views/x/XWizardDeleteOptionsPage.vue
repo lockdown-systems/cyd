@@ -215,15 +215,6 @@ onMounted(async () => {
             </div>
             <div class="d-flex align-items-center">
                 <div class="form-check mb-2">
-                    <input id="unfollowEveryone" v-model="unfollowEveryone" type="checkbox" class="form-check-input">
-                    <label class="form-check-label mr-1 text-nowrap" for="unfollowEveryone">
-                        Unfollow everyone
-                    </label>
-                    <span class="ms-2 text-muted">(recommended)</span>
-                </div>
-            </div>
-            <div class="d-flex align-items-center">
-                <div class="form-check mb-2">
                     <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox" class="form-check-input">
                     <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
                         Unretweet tweets
@@ -240,6 +231,15 @@ onMounted(async () => {
                             <span class="input-group-text">days</span>
                         </div>
                     </div>
+                    <span class="ms-2 text-muted">(recommended)</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="form-check mb-2">
+                    <input id="unfollowEveryone" v-model="unfollowEveryone" type="checkbox" class="form-check-input">
+                    <label class="form-check-label mr-1 text-nowrap" for="unfollowEveryone">
+                        Unfollow everyone
+                    </label>
                     <span class="ms-2 text-muted">(recommended)</span>
                 </div>
             </div>
@@ -266,8 +266,7 @@ onMounted(async () => {
                 </div>
                 <div class="indent">
                     <small class="form-text text-muted">
-                        Likes are private on X. If you've liked a lot of tweets, it might take a
-                        long time to delete them all.
+                        Likes are private on X. If you have a lot of likes, this will take a long time.
                     </small>
                 </div>
             </div>
