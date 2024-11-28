@@ -219,6 +219,7 @@ onMounted(async () => {
                     <label class="form-check-label mr-1 text-nowrap" for="unfollowEveryone">
                         Unfollow everyone
                     </label>
+                    <span class="ms-2 text-muted">(recommended)</span>
                 </div>
             </div>
             <div class="d-flex align-items-center">
@@ -292,6 +293,7 @@ onMounted(async () => {
                     deleteTweets ||
                     deleteRetweets ||
                     deleteLikes ||
+                    unfollowEveryone ||
                     deleteDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
