@@ -2,6 +2,7 @@
 import {
     ref,
     onMounted,
+    computed,
 } from 'vue';
 import {
     AccountXViewModel,
@@ -27,6 +28,14 @@ const nextClicked = async () => {
     emit('setState', State.WizardReview);
 };
 
+// Show more
+const deleteTweetsShowMore = ref(false);
+const deleteTweetsShowMoreButtonText = computed(() => deleteTweetsShowMore.value ? 'Hide more options' : 'Show more options');
+
+const deleteTweetsShowMoreClicked = () => {
+    deleteTweetsShowMore.value = !deleteTweetsShowMore.value;
+};
+
 // Settings
 const deleteTweets = ref(false);
 const deleteTweetsDaysOld = ref(0);
@@ -40,6 +49,7 @@ const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
+const unfollowEveryone = ref(false);
 
 const loadSettings = async () => {
     console.log('XWizardDeleteOptionsPage', 'loadSettings');
@@ -57,6 +67,11 @@ const loadSettings = async () => {
         deleteLikes.value = account.xAccount.deleteLikes;
         deleteLikesDaysOld.value = account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = account.xAccount.deleteDMs;
+        unfollowEveryone.value = account.xAccount.unfollowEveryone;
+    }
+
+    if (deleteTweets.value && (deleteTweetsRetweetsThresholdEnabled.value || deleteTweetsLikesThresholdEnabled.value || deleteTweetsArchiveEnabled.value)) {
+        deleteTweetsShowMore.value = true;
     }
 };
 
@@ -84,6 +99,8 @@ const saveSettings = async () => {
         account.xAccount.deleteLikes = deleteLikes.value;
         account.xAccount.deleteLikesDaysOld = deleteLikesDaysOld.value;
         account.xAccount.deleteDMs = deleteDMs.value;
+        account.xAccount.unfollowEveryone = unfollowEveryone.value;
+
         await window.electron.database.saveAccount(JSON.stringify(account));
         emit('updateAccount');
     }
@@ -131,7 +148,10 @@ onMounted(async () => {
                     <span class="ms-2 text-muted">(recommended)</span>
                 </div>
             </div>
-            <div class="indent">
+            <button class="btn btn-sm btn-link show-more-button" @click="deleteTweetsShowMoreClicked">
+                {{ deleteTweetsShowMoreButtonText }}
+            </button>
+            <div v-if="deleteTweetsShowMore" class="indent">
                 <div class="d-flex align-items-center">
                     <div class="form-check mb-2">
                         <input id="deleteTweetsRetweetsThresholdEnabled" v-model="deleteTweetsRetweetsThresholdEnabled"
@@ -191,6 +211,14 @@ onMounted(async () => {
                             </small>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="form-check mb-2">
+                    <input id="unfollowEveryone" v-model="unfollowEveryone" type="checkbox" class="form-check-input">
+                    <label class="form-check-label mr-1 text-nowrap" for="unfollowEveryone">
+                        Unfollow everyone
+                    </label>
                 </div>
             </div>
             <div class="d-flex align-items-center">
@@ -276,5 +304,10 @@ onMounted(async () => {
 <style scoped>
 .form-short {
     width: 55px;
+}
+
+.show-more-button {
+    margin-left: 1rem;
+    margin-top: -1.5rem;
 }
 </style>
