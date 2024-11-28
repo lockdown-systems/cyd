@@ -60,6 +60,7 @@ export const runMigrations = (db: Database.Database, migrations: Migration[]) =>
 
 export const runMainMigrations = () => {
     runMigrations(getMainDatabase(), [
+        // Create the tables
         {
             name: "initial",
             sql: [
@@ -101,6 +102,7 @@ export const runMainMigrations = () => {
 );`,
             ]
         },
+        // Add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount
         {
             name: "add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount",
             sql: [
@@ -109,6 +111,13 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN followersCount INTEGER DEFAULT 0;`,
                 `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT 0;`,
                 `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT 0;`,
+            ]
+        },
+        // Add unfollowEveryone to xAccount
+        {
+            name: "add unfollowEveryone to xAccount",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN unfollowEveryone BOOLEAN DEFAULT 1;`,
             ]
         }
     ]);
@@ -162,6 +171,7 @@ interface XAccountRow {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
+    unfollowEveryone: boolean;
     followingCount: number;
     followersCount: number;
     tweetsCount: number;
@@ -251,6 +261,7 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteLikes: !!row.deleteLikes,
         deleteLikesDaysOld: row.deleteLikesDaysOld,
         deleteDMs: !!row.deleteDMs,
+        unfollowEveryone: !!row.unfollowEveryone,
         followingCount: row.followingCount,
         followersCount: row.followersCount,
         tweetsCount: row.tweetsCount,
@@ -289,6 +300,7 @@ export const getXAccounts = (): XAccount[] => {
             deleteLikes: !!row.deleteLikes,
             deleteLikesDaysOld: row.deleteLikesDaysOld,
             deleteDMs: !!row.deleteDMs,
+            unfollowEveryone: !!row.unfollowEveryone,
             followingCount: row.followingCount,
             followersCount: row.followersCount,
             tweetsCount: row.tweetsCount,
@@ -335,6 +347,7 @@ export const saveXAccount = (account: XAccount) => {
             deleteLikes = ?,
             deleteLikesDaysOld = ?,
             deleteDMs = ?,
+            unfollowEveryone = ?,
             followingCount = ?,
             followersCount = ?,
             tweetsCount = ?,
@@ -362,6 +375,7 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteLikes ? 1 : 0,
         account.deleteLikesDaysOld,
         account.deleteDMs ? 1 : 0,
+        account.unfollowEveryone ? 1 : 0,
         account.followingCount,
         account.followersCount,
         account.tweetsCount,

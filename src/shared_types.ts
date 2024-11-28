@@ -43,6 +43,7 @@ export type XAccount = {
     deleteLikes: boolean;
     deleteLikesDaysOld: number;
     deleteDMs: boolean;
+    unfollowEveryone: boolean;
     followingCount: number;
     followersCount: number;
     tweetsCount: number;
@@ -125,6 +126,7 @@ export type XProgress = {
     likesDeleted: number;
 
     conversationsDeleted: number;
+    accountsUnfollowed: number;
 }
 
 export function emptyXProgress(): XProgress {
@@ -170,6 +172,7 @@ export function emptyXProgress(): XProgress {
         likesDeleted: 0,
 
         conversationsDeleted: 0,
+        accountsUnfollowed: 0
     };
 }
 

@@ -255,6 +255,7 @@ export class XAccountController {
         this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
         this.db.pragma('journal_mode = WAL');
         runMigrations(this.db, [
+            // Create the tables
             {
                 name: "initial",
                 sql: [
@@ -317,6 +318,7 @@ export class XAccountController {
 );`
                 ]
             },
+            // Add the config table
             {
                 name: "20241016_add_config",
                 sql: [
@@ -327,6 +329,7 @@ export class XAccountController {
 );`
                 ]
             },
+            // Update the tweet table to make some columns nullable
             {
                 name: "20241127_make_tweet_cols_nullable",
                 sql: [
