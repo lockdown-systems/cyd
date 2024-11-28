@@ -568,19 +568,24 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
-    // click the first element in the list of elements that match selector
-    async scriptClickElementFirst(selector: string): Promise<boolean> {
+    // click the Nth element in the list of elements that match selector
+    async scriptClickElementNth(selector: string, n: number): Promise<boolean> {
         const code = `
         (() => {
             const els = document.querySelectorAll('${selector}');
-            if(els.length == 0) { return false; }
-            const firstEl = els[0];
+            if(els.length < ${n + 1}) { return false; }
+            const firstEl = els[${n}];
             firstEl.click()
             return true;
         })()
         `;
         await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // click the first element in the list of elements that match selector
+    async scriptClickElementFirst(selector: string): Promise<boolean> {
+        return await this.scriptClickElementNth(selector, 0);
     }
 
     // click the last element in the list of elements that match selector
@@ -645,19 +650,24 @@ export class BaseViewModel {
         return await this.getWebview()?.executeJavaScript(code);
     }
 
-    // mouseover the first element in the list of elements that match selector
-    async scriptMouseoverElementFirst(selector: string): Promise<boolean> {
+    // mouseover the Nth element in the list of elements that match selector
+    async scriptMouseoverElementNth(selector: string, n: number): Promise<boolean> {
         const code = `
         (() => {
             const els = document.querySelectorAll('${selector}');
-            if(els.length == 0) { return false; }
-            const firstEl = els[0];
+            if(els.length < ${n + 1}) { return false; }
+            const firstEl = els[${n}];
             firstEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
             return true;
         })()
         `;
         await this.sleep(500);
         return await this.getWebview()?.executeJavaScript(code);
+    }
+
+    // mouseover the first element in the list of elements that match selector
+    async scriptMouseoverElementFirst(selector: string): Promise<boolean> {
+        return await this.scriptMouseoverElementNth(selector, 0);
     }
 
     // mouseover the last element in the list of elements that match selector

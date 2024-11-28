@@ -109,10 +109,13 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     async defineJobs() {
+        let shouldBuildArchive = false;
+
         const jobTypes = [];
         jobTypes.push("login");
 
         if (this.account?.xAccount?.saveMyData) {
+            shouldBuildArchive = true;
             if (this.account?.xAccount?.archiveTweets) {
                 jobTypes.push("indexTweets");
                 if (this.account?.xAccount?.archiveTweetsHTML) {
@@ -131,19 +134,27 @@ export class AccountXViewModel extends BaseViewModel {
         if (this.account?.xAccount?.deleteMyData) {
             if (this.account?.xAccount?.deleteTweets) {
                 jobTypes.push("deleteTweets");
+                shouldBuildArchive = true;
             }
             if (this.account?.xAccount?.deleteRetweets) {
                 jobTypes.push("deleteRetweets");
+                shouldBuildArchive = true;
             }
             if (this.account?.xAccount?.deleteLikes) {
                 jobTypes.push("deleteLikes");
+                shouldBuildArchive = true;
+            }
+            if (this.account?.xAccount?.unfollowEveryone) {
+                jobTypes.push("unfollowEveryone");
             }
             if (this.account?.xAccount?.deleteDMs) {
                 jobTypes.push("deleteDMs");
             }
         }
 
-        jobTypes.push("archiveBuild");
+        if (shouldBuildArchive) {
+            jobTypes.push("archiveBuild");
+        }
 
         try {
             this.jobs = await window.electron.X.createJobs(this.account?.id, jobTypes);
@@ -625,6 +636,67 @@ export class AccountXViewModel extends BaseViewModel {
                     continue;
                 }
             }
+        }
+
+        if (!success) {
+            await this.error(errorType, {
+                exception: (error as Error).toString(),
+                currentURL: this.webview?.getURL(),
+                newURL: newURL,
+            })
+            return true;
+        }
+
+        return false;
+    }
+
+    // Load the following page, and return true if an error was triggered
+    async unfollowEveryoneLoadPage(): Promise<boolean> {
+        this.log("unfollowEveryoneLoadPage", "loading following page");
+        let tries: number, success: boolean;
+        let error: Error | null = null;
+        let errorType: AutomationErrorType = AutomationErrorType.x_runJob_unfollowEveryone_OtherError;
+        let newURL: string = "";
+
+        const followingURL = `https://x.com/${this.account?.xAccount?.username}/following`;
+
+        success = false;
+        for (tries = 0; tries < 3; tries++) {
+            await this.loadURLWithRateLimit(followingURL);
+
+            // If no following users appear in two seconds, there are no following users
+            try {
+                await this.waitForSelector('div[data-testid="cellInnerDiv"] button button', followingURL, 2000);
+            } catch (e) {
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // There are no following users
+                        await this.waitForLoadingToFinish();
+                        this.progress.isUnfollowEveryoneFinished = true;
+                        await this.syncProgress();
+                        return false;
+                    }
+                } else if (e instanceof URLChangedError) {
+                    newURL = this.webview?.getURL() || '';
+                    error = e;
+                    errorType = AutomationErrorType.x_runJob_deleteDMs_URLChanged;
+                    this.log("unfollowEveryoneLoadPage", ["URL changed", newURL]);
+                    await this.sleep(1000);
+                    continue;
+                } else {
+                    error = e as Error
+                    this.log("unfollowEveryoneLoadPage", ["other error", e]);
+                    await this.sleep(1000);
+                    continue;
+                }
+            }
+
+            success = true;
+            break;
         }
 
         if (!success) {
@@ -2046,6 +2118,141 @@ Follow the instructions below to request your archive from X. You will need to v
         return true;
     }
 
+    async runJobUnfollowEveryone(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_UNFOLLOW_EVERYONE, navigator.userAgent);
+
+        let tries: number, success: boolean;
+        let error: Error | null = null;
+        let errorType: AutomationErrorType = AutomationErrorType.x_runJob_unfollowEveryone_UnknownError;
+
+        let errorTriggered = false;
+        let reloadFollowingPage = true;
+        let numberOfAccountsToUnfollow = 0;
+        let accountToUnfollowIndex = 0;
+
+        this.showBrowser = true;
+        this.instructions = `**I'm unfollowing everyone on X for you.**`;
+        this.showAutomationNotice = true;
+
+        // Start the progress
+        await this.syncProgress();
+        this.progress.isUnfollowEveryoneFinished = false;
+        this.progress.accountsUnfollowed = 0;
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            error = null;
+            success = false;
+
+            await this.waitForPause();
+
+            // Try 3 times, in case of rate limit or error
+            for (tries = 0; tries < 3; tries++) {
+                errorTriggered = false;
+
+                // Load the following page, if necessary
+                if (reloadFollowingPage) {
+                    if (await this.unfollowEveryoneLoadPage()) {
+                        return false;
+                    }
+                    reloadFollowingPage = false;
+
+                    // Count the number of accounts to unfollow in the DOM
+                    numberOfAccountsToUnfollow = await this.countSelectorsFound('div[data-testid="cellInnerDiv"] button button');
+                    accountToUnfollowIndex = 0;
+                }
+
+                // When loading the following page in the previous step, if there are following users it sets isUnfollowEveryoneFinished to true
+                if (this.progress.isUnfollowEveryoneFinished) {
+                    this.log('runJobUnfollowEveryone', ["no more following users, so ending unfollowEveryone"]);
+                    success = true;
+                    break;
+                }
+
+                // Mouseover the "Following" button on the next user
+                if (!await this.scriptMouseoverElementNth('div[data-testid="cellInnerDiv"] button button', accountToUnfollowIndex)) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_unfollowEveryone_MouseoverFailed;
+                    reloadFollowingPage = true;
+                    continue;
+                }
+                await this.sleep(200);
+
+                // Click the unfollow button
+                if (!await this.scriptClickElementNth('div[data-testid="cellInnerDiv"] button button', accountToUnfollowIndex)) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_unfollowEveryone_ClickUnfollowFailed;
+                    reloadFollowingPage = true;
+                    continue;
+                }
+
+                // Wait for confirm button
+                try {
+                    await this.waitForSelector(
+                        'button[data-testid="confirmationSheetConfirm"]',
+                    )
+                } catch (e) {
+                    errorTriggered = true;
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        reloadFollowingPage = true;
+                        tries--;
+                        continue;
+                    } else {
+                        error = e as Error;
+                        errorType = AutomationErrorType.x_runJob_unfollowEveryone_WaitForConfirmButtonFailed;
+                        this.log("runJobUnfollowEveryone", ["wait for confirm button selector failed, try #", tries]);
+                        reloadFollowingPage = true;
+                        continue;
+                    }
+                }
+
+                // Click the confirm button
+                if (!await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]')) {
+                    errorTriggered = true;
+                    errorType = AutomationErrorType.x_runJob_unfollowEveryone_ClickConfirmFailed;
+                    reloadFollowingPage = true;
+                    continue;
+                }
+
+                if (!errorTriggered) {
+                    // Update progress
+                    this.progress.accountsUnfollowed += 1;
+
+                    // Increment the account index
+                    accountToUnfollowIndex++;
+                    if (accountToUnfollowIndex >= numberOfAccountsToUnfollow) {
+                        reloadFollowingPage = true;
+                    }
+                    break;
+                }
+            }
+
+            await this.sleep(500);
+
+            if (success) {
+                break;
+            }
+
+            if (errorTriggered) {
+                if (error) {
+                    await this.error(errorType, { exception: (error as Error).toString() });
+                } else {
+                    await this.error(errorType, {});
+                }
+                break;
+            }
+        }
+
+        if (errorTriggered) {
+            return false;
+        }
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
     async runJob(jobIndex: number) {
         // Reset logs before each job, so the sensitive context data in error reports will only includes
         // logs from the current job
@@ -2102,6 +2309,10 @@ Follow the instructions below to request your archive from X. You will need to v
 
             case "deleteLikes":
                 await this.runJobDeleteLikes(jobIndex);
+                break;
+
+            case "unfollowEveryone":
+                await this.runJobUnfollowEveryone(jobIndex);
                 break;
 
             case "deleteDMs":

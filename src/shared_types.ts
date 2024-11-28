@@ -97,6 +97,7 @@ export type XProgress = {
     isDeleteRetweetsFinished: boolean;
     isDeleteLikesFinished: boolean;
     isDeleteDMsFinished: boolean;
+    isUnfollowEveryoneFinished: boolean;
 
     tweetsIndexed: number;
     retweetsIndexed: number;
@@ -143,6 +144,7 @@ export function emptyXProgress(): XProgress {
         isDeleteRetweetsFinished: false,
         isDeleteLikesFinished: false,
         isDeleteDMsFinished: false,
+        isUnfollowEveryoneFinished: false,
 
         tweetsIndexed: 0,
         retweetsIndexed: 0,
