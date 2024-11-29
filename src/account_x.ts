@@ -53,7 +53,11 @@ import {
     XAPIAll,
     XArchiveAccount,
     XArchiveTweet,
+    XArchiveTweetContainer,
+    isXArchiveTweetContainer,
     XArchiveLike,
+    XArchiveLikeContainer,
+    isXArchiveLikeContainer,
     XArchiveDMConversation,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
@@ -1651,31 +1655,22 @@ export class XAccountController {
             }
         }
 
-        const filesToCheck = [
-            path.join(archivePath, "data", "account.js"),
-            path.join(archivePath, "data", "direct-messages-group.js"),
-            path.join(archivePath, "data", "direct-messages.js"),
-            path.join(archivePath, "data", "like.js"),
-            path.join(archivePath, "data", "tweets.js"),
-        ];
-
-        // Make sure files exist and are readable
-        for (let i = 0; i < filesToCheck.length; i++) {
-            if (!fs.existsSync(filesToCheck[i])) {
-                log.error(`XAccountController.verifyXArchive: file does not exist: ${filesToCheck[i]}`);
-                return `The file ${filesToCheck[i]} doesn't exist.`;
-            }
-            try {
-                fs.accessSync(filesToCheck[i], fs.constants.R_OK);
-            } catch {
-                log.error(`XAccountController.verifyXArchive: file is not readable: ${filesToCheck[i]}`);
-                return `The file ${filesToCheck[i]} is not readable.`;
-            }
+        // Make sure account.js exists and is readable
+        const accountPath = path.join(archivePath, "data", "account.js");
+        if (!fs.existsSync(accountPath)) {
+            log.error(`XAccountController.verifyXArchive: file does not exist: ${accountPath}`);
+            return `The file ${accountPath} doesn't exist.`;
+        }
+        try {
+            fs.accessSync(accountPath, fs.constants.R_OK);
+        } catch {
+            log.error(`XAccountController.verifyXArchive: file is not readable: ${accountPath}`);
+            return `The file ${accountPath} is not readable.`;
         }
 
         // Make sure the account.js file belongs to the right account
         try {
-            const accountFile = fs.readFileSync(path.join(archivePath, "data", "account.js"), 'utf8');
+            const accountFile = fs.readFileSync(accountPath, 'utf8');
             const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
             if (accountData.length !== 1) {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
@@ -1686,7 +1681,7 @@ export class XAccountController {
                 return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
             }
         } catch {
-            return "Error reading account.js";
+            return "Error parsing JSON in account.js";
         }
 
         return null;
@@ -1706,7 +1701,7 @@ export class XAccountController {
         } catch {
             return {
                 status: "error",
-                errorMessage: "Error reading account.js",
+                errorMessage: "Error parsing JSON in account.js",
                 importCount: importCount,
                 skipCount: skipCount,
             };
@@ -1714,16 +1709,31 @@ export class XAccountController {
 
         // Import tweets
         if (dataType == "tweets") {
+            // Tweets data should be in tweets.js
+            let tweetsPath = path.join(archivePath, "data", "tweets.js");
+            if (!fs.existsSync(tweetsPath)) {
+                // Old X archives might put it in tweet.js
+                tweetsPath = path.join(archivePath, "data", "tweet.js");
+                if (!fs.existsSync(tweetsPath)) {
+                    return {
+                        status: "error",
+                        errorMessage: "tweets.js not found",
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
+            }
+
             // Load the data
-            const tweetsPath = path.join(archivePath, "data", "tweets.js");
-            let tweetsData: XArchiveTweet[];
+            // New archives use XArchiveTweetContainer[], old archives use XArchiveTweet[]
+            let tweetsData: XArchiveTweet[] | XArchiveTweetContainer[];
             try {
                 const tweetsFile = fs.readFileSync(tweetsPath, 'utf8');
-                tweetsData = JSON.parse(tweetsFile.slice("window.YTD.tweets.part0 = ".length));
+                tweetsData = JSON.parse(tweetsFile.slice(tweetsFile.indexOf('[')));
             } catch (e) {
                 return {
                     status: "error",
-                    errorMessage: "Error reading tweets.js",
+                    errorMessage: "Error parsing JSON in tweets.js",
                     importCount: importCount,
                     skipCount: skipCount,
                 };
@@ -1731,23 +1741,30 @@ export class XAccountController {
 
             // Loop through the tweets and add them to the database
             try {
-                tweetsData.forEach((tweet) => {
+                tweetsData.forEach((tweetContainer) => {
+                    let tweet: XArchiveTweet;
+                    if (isXArchiveTweetContainer(tweetContainer)) {
+                        tweet = tweetContainer.tweet;
+                    } else {
+                        tweet = tweetContainer;
+                    }
+
                     // Is this tweet already there?
-                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.tweet.id_str], "get") as XTweetRow;
+                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
                     if (existingTweet) {
                         skipCount++;
                     } else {
                         // Import it
                         exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                             username,
-                            tweet.tweet.id_str,
-                            new Date(tweet.tweet.created_at),
-                            tweet.tweet.favorite_count,
-                            tweet.tweet.retweet_count,
-                            tweet.tweet.favorited ? 1 : 0,
-                            tweet.tweet.retweeted ? 1 : 0,
-                            tweet.tweet.full_text,
-                            `${username}/status/${tweet.tweet.id_str}`,
+                            tweet.id_str,
+                            new Date(tweet.created_at),
+                            tweet.favorite_count,
+                            tweet.retweet_count,
+                            tweet.favorited ? 1 : 0,
+                            tweet.retweeted ? 1 : 0,
+                            tweet.full_text,
+                            `${username}/status/${tweet.id_str}`,
                             new Date(),
                         ]);
                         importCount++;
@@ -1774,14 +1791,14 @@ export class XAccountController {
         else if (dataType == "likes") {
             // Load the data
             const likesPath = path.join(archivePath, "data", "like.js");
-            let likesData: XArchiveLike[];
+            let likesData: XArchiveLike[] | XArchiveLikeContainer[];
             try {
                 const likesFile = fs.readFileSync(likesPath, 'utf8');
-                likesData = JSON.parse(likesFile.slice("window.YTD.like.part0 = ".length));
+                likesData = JSON.parse(likesFile.slice(likesFile.indexOf('[')));
             } catch (e) {
                 return {
                     status: "error",
-                    errorMessage: "Error reading like.js",
+                    errorMessage: "Error parsing JSON in like.js",
                     importCount: importCount,
                     skipCount: skipCount,
                 };
@@ -1789,25 +1806,32 @@ export class XAccountController {
 
             // Loop through the likes and add them to the database
             try {
-                likesData.forEach((like) => {
+                likesData.forEach((likeContainer) => {
+                    let like: XArchiveLike;
+                    if (isXArchiveLikeContainer(likeContainer)) {
+                        like = likeContainer.like;
+                    } else {
+                        like = likeContainer;
+                    }
+
                     // Is this like already there?
-                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [like.like.tweetId], "get") as XTweetRow;
+                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [like.tweetId], "get") as XTweetRow;
                     if (existingTweet) {
                         if (existingTweet.isLiked) {
                             skipCount++;
                         } else {
                             // Set isLiked to true
-                            exec(this.db, 'UPDATE tweet SET isLiked = ? WHERE tweetID = ?', [1, like.like.tweetId]);
+                            exec(this.db, 'UPDATE tweet SET isLiked = ? WHERE tweetID = ?', [1, like.tweetId]);
                             importCount++;
                         }
                     } else {
                         // Import it
-                        const url = new URL(like.like.expandedUrl);
+                        const url = new URL(like.expandedUrl);
                         const path = url.pathname + url.search + url.hash;
                         exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
-                            like.like.tweetId,
+                            like.tweetId,
                             1,
-                            like.like.fullText,
+                            like.fullText,
                             path,
                             new Date(),
                         ]);
@@ -1833,22 +1857,47 @@ export class XAccountController {
 
         // Import direct message groups
         else if (dataType == "dmGroups" || dataType == "dms") {
-            const dmsFilename = dataType == "dmGroups" ? "direct-messages-group.js" : "direct-messages.js"
+            let dmsFilename: string;
+            if (dataType == "dmGroups") {
+                dmsFilename = "direct-messages-group.js";
+                if (!fs.existsSync(dmsFilename)) {
+                    // Old X archives might put it in direct-message-group.js
+                    dmsFilename = path.join(archivePath, "data", "direct-message-group.js");
+                    if (!fs.existsSync(dmsFilename)) {
+                        return {
+                            status: "error",
+                            errorMessage: "direct-messages-group.js",
+                            importCount: importCount,
+                            skipCount: skipCount,
+                        };
+                    }
+                }
+            } else {
+                dmsFilename = "direct-messages.js";
+                if (!fs.existsSync(dmsFilename)) {
+                    // Old X archives might put it in direct-message.js
+                    dmsFilename = path.join(archivePath, "data", "direct-message.js");
+                    if (!fs.existsSync(dmsFilename)) {
+                        return {
+                            status: "error",
+                            errorMessage: "direct-messages.js",
+                            importCount: importCount,
+                            skipCount: skipCount,
+                        };
+                    }
+                }
+            }
 
             // Load the data
             const dmsPath = path.join(archivePath, "data", dmsFilename);
             let dmsData: XArchiveDMConversation[];
             try {
                 const dmsFile = fs.readFileSync(dmsPath, 'utf8');
-                if (dataType == "dmGroups") {
-                    dmsData = JSON.parse(dmsFile.slice("window.YTD.direct_messages_group.part0 = ".length));
-                } else {
-                    dmsData = JSON.parse(dmsFile.slice("window.YTD.direct_messages.part0 = ".length));
-                }
+                dmsData = JSON.parse(dmsFile.slice(dmsFile.indexOf('[')));
             } catch (e) {
                 return {
                     status: "error",
-                    errorMessage: `Error reading ${dmsFilename}`,
+                    errorMessage: `Error parsing JSON in ${dmsFilename}`,
                     importCount: importCount,
                     skipCount: skipCount,
                 };
