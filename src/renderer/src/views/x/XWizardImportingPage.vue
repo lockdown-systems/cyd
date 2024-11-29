@@ -35,17 +35,18 @@ const nextClicked = async () => {
 
 const createCountString = (importCount: number, skipCount: number) => {
     if (importCount > 0 && skipCount > 0) {
-        return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} skipped`;
+        return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} already imported`;
     } else if (importCount > 0 && skipCount == 0) {
         return `${importCount.toLocaleString()} imported`;
     } else if (importCount == 0 && skipCount > 0) {
-        return `${skipCount.toLocaleString()} skipped`;
+        return `${skipCount.toLocaleString()} already imported`;
     } else {
         return 'nothing imported';
     }
 }
 
 const startClicked = async () => {
+    errorMessages.value = [];
     importStarted.value = true;
 
     // Verify that the archive is valid
@@ -53,7 +54,7 @@ const startClicked = async () => {
     const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
-        errorMessage.value = verifyResp;
+        errorMessages.value.push(verifyResp);
         importFailed.value = true;
         return;
     }
@@ -65,11 +66,11 @@ const startClicked = async () => {
     tweetCountString.value = createCountString(tweetsResp.importCount, tweetsResp.skipCount);
     if (tweetsResp.status == 'error') {
         statusImportingTweets.value = ImportStatus.Failed;
-        errorMessage.value = tweetsResp.errorMessage;
+        errorMessages.value.push(tweetsResp.errorMessage);
         importFailed.value = true;
-        return;
+    } else {
+        statusImportingTweets.value = ImportStatus.Finished;
     }
-    statusImportingTweets.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Import likes
@@ -78,11 +79,11 @@ const startClicked = async () => {
     likeCountString.value = createCountString(likesResp.importCount, likesResp.skipCount);
     if (likesResp.status == 'error') {
         statusImportingLikes.value = ImportStatus.Failed;
-        errorMessage.value = likesResp.errorMessage;
+        errorMessages.value.push(likesResp.errorMessage);
         importFailed.value = true;
-        return;
+    } else {
+        statusImportingLikes.value = ImportStatus.Finished;
     }
-    statusImportingLikes.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Import DM groups
@@ -91,11 +92,11 @@ const startClicked = async () => {
     dmGroupCountString.value = createCountString(dmGroupsResp.importCount, dmGroupsResp.skipCount);
     if (dmGroupsResp.status == 'error') {
         statusImportingDMGroups.value = ImportStatus.Failed;
-        errorMessage.value = dmGroupsResp.errorMessage;
+        errorMessages.value.push(dmGroupsResp.errorMessage);
         importFailed.value = true;
-        return;
+    } else {
+        statusImportingDMGroups.value = ImportStatus.Finished;
     }
-    statusImportingDMGroups.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Import DMs
@@ -104,11 +105,11 @@ const startClicked = async () => {
     dmCountString.value = createCountString(dmsResp.importCount, dmsResp.skipCount);
     if (dmsResp.status == 'error') {
         statusImportingDMs.value = ImportStatus.Failed;
-        errorMessage.value = dmsResp.errorMessage;
+        errorMessages.value.push(dmsResp.errorMessage);
         importFailed.value = true;
-        return;
+    } else {
+        statusImportingDMs.value = ImportStatus.Finished;
     }
-    statusImportingDMs.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Build Cyd archive
@@ -117,7 +118,7 @@ const startClicked = async () => {
         await window.electron.X.archiveBuild(props.model.account.id);
     } catch (e) {
         statusBuildCydArchive.value = ImportStatus.Failed;
-        errorMessage.value = `${e}`;
+        errorMessages.value.push(`${e}`);
         importFailed.value = true;
         return;
     }
@@ -125,9 +126,10 @@ const startClicked = async () => {
     statusBuildCydArchive.value = ImportStatus.Finished;
 
     // Success
-    await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
-
-    importFinished.value = true;
+    if (!importFailed.value) {
+        await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
+        importFinished.value = true;
+    }
 };
 
 const importFromArchiveBrowserClicked = async () => {
@@ -140,7 +142,7 @@ const importFromArchiveBrowserClicked = async () => {
 // Keep track of import status
 
 const importFromArchivePath = ref('');
-const errorMessage = ref('');
+const errorMessages = ref();
 
 const importStarted = ref(false);
 const importFinished = ref(false);
@@ -269,7 +271,8 @@ const iconFromStatus = (status: ImportStatus) => {
                 </div>
             </template>
             <template v-if="importFailed">
-                <div class="alert alert-danger mt-3 text-break">
+                <div v-for="errorMessage in errorMessages" :key="errorMessage"
+                    class="alert alert-danger mt-3 text-break">
                     <strong>Import failed.</strong> {{ errorMessage }}
                 </div>
                 <div class="buttons">

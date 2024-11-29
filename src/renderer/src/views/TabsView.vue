@@ -350,6 +350,10 @@ onUnmounted(async () => {
 </template>
 
 <style scoped>
+.container-fluid {
+  padding-left: 0;
+}
+
 .sidebar {
   height: 100vh;
   width: 66px;
