@@ -35,17 +35,18 @@ const nextClicked = async () => {
 
 const createCountString = (importCount: number, skipCount: number) => {
     if (importCount > 0 && skipCount > 0) {
-        return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} skipped`;
+        return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} already imported`;
     } else if (importCount > 0 && skipCount == 0) {
         return `${importCount.toLocaleString()} imported`;
     } else if (importCount == 0 && skipCount > 0) {
-        return `${skipCount.toLocaleString()} skipped`;
+        return `${skipCount.toLocaleString()} already imported`;
     } else {
         return 'nothing imported';
     }
 }
 
 const startClicked = async () => {
+    errorMessages.value = [];
     importStarted.value = true;
 
     // Verify that the archive is valid
@@ -53,7 +54,7 @@ const startClicked = async () => {
     const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
-        errorMessage.value = verifyResp;
+        errorMessages.value.push(verifyResp);
         importFailed.value = true;
         return;
     }
@@ -65,11 +66,11 @@ const startClicked = async () => {
     tweetCountString.value = createCountString(tweetsResp.importCount, tweetsResp.skipCount);
     if (tweetsResp.status == 'error') {
         statusImportingTweets.value = ImportStatus.Failed;
-        errorMessage.value = tweetsResp.errorMessage;
+        errorMessages.value.push(tweetsResp.errorMessage);
         importFailed.value = true;
-        return;
+    } else {
+        statusImportingTweets.value = ImportStatus.Finished;
     }
-    statusImportingTweets.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Import likes
@@ -78,38 +79,38 @@ const startClicked = async () => {
     likeCountString.value = createCountString(likesResp.importCount, likesResp.skipCount);
     if (likesResp.status == 'error') {
         statusImportingLikes.value = ImportStatus.Failed;
-        errorMessage.value = likesResp.errorMessage;
+        errorMessages.value.push(likesResp.errorMessage);
         importFailed.value = true;
-        return;
+    } else {
+        statusImportingLikes.value = ImportStatus.Finished;
     }
-    statusImportingLikes.value = ImportStatus.Finished;
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
-    // Import DM groups
-    statusImportingDMGroups.value = ImportStatus.Active;
-    const dmGroupsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dmGroups');
-    dmGroupCountString.value = createCountString(dmGroupsResp.importCount, dmGroupsResp.skipCount);
-    if (dmGroupsResp.status == 'error') {
-        statusImportingDMGroups.value = ImportStatus.Failed;
-        errorMessage.value = dmGroupsResp.errorMessage;
-        importFailed.value = true;
-        return;
-    }
-    statusImportingDMGroups.value = ImportStatus.Finished;
-    emitter.emit(`x-update-database-stats-${props.model.account.id}`);
+    // // Import DM groups
+    // statusImportingDMGroups.value = ImportStatus.Active;
+    // const dmGroupsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dmGroups');
+    // dmGroupCountString.value = createCountString(dmGroupsResp.importCount, dmGroupsResp.skipCount);
+    // if (dmGroupsResp.status == 'error') {
+    //     statusImportingDMGroups.value = ImportStatus.Failed;
+    //     errorMessages.value.push(dmGroupsResp.errorMessage);
+    //     importFailed.value = true;
+    // } else {
+    //     statusImportingDMGroups.value = ImportStatus.Finished;
+    // }
+    // emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
-    // Import DMs
-    statusImportingDMs.value = ImportStatus.Active;
-    const dmsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dms');
-    dmCountString.value = createCountString(dmsResp.importCount, dmsResp.skipCount);
-    if (dmsResp.status == 'error') {
-        statusImportingDMs.value = ImportStatus.Failed;
-        errorMessage.value = dmsResp.errorMessage;
-        importFailed.value = true;
-        return;
-    }
-    statusImportingDMs.value = ImportStatus.Finished;
-    emitter.emit(`x-update-database-stats-${props.model.account.id}`);
+    // // Import DMs
+    // statusImportingDMs.value = ImportStatus.Active;
+    // const dmsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dms');
+    // dmCountString.value = createCountString(dmsResp.importCount, dmsResp.skipCount);
+    // if (dmsResp.status == 'error') {
+    //     statusImportingDMs.value = ImportStatus.Failed;
+    //     errorMessages.value.push(dmsResp.errorMessage);
+    //     importFailed.value = true;
+    // } else {
+    //     statusImportingDMs.value = ImportStatus.Finished;
+    // }
+    // emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
     // Build Cyd archive
     statusBuildCydArchive.value = ImportStatus.Active;
@@ -117,7 +118,7 @@ const startClicked = async () => {
         await window.electron.X.archiveBuild(props.model.account.id);
     } catch (e) {
         statusBuildCydArchive.value = ImportStatus.Failed;
-        errorMessage.value = `${e}`;
+        errorMessages.value.push(`${e}`);
         importFailed.value = true;
         return;
     }
@@ -125,9 +126,10 @@ const startClicked = async () => {
     statusBuildCydArchive.value = ImportStatus.Finished;
 
     // Success
-    await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
-
-    importFinished.value = true;
+    if (!importFailed.value) {
+        await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
+        importFinished.value = true;
+    }
 };
 
 const importFromArchiveBrowserClicked = async () => {
@@ -140,7 +142,7 @@ const importFromArchiveBrowserClicked = async () => {
 // Keep track of import status
 
 const importFromArchivePath = ref('');
-const errorMessage = ref('');
+const errorMessages = ref();
 
 const importStarted = ref(false);
 const importFinished = ref(false);
@@ -156,14 +158,14 @@ enum ImportStatus {
 const statusValidating = ref(ImportStatus.Pending);
 const statusImportingTweets = ref(ImportStatus.Pending);
 const statusImportingLikes = ref(ImportStatus.Pending);
-const statusImportingDMGroups = ref(ImportStatus.Pending);
-const statusImportingDMs = ref(ImportStatus.Pending);
+// const statusImportingDMGroups = ref(ImportStatus.Pending);
+// const statusImportingDMs = ref(ImportStatus.Pending);
 const statusBuildCydArchive = ref(ImportStatus.Pending);
 
 const tweetCountString = ref('');
 const likeCountString = ref('');
-const dmGroupCountString = ref('');
-const dmCountString = ref('');
+// const dmGroupCountString = ref('');
+// const dmCountString = ref('');
 
 const iconFromStatus = (status: ImportStatus) => {
     switch (status) {
@@ -236,7 +238,7 @@ const iconFromStatus = (status: ImportStatus) => {
                         ({{ likeCountString }})
                     </span>
                 </li>
-                <li :class="statusImportingDMGroups == ImportStatus.Pending ? 'text-muted' : ''">
+                <!-- <li :class="statusImportingDMGroups == ImportStatus.Pending ? 'text-muted' : ''">
                     <i :class="['fa', iconFromStatus(statusImportingDMGroups)]" />
                     Importing direct message groups
                     <span v-if="dmGroupCountString != ''" class="text-muted">
@@ -249,7 +251,7 @@ const iconFromStatus = (status: ImportStatus) => {
                     <span v-if="dmCountString != ''" class="text-muted">
                         ({{ dmCountString }})
                     </span>
-                </li>
+                </li> -->
                 <li :class="statusBuildCydArchive == ImportStatus.Pending ? 'text-muted' : ''">
                     <i :class="['fa', iconFromStatus(statusBuildCydArchive)]" />
                     Build Cyd archive
@@ -269,7 +271,8 @@ const iconFromStatus = (status: ImportStatus) => {
                 </div>
             </template>
             <template v-if="importFailed">
-                <div class="alert alert-danger mt-3">
+                <div v-for="errorMessage in errorMessages" :key="errorMessage"
+                    class="alert alert-danger mt-3 text-break">
                     <strong>Import failed.</strong> {{ errorMessage }}
                 </div>
                 <div class="buttons">

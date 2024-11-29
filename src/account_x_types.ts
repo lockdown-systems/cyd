@@ -344,37 +344,49 @@ export interface XArchiveAccount {
     }
 }
 
+export function isXArchiveTweetContainer(item: XArchiveTweet | XArchiveTweetContainer): item is XArchiveTweetContainer {
+    return (item as XArchiveTweetContainer).tweet !== undefined;
+}
+
 export interface XArchiveTweet {
-    tweet: {
-        edit_info: any;
-        retweeted: boolean;
-        source: string;
-        entities: any;
-        display_text_range: any;
-        favorite_count: number;
-        in_reply_to_status_id_str?: string;
-        id_str: string;
-        in_reply_to_user_id?: string;
-        truncated: boolean;
-        retweet_count: number;
-        id: string;
-        in_reply_to_status_id?: string;
-        possibly_sensitive?: boolean;
-        created_at: string;
-        favorited: boolean;
-        full_text: string;
-        lang: string;
-        in_reply_to_screen_name?: string;
-        in_reply_to_user_id_str?: string;
-    }
+    edit_info: any;
+    retweeted: boolean;
+    source: string;
+    entities: any;
+    display_text_range: any;
+    favorite_count: number;
+    in_reply_to_status_id_str?: string;
+    id_str: string;
+    in_reply_to_user_id?: string;
+    truncated: boolean;
+    retweet_count: number;
+    id: string;
+    in_reply_to_status_id?: string;
+    possibly_sensitive?: boolean;
+    created_at: string;
+    favorited: boolean;
+    full_text: string;
+    lang: string;
+    in_reply_to_screen_name?: string;
+    in_reply_to_user_id_str?: string;
+}
+
+export interface XArchiveTweetContainer {
+    tweet: XArchiveTweet;
+}
+
+export function isXArchiveLikeContainer(item: XArchiveLike | XArchiveLikeContainer): item is XArchiveLikeContainer {
+    return (item as XArchiveLikeContainer).like !== undefined;
 }
 
 export interface XArchiveLike {
-    like: {
-        tweetId: string;
-        fullText: string;
-        expandedUrl: string;
-    }
+    tweetId: string;
+    fullText: string;
+    expandedUrl: string;
+}
+
+export interface XArchiveLikeContainer {
+    like: XArchiveLike;
 }
 
 export interface XArchiveDMMessage {
