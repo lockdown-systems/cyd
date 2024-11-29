@@ -329,7 +329,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -342,7 +342,7 @@ export class BaseViewModel {
             return lastEl.disabled;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -361,7 +361,7 @@ export class BaseViewModel {
             return innerEls.length;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -484,7 +484,7 @@ export class BaseViewModel {
                 break;
             }
 
-            await this.sleep(500);
+            await this.sleep(250);
         }
     }
 
@@ -564,7 +564,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -579,7 +579,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -599,7 +599,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -616,7 +616,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -633,7 +633,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -646,7 +646,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -661,7 +661,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
@@ -681,7 +681,7 @@ export class BaseViewModel {
             return true;
         })()
         `;
-        await this.sleep(500);
+        await this.sleep(250);
         return await this.getWebview()?.executeJavaScript(code);
     }
 
