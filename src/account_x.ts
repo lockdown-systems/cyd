@@ -1827,7 +1827,10 @@ export class XAccountController {
                     } else {
                         // Import it
                         const url = new URL(like.expandedUrl);
-                        const path = url.pathname + url.search + url.hash;
+                        let path = url.pathname + url.search + url.hash;
+                        if (path.startsWith('/')) {
+                            path = path.substring(1);
+                        }
                         exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
                             like.tweetId,
                             1,
