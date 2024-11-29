@@ -69,7 +69,7 @@ const onRemoveClicked = () => {
 
 <style scoped>
 .account-header {
-    margin-left: -15px;
+    margin-left: -3px;
     margin-right: -12px;
     padding: 3px 10px;
     background-color: #3f5f8b;

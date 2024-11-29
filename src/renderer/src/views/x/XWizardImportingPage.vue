@@ -269,7 +269,7 @@ const iconFromStatus = (status: ImportStatus) => {
                 </div>
             </template>
             <template v-if="importFailed">
-                <div class="alert alert-danger mt-3">
+                <div class="alert alert-danger mt-3 text-break">
                     <strong>Import failed.</strong> {{ errorMessage }}
                 </div>
                 <div class="buttons">

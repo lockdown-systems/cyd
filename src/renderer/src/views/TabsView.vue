@@ -254,7 +254,7 @@ onUnmounted(async () => {
 
 <template>
   <div class="container-fluid">
-    <div class="row">
+    <div class="d-flex">
       <div class="sidebar col-auto d-flex flex-column gap-2">
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
           <AccountButton v-for="account in accounts" :key="account.id"
@@ -333,7 +333,7 @@ onUnmounted(async () => {
         </div>
       </div>
 
-      <div class="main-content col">
+      <div class="main-content col flex-grow-1">
         <!-- Accounts -->
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
           :class="{ 'hide': hideAllAccounts || activeAccountID !== account.id }" @account-selected="accountSelected"

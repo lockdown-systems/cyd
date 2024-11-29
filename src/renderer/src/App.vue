@@ -389,6 +389,10 @@ body {
   font-size: .875em;
 }
 
+.alert {
+  overflow: auto;
+}
+
 /* Headers */
 h1 {
   font-size: 1.5rem;
