@@ -110,6 +110,9 @@ onMounted(async () => {
                         <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
                         that are older than {{ model.account?.xAccount?.deleteLikesDaysOld }} days
                     </li>
+                    <li v-if="model.account?.xAccount?.unfollowEveryone">
+                        <b>Unfollow everyone</b>
+                    </li>
                     <li v-if="model.account?.xAccount?.deleteDMs">
                         <b>All of your direct messages</b>
                     </li>

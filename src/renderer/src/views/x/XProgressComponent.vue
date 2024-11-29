@@ -214,6 +214,17 @@ onUnmounted(() => {
                 </p>
             </template>
 
+            <!-- Unfollow everyone -->
+            <template v-if="progress.currentJob == 'unfollowEveryone'">
+                <p>
+                    Unfollowed
+                    <b>{{ progress.accountsUnfollowed.toLocaleString() }} accounts</b>.
+                    <template v-if="progress.isUnfollowEveryoneFinished">
+                        Finished unfollowing everyone!
+                    </template>
+                </p>
+            </template>
+
             <!-- Build archive -->
             <template v-if="progress.currentJob == 'archiveBuild'">
                 <p>Building archive website</p>

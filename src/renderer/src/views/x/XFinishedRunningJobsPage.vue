@@ -119,6 +119,10 @@ onMounted(async () => {
                         <strong>{{ model.progress.conversationsDeleted.toLocaleString() }}</strong> direct
                         message conversations
                     </li>
+                    <li v-if="model.account.xAccount?.unfollowEveryone">
+                        <i class="fa-solid fa-fire delete-bullet" />
+                        Unfollowed <strong>{{ model.progress.accountsUnfollowed.toLocaleString() }}</strong> accounts
+                    </li>
                 </ul>
             </div>
         </div>
