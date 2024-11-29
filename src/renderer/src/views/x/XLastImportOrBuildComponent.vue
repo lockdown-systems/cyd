@@ -40,7 +40,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div v-if="lastImportArchive || lastBuildDatabase" class="alert alert-light small text-center" role="alert">
+    <div class="alert alert-light small text-center" role="alert">
         <div v-if="lastImportArchive">
             You last imported your X archive {{ formatDistanceToNow(lastImportArchive, {
                 addSuffix: true
@@ -51,6 +51,10 @@ onMounted(async () => {
                 formatDistanceToNow(lastBuildDatabase, {
                     addSuffix: true
                 }) }}.
+        </div>
+        <div v-if="!lastImportArchive && !lastBuildDatabase">
+            Cyd can unfollow everyone and delete your direct messages right away. You'll need to import or build your
+            database to delete your tweets though.
         </div>
         <button type="submit" class="btn btn-sm btn-link text-nowrap" @click="buttonClicked">
             {{ buttonText }}
