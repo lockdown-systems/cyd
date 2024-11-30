@@ -71,23 +71,23 @@ const loadSettings = async () => {
     if (account && account.xAccount) {
         deleteTweets.value = account.xAccount.deleteTweets;
         deleteTweetsDaysOld.value = account.xAccount.deleteTweetsDaysOld;
+        deleteTweetsDaysOldEnabled.value = account.xAccount.deleteTweetsDaysOldEnabled;
         deleteTweetsRetweetsThresholdEnabled.value = account.xAccount.deleteTweetsRetweetsThresholdEnabled;
         deleteTweetsRetweetsThreshold.value = account.xAccount.deleteTweetsRetweetsThreshold;
         deleteTweetsLikesThresholdEnabled.value = account.xAccount.deleteTweetsLikesThresholdEnabled;
         deleteTweetsLikesThreshold.value = account.xAccount.deleteTweetsLikesThreshold;
         deleteTweetsArchiveEnabled.value = account.xAccount.deleteTweetsArchiveEnabled;
         deleteRetweets.value = account.xAccount.deleteRetweets;
+        deleteRetweetsDaysOldEnabled.value = account.xAccount.deleteRetweetsDaysOldEnabled;
         deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
         deleteLikes.value = account.xAccount.deleteLikes;
+        deleteLikesDaysOldEnabled.value = account.xAccount.deleteLikesDaysOldEnabled;
         deleteLikesDaysOld.value = account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = account.xAccount.deleteDMs;
         unfollowEveryone.value = account.xAccount.unfollowEveryone;
     }
 
     // Should delete tweets show more options?
-    if (deleteTweets.value && deleteTweetsDaysOld.value > 0) {
-        deleteTweetsDaysOldEnabled.value = true;
-    }
     if (
         deleteTweets.value &&
         (
@@ -101,17 +101,11 @@ const loadSettings = async () => {
     }
 
     // Should delete retweets show more options?
-    if (deleteRetweets.value && deleteRetweetsDaysOld.value > 0) {
-        deleteRetweetsDaysOldEnabled.value = true;
-    }
     if (deleteRetweets.value && deleteRetweetsDaysOldEnabled.value) {
         deleteRetweetsShowMore.value = true;
     }
 
     // Should delete likes show more options?
-    if (deleteLikes.value && deleteLikesDaysOld.value > 0) {
-        deleteLikesDaysOldEnabled.value = true;
-    }
     if (deleteLikes.value && deleteLikesDaysOldEnabled.value) {
         deleteLikesShowMore.value = true;
     }
@@ -130,6 +124,7 @@ const saveSettings = async () => {
         account.xAccount.deleteMyData = true;
 
         account.xAccount.deleteTweets = deleteTweets.value;
+        account.xAccount.deleteTweetsDaysOldEnabled = deleteTweetsDaysOldEnabled.value;
         account.xAccount.deleteTweetsDaysOld = deleteTweetsDaysOld.value;
         account.xAccount.deleteTweetsRetweetsThresholdEnabled = deleteTweetsRetweetsThresholdEnabled.value;
         account.xAccount.deleteTweetsRetweetsThreshold = deleteTweetsRetweetsThreshold.value;
@@ -137,8 +132,10 @@ const saveSettings = async () => {
         account.xAccount.deleteTweetsLikesThreshold = deleteTweetsLikesThreshold.value;
         account.xAccount.deleteTweetsArchiveEnabled = deleteTweetsArchiveEnabled.value;
         account.xAccount.deleteRetweets = deleteRetweets.value;
+        account.xAccount.deleteRetweetsDaysOldEnabled = deleteRetweetsDaysOldEnabled.value;
         account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
         account.xAccount.deleteLikes = deleteLikes.value;
+        account.xAccount.deleteLikesDaysOldEnabled = deleteLikesDaysOldEnabled.value;
         account.xAccount.deleteLikesDaysOld = deleteLikesDaysOld.value;
         account.xAccount.deleteDMs = deleteDMs.value;
         account.xAccount.unfollowEveryone = unfollowEveryone.value;
