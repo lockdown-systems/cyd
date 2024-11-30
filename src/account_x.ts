@@ -1727,7 +1727,7 @@ export class XAccountController {
             if (tweetsFilenames.length === 0) {
                 return {
                     status: "error",
-                    errorMessage: "No tweet files found",
+                    errorMessage: "No tweets files found",
                     importCount: importCount,
                     skipCount: skipCount,
                 };
@@ -1800,65 +1800,83 @@ export class XAccountController {
 
         // Import likes
         else if (dataType == "likes") {
-            // Load the data
-            const likesPath = path.join(archivePath, "data", "like.js");
-            let likesData: XArchiveLike[] | XArchiveLikeContainer[];
-            try {
-                const likesFile = fs.readFileSync(likesPath, 'utf8');
-                likesData = JSON.parse(likesFile.slice(likesFile.indexOf('[')));
-            } catch (e) {
+            const likesFilenames = await glob(
+                [
+                    path.join(archivePath, "data", "like.js"),
+                    path.join(archivePath, "data", "likes.js"),
+                    path.join(archivePath, "data", "like-part*.js"),
+                    path.join(archivePath, "data", "likes-part*.js")
+                ]
+            );
+            if (likesFilenames.length === 0) {
                 return {
                     status: "error",
-                    errorMessage: "Error parsing JSON in like.js",
+                    errorMessage: "No likes files found",
                     importCount: importCount,
                     skipCount: skipCount,
                 };
             }
 
-            // Loop through the likes and add them to the database
-            try {
-                likesData.forEach((likeContainer) => {
-                    let like: XArchiveLike;
-                    if (isXArchiveLikeContainer(likeContainer)) {
-                        like = likeContainer.like;
-                    } else {
-                        like = likeContainer;
-                    }
+            for (let i = 0; i < likesFilenames.length; i++) {
+                // Load the data
+                let likesData: XArchiveLike[] | XArchiveLikeContainer[];
+                try {
+                    const likesFile = fs.readFileSync(likesFilenames[i], 'utf8');
+                    likesData = JSON.parse(likesFile.slice(likesFile.indexOf('[')));
+                } catch (e) {
+                    return {
+                        status: "error",
+                        errorMessage: "Error parsing JSON in like.js",
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
 
-                    // Is this like already there?
-                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [like.tweetId], "get") as XTweetRow;
-                    if (existingTweet) {
-                        if (existingTweet.isLiked) {
-                            skipCount++;
+                // Loop through the likes and add them to the database
+                try {
+                    likesData.forEach((likeContainer) => {
+                        let like: XArchiveLike;
+                        if (isXArchiveLikeContainer(likeContainer)) {
+                            like = likeContainer.like;
                         } else {
-                            // Set isLiked to true
-                            exec(this.db, 'UPDATE tweet SET isLiked = ? WHERE tweetID = ?', [1, like.tweetId]);
+                            like = likeContainer;
+                        }
+
+                        // Is this like already there?
+                        const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [like.tweetId], "get") as XTweetRow;
+                        if (existingTweet) {
+                            if (existingTweet.isLiked) {
+                                skipCount++;
+                            } else {
+                                // Set isLiked to true
+                                exec(this.db, 'UPDATE tweet SET isLiked = ? WHERE tweetID = ?', [1, like.tweetId]);
+                                importCount++;
+                            }
+                        } else {
+                            // Import it
+                            const url = new URL(like.expandedUrl);
+                            let path = url.pathname + url.search + url.hash;
+                            if (path.startsWith('/')) {
+                                path = path.substring(1);
+                            }
+                            exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                                like.tweetId,
+                                1,
+                                like.fullText,
+                                path,
+                                new Date(),
+                            ]);
                             importCount++;
                         }
-                    } else {
-                        // Import it
-                        const url = new URL(like.expandedUrl);
-                        let path = url.pathname + url.search + url.hash;
-                        if (path.startsWith('/')) {
-                            path = path.substring(1);
-                        }
-                        exec(this.db, 'INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
-                            like.tweetId,
-                            1,
-                            like.fullText,
-                            path,
-                            new Date(),
-                        ]);
-                        importCount++;
-                    }
-                });
-            } catch (e) {
-                return {
-                    status: "error",
-                    errorMessage: "Error importing tweets: " + e,
-                    importCount: importCount,
-                    skipCount: skipCount,
-                };
+                    });
+                } catch (e) {
+                    return {
+                        status: "error",
+                        errorMessage: "Error importing tweets: " + e,
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
             }
 
             return {
