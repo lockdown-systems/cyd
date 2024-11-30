@@ -7,6 +7,7 @@ import unzipper from 'unzipper';
 import { app, ipcMain, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
+import { glob } from 'glob';
 
 import {
     getResourcesPath,
@@ -1715,74 +1716,71 @@ export class XAccountController {
 
         // Import tweets
         if (dataType == "tweets") {
-            // Tweets data should be in tweets.js
-            let tweetsPath = path.join(archivePath, "data", "tweets.js");
-            if (!fs.existsSync(tweetsPath)) {
-                // Old X archives might put it in tweet.js
-                tweetsPath = path.join(archivePath, "data", "tweet.js");
-                if (!fs.existsSync(tweetsPath)) {
+            const tweetsFilenames = await glob(path.join(archivePath, "data", "tweet*.js"));
+            if (tweetsFilenames.length === 0) {
+                return {
+                    status: "error",
+                    errorMessage: "No tweet files found",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            for (let i = 0; i < tweetsFilenames.length; i++) {
+                // Load the data
+                // New archives use XArchiveTweetContainer[], old archives use XArchiveTweet[]
+                let tweetsData: XArchiveTweet[] | XArchiveTweetContainer[];
+                try {
+                    const tweetsFile = fs.readFileSync(tweetsFilenames[i], 'utf8');
+                    tweetsData = JSON.parse(tweetsFile.slice(tweetsFile.indexOf('[')));
+                } catch (e) {
                     return {
                         status: "error",
-                        errorMessage: "tweets.js not found",
+                        errorMessage: "Error parsing JSON in tweets.js",
                         importCount: importCount,
                         skipCount: skipCount,
                     };
                 }
-            }
 
-            // Load the data
-            // New archives use XArchiveTweetContainer[], old archives use XArchiveTweet[]
-            let tweetsData: XArchiveTweet[] | XArchiveTweetContainer[];
-            try {
-                const tweetsFile = fs.readFileSync(tweetsPath, 'utf8');
-                tweetsData = JSON.parse(tweetsFile.slice(tweetsFile.indexOf('[')));
-            } catch (e) {
-                return {
-                    status: "error",
-                    errorMessage: "Error parsing JSON in tweets.js",
-                    importCount: importCount,
-                    skipCount: skipCount,
-                };
-            }
+                // Loop through the tweets and add them to the database
+                try {
+                    tweetsData.forEach((tweetContainer) => {
+                        let tweet: XArchiveTweet;
+                        if (isXArchiveTweetContainer(tweetContainer)) {
+                            tweet = tweetContainer.tweet;
+                        } else {
+                            tweet = tweetContainer;
+                        }
 
-            // Loop through the tweets and add them to the database
-            try {
-                tweetsData.forEach((tweetContainer) => {
-                    let tweet: XArchiveTweet;
-                    if (isXArchiveTweetContainer(tweetContainer)) {
-                        tweet = tweetContainer.tweet;
-                    } else {
-                        tweet = tweetContainer;
-                    }
-
-                    // Is this tweet already there?
-                    const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
-                    if (existingTweet) {
-                        skipCount++;
-                    } else {
-                        // Import it
-                        exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                            username,
-                            tweet.id_str,
-                            new Date(tweet.created_at),
-                            tweet.favorite_count,
-                            tweet.retweet_count,
-                            tweet.favorited ? 1 : 0,
-                            tweet.retweeted ? 1 : 0,
-                            tweet.full_text,
-                            `${username}/status/${tweet.id_str}`,
-                            new Date(),
-                        ]);
-                        importCount++;
-                    }
-                });
-            } catch (e) {
-                return {
-                    status: "error",
-                    errorMessage: "Error importing tweets: " + e,
-                    importCount: importCount,
-                    skipCount: skipCount,
-                };
+                        // Is this tweet already there?
+                        const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
+                        if (existingTweet) {
+                            skipCount++;
+                        } else {
+                            // Import it
+                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                                username,
+                                tweet.id_str,
+                                new Date(tweet.created_at),
+                                tweet.favorite_count,
+                                tweet.retweet_count,
+                                tweet.favorited ? 1 : 0,
+                                tweet.retweeted ? 1 : 0,
+                                tweet.full_text,
+                                `${username}/status/${tweet.id_str}`,
+                                new Date(),
+                            ]);
+                            importCount++;
+                        }
+                    });
+                } catch (e) {
+                    return {
+                        status: "error",
+                        errorMessage: "Error importing tweets: " + e,
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
             }
 
             return {
