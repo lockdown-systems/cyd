@@ -8,6 +8,7 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 import { XImportArchiveResponse } from '../../../../shared_types'
+import RunningIcon from '../shared_components/RunningIcon.vue'
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -86,32 +87,6 @@ const startClicked = async () => {
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
-    // // Import DM groups
-    // statusImportingDMGroups.value = ImportStatus.Active;
-    // const dmGroupsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dmGroups');
-    // dmGroupCountString.value = createCountString(dmGroupsResp.importCount, dmGroupsResp.skipCount);
-    // if (dmGroupsResp.status == 'error') {
-    //     statusImportingDMGroups.value = ImportStatus.Failed;
-    //     errorMessages.value.push(dmGroupsResp.errorMessage);
-    //     importFailed.value = true;
-    // } else {
-    //     statusImportingDMGroups.value = ImportStatus.Finished;
-    // }
-    // emitter.emit(`x-update-database-stats-${props.model.account.id}`);
-
-    // // Import DMs
-    // statusImportingDMs.value = ImportStatus.Active;
-    // const dmsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'dms');
-    // dmCountString.value = createCountString(dmsResp.importCount, dmsResp.skipCount);
-    // if (dmsResp.status == 'error') {
-    //     statusImportingDMs.value = ImportStatus.Failed;
-    //     errorMessages.value.push(dmsResp.errorMessage);
-    //     importFailed.value = true;
-    // } else {
-    //     statusImportingDMs.value = ImportStatus.Finished;
-    // }
-    // emitter.emit(`x-update-database-stats-${props.model.account.id}`);
-
     // Build Cyd archive
     statusBuildCydArchive.value = ImportStatus.Active;
     try {
@@ -158,21 +133,15 @@ enum ImportStatus {
 const statusValidating = ref(ImportStatus.Pending);
 const statusImportingTweets = ref(ImportStatus.Pending);
 const statusImportingLikes = ref(ImportStatus.Pending);
-// const statusImportingDMGroups = ref(ImportStatus.Pending);
-// const statusImportingDMs = ref(ImportStatus.Pending);
 const statusBuildCydArchive = ref(ImportStatus.Pending);
 
 const tweetCountString = ref('');
 const likeCountString = ref('');
-// const dmGroupCountString = ref('');
-// const dmCountString = ref('');
 
 const iconFromStatus = (status: ImportStatus) => {
     switch (status) {
         case ImportStatus.Pending:
             return 'fa-solid fa-ellipsis text-primary';
-        case ImportStatus.Active:
-            return 'fa-solid fa-hourglass-half';
         case ImportStatus.Finished:
             return 'fa-solid fa-square-check text-success';
         case ImportStatus.Failed:
@@ -221,39 +190,41 @@ const iconFromStatus = (status: ImportStatus) => {
         <template v-else>
             <ul class="import-status">
                 <li :class="statusValidating == ImportStatus.Pending ? 'text-muted' : ''">
-                    <i :class="['fa', iconFromStatus(statusValidating)]" />
+                    <i v-if="statusValidating != ImportStatus.Active"
+                        :class="['fa', iconFromStatus(statusValidating)]" />
+                    <i v-else>
+                        <RunningIcon />
+                    </i>
                     Validating X archive
                 </li>
                 <li :class="statusImportingTweets == ImportStatus.Pending ? 'text-muted' : ''">
-                    <i :class="['fa', iconFromStatus(statusImportingTweets)]" />
+                    <i v-if="statusImportingTweets != ImportStatus.Active"
+                        :class="['fa', iconFromStatus(statusImportingTweets)]" />
+                    <i v-else>
+                        <RunningIcon />
+                    </i>
                     Importing tweets
                     <span v-if="tweetCountString != ''" class="text-muted">
                         ({{ tweetCountString }})
                     </span>
                 </li>
                 <li :class="statusImportingLikes == ImportStatus.Pending ? 'text-muted' : ''">
-                    <i :class="['fa', iconFromStatus(statusImportingLikes)]" />
+                    <i v-if="statusImportingLikes != ImportStatus.Active"
+                        :class="['fa', iconFromStatus(statusImportingLikes)]" />
+                    <i v-else>
+                        <RunningIcon />
+                    </i>
                     Importing likes
                     <span v-if="likeCountString != ''" class="text-muted">
                         ({{ likeCountString }})
                     </span>
                 </li>
-                <!-- <li :class="statusImportingDMGroups == ImportStatus.Pending ? 'text-muted' : ''">
-                    <i :class="['fa', iconFromStatus(statusImportingDMGroups)]" />
-                    Importing direct message groups
-                    <span v-if="dmGroupCountString != ''" class="text-muted">
-                        ({{ dmGroupCountString }})
-                    </span>
-                </li>
-                <li :class="statusImportingDMs == ImportStatus.Pending ? 'text-muted' : ''">
-                    <i :class="['fa', iconFromStatus(statusImportingDMs)]" />
-                    Importing one-to-one direct messages
-                    <span v-if="dmCountString != ''" class="text-muted">
-                        ({{ dmCountString }})
-                    </span>
-                </li> -->
                 <li :class="statusBuildCydArchive == ImportStatus.Pending ? 'text-muted' : ''">
-                    <i :class="['fa', iconFromStatus(statusBuildCydArchive)]" />
+                    <i v-if="statusBuildCydArchive != ImportStatus.Active"
+                        :class="['fa', iconFromStatus(statusBuildCydArchive)]" />
+                    <i v-else>
+                        <RunningIcon />
+                    </i>
                     Build Cyd archive
                 </li>
             </ul>
