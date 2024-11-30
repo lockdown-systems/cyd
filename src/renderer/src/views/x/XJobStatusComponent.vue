@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import type { XJob } from '../../../../shared_types';
+import RunningIcon from '../shared_components/RunningIcon.vue'
 
 defineProps<{
     jobs: XJob[],
@@ -8,15 +8,6 @@ defineProps<{
 }>();
 
 const emit = defineEmits(['onPause', 'onResume', 'onCancel', 'onReportBug']);
-
-const runningIconIndex = ref(0);
-const runningIcons = [
-    'fa-solid fa-hourglass-start',
-    'fa-solid fa-hourglass-half',
-    'fa-solid fa-hourglass-end'
-];
-
-const runningIcon = computed(() => runningIcons[runningIconIndex.value]);
 
 const getStatusIcon = (status: string) => {
     const statusIcons: { [key: string]: string } = {
@@ -45,21 +36,6 @@ const getJobTypeText = (jobType: string) => {
     };
     return jobTypeTexts[jobType] || jobType;
 };
-
-const cycleRunningIcon = () => {
-    runningIconIndex.value = (runningIconIndex.value + 1) % runningIcons.length;
-};
-
-let runningIconInterval: number | undefined;
-
-onMounted(() => {
-    // @ts-expect-error intervalID is a NodeJS.Interval, not a number
-    runningIconInterval = setInterval(cycleRunningIcon, 1000);
-});
-
-onBeforeUnmount(() => {
-    clearInterval(runningIconInterval);
-});
 </script>
 
 <template>
@@ -68,7 +44,7 @@ onBeforeUnmount(() => {
             <div class="status-icon me-2">
                 <i v-if="job.status !== 'running'" :class="getStatusIcon(job.status)" />
                 <i v-else-if="isPaused" class="fa-solid fa-pause" />
-                <i v-else :class="runningIcon" />
+                <RunningIcon v-else />
             </div>
             <div class="job-type">
                 {{ getJobTypeText(job.jobType) }}
