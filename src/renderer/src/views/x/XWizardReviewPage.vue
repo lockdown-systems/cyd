@@ -77,7 +77,6 @@ onMounted(async () => {
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
                     Delete my data
-                    <span class="premium badge badge-primary">Premium</span>
                 </h3>
                 <ul>
                     <li v-if="model.account?.xAccount?.deleteTweets">
