@@ -255,10 +255,8 @@ export type XDatabaseStats = {
     retweetsDeleted: number;
     likesSaved: number;
     likesDeleted: number;
-    conversationsSaved: number;
     conversationsDeleted: number;
-    messagesSaved: number;
-    messagesDeleted: number;
+    accountsUnfollowed: number;
 }
 
 export function emptyXDatabaseStats(): XDatabaseStats {
@@ -269,10 +267,8 @@ export function emptyXDatabaseStats(): XDatabaseStats {
         retweetsDeleted: 0,
         likesSaved: 0,
         likesDeleted: 0,
-        conversationsSaved: 0,
         conversationsDeleted: 0,
-        messagesSaved: 0,
-        messagesDeleted: 0
+        accountsUnfollowed: 0
     }
 }
 

@@ -175,6 +175,26 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
+                <div v-if="databaseStats.conversationsDeleted > 0" class="col-12 col-md-6">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            Conversations Deleted
+                        </div>
+                        <div class="card-body">
+                            <h1>{{ formatStatsNumber(databaseStats.conversationsDeleted) }}</h1>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="databaseStats.accountsUnfollowed > 0" class="col-12 col-md-6">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            Accounts Unfollowed
+                        </div>
+                        <div class="card-body">
+                            <h1>{{ formatStatsNumber(databaseStats.accountsUnfollowed) }}</h1>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
