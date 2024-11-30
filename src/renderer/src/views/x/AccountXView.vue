@@ -165,6 +165,10 @@ const onAutomationErrorResume = () => {
 
 const onCancelAutomation = () => {
     console.log('Cancelling automation');
+
+    // Submit progress to the API
+    emitter.value.emit(`x-submit-progress-${props.account.id}`);
+
     emit('onRefreshClicked');
 };
 

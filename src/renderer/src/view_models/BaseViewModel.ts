@@ -207,6 +207,9 @@ export class BaseViewModel {
     async error(automationErrorType: AutomationErrorType, errorReportData: any = null, sensitiveContextData: any = null) {
         console.error(`Automation Error: ${automationErrorType}`, errorReportData, sensitiveContextData);
 
+        // Submit progress to the API
+        this.emitter?.emit(`x-submit-progress-${this.account?.id}`);
+
         await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_OCCURED, navigator.userAgent);
         const webview = this.getWebview();
 
