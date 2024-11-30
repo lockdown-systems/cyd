@@ -8,6 +8,7 @@ import {
 const props = defineProps<{
     accountID: number;
     buttonText: string;
+    buttonTextNoData: string;
     buttonState: State;
 }>();
 
@@ -57,7 +58,12 @@ onMounted(async () => {
             database to delete your tweets though.
         </div>
         <button type="submit" class="btn btn-sm btn-link text-nowrap" @click="buttonClicked">
-            {{ buttonText }}
+            <template v-if="lastImportArchive || lastBuildDatabase">
+                {{ buttonText }}
+            </template>
+            <template v-else>
+                {{ buttonTextNoData }}
+            </template>
         </button>
     </div>
 </template>

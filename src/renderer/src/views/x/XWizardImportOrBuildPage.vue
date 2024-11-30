@@ -69,7 +69,8 @@ onMounted(() => {
             </p>
 
             <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
-                :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)" />
+                :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
+                @set-state="emit('setState', $event)" />
 
             <form @submit.prevent>
                 <!-- import archive recommended -->
