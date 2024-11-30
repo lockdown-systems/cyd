@@ -109,8 +109,8 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`,
                 `ALTER TABLE xAccount ADD COLUMN followingCount INTEGER DEFAULT 0;`,
                 `ALTER TABLE xAccount ADD COLUMN followersCount INTEGER DEFAULT 0;`,
-                `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT 0;`,
-                `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT 0;`,
+                `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT -1;`,
+                `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT -1;`,
             ]
         },
         // Add unfollowEveryone to xAccount

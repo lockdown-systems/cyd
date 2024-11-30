@@ -374,8 +374,8 @@ onUnmounted(async () => {
 
 <template>
     <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
-        <AccountHeader :account="account" :show-refresh-button="currentState != State.WizardStartDisplay"
-            @on-refresh-clicked="emit('onRefreshClicked')" @on-remove-clicked="emit('onRemoveClicked')" />
+        <AccountHeader :account="account" :show-refresh-button="true" @on-refresh-clicked="emit('onRefreshClicked')"
+            @on-remove-clicked="emit('onRemoveClicked')" />
 
         <div class="d-flex">
             <div class="d-flex flex-column flex-grow-1">
@@ -477,7 +477,7 @@ onUnmounted(async () => {
                 </div>
 
                 <!-- wizard side bar -->
-                <XWizardSidebar :model="unref(model)" @set-state="setState($event)" @start-state-loop="startStateLoop"
+                <XWizardSidebar :model="unref(model)" @set-state="setState($event)"
                     @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
             </div>
         </div>

@@ -549,9 +549,12 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get user stats
         const account: XAccount = await window.electron.X.indexParseAllJSON(this.account?.id);
+        this.account.xAccount = account;
         this.emitter?.emit("account-updated");
 
         this.log("loadUserStats", `${account.tweetsCount} tweets, ${account.likesCount} likes, ${account.followingCount} following, ${account.followersCount} followers`);
+
+        await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'false');
 
         await this.waitForPause();
     }
@@ -1523,6 +1526,9 @@ Hang on while I scroll down to your earliest likes.`;
     async runJobDeleteTweets(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
 
+        // After this job, we want to reload the user stats
+        await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
+
         let tries: number, success: boolean;
         let error: Error | null = null;
         let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
@@ -1807,6 +1813,9 @@ Hang on while I scroll down to your earliest likes.`;
 
     async runJobDeleteLikes(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_LIKES, navigator.userAgent);
+
+        // After this job, we want to reload the user stats
+        await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
 
         let tweetsToDelete: XDeleteTweetsStartResponse;
         let alreadyDeleted = false;
@@ -2347,7 +2356,14 @@ Follow the instructions below to request your archive from X. You will need to v
                     break;
 
                 case State.WizardPrestart:
-                    await this.loadUserStats();
+                    // Only load user stats if we don't know them yet, or if there's a config telling us to
+                    if (
+                        this.account.xAccount?.tweetsCount === -1 ||
+                        this.account.xAccount?.likesCount === -1 ||
+                        await window.electron.X.getConfig(this.account?.id, 'reloadUserStats') == "true"
+                    ) {
+                        await this.loadUserStats();
+                    }
                     this.state = State.WizardStart;
                     break;
 

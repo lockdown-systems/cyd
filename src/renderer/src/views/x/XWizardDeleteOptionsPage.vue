@@ -124,7 +124,8 @@ onMounted(async () => {
         </div>
 
         <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Import or Build Database Again'"
-            :button-state="State.WizardImportOrBuild" @set-state="emit('setState', $event)" />
+            :button-text-no-data="'Import or Build Database First'" :button-state="State.WizardImportOrBuild"
+            @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>
             <div class="d-flex align-items-center">

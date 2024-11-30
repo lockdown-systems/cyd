@@ -474,6 +474,12 @@ export class XAccountController {
                         this.account.followersCount = user.followers_count;
                         this.account.tweetsCount = user.statuses_count;
                         this.account.likesCount = user.favourites_count;
+                        log.info('XAccountController.indexParseAllJSON: found the following data', {
+                            followingCount: this.account.followingCount,
+                            followersCount: this.account.followersCount,
+                            tweetsCount: this.account.tweetsCount,
+                            likesCount: this.account.likesCount
+                        });
                         saveXAccount(this.account);
                     }
                 });
