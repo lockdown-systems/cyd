@@ -2068,6 +2068,7 @@ Hang on while I scroll down to your earliest likes.`;
                 if (!errorTriggered) {
                     // Update progress
                     this.progress.conversationsDeleted += 1;
+                    await window.electron.X.setConfig(this.account?.id, 'totalConversationsDeleted', `${this.progress.conversationsDeleted}`);
                     break;
                 }
             }
@@ -2088,6 +2089,9 @@ Hang on while I scroll down to your earliest likes.`;
                 break;
             }
         }
+
+        // Submit progress to the API
+        this.emitter?.emit(`x-submit-progress-${this.account?.id}`);
 
         if (errorTriggered) {
             return false;
@@ -2227,6 +2231,7 @@ Follow the instructions below to request your archive from X. You will need to v
                 if (!errorTriggered) {
                     // Update progress
                     this.progress.accountsUnfollowed += 1;
+                    await window.electron.X.setConfig(this.account?.id, 'totalAccountsUnfollowed', `${this.progress.accountsUnfollowed}`);
 
                     // Increment the account index
                     accountToUnfollowIndex++;
@@ -2252,6 +2257,9 @@ Follow the instructions below to request your archive from X. You will need to v
                 break;
             }
         }
+
+        // Submit progress to the API
+        this.emitter?.emit(`x-submit-progress-${this.account?.id}`);
 
         if (errorTriggered) {
             return false;

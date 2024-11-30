@@ -62,6 +62,8 @@ export type PostXProgressAPIRequest = {
     total_tweets_deleted: number;
     total_retweets_deleted: number;
     total_likes_deleted: number;
+    total_conversations_deleted: number;
+    total_accounts_unfollowed: number;
 };
 
 // API models for GET /user/premium

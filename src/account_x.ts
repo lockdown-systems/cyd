@@ -1547,6 +1547,18 @@ export class XAccountController {
             "get"
         ) as Sqlite3Count;
 
+        const totalConversationsDeletedConfig: string | null = await this.getConfig("totalConversationsDeleted");
+        let totalConversationsDeleted: number = 0;
+        if (totalConversationsDeletedConfig) {
+            totalConversationsDeleted = parseInt(totalConversationsDeletedConfig);
+        }
+
+        const totalAccountsUnfollowedConfig: string | null = await this.getConfig("totalAccountsUnfollowed");
+        let totalAccountsUnfollowed: number = 0;
+        if (totalAccountsUnfollowedConfig) {
+            totalAccountsUnfollowed = parseInt(totalAccountsUnfollowedConfig);
+        }
+
         const progressInfo = emptyXProgressInfo();
         progressInfo.accountUUID = this.accountUUID;
         progressInfo.totalTweetsIndexed = totalTweetsIndexed.count;
@@ -1557,6 +1569,8 @@ export class XAccountController {
         progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
         progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
         progressInfo.totalLikesDeleted = totalLikesDeleted.count;
+        progressInfo.totalConversationsDeleted = totalConversationsDeleted;
+        progressInfo.totalAccountsUnfollowed = totalAccountsUnfollowed;
         return progressInfo;
     }
 

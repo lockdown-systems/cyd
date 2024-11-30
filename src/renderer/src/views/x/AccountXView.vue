@@ -236,6 +236,8 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
         total_tweets_deleted: progressInfo.totalTweetsDeleted,
         total_retweets_deleted: progressInfo.totalRetweetsDeleted,
         total_likes_deleted: progressInfo.totalLikesDeleted,
+        total_conversations_deleted: progressInfo.totalConversationsDeleted,
+        total_accounts_unfollowed: progressInfo.totalAccountsUnfollowed,
     }, deviceInfo.value?.valid ? true : false)
     if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
         // Silently log the error and continue
