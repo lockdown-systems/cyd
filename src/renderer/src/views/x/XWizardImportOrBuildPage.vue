@@ -32,7 +32,13 @@ const nextClicked = async () => {
 
 // Settings
 const buildDatabaseStrategy = ref('importArchive');
-const importArchiveRecommended = ref(true);
+
+enum RecommendedState {
+    ImportArchive,
+    BuildFromScratch,
+    Unknown
+}
+const recommendedState = ref(RecommendedState.Unknown);
 
 const showMoreText = ref("Show other options");
 const showMore = ref(false);
@@ -45,12 +51,21 @@ const showMoreClicked = () => {
 onMounted(() => {
     // If the user has a lot of data, recommend importing the archive
     if (props.model.account && props.model.account.xAccount) {
-        importArchiveRecommended.value = (
+        if (
+            props.model.account.xAccount.tweetsCount == -1 ||
+            props.model.account.xAccount.likesCount == -1
+        ) {
+            recommendedState.value = RecommendedState.Unknown;
+        } else if (
             props.model.account.xAccount.tweetsCount >= 1800 ||
             props.model.account.xAccount.likesCount >= 1800
-        );
+        ) {
+            recommendedState.value = RecommendedState.ImportArchive;
+        } else {
+            recommendedState.value = RecommendedState.BuildFromScratch;
+        }
     }
-    if (importArchiveRecommended.value) {
+    if (recommendedState.value == RecommendedState.ImportArchive || recommendedState.value == RecommendedState.Unknown) {
         buildDatabaseStrategy.value = 'importArchive';
     } else {
         buildDatabaseStrategy.value = 'buildFromScratch';
@@ -74,7 +89,7 @@ onMounted(() => {
 
             <form @submit.prevent>
                 <!-- import archive recommended -->
-                <template v-if="importArchiveRecommended">
+                <template v-if="recommendedState == RecommendedState.ImportArchive">
                     <div class="mb-3">
                         <div class="form-check">
                             <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
@@ -114,7 +129,7 @@ onMounted(() => {
                 </template>
 
                 <!-- build from scratch recommended -->
-                <template v-else>
+                <template v-else-if="recommendedState == RecommendedState.BuildFromScratch">
                     <div class="mb-3">
                         <div class="form-check">
                             <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
@@ -149,6 +164,45 @@ onMounted(() => {
                             <small>
                                 Importing your X archive will work great, but you'll need to wait at least a day for X
                                 to send it to you if you don't already have it.
+                            </small>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- unknown which is better -->
+                <template v-else>
+                    <div class="mb-3 mt-3">
+                        <div class="form-check">
+                            <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
+                                class="form-check-input">
+                            <label class="form-check-label" for="importArchive">
+                                Import X archive
+                                <span class="ms-2 text-muted">(recommended)</span>
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                Importing your X archive will work great, but you'll need to wait at least a day for X
+                                to send it to you if you don't already have it.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
+                                value="buildFromScratch" class="form-check-input">
+                            <label class="form-check-label" for="buildFromScratch">
+                                Build database from scratch
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                Having Cyd scroll through your profile is faster than importing your X archive, but it
+                                only works if you have less than about 2,000 tweets or likes.
+                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                    Read more
+                                </a>.
                             </small>
                         </div>
                     </div>
