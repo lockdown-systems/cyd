@@ -1716,7 +1716,14 @@ export class XAccountController {
 
         // Import tweets
         if (dataType == "tweets") {
-            const tweetsFilenames = await glob(path.join(archivePath, "data", "tweet*.js"));
+            const tweetsFilenames = await glob(
+                [
+                    path.join(archivePath, "data", "tweet.js"),
+                    path.join(archivePath, "data", "tweets.js"),
+                    path.join(archivePath, "data", "tweet-part*.js"),
+                    path.join(archivePath, "data", "tweets-part*.js")
+                ]
+            );
             if (tweetsFilenames.length === 0) {
                 return {
                     status: "error",
