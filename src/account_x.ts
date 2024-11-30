@@ -1547,6 +1547,18 @@ export class XAccountController {
             "get"
         ) as Sqlite3Count;
 
+        const totalConversationsDeletedConfig: string | null = await this.getConfig("totalConversationsDeleted");
+        let totalConversationsDeleted: number = 0;
+        if (totalConversationsDeletedConfig) {
+            totalConversationsDeleted = parseInt(totalConversationsDeletedConfig);
+        }
+
+        const totalAccountsUnfollowedConfig: string | null = await this.getConfig("totalAccountsUnfollowed");
+        let totalAccountsUnfollowed: number = 0;
+        if (totalAccountsUnfollowedConfig) {
+            totalAccountsUnfollowed = parseInt(totalAccountsUnfollowedConfig);
+        }
+
         const progressInfo = emptyXProgressInfo();
         progressInfo.accountUUID = this.accountUUID;
         progressInfo.totalTweetsIndexed = totalTweetsIndexed.count;
@@ -1557,6 +1569,8 @@ export class XAccountController {
         progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
         progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
         progressInfo.totalLikesDeleted = totalLikesDeleted.count;
+        progressInfo.totalConversationsDeleted = totalConversationsDeleted;
+        progressInfo.totalAccountsUnfollowed = totalAccountsUnfollowed;
         return progressInfo;
     }
 
@@ -1579,10 +1593,8 @@ export class XAccountController {
         const retweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedAt IS NOT NULL", ["RT @%"], "get") as Sqlite3Count;
         const likesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?", [1], "get") as Sqlite3Count;
         const likesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
-        const conversationsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation", [], "get") as Sqlite3Count;
-        const conversationsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
-        const messagesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message", [], "get") as Sqlite3Count;
-        const messagesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM message WHERE deletedAt IS NOT NULL", [], "get") as Sqlite3Count;
+        const conversationsDeleted = parseInt(await this.getConfig("totalConversationsDeleted") || "0");
+        const accountsUnfollowed = parseInt(await this.getConfig("totalAccountsUnfollowed") || "0");
 
         databaseStats.tweetsSaved = tweetsSaved.count;
         databaseStats.tweetsDeleted = tweetsDeleted.count;
@@ -1590,10 +1602,8 @@ export class XAccountController {
         databaseStats.retweetsDeleted = retweetsDeleted.count;
         databaseStats.likesSaved = likesSaved.count;
         databaseStats.likesDeleted = likesDeleted.count;
-        databaseStats.conversationsSaved = conversationsSaved.count;
-        databaseStats.conversationsDeleted = conversationsDeleted.count;
-        databaseStats.messagesSaved = messagesSaved.count;
-        databaseStats.messagesDeleted = messagesDeleted.count
+        databaseStats.conversationsDeleted = conversationsDeleted;
+        databaseStats.accountsUnfollowed = accountsUnfollowed
         return databaseStats;
     }
 
