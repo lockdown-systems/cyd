@@ -61,7 +61,8 @@ const backClicked = async () => {
             </div>
 
             <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
-                :button-state="State.WizardDeleteOptions" @set-state="emit('setState', $event)" />
+                :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
+                @set-state="emit('setState', $event)" />
 
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">

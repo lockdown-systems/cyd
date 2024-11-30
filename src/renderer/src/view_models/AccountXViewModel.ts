@@ -549,6 +549,7 @@ export class AccountXViewModel extends BaseViewModel {
 
         // Get user stats
         const account: XAccount = await window.electron.X.indexParseAllJSON(this.account?.id);
+        this.account.xAccount = account;
         this.emitter?.emit("account-updated");
 
         this.log("loadUserStats", `${account.tweetsCount} tweets, ${account.likesCount} likes, ${account.followingCount} following, ${account.followersCount} followers`);

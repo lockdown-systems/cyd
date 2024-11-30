@@ -29,7 +29,6 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startStateLoop: []
     setDebugAutopauseEndOfStep: [value: boolean]
 }>()
 
@@ -40,6 +39,11 @@ const openArchiveFolder = async () => {
 
 const openArchive = async () => {
     await window.electron.X.openFolder(props.model.account?.id, "index.html");
+};
+
+const reloadUserStats = async () => {
+    await window.electron.X.setConfig(props.model.account?.id, 'reloadUserStats', 'true');
+    emit('setState', State.WizardPrestart);
 };
 
 // Util
@@ -72,7 +76,6 @@ const debugAutopauseEndOfStepChanged = async () => {
 
 const enableDebugMode = async () => {
     emit('setState', State.Debug);
-    emit('startStateLoop');
 };
 
 onMounted(async () => {
@@ -83,10 +86,22 @@ onMounted(async () => {
 <template>
     <div class="wizard-sidebar">
         <p v-if="model.account && model.account.xAccount" class="p-3 small text-muted">
-            According to X, your account has <strong class="text-nowrap">{{
-                model.account?.xAccount?.tweetsCount.toLocaleString() }}
-                tweets</strong> and <strong class="text-nowrap">{{ model.account?.xAccount?.likesCount.toLocaleString()
-                }} likes</strong>. These numbers aren't always accurate.
+            <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
+                Cyd could not detect how many likes and tweets you have.
+                <a href="#" @click="reloadUserStats">
+                    Try again.
+                </a>
+            </template>
+            <template v-else>
+                According to X, your account has <strong class="text-nowrap">{{
+                    model.account?.xAccount?.tweetsCount.toLocaleString() }}
+                    tweets</strong> and <strong class="text-nowrap">{{
+                        model.account?.xAccount?.likesCount.toLocaleString()
+                    }} likes</strong>. These numbers aren't always accurate.
+                <a href="#" @click="reloadUserStats">
+                    Refresh the stats.
+                </a>
+            </template>
         </p>
         <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
             <button class="btn btn-outline-success btn-sm" @click="openArchive">

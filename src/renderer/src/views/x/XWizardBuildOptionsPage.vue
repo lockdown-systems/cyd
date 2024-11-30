@@ -8,6 +8,8 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 
+import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
@@ -83,6 +85,10 @@ onMounted(async () => {
                 You can save tweets, likes, and direct messages.
             </p>
         </div>
+
+        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
+            :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
+            @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>
             <div class="mb-3">
