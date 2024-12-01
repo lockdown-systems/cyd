@@ -1,3 +1,5 @@
+import { XAccount } from '../../shared_types';
+
 export async function xHasSomeData(accountID: number): Promise<boolean> {
     let lastImportArchive: Date | null = null;
     let lastBuildDatabase: Date | null = null;
@@ -16,4 +18,49 @@ export async function xHasSomeData(accountID: number): Promise<boolean> {
     }
 
     return lastImportArchive !== null || lastBuildDatabase !== null;
+}
+
+export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
+    let requiresPremium = false;
+
+    // All premium features are part of deleting
+    if (!xAccount.deleteMyData) {
+        return requiresPremium;
+    }
+
+    // You can delete tweets for free, but only if you're not using these options
+    if (xAccount.deleteTweets && xAccount.deleteTweetsDaysOldEnabled) {
+        console.log('Requires premium: deleteTweets and deleteTweetsDaysOldEnabled');
+        requiresPremium = true;
+    }
+    if (xAccount.deleteTweets && xAccount.deleteTweetsLikesThresholdEnabled) {
+        console.log('Requires premium: deleteTweets and deleteTweetsLikesThresholdEnabled');
+        requiresPremium = true;
+    }
+    if (xAccount.deleteTweets && xAccount.deleteTweetsRetweetsThresholdEnabled) {
+        console.log('Requires premium: deleteTweets and deleteTweetsRetweetsThresholdEnabled');
+        requiresPremium = true;
+    }
+
+    // You can delete retweets for free, but only if you're not using these options
+    if (xAccount.deleteRetweets && xAccount.deleteRetweetsDaysOldEnabled) {
+        console.log('Requires premium: deleteRetweets and deleteRetweetsDaysOldEnabled');
+        requiresPremium = true;
+    }
+
+    // Deleting likes, DMs, and unfollowing everyone are premium features
+    if (xAccount.deleteLikes) {
+        console.log('Requires premium: deleteLikes');
+        requiresPremium = true;
+    }
+    if (xAccount.deleteDMs) {
+        console.log('Requires premium: deleteDMs');
+        requiresPremium = true;
+    }
+    if (xAccount.unfollowEveryone) {
+        console.log('Requires premium: unfollowEveryone');
+        requiresPremium = true;
+    }
+
+    return requiresPremium;
 }

@@ -41,6 +41,7 @@ import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { AccountXViewModel, State, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
 import { setAccountRunning, openURL } from '../../util';
+import { xRequiresPremium } from '../../util_x';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -251,7 +252,7 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
 
 const startJobs = async () => {
     // Premium check
-    if (model.value.account.xAccount?.deleteMyData) {
+    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
         await updateUserAuthenticated();
         console.log("userAuthenticated", userAuthenticated.value);
         if (!userAuthenticated.value) {
