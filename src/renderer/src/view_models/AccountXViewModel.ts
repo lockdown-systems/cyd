@@ -16,6 +16,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
+import { xHasSomeData } from '../../util_x';
 
 export enum State {
     Login = "Login",
@@ -110,6 +111,7 @@ export class AccountXViewModel extends BaseViewModel {
 
     async defineJobs() {
         let shouldBuildArchive = false;
+        const hasSomeData = await xHasSomeData(this.account?.id);
 
         const jobTypes = [];
         jobTypes.push("login");
@@ -132,15 +134,15 @@ export class AccountXViewModel extends BaseViewModel {
         }
 
         if (this.account?.xAccount?.deleteMyData) {
-            if (this.account?.xAccount?.deleteTweets) {
+            if (hasSomeData && this.account?.xAccount?.deleteTweets) {
                 jobTypes.push("deleteTweets");
                 shouldBuildArchive = true;
             }
-            if (this.account?.xAccount?.deleteRetweets) {
+            if (hasSomeData && this.account?.xAccount?.deleteRetweets) {
                 jobTypes.push("deleteRetweets");
                 shouldBuildArchive = true;
             }
-            if (this.account?.xAccount?.deleteLikes) {
+            if (hasSomeData && this.account?.xAccount?.deleteLikes) {
                 jobTypes.push("deleteLikes");
                 shouldBuildArchive = true;
             }
