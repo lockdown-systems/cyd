@@ -16,7 +16,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { xHasSomeData } from '../../util_x';
+import { xHasSomeData } from '../util_x';
 
 export enum State {
     Login = "Login",
