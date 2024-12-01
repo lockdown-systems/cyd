@@ -43,7 +43,7 @@ const deleteRetweetsShowMoreClicked = () => {
 };
 
 const deleteLikesShowMore = ref(false);
-const deleteLikesShowMoreButtonText = computed(() => deleteTweetsShowMore.value ? 'Hide more options' : 'Show more options');
+const deleteLikesShowMoreButtonText = computed(() => deleteLikesShowMore.value ? 'Hide more options' : 'Show more options');
 const deleteLikesShowMoreClicked = () => {
     deleteLikesShowMore.value = !deleteLikesShowMore.value;
 };
