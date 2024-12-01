@@ -41,6 +41,7 @@ import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { AccountXViewModel, State, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
 import { setAccountRunning, openURL } from '../../util';
+import { xRequiresPremium } from '../../util_x';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -251,7 +252,7 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
 
 const startJobs = async () => {
     // Premium check
-    if (model.value.account.xAccount?.deleteMyData) {
+    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
         await updateUserAuthenticated();
         console.log("userAuthenticated", userAuthenticated.value);
         if (!userAuthenticated.value) {
@@ -383,7 +384,7 @@ onUnmounted(async () => {
         <AccountHeader :account="account" :show-refresh-button="true" @on-refresh-clicked="emit('onRefreshClicked')"
             @on-remove-clicked="emit('onRemoveClicked')" />
 
-        <div class="d-flex">
+        <div class="d-flex ms-2">
             <div class="d-flex flex-column flex-grow-1">
                 <!-- Speech bubble -->
                 <SpeechBubble ref="speechBubbleComponent" :message="model.instructions || ''" class="mb-2"
@@ -404,7 +405,7 @@ onUnmounted(async () => {
         </div>
 
         <!-- U2F security key notice -->
-        <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small">
+        <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
             <i class="fa-solid fa-circle-info me-2" />
             If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
             screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
@@ -430,7 +431,7 @@ onUnmounted(async () => {
             }" />
 
         <!-- Wizard -->
-        <div :class="{ 'hidden': model.showBrowser, 'wizard': true }">
+        <div :class="{ 'hidden': model.showBrowser, 'wizard': true, 'ms-2': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
                     <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"

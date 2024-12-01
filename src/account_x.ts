@@ -1319,7 +1319,7 @@ export class XAccountController {
 
         // Select just the tweets that need to be deleted based on the settings
         let tweets: XTweetRow[];
-        const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteTweetsDaysOld);
+        const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld) : getTimestampDaysAgo(0);
         if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
             // Both likes and retweets thresholds
             tweets = exec(
@@ -1371,7 +1371,7 @@ export class XAccountController {
         }
 
         // Select just the retweets that need to be deleted based on the settings
-        const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteRetweetsDaysOld);
+        const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld) : getTimestampDaysAgo(0);
         const tweets: XTweetRow[] = exec(
             this.db,
             'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt DESC',
@@ -1396,7 +1396,7 @@ export class XAccountController {
         }
 
         // Select just the tweets that need to be unliked based on the settings
-        const daysOldTimestamp = getTimestampDaysAgo(this.account.deleteLikesDaysOld);
+        const daysOldTimestamp = this.account.deleteLikesDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteLikesDaysOld) : getTimestampDaysAgo(0);
         const tweets: XTweetRow[] = exec(
             this.db,
             'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND isLiked = ? AND createdAt <= ? ORDER BY createdAt DESC',

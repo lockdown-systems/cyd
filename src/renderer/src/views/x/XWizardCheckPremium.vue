@@ -47,8 +47,35 @@ const backClicked = async () => {
             <i class="fa-solid fa-heart" />
         </h2>
         <h2 v-else>
-            Upgrade to Premium to delete data
+            You need to upgrade to Premium to do the following:
         </h2>
+        <ul v-if="!userAuthenticated || !userPremium">
+            <li
+                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsDaysOldEnabled">
+                Deleting tweets older than a set number of days
+            </li>
+            <li
+                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled">
+                Deleting tweets unless they have at least a certain number of retweets
+            </li>
+            <li
+                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
+                Deleting tweets unless they have at least a certain number of likes
+            </li>
+            <li
+                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteRetweets && model.account.xAccount?.deleteRetweetsDaysOldEnabled">
+                Deleting retweets older than a set number of days
+            </li>
+            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.unfollowEveryone">
+                Unfollowing everyone
+            </li>
+            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes">
+                Deleting likes
+            </li>
+            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteDMs">
+                Deleting direct messages
+            </li>
+        </ul>
 
         <template v-if="!userAuthenticated">
             <p>First, sign in to your Cyd account.</p>

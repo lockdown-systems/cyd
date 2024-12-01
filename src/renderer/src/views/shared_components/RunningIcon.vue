@@ -18,7 +18,7 @@ let runningIconInterval: number | undefined;
 
 onMounted(() => {
     // @ts-expect-error intervalID is a NodeJS.Interval, not a number
-    runningIconInterval = setInterval(cycleRunningIcon, 1000);
+    runningIconInterval = setInterval(cycleRunningIcon, 500);
 });
 
 onBeforeUnmount(() => {

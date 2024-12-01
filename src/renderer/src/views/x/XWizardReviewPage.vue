@@ -7,6 +7,7 @@ import {
 import { openPreventSleepURL } from '../../util';
 import { emptyXDeleteReviewStats } from '../../../../shared_types';
 import type { XDeleteReviewStats } from '../../../../shared_types';
+import { xHasSomeData } from '../../util_x';
 
 // Props
 const props = defineProps<{
@@ -36,9 +37,12 @@ const backClicked = async () => {
 // Settings
 const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 
+const hasSomeData = ref(false);
+
 onMounted(async () => {
     await props.model.refreshDatabaseStats();
     deleteReviewStats.value = props.model.deleteReviewStats;
+    hasSomeData.value = await xHasSomeData(props.model.account.id);
 });
 </script>
 
@@ -77,12 +81,13 @@ onMounted(async () => {
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
                     Delete my data
-                    <span class="premium badge badge-primary">Premium</span>
                 </h3>
                 <ul>
-                    <li v-if="model.account?.xAccount?.deleteTweets">
+                    <li v-if="hasSomeData && model.account?.xAccount?.deleteTweets">
                         <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
-                        that are older than {{ model.account?.xAccount?.deleteTweetsDaysOld }} days
+                        <span v-if="model.account?.xAccount?.deleteTweetsDaysOldEnabled">
+                            that are older than {{ model.account?.xAccount?.deleteTweetsDaysOld }} days
+                        </span>
                         <span
                             v-if="model.account?.xAccount?.deleteTweetsRetweetsThresholdEnabled && !model.account?.xAccount?.deleteTweetsLikesThresholdEnabled">
                             unless they have at least {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }}
@@ -102,13 +107,17 @@ onMounted(async () => {
                         <span v-if="model.account?.xAccount?.deleteTweetsArchiveEnabled" class="fst-italic">(after
                             saving HTML versions of them)</span>
                     </li>
-                    <li v-if="model.account?.xAccount?.deleteRetweets">
+                    <li v-if="hasSomeData && model.account?.xAccount?.deleteRetweets">
                         <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
-                        that are older than {{ model.account?.xAccount?.deleteRetweetsDaysOld }} days
+                        <span v-if="model.account?.xAccount?.deleteRetweetsDaysOldEnabled">
+                            that are older than {{ model.account?.xAccount?.deleteRetweetsDaysOld }} days
+                        </span>
                     </li>
-                    <li v-if="model.account?.xAccount?.deleteLikes">
+                    <li v-if="hasSomeData && model.account?.xAccount?.deleteLikes">
                         <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
-                        that are older than {{ model.account?.xAccount?.deleteLikesDaysOld }} days
+                        <span v-if="model.account?.xAccount?.deleteLikesDaysOldEnabled">
+                            that are older than {{ model.account?.xAccount?.deleteLikesDaysOld }} days
+                        </span>
                     </li>
                     <li v-if="model.account?.xAccount?.unfollowEveryone">
                         <b>Unfollow everyone</b>
