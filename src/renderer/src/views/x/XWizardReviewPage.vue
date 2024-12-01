@@ -81,7 +81,9 @@ onMounted(async () => {
                 <ul>
                     <li v-if="model.account?.xAccount?.deleteTweets">
                         <b>{{ deleteReviewStats.tweetsToDelete.toLocaleString() }} tweets</b>
-                        that are older than {{ model.account?.xAccount?.deleteTweetsDaysOld }} days
+                        <span v-if="model.account?.xAccount?.deleteTweetsDaysOldEnabled">
+                            that are older than {{ model.account?.xAccount?.deleteTweetsDaysOld }} days
+                        </span>
                         <span
                             v-if="model.account?.xAccount?.deleteTweetsRetweetsThresholdEnabled && !model.account?.xAccount?.deleteTweetsLikesThresholdEnabled">
                             unless they have at least {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }}
@@ -103,11 +105,15 @@ onMounted(async () => {
                     </li>
                     <li v-if="model.account?.xAccount?.deleteRetweets">
                         <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
-                        that are older than {{ model.account?.xAccount?.deleteRetweetsDaysOld }} days
+                        <span v-if="model.account?.xAccount?.deleteRetweetsDaysOldEnabled">
+                            that are older than {{ model.account?.xAccount?.deleteRetweetsDaysOld }} days
+                        </span>
                     </li>
                     <li v-if="model.account?.xAccount?.deleteLikes">
                         <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
-                        that are older than {{ model.account?.xAccount?.deleteLikesDaysOld }} days
+                        <span v-if="model.account?.xAccount?.deleteLikesDaysOldEnabled">
+                            that are older than {{ model.account?.xAccount?.deleteLikesDaysOld }} days
+                        </span>
                     </li>
                     <li v-if="model.account?.xAccount?.unfollowEveryone">
                         <b>Unfollow everyone</b>
