@@ -8,6 +8,7 @@ import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
+import { xHasSomeData } from '../../util_x';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -145,8 +146,11 @@ const saveSettings = async () => {
     }
 };
 
+const hasSomeData = ref(false);
+
 onMounted(async () => {
     await loadSettings();
+    hasSomeData.value = await xHasSomeData(props.model.account.id);
 });
 </script>
 
@@ -167,7 +171,7 @@ onMounted(async () => {
 
         <form @submit.prevent>
             <!-- deleteTweets -->
-            <div class="mb-3">
+            <div v-if="hasSomeData" class="mb-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="form-check">
                         <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input">
@@ -282,7 +286,7 @@ onMounted(async () => {
             </div>
 
             <!-- deleteRetweets -->
-            <div class="mb-3">
+            <div v-if="hasSomeData" class="mb-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="form-check">
                         <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox" class="form-check-input">
@@ -340,7 +344,7 @@ onMounted(async () => {
             </div>
 
             <!-- deleteLikes -->
-            <div class="mb-3">
+            <div v-if="hasSomeData" class="mb-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="form-check">
                         <input id="deleteLikes" v-model="deleteLikes" type="checkbox" class="form-check-input">
@@ -408,12 +412,9 @@ onMounted(async () => {
             </div>
 
             <div class="buttons">
-                <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    deleteTweets ||
-                    deleteRetweets ||
-                    deleteLikes ||
-                    unfollowEveryone ||
-                    deleteDMs)" @click="nextClicked">
+                <button type="submit" class="btn btn-primary text-nowrap m-1"
+                    :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
+                    @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>
