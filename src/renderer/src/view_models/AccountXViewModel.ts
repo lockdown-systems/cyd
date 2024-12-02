@@ -1525,7 +1525,7 @@ Hang on while I scroll down to your earliest likes.`;
         return true;
     }
 
-    async runJobDeleteTweets(jobIndex: number): Promise<boolean> {
+    async runJobDeleteTweets(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
 
         // After this job, we want to reload the user stats
@@ -1586,8 +1586,9 @@ Hang on while I scroll down to your earliest likes.`;
                 if (this.account?.xAccount?.deleteTweetsArchiveEnabled) {
                     // Archive the tweet
                     if (!await this.archiveSaveTweet(await window.electron.X.archiveTweetsOutputPath(this.account?.id), tweetsToDelete.tweets[i])) {
+                        errorType = AutomationErrorType.x_runJob_deleteTweets_FailedToArchive;
                         errorTriggered = true;
-                        break;
+                        continue;
                     }
                 }
 
@@ -1644,7 +1645,13 @@ Hang on while I scroll down to your earliest likes.`;
             }
 
             if (errorTriggered) {
-                break;
+                // Record the error, with allowContinue=true, to continue on to the next tweet
+                await this.error(errorType, {
+                    exception: (error as Error).toString()
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true);
             }
 
             if (success) {
@@ -1657,30 +1664,16 @@ Hang on while I scroll down to your earliest likes.`;
                     }, {
                         tweet: tweetsToDelete.tweets[i],
                         index: i
-                    })
+                    }, true)
                     errorTriggered = true;
-                    break;
                 }
 
                 this.progress.tweetsDeleted += 1;
                 await this.syncProgress();
-            } else {
-                await this.error(errorType, {
-                    exception: (error as Error).toString()
-                }, {
-                    tweet: tweetsToDelete.tweets[i],
-                    index: i
-                });
-                errorTriggered = true;
             }
         }
 
-        if (errorTriggered) {
-            return false;
-        }
-
         await this.finishJob(jobIndex);
-        return true;
     }
 
     async runJobDeleteRetweets(jobIndex: number): Promise<boolean> {
@@ -2484,6 +2477,9 @@ You can save all your data for free, but you need a Premium plan to delete your 
 
                 case State.RunJobs:
                     this.progress = await window.electron.X.resetProgress(this.account?.id);
+
+                    // Empty the error queue
+                    window.localStorage.setItem('automationErrors', JSON.stringify([]));
 
                     // i is starting at currentJobIndex instead of 0, in case we restored state
                     for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
