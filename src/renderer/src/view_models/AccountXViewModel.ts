@@ -1621,6 +1621,13 @@ Hang on while I scroll down to your earliest likes.`;
                 }
                 await this.sleep(200);
 
+                // DEBUG: trigger an error instead
+                error = null;
+                errorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
+                errorTriggered = true;
+                await this.sleep(2000);
+                break;
+
                 // Click the delete button
                 await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
 
@@ -1647,11 +1654,14 @@ Hang on while I scroll down to your earliest likes.`;
             if (errorTriggered) {
                 // Record the error, with allowContinue=true, to continue on to the next tweet
                 await this.error(errorType, {
-                    exception: (error as Error).toString()
+                    exception: error ? (error as Error).toString() : 'null'
                 }, {
                     tweet: tweetsToDelete.tweets[i],
                     index: i
                 }, true);
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
             }
 
             if (success) {
@@ -1671,6 +1681,9 @@ Hang on while I scroll down to your earliest likes.`;
                 this.progress.tweetsDeleted += 1;
                 await this.syncProgress();
             }
+
+            this.pause();
+            await this.waitForPause();
         }
 
         await this.finishJob(jobIndex);
