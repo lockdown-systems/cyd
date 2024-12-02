@@ -245,6 +245,22 @@ body {
   overflow-y: auto;
 }
 
+@media (min-width: 820px) {
+
+  .modal-lg,
+  .modal-xl {
+    --bs-modal-width: 700px;
+  }
+}
+
+@media (min-width: 992px) {
+
+  .modal-lg,
+  .modal-xl {
+    --bs-modal-width: 800px;
+  }
+}
+
 /* Webview styles */
 
 .automation-notice {

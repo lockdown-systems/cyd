@@ -24,25 +24,25 @@ const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const appVersion = ref('');
 const clientPlatform = ref('');
 const includeSensitiveData = ref(false);
-const details = ref<AutomationErrorDetails | null>(null);
+const details = ref<AutomationErrorDetails[]>([]);
 
-const automationErrorType = () => {
-    if (details.value && AutomationErrorTypeToMessage[details.value?.automationErrorType] !== null) {
-        return AutomationErrorTypeToMessage[details.value?.automationErrorType];
+const automationErrorType = (i: number) => {
+    if (details.value[i] && AutomationErrorTypeToMessage[details.value[i].automationErrorType] !== null) {
+        return AutomationErrorTypeToMessage[details.value[i].automationErrorType];
     }
     return "Automation error";
 };
 
-const errorReportData = () => {
-    if (details.value?.errorReportData) {
-        return details.value.errorReportData;
+const errorReportData = (i: number) => {
+    if (details.value[i].errorReportData) {
+        return details.value[i].errorReportData;
     }
     return "";
 };
 
-const sensitiveContextData = () => {
-    if (details.value?.sensitiveContextData) {
-        return details.value.sensitiveContextData;
+const sensitiveContextData = (i: number) => {
+    if (details.value[i].sensitiveContextData) {
+        return details.value[i].sensitiveContextData;
     }
     return "";
 };
@@ -52,8 +52,10 @@ const sensitiveContextData = () => {
 const userDescription = ref('');
 
 const onUserDescriptionChange = (_event: Event) => {
-    if (details.value) {
-        details.value.errorReportData.userDescription = userDescription.value;
+    for (let i = 0; i < details.value.length; i++) {
+        if (details.value[i]) {
+            details.value[i].errorReportData.userDescription = userDescription.value;
+        }
     }
 };
 
@@ -72,14 +74,15 @@ const toggleShowDetails = () => {
 };
 
 const shouldRetry = async () => {
-    if (!details.value) {
+    if (details.value.length == 0) {
         console.error("No details provided for automation error report");
         return;
     }
+    const accountID = details.value[0].accountID;
 
     // If this is a manual action, instead of retrying, we should just resume
-    if (details.value.automationErrorType == AutomationErrorType.X_manualBugReport) {
-        emitter.emit(`automation-error-${details.value?.accountID}-resume`);
+    if (details.value[0].automationErrorType == AutomationErrorType.X_manualBugReport) {
+        emitter.emit(`automation-error-${accountID}-resume`);
         return;
     }
 
@@ -88,9 +91,9 @@ const shouldRetry = async () => {
         "Retry",
         "Cancel"
     )) {
-        emitter.emit(`automation-error-${details.value?.accountID}-retry`);
+        emitter.emit(`automation-error-${accountID}-retry`);
     } else {
-        emitter.emit(`automation-error-${details.value?.accountID}-cancel`);
+        emitter.emit(`automation-error-${accountID}-cancel`);
     }
 };
 
@@ -104,35 +107,37 @@ const submitReport = async () => {
         return;
     }
 
-    // Build the data object
-    let data: PostAutomationErrorReportAPIRequest = {
-        app_version: appVersion.value,
-        client_platform: clientPlatform.value,
-        account_type: details.value.accountType,
-        error_report_type: details.value.automationErrorType,
-        error_report_data: JSON.parse(JSON.stringify(details.value.errorReportData)),
-    };
-    if (includeSensitiveData.value) {
-        data = {
-            ...data,
-            account_username: details.value.username,
-            screenshot_data_uri: details.value.screenshotDataURL,
-            sensitive_context_data: JSON.parse(JSON.stringify(details.value.sensitiveContextData)),
-        }
-    }
-
     // Are we logged in?
     const authenticated = await apiClient.value.ping();
 
-    // Post the report
-    const postAutomationErrorReportResp = await apiClient.value.postAutomationErrorReport(data, authenticated);
-    if (postAutomationErrorReportResp !== true && postAutomationErrorReportResp !== false && postAutomationErrorReportResp.error) {
-        await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
+    for (let i = 0; i < details.value.length; i++) {
+        // Build the data object
+        let data: PostAutomationErrorReportAPIRequest = {
+            app_version: appVersion.value,
+            client_platform: clientPlatform.value,
+            account_type: details.value[i].accountType,
+            error_report_type: details.value[i].automationErrorType,
+            error_report_data: JSON.parse(JSON.stringify(details.value[i].errorReportData)),
+        };
+        if (includeSensitiveData.value) {
+            data = {
+                ...data,
+                account_username: details.value[i].username,
+                screenshot_data_uri: details.value[i].screenshotDataURL,
+                sensitive_context_data: JSON.parse(JSON.stringify(details.value[i].sensitiveContextData)),
+            }
+        }
 
-        console.error("Error posting automation error report:", postAutomationErrorReportResp.message);
-        await window.electron.showError("Well this is awkward. There's an error submitting your automation error report.")
-    } else {
-        await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED, navigator.userAgent);
+        // Post the report
+        const postAutomationErrorReportResp = await apiClient.value.postAutomationErrorReport(data, authenticated);
+        if (postAutomationErrorReportResp !== true && postAutomationErrorReportResp !== false && postAutomationErrorReportResp.error) {
+            await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
+
+            console.error("Error posting automation error report:", postAutomationErrorReportResp.message);
+            await window.electron.showError("Well this is awkward. There's an error submitting your automation error report.")
+        } else {
+            await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED, navigator.userAgent);
+        }
     }
 
     hide();
@@ -161,12 +166,8 @@ onMounted(async () => {
 
     // Load the errors
     const errorsStr = window.localStorage.getItem('automationErrors');
-    const errors = errorsStr ? JSON.parse(errorsStr) : [];
-    console.log("Errors:", errors);
-
-    if (errors.length > 0) {
-        details.value = errors[0];
-    }
+    details.value = errorsStr ? JSON.parse(errorsStr) : [];
+    console.log("Errors:", details.value);
 
     // Clear errors
     window.localStorage.setItem('automationErrors', JSON.stringify([]));
@@ -208,8 +209,11 @@ onUnmounted(() => {
                 <div class="modal-body">
                     <div class="d-flex flex-column">
                         <div>
-                            <h5 class="mb-3">
-                                {{ automationErrorType() }}
+                            <h5 v-if="details.length == 1" class="mb-3">
+                                {{ automationErrorType(0) }}
+                            </h5>
+                            <h5 v-else>
+                                {{ details.length.toLocaleString() }} errors occured
                             </h5>
                             <div class="mb-3">
                                 <textarea v-model="userDescription" class="form-control w-100"
@@ -238,41 +242,48 @@ onUnmounted(() => {
                                         {{ showDetailsLabel }}
                                     </a>
                                 </p>
-                                <ul v-if="showDetails" class="details">
-                                    <li>
-                                        <label>App version:</label>
-                                        <span>
-                                            Cyd {{ appVersion }} for {{ clientPlatform }}
-                                        </span>
-                                    </li>
-                                    <li>
-                                        <label>Account type:</label>
-                                        <span>{{ details?.accountType }}</span>
-                                    </li>
-                                    <li v-if="includeSensitiveData && details?.username != ''">
-                                        <label>Username:</label>
-                                        <span>{{ details?.username }}</span>
-                                    </li>
-                                    <li>
-                                        <label>Error type:</label>
-                                        <span>{{ automationErrorType() }}</span>
-                                    </li>
-                                    <li v-if="errorReportData() != ''">
-                                        <label>Details:</label>
-                                        <pre>{{ errorReportData() }}</pre>
-                                    </li>
-                                    <li
-                                        v-if="includeSensitiveData && sensitiveContextData() != '' && sensitiveContextData() != '{}'">
-                                        <label>Context:</label>
-                                        <pre>{{ sensitiveContextData() }}</pre>
-                                    </li>
-                                    <li v-if="includeSensitiveData && details && details.screenshotDataURL != ''">
-                                        <div class="screenshot text-center">
-                                            <img :src="details?.screenshotDataURL"
-                                                alt="Screenshot of the embedded browser">
+                                <div v-if="showDetails">
+                                    <template v-for="(detail, i) in details" :key="i">
+                                        <div v-if="details.length > 1" class="text-center fw-bold">
+                                            Error {{ i + 1 }} of {{ details.length }}
                                         </div>
-                                    </li>
-                                </ul>
+                                        <ul class="details">
+                                            <li>
+                                                <label>Error type:</label>
+                                                <span>{{ automationErrorType(i) }}</span>
+                                            </li>
+                                            <li>
+                                                <label>App version:</label>
+                                                <span>
+                                                    Cyd {{ appVersion }} for {{ clientPlatform }}
+                                                </span>
+                                            </li>
+                                            <li>
+                                                <label>Account type:</label>
+                                                <span>{{ detail.accountType }}</span>
+                                            </li>
+                                            <li v-if="includeSensitiveData && detail.username != ''">
+                                                <label>Username:</label>
+                                                <span>{{ detail.username }}</span>
+                                            </li>
+                                            <li v-if="errorReportData(i) != ''">
+                                                <label>Details:</label>
+                                                <pre>{{ errorReportData(i) }}</pre>
+                                            </li>
+                                            <li
+                                                v-if="includeSensitiveData && sensitiveContextData(i) != '' && sensitiveContextData(i) != '{}'">
+                                                <label>Context:</label>
+                                                <pre>{{ sensitiveContextData(i) }}</pre>
+                                            </li>
+                                            <li v-if="includeSensitiveData && detail.screenshotDataURL != ''">
+                                                <div class="screenshot text-center">
+                                                    <img :src="detail.screenshotDataURL"
+                                                        alt="Screenshot of the embedded browser">
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </template>
+                                </div>
                                 <div v-else class="error-avatar text-center">
                                     <img src="/assets/cyd-omgkevin.svg" class="mb-3" alt="Cyd Error Message">
                                 </div>
