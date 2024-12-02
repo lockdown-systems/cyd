@@ -268,8 +268,6 @@ export class BaseViewModel {
     async showErrorModal() {
         // Show the error modal
         this.emitter?.emit("show-automation-error");
-        // Wait for it to appear
-        await new Promise(resolve => setTimeout(resolve, 200));
 
         this.pause()
         await this.waitForPause();

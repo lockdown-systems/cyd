@@ -1625,7 +1625,6 @@ Hang on while I scroll down to your earliest likes.`;
                 error = null;
                 errorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
                 errorTriggered = true;
-                await this.sleep(2000);
                 break;
 
                 // Click the delete button
@@ -1681,9 +1680,6 @@ Hang on while I scroll down to your earliest likes.`;
                 this.progress.tweetsDeleted += 1;
                 await this.syncProgress();
             }
-
-            this.pause();
-            await this.waitForPause();
         }
 
         await this.finishJob(jobIndex);

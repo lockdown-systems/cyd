@@ -2,12 +2,17 @@
 import {
     ref,
     onMounted,
+    getCurrentInstance,
 } from 'vue';
 import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
 import { openURL } from '../../util';
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
@@ -37,6 +42,11 @@ const nextClicked = async () => {
     }
 };
 
+const submitErrorReportClicked = async () => {
+    hideErrors.value = true;
+    emitter.emit("show-automation-error");
+};
+
 // Settings
 const archivePath = ref('');
 
@@ -44,6 +54,8 @@ const updateArchivePath = async () => {
     const path = await window.electron.getAccountDataPath(props.model.account.id, '');
     archivePath.value = path ? path : '';
 };
+
+const hideErrors = ref(false);
 
 onMounted(async () => {
     await props.model.reloadAccount();
@@ -125,6 +137,16 @@ onMounted(async () => {
                     </li>
                 </ul>
             </div>
+        </div>
+
+        <div v-if="!hideErrors && model.progress.errorsOccured > 0" class="alert alert-danger mt-4" role="alert">
+            <p>
+                <strong>Uh oh, Cyd encountered {{ model.progress.errorsOccured.toLocaleString() }} errors.</strong>
+                Please submit an error report so we can fix the problems you encountered.
+            </p>
+            <button class="btn btn-primary" @click="submitErrorReportClicked">
+                Submit Error Report
+            </button>
         </div>
 
         <div v-if="(
