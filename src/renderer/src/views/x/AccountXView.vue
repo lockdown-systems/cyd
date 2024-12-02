@@ -310,12 +310,24 @@ const debugAutopauseEndOfStepChanged = async (value: boolean) => {
     model.value.debugAutopauseEndOfStep = value;
 };
 
-const debugModeTriggerError = async () => {
-    await model.value.error(AutomationErrorType.x_unknownError, {
-        message: 'Debug mode error triggered'
-    }, {
-        currentURL: model.value.webview?.getURL()
-    });
+const debugModeTriggerError = async (count: number = 1) => {
+    console.log('Debug mode error triggered', count);
+    if (count == 1) {
+        await model.value.error(AutomationErrorType.x_unknownError, {
+            message: "Debug mode error triggered",
+        }, {
+            currentURL: model.value.webview?.getURL()
+        });
+    } else {
+        for (let i = 0; i < count; i++) {
+            await model.value.error(AutomationErrorType.x_unknownError, {
+                message: `Debug mode error triggered ${i + 1} of ${count}`,
+            }, {
+                currentURL: model.value.webview?.getURL()
+            }, true);
+        }
+        await model.value.showErrorModal();
+    }
 };
 
 const debugModeDisable = async () => {
@@ -471,8 +483,13 @@ onUnmounted(async () => {
                     <div v-if="model.state == State.Debug">
                         <p>Debug debug debug!!!</p>
                         <p>
-                            <button class="btn btn-danger" @click="debugModeTriggerError">
+                            <button class="btn btn-danger" @click="debugModeTriggerError(1)">
                                 Trigger Error
+                            </button>
+                        </p>
+                        <p>
+                            <button class="btn btn-danger" @click="debugModeTriggerError(3)">
+                                Trigger 3 Errors
                             </button>
                         </p>
                         <p>

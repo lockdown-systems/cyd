@@ -26,10 +26,6 @@ const clientPlatform = ref('');
 const includeSensitiveData = ref(false);
 const details = ref<AutomationErrorDetails | null>(null);
 
-emitter?.on('set-automation-error-details', (newDetails: AutomationErrorDetails) => {
-    details.value = newDetails;
-});
-
 const automationErrorType = () => {
     if (details.value && AutomationErrorTypeToMessage[details.value?.automationErrorType] !== null) {
         return AutomationErrorTypeToMessage[details.value?.automationErrorType];
@@ -162,6 +158,18 @@ onMounted(async () => {
             hide();
         });
     }
+
+    // Load the errors
+    const errorsStr = window.localStorage.getItem('automationErrors');
+    const errors = errorsStr ? JSON.parse(errorsStr) : [];
+    console.log("Errors:", errors);
+
+    if (errors.length > 0) {
+        details.value = errors[0];
+    }
+
+    // Clear errors
+    window.localStorage.setItem('automationErrors', JSON.stringify([]));
 
     // Load the app version and client platform
     appVersion.value = await window.electron.getVersion();

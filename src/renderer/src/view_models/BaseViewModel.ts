@@ -261,29 +261,19 @@ export class BaseViewModel {
         }
 
         if (!allowContinue) {
-            // Show the error modal
-            this.emitter?.emit("show-automation-error");
-            // Wait for it to appear
-            await new Promise(resolve => setTimeout(resolve, 200));
-            // Set the data
-            this.emitter?.emit("set-automation-error-details", details);
-
-            this.pause()
-            await this.waitForPause();
+            await this.showErrorModal();
         }
     }
 
-    // async showErrorModal() {
-    //     // Show the error modal
-    //     this.emitter?.emit("show-automation-error");
-    //     // Wait for it to appear
-    //     await new Promise(resolve => setTimeout(resolve, 200));
-    //     // Set the data
-    //     this.emitter?.emit("set-automation-error-details");
+    async showErrorModal() {
+        // Show the error modal
+        this.emitter?.emit("show-automation-error");
+        // Wait for it to appear
+        await new Promise(resolve => setTimeout(resolve, 200));
 
-    //     this.pause()
-    //     await this.waitForPause();
-    // }
+        this.pause()
+        await this.waitForPause();
+    }
 
     async waitForLoadingToFinish(timeout: number = DEFAULT_TIMEOUT) {
         this.log("waitForLoadingToFinish", "waiting for loading to finish");
