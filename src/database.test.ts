@@ -295,7 +295,6 @@ test("getNewErrorReports should retrieve all new error reports", () => {
     const screenshotDataURI = 'testScreenshotDataURI';
     const sensitiveContextData = '{"test": "sensitive data"}';
 
-    const accountID2 = 2;
     const accountType2 = 'Y';
     const errorReportType2 = 'Y_manualBugReport';
     const errorReportData2 = '{"test": "data2"}';
@@ -304,9 +303,9 @@ test("getNewErrorReports should retrieve all new error reports", () => {
     const sensitiveContextData2 = '{"test": "sensitive data2"}';
 
     database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
-    database.createErrorReport(accountID2, accountType2, errorReportType2, errorReportData2, accountUsername2, screenshotDataURI2, sensitiveContextData2);
+    database.createErrorReport(accountID, accountType2, errorReportType2, errorReportData2, accountUsername2, screenshotDataURI2, sensitiveContextData2);
 
-    const newErrorReports = database.getNewErrorReports();
+    const newErrorReports = database.getNewErrorReports(accountID);
     expect(newErrorReports.length).toEqual(2);
     expect(newErrorReports[0].accountID).toBe(accountID);
     expect(newErrorReports[0].accountType).toBe(accountType);
@@ -316,7 +315,7 @@ test("getNewErrorReports should retrieve all new error reports", () => {
     expect(newErrorReports[0].screenshotDataURI).toBe(screenshotDataURI);
     expect(newErrorReports[0].sensitiveContextData).toBe(sensitiveContextData);
     expect(newErrorReports[0].status).toBe('new');
-    expect(newErrorReports[1].accountID).toBe(accountID2);
+    expect(newErrorReports[1].accountID).toBe(accountID);
     expect(newErrorReports[1].accountType).toBe(accountType2);
     expect(newErrorReports[1].errorReportType).toBe(errorReportType2);
     expect(newErrorReports[1].errorReportData).toBe(errorReportData2);
@@ -354,9 +353,9 @@ test("dismissNewErrorReports should update the status of all new error reports t
     const sensitiveContextData = '{"test": "sensitive data"}';
 
     database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
-    database.dismissNewErrorReports();
+    database.dismissNewErrorReports(accountID);
 
-    const newErrorReports = database.getNewErrorReports();
+    const newErrorReports = database.getNewErrorReports(accountID);
     expect(newErrorReports.length).toBe(0);
 
     const db = database.getMainDatabase();

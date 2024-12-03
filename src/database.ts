@@ -300,8 +300,8 @@ export const getErrorReport = (id: number): ErrorReport | null => {
     }
 }
 
-export const getNewErrorReports = (): ErrorReport[] => {
-    const rows: ErrorReportRow[] = exec(getMainDatabase(), 'SELECT * FROM errorReport WHERE status = ?', ['new'], 'all') as ErrorReportRow[];
+export const getNewErrorReports = (accountID: number): ErrorReport[] => {
+    const rows: ErrorReportRow[] = exec(getMainDatabase(), 'SELECT * FROM errorReport WHERE accountID = ? AND status = ?', [accountID, 'new'], 'all') as ErrorReportRow[];
     const errorReports: ErrorReport[] = [];
     for (const row of rows) {
         errorReports.push({
@@ -324,7 +324,17 @@ export const getNewErrorReports = (): ErrorReport[] => {
 
 export const createErrorReport = (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => {
     const info: Sqlite3Info = exec(getMainDatabase(), `
-        INSERT INTO errorReport (accountID, appVersion, clientPlatform, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData)
+        INSERT INTO errorReport (
+            accountID, 
+            appVersion, 
+            clientPlatform, 
+            accountType, 
+            errorReportType, 
+            errorReportData, 
+            accountUsername, 
+            screenshotDataURI, 
+            sensitiveContextData
+        )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
         accountID,
@@ -347,7 +357,11 @@ export const updateErrorReportSubmitted = (id: number) => {
     exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE id = ?', ['submitted', id]);
 }
 
-export const dismissNewErrorReports = () => {
+export const dismissNewErrorReports = (accountID: number) => {
+    exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE accountID = ? AND status = ?', ['dismissed', accountID, 'new']);
+}
+
+export const dismissAllNewErrorReports = () => {
     exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE status = ?', ['dismissed', 'new']);
 }
 
@@ -696,9 +710,9 @@ export const defineIPCDatabase = () => {
         }
     });
 
-    ipcMain.handle('database:getNewErrorReports', async (_): Promise<ErrorReport[]> => {
+    ipcMain.handle('database:getNewErrorReports', async (_, accountID: number): Promise<ErrorReport[]> => {
         try {
-            return getNewErrorReports();
+            return getNewErrorReports(accountID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -720,9 +734,9 @@ export const defineIPCDatabase = () => {
         }
     });
 
-    ipcMain.handle('database:dismissNewErrorReports', async (_): Promise<void> => {
+    ipcMain.handle('database:dismissNewErrorReports', async (_, accountID: number): Promise<void> => {
         try {
-            dismissNewErrorReports();
+            dismissNewErrorReports(accountID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

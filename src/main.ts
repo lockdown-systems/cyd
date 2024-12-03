@@ -102,7 +102,7 @@ async function initializeApp() {
     }
 
     // Dismiss any stale error reports
-    database.dismissNewErrorReports();
+    database.dismissAllNewErrorReports();
 
     // If a device description has not been created yet, make one now
     const deviceDescription = database.getConfig("deviceDescription");

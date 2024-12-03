@@ -242,7 +242,8 @@ export class BaseViewModel {
 
         // Create the error
         await window.electron.database.createErrorReport(
-            this.account?.type,
+            this.account.id,
+            this.account.type,
             automationErrorType,
             JSON.stringify(errorReportData),
             username,
@@ -257,7 +258,7 @@ export class BaseViewModel {
 
     async showErrorModal() {
         // Show the error modal
-        this.emitter?.emit("show-automation-error");
+        this.emitter?.emit("show-automation-error", this.account.id);
 
         this.pause()
         await this.waitForPause();

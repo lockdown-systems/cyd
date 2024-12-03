@@ -48,10 +48,10 @@ declare global {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
                 getErrorReport: (id: number) => Promise<ErrorReport | null>;
-                getNewErrorReports: () => Promise<ErrorReport[]>;
-                createErrorReport: (accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => Promise<void>;
+                getNewErrorReports: (accountID: number) => Promise<ErrorReport[]>;
+                createErrorReport: (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => Promise<void>;
                 updateErrorReportSubmitted: (id: number) => void;
-                dismissNewErrorReports: () => void;
+                dismissNewErrorReports: (accountID: number) => void;
                 getAccount: (accountID: number) => Promise<Account | null>;
                 getAccounts: () => Promise<Account[]>;
                 createAccount: () => Promise<Account>;
