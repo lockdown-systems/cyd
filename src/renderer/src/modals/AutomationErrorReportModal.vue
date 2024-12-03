@@ -107,10 +107,14 @@ const submitReport = async () => {
         return;
     }
 
+    isSubmitting.value = true;
+
     // Are we logged in?
     const authenticated = await apiClient.value.ping();
 
     for (let i = 0; i < details.value.length; i++) {
+        submittingIndex.value++;
+
         // Build the data object
         let data: PostAutomationErrorReportAPIRequest = {
             app_version: appVersion.value,
@@ -152,6 +156,9 @@ const doNotSubmitReport = async () => {
     await shouldRetry();
 };
 
+const isSubmitting = ref(false);
+const submittingIndex = ref(0);
+
 onMounted(async () => {
     const modalElement = automationErrorReportModal.value;
     if (modalElement) {
@@ -163,6 +170,9 @@ onMounted(async () => {
             hide();
         });
     }
+
+    isSubmitting.value = false;
+    submittingIndex.value = 0;
 
     // Load the errors
     const errorsStr = window.localStorage.getItem('automationErrors');
@@ -293,13 +303,19 @@ onUnmounted(() => {
                 </div>
                 <div class="modal-footer">
                     <div class="d-flex justify-content-between w-100">
-                        <button type="button" class="btn btn-outline-danger" @click="doNotSubmitReport">
+                        <button type="button" class="btn btn-outline-danger" :disabled="isSubmitting"
+                            @click="doNotSubmitReport">
                             <i class="fa-solid fa-thumbs-down" />
                             Don't Submit Report
                         </button>
-                        <button type="submit" class="btn btn-primary" @click="submitReport">
+                        <button type="submit" class="btn btn-primary" :disabled="isSubmitting" @click="submitReport">
                             <i class="fa-solid fa-thumbs-up" />
-                            Submit Report
+                            <template v-if="isSubmitting">
+                                Submitting {{ submittingIndex }}...
+                            </template>
+                            <template v-else>
+                                Submit Report
+                            </template>
                         </button>
                     </div>
                 </div>
