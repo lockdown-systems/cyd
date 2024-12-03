@@ -757,7 +757,7 @@ export class AccountXViewModel extends BaseViewModel {
                 message: "webContentsID is null"
             }, {
                 currentURL: this.webview?.getURL()
-            });
+            }, true);
             return false;
         }
 
@@ -770,7 +770,7 @@ export class AccountXViewModel extends BaseViewModel {
             }, {
                 tweetItem: tweetItem,
                 currentURL: this.webview?.getURL()
-            })
+            }, true)
             return false;
         }
 
@@ -1035,19 +1035,13 @@ This may take a while...`;
         this.progress.newTweetsArchived = 0;
 
         // Archive the tweets
-        let errorTriggered = false;
         for (let i = 0; i < archiveStartResponse.items.length; i++) {
             await this.waitForPause();
 
             // Save the tweet
             if (!await this.archiveSaveTweet(archiveStartResponse.outputPath, archiveStartResponse.items[i])) {
-                errorTriggered = true;
-                break;
+                this.log("runJobArchiveTweets", ["failed to save tweet", archiveStartResponse.items[i].tweetID]);
             }
-        }
-
-        if (errorTriggered) {
-            return false;
         }
 
         await this.syncProgress();
@@ -1183,7 +1177,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
         return true;
     }
 
-    async runJobIndexMessages(jobIndex: number): Promise<boolean> {
+    async runJobIndexMessages(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_MESSAGES, navigator.userAgent);
 
         let tries: number, success: boolean, error: null | Error = null;
@@ -1218,7 +1212,6 @@ Please wait while I index all the messages from each conversation...`;
         this.progress.conversationMessagesIndexed = this.progress.totalConversations - indexMessagesStartResponse?.conversationIDs.length;
         await this.syncProgress();
 
-        let errorTriggered = false;
         for (let i = 0; i < indexMessagesStartResponse.conversationIDs.length; i++) {
             await this.waitForPause();
 
@@ -1269,17 +1262,11 @@ Please wait while I index all the messages from each conversation...`;
             if (!success) {
                 await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
                     exception: (error as Error).toString(),
-                });
-                errorTriggered = true;
+                }, true);
             }
 
             if (shouldSkip) {
                 continue;
-            }
-
-            if (errorTriggered) {
-                await window.electron.X.indexStop(this.account?.id);
-                break;
             }
 
             await this.sleep(500);
@@ -1307,8 +1294,7 @@ Please wait while I index all the messages from each conversation...`;
                     }, {
                         latestResponseData: latestResponseData,
                         currentURL: this.webview?.getURL()
-                    });
-                    errorTriggered = true;
+                    }, true);
                     break;
                 }
                 this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
@@ -1329,12 +1315,7 @@ Please wait while I index all the messages from each conversation...`;
         // Stop monitoring network requests
         await window.electron.X.indexStop(this.account?.id);
 
-        if (errorTriggered) {
-            return false;
-        }
-
         await this.finishJob(jobIndex);
-        return true;
     }
 
     async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
@@ -1525,7 +1506,7 @@ Hang on while I scroll down to your earliest likes.`;
         return true;
     }
 
-    async runJobDeleteTweets(jobIndex: number): Promise<boolean> {
+    async runJobDeleteTweets(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
 
         // After this job, we want to reload the user stats
@@ -1586,8 +1567,7 @@ Hang on while I scroll down to your earliest likes.`;
                 if (this.account?.xAccount?.deleteTweetsArchiveEnabled) {
                     // Archive the tweet
                     if (!await this.archiveSaveTweet(await window.electron.X.archiveTweetsOutputPath(this.account?.id), tweetsToDelete.tweets[i])) {
-                        errorTriggered = true;
-                        break;
+                        this.log("runJobDeleteTweets", ["failed to archive tweet", tweetsToDelete.tweets[i].tweetID]);
                     }
                 }
 
@@ -1599,6 +1579,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
+                    errorTriggered = true;
                     this.log("runJobDeleteTweets", ["wait for menu button to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
@@ -1614,6 +1595,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed;
+                    errorTriggered = true;
                     this.log("runJobDeleteTweets", ["wait for menu to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
@@ -1629,6 +1611,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed;
+                    errorTriggered = true;
                     this.log("runJobDeleteTweets", ["wait for delete confirmation popup to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
@@ -1644,46 +1627,41 @@ Hang on while I scroll down to your earliest likes.`;
             }
 
             if (errorTriggered) {
-                break;
+                // Record the error, with allowContinue=true, to continue on to the next tweet
+                await this.error(errorType, {
+                    exception: error ? (error as Error).toString() : 'null'
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true);
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
             }
 
             if (success) {
                 // Update the tweet's deletedAt date
                 try {
                     await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].tweetID);
+
+                    this.progress.tweetsDeleted += 1;
+                    await this.syncProgress();
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
                         exception: (e as Error).toString()
                     }, {
                         tweet: tweetsToDelete.tweets[i],
                         index: i
-                    })
+                    }, true)
                     errorTriggered = true;
-                    break;
                 }
-
-                this.progress.tweetsDeleted += 1;
-                await this.syncProgress();
-            } else {
-                await this.error(errorType, {
-                    exception: (error as Error).toString()
-                }, {
-                    tweet: tweetsToDelete.tweets[i],
-                    index: i
-                });
-                errorTriggered = true;
             }
         }
 
-        if (errorTriggered) {
-            return false;
-        }
-
         await this.finishJob(jobIndex);
-        return true;
     }
 
-    async runJobDeleteRetweets(jobIndex: number): Promise<boolean> {
+    async runJobDeleteRetweets(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_RETWEETS, navigator.userAgent);
 
         let tries: number, success: boolean;
@@ -1759,6 +1737,7 @@ Hang on while I scroll down to your earliest likes.`;
                     } catch (e) {
                         error = e as Error;
                         errorType = AutomationErrorType.x_runJob_deleteRetweets_WaitForMenuFailed;
+                        errorTriggered = true;
                         this.log("runJobDeleteRetweets", ["wait for unretweet menu to appear failed, try #", tries]);
                         await this.sleep(1000);
                         continue;
@@ -1778,42 +1757,43 @@ Hang on while I scroll down to your earliest likes.`;
                 }
             }
 
+            if (errorTriggered) {
+                // Record the error, with allowContinue=true, to continue on to the next tweet
+                await this.error(errorType, {
+                    exception: error ? (error as Error).toString() : 'null'
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true);
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
+
             if (success) {
                 // Mark the tweet as deleted
                 try {
                     // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
                     await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].tweetID);
+
+                    this.progress.retweetsDeleted += 1;
+                    await this.syncProgress();
                 } catch (e) {
                     await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp, {
                         exception: (e as Error).toString()
                     }, {
                         tweet: tweetsToDelete.tweets[i],
                         index: i
-                    })
+                    }, true)
                     errorTriggered = true;
-                    break;
                 }
-
-                this.progress.retweetsDeleted += 1;
-                await this.syncProgress();
-            } else {
-                await this.error(errorType, {
-                    exception: (error as Error).toString()
-                });
-                errorTriggered = true;
-                break;
             }
         }
 
-        if (errorTriggered) {
-            return false;
-        }
-
         await this.finishJob(jobIndex);
-        return true;
     }
 
-    async runJobDeleteLikes(jobIndex: number): Promise<boolean> {
+    async runJobDeleteLikes(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_LIKES, navigator.userAgent);
 
         // After this job, we want to reload the user stats
@@ -1842,7 +1822,6 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.likesDeleted = 0;
         await this.syncProgress();
 
-        let errorTriggered = false;
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
             alreadyDeleted = false;
 
@@ -1878,27 +1857,20 @@ Hang on while I scroll down to your earliest likes.`;
             try {
                 // Deleting likes uses the same deleteTweet IPC function as deleting tweets
                 await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].tweetID);
+
+                this.progress.likesDeleted += 1;
+                await this.syncProgress();
             } catch (e) {
                 await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp, {
                     exception: (e as Error).toString()
                 }, {
                     tweet: tweetsToDelete.tweets[i],
                     index: i
-                })
-                errorTriggered = true;
-                break;
+                }, true)
             }
-
-            this.progress.likesDeleted += 1;
-            await this.syncProgress();
-        }
-
-        if (errorTriggered) {
-            return false;
         }
 
         await this.finishJob(jobIndex);
-        return true;
     }
 
     async runJobDeleteDMs(jobIndex: number): Promise<boolean> {
@@ -2484,6 +2456,9 @@ You can save all your data for free, but you need a Premium plan to delete your 
 
                 case State.RunJobs:
                     this.progress = await window.electron.X.resetProgress(this.account?.id);
+
+                    // Empty the error queue
+                    window.localStorage.setItem('automationErrors', JSON.stringify([]));
 
                     // i is starting at currentJobIndex instead of 0, in case we restored state
                     for (let i = this.currentJobIndex; i < this.jobs.length; i++) {

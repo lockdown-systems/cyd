@@ -204,7 +204,7 @@ export class BaseViewModel {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async error(automationErrorType: AutomationErrorType, errorReportData: any = null, sensitiveContextData: any = null) {
+    async error(automationErrorType: AutomationErrorType, errorReportData: any = null, sensitiveContextData: any = null, allowContinue: boolean = false) {
         console.error(`Automation Error: ${automationErrorType}`, errorReportData, sensitiveContextData);
 
         // Submit progress to the API
@@ -250,12 +250,24 @@ export class BaseViewModel {
             sensitiveContextData: sensitiveContextData,
         };
 
+        // Store the error in localStorage
+        const errorsStr = window.localStorage.getItem('automationErrors');
+        if (!errorsStr) {
+            window.localStorage.setItem('automationErrors', JSON.stringify([details]));
+        } else {
+            const errors = JSON.parse(errorsStr);
+            errors.push(details);
+            window.localStorage.setItem('automationErrors', JSON.stringify(errors));
+        }
+
+        if (!allowContinue) {
+            await this.showErrorModal();
+        }
+    }
+
+    async showErrorModal() {
         // Show the error modal
         this.emitter?.emit("show-automation-error");
-        // Wait for it to appear
-        await new Promise(resolve => setTimeout(resolve, 200));
-        // Set the data
-        this.emitter?.emit("set-automation-error-details", details);
 
         this.pause()
         await this.waitForPause();
