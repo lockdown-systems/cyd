@@ -240,6 +240,7 @@ test("create, delete, and verify accounts", () => {
 // Tests for error report functions
 
 test("createErrorReport should create a new error report", () => {
+    const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
     const errorReportData = '{"test": "data"}';
@@ -247,11 +248,12 @@ test("createErrorReport should create a new error report", () => {
     const screenshotDataURI = 'testScreenshotDataURI';
     const sensitiveContextData = '{"test": "sensitive data"}';
 
-    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
 
     const db = database.getMainDatabase();
     const result = database.exec(db, 'SELECT * FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get');
     expect(result).toEqual(expect.objectContaining({
+        accountID,
         accountType,
         errorReportType,
         errorReportData,
@@ -263,6 +265,7 @@ test("createErrorReport should create a new error report", () => {
 });
 
 test("getErrorReport should retrieve the correct error report", () => {
+    const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
     const errorReportData = '{"test": "data"}';
@@ -270,12 +273,13 @@ test("getErrorReport should retrieve the correct error report", () => {
     const screenshotDataURI = 'testScreenshotDataURI';
     const sensitiveContextData = '{"test": "sensitive data"}';
 
-    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
     const db = database.getMainDatabase();
     const result: database.ErrorReportRow = database.exec(db, 'SELECT id FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get') as database.ErrorReportRow;
     const errorReport = database.getErrorReport(result.id);
 
     expect(errorReport).toEqual(expect.objectContaining({
+        accountID,
         accountType,
         errorReportType,
         errorReportData,
@@ -287,6 +291,7 @@ test("getErrorReport should retrieve the correct error report", () => {
 });
 
 test("getNewErrorReports should retrieve all new error reports", () => {
+    const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
     const errorReportData = '{"test": "data"}';
@@ -294,11 +299,12 @@ test("getNewErrorReports should retrieve all new error reports", () => {
     const screenshotDataURI = 'testScreenshotDataURI';
     const sensitiveContextData = '{"test": "sensitive data"}';
 
-    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
     const newErrorReports = database.getNewErrorReports();
 
     expect(newErrorReports.length).toBeGreaterThan(0);
     expect(newErrorReports[0]).toEqual(expect.objectContaining({
+        accountID,
         accountType,
         errorReportType,
         errorReportData,
@@ -310,6 +316,7 @@ test("getNewErrorReports should retrieve all new error reports", () => {
 });
 
 test("updateErrorReportSubmitted should update the status of an error report to submitted", () => {
+    const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
     const errorReportData = '{"test": "data"}';
@@ -317,7 +324,7 @@ test("updateErrorReportSubmitted should update the status of an error report to 
     const screenshotDataURI = 'testScreenshotDataURI';
     const sensitiveContextData = '{"test": "sensitive data"}';
 
-    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
     const db = database.getMainDatabase();
     const result: database.ErrorReportRow = database.exec(db, 'SELECT * FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get') as database.ErrorReportRow;
     database.updateErrorReportSubmitted(result.id);
@@ -327,6 +334,7 @@ test("updateErrorReportSubmitted should update the status of an error report to 
 });
 
 test("dismissNewErrorReports should update the status of all new error reports to dismissed", () => {
+    const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
     const errorReportData = '{"test": "data"}';
@@ -334,7 +342,7 @@ test("dismissNewErrorReports should update the status of all new error reports t
     const screenshotDataURI = 'testScreenshotDataURI';
     const sensitiveContextData = '{"test": "sensitive data"}';
 
-    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    database.createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
     database.dismissNewErrorReports();
 
     const newErrorReports = database.getNewErrorReports();
@@ -346,12 +354,13 @@ test("dismissNewErrorReports should update the status of all new error reports t
 });
 
 test("createErrorReport should create a new error report with optional parameters", () => {
+    const accountID = 1;
     const accountType = 'testAccountType';
     const errorReportType = 'testErrorReportType';
     const errorReportData = 'testErrorReportData';
 
     // Create an error report without optional parameters
-    database.createErrorReport(accountType, errorReportType, errorReportData, null, null, null);
+    database.createErrorReport(accountID, accountType, errorReportType, errorReportData, null, null, null);
 
     const db = database.getMainDatabase();
     const result = database.exec(db, 'SELECT * FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get');

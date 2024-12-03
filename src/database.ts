@@ -138,6 +138,7 @@ export const runMainMigrations = () => {
                 `CREATE TABLE errorReport (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accountID INTEGER DEFAULT NULL,
     appVersion TEXT DEFAULT NULL,
     clientPlatform TEXT DEFAULT NULL,
     accountType TEXT DEFAULT NULL,
@@ -214,6 +215,7 @@ interface XAccountRow {
 export interface ErrorReportRow {
     id: number;
     createdAt: string;
+    accountID: number;
     appVersion: string;
     clientPlatform: string;
     accountType: string;
@@ -285,6 +287,7 @@ export const getErrorReport = (id: number): ErrorReport | null => {
     return {
         id: row.id,
         createdAt: row.createdAt,
+        accountID: row.accountID,
         appVersion: row.appVersion,
         clientPlatform: row.clientPlatform,
         accountType: row.accountType,
@@ -304,6 +307,7 @@ export const getNewErrorReports = (): ErrorReport[] => {
         errorReports.push({
             id: row.id,
             createdAt: row.createdAt,
+            accountID: row.accountID,
             appVersion: row.appVersion,
             clientPlatform: row.clientPlatform,
             accountType: row.accountType,
@@ -318,11 +322,12 @@ export const getNewErrorReports = (): ErrorReport[] => {
     return errorReports;
 }
 
-export const createErrorReport = (accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => {
+export const createErrorReport = (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => {
     const info: Sqlite3Info = exec(getMainDatabase(), `
-        INSERT INTO errorReport (appVersion, clientPlatform, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO errorReport (accountID, appVersion, clientPlatform, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
+        accountID,
         app.getVersion(),
         os.platform(),
         accountType,
@@ -699,9 +704,9 @@ export const defineIPCDatabase = () => {
         }
     });
 
-    ipcMain.handle('database:createErrorReport', async (_, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null): Promise<void> => {
+    ipcMain.handle('database:createErrorReport', async (_, accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null): Promise<void> => {
         try {
-            createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+            createErrorReport(accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

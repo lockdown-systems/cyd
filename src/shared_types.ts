@@ -12,6 +12,7 @@ export type ResponseData = {
 export type ErrorReport = {
     id: number;
     createdAt: string;
+    accountID: number;
     appVersion: string;
     clientPlatform: string;
     accountType: string;
