@@ -1,11 +1,13 @@
 import path from "path"
 import crypto from 'crypto';
+import os from 'os';
+
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
-import { ipcMain, session } from 'electron';
+import { app, ipcMain, session } from 'electron';
 
 import { getSettingsPath, packageExceptionForReport } from "./util"
-import { Account, XAccount } from './shared_types'
+import { ErrorReport, Account, XAccount } from './shared_types'
 
 export type Migration = {
     name: string;
@@ -128,6 +130,25 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN deleteRetweetsDaysOldEnabled BOOLEAN DEFAULT 0;`,
                 `ALTER TABLE xAccount ADD COLUMN deleteLikesDaysOldEnabled BOOLEAN DEFAULT 0;`,
             ]
+        },
+        // Add errorReport table. Status can be "new", "submitted", and "dismissed"
+        {
+            name: "add errorReport table",
+            sql: [
+                `CREATE TABLE errorReport (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    appVersion TEXT DEFAULT NULL,
+    clientPlatform TEXT DEFAULT NULL,
+    accountType TEXT DEFAULT NULL,
+    errorReportType TEXT NOT NULL,
+    errorReportData TEXT DEFAULT NULL,
+    accountUsername TEXT DEFAULT NULL,
+    screenshotDataURI TEXT DEFAULT NULL,
+    sensitiveContextData TEXT DEFAULT NULL,
+    status TEXT DEFAULT 'new'
+);`,
+            ]
         }
     ]);
 }
@@ -190,6 +211,20 @@ interface XAccountRow {
     likesCount: number;
 }
 
+export interface ErrorReportRow {
+    id: number;
+    createdAt: string;
+    appVersion: string;
+    clientPlatform: string;
+    accountType: string;
+    errorReportType: string;
+    errorReportData: string;
+    accountUsername: string;
+    screenshotDataURI: string;
+    sensitiveContextData: string;
+    status: string; // "new", "submitted", and "dismissed"
+}
+
 // Utils
 
 export const exec = (db: Database.Database | null, sql: string, params: Array<number | string | bigint | Buffer | Date | null> = [], cmd: 'run' | 'all' | 'get' = 'run') => {
@@ -238,6 +273,77 @@ export const setConfig = (key: string, value: string, db: Database.Database | nu
         db = getMainDatabase();
     }
     exec(db, 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
+}
+
+// Error reports
+
+export const getErrorReport = (id: number): ErrorReport | null => {
+    const row: ErrorReportRow | undefined = exec(getMainDatabase(), 'SELECT * FROM errorReport WHERE id = ?', [id], 'get') as ErrorReportRow | undefined;
+    if (!row) {
+        return null;
+    }
+    return {
+        id: row.id,
+        createdAt: row.createdAt,
+        appVersion: row.appVersion,
+        clientPlatform: row.clientPlatform,
+        accountType: row.accountType,
+        errorReportType: row.errorReportType,
+        errorReportData: row.errorReportData,
+        accountUsername: row.accountUsername,
+        screenshotDataURI: row.screenshotDataURI,
+        sensitiveContextData: row.sensitiveContextData,
+        status: row.status
+    }
+}
+
+export const getNewErrorReports = (): ErrorReport[] => {
+    const rows: ErrorReportRow[] = exec(getMainDatabase(), 'SELECT * FROM errorReport WHERE status = ?', ['new'], 'all') as ErrorReportRow[];
+    const errorReports: ErrorReport[] = [];
+    for (const row of rows) {
+        errorReports.push({
+            id: row.id,
+            createdAt: row.createdAt,
+            appVersion: row.appVersion,
+            clientPlatform: row.clientPlatform,
+            accountType: row.accountType,
+            errorReportType: row.errorReportType,
+            errorReportData: row.errorReportData,
+            accountUsername: row.accountUsername,
+            screenshotDataURI: row.screenshotDataURI,
+            sensitiveContextData: row.sensitiveContextData,
+            status: row.status
+        });
+    }
+    return errorReports;
+}
+
+export const createErrorReport = (accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => {
+    const info: Sqlite3Info = exec(getMainDatabase(), `
+        INSERT INTO errorReport (appVersion, clientPlatform, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+        app.getVersion(),
+        os.platform(),
+        accountType,
+        errorReportType,
+        errorReportData,
+        accountUsername,
+        screenshotDataURI,
+        sensitiveContextData
+    ]) as Sqlite3Info;
+    const report = getErrorReport(info.lastInsertRowid);
+    if (!report) {
+        throw new Error("Failed to create error report");
+    }
+}
+
+export const updateErrorReportSubmitted = (id: number) => {
+    exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE id = ?', ['submitted', id]);
+}
+
+export const dismissNewErrorReports = () => {
+    exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE status = ?', ['dismissed', 'new']);
 }
 
 // X accounts
@@ -572,6 +678,46 @@ export const defineIPCDatabase = () => {
     ipcMain.handle('database:setConfig', async (_, key, value) => {
         try {
             setConfig(key, value);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:getErrorReport', async (_, id): Promise<ErrorReport | null> => {
+        try {
+            return getErrorReport(id);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:getNewErrorReports', async (_): Promise<ErrorReport[]> => {
+        try {
+            return getNewErrorReports();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:createErrorReport', async (_, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData): Promise<void> => {
+        try {
+            createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:updateErrorReportSubmitted', async (_, id): Promise<void> => {
+        try {
+            updateErrorReportSubmitted(id);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:dismissNewErrorReports', async (_): Promise<void> => {
+        try {
+            dismissNewErrorReports();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

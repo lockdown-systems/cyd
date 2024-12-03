@@ -16,6 +16,13 @@ vi.mock('./util', () => ({
 }));
 import { getSettingsPath } from './util';
 
+// Mock electron's app.getVersion()
+vi.mock('electron', () => ({
+    app: {
+        getVersion: vi.fn(() => '0.0.1')
+    }
+}));
+
 // Import the local modules after stuff has been mocked
 // import { Account, XAccount } from './shared_types'
 import * as database from './database';
@@ -228,4 +235,112 @@ test("create, delete, and verify accounts", () => {
     accounts = database.getAccounts();
     accountIds = accounts.map(account => account.id);
     expect(accountIds).toEqual(expect.arrayContaining([1, 3, 4]));
+});
+
+// Tests for error report functions
+
+test("createErrorReport should create a new error report", () => {
+    const accountType = 'X';
+    const errorReportType = 'X_manualBugReport';
+    const errorReportData = '{"test": "data"}';
+    const accountUsername = 'testUsername';
+    const screenshotDataURI = 'testScreenshotDataURI';
+    const sensitiveContextData = '{"test": "sensitive data"}';
+
+    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+
+    const db = database.getMainDatabase();
+    const result = database.exec(db, 'SELECT * FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get');
+    expect(result).toEqual(expect.objectContaining({
+        accountType,
+        errorReportType,
+        errorReportData,
+        accountUsername,
+        screenshotDataURI,
+        sensitiveContextData,
+        status: 'new'
+    }));
+});
+
+test("getErrorReport should retrieve the correct error report", () => {
+    const accountType = 'X';
+    const errorReportType = 'X_manualBugReport';
+    const errorReportData = '{"test": "data"}';
+    const accountUsername = 'testUsername';
+    const screenshotDataURI = 'testScreenshotDataURI';
+    const sensitiveContextData = '{"test": "sensitive data"}';
+
+    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    const db = database.getMainDatabase();
+    const result: database.ErrorReportRow = database.exec(db, 'SELECT id FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get') as database.ErrorReportRow;
+    const errorReport = database.getErrorReport(result.id);
+
+    expect(errorReport).toEqual(expect.objectContaining({
+        accountType,
+        errorReportType,
+        errorReportData,
+        accountUsername,
+        screenshotDataURI,
+        sensitiveContextData,
+        status: 'new'
+    }));
+});
+
+test("getNewErrorReports should retrieve all new error reports", () => {
+    const accountType = 'X';
+    const errorReportType = 'X_manualBugReport';
+    const errorReportData = '{"test": "data"}';
+    const accountUsername = 'testUsername';
+    const screenshotDataURI = 'testScreenshotDataURI';
+    const sensitiveContextData = '{"test": "sensitive data"}';
+
+    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    const newErrorReports = database.getNewErrorReports();
+
+    expect(newErrorReports.length).toBeGreaterThan(0);
+    expect(newErrorReports[0]).toEqual(expect.objectContaining({
+        accountType,
+        errorReportType,
+        errorReportData,
+        accountUsername,
+        screenshotDataURI,
+        sensitiveContextData,
+        status: 'new'
+    }));
+});
+
+test("updateErrorReportSubmitted should update the status of an error report to submitted", () => {
+    const accountType = 'X';
+    const errorReportType = 'X_manualBugReport';
+    const errorReportData = '{"test": "data"}';
+    const accountUsername = 'testUsername';
+    const screenshotDataURI = 'testScreenshotDataURI';
+    const sensitiveContextData = '{"test": "sensitive data"}';
+
+    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    const db = database.getMainDatabase();
+    const result: database.ErrorReportRow = database.exec(db, 'SELECT * FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get') as database.ErrorReportRow;
+    database.updateErrorReportSubmitted(result.id);
+
+    const updatedReport = database.getErrorReport(result.id);
+    expect(updatedReport?.status).toBe('submitted');
+});
+
+test("dismissNewErrorReports should update the status of all new error reports to dismissed", () => {
+    const accountType = 'X';
+    const errorReportType = 'X_manualBugReport';
+    const errorReportData = '{"test": "data"}';
+    const accountUsername = 'testUsername';
+    const screenshotDataURI = 'testScreenshotDataURI';
+    const sensitiveContextData = '{"test": "sensitive data"}';
+
+    database.createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
+    database.dismissNewErrorReports();
+
+    const newErrorReports = database.getNewErrorReports();
+    expect(newErrorReports.length).toBe(0);
+
+    const db = database.getMainDatabase();
+    const dismissedReports: database.ErrorReportRow[] = database.exec(db, 'SELECT * FROM errorReport WHERE status = ?', ['dismissed'], 'all') as database.ErrorReportRow[];
+    expect(dismissedReports.length).toBeGreaterThan(0);
 });

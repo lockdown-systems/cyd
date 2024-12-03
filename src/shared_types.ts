@@ -7,7 +7,21 @@ export type ResponseData = {
     processed: boolean;
 }
 
-// Settings models
+// Models
+
+export type ErrorReport = {
+    id: number;
+    createdAt: string;
+    appVersion: string;
+    clientPlatform: string;
+    accountType: string;
+    errorReportType: string;
+    errorReportData: string;
+    accountUsername: string;
+    screenshotDataURI: string;
+    sensitiveContextData: string;
+    status: string; // "new", "submitted", and "dismissed"
+}
 
 export type Account = {
     id: number;
