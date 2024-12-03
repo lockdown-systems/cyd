@@ -145,13 +145,18 @@ const startStateLoop = async () => {
     console.log('State loop ended');
 };
 
-const onAutomationErrorRetry = () => {
+const onAutomationErrorRetry = async () => {
     console.log('Retrying automation after error');
 
-    // Store the state of the view model before the error
-    const state: XViewModelState | undefined = model.value.saveState();
-    localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
-    emit('onRefreshClicked');
+    // If we're currently on the finished page, then move back to the review page
+    if (model.value.state == State.FinishedRunningJobsDisplay) {
+        await setState(State.WizardReview);
+    } else {
+        // Store the state of the view model before the error
+        const state: XViewModelState | undefined = model.value.saveState();
+        localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
+        emit('onRefreshClicked');
+    }
 };
 
 const onAutomationErrorCancel = () => {
