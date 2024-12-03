@@ -73,7 +73,8 @@ emitter?.on('show-sign-in', () => {
 
 // Automation error report modal
 const showAutomationErrorReportModal = ref(false);
-emitter?.on('show-automation-error', () => {
+emitter?.on('show-automation-error', (accountID: number) => {
+  localStorage.setItem("automationErrorAccountID", accountID.toString());
   showAutomationErrorReportModal.value = true;
 });
 

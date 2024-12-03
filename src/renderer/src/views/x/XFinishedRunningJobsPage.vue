@@ -44,7 +44,7 @@ const nextClicked = async () => {
 
 const submitErrorReportClicked = async () => {
     hideErrors.value = true;
-    emitter.emit("show-automation-error");
+    emitter.emit("show-automation-error", props.model.account.id);
 };
 
 // Settings

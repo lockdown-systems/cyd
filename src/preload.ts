@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import {
+    ErrorReport,
     Account,
     XProgress,
     XJob,
@@ -74,6 +75,21 @@ contextBridge.exposeInMainWorld('electron', {
         },
         setConfig: (key: string, value: string) => {
             ipcRenderer.invoke('database:setConfig', key, value)
+        },
+        getErrorReport: (id: number): Promise<ErrorReport | null> => {
+            return ipcRenderer.invoke('database:getErrorReport', id)
+        },
+        getNewErrorReports: (accountID: number): Promise<ErrorReport[]> => {
+            return ipcRenderer.invoke('database:getNewErrorReports', accountID)
+        },
+        createErrorReport: (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null): Promise<void> => {
+            return ipcRenderer.invoke('database:createErrorReport', accountID, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData)
+        },
+        updateErrorReportSubmitted: (id: number) => {
+            ipcRenderer.invoke('database:updateErrorReportSubmitted', id)
+        },
+        dismissNewErrorReports: (accountID: number) => {
+            ipcRenderer.invoke('database:dismissNewErrorReports', accountID)
         },
         getAccount: (accountID: number): Promise<Account | null> => {
             return ipcRenderer.invoke('database:getAccount', accountID)
