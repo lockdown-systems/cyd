@@ -40,14 +40,6 @@ enum RecommendedState {
 }
 const recommendedState = ref(RecommendedState.Unknown);
 
-const showMoreText = ref("Show other options");
-const showMore = ref(false);
-
-const showMoreClicked = () => {
-    showMore.value = !showMore.value;
-    showMoreText.value = showMore.value ? "Show less" : "Show other options";
-};
-
 onMounted(() => {
     // If the user has a lot of data, recommend importing the archive
     if (props.model.account && props.model.account.xAccount) {
@@ -106,11 +98,7 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <button class="btn btn-link btn-sm" @click="showMoreClicked">
-                        {{ showMoreText }}
-                    </button>
-
-                    <div v-if="showMore" class="mb-3 mt-3">
+                    <div class="mb-3 mt-3">
                         <div class="form-check">
                             <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
                                 value="buildFromScratch" class="form-check-input">
@@ -121,8 +109,11 @@ onMounted(() => {
                         <div class="indent">
                             <small class="form-text text-muted">
                                 X restricts how much of your data you can access. You likely won't get all of your data
-                                if you have Cyd build it from scratch. <a href="#"
-                                    @click="openURL('https://cyd.social/docs-building-database-limits/')">Read more</a>.
+                                if you have Cyd build it from scratch. Building from scratch is a great way to backup
+                                your direct messages, though.
+                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                    Read more
+                                </a>.
                             </small>
                         </div>
                     </div>
@@ -142,17 +133,16 @@ onMounted(() => {
                         <div class="indent">
                             <small>
                                 You don't have a lot of data in your X account, so having Cyd scroll through your
-                                profile will be faster. <a href="#"
-                                    @click="openURL('https://cyd.social/docs-building-database-limits/')">Read more</a>.
+                                profile will be faster. Building from scratch is also a great way to backup your direct
+                                messages.
+                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                    Read more
+                                </a>.
                             </small>
                         </div>
                     </div>
 
-                    <button class="btn btn-link btn-sm" @click="showMoreClicked">
-                        {{ showMoreText }}
-                    </button>
-
-                    <div v-if="showMore" class="mb-3 mt-3">
+                    <div class="mb-3 mt-3">
                         <div class="form-check">
                             <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
                                 class="form-check-input">
@@ -199,7 +189,8 @@ onMounted(() => {
                         <div class="indent">
                             <small>
                                 Having Cyd scroll through your profile is faster than importing your X archive, but it
-                                only works if you have less than about 2,000 tweets or likes.
+                                only works if you have less than about 2,000 tweets or likes. Building from scratch is a
+                                great way to backup your direct messages, though.
                                 <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
                                     Read more
                                 </a>.

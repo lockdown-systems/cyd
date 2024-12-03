@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
@@ -1732,7 +1733,10 @@ export class XAccountController {
                     path.join(archivePath, "data", "tweets.js"),
                     path.join(archivePath, "data", "tweet-part*.js"),
                     path.join(archivePath, "data", "tweets-part*.js")
-                ]
+                ],
+                {
+                    windowsPathsNoEscape: os.platform() == 'win32'
+                }
             );
             if (tweetsFilenames.length === 0) {
                 return {
@@ -1816,7 +1820,10 @@ export class XAccountController {
                     path.join(archivePath, "data", "likes.js"),
                     path.join(archivePath, "data", "like-part*.js"),
                     path.join(archivePath, "data", "likes-part*.js")
-                ]
+                ],
+                {
+                    windowsPathsNoEscape: os.platform() == 'win32'
+                }
             );
             if (likesFilenames.length === 0) {
                 return {
