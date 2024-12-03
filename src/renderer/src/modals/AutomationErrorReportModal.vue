@@ -91,8 +91,10 @@ const shouldRetry = async () => {
         "Retry",
         "Cancel"
     )) {
+        console.log('emitting:', `automation-error-${accountID}-retry`);
         emitter.emit(`automation-error-${accountID}-retry`);
     } else {
+        console.log('emitting:', `automation-error-${accountID}-cancel`);
         emitter.emit(`automation-error-${accountID}-cancel`);
     }
 };

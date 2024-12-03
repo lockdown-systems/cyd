@@ -1621,12 +1621,6 @@ Hang on while I scroll down to your earliest likes.`;
                 }
                 await this.sleep(200);
 
-                // DEBUG: trigger an error instead
-                error = null;
-                errorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
-                errorTriggered = true;
-                break;
-
                 // Click the delete button
                 await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
 

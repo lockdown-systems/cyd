@@ -390,6 +390,7 @@ onUnmounted(async () => {
     // Remove automation error handlers
     emitter?.off(`automation-error-${props.account.id}-retry`, onAutomationErrorRetry);
     emitter?.off(`automation-error-${props.account.id}-cancel`, onAutomationErrorCancel);
+    emitter?.off(`automation-error-${props.account.id}-resume`, onAutomationErrorResume);
 
     // Cleanup the view controller
     await model.value.cleanup();
