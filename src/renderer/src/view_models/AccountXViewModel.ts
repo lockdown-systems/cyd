@@ -1579,6 +1579,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuButtonFailed;
+                    errorTriggered = true;
                     this.log("runJobDeleteTweets", ["wait for menu button to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
@@ -1594,6 +1595,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForMenuFailed;
+                    errorTriggered = true;
                     this.log("runJobDeleteTweets", ["wait for menu to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
@@ -1609,6 +1611,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     error = e as Error;
                     errorType = AutomationErrorType.x_runJob_deleteTweets_WaitForDeleteConfirmationFailed;
+                    errorTriggered = true;
                     this.log("runJobDeleteTweets", ["wait for delete confirmation popup to appear failed, try #", tries]);
                     await this.sleep(1000);
                     continue;
@@ -1734,6 +1737,7 @@ Hang on while I scroll down to your earliest likes.`;
                     } catch (e) {
                         error = e as Error;
                         errorType = AutomationErrorType.x_runJob_deleteRetweets_WaitForMenuFailed;
+                        errorTriggered = true;
                         this.log("runJobDeleteRetweets", ["wait for unretweet menu to appear failed, try #", tries]);
                         await this.sleep(1000);
                         continue;
