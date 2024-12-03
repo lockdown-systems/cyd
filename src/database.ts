@@ -699,7 +699,7 @@ export const defineIPCDatabase = () => {
         }
     });
 
-    ipcMain.handle('database:createErrorReport', async (_, accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData): Promise<void> => {
+    ipcMain.handle('database:createErrorReport', async (_, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null): Promise<void> => {
         try {
             createErrorReport(accountType, errorReportType, errorReportData, accountUsername, screenshotDataURI, sensitiveContextData);
         } catch (error) {

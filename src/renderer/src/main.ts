@@ -6,6 +6,7 @@ import mitt from 'mitt';
 
 import { createApp } from "vue";
 import type {
+    ErrorReport,
     Account,
     XProgress,
     XJob,
@@ -46,6 +47,11 @@ declare global {
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
+                getErrorReport: (id: number) => Promise<ErrorReport | null>;
+                getNewErrorReports: () => Promise<ErrorReport[]>;
+                createErrorReport: (accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => Promise<void>;
+                updateErrorReportSubmitted: (id: number) => void;
+                dismissNewErrorReports: () => void;
                 getAccount: (accountID: number) => Promise<Account | null>;
                 getAccounts: () => Promise<Account[]>;
                 createAccount: () => Promise<Account>;
