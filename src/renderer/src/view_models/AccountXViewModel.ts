@@ -2457,8 +2457,8 @@ You can save all your data for free, but you need a Premium plan to delete your 
                 case State.RunJobs:
                     this.progress = await window.electron.X.resetProgress(this.account?.id);
 
-                    // Empty the error queue
-                    window.localStorage.setItem('automationErrors', JSON.stringify([]));
+                    // Dismiss old error reports
+                    await window.electron.database.dismissNewErrorReports();
 
                     // i is starting at currentJobIndex instead of 0, in case we restored state
                     for (let i = this.currentJobIndex; i < this.jobs.length; i++) {

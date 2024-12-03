@@ -2,7 +2,7 @@ import { WebviewTag } from 'electron';
 import { Emitter, EventType } from 'mitt';
 import type { Account } from '../../../shared_types';
 import { PlausibleEvents } from '../types';
-import { AutomationErrorType, AutomationErrorDetails } from '../automation_errors';
+import { AutomationErrorType } from '../automation_errors';
 import { logObj } from '../util';
 
 const DEFAULT_TIMEOUT = 30000;
@@ -240,25 +240,15 @@ export class BaseViewModel {
             sensitiveContextData.currentURL = webview.getURL();
         }
 
-        const details: AutomationErrorDetails = {
-            accountID: this.account?.id,
-            accountType: this.account?.type,
-            automationErrorType: automationErrorType,
-            errorReportData: errorReportData,
-            username: username,
-            screenshotDataURL: screenshotDataURL,
-            sensitiveContextData: sensitiveContextData,
-        };
-
-        // Store the error in localStorage
-        const errorsStr = window.localStorage.getItem('automationErrors');
-        if (!errorsStr) {
-            window.localStorage.setItem('automationErrors', JSON.stringify([details]));
-        } else {
-            const errors = JSON.parse(errorsStr);
-            errors.push(details);
-            window.localStorage.setItem('automationErrors', JSON.stringify(errors));
-        }
+        // Create the error
+        await window.electron.database.createErrorReport(
+            this.account?.type,
+            automationErrorType,
+            JSON.stringify(errorReportData),
+            username,
+            screenshotDataURL,
+            JSON.stringify(sensitiveContextData)
+        );
 
         if (!allowContinue) {
             await this.showErrorModal();

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, getCurrentInstance } from 'vue';
-import { AutomationErrorTypeToMessage, AutomationErrorDetails, AutomationErrorType } from '../automation_errors';
+import { AutomationErrorTypeToMessage, AutomationErrorType } from '../automation_errors';
 import { PlausibleEvents } from "../types";
 import CydAPIClient from '../../../cyd-api-client';
 import { PostAutomationErrorReportAPIRequest } from '../../../cyd-api-client';
 import Modal from 'bootstrap/js/dist/modal';
+import { ErrorReport } from '../../../shared_types';
 
 const emit = defineEmits(['hide']);
 const hide = () => {
@@ -24,25 +25,25 @@ const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const appVersion = ref('');
 const clientPlatform = ref('');
 const includeSensitiveData = ref(false);
-const details = ref<AutomationErrorDetails[]>([]);
+const errorReports = ref<ErrorReport[]>([]);
 
-const automationErrorType = (i: number) => {
-    if (details.value[i] && AutomationErrorTypeToMessage[details.value[i].automationErrorType] !== null) {
-        return AutomationErrorTypeToMessage[details.value[i].automationErrorType];
+const errorReportType = (i: number) => {
+    if (errorReports.value[i] && AutomationErrorTypeToMessage[errorReports.value[i].errorReportType as AutomationErrorType] !== null) {
+        return AutomationErrorTypeToMessage[errorReports.value[i].errorReportType as AutomationErrorType];
     }
     return "Automation error";
 };
 
 const errorReportData = (i: number) => {
-    if (details.value[i].errorReportData) {
-        return details.value[i].errorReportData;
+    if (errorReports.value[i].errorReportData) {
+        return JSON.parse(errorReports.value[i].errorReportData);
     }
     return "";
 };
 
 const sensitiveContextData = (i: number) => {
-    if (details.value[i].sensitiveContextData) {
-        return details.value[i].sensitiveContextData;
+    if (errorReports.value[i].sensitiveContextData) {
+        return JSON.parse(errorReports.value[i].sensitiveContextData);
     }
     return "";
 };
@@ -52,9 +53,11 @@ const sensitiveContextData = (i: number) => {
 const userDescription = ref('');
 
 const onUserDescriptionChange = (_event: Event) => {
-    for (let i = 0; i < details.value.length; i++) {
-        if (details.value[i]) {
-            details.value[i].errorReportData.userDescription = userDescription.value;
+    for (let i = 0; i < errorReports.value.length; i++) {
+        if (errorReports.value[i]) {
+            const errorReportData = JSON.parse(errorReports.value[i].errorReportData);
+            errorReportData.userDescription = userDescription.value;
+            errorReports.value[i].errorReportData = JSON.stringify(errorReportData);
         }
     }
 };
@@ -74,14 +77,14 @@ const toggleShowDetails = () => {
 };
 
 const shouldRetry = async () => {
-    if (details.value.length == 0) {
+    if (errorReports.value.length == 0) {
         console.error("No details provided for automation error report");
         return;
     }
-    const accountID = details.value[0].accountID;
+    const accountID = errorReports.value[0].accountID;
 
     // If this is a manual action, instead of retrying, we should just resume
-    if (details.value[0].automationErrorType == AutomationErrorType.X_manualBugReport) {
+    if (errorReports.value[0].errorReportType == AutomationErrorType.X_manualBugReport) {
         emitter.emit(`automation-error-${accountID}-resume`);
         return;
     }
@@ -100,7 +103,7 @@ const shouldRetry = async () => {
 };
 
 const submitReport = async () => {
-    if (!details.value) {
+    if (!errorReports.value) {
         await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR, navigator.userAgent);
 
         await window.electron.showError("Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.")
@@ -114,23 +117,23 @@ const submitReport = async () => {
     // Are we logged in?
     const authenticated = await apiClient.value.ping();
 
-    for (let i = 0; i < details.value.length; i++) {
+    for (let i = 0; i < errorReports.value.length; i++) {
         submittingIndex.value++;
 
         // Build the data object
         let data: PostAutomationErrorReportAPIRequest = {
-            app_version: appVersion.value,
-            client_platform: clientPlatform.value,
-            account_type: details.value[i].accountType,
-            error_report_type: details.value[i].automationErrorType,
-            error_report_data: JSON.parse(JSON.stringify(details.value[i].errorReportData)),
+            app_version: errorReports.value[i].appVersion,
+            client_platform: errorReports.value[i].clientPlatform,
+            account_type: errorReports.value[i].accountType,
+            error_report_type: errorReports.value[i].errorReportType,
+            error_report_data: JSON.parse(errorReports.value[i].errorReportData),
         };
         if (includeSensitiveData.value) {
             data = {
                 ...data,
-                account_username: details.value[i].username,
-                screenshot_data_uri: details.value[i].screenshotDataURL,
-                sensitive_context_data: JSON.parse(JSON.stringify(details.value[i].sensitiveContextData)),
+                account_username: errorReports.value[i].accountUsername,
+                screenshot_data_uri: errorReports.value[i].screenshotDataURI,
+                sensitive_context_data: JSON.parse(errorReports.value[i].sensitiveContextData),
             }
         }
 
@@ -143,8 +146,13 @@ const submitReport = async () => {
             await window.electron.showError("Well this is awkward. There's an error submitting your automation error report.")
         } else {
             await window.electron.trackEvent(PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED, navigator.userAgent);
+
+            await window.electron.database.updateErrorReportSubmitted(errorReports.value[i].id);
         }
     }
+
+    // Dismiss any error reports that failed
+    errorReports.value = await window.electron.database.getNewErrorReports();
 
     hide();
     await shouldRetry();
@@ -177,12 +185,7 @@ onMounted(async () => {
     submittingIndex.value = 0;
 
     // Load the errors
-    const errorsStr = window.localStorage.getItem('automationErrors');
-    details.value = errorsStr ? JSON.parse(errorsStr) : [];
-    console.log("Errors:", details.value);
-
-    // Clear errors
-    window.localStorage.setItem('automationErrors', JSON.stringify([]));
+    errorReports.value = await window.electron.database.getNewErrorReports();
 
     // Load the app version and client platform
     appVersion.value = await window.electron.getVersion();
@@ -222,7 +225,7 @@ onUnmounted(() => {
                     <div class="d-flex flex-column">
                         <div>
                             <h5 v-if="details.length == 1" class="mb-3">
-                                {{ automationErrorType(0) }}
+                                {{ errorReportType(0) }}
                             </h5>
                             <h5 v-else>
                                 {{ details.length.toLocaleString() }} errors occured
@@ -262,7 +265,7 @@ onUnmounted(() => {
                                         <ul class="details">
                                             <li>
                                                 <label>Error type:</label>
-                                                <span>{{ automationErrorType(i) }}</span>
+                                                <span>{{ errorReportType(i) }}</span>
                                             </li>
                                             <li>
                                                 <label>App version:</label>

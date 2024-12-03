@@ -133,15 +133,3 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_loadURLError]: "Error while loading URL",
     [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
 }
-
-export type AutomationErrorDetails = {
-    accountID: number;
-    accountType: string;
-    automationErrorType: AutomationErrorType;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    errorReportData: any;
-    username: string;
-    screenshotDataURL: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sensitiveContextData: any;
-}
