@@ -138,12 +138,7 @@ onMounted(async () => {
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
                     :disabled="!(archiveTweets || archiveLikes || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    <template v-if="props.model.account?.xAccount?.deleteMyData">
-                        Continue to Delete Options
-                    </template>
-                    <template v-else>
-                        Continue to Review
-                    </template>
+                    Continue to Review
                 </button>
             </div>
         </form>
