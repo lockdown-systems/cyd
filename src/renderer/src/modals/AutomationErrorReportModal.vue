@@ -329,30 +329,7 @@ onUnmounted(() => {
 <style scoped>
 .error-avatar img {
     width: 180px;
-    animation: spin-alternate 1.5s linear infinite;
     margin: 2rem;
-}
-
-@keyframes spin-alternate {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    25% {
-        transform: rotate(15deg);
-    }
-
-    50% {
-        transform: rotate(0deg);
-    }
-
-    75% {
-        transform: rotate(-15deg);
-    }
-
-    100% {
-        transform: rotate(0deg);
-    }
 }
 
 .screenshot img {
