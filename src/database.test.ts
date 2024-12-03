@@ -344,3 +344,25 @@ test("dismissNewErrorReports should update the status of all new error reports t
     const dismissedReports: database.ErrorReportRow[] = database.exec(db, 'SELECT * FROM errorReport WHERE status = ?', ['dismissed'], 'all') as database.ErrorReportRow[];
     expect(dismissedReports.length).toBeGreaterThan(0);
 });
+
+test("createErrorReport should create a new error report with optional parameters", () => {
+    const accountType = 'testAccountType';
+    const errorReportType = 'testErrorReportType';
+    const errorReportData = 'testErrorReportData';
+
+    // Create an error report without optional parameters
+    database.createErrorReport(accountType, errorReportType, errorReportData, null, null, null);
+
+    const db = database.getMainDatabase();
+    const result = database.exec(db, 'SELECT * FROM errorReport WHERE accountType = ? AND errorReportType = ?', [accountType, errorReportType], 'get');
+
+    expect(result).toEqual(expect.objectContaining({
+        accountType,
+        errorReportType,
+        errorReportData,
+        accountUsername: null,
+        screenshotDataURI: null,
+        sensitiveContextData: null,
+        status: 'new'
+    }));
+});
