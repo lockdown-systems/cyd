@@ -325,7 +325,7 @@ test("getNewErrorReports should retrieve all new error reports", () => {
     expect(newErrorReports[1].status).toBe('new');
 });
 
-test("updateErrorReportSubmitted should update the status of an error report to submitted", () => {
+test("updateErrorReportSubmitted should delete an error report", () => {
     const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
@@ -340,10 +340,10 @@ test("updateErrorReportSubmitted should update the status of an error report to 
     database.updateErrorReportSubmitted(result.id);
 
     const updatedReport = database.getErrorReport(result.id);
-    expect(updatedReport?.status).toBe('submitted');
+    expect(updatedReport).toBe(null);
 });
 
-test("dismissNewErrorReports should update the status of all new error reports to dismissed", () => {
+test("dismissNewErrorReports should delete all new error reports", () => {
     const accountID = 1;
     const accountType = 'X';
     const errorReportType = 'X_manualBugReport';
@@ -357,10 +357,6 @@ test("dismissNewErrorReports should update the status of all new error reports t
 
     const newErrorReports = database.getNewErrorReports(accountID);
     expect(newErrorReports.length).toBe(0);
-
-    const db = database.getMainDatabase();
-    const dismissedReports: database.ErrorReportRow[] = database.exec(db, 'SELECT * FROM errorReport WHERE status = ?', ['dismissed'], 'all') as database.ErrorReportRow[];
-    expect(dismissedReports.length).toBeGreaterThan(0);
 });
 
 test("createErrorReport should create a new error report with optional parameters", () => {
