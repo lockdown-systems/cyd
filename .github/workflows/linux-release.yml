@@ -50,12 +50,14 @@ jobs:
 
       - name: Make release
         run: |
+          export DEBUG=electron-packager,electron-universal,electron-forge*
           CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
           if [[ "$CYD_VERSION" == *-dev ]]; then
-            npm run make-dev-linux
+            export CYD_ENV=dev
           else
-            npm run make-prod-linux
+            export CYD_ENV=prod
           fi
+          npx electron-forge make --arch ${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}
 
       - name: Display output files
         run: find out
