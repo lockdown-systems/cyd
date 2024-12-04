@@ -1623,6 +1623,7 @@ Hang on while I scroll down to your earliest likes.`;
                 await this.scriptClickElement('div[role="group"] button[data-testid="confirmationSheetConfirm"]');
                 await this.sleep(200);
 
+                errorTriggered = false;
                 success = true;
                 break;
             }
