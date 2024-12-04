@@ -42,12 +42,6 @@ const deleteRetweetsShowMoreClicked = () => {
     deleteRetweetsShowMore.value = !deleteRetweetsShowMore.value;
 };
 
-const deleteLikesShowMore = ref(false);
-const deleteLikesShowMoreButtonText = computed(() => deleteLikesShowMore.value ? 'Hide more options' : 'Show more options');
-const deleteLikesShowMoreClicked = () => {
-    deleteLikesShowMore.value = !deleteLikesShowMore.value;
-};
-
 // Settings
 const deleteTweets = ref(false);
 const deleteTweetsDaysOldEnabled = ref(false);
@@ -61,8 +55,6 @@ const deleteRetweets = ref(false);
 const deleteRetweetsDaysOldEnabled = ref(false);
 const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
-const deleteLikesDaysOldEnabled = ref(false);
-const deleteLikesDaysOld = ref(0);
 const deleteDMs = ref(false);
 const unfollowEveryone = ref(false);
 
@@ -82,8 +74,6 @@ const loadSettings = async () => {
         deleteRetweetsDaysOldEnabled.value = account.xAccount.deleteRetweetsDaysOldEnabled;
         deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
         deleteLikes.value = account.xAccount.deleteLikes;
-        deleteLikesDaysOldEnabled.value = account.xAccount.deleteLikesDaysOldEnabled;
-        deleteLikesDaysOld.value = account.xAccount.deleteLikesDaysOld;
         deleteDMs.value = account.xAccount.deleteDMs;
         unfollowEveryone.value = account.xAccount.unfollowEveryone;
     }
@@ -104,11 +94,6 @@ const loadSettings = async () => {
     // Should delete retweets show more options?
     if (deleteRetweets.value && deleteRetweetsDaysOldEnabled.value) {
         deleteRetweetsShowMore.value = true;
-    }
-
-    // Should delete likes show more options?
-    if (deleteLikes.value && deleteLikesDaysOldEnabled.value) {
-        deleteLikesShowMore.value = true;
     }
 };
 
@@ -136,8 +121,6 @@ const saveSettings = async () => {
         account.xAccount.deleteRetweetsDaysOldEnabled = deleteRetweetsDaysOldEnabled.value;
         account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
         account.xAccount.deleteLikes = deleteLikes.value;
-        account.xAccount.deleteLikesDaysOldEnabled = deleteLikesDaysOldEnabled.value;
-        account.xAccount.deleteLikesDaysOld = deleteLikesDaysOld.value;
         account.xAccount.deleteDMs = deleteDMs.value;
         account.xAccount.unfollowEveryone = unfollowEveryone.value;
 
@@ -351,36 +334,9 @@ onMounted(async () => {
                         <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
                             Delete my likes
                         </label>
-                        <button class="btn btn-sm btn-link" @click="deleteLikesShowMoreClicked">
-                            {{ deleteLikesShowMoreButtonText }}
-                        </button>
                     </div>
                     <div class="d-flex align-items-center flex-nowrap">
                         <span class="premium badge badge-primary">Premium</span>
-                    </div>
-                </div>
-                <div v-if="deleteLikesShowMore" class="indent">
-                    <div class="d-flex align-items-center">
-                        <div class="form-check">
-                            <input id="deleteLikesDaysOldEnabled" v-model="deleteLikesDaysOldEnabled" type="checkbox"
-                                class="form-check-input" :disabled="!deleteLikes">
-                            <label class="form-check-label mr-1 text-nowrap" for="deleteLikesDaysOldEnabled">
-                                older than
-                            </label>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <label class="form-check-label mr-1 sr-only" for="deleteLikesDaysOld">
-                                days
-                            </label>
-                            <div class="input-group flex-nowrap">
-                                <input id="deleteLikesDaysOld" v-model="deleteLikesDaysOld" type="text"
-                                    class="form-control form-short small"
-                                    :disabled="!deleteLikes || !deleteLikesDaysOldEnabled">
-                                <div class="input-group-append">
-                                    <span class="input-group-text small">days</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="indent">
