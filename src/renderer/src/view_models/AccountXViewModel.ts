@@ -1693,8 +1693,9 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.retweetsDeleted = 0;
         await this.syncProgress();
 
-        let errorTriggered = false;
+        let errorTriggered;
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+            errorTriggered = false;
             errorType = AutomationErrorType.x_runJob_deleteRetweets_UnknownError;
             alreadyDeleted = false;
 
@@ -1750,10 +1751,12 @@ Hang on while I scroll down to your earliest likes.`;
                     await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
                     await this.sleep(200);
 
+                    errorTriggered = false;
                     success = true;
                     break;
                 } else {
                     this.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
+                    errorTriggered = false;
                     success = true;
                     break;
                 }
