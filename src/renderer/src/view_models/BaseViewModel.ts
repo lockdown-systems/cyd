@@ -230,7 +230,7 @@ export class BaseViewModel {
 
         // Get screenshot
         let screenshotDataURL = "";
-        if (webview) {
+        if (webview && this.showBrowser) {
             screenshotDataURL = (await webview.capturePage()).toDataURL();
         }
 
