@@ -26,6 +26,9 @@ jobs:
             exit 1
           fi
 
+      - name: Install Linux dependencies
+        run: sudo apt-get install -y build-essential fakeroot curl rpm zip sudo
+
       - name: Install node
         uses: actions/setup-node@v4
         with:
