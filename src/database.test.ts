@@ -105,7 +105,6 @@ test("createXAccount should create a new XAccount", () => {
     expect(xAccount).toHaveProperty('deleteRetweets');
     expect(xAccount).toHaveProperty('deleteRetweetsDaysOld');
     expect(xAccount).toHaveProperty('deleteLikes');
-    expect(xAccount).toHaveProperty('deleteLikesDaysOld');
     expect(xAccount).toHaveProperty('deleteDMs');
 });
 

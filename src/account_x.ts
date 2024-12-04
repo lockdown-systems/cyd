@@ -1397,11 +1397,10 @@ export class XAccountController {
         }
 
         // Select just the tweets that need to be unliked based on the settings
-        const daysOldTimestamp = this.account.deleteLikesDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteLikesDaysOld) : getTimestampDaysAgo(0);
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND isLiked = ? AND createdAt <= ? ORDER BY createdAt DESC',
-            [1, daysOldTimestamp],
+            'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND isLiked = ? ORDER BY createdAt DESC',
+            [1],
             "all"
         ) as XTweetRow[];
 
