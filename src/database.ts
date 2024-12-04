@@ -354,15 +354,15 @@ export const createErrorReport = (accountID: number, accountType: string, errorR
 }
 
 export const updateErrorReportSubmitted = (id: number) => {
-    exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE id = ?', ['submitted', id]);
+    exec(getMainDatabase(), 'DELETE FROM errorReport WHERE id = ?', [id]);
 }
 
 export const dismissNewErrorReports = (accountID: number) => {
-    exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE accountID = ? AND status = ?', ['dismissed', accountID, 'new']);
+    exec(getMainDatabase(), 'DELETE FROM errorReport WHERE accountID = ? AND status = ?', [accountID, 'new']);
 }
 
 export const dismissAllNewErrorReports = () => {
-    exec(getMainDatabase(), 'UPDATE errorReport SET status = ? WHERE status = ?', ['dismissed', 'new']);
+    exec(getMainDatabase(), 'DELETE FROM errorReport WHERE status = ?', ['new']);
 }
 
 // X accounts

@@ -192,6 +192,11 @@ export class BaseViewModel {
             message: message,
         });
 
+        // Cap this.logs to at most 20 items
+        if (this.logs.length > 20) {
+            this.logs.shift();
+        }
+
         if (message === undefined) {
             console.log(`${this.account?.type}[${this.account?.id}] ${func} (${this.state})`);
         } else {
@@ -225,7 +230,7 @@ export class BaseViewModel {
 
         // Get screenshot
         let screenshotDataURL = "";
-        if (webview) {
+        if (webview && this.showBrowser) {
             screenshotDataURL = (await webview.capturePage()).toDataURL();
         }
 
