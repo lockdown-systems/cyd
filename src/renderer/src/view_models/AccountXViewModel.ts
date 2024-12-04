@@ -1540,8 +1540,9 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.newTweetsArchived = 0;
         await this.syncProgress();
 
-        let errorTriggered = false;
+        let errorTriggered;
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+            errorTriggered = false;
             errorType = AutomationErrorType.x_runJob_deleteTweets_UnknownError;
 
             success = false;
