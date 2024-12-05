@@ -11,10 +11,12 @@ jobs:
       matrix:
         arch: [x86_64, arm64]
         include:
+           # default github-hosted runner
           - arch: x86_64
-            runs-on: ubuntu-24.04 # default github-hosted runner
+            runs-on: ubuntu-24.04
+          # custom github-hosted runner
           - arch: arm64
-            runs-on: ubuntu-arm64 # custom github-hosted runner
+            runs-on: ubuntu-arm64
 
     steps:
       - name: Checkout repository
