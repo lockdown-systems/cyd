@@ -7,7 +7,7 @@ on:
 
 jobs:
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         arch: [x86_64, arm64]
@@ -25,6 +25,11 @@ jobs:
             echo "::error file=package.json,title=Version check failed::Version string in package.json $CYD_VERSION does not match the tag $TAG_VERSION"
             exit 1
           fi
+
+      - name: Display platform and architecture
+        run: |
+          echo "Platform: ${{ runner.os }}, Architecture: ${{ matrix.arch }}"
+          uname -a
 
       - name: Install Linux dependencies
         run: sudo apt-get install -y build-essential fakeroot curl rpm zip sudo
