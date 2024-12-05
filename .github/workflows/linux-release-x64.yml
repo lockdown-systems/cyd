@@ -1,0 +1,87 @@
+name: Release for Linux x64
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    # default x64 github-hosted runner
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make sure the version string matches the tag
+        run: |
+          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
+          TAG_VERSION=${GITHUB_REF#refs/tags/}
+          TAG_VERSION=${TAG_VERSION#v} # strip the leading 'v' from the tag
+          if [ "$CYD_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error file=package.json,title=Version check failed::Version string in package.json $CYD_VERSION does not match the tag $TAG_VERSION"
+            exit 1
+          fi
+
+      - name: Display platform and architecture
+        run: |
+          echo "Platform: ${{ runner.os }}, Architecture: ${{ matrix.arch }}"
+          uname -a
+
+      - name: Install Linux dependencies
+        run: sudo apt-get install -y build-essential fakeroot curl rpm zip sudo
+
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ matrix.arch }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.arch }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Save Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ matrix.arch }}
+
+      - name: Make release
+        run: |
+          export DEBUG=electron-packager,electron-universal,electron-forge*
+          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
+          if [[ "$CYD_VERSION" == *-dev ]]; then
+            export CYD_ENV=dev
+          else
+            export CYD_ENV=prod
+          fi
+          npx electron-forge make --arch ${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}
+
+      - name: Display output files
+        run: find out
+
+      - name: Upload DEB artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-packages-${{ matrix.arch }}
+          path: out/make/deb/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/cyd_*.deb
+
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-packages-${{ matrix.arch }}
+          path: out/make/rpm/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/cyd-*.rpm
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zip-packages-${{ matrix.arch }}
+          path: out/make/zip/linux/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/Cyd-*.zip
