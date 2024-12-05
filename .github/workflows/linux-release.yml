@@ -17,6 +17,8 @@ jobs:
           # custom github-hosted runner
           - arch: arm64
             runs-on: ubuntu-arm64
+    
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout repository
