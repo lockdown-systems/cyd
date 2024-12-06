@@ -31,6 +31,8 @@ import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
+import XJobDeleteTweets from './XJobDeleteTweets.vue';
+
 import type {
     Account,
     XProgress,
@@ -451,13 +453,18 @@ onUnmounted(async () => {
         <!-- RunJobs states -->
         <div :class="{
             'hidden': model.showBrowser || !(model.state == State.RunJobs && model.runJobsState != RunJobsState.Default),
+            'run-jobs-state': true,
             'ms-2': true
         }">
-            <p>this is a run jobs state?</p>
+            <div class="run-jobs-state-container d-flex">
+                <div class="run-jobs-state-content flex-grow-1">
+                    <XJobDeleteTweets v-if="model.runJobsState == RunJobsState.DeleteTweets" :model="unref(model)" />
+                </div>
+            </div>
         </div>
 
         <!-- Wizard -->
-        <div :class="{ 'hidden': model.showBrowser, 'wizard': true, 'ms-2': true }">
+        <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
                     <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
