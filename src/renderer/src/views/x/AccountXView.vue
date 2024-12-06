@@ -39,7 +39,7 @@ import type {
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
-import { AccountXViewModel, State, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
+import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
 import { setAccountRunning, openURL } from '../../util';
 import { xRequiresPremium } from '../../util_x';
 
@@ -447,6 +447,14 @@ onUnmounted(async () => {
                 'webview-automation-border': model.showAutomationNotice,
                 'webview-input-border': !model.showAutomationNotice
             }" />
+
+        <!-- RunJobs states -->
+        <div :class="{
+            'hidden': model.showBrowser || !(model.state == State.RunJobs && model.runJobsState != RunJobsState.Default),
+            'ms-2': true
+        }">
+            <p>this is a run jobs state?</p>
+        </div>
 
         <!-- Wizard -->
         <div :class="{ 'hidden': model.showBrowser, 'wizard': true, 'ms-2': true }">

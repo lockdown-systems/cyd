@@ -56,6 +56,13 @@ export enum State {
     Debug = "Debug",
 }
 
+// When state is state is RunJobs, this is the job that is currently running, if
+// it requires hiding the browser and instead showing stuff in AccountXView
+export enum RunJobsState {
+    Default = "",
+    DeleteTweets = "DeleteTweets",
+}
+
 export enum FailureState {
     indexTweets_FailedToRetryAfterRateLimit = "indexTweets_FailedToRetryAfterRateLimit",
     indexLikes_FailedToRetryAfterRateLimit = "indexLikes_FailedToRetryAfterRateLimit",
@@ -1507,6 +1514,8 @@ Hang on while I scroll down to your earliest likes.`;
     }
 
     async runJobDeleteTweets(jobIndex: number) {
+        this.runJobsState = RunJobsState.DeleteTweets;
+
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
 
         // After this job, we want to reload the user stats
@@ -1518,8 +1527,8 @@ Hang on while I scroll down to your earliest likes.`;
 
         let tweetsToDelete: XDeleteTweetsStartResponse;
 
-        this.showBrowser = true;
         this.instructions = `**I'm deleting your tweets based on your criteria, starting with the earliest.**`;
+        this.showBrowser = false;
         this.showAutomationNotice = true;
 
         // Load the tweets to delete
@@ -1539,6 +1548,9 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.tweetsArchived = 0;
         this.progress.newTweetsArchived = 0;
         await this.syncProgress();
+
+        this.pause();
+        await this.waitForPause();
 
         let errorTriggered;
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
@@ -2249,6 +2261,8 @@ Follow the instructions below to request your archive from X. You will need to v
     }
 
     async runJob(jobIndex: number) {
+        this.runJobsState = RunJobsState.Default;
+
         // Reset logs before each job, so the sensitive context data in error reports will only includes
         // logs from the current job
         this.resetLogs();

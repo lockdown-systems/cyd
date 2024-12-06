@@ -48,6 +48,7 @@ export class BaseViewModel {
     public isWebviewDestroyed: boolean;
 
     public state: string;
+    public runJobsState: string;
     public action: string;
     public actionString: string;
     public actionFinishedString: string;
@@ -75,6 +76,7 @@ export class BaseViewModel {
         this.isWebviewDestroyed = false;
 
         this.state = "";
+        this.runJobsState = "";
         this.action = "";
         this.actionString = "";
         this.actionFinishedString = "";
