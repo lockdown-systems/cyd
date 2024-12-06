@@ -49,8 +49,8 @@ onMounted(() => {
         ) {
             recommendedState.value = RecommendedState.Unknown;
         } else if (
-            props.model.account.xAccount.tweetsCount >= 1800 ||
-            props.model.account.xAccount.likesCount >= 1800
+            props.model.account.xAccount.tweetsCount >= 2000 ||
+            props.model.account.xAccount.likesCount >= 2000
         ) {
             recommendedState.value = RecommendedState.ImportArchive;
         } else {
