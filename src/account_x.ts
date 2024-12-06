@@ -191,6 +191,8 @@ export class XAccountController {
     public mitmController: IMITMController;
     private progress: XProgress = emptyXProgress();
 
+    private cookies: Record<string, string> = {};
+
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
 
@@ -221,6 +223,23 @@ export class XAccountController {
                 const urlParts = details.url.split("/");
                 const conversationID = urlParts[urlParts.length - 2];
                 this.deleteDMsMarkDeleted(conversationID);
+            }
+        });
+
+        ses.webRequest.onSendHeaders((details) => {
+            // Keep track of cookies
+            if (details.url.startsWith("https://x.com/") && details.requestHeaders) {
+                const cookieHeader = details.requestHeaders['Cookie'];
+                if (cookieHeader) {
+                    const cookies = cookieHeader.split(';');
+                    cookies.forEach((cookie) => {
+                        const parts = cookie.split('=');
+                        if (parts.length == 2) {
+                            this.cookies[parts[0].trim()] = parts[1].trim();
+                        }
+                    });
+                    log.info("XAccountController: cookies", this.cookies);
+                }
             }
         });
     }
@@ -2062,6 +2081,10 @@ export class XAccountController {
         };
     }
 
+    async getCookie(name: string): Promise<string | null> {
+        return this.cookies[name] || null;
+    }
+
     async getConfig(key: string): Promise<string | null> {
         return getConfig(key, this.db);
     }
@@ -2456,6 +2479,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.importXArchive(archivePath, dataType);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:getCookie', async (_, accountID: number, name: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getCookie(name);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

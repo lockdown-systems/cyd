@@ -248,6 +248,9 @@ contextBridge.exposeInMainWorld('electron', {
         importXArchive: (accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
             return ipcRenderer.invoke('X:importXArchive', accountID, archivePath, dataType);
         },
+        getCookie: (accountID: number, name: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:getCookie', accountID, name);
+        },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:getConfig', accountID, key);
         },

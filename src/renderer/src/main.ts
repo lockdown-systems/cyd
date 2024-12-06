@@ -107,6 +107,7 @@ declare global {
                 deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
                 verifyXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 importXArchive: (accountID: number, archivePath: string, dataType: string) => Promise<XImportArchiveResponse>;
+                getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
             };
