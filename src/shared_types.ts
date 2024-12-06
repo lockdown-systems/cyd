@@ -199,6 +199,14 @@ export function emptyXProgress(): XProgress {
 }
 
 export type XTweetItem = {
+    id: string; // tweetID
+    t: string; // text
+    l: number; // likeCount
+    r: number; // retweetCount
+    d: string; // createdAt
+}
+
+export type XTweetItemArchive = {
     url: string,
     username: string,
     tweetID: string,
@@ -207,7 +215,7 @@ export type XTweetItem = {
 
 export type XArchiveStartResponse = {
     outputPath: string;
-    items: XTweetItem[]
+    items: XTweetItemArchive[]
 }
 
 export function emptyXArchiveStartResponse(): XArchiveStartResponse {

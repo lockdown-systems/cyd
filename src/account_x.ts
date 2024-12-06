@@ -21,6 +21,7 @@ import {
     XJob,
     XProgress, emptyXProgress,
     XTweetItem,
+    XTweetItemArchive,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
     XIndexMessagesStartResponse,
@@ -154,6 +155,16 @@ function convertXJobRowToXJob(row: XJobRow): XJob {
 }
 
 function convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
+    return {
+        id: row.tweetID,
+        t: row.text,
+        l: row.likeCount,
+        r: row.retweetCount,
+        d: row.createdAt,
+    };
+}
+
+function convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemArchive {
     return {
         url: `https://x.com/${row.path}`,
         tweetID: row.tweetID,
@@ -1078,14 +1089,14 @@ export class XAccountController {
         if (this.account) {
             const tweetsResp: XTweetRow[] = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE username = ? AND text NOT LIKE ? ORDER BY createdAt',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE username = ? AND text NOT LIKE ? ORDER BY createdAt',
                 [this.account.username, "RT @%"],
                 "all"
             ) as XTweetRow[];
 
-            const items: XTweetItem[] = [];
+            const items: XTweetItemArchive[] = [];
             for (let i = 0; i < tweetsResp.length; i++) {
-                items.push(convertTweetRowToXTweetItem(tweetsResp[i]))
+                items.push(convertTweetRowToXTweetItemArchive(tweetsResp[i]))
             }
 
             return {
@@ -1325,7 +1336,7 @@ export class XAccountController {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1333,7 +1344,7 @@ export class XAccountController {
             // Just likes threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt DESC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1341,7 +1352,7 @@ export class XAccountController {
             // Just retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1349,7 +1360,7 @@ export class XAccountController {
             // Neither likes nor retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, createdAt, path, username FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
                 ["RT @%", this.account.username, daysOldTimestamp],
                 "all"
             ) as XTweetRow[];
@@ -1375,7 +1386,7 @@ export class XAccountController {
         const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld) : getTimestampDaysAgo(0);
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt DESC',
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt DESC',
             ["RT @%", daysOldTimestamp],
             "all"
         ) as XTweetRow[];
@@ -1399,7 +1410,7 @@ export class XAccountController {
         // Select just the tweets that need to be unliked based on the settings
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT id, tweetID, username FROM tweet WHERE deletedAt IS NULL AND isLiked = ? ORDER BY createdAt DESC',
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND isLiked = ? ORDER BY createdAt DESC',
             [1],
             "all"
         ) as XTweetRow[];
