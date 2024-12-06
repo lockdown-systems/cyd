@@ -50,7 +50,6 @@ const deleteTweetsRetweetsThresholdEnabled = ref(false);
 const deleteTweetsRetweetsThreshold = ref(0);
 const deleteTweetsLikesThresholdEnabled = ref(false);
 const deleteTweetsLikesThreshold = ref(0);
-const deleteTweetsArchiveEnabled = ref(false);
 const deleteRetweets = ref(false);
 const deleteRetweetsDaysOldEnabled = ref(false);
 const deleteRetweetsDaysOld = ref(0);
@@ -69,7 +68,6 @@ const loadSettings = async () => {
         deleteTweetsRetweetsThreshold.value = account.xAccount.deleteTweetsRetweetsThreshold;
         deleteTweetsLikesThresholdEnabled.value = account.xAccount.deleteTweetsLikesThresholdEnabled;
         deleteTweetsLikesThreshold.value = account.xAccount.deleteTweetsLikesThreshold;
-        deleteTweetsArchiveEnabled.value = account.xAccount.deleteTweetsArchiveEnabled;
         deleteRetweets.value = account.xAccount.deleteRetweets;
         deleteRetweetsDaysOldEnabled.value = account.xAccount.deleteRetweetsDaysOldEnabled;
         deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
@@ -84,8 +82,7 @@ const loadSettings = async () => {
         (
             deleteTweetsDaysOldEnabled.value ||
             deleteTweetsRetweetsThresholdEnabled.value ||
-            deleteTweetsLikesThresholdEnabled.value ||
-            deleteTweetsArchiveEnabled.value
+            deleteTweetsLikesThresholdEnabled.value
         )
     ) {
         deleteTweetsShowMore.value = true;
@@ -116,7 +113,6 @@ const saveSettings = async () => {
         account.xAccount.deleteTweetsRetweetsThreshold = deleteTweetsRetweetsThreshold.value;
         account.xAccount.deleteTweetsLikesThresholdEnabled = deleteTweetsLikesThresholdEnabled.value;
         account.xAccount.deleteTweetsLikesThreshold = deleteTweetsLikesThreshold.value;
-        account.xAccount.deleteTweetsArchiveEnabled = deleteTweetsArchiveEnabled.value;
         account.xAccount.deleteRetweets = deleteRetweets.value;
         account.xAccount.deleteRetweetsDaysOldEnabled = deleteRetweetsDaysOldEnabled.value;
         account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
@@ -246,24 +242,6 @@ onMounted(async () => {
                             </div>
                         </div>
                         <span class="premium badge badge-primary">Premium</span>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="mb-2">
-                            <div class="form-check">
-                                <input id="deleteTweetsArchiveEnabled" v-model="deleteTweetsArchiveEnabled"
-                                    type="checkbox" class="form-check-input" :disabled="!deleteTweets">
-                                <label class="form-check-label mr-1 text-nowrap" for="deleteTweetsArchiveEnabled">
-                                    Save an HTML version of each tweet before deleting it
-                                </label>
-                            </div>
-                            <div class="indent">
-                                <small class="form-text text-muted">
-                                    Make an HTML archive of each tweet, including its replies, which is
-                                    good for taking
-                                    screenshots <em>(takes longer)</em>
-                                </small>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -95,7 +95,6 @@ export const runMainMigrations = () => {
     deleteTweetsLikesThreshold INTEGER DEFAULT 20,
     deleteTweetsRetweetsThresholdEnabled BOOLEAN DEFAULT 0,
     deleteTweetsRetweetsThreshold INTEGER DEFAULT 20,
-    deleteTweetsArchiveEnabled BOOLEAN DEFAULT 0,
     deleteRetweets BOOLEAN DEFAULT 1,
     deleteRetweetsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
@@ -197,7 +196,6 @@ interface XAccountRow {
     deleteTweetsLikesThreshold: number;
     deleteTweetsRetweetsThresholdEnabled: boolean;
     deleteTweetsRetweetsThreshold: number;
-    deleteTweetsArchiveEnabled: boolean;
     deleteRetweets: boolean;
     deleteRetweetsDaysOldEnabled: boolean;
     deleteRetweetsDaysOld: number;
@@ -391,7 +389,6 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteTweetsLikesThreshold: row.deleteTweetsLikesThreshold,
         deleteTweetsRetweetsThresholdEnabled: !!row.deleteTweetsRetweetsThresholdEnabled,
         deleteTweetsRetweetsThreshold: row.deleteTweetsRetweetsThreshold,
-        deleteTweetsArchiveEnabled: !!row.deleteTweetsArchiveEnabled,
         deleteRetweets: !!row.deleteRetweets,
         deleteRetweetsDaysOldEnabled: !!row.deleteRetweetsDaysOldEnabled,
         deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
@@ -431,7 +428,6 @@ export const getXAccounts = (): XAccount[] => {
             deleteTweetsLikesThreshold: row.deleteTweetsLikesThreshold,
             deleteTweetsRetweetsThresholdEnabled: !!row.deleteTweetsRetweetsThresholdEnabled,
             deleteTweetsRetweetsThreshold: row.deleteTweetsRetweetsThreshold,
-            deleteTweetsArchiveEnabled: !!row.deleteTweetsArchiveEnabled,
             deleteRetweets: !!row.deleteRetweets,
             deleteRetweetsDaysOldEnabled: !!row.deleteRetweetsDaysOldEnabled,
             deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
@@ -479,7 +475,6 @@ export const saveXAccount = (account: XAccount) => {
             deleteTweetsLikesThreshold = ?,
             deleteTweetsRetweetsThresholdEnabled = ?,
             deleteTweetsRetweetsThreshold = ?,
-            deleteTweetsArchiveEnabled = ?,
             deleteRetweets = ?,
             deleteRetweetsDaysOldEnabled = ?,
             deleteRetweetsDaysOld = ?,
@@ -508,7 +503,6 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteTweetsLikesThreshold,
         account.deleteTweetsRetweetsThresholdEnabled ? 1 : 0,
         account.deleteTweetsRetweetsThreshold,
-        account.deleteTweetsArchiveEnabled ? 1 : 0,
         account.deleteRetweets ? 1 : 0,
         account.deleteRetweetsDaysOldEnabled ? 1 : 0,
         account.deleteRetweetsDaysOld,

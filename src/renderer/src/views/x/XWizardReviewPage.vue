@@ -104,8 +104,6 @@ onMounted(async () => {
                             or {{
                                 model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                         </span>
-                        <span v-if="model.account?.xAccount?.deleteTweetsArchiveEnabled" class="fst-italic">(after
-                            saving HTML versions of them)</span>
                     </li>
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteRetweets">
                         <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
