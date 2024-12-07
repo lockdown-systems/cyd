@@ -4,7 +4,6 @@ import {
     onMounted,
     computed,
 } from 'vue';
-import { formatDistanceToNow } from 'date-fns';
 import {
     AccountXViewModel,
     State
@@ -127,12 +126,10 @@ const saveSettings = async () => {
 };
 
 const hasSomeData = ref(false);
-const lastFinishedJob_archiveTweets = ref<string | null>(null);
 
 onMounted(async () => {
     await loadSettings();
     hasSomeData.value = await xHasSomeData(props.model.account.id);
-    lastFinishedJob_archiveTweets.value = await window.electron.X.getConfig(props.model.account.id, 'lastFinishedJob_archiveTweets');
 });
 </script>
 
@@ -247,18 +244,6 @@ onMounted(async () => {
                         <span class="premium badge badge-primary">Premium</span>
                     </div>
                 </div>
-                <div class="indent">
-                    <small v-if="lastFinishedJob_archiveTweets" class="form-text text-muted">
-                        You last saved HTML versions of your tweets {{ formatDistanceToNow(new
-                            Date(lastFinishedJob_archiveTweets), {
-                            addSuffix: true
-                        }) }}.
-                    </small>
-                    <small v-else class="form-text text-muted">
-                        If you want an HTML versions of each tweet, make sure to ... (TODO implement this). If you don't
-                        care, go ahead and delete away!
-                    </small>
-                </div>
             </div>
 
             <!-- deleteRetweets -->
@@ -334,7 +319,7 @@ onMounted(async () => {
                 </div>
                 <div class="indent">
                     <small class="form-text text-muted">
-                        Likes are private on X. If you have a lot of likes, this will take a long time.
+                        Likes are private on X.
                     </small>
                 </div>
             </div>
