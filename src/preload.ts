@@ -227,6 +227,9 @@ contextBridge.exposeInMainWorld('electron', {
         deleteTweetsStart: (accountID: number): Promise<XDeleteTweetsStartResponse> => {
             return ipcRenderer.invoke('X:deleteTweetsStart', accountID);
         },
+        deleteTweetsCountNotArchived: (accountID: number): Promise<number> => {
+            return ipcRenderer.invoke('X:deleteTweetsCountNotArchived', accountID);
+        },
         deleteRetweetsStart: (accountID: number): Promise<XDeleteTweetsStartResponse> => {
             return ipcRenderer.invoke('X:deleteRetweetsStart', accountID);
         },

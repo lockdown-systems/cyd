@@ -39,10 +39,17 @@ const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 
 const hasSomeData = ref(false);
 
+const deleteTweetsCountNotArchived = ref(0);
+
 onMounted(async () => {
     await props.model.refreshDatabaseStats();
     deleteReviewStats.value = props.model.deleteReviewStats;
     hasSomeData.value = await xHasSomeData(props.model.account.id);
+
+    if (props.model.account?.xAccount?.deleteMyData && props.model.account?.xAccount?.deleteTweets) {
+        deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id);
+        console.log("deleteTweetsCountNotArchived", deleteTweetsCountNotArchived.value);
+    }
 });
 </script>
 
@@ -104,6 +111,12 @@ onMounted(async () => {
                             or {{
                                 model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                         </span>
+                        <div v-if="deleteTweetsCountNotArchived > 0" class="text-muted small">
+                            <i class="fa-solid fa-triangle-exclamation" />
+                            If you want an HTML version of your each tweet, <a href="#">archive your tweets</a>
+                            before you delete them. This takes a lot of time, so if you don't care, you should just
+                            delete them.
+                        </div>
                     </li>
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteRetweets">
                         <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
