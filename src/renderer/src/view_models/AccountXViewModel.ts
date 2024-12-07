@@ -62,6 +62,8 @@ export enum State {
 export enum RunJobsState {
     Default = "",
     DeleteTweets = "DeleteTweets",
+    DeleteRetweets = "DeleteRetweets",
+    DeleteLikes = "DeleteLikes",
 }
 
 export enum FailureState {
@@ -234,6 +236,10 @@ export class AccountXViewModel extends BaseViewModel {
                         "credentials": "include",
                         "signal": AbortSignal.timeout(5000)
                     })
+                    console.log(response.status);
+                    if(response.status == 200) {
+                        console.log(await response.text());
+                    }
                     return response.status;
                 } catch (e) {
                     return 0;
@@ -1555,15 +1561,13 @@ Hang on while I scroll down to your earliest likes.`;
     }
 
     async runJobDeleteTweets(jobIndex: number) {
-        this.runJobsState = RunJobsState.DeleteTweets;
-
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
 
         // After this job, we want to reload the user stats
         await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
 
+        this.runJobsState = RunJobsState.DeleteTweets;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-
         this.instructions = `**I'm deleting your tweets based on your criteria, starting with the earliest.**`;
 
         // Load the tweets to delete
@@ -1652,137 +1656,92 @@ Hang on while I scroll down to your earliest likes.`;
     async runJobDeleteRetweets(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_RETWEETS, navigator.userAgent);
 
-        // let tries: number, success: boolean;
-        // let error: Error | null = null;
-        // let errorType: AutomationErrorType = AutomationErrorType.x_runJob_deleteRetweets_UnknownError;
+        // After this job, we want to reload the user stats
+        await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
 
+        this.runJobsState = RunJobsState.DeleteRetweets;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-
-        this.showBrowser = true;
         this.instructions = `**I'm deleting your retweets, starting with the earliest.**`;
-        this.showAutomationNotice = true;
-        // let alreadyDeleted = false;
 
         // Load the retweets to delete
         try {
             tweetsToDelete = await window.electron.X.deleteRetweetsStart(this.account?.id);
         } catch (e) {
-            await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
+            await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToStart, {
                 exception: (e as Error).toString()
             })
             return false;
         }
-        this.log('runJob', ["jobType=deleteRetweets", "deleteRetweetsStartResponse", tweetsToDelete]);
+        this.log('runJob', ["jobType=deleteRetweets", "XDeleteTweetsStartResponse", tweetsToDelete]);
 
         // Start the progress
         this.progress.totalRetweetsToDelete = tweetsToDelete.tweets.length;
         this.progress.retweetsDeleted = 0;
         await this.syncProgress();
 
-        // let errorTriggered;
+        // Load the tweets page
+        this.showBrowser = true;
+        this.showAutomationNotice = true;
+        await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username);
+
+        // Hide the browser and start showing other progress instead
+        this.showBrowser = false;
+
+        // Get the ct0 cookie
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        this.log('runJobDeleteRetweets', ["ct0", ct0]);
+        if (!ct0) {
+            await this.error(AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound, {})
+            return false;
+        }
+
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
-            // DEBUG
-            this.pause()
+            this.currentTweetItem = tweetsToDelete.tweets[i];
+
+            // Delete the retweet
+            let retweetDeleted = false;
+            let statusCode = 0;
+            for (let tries = 0; tries < 3; tries++) {
+                // Delete the retweet (which also uses the delete tweet API route)
+                statusCode = await this.apiDeleteTweet(ct0, tweetsToDelete.tweets[i].id);
+                if (statusCode == 200) {
+                    this.log('runJobDeleteRetweets', ["deleted retweet", tweetsToDelete.tweets[i].id]);
+                    // Update the tweet's deletedAt date
+                    try {
+                        // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        retweetDeleted = true;
+                        this.progress.retweetsDeleted += 1;
+                        await this.syncProgress();
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            tweet: tweetsToDelete.tweets[i],
+                            index: i
+                        }, true)
+                    }
+                    break;
+                } else {
+                    // Sleep 1 second and try again
+                    this.log("runJobDeleteRetweets", ["statusCode", statusCode, "failed to delete retweet, try #", tries]);
+                    await this.sleep(1000);
+                }
+            }
+
+            if (!retweetDeleted) {
+                await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToDelete, {
+                    statusCode: statusCode
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true)
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
+
             await this.waitForPause();
-
-            // errorTriggered = false;
-            // errorType = AutomationErrorType.x_runJob_deleteRetweets_UnknownError;
-            // alreadyDeleted = false;
-
-            // success = false;
-            // for (tries = 0; tries < 3; tries++) {
-            //     // Load the URL
-            //     await this.loadURLWithRateLimit(
-            //         `https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`,
-            //         // It's okay if the URL changes as long as the tweetID is the same
-            //         // This happens if the user has changed their username
-            //         [RegExp(`https://x\\.com/.*/status/${tweetsToDelete.tweets[i].tweetID}`)]
-            //     );
-            //     await this.sleep(200);
-
-            //     await this.waitForPause();
-
-            //     // Check if retweet is already deleted
-            //     if (await this.doesSelectorExist('div[data-testid="primaryColumn"] div[data-testid="error-detail"]')) {
-            //         this.log("runJobDeleteTweets", ["retweet is already deleted", tweetsToDelete.tweets[i].tweetID]);
-            //         alreadyDeleted = true;
-            //     }
-
-            //     if (!alreadyDeleted) {
-            //         // Wait for the retweet menu button to appear
-            //         try {
-            //             await this.waitForSelector('article[tabindex="-1"] button[data-testid="unretweet"]');
-            //         } catch (e) {
-            //             // If it doesn't appear, let's assume this retweet was already deleted and for some reason
-            //             // the previous check didn't catch it
-            //             alreadyDeleted = true;
-            //         }
-            //         await this.sleep(200);
-            //     }
-
-            //     if (!alreadyDeleted) {
-            //         // Click the retweet menu button
-            //         await this.scriptClickElement('article[tabindex="-1"] button[data-testid="unretweet"]');
-
-            //         // Wait for the unretweet menu to appear
-            //         try {
-            //             await this.waitForSelector('div[role="menu"] div[role="menuitem"]:first-of-type');
-            //         } catch (e) {
-            //             error = e as Error;
-            //             errorType = AutomationErrorType.x_runJob_deleteRetweets_WaitForMenuFailed;
-            //             errorTriggered = true;
-            //             this.log("runJobDeleteRetweets", ["wait for unretweet menu to appear failed, try #", tries]);
-            //             await this.sleep(1000);
-            //             continue;
-            //         }
-            //         await this.sleep(200);
-
-            //         // Click the delete button
-            //         await this.scriptClickElement('div[role="menu"] div[role="menuitem"]:first-of-type');
-            //         await this.sleep(200);
-
-            //         errorTriggered = false;
-            //         success = true;
-            //         break;
-            //     } else {
-            //         this.log("Already unretweeted", tweetsToDelete.tweets[i].tweetID);
-            //         errorTriggered = false;
-            //         success = true;
-            //         break;
-            //     }
-            // }
-
-            // if (errorTriggered) {
-            //     // Record the error, with allowContinue=true, to continue on to the next tweet
-            //     await this.error(errorType, {
-            //         exception: error ? (error as Error).toString() : 'null'
-            //     }, {
-            //         tweet: tweetsToDelete.tweets[i],
-            //         index: i
-            //     }, true);
-
-            //     this.progress.errorsOccured += 1;
-            //     await this.syncProgress();
-            // }
-
-            // if (success) {
-            //     // Mark the tweet as deleted
-            //     try {
-            //         // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
-            //         await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].tweetID);
-
-            //         this.progress.retweetsDeleted += 1;
-            //         await this.syncProgress();
-            //     } catch (e) {
-            //         await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp, {
-            //             exception: (e as Error).toString()
-            //         }, {
-            //             tweet: tweetsToDelete.tweets[i],
-            //             index: i
-            //         }, true)
-            //         errorTriggered = true;
-            //     }
-            // }
         }
 
         await this.finishJob(jobIndex);

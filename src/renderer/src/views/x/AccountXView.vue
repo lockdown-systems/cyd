@@ -458,7 +458,9 @@ onUnmounted(async () => {
         }">
             <div class="run-jobs-state-container d-flex">
                 <div class="run-jobs-state-content flex-grow-1">
-                    <XJobDeleteTweets v-if="model.runJobsState == RunJobsState.DeleteTweets" :model="unref(model)" />
+                    <XJobDeleteTweets
+                        v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes"
+                        :model="unref(model)" />
                 </div>
             </div>
         </div>

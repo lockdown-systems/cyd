@@ -1355,7 +1355,7 @@ export class XAccountController {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1371,7 +1371,7 @@ export class XAccountController {
             // Just retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1379,13 +1379,13 @@ export class XAccountController {
             // Neither likes nor retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt DESC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp],
                 "all"
             ) as XTweetRow[];
         }
 
-        log.debug("XAccountController.deleteTweetsStart", tweets);
+        // log.debug("XAccountController.deleteTweetsStart", tweets);
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
@@ -1405,12 +1405,12 @@ export class XAccountController {
         const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld) : getTimestampDaysAgo(0);
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt DESC',
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt ASC',
             ["RT @%", daysOldTimestamp],
             "all"
         ) as XTweetRow[];
 
-        log.debug("XAccountController.deleteRetweetsStart", tweets);
+        // log.debug("XAccountController.deleteRetweetsStart", tweets);
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
@@ -1429,12 +1429,12 @@ export class XAccountController {
         // Select just the tweets that need to be unliked based on the settings
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND isLiked = ? ORDER BY createdAt DESC',
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND isLiked = ? ORDER BY createdAt ASC',
             [1],
             "all"
         ) as XTweetRow[];
 
-        log.debug("XAccountController.deleteLikesStart", tweets);
+        // log.debug("XAccountController.deleteLikesStart", tweets);
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };

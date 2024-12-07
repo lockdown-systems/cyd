@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { AccountXViewModel } from '../../view_models/AccountXViewModel'
+import { AccountXViewModel, RunJobsState } from '../../view_models/AccountXViewModel'
 import { formattedDatetime } from '../../util';
 
 import { XTweetItem } from '../../../../shared_types';
@@ -23,7 +23,7 @@ watch(
     <div class="parent d-flex justify-content-center align-items-center">
         <div v-if="tweetItem" class="tweet p-5">
             <div class="d-flex gap-3 justify-content-center align-items-center">
-                <strong>
+                <strong v-if="model.runJobsState == RunJobsState.DeleteTweets">
                     @{{ model.account.xAccount?.username }}
                 </strong>
                 <small>
@@ -33,7 +33,8 @@ watch(
             <div class="mt-4 fs-3">
                 <p>{{ tweetItem.t }}</p>
             </div>
-            <div class="d-flex mt-4 gap-3 justify-content-center align-items-center">
+            <div v-if="model.runJobsState == RunJobsState.DeleteTweets"
+                class="d-flex mt-4 gap-3 justify-content-center align-items-center">
                 <div>
                     <i class="fa-solid fa-retweet" /> {{ tweetItem.r.toLocaleString() }} retweets
                 </div>
