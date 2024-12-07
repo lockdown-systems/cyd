@@ -248,6 +248,49 @@ export class AccountXViewModel extends BaseViewModel {
         `);
     }
 
+    // Returns the API response's status code, or 0 on error
+    async apiDeleteLike(ct0: string, tweetID: string): Promise<number> {
+        this.log("apiDeleteLike", ["deleting like", tweetID]);
+        return await this.getWebview()?.executeJavaScript(`
+            (async () => {
+                const ct0 = '${ct0}';
+                const username = '${this.account.xAccount?.username}';
+                const tweetID = '${tweetID}';
+
+                const url = "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet";
+                const body = JSON.stringify({ "variables": { "tweet_id": tweetID }, "queryId": "ZYKSe-w7KEslx3JhSIk5LA" });
+                const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
+
+                try {
+                    const response = await fetch(url, {
+                        "headers": {
+                            "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+                            "content-type": "application/json",
+                            "x-client-transaction-id": transactionID,
+                            "x-csrf-token": ct0,
+                            "x-twitter-active-user": "yes",
+                            "x-twitter-auth-type": "OAuth2Session"
+                        },
+                        "referrer": 'https://x.com/' + username + '/with_replies',
+                        "referrerPolicy": "strict-origin-when-cross-origin",
+                        "body": body,
+                        "method": "POST",
+                        "mode": "cors",
+                        "credentials": "include",
+                        "signal": AbortSignal.timeout(5000)
+                    })
+                    console.log(response.status);
+                    if(response.status == 200) {
+                        console.log(await response.text());
+                    }
+                    return response.status;
+                } catch (e) {
+                    return 0;
+                }
+            })();
+        `);
+    }
+
     async waitForRateLimit() {
         this.log("waitForRateLimit", this.rateLimitInfo);
 
@@ -1753,12 +1796,9 @@ Hang on while I scroll down to your earliest likes.`;
         // After this job, we want to reload the user stats
         await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
 
+        this.runJobsState = RunJobsState.DeleteLikes;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-        // let alreadyDeleted = false;
-
-        this.showBrowser = true;
         this.instructions = `**I'm deleting your likes, starting with the earliest.**`;
-        this.showAutomationNotice = true;
 
         // Load the likes to delete
         try {
@@ -1776,56 +1816,71 @@ Hang on while I scroll down to your earliest likes.`;
         this.progress.likesDeleted = 0;
         await this.syncProgress();
 
-        for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
-            // alreadyDeleted = false;
+        // Load the likes page
+        this.showBrowser = true;
+        this.showAutomationNotice = true;
+        await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username + "/likes");
 
-            // DEBUG
+        // Hide the browser and start showing other progress instead
+        this.showBrowser = false;
+
+        // Get the ct0 cookie
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        this.log('runJobDeleteLikes', ["ct0", ct0]);
+        if (!ct0) {
+            await this.error(AutomationErrorType.x_runJob_deleteLikes_Ct0CookieNotFound, {})
+            return false;
+        }
+
+        for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+            this.currentTweetItem = tweetsToDelete.tweets[i];
+
+            console.log(this.currentTweetItem);
             this.pause();
             await this.waitForPause();
 
-            // // Load the URL
-            // await this.loadURLWithRateLimit(
-            //     `https://x.com/${tweetsToDelete.tweets[i].username}/status/${tweetsToDelete.tweets[i].tweetID}`,
-            //     // It's okay if the URL changes as long as the tweetID is the same
-            //     // This happens if the user has changed their username
-            //     [RegExp(`https://x\\.com/.*/status/${tweetsToDelete.tweets[i].tweetID}`)]
-            // );
-            // await this.sleep(200);
+            // Delete the like
+            let likeDeleted = false;
+            let statusCode = 0;
+            for (let tries = 0; tries < 3; tries++) {
+                statusCode = await this.apiDeleteLike(ct0, tweetsToDelete.tweets[i].id);
+                if (statusCode == 200) {
+                    // Update the tweet's deletedAt date
+                    try {
+                        // Deleting likes uses the same deleteTweet IPC function as deleting tweets
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        likeDeleted = true;
+                        this.progress.likesDeleted += 1;
+                        await this.syncProgress();
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            tweet: tweetsToDelete.tweets[i],
+                            index: i
+                        }, true)
+                    }
+                    break;
+                } else {
+                    // Sleep 1 second and try again
+                    this.log("runJobDeleteLikes", ["statusCode", statusCode, "failed to delete like, try #", tries]);
+                    await this.sleep(1000);
+                }
+            }
 
-            // await this.waitForPause();
+            if (!likeDeleted) {
+                await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToDelete, {
+                    statusCode: statusCode
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true)
 
-            // // Wait for the unlike button to appear
-            // try {
-            //     await this.waitForSelector('article[tabindex="-1"] button[data-testid="unlike"]');
-            // } catch (e) {
-            //     // If it doesn't appear, let's assume this like was already deleted
-            //     alreadyDeleted = true;
-            // }
-            // await this.sleep(200);
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
 
-            // if (!alreadyDeleted) {
-            //     // Click the unlike button
-            //     await this.scriptClickElement('article[tabindex="-1"] button[data-testid="unlike"]');
-            //     await this.sleep(200);
-            // } else {
-            //     this.log("Already unliked", tweetsToDelete.tweets[i].tweetID);
-            // }
-
-            // // Mark the tweet as deleted
-            // try {
-            //     // Deleting likes uses the same deleteTweet IPC function as deleting tweets
-            //     await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].tweetID);
-
-            //     this.progress.likesDeleted += 1;
-            //     await this.syncProgress();
-            // } catch (e) {
-            //     await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp, {
-            //         exception: (e as Error).toString()
-            //     }, {
-            //         tweet: tweetsToDelete.tweets[i],
-            //         index: i
-            //     }, true)
-            // }
+            await this.waitForPause();
         }
 
         await this.finishJob(jobIndex);
