@@ -7,8 +7,12 @@ import {
     AccountXViewModel,
     State
 } from '../../view_models/AccountXViewModel'
-
-import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import type {
+    XDatabaseStats
+} from '../../../../shared_types';
+import {
+    emptyXDatabaseStats
+} from '../../../../shared_types';
 
 // Props
 const props = defineProps<{
@@ -33,18 +37,16 @@ const backClicked = async () => {
 };
 
 // Settings
-const archiveTweets = ref(false);
 const archiveTweetsHTML = ref(false);
-const archiveLikes = ref(false);
 const archiveDMs = ref(false);
+
+const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
 
 const loadSettings = async () => {
     console.log('XWizardBuildOptionsPage', 'loadSettings');
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
-        archiveTweets.value = account.xAccount.archiveTweets;
         archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
-        archiveLikes.value = account.xAccount.archiveLikes;
         archiveDMs.value = account.xAccount.archiveDMs;
     }
 };
@@ -57,13 +59,11 @@ const saveSettings = async () => {
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
-        account.xAccount.saveMyData = true;
+        account.xAccount.saveMyData = false;
         account.xAccount.deleteMyData = false;
-        account.xAccount.archiveMyData = false;
+        account.xAccount.archiveMyData = true;
 
-        account.xAccount.archiveTweets = archiveTweets.value;
         account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
-        account.xAccount.archiveLikes = archiveLikes.value;
         account.xAccount.archiveDMs = archiveDMs.value;
         await window.electron.database.saveAccount(JSON.stringify(account));
         emit('updateAccount');
@@ -72,6 +72,7 @@ const saveSettings = async () => {
 
 onMounted(async () => {
     await loadSettings();
+    databaseStats.value = await window.electron.X.getDatabaseStats(props.model.account.id);
 });
 </script>
 
@@ -79,47 +80,29 @@ onMounted(async () => {
     <div class="wizard-content container mb-4 mt-3 mx-auto">
         <div class="mb-4">
             <h2>
-                Build options
+                Archive options
             </h2>
             <p class="text-muted">
-                You can save tweets, likes, and direct messages.
+                You can save an HTML version of each tweet, and you can save your direct messages.
             </p>
         </div>
-
-        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
-            :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
-            @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>
             <div class="mb-3">
                 <div class="form-check">
-                    <input id="archiveTweets" v-model="archiveTweets" type="checkbox" class="form-check-input">
-                    <label class="form-check-label" for="archiveTweets">Save my tweets</label>
+                    <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox" class="form-check-input">
+                    <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version of each tweet</label>
                 </div>
-            </div>
-            <div class="indent">
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox"
-                            class="form-check-input" :disabled="!archiveTweets">
-                        <label class="form-check-label" for="archiveTweetsHTML">
-                            Save an HTML version of each tweet
-                        </label>
-                    </div>
-                    <div class="indent">
-                        <small class="form-text text-muted">
-                            Make an HTML archive of each tweet, including its replies, which is good
-                            for
-                            taking screenshots
-                            <em>(takes longer)</em>
-                        </small>
-                    </div>
-                </div>
-            </div>
-            <div class="mb-3">
-                <div class="form-check">
-                    <input id="archiveLikes" v-model="archiveLikes" type="checkbox" class="form-check-input">
-                    <label class="form-check-label" for="archiveLikes">Save my likes</label>
+                <div class="indent">
+                    <small v-if="databaseStats.tweetsSaved == 0" class="form-text text-muted">
+                        <i class="fa-solid fa-triangle-exclamation" />
+                        Your local database doesn't have any tweets yet. You need to import your X archive or build
+                        your database from scratch before you can save HTML versions of your tweets.
+                    </small>
+                    <small v-else class="form-text text-muted">
+                        Make an HTML archive of each tweet, including its replies, which is good
+                        for taking screenshots <em>(takes much longer than just deleting them)</em>
+                    </small>
                 </div>
             </div>
             <div class="mb-3">
@@ -136,7 +119,7 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)" @click="nextClicked">
+                    :disabled="!(archiveTweetsHTML || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

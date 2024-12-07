@@ -149,7 +149,14 @@ export const runMainMigrations = () => {
     status TEXT DEFAULT 'new'
 );`,
             ]
-        }
+        },
+        // Add archiveMyData to xAccount
+        {
+            name: "add archiveMyData to xAccount",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN archiveMyData BOOLEAN DEFAULT 0;`,
+            ]
+        },
     ]);
 }
 
@@ -185,6 +192,7 @@ interface XAccountRow {
     importFromArchive: boolean;
     saveMyData: boolean;
     deleteMyData: boolean;
+    archiveMyData: boolean;
     archiveTweets: boolean;
     archiveTweetsHTML: boolean;
     archiveLikes: boolean;
@@ -378,6 +386,7 @@ export const getXAccount = (id: number): XAccount | null => {
         importFromArchive: !!row.importFromArchive,
         saveMyData: !!row.saveMyData,
         deleteMyData: !!row.deleteMyData,
+        archiveMyData: !!row.archiveMyData,
         archiveTweets: !!row.archiveTweets,
         archiveTweetsHTML: !!row.archiveTweetsHTML,
         archiveLikes: !!row.archiveLikes,
@@ -417,6 +426,7 @@ export const getXAccounts = (): XAccount[] => {
             importFromArchive: !!row.importFromArchive,
             saveMyData: !!row.saveMyData,
             deleteMyData: !!row.deleteMyData,
+            archiveMyData: !!row.archiveMyData,
             archiveTweets: !!row.archiveTweets,
             archiveTweetsHTML: !!row.archiveTweetsHTML,
             archiveLikes: !!row.archiveLikes,
@@ -464,6 +474,7 @@ export const saveXAccount = (account: XAccount) => {
             importFromArchive = ?,
             saveMyData = ?,
             deleteMyData = ?,
+            archiveMyData = ?,
             archiveTweets = ?,
             archiveTweetsHTML = ?,
             archiveLikes = ?,
@@ -492,6 +503,7 @@ export const saveXAccount = (account: XAccount) => {
         account.importFromArchive ? 1 : 0,
         account.saveMyData ? 1 : 0,
         account.deleteMyData ? 1 : 0,
+        account.archiveMyData ? 1 : 0,
         account.archiveTweets ? 1 : 0,
         account.archiveTweetsHTML ? 1 : 0,
         account.archiveLikes ? 1 : 0,

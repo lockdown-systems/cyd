@@ -84,6 +84,21 @@ onMounted(async () => {
                 </ul>
             </div>
 
+            <div v-if="model.account?.xAccount?.archiveMyData">
+                <h3>
+                    <i class="fa-solid fa-floppy-disk me-1" />
+                    Archive my data
+                </h3>
+                <ul>
+                    <li v-if="model.account?.xAccount?.archiveTweetsHTML">
+                        Save HTML versions of tweets
+                    </li>
+                    <li v-if="model.account?.xAccount?.archiveDMs">
+                        Save direct messages
+                    </li>
+                </ul>
+            </div>
+
             <div v-if="model.account?.xAccount?.deleteMyData">
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
@@ -153,6 +168,9 @@ onMounted(async () => {
                     <i class="fa-solid fa-forward" />
                     <template v-if="model.account?.xAccount?.saveMyData">
                         Build Database
+                    </template>
+                    <template v-if="model.account?.xAccount?.archiveMyData">
+                        Start Archiving
                     </template>
                     <template v-else>
                         Start Deleting

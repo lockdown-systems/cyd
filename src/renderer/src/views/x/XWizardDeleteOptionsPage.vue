@@ -102,9 +102,9 @@ const saveSettings = async () => {
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
-        // don't save data, yes delete data
         account.xAccount.saveMyData = false;
         account.xAccount.deleteMyData = true;
+        account.xAccount.archiveMyData = false;
 
         account.xAccount.deleteTweets = deleteTweets.value;
         account.xAccount.deleteTweetsDaysOldEnabled = deleteTweetsDaysOldEnabled.value;

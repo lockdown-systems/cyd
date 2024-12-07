@@ -25,8 +25,10 @@ const emit = defineEmits<{
 const nextClicked = async () => {
     if (buildDatabaseStrategy.value == 'importArchive') {
         emit('setState', State.WizardImportStart);
-    } else {
+    } else if (buildDatabaseStrategy.value == 'buildFromScratch') {
         emit('setState', State.WizardBuildOptions);
+    } else {
+        emit('setState', State.WizardArchiveOptions);
     }
 };
 
@@ -117,6 +119,22 @@ onMounted(() => {
                             </small>
                         </div>
                     </div>
+
+                    <div class="mb-3 mt-3">
+                        <div class="form-check">
+                            <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
+                                class="form-check-input">
+                            <label class="form-check-label" for="archiveData">
+                                Save HTML tweets, direct messages, or both
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                Cyd can save an HTML version of each tweet for you, and also save a more detailed backup
+                                of your direct messages than is available in the official X archive.
+                            </small>
+                        </div>
+                    </div>
                 </template>
 
                 <!-- build from scratch recommended -->
@@ -154,6 +172,22 @@ onMounted(() => {
                             <small>
                                 Importing your X archive will work great, but you'll need to wait at least a day for X
                                 to send it to you if you don't already have it.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 mt-3">
+                        <div class="form-check">
+                            <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
+                                class="form-check-input">
+                            <label class="form-check-label" for="archiveData">
+                                Save HTML tweets, direct messages, or both
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                Cyd can save an HTML version of each tweet for you, and also save a more detailed backup
+                                of your direct messages than is available in the official X archive.
                             </small>
                         </div>
                     </div>
@@ -197,6 +231,22 @@ onMounted(() => {
                             </small>
                         </div>
                     </div>
+
+                    <div class="mb-3 mt-3">
+                        <div class="form-check">
+                            <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
+                                class="form-check-input">
+                            <label class="form-check-label" for="archiveData">
+                                Save HTML tweets, direct messages, or both
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small>
+                                Cyd can save an HTML version of each tweet for you, and also save a more detailed backup
+                                of your direct messages than is available in the official X archive.
+                            </small>
+                        </div>
+                    </div>
                 </template>
             </form>
 
@@ -206,8 +256,11 @@ onMounted(() => {
                     <template v-if="buildDatabaseStrategy == 'importArchive'">
                         Continue to Import Archive
                     </template>
-                    <template v-else>
+                    <template v-else-if="buildDatabaseStrategy == 'buildFromScratch'">
                         Continue to Build Options
+                    </template>
+                    <template v-else>
+                        Continue to Archive Options
                     </template>
                 </button>
             </div>

@@ -25,6 +25,7 @@ import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportingPage from './XWizardImportingPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
+import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
@@ -483,6 +484,9 @@ onUnmounted(async () => {
 
                     <XWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay" :model="unref(model)"
                         @set-state="setState($event)" @update-account="updateAccount" />
+
+                    <XWizardArchiveOptionsPage v-if="model.state == State.WizardArchiveOptionsDisplay"
+                        :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
 
                     <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
                         :model="unref(model)" @update-account="updateAccount" @set-state="setState($event)" />

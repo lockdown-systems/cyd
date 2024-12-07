@@ -37,6 +37,9 @@ export enum State {
     WizardBuildOptions = "WizardBuildOptions",
     WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
 
+    WizardArchiveOptions = "WizardArchiveOptions",
+    WizardArchiveOptionsDisplay = "WizardArchiveOptionsDisplay",
+
     WizardDeleteOptions = "WizardDeleteOptions",
     WizardDeleteOptionsDisplay = "WizardDeleteOptionsDisplay",
 
@@ -137,6 +140,17 @@ export class AccountXViewModel extends BaseViewModel {
             }
             if (this.account?.xAccount?.archiveLikes) {
                 jobTypes.push("indexLikes");
+            }
+            if (this.account?.xAccount?.archiveDMs) {
+                jobTypes.push("indexConversations");
+                jobTypes.push("indexMessages");
+            }
+        }
+
+        if (this.account?.xAccount?.archiveMyData) {
+            shouldBuildArchive = true;
+            if (this.account?.xAccount?.archiveTweetsHTML) {
+                jobTypes.push("archiveTweets");
             }
             if (this.account?.xAccount?.archiveDMs) {
                 jobTypes.push("indexConversations");
@@ -2420,6 +2434,16 @@ You'll be able to access it even after you delete it from X.
 
 **Which data do you want to save?**`;
                     this.state = State.WizardBuildOptionsDisplay;
+                    break;
+
+                case State.WizardArchiveOptions:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+I can save an HTML version of each of your tweets. I can also save a more detailed backup of your direct messages than is available in the official X archive.
+
+**Which data do you want to save?**`;
+                    this.state = State.WizardArchiveOptionsDisplay;
                     break;
 
                 case State.WizardDeleteOptions:
