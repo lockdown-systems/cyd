@@ -26,19 +26,22 @@ watch(
                 <strong v-if="model.runJobsState == RunJobsState.DeleteTweets">
                     @{{ model.account.xAccount?.username }}
                 </strong>
-                <small>
+                <small v-if="tweetItem.d">
                     {{ formattedDatetime(tweetItem.d) }}
                 </small>
             </div>
-            <div class="mt-4 fs-3">
+            <div v-if="tweetItem.t" class="mt-4 fs-3">
                 <p>{{ tweetItem.t }}</p>
+            </div>
+            <div v-else class="mt-4 fs-3">
+                <p>Tweet ID: {{ tweetItem.id }}</p>
             </div>
             <div v-if="model.runJobsState == RunJobsState.DeleteTweets"
                 class="d-flex mt-4 gap-3 justify-content-center align-items-center">
-                <div>
+                <div v-if="tweetItem.r">
                     <i class="fa-solid fa-retweet" /> {{ tweetItem.r.toLocaleString() }} retweets
                 </div>
-                <div>
+                <div v-if="tweetItem.l">
                     <i class="fa-solid fa-heart" /> {{ tweetItem.l.toLocaleString() }} likes
                 </div>
             </div>

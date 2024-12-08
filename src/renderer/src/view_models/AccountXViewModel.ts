@@ -1689,6 +1689,7 @@ Hang on while I scroll down to your earliest likes.`;
                     // Rate limited
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
                     await this.waitForRateLimit();
+                    tries = 0;
                 } else {
                     // Sleep 1 second and try again
                     this.log("runJobDeleteTweets", ["statusCode", statusCode, "failed to delete tweet, try #", tries]);
@@ -1787,6 +1788,7 @@ Hang on while I scroll down to your earliest likes.`;
                     // Rate limited
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
                     await this.waitForRateLimit();
+                    tries = 0;
                 } else {
                     // Sleep 1 second and try again
                     this.log("runJobDeleteRetweets", ["statusCode", statusCode, "failed to delete retweet, try #", tries]);
@@ -1883,6 +1885,7 @@ Hang on while I scroll down to your earliest likes.`;
                     // Rate limited
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
                     await this.waitForRateLimit();
+                    tries = 0;
                 } else {
                     // Sleep 1 second and try again
                     this.log("runJobDeleteLikes", ["statusCode", statusCode, "failed to delete like, try #", tries]);
