@@ -489,7 +489,8 @@ onUnmounted(async () => {
                         :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
 
                     <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
-                        :model="unref(model)" @update-account="updateAccount" @set-state="setState($event)" />
+                        :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                        @update-account="updateAccount" @set-state="setState($event)" />
 
                     <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
                         @set-state="setState($event)" @update-account="updateAccount" @start-jobs="startJobs" />

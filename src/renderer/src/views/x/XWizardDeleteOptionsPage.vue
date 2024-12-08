@@ -15,6 +15,8 @@ import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 // Props
 const props = defineProps<{
     model: AccountXViewModel;
+    userAuthenticated: boolean;
+    userPremium: boolean;
 }>();
 
 // Emits
@@ -187,7 +189,8 @@ onMounted(async () => {
                                 </div>
                             </div>
                         </div>
-                        <span class="premium badge badge-primary">Premium</span>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center flex-nowrap">
@@ -214,7 +217,8 @@ onMounted(async () => {
                                 </div>
                             </div>
                         </div>
-                        <span class="premium badge badge-primary">Premium</span>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
                     </div>
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center flex-nowrap">
@@ -241,7 +245,8 @@ onMounted(async () => {
                                 </div>
                             </div>
                         </div>
-                        <span class="premium badge badge-primary">Premium</span>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
                     </div>
                 </div>
             </div>
@@ -284,7 +289,8 @@ onMounted(async () => {
                                 </div>
                             </div>
                         </div>
-                        <span class="premium badge badge-primary">Premium</span>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
                     </div>
                 </div>
             </div>
@@ -300,7 +306,7 @@ onMounted(async () => {
                         </label>
                         <span class="ms-2 text-muted">(recommended)</span>
                     </div>
-                    <span class="premium badge badge-primary">Premium</span>
+                    <span v-if="!userAuthenticated || !userPremium" class="premium badge badge-primary">Premium</span>
                 </div>
             </div>
 
@@ -314,7 +320,8 @@ onMounted(async () => {
                         </label>
                     </div>
                     <div class="d-flex align-items-center flex-nowrap">
-                        <span class="premium badge badge-primary">Premium</span>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
                     </div>
                 </div>
                 <div class="indent">
@@ -335,7 +342,7 @@ onMounted(async () => {
                             </label>
                         </div>
                     </div>
-                    <span class="premium badge badge-primary">Premium</span>
+                    <span v-if="!userAuthenticated || !userPremium" class="premium badge badge-primary">Premium</span>
                 </div>
                 <div class="indent">
                     <small class="form-text text-muted">
