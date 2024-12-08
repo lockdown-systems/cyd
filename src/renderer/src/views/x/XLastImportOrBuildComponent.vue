@@ -54,8 +54,13 @@ onMounted(async () => {
                 }) }}.
         </div>
         <div v-if="!lastImportArchive && !lastBuildDatabase">
-            Cyd can unfollow everyone and delete your direct messages right away. You'll need to import or build your
-            database to delete your tweets though.
+            <div>
+                Cyd can unfollow everyone and delete your direct messages right away
+            </div>
+            <div>
+                <i class="fa-solid fa-triangle-exclamation" />
+                You'll need to import or build your database to delete your tweets
+            </div>
         </div>
         <button type="submit" class="btn btn-sm btn-link text-nowrap" @click="buttonClicked">
             <template v-if="lastImportArchive || lastBuildDatabase">
