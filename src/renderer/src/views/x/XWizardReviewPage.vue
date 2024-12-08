@@ -34,15 +34,25 @@ const backClicked = async () => {
     }
 };
 
+const archiveClicked = async () => {
+    emit('setState', State.WizardArchiveOptions);
+};
+
 // Settings
 const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 
 const hasSomeData = ref(false);
 
+const deleteTweetsCountNotArchived = ref(0);
+
 onMounted(async () => {
     await props.model.refreshDatabaseStats();
     deleteReviewStats.value = props.model.deleteReviewStats;
     hasSomeData.value = await xHasSomeData(props.model.account.id);
+
+    if (props.model.account?.xAccount?.deleteMyData && props.model.account?.xAccount?.deleteTweets) {
+        deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
+    }
 });
 </script>
 
@@ -77,6 +87,21 @@ onMounted(async () => {
                 </ul>
             </div>
 
+            <div v-if="model.account?.xAccount?.archiveMyData">
+                <h3>
+                    <i class="fa-solid fa-floppy-disk me-1" />
+                    Archive my data
+                </h3>
+                <ul>
+                    <li v-if="model.account?.xAccount?.archiveTweetsHTML">
+                        Save HTML versions of tweets
+                    </li>
+                    <li v-if="model.account?.xAccount?.archiveDMs">
+                        Save direct messages
+                    </li>
+                </ul>
+            </div>
+
             <div v-if="model.account?.xAccount?.deleteMyData">
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
@@ -104,8 +129,26 @@ onMounted(async () => {
                             or {{
                                 model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                         </span>
-                        <span v-if="model.account?.xAccount?.deleteTweetsArchiveEnabled" class="fst-italic">(after
-                            saving HTML versions of them)</span>
+                        <div v-if="deleteTweetsCountNotArchived > 0">
+                            <small class="text-form">
+                                <i class="fa-solid fa-triangle-exclamation" />
+                                <em>
+                                    <span v-if="deleteTweetsCountNotArchived == deleteReviewStats.tweetsToDelete">
+                                        You haven't saved HTML versions of any of these tweets.
+                                    </span>
+                                    <span v-else>
+                                        You haven't saved HTML versions of {{
+                                            deleteTweetsCountNotArchived.toLocaleString()
+                                        }}
+                                        of these tweets.
+                                    </span>
+                                </em>
+                                <span>
+                                    If you care, <a href="#" @click="archiveClicked">archive your tweets</a>
+                                    before you delete them. Otherwise, just delete them.
+                                </span>
+                            </small>
+                        </div>
                     </li>
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteRetweets">
                         <b>{{ deleteReviewStats.retweetsToDelete.toLocaleString() }} retweets</b>
@@ -143,6 +186,9 @@ onMounted(async () => {
                     <template v-if="model.account?.xAccount?.saveMyData">
                         Build Database
                     </template>
+                    <template v-if="model.account?.xAccount?.archiveMyData">
+                        Start Archiving
+                    </template>
                     <template v-else>
                         Start Deleting
                     </template>
@@ -155,8 +201,8 @@ onMounted(async () => {
                 X restricts how fast you can access your data using <span class="fst-italic">rate limits</span>.
             </p>
             <p class="alert-details mb-0">
-                If you have much data in your account, you will probably hit rate limits while Cyd works. Cyd will pause
-                and wait for the rate limit to reset before continuing, but it might take a while to finish.
+                You might hit rate limits while Cyd works. Cyd will pause and wait for the rate limit to reset before
+                continuing.
             </p>
         </div>
         <div class="alert alert-info" role="alert">

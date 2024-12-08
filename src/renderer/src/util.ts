@@ -110,3 +110,15 @@ export async function openPreventSleepURL() {
 export async function openURL(url: string) {
     await window.electron.openURL(url);
 }
+
+export const formattedDatetime = (date: string): string => {
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    };
+    return new Date(date).toLocaleString('en-US', options);
+}

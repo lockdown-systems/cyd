@@ -25,11 +25,14 @@ import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportingPage from './XWizardImportingPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
+import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
+
+import XJobDeleteTweets from './XJobDeleteTweets.vue';
 
 import type {
     Account,
@@ -39,7 +42,7 @@ import type {
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
-import { AccountXViewModel, State, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
+import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
 import { setAccountRunning, openURL } from '../../util';
 import { xRequiresPremium } from '../../util_x';
 
@@ -448,8 +451,23 @@ onUnmounted(async () => {
                 'webview-input-border': !model.showAutomationNotice
             }" />
 
+        <!-- RunJobs states -->
+        <div :class="{
+            'hidden': model.showBrowser || !(model.state == State.RunJobs && model.runJobsState != RunJobsState.Default),
+            'run-jobs-state': true,
+            'ms-2': true
+        }">
+            <div class="run-jobs-state-container d-flex">
+                <div class="run-jobs-state-content flex-grow-1">
+                    <XJobDeleteTweets
+                        v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes"
+                        :model="unref(model)" />
+                </div>
+            </div>
+        </div>
+
         <!-- Wizard -->
-        <div :class="{ 'hidden': model.showBrowser, 'wizard': true, 'ms-2': true }">
+        <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
                     <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
@@ -466,6 +484,9 @@ onUnmounted(async () => {
 
                     <XWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay" :model="unref(model)"
                         @set-state="setState($event)" @update-account="updateAccount" />
+
+                    <XWizardArchiveOptionsPage v-if="model.state == State.WizardArchiveOptionsDisplay"
+                        :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
 
                     <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
                         :model="unref(model)" @update-account="updateAccount" @set-state="setState($event)" />

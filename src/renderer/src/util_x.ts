@@ -1,5 +1,3 @@
-import { XAccount } from '../../shared_types';
-
 export async function xHasSomeData(accountID: number): Promise<boolean> {
     let lastImportArchive: Date | null = null;
     let lastBuildDatabase: Date | null = null;
