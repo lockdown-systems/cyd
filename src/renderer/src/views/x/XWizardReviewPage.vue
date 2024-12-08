@@ -47,8 +47,7 @@ onMounted(async () => {
     hasSomeData.value = await xHasSomeData(props.model.account.id);
 
     if (props.model.account?.xAccount?.deleteMyData && props.model.account?.xAccount?.deleteTweets) {
-        deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id);
-        console.log("deleteTweetsCountNotArchived", deleteTweetsCountNotArchived.value);
+        deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
     }
 });
 </script>
@@ -130,11 +129,11 @@ onMounted(async () => {
                             <small v-if="deleteTweetsCountNotArchived == deleteReviewStats.tweetsToDelete"
                                 class="text-form">
                                 <i class="fa-solid fa-circle-info" />
-                                You haven't saved an HTML version of any of these tweets.
+                                You haven't saved HTML versions of any of these tweets.
                             </small>
                             <small v-else class="text-form">
                                 <i class="fa-solid fa-circle-info" />
-                                You haven't saved an HTML version of {{ deleteTweetsCountNotArchived.toLocaleString() }}
+                                You haven't saved HTML versions of {{ deleteTweetsCountNotArchived.toLocaleString() }}
                                 of these tweets.
                             </small>
                         </div>

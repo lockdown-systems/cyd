@@ -1391,8 +1391,10 @@ export class XAccountController {
         };
     }
 
-    // Returns a list of tweets to delete that are not archived
-    async deleteTweetsCountNotArchived(): Promise<number> {
+    // Returns the count of tweets that are not archived
+    // If total is true, return the total count of tweets not archived
+    // Otherwise, return the count of tweets not archived that will be deleted
+    async deleteTweetsCountNotArchived(total: boolean): Promise<number> {
         if (!this.db) {
             this.initDB();
         }
@@ -1404,42 +1406,51 @@ export class XAccountController {
         // Select just the tweets that need to be deleted based on the settings
         let count: Sqlite3Count;
 
-        const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld) : getTimestampDaysAgo(0);
-        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
-            // Both likes and retweets thresholds
+        if (total) {
+            // Count all non-deleted, non-archived tweets, with no filters
             count = exec(
                 this.db,
-                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ?',
-                ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
-                "get"
-            ) as Sqlite3Count;
-        } else if (this.account.deleteTweetsLikesThresholdEnabled && !this.account.deleteTweetsRetweetsThresholdEnabled) {
-            // Just likes threshold
-            count = exec(
-                this.db,
-                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ?',
-                ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
-                "get"
-            ) as Sqlite3Count;
-        } else if (!this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
-            // Just retweets threshold
-            count = exec(
-                this.db,
-                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ?',
-                ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
+                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ?',
+                ["RT @%", this.account.username],
                 "get"
             ) as Sqlite3Count;
         } else {
-            // Neither likes nor retweets threshold
-            count = exec(
-                this.db,
-                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ?',
-                ["RT @%", this.account.username, daysOldTimestamp],
-                "get"
-            ) as Sqlite3Count;
+            const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld) : getTimestampDaysAgo(0);
+            if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
+                // Both likes and retweets thresholds
+                count = exec(
+                    this.db,
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ?',
+                    ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
+                    "get"
+                ) as Sqlite3Count;
+            } else if (this.account.deleteTweetsLikesThresholdEnabled && !this.account.deleteTweetsRetweetsThresholdEnabled) {
+                // Just likes threshold
+                count = exec(
+                    this.db,
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ?',
+                    ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
+                    "get"
+                ) as Sqlite3Count;
+            } else if (!this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
+                // Just retweets threshold
+                count = exec(
+                    this.db,
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ?',
+                    ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
+                    "get"
+                ) as Sqlite3Count;
+            } else {
+                // Neither likes nor retweets threshold
+                count = exec(
+                    this.db,
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ?',
+                    ["RT @%", this.account.username, daysOldTimestamp],
+                    "get"
+                ) as Sqlite3Count;
+            }
         }
 
-        log.debug("XAccountController.deleteTweetsCountNotArchived", count);
         return count.count;
     }
 
@@ -2482,10 +2493,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:deleteTweetsCountNotArchived', async (_, accountID: number): Promise<number> => {
+    ipcMain.handle('X:deleteTweetsCountNotArchived', async (_, accountID: number, total: boolean): Promise<number> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.deleteTweetsCountNotArchived();
+            return await controller.deleteTweetsCountNotArchived(total);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

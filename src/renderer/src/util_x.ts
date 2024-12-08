@@ -64,14 +64,3 @@ export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
 
     return requiresPremium;
 }
-
-export async function xGetUnarchivedTweetsCount(accountID: number): Promise<number> {
-    let archivedTweetsCount = 0;
-    const archiveStartResponse: XArchiveStartResponse = await window.electron.X.archiveTweetsStart(accountID);
-    for (let i = 0; i < archiveStartResponse.items.length; i++) {
-        if (await window.electron.archive.isPageAlreadySaved(archiveStartResponse.outputPath, archiveStartResponse.items[i].basename)) {
-            archivedTweetsCount++;
-        }
-    }
-    return archiveStartResponse.items.length - archivedTweetsCount;
-}

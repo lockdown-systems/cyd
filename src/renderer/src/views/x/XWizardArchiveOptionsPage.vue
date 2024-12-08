@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue';
 import { AccountXViewModel, State } from '../../view_models/AccountXViewModel'
 import type { XDatabaseStats } from '../../../../shared_types';
 import { emptyXDatabaseStats } from '../../../../shared_types';
-import { xGetUnarchivedTweetsCount } from '../../util_x';
 
 // Props
 const props = defineProps<{
@@ -61,12 +60,12 @@ const saveSettings = async () => {
     }
 };
 
-const unarchivedTweetsCount = ref(0);
+const deleteTweetsCountNotArchived = ref(0);
 
 onMounted(async () => {
     await loadSettings();
     databaseStats.value = await window.electron.X.getDatabaseStats(props.model.account.id);
-    unarchivedTweetsCount.value = await xGetUnarchivedTweetsCount(props.model.account.id);
+    deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, true);
 });
 </script>
 
@@ -98,10 +97,11 @@ onMounted(async () => {
                         for taking screenshots <em>(takes much longer than just deleting them)</em>
                     </small>
                 </div>
-                <div v-if="unarchivedTweetsCount > 0" class="indent">
+                <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
                     <small>
                         <i class="fa-solid fa-circle-info" />
-                        You have <strong>{{ unarchivedTweetsCount }} tweets</strong> that haven't been archived yet
+                        You have <strong>{{ deleteTweetsCountNotArchived }} tweets</strong> that haven't been archived
+                        yet
                     </small>
                 </div>
             </div>
