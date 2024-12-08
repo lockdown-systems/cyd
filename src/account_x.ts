@@ -1108,7 +1108,7 @@ export class XAccountController {
         if (this.account) {
             const tweetsResp: XTweetRow[] = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE username = ? AND text NOT LIKE ? ORDER BY createdAt',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt, path FROM tweet WHERE username = ? AND text NOT LIKE ? ORDER BY createdAt',
                 [this.account.username, "RT @%"],
                 "all"
             ) as XTweetRow[];
