@@ -1849,10 +1849,6 @@ Hang on while I scroll down to your earliest likes.`;
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
             this.currentTweetItem = tweetsToDelete.tweets[i];
 
-            console.log(this.currentTweetItem);
-            this.pause();
-            await this.waitForPause();
-
             // Delete the like
             let likeDeleted = false;
             let statusCode = 0;

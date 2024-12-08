@@ -130,24 +130,23 @@ onMounted(async () => {
                                 model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                         </span>
                         <div v-if="deleteTweetsCountNotArchived > 0">
-                            <small v-if="deleteTweetsCountNotArchived == deleteReviewStats.tweetsToDelete"
-                                class="text-form">
-                                <i class="fa-solid fa-circle-info" />
-                                You haven't saved HTML versions of any of these tweets.
-                            </small>
-                            <small v-else class="text-form">
-                                <i class="fa-solid fa-circle-info" />
-                                You haven't saved HTML versions of {{ deleteTweetsCountNotArchived.toLocaleString() }}
-                                of these tweets.
-                            </small>
-                        </div>
-                        <div v-if="deleteTweetsCountNotArchived > 0">
                             <small class="text-form">
                                 <i class="fa-solid fa-triangle-exclamation" />
-                                If you want an HTML version of your each tweet, <a href="#"
-                                    @click="archiveClicked">archive your tweets</a>
-                                before you delete them. This takes a lot of time, so if you don't care, you should just
-                                delete them.
+                                <em>
+                                    <span v-if="deleteTweetsCountNotArchived == deleteReviewStats.tweetsToDelete">
+                                        You haven't saved HTML versions of any of these tweets.
+                                    </span>
+                                    <span v-else>
+                                        You haven't saved HTML versions of {{
+                                            deleteTweetsCountNotArchived.toLocaleString()
+                                        }}
+                                        of these tweets.
+                                    </span>
+                                </em>
+                                <span>
+                                    If you care, <a href="#" @click="archiveClicked">archive your tweets</a>
+                                    before you delete them. Otherwise, just delete them.
+                                </span>
                             </small>
                         </div>
                     </li>
