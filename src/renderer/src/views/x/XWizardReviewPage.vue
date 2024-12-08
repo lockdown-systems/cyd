@@ -34,6 +34,10 @@ const backClicked = async () => {
     }
 };
 
+const archiveClicked = async () => {
+    emit('setState', State.WizardArchiveOptions);
+};
+
 // Settings
 const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 
@@ -140,7 +144,8 @@ onMounted(async () => {
                         <div v-if="deleteTweetsCountNotArchived > 0">
                             <small class="text-form">
                                 <i class="fa-solid fa-triangle-exclamation" />
-                                If you want an HTML version of your each tweet, <a href="#">archive your tweets</a>
+                                If you want an HTML version of your each tweet, <a href="#"
+                                    @click="archiveClicked">archive your tweets</a>
                                 before you delete them. This takes a lot of time, so if you don't care, you should just
                                 delete them.
                             </small>
