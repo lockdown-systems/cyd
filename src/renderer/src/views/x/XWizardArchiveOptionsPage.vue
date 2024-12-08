@@ -1,18 +1,9 @@
 <script setup lang="ts">
-import {
-    ref,
-    onMounted,
-} from 'vue';
-import {
-    AccountXViewModel,
-    State
-} from '../../view_models/AccountXViewModel'
-import type {
-    XDatabaseStats
-} from '../../../../shared_types';
-import {
-    emptyXDatabaseStats
-} from '../../../../shared_types';
+import { ref, onMounted } from 'vue';
+import { AccountXViewModel, State } from '../../view_models/AccountXViewModel'
+import type { XDatabaseStats } from '../../../../shared_types';
+import { emptyXDatabaseStats } from '../../../../shared_types';
+import { xGetUnarchivedTweetsCount } from '../../util_x';
 
 // Props
 const props = defineProps<{
@@ -70,9 +61,12 @@ const saveSettings = async () => {
     }
 };
 
+const unarchivedTweetsCount = ref(0);
+
 onMounted(async () => {
     await loadSettings();
     databaseStats.value = await window.electron.X.getDatabaseStats(props.model.account.id);
+    unarchivedTweetsCount.value = await xGetUnarchivedTweetsCount(props.model.account.id);
 });
 </script>
 
@@ -102,6 +96,12 @@ onMounted(async () => {
                     <small v-else class="form-text text-muted">
                         Make an HTML archive of each tweet, including its replies, which is good
                         for taking screenshots <em>(takes much longer than just deleting them)</em>
+                    </small>
+                </div>
+                <div v-if="unarchivedTweetsCount > 0" class="indent">
+                    <small>
+                        <i class="fa-solid fa-circle-info" />
+                        You have <strong>{{ unarchivedTweetsCount }} tweets</strong> that haven't been archived yet
                     </small>
                 </div>
             </div>
