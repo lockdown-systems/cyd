@@ -87,7 +87,7 @@ export const runMainMigrations = () => {
     deleteMyData BOOLEAN DEFAULT 0,
     archiveTweets BOOLEAN DEFAULT 1,
     archiveTweetsHTML BOOLEAN DEFAULT 0,
-    archiveLikes BOOLEAN DEFAULT 0,
+    archiveLikes BOOLEAN DEFAULT 1,
     archiveDMs BOOLEAN DEFAULT 1,
     deleteTweets BOOLEAN DEFAULT 1,
     deleteTweetsDaysOld INTEGER DEFAULT 0,
