@@ -126,11 +126,25 @@ onMounted(async () => {
                             or {{
                                 model.account?.xAccount?.deleteTweetsLikesThreshold }} likes
                         </span>
-                        <div v-if="deleteTweetsCountNotArchived > 0" class="text-muted small">
-                            <i class="fa-solid fa-triangle-exclamation" />
-                            If you want an HTML version of your each tweet, <a href="#">archive your tweets</a>
-                            before you delete them. This takes a lot of time, so if you don't care, you should just
-                            delete them.
+                        <div v-if="deleteTweetsCountNotArchived > 0">
+                            <small v-if="deleteTweetsCountNotArchived == deleteReviewStats.tweetsToDelete"
+                                class="text-form">
+                                <i class="fa-solid fa-circle-info" />
+                                You haven't saved an HTML version of any of these tweets.
+                            </small>
+                            <small v-else class="text-form">
+                                <i class="fa-solid fa-circle-info" />
+                                You haven't saved an HTML version of {{ deleteTweetsCountNotArchived.toLocaleString() }}
+                                of these tweets.
+                            </small>
+                        </div>
+                        <div v-if="deleteTweetsCountNotArchived > 0">
+                            <small class="text-form">
+                                <i class="fa-solid fa-triangle-exclamation" />
+                                If you want an HTML version of your each tweet, <a href="#">archive your tweets</a>
+                                before you delete them. This takes a lot of time, so if you don't care, you should just
+                                delete them.
+                            </small>
                         </div>
                     </li>
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteRetweets">
