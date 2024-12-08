@@ -30,7 +30,11 @@ const backClicked = async () => {
     emit('setState', State.WizardImportStart);
 };
 
-const nextClicked = async () => {
+const archiveClicked = async () => {
+    emit('setState', State.WizardArchiveOptions);
+};
+
+const deleteClicked = async () => {
     emit('setState', State.WizardDeleteOptions);
 };
 
@@ -234,11 +238,25 @@ const iconFromStatus = (status: ImportStatus) => {
                     <i class="fa-solid fa-check" />
                     Import finished successfully!
                 </div>
-                <div class="buttons">
-                    <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
-                        <i class="fa-solid fa-forward" />
-                        Continue to Delete Options
-                    </button>
+                <div class="buttons d-flex flex-column flex-md-row justify-content-between">
+                    <div class="d-flex flex-column align-items-center mb-3 mb-md-0">
+                        <button type="submit" class="btn btn-primary text-nowrap m-1" @click="archiveClicked">
+                            <i class="fa-solid fa-forward" />
+                            Continue to Archive Options
+                        </button>
+                        <small class="text-center text-muted">
+                            Save tweets as HTML and backup DMs
+                        </small>
+                    </div>
+                    <div class="d-flex flex-column align-items-center">
+                        <button type="submit" class="btn btn-primary text-nowrap m-1" @click="deleteClicked">
+                            <i class="fa-solid fa-forward" />
+                            Continue to Delete Options
+                        </button>
+                        <small class="text-center text-muted">
+                            Start deleting now
+                        </small>
+                    </div>
                 </div>
             </template>
             <template v-if="importFailed">
