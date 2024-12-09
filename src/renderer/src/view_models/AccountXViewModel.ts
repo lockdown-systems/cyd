@@ -315,6 +315,10 @@ export class AccountXViewModel extends BaseViewModel {
         await this.sleep(seconds * 1000);
         this.log("waitForRateLimit", "finished waiting for rate limit");
 
+        // Reset the rate limit checker
+        await window.electron.X.resetRateLimitInfo(this.account?.id);
+        this.rateLimitInfo = emptyXRateLimitInfo();
+
         // Wait for the user to unpause.
         // This is important because if the computer sleeps and autopauses during a rate limit, this will
         // continue to wait until after the computer wakes up.

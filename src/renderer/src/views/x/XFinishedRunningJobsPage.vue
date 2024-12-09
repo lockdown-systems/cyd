@@ -66,7 +66,7 @@ onMounted(async () => {
 <template>
     <div class="finished">
         <div v-if="model.account.xAccount?.saveMyData" class="container mt-3">
-            <div class="finished-archive">
+            <div class="finished-save">
                 <h2>You just saved:</h2>
                 <ul>
                     <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
@@ -93,6 +93,31 @@ onMounted(async () => {
                             (<a href="#" @click="openURL('https://cyd.social/docs-other-tweets');">what's
                                 this?</a>)
                         </span>
+                    </li>
+                    <li
+                        v-if="model.account.xAccount?.archiveDMs || (model.progress.conversationsIndexed ?? 0) > 0 || (model.progress.messagesIndexed ?? 0) > 0">
+                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                        <strong>{{ model.progress.conversationsIndexed.toLocaleString() }}</strong>
+                        conversations,
+                        including <strong>{{ model.progress.messagesIndexed.toLocaleString() }}</strong>
+                        messages
+                    </li>
+                </ul>
+
+                <p>
+                    Your X archive is stored locally on your computer at
+                    <code>{{ archivePath }}</code>.
+                </p>
+            </div>
+        </div>
+        <div v-if="model.account.xAccount?.archiveMyData" class="container mt-3">
+            <div class="finished-archive">
+                <h2>You just archived:</h2>
+                <ul>
+                    <li v-if="model.account.xAccount?.archiveTweetsHTML">
+                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                        <strong>{{ model.progress.newTweetsArchived.toLocaleString() }}</strong> tweets
+                        saved as HTML archives
                     </li>
                     <li
                         v-if="model.account.xAccount?.archiveDMs || (model.progress.conversationsIndexed ?? 0) > 0 || (model.progress.messagesIndexed ?? 0) > 0">
@@ -234,6 +259,7 @@ onMounted(async () => {
     margin-right: 5px;
 }
 
+.finished-save ul,
 .finished-archive ul,
 .finished-delete ul {
     list-style-type: none;
@@ -241,6 +267,7 @@ onMounted(async () => {
     margin-left: 1.5em;
 }
 
+.finished-save li,
 .finished-archive li,
 .finished-delete li {
     margin-bottom: 0.2rem;
