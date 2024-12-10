@@ -60,7 +60,8 @@ vi.mock('electron', () => ({
     session: {
         fromPartition: vi.fn().mockReturnValue({
             webRequest: {
-                onCompleted: vi.fn()
+                onCompleted: vi.fn(),
+                onSendHeaders: vi.fn(),
             }
         })
     },

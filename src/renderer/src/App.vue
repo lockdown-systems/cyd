@@ -369,6 +369,25 @@ body {
   padding-left: 1.5rem;
 }
 
+/* Run Jobs styles */
+
+.run-jobs-state {
+  flex: 1;
+  overflow: auto;
+}
+
+.run-jobs-state-container {
+  display: flex;
+  height: 100%;
+}
+
+.run-jobs-state-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+
 /* Misc */
 
 .hidden {
