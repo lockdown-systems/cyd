@@ -6,9 +6,11 @@ on:
       - "v*"
 
 jobs:
-  build-x64:
-    # default x64 github-hosted runner
-    runs-on: ubuntu-24.04
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
 
     steps:
       - name: Checkout repository
@@ -24,134 +26,53 @@ jobs:
             exit 1
           fi
 
-      - name: Install Linux dependencies
-        run: sudo apt-get install -y build-essential fakeroot curl rpm zip sudo
-
-      - name: Install node
-        uses: actions/setup-node@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
         with:
-          node-version: "20.x"
+          platforms: all
 
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-x64
-          restore-keys: |
-            ${{ runner.os }}-node-x64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Save Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-x64
-
-      - name: Make release
+      - name: Build Docker image
         run: |
-          export DEBUG=electron-packager,electron-universal,electron-forge*
-          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
-          if [[ "$CYD_VERSION" == *-dev ]]; then
-            export CYD_ENV=dev
+          docker buildx create --use
+          if [ "${{ matrix.arch }}" == "arm64" ]; then
+            docker buildx build --platform linux/arm64 -t my-arm64-builder --load .
           else
-            export CYD_ENV=prod
+            docker buildx build --platform linux/amd64 -t my-amd64-builder --load .
           fi
-          npx electron-forge make --arch x64
-
-      - name: Display output files
-        run: find out
+      
+      - name: Build linux release
+        run: |
+          if [ "${{ matrix.arch }}" == "arm64" ]; then
+            docker run --rm -v $(pwd):/workspace -w /workspace my-arm64-builder /bin/bash -c "
+          else
+            docker run --rm -v $(pwd):/workspace -w /workspace my-amd64-builder /bin/bash -c "
+          fi
+          sudo apt-get update && sudo apt-get install -y build-essential fakeroot curl rpm zip sudo &&
+          npm ci &&
+          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4) &&
+          if [[ \"$CYD_VERSION\" == *-dev ]]; then
+            npm run make-dev-linux
+          else
+            npm run make-prod-linux
+          fi
 
       - name: Upload DEB artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: deb-packages-x64
-          path: out/make/deb/x64/cyd_*.deb
+          name: deb-packages-${{ matrix.arch }}
+          path: out/make/deb/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/cyd_*.deb
 
       - name: Upload RPM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: rpm-packages-x64
-          path: out/make/rpm/x64/cyd-*.rpm
+          name: rpm-packages-${{ matrix.arch }}
+          path: out/make/rpm/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/cyd-*.rpm
 
       - name: Upload ZIP artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: zip-packages-x64
-          path: out/make/zip/linux/x64/Cyd-*.zip
-
-  build-arm64:
-    # custom arm64 github-hosted runner
-    runs-on: ubuntu-arm64
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Make sure the version string matches the tag
-        run: |
-          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
-          TAG_VERSION=${GITHUB_REF#refs/tags/}
-          TAG_VERSION=${TAG_VERSION#v} # strip the leading 'v' from the tag
-          if [ "$CYD_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error file=package.json,title=Version check failed::Version string in package.json $CYD_VERSION does not match the tag $TAG_VERSION"
-            exit 1
-          fi
-
-      - name: Install Linux dependencies
-        run: sudo apt-get install -y build-essential fakeroot curl rpm zip sudo
-
-      - name: Install node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-arm64
-          restore-keys: |
-            ${{ runner.os }}-node-arm64
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Save Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-arm64
-
-      - name: Make release
-        run: |
-          export DEBUG=electron-packager,electron-universal,electron-forge*
-          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4)
-          if [[ "$CYD_VERSION" == *-dev ]]; then
-            export CYD_ENV=dev
-          else
-            export CYD_ENV=prod
-          fi
-          npx electron-forge make --arch arm64
-
-      - name: Display output files
-        run: find out
-
-      - name: Upload DEB artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: deb-packages-arm64
-          path: out/make/deb/arm64/cyd_*.deb
-
-      - name: Upload RPM artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: rpm-packages-arm64
-          path: out/make/rpm/arm64/cyd-*.rpm
-
-      - name: Upload ZIP artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: zip-packages-arm64
-          path: out/make/zip/linux/arm64/Cyd-*.zip
+          name: zip-packages-${{ matrix.arch }}
+          path: out/make/zip/linux/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/Cyd-*.zip
