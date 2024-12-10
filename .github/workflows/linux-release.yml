@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         arch: [x86_64, arm64]
@@ -52,19 +52,19 @@ jobs:
           fi
 
       - name: Upload DEB artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deb-packages-${{ matrix.arch }}
           path: out/make/deb/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/cyd_*.deb
 
       - name: Upload RPM artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rpm-packages-${{ matrix.arch }}
           path: out/make/rpm/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/cyd-*.rpm
 
       - name: Upload ZIP artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zip-packages-${{ matrix.arch }}
           path: out/make/zip/linux/${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}/Cyd-*.zip
