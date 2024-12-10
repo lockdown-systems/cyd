@@ -1,3 +1,5 @@
+# For making linux releases
+
 FROM node:20-bookworm
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
@@ -8,4 +10,5 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
     zip \
     sudo
 
-WORKDIR /app
+WORKDIR /workspace
+
