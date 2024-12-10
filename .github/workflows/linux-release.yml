@@ -43,20 +43,12 @@ jobs:
             docker buildx build --platform linux/amd64 -t my-amd64-builder --load .
           fi
       
-      - name: Build linux release
+      - name: Build Linux release in Docker container
         run: |
           if [ "${{ matrix.arch }}" == "arm64" ]; then
-            docker run --rm -v $(pwd):/workspace -w /workspace my-arm64-builder /bin/bash -c "
+            docker run --rm -v $(pwd):/workspace -w /workspace my-arm64-builder ./scripts/make-linux-release.sh
           else
-            docker run --rm -v $(pwd):/workspace -w /workspace my-amd64-builder /bin/bash -c "
-          fi
-          sudo apt-get update && sudo apt-get install -y build-essential fakeroot curl rpm zip sudo &&
-          npm ci &&
-          CYD_VERSION=$(cat package.json | grep '"version"' | cut -d'"' -f4) &&
-          if [[ \"$CYD_VERSION\" == *-dev ]]; then
-            npm run make-dev-linux
-          else
-            npm run make-prod-linux
+            docker run --rm -v $(pwd):/workspace -w /workspace my-amd64-builder ./scripts/make-linux-release.sh
           fi
 
       - name: Upload DEB artifacts
