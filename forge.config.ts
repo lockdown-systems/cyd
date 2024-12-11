@@ -156,7 +156,16 @@ const config: ForgeConfig = {
       macUpdateManifestBaseUrl: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/macos/universal`
     }),
     // Linux RPM
-    new MakerRpm({}),
+    new MakerRpm({
+      // @ts-expect-error I think the typescript definitions are wrong, but this should work
+      icon: path.join(assetsPath, 'icon.png'),
+      homepage: 'https://cyd.social',
+      categories: ['Utility', 'Network'],
+      description: 'Claw back your data from Big Tech',
+      productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
+      bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+      name: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+    }),
     // Linux Debian
     new MakerDeb({
       options: {
