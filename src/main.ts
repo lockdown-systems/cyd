@@ -163,7 +163,6 @@ async function createWindow() {
             preload: path.join(__dirname, './preload.js')
         },
         icon: icon,
-        title: config.mode == "prod" ? 'Cyd' : 'Cyd Dev',
     });
 
     // Handle power monitor events
