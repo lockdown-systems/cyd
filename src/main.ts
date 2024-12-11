@@ -258,6 +258,14 @@ async function createWindow() {
             }
         });
 
+        ipcMain.handle('getMode', async () => {
+            try {
+                return config.mode;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
+
         ipcMain.handle('getPlatform', async () => {
             try {
                 return os.platform();

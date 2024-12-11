@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 
 const currentYear = new Date().getFullYear();
 const appVersion = ref("");
+const mode = ref("prod");
 
 defineProps<{
     shouldShow: boolean;
@@ -18,6 +19,7 @@ const termsClicked = async () => {
 
 onMounted(async () => {
     appVersion.value = await window.electron.getVersion();
+    mode.value = await window.electron.getMode();
 });
 </script>
 
@@ -36,6 +38,7 @@ onMounted(async () => {
             </p>
             <p class="text-muted">
                 <img src="/assets/wordmark.svg" class="cyd-wordmark mr-2" alt="Cyd">
+                {{ mode != 'prod' ? 'Dev' : '' }}
                 version {{ appVersion }}
             </p>
             <p class="text-muted">
