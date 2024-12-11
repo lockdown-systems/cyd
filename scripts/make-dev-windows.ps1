@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 $env:CYD_ENV = "dev"
-$env:DEBUG = "electron-packager,electron-universal,electron-forge*"
+$env:DEBUG = "electron-packager,electron-universal,electron-forge*,electron-installer*"
 $env:WINDOWS_RELEASE = "false"
 
 # https://github.com/Squirrel/Squirrel.Windows/issues/1838#issuecomment-1514089628

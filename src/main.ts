@@ -49,6 +49,14 @@ if (!fs.existsSync(configPath)) {
 }
 const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+// Set the app name
+if (config.mode == "prod") {
+    // cyd with a lowercase c, for backwards compatibility
+    app.setName('cyd');
+} else {
+    app.setName('Cyd Dev');
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
     app.quit();
@@ -71,13 +79,13 @@ async function initializeApp() {
     // Display message in dev mode
     if (config.mode == "dev") {
         dialog.showMessageBoxSync({
-            title: `Cyd ${app.getVersion()}`,
+            title: `Cyd Dev ${app.getVersion()}`,
             message: `You're running Cyd ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
             type: 'info',
         });
     } else if (config.mode == "local") {
         dialog.showMessageBoxSync({
-            title: `Cyd ${app.getVersion()}`,
+            title: `Cyd Local ${app.getVersion()}`,
             message: `You're running Cyd ${app.getVersion()} in local mode.`,
             type: 'info',
         });
@@ -154,7 +162,7 @@ async function createWindow() {
             webviewTag: true,
             preload: path.join(__dirname, './preload.js')
         },
-        icon: icon
+        icon: icon,
     });
 
     // Handle power monitor events
@@ -244,6 +252,14 @@ async function createWindow() {
         ipcMain.handle('getVersion', async () => {
             try {
                 return app.getVersion();
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
+
+        ipcMain.handle('getMode', async () => {
+            try {
+                return config.mode;
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }
