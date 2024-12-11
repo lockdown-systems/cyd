@@ -95,7 +95,7 @@ function removeCodeSignatures(dir: string) {
 const config: ForgeConfig = {
   packagerConfig: {
     name: process.env.CYD_ENV == 'prod' ? 'Cyd' : 'Cyd Dev',
-    executableName: os.platform() == 'linux' ? 'cyd' : 'Cyd',
+    executableName: os.platform() == 'linux' ? (process.env.CYD_ENV == 'prod' ? 'cyd' : 'cyd-dev') : (process.env.CYD_ENV == 'prod' ? 'Cyd' : 'Cyd Dev'),
     appBundleId: process.env.CYD_ENV == 'prod' ? 'systems.lockdown.cyd' : 'systems.lockdown.cyd-dev',
     appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
@@ -166,6 +166,7 @@ const config: ForgeConfig = {
         categories: ['Utility', 'Network'],
         description: 'Claw back your data from Big Tech',
         productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
+        bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
       }
     })
   ],
