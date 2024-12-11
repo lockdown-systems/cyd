@@ -167,6 +167,7 @@ const config: ForgeConfig = {
         description: 'Claw back your data from Big Tech',
         productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
         bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+        name: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
       }
     })
   ],
