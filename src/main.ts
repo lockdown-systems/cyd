@@ -49,6 +49,9 @@ if (!fs.existsSync(configPath)) {
 }
 const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+// Attach the mode to the process environment
+process.env.CYD_MODE = config.mode;
+
 // Set the app name
 if (config.mode == "prod") {
     // cyd with a lowercase c, for backwards compatibility

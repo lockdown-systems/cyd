@@ -67,7 +67,11 @@ export const getDataPath = () => {
     // Get dataPath from config
     let dataPath = getConfig('dataPath');
     if (!dataPath) {
-        dataPath = path.join(app.getPath('documents'), 'Cyd');
+        if (process.env.CYD_MODE === 'prod') {
+            dataPath = path.join(app.getPath('documents'), 'Cyd');
+        } else {
+            dataPath = path.join(app.getPath('documents'), 'Cyd Dev');
+        }
         setConfig('dataPath', dataPath);
     }
 
