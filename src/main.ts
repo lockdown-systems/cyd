@@ -49,6 +49,14 @@ if (!fs.existsSync(configPath)) {
 }
 const config: Config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+// Set the app name
+if (config.mode == "prod") {
+    // cyd with a lowercase c, for backwards compatibility
+    app.setName('cyd');
+} else {
+    app.setName('Cyd Dev');
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
     app.quit();
