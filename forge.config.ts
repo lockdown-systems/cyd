@@ -121,7 +121,7 @@ const config: ForgeConfig = {
     // Windows
     new MakerSquirrel({
       iconUrl: "https://releases.lockdown.systems/cyd/icon.ico",
-      name: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
+      name: process.env.CYD_ENV == 'prod' ? "Cyd" : "CydDev",
       setupIcon: path.join(assetsPath, "installer-icon.ico"),
       loadingGif: path.join(assetsPath, "installer-loading.gif"),
       windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {

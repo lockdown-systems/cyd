@@ -79,13 +79,13 @@ async function initializeApp() {
     // Display message in dev mode
     if (config.mode == "dev") {
         dialog.showMessageBoxSync({
-            title: `Cyd ${app.getVersion()}`,
+            title: `Cyd Dev ${app.getVersion()}`,
             message: `You're running Cyd ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
             type: 'info',
         });
     } else if (config.mode == "local") {
         dialog.showMessageBoxSync({
-            title: `Cyd ${app.getVersion()}`,
+            title: `Cyd Local ${app.getVersion()}`,
             message: `You're running Cyd ${app.getVersion()} in local mode.`,
             type: 'info',
         });
@@ -162,7 +162,8 @@ async function createWindow() {
             webviewTag: true,
             preload: path.join(__dirname, './preload.js')
         },
-        icon: icon
+        icon: icon,
+        title: config.mode == "prod" ? 'Cyd' : 'Cyd Dev',
     });
 
     // Handle power monitor events
