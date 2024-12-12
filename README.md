@@ -32,28 +32,26 @@ npm run start
 
 Do all of these before making a release:
 
-- [ ] Bump the version in `package.json`
-- [ ] Manually test with `npm run start` and make sure it runs
-- [ ] Make a release, install it, and run the installed binary, and make sure it runs
+- [ ] Make a PR where you bump the version in `package.json` and run `npm install`, and merge it
+- [ ] Create a release and tag in GitHub
 
 **To make the release:**
-
-Ubuntu build machine:
-
-- [ ] Linux amd64 and Linux arm64: Docker
-  - `./scripts/publish-dev-linux.sh`
-  - `cd ../linux-repos`
-  - need the PGP passphrase
-  - `./scripts/release-dev.sh`
-- [ ] Windows x64: Windows VM
-  - need the HARICA token PIN
-  - `npm run publish-dev-windows`
 
 Mac build machine:
 
 - [ ] macOS universal: host
   - `npm run publish-dev-macos`
 - [ ] Windows arm64: Windows VM (arm64)
+  - need the HARICA token PIN
+  - `npm run publish-dev-windows`
+
+Ubuntu build machine:
+
+- [ ] Linux amd64 and Linux arm64:
+  - wait for "Release for Linux" GitHub Actions workflow to finish
+  - need the PGP passphrase
+  - `./scripts/release-dev.sh` (from `linux-repos` repo)
+- [ ] Windows x64: Windows VM
   - need the HARICA token PIN
   - `npm run publish-dev-windows`
 
