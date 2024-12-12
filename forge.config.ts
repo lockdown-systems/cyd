@@ -127,6 +127,7 @@ const config: ForgeConfig = {
       windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {
         signToolPath: findLatestSigntoolPath()
       } : undefined,
+      exe: process.env.CYD_ENV == 'prod' ? `Cyd ${version} Setup.exe` : `Cyd Dev ${version} Setup.exe`,
       // For auto-updates
       remoteReleases: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/windows/${process.arch}`,
       noDelta: process.env.WINDOWS_RELEASE === 'true' ? false : true,
