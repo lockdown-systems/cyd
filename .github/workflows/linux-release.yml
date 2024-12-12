@@ -43,19 +43,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-packages-x86_64
-          path: out/make/deb/x64/cyd_*.deb
+          path: out/make/deb/x64/*.deb
 
       - name: Upload RPM artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rpm-packages-x86_64
-          path: out/make/rpm/x64/cyd-*.rpm
+          path: out/make/rpm/x64/*.rpm
 
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
           name: zip-packages-x86_64
-          path: out/make/zip/linux/x64/Cyd-*.zip
+          path: out/make/zip/linux/x64/*.zip
 
   build-arm64:
     runs-on: ubuntu-arm64
@@ -94,16 +94,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-packages-arm64
-          path: out/make/deb/arm64/cyd_*.deb
+          path: out/make/deb/arm64/*.deb
 
       - name: Upload RPM artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rpm-packages-arm64
-          path: out/make/rpm/arm64/cyd-*.rpm
+          path: out/make/rpm/arm64/*.rpm
 
       - name: Upload ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
           name: zip-packages-arm64
-          path: out/make/zip/linux/arm64/Cyd-*.zip
+          path: out/make/zip/linux/arm64/*.zip
