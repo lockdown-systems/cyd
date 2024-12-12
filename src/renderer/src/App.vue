@@ -99,6 +99,14 @@ onMounted(async () => {
   }
 
   isReady.value = true;
+
+  // Change the app title
+  const mode = await window.electron.getMode();
+  if (mode === 'prod') {
+    document.title = 'Cyd';
+  } else {
+    document.title = `Cyd (${mode})`;
+  }
 });
 </script>
 

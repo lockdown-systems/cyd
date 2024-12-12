@@ -94,9 +94,9 @@ function removeCodeSignatures(dir: string) {
 
 const config: ForgeConfig = {
   packagerConfig: {
-    name: 'Cyd',
-    executableName: os.platform() == 'linux' ? 'cyd' : 'Cyd',
-    appBundleId: 'systems.lockdown.cyd',
+    name: process.env.CYD_ENV == 'prod' ? 'Cyd' : 'Cyd Dev',
+    executableName: os.platform() == 'linux' ? (process.env.CYD_ENV == 'prod' ? 'cyd' : 'cyd-dev') : (process.env.CYD_ENV == 'prod' ? 'Cyd' : 'Cyd Dev'),
+    appBundleId: process.env.CYD_ENV == 'prod' ? 'systems.lockdown.cyd' : 'systems.lockdown.cyd-dev',
     appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
     icon: path.join(assetsPath, 'icon'),
@@ -121,7 +121,7 @@ const config: ForgeConfig = {
     // Windows
     new MakerSquirrel({
       iconUrl: "https://releases.lockdown.systems/cyd/icon.ico",
-      name: "Cyd",
+      name: process.env.CYD_ENV == 'prod' ? "Cyd" : "CydDev",
       setupIcon: path.join(assetsPath, "installer-icon.ico"),
       loadingGif: path.join(assetsPath, "installer-loading.gif"),
       windowsSign: process.env.WINDOWS_RELEASE === 'true' ? {
@@ -133,13 +133,13 @@ const config: ForgeConfig = {
     }),
     // macOS DMG
     new MakerDMG({
-      name: `Cyd ${version}`,
+      name: process.env.CYD_ENV == 'prod' ? `Cyd ${version}` : `Cyd Dev ${version}`,
       background: path.join(assetsPath, 'dmg-background.png'),
       icon: path.join(assetsPath, 'installer-icon.icns'),
       iconSize: 110,
       overwrite: true,
       contents: [
-        { "x": 270, "y": 142, "type": "file", "path": `${process.cwd()}/out/Cyd-darwin-universal/Cyd.app` },
+        { "x": 270, "y": 142, "type": "file", "path": process.env.CYD_ENV == 'prod' ? `${process.cwd()}/out/Cyd-darwin-universal/Cyd.app` : `${process.cwd()}/out/Cyd Dev-darwin-universal/Cyd Dev.app` },
         { "x": 428, "y": 142, "type": "link", "path": "/Applications" }
       ],
       additionalDMGOptions: {
@@ -156,7 +156,16 @@ const config: ForgeConfig = {
       macUpdateManifestBaseUrl: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/macos/universal`
     }),
     // Linux RPM
-    new MakerRpm({}),
+    new MakerRpm({
+      // @ts-expect-error I think the typescript definitions are wrong, but this should work
+      icon: path.join(assetsPath, 'icon.png'),
+      homepage: 'https://cyd.social',
+      categories: ['Utility', 'Network'],
+      description: 'Claw back your data from Big Tech',
+      productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
+      bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+      name: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+    }),
     // Linux Debian
     new MakerDeb({
       options: {
@@ -165,7 +174,9 @@ const config: ForgeConfig = {
         homepage: 'https://cyd.social',
         categories: ['Utility', 'Network'],
         description: 'Claw back your data from Big Tech',
-        productName: "Cyd",
+        productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
+        bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+        name: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
       }
     })
   ],
@@ -210,8 +221,8 @@ const config: ForgeConfig = {
 
       console.log('🍎 Preparing to codesign macOS app bundle');
 
-      const universalBuildPath = path.join(__dirname, 'out', 'Cyd-darwin-universal');
-      const appPath = path.join(universalBuildPath, "Cyd.app");
+      const universalBuildPath = path.join(__dirname, 'out', process.env.CYD_ENV == 'prod' ? 'Cyd-darwin-universal' : 'Cyd Dev-darwin-universal');
+      const appPath = path.join(universalBuildPath, process.env.CYD_ENV == 'prod' ? "Cyd.app" : "Cyd Dev.app");
       const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
       const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
       const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');

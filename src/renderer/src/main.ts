@@ -29,6 +29,7 @@ declare global {
         electron: {
             checkForUpdates: () => void;
             getVersion: () => Promise<string>;
+            getMode: () => Promise<string>;
             getPlatform: () => Promise<string>;
             getAPIURL: () => Promise<string>;
             getDashURL: () => Promise<string>;
