@@ -6,7 +6,8 @@ import {
 } from 'vue';
 import {
     AccountXViewModel,
-    State
+    State,
+    FailureState
 } from '../../view_models/AccountXViewModel'
 import { openURL } from '../../util';
 
@@ -80,6 +81,10 @@ onMounted(async () => {
         showFailureTweets.value = false;
         showFailureBoth.value = false;
     }
+
+    // Reset failure states
+    await window.electron.X.setConfig(props.model.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "false");
+    await window.electron.X.setConfig(props.model.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
 });
 </script>
 
