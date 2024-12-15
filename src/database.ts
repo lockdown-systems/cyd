@@ -157,6 +157,14 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN archiveMyData BOOLEAN DEFAULT 0;`,
             ]
         },
+        // Add archiveBookmarks, deleteBookmarks to xAccount
+        {
+            name: "add archiveBookmarks, deleteBookmarks to xAccount",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN archiveBookmarks BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN deleteBookmarks BOOLEAN DEFAULT 0;`,
+            ]
+        },
     ]);
 }
 
@@ -196,6 +204,7 @@ interface XAccountRow {
     archiveTweets: boolean;
     archiveTweetsHTML: boolean;
     archiveLikes: boolean;
+    archiveBookmarks: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;
     deleteTweetsDaysOldEnabled: boolean;
@@ -208,6 +217,7 @@ interface XAccountRow {
     deleteRetweetsDaysOldEnabled: boolean;
     deleteRetweetsDaysOld: number;
     deleteLikes: boolean;
+    deleteBookmarks: number;
     deleteDMs: boolean;
     unfollowEveryone: boolean;
     followingCount: number;
@@ -390,6 +400,7 @@ export const getXAccount = (id: number): XAccount | null => {
         archiveTweets: !!row.archiveTweets,
         archiveTweetsHTML: !!row.archiveTweetsHTML,
         archiveLikes: !!row.archiveLikes,
+        archiveBookmarks: !!row.archiveBookmarks,
         archiveDMs: !!row.archiveDMs,
         deleteTweets: !!row.deleteTweets,
         deleteTweetsDaysOldEnabled: !!row.deleteTweetsDaysOldEnabled,
@@ -402,6 +413,7 @@ export const getXAccount = (id: number): XAccount | null => {
         deleteRetweetsDaysOldEnabled: !!row.deleteRetweetsDaysOldEnabled,
         deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
         deleteLikes: !!row.deleteLikes,
+        deleteBookmarks: !!row.deleteBookmarks,
         deleteDMs: !!row.deleteDMs,
         unfollowEveryone: !!row.unfollowEveryone,
         followingCount: row.followingCount,
@@ -430,6 +442,7 @@ export const getXAccounts = (): XAccount[] => {
             archiveTweets: !!row.archiveTweets,
             archiveTweetsHTML: !!row.archiveTweetsHTML,
             archiveLikes: !!row.archiveLikes,
+            archiveBookmarks: !!row.archiveBookmarks,
             archiveDMs: !!row.archiveDMs,
             deleteTweets: !!row.deleteTweets,
             deleteTweetsDaysOldEnabled: !!row.deleteTweetsDaysOldEnabled,
@@ -442,6 +455,7 @@ export const getXAccounts = (): XAccount[] => {
             deleteRetweetsDaysOldEnabled: !!row.deleteRetweetsDaysOldEnabled,
             deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
             deleteLikes: !!row.deleteLikes,
+            deleteBookmarks: !!row.deleteBookmarks,
             deleteDMs: !!row.deleteDMs,
             unfollowEveryone: !!row.unfollowEveryone,
             followingCount: row.followingCount,
@@ -478,6 +492,7 @@ export const saveXAccount = (account: XAccount) => {
             archiveTweets = ?,
             archiveTweetsHTML = ?,
             archiveLikes = ?,
+            archiveBookmarks = ?,
             archiveDMs = ?,
             deleteTweets = ?,
             deleteTweetsDaysOld = ?,
@@ -490,6 +505,7 @@ export const saveXAccount = (account: XAccount) => {
             deleteRetweetsDaysOldEnabled = ?,
             deleteRetweetsDaysOld = ?,
             deleteLikes = ?,
+            deleteBookmarks = ?,
             deleteDMs = ?,
             unfollowEveryone = ?,
             followingCount = ?,
@@ -507,6 +523,7 @@ export const saveXAccount = (account: XAccount) => {
         account.archiveTweets ? 1 : 0,
         account.archiveTweetsHTML ? 1 : 0,
         account.archiveLikes ? 1 : 0,
+        account.archiveBookmarks ? 1 : 0,
         account.archiveDMs ? 1 : 0,
         account.deleteTweets ? 1 : 0,
         account.deleteTweetsDaysOld,
@@ -519,6 +536,7 @@ export const saveXAccount = (account: XAccount) => {
         account.deleteRetweetsDaysOldEnabled ? 1 : 0,
         account.deleteRetweetsDaysOld,
         account.deleteLikes ? 1 : 0,
+        account.deleteBookmarks ? 1 : 0,
         account.deleteDMs ? 1 : 0,
         account.unfollowEveryone ? 1 : 0,
         account.followingCount,

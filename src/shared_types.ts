@@ -46,6 +46,7 @@ export type XAccount = {
     archiveTweets: boolean;
     archiveTweetsHTML: boolean;
     archiveLikes: boolean;
+    archiveBookmarks: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;
     deleteTweetsDaysOldEnabled: boolean;
@@ -58,6 +59,7 @@ export type XAccount = {
     deleteRetweetsDaysOldEnabled: boolean;
     deleteRetweetsDaysOld: number;
     deleteLikes: boolean;
+    deleteBookmarks: boolean;
     deleteDMs: boolean;
     unfollowEveryone: boolean;
     followingCount: number;
