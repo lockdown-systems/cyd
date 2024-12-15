@@ -56,6 +56,7 @@ const deleteRetweets = ref(false);
 const deleteRetweetsDaysOldEnabled = ref(false);
 const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
+const deleteBookmarks = ref(false);
 const deleteDMs = ref(false);
 const unfollowEveryone = ref(false);
 
@@ -74,6 +75,7 @@ const loadSettings = async () => {
         deleteRetweetsDaysOldEnabled.value = account.xAccount.deleteRetweetsDaysOldEnabled;
         deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
         deleteLikes.value = account.xAccount.deleteLikes;
+        deleteBookmarks.value = account.xAccount.deleteBookmarks;
         deleteDMs.value = account.xAccount.deleteDMs;
         unfollowEveryone.value = account.xAccount.unfollowEveryone;
     }
@@ -119,6 +121,7 @@ const saveSettings = async () => {
         account.xAccount.deleteRetweetsDaysOldEnabled = deleteRetweetsDaysOldEnabled.value;
         account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
         account.xAccount.deleteLikes = deleteLikes.value;
+        account.xAccount.deleteBookmarks = deleteBookmarks.value;
         account.xAccount.deleteDMs = deleteDMs.value;
         account.xAccount.unfollowEveryone = unfollowEveryone.value;
 
@@ -328,6 +331,22 @@ onMounted(async () => {
                     <small class="form-text text-muted">
                         Likes are private on X.
                     </small>
+                </div>
+            </div>
+
+            <!-- deleteBookmarks -->
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="form-check">
+                        <input id="deleteBookmarks" v-model="deleteBookmarks" type="checkbox" class="form-check-input">
+                        <label class="form-check-label mr-1 text-nowrap" for="deleteBookmarks">
+                            Delete my bookmarks
+                        </label>
+                    </div>
+                    <div class="d-flex align-items-center flex-nowrap">
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
+                    </div>
                 </div>
             </div>
 
