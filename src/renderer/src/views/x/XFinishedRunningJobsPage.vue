@@ -71,11 +71,11 @@ onMounted(async () => {
         showFailureTweets.value = false;
         showFailureLikes.value = false;
     }
-    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && !props.failureStateIndexLikes_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveTweets)) {
+    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveTweets)) {
         showFailureTweets.value = true;
         showFailureLikes.value = false;
         showFailureBoth.value = false;
-    } if (props.failureStateIndexLikes_FailedToRetryAfterRateLimit && !props.failureStateIndexTweets_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveLikes)) {
+    } if (props.failureStateIndexLikes_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveLikes)) {
         showFailureLikes.value = true;
         showFailureTweets.value = false;
         showFailureBoth.value = false;

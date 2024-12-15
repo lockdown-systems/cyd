@@ -1482,6 +1482,7 @@ Hang on while I scroll down to your earliest likes.`;
         await this.waitForPause();
         await window.electron.X.resetRateLimitInfo(this.account?.id);
         await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username + "/likes");
+        await this.sleep(500);
 
         // Check if likes list is empty
         if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
@@ -1489,6 +1490,8 @@ Hang on while I scroll down to your earliest likes.`;
             this.progress.isIndexLikesFinished = true;
             this.progress.likesIndexed = 0;
             await this.syncProgress();
+        } else {
+            this.log("runJobIndexLikes", "did not find empty state");
         }
 
         if (!this.progress.isIndexLikesFinished) {
