@@ -1091,7 +1091,7 @@ Hang on while I scroll down to your earliest tweets.`;
                     this.progress = await window.electron.X.indexTweetsFinished(this.account?.id);
 
                     // On success, set the failure state to false
-                    await window.electron.X.setConfig(this.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "fail");
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "false");
                     break;
                 }
 
@@ -1590,7 +1590,7 @@ Hang on while I scroll down to your earliest likes.`;
                     this.progress = await window.electron.X.indexLikesFinished(this.account?.id);
 
                     // On success, set the failure state to false
-                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "fail");
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
                     break;
                 }
 
