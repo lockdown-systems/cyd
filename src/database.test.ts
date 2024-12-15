@@ -43,7 +43,7 @@ afterEach(() => {
 
 // database tests
 
-test("config, account, and xAccount tables should be created", async () => {
+test("config, account, and xAccount, blueskyAccount tables should be created", async () => {
     const db = database.getMainDatabase();
     const tables = await database.exec(
         db,
@@ -55,6 +55,7 @@ test("config, account, and xAccount tables should be created", async () => {
         expect.objectContaining({ name: 'config' }),
         expect.objectContaining({ name: 'account' }),
         expect.objectContaining({ name: 'xAccount' }),
+        expect.objectContaining({ name: 'blueskyAccount' }),
     ]));
 })
 

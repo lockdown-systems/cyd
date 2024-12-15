@@ -73,6 +73,24 @@ onMounted(async () => {
           </div>
         </div>
 
+        <div class="select-account select-account-bluesky d-flex flex-wrap" @click="accountClicked('Bluesky')">
+          <div class="card m-2">
+            <div class="card-body d-flex align-items-center">
+              <div class="logo mr-2">
+                <i :class="getAccountIcon('Bluesky')" />
+              </div>
+              <div class="description">
+                <div class="name">
+                  Bluesky
+                </div>
+                <div class="info text-muted">
+                  Open source, decentralized social media platform
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <p class="text-muted mt-3">
           More platforms coming soon.
         </p>

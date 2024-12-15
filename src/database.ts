@@ -157,6 +157,42 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN archiveMyData BOOLEAN DEFAULT 0;`,
             ]
         },
+        // Add Bluesky table
+        {
+            name: "add Bluesky table",
+            sql: [
+                `CREATE TABLE blueskyAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    profileImageDataURI TEXT,
+    saveMyData BOOLEAN DEFAULT 1,
+    deleteMyData BOOLEAN DEFAULT 0,
+    archivePosts BOOLEAN DEFAULT 1,
+    archivePostsHTML BOOLEAN DEFAULT 0,
+    archiveLikes BOOLEAN DEFAULT 1,
+    archiveDMs BOOLEAN DEFAULT 1,
+    deletePosts BOOLEAN DEFAULT 1,
+    deletePostsDaysOld INTEGER DEFAULT 0,
+    deletePostsLikesThresholdEnabled BOOLEAN DEFAULT 0,
+    deletePostsLikesThreshold INTEGER DEFAULT 20,
+    deletePostsRepostsThresholdEnabled BOOLEAN DEFAULT 0,
+    deletePostsRepostsThreshold INTEGER DEFAULT 20,
+    deleteReposts BOOLEAN DEFAULT 1,
+    deleteRepostsDaysOld INTEGER DEFAULT 0,
+    deleteLikes BOOLEAN DEFAULT 0,
+    deleteLikesDaysOld INTEGER DEFAULT 0,
+    deleteDMs BOOLEAN DEFAULT 0,
+    unfollowEveryone BOOLEAN DEFAULT 1,
+    followingCount INTEGER DEFAULT 0,
+    followersCount INTEGER DEFAULT 0,
+    postsCount INTEGER DEFAULT -1,
+    likesCount INTEGER DEFAULT -1
+);`,
+            ]
+        }
     ]);
 }
 
@@ -213,6 +249,37 @@ interface XAccountRow {
     followingCount: number;
     followersCount: number;
     tweetsCount: number;
+    likesCount: number;
+}
+
+export interface BlueskyAccountRow {
+    id: number;
+    createdAt: string;
+    updatedAt: string;
+    accessedAt: string;
+    username: string;
+    profileImageDataURI: string;
+    saveMyData: boolean;
+    deleteMyData: boolean;
+    archivePosts: boolean;
+    archivePostsHTML: boolean;
+    archiveLikes: boolean;
+    archiveDMs: boolean;
+    deletePosts: boolean;
+    deletePostsDaysOld: number;
+    deletePostsLikesThresholdEnabled: boolean;
+    deletePostsLikesThreshold: number;
+    deletePostsRepostsThresholdEnabled: boolean;
+    deletePostsRepostsThreshold: number;
+    deleteReposts: boolean;
+    deleteRepostsDaysOld: number;
+    deleteLikes: boolean;
+    deleteLikesDaysOld: number;
+    deleteDMs: boolean;
+    unfollowEveryone: boolean;
+    followingCount: number;
+    followersCount: number;
+    postsCount: number;
     likesCount: number;
 }
 
