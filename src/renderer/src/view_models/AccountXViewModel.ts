@@ -72,6 +72,7 @@ export enum RunJobsState {
 export enum FailureState {
     indexTweets_FailedToRetryAfterRateLimit = "indexTweets_FailedToRetryAfterRateLimit",
     indexLikes_FailedToRetryAfterRateLimit = "indexLikes_FailedToRetryAfterRateLimit",
+    indexBookmarks_FailedToRetryAfterRateLimit = "indexBookmarks_FailedToRetryAfterRateLimit",
 }
 
 export type XViewModelState = {
@@ -1660,43 +1661,43 @@ Hang on while I scroll down to your earliest boomarks.`;
         await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username + "/i/bookmarks");
         await this.sleep(500);
 
-        // Check if likes list is empty
+        // Check if bookmarks list is empty
         if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
-            this.log("runJobIndexLikes", "no likes found");
-            this.progress.isIndexLikesFinished = true;
-            this.progress.likesIndexed = 0;
+            this.log("runJobIndexBookmarks", "no bookmarks found");
+            this.progress.isIndexBookmarksFinished = true;
+            this.progress.bookmarksIndexed = 0;
             await this.syncProgress();
         } else {
-            this.log("runJobIndexLikes", "did not find empty state");
+            this.log("runJobIndexBookmarks", "did not find empty state");
         }
 
-        if (!this.progress.isIndexLikesFinished) {
-            // Wait for tweets to appear
+        if (!this.progress.isIndexBookmarksFinished) {
+            // Wait for bookmarks to appear
             try {
-                await this.waitForSelector('article', "https://x.com/" + this.account?.xAccount?.username + "/likes");
+                await this.waitForSelector('article', "https://x.com/" + this.account?.xAccount?.username + "/i/bookmarks");
             } catch (e) {
-                this.log("runJobIndexLikes", ["selector never appeared", e]);
+                this.log("runJobIndexBookmarks", ["selector never appeared", e]);
                 if (e instanceof TimeoutError) {
                     // Were we rate limited?
                     this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
                     if (this.rateLimitInfo.isRateLimited) {
                         await this.waitForRateLimit();
                     } else {
-                        // If the page isn't loading, we assume the user has no likes yet
+                        // If the page isn't loading, we assume the user has no bookmarks yet
                         await this.waitForLoadingToFinish();
-                        this.progress.isIndexLikesFinished = true;
-                        this.progress.likesIndexed = 0;
+                        this.progress.isIndexBookmarksFinished = true;
+                        this.progress.bookmarksIndexed = 0;
                         await this.syncProgress();
                     }
                 } else if (e instanceof URLChangedError) {
                     const newURL = this.webview?.getURL();
-                    await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                    await this.error(AutomationErrorType.x_runJob_indexBookmarks_URLChanged, {
                         newURL: newURL,
                         exception: (e as Error).toString()
                     })
                     errorTriggered = true;
                 } else {
-                    await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                    await this.error(AutomationErrorType.x_runJob_indexBookmarks_OtherError, {
                         exception: (e as Error).toString()
                     })
                     errorTriggered = true;
@@ -1709,7 +1710,7 @@ Hang on while I scroll down to your earliest boomarks.`;
             return false;
         }
 
-        while (this.progress.isIndexLikesFinished === false) {
+        while (this.progress.isIndexBookmarksFinished === false) {
             await this.waitForPause();
 
             // Scroll to bottom
@@ -1722,7 +1723,7 @@ Hang on while I scroll down to your earliest boomarks.`;
                 await this.waitForRateLimit();
                 if (!await this.indexTweetsHandleRateLimit()) {
                     // On fail, update the failure state and move on
-                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "true");
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexBookmarks_FailedToRetryAfterRateLimit, "true");
                     break;
                 }
                 await this.sleep(500);
@@ -1731,10 +1732,10 @@ Hang on while I scroll down to your earliest boomarks.`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseLikes(this.account?.id);
+                this.progress = await window.electron.X.indexParseBookmarks(this.account?.id);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
-                await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
+                await this.error(AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError, {
                     exception: (e as Error).toString()
                 }, {
                     latestResponseData: latestResponseData
@@ -1754,7 +1755,7 @@ Hang on while I scroll down to your earliest boomarks.`;
                     verifyResult = await this.indexTweetsVerifyThereIsNoMore();
                 } catch (e) {
                     const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
-                    await this.error(AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError, {
+                    await this.error(AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError, {
                         exception: (e as Error).toString()
                     }, {
                         latestResponseData: latestResponseData,
@@ -1766,10 +1767,10 @@ Hang on while I scroll down to your earliest boomarks.`;
 
                 // If we verified that there are no more tweets, we're done
                 if (verifyResult) {
-                    this.progress = await window.electron.X.indexLikesFinished(this.account?.id);
+                    this.progress = await window.electron.X.indexBookmarksFinished(this.account?.id);
 
                     // On success, set the failure state to false
-                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexBookmarks_FailedToRetryAfterRateLimit, "false");
                     break;
                 }
 
