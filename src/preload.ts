@@ -24,6 +24,9 @@ contextBridge.exposeInMainWorld('electron', {
     getVersion: (): Promise<string> => {
         return ipcRenderer.invoke('getVersion')
     },
+    getMode: (): Promise<string> => {
+        return ipcRenderer.invoke('getMode')
+    },
     getPlatform: (): Promise<string> => {
         return ipcRenderer.invoke('getPlatform')
     },

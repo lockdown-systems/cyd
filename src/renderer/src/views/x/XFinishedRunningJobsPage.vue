@@ -6,7 +6,8 @@ import {
 } from 'vue';
 import {
     AccountXViewModel,
-    State
+    State,
+    FailureState
 } from '../../view_models/AccountXViewModel'
 import { openURL } from '../../util';
 
@@ -50,6 +51,10 @@ const submitErrorReportClicked = async () => {
 // Settings
 const archivePath = ref('');
 
+const showFailureBoth = ref(false);
+const showFailureTweets = ref(false);
+const showFailureLikes = ref(false);
+
 const updateArchivePath = async () => {
     const path = await window.electron.getAccountDataPath(props.model.account.id, '');
     archivePath.value = path ? path : '';
@@ -60,13 +65,33 @@ const hideErrors = ref(false);
 onMounted(async () => {
     await props.model.reloadAccount();
     await updateArchivePath();
+
+    // See if we need to show any of the failure alerts
+    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && props.failureStateIndexLikes_FailedToRetryAfterRateLimit && props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveTweets && props.model.account.xAccount?.archiveLikes) {
+        showFailureBoth.value = true;
+        showFailureTweets.value = false;
+        showFailureLikes.value = false;
+    }
+    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveTweets)) {
+        showFailureTweets.value = true;
+        showFailureLikes.value = false;
+        showFailureBoth.value = false;
+    } if (props.failureStateIndexLikes_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveLikes)) {
+        showFailureLikes.value = true;
+        showFailureTweets.value = false;
+        showFailureBoth.value = false;
+    }
+
+    // Reset failure states
+    await window.electron.X.setConfig(props.model.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "false");
+    await window.electron.X.setConfig(props.model.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
 });
 </script>
 
 <template>
     <div class="finished">
         <div v-if="model.account.xAccount?.saveMyData" class="container mt-3">
-            <div class="finished-archive">
+            <div class="finished-save">
                 <h2>You just saved:</h2>
                 <ul>
                     <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
@@ -93,6 +118,31 @@ onMounted(async () => {
                             (<a href="#" @click="openURL('https://cyd.social/docs-other-tweets');">what's
                                 this?</a>)
                         </span>
+                    </li>
+                    <li
+                        v-if="model.account.xAccount?.archiveDMs || (model.progress.conversationsIndexed ?? 0) > 0 || (model.progress.messagesIndexed ?? 0) > 0">
+                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                        <strong>{{ model.progress.conversationsIndexed.toLocaleString() }}</strong>
+                        conversations,
+                        including <strong>{{ model.progress.messagesIndexed.toLocaleString() }}</strong>
+                        messages
+                    </li>
+                </ul>
+
+                <p>
+                    Your X archive is stored locally on your computer at
+                    <code>{{ archivePath }}</code>.
+                </p>
+            </div>
+        </div>
+        <div v-if="model.account.xAccount?.archiveMyData" class="container mt-3">
+            <div class="finished-archive">
+                <h2>You just archived:</h2>
+                <ul>
+                    <li v-if="model.account.xAccount?.archiveTweetsHTML">
+                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                        <strong>{{ model.progress.newTweetsArchived.toLocaleString() }}</strong> tweets
+                        saved as HTML archives
                     </li>
                     <li
                         v-if="model.account.xAccount?.archiveDMs || (model.progress.conversationsIndexed ?? 0) > 0 || (model.progress.messagesIndexed ?? 0) > 0">
@@ -149,48 +199,18 @@ onMounted(async () => {
             </button>
         </div>
 
-        <div v-if="(
-            failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-            ((model.account.xAccount?.saveMyData && model.account.xAccount?.archiveTweets) || (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets))) ||
-            (
-                failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                ((model.account.xAccount?.saveMyData && model.account.xAccount?.archiveLikes) || (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes))
-            )" class="alert alert-danger mt-4" role="alert">
-            <p v-if="(
-                failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                (model.account.xAccount?.archiveTweets || model.account.xAccount?.deleteTweets)) &&
-                (
-                    failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                    (model.account.xAccount?.archiveLikes || model.account.xAccount?.deleteLikes)
-                )" class="fw-bold mb-0">
+        <div v-if="showFailureBoth || showFailureTweets || showFailureLikes" class="alert alert-danger mt-4"
+            role="alert">
+            <p v-if="showFailureBoth" class="fw-bold mb-0">
                 Cyd wasn't able to scroll through all of your tweets and likes this time.
             </p>
-            <p v-if="(
-                failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                (
-                    (model.account.xAccount?.saveMyData && model.account.xAccount?.archiveTweets) ||
-                    (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets)
-                )
-            ) && !(
-                failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                ((model.account.xAccount?.saveMyData && model.account.xAccount?.archiveLikes) || (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes))
-            )" class="fw-bold mb-0">
+            <p v-if="showFailureTweets" class="fw-bold mb-0">
                 Cyd wasn't able to scroll through all of your tweets this time.
             </p>
-            <p v-if="!(
-                failureStateIndexTweets_FailedToRetryAfterRateLimit &&
-                ((model.account.xAccount?.saveMyData && model.account.xAccount?.archiveTweets) || (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets))
-            ) && (
-                    failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                    ((model.account.xAccount?.saveMyData && model.account.xAccount?.archiveLikes) || (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes))
-                )" class="fw-bold mb-0">
+            <p v-if="showFailureLikes" class="fw-bold mb-0">
                 Cyd wasn't able to scroll through all of your likes this time.
             </p>
-            <p v-if="model.account.xAccount?.deleteMyData && (model.account.xAccount?.deleteTweets || model.account.xAccount?.deleteLikes)"
-                class="alert-details mb-0">
-                Run Cyd again with the same settings to delete more.
-            </p>
-            <p v-else class="alert-details mb-0">
+            <p class="alert-details mb-0">
                 Run Cyd again with the same settings to try again from the beginning.
             </p>
         </div>
@@ -234,6 +254,7 @@ onMounted(async () => {
     margin-right: 5px;
 }
 
+.finished-save ul,
 .finished-archive ul,
 .finished-delete ul {
     list-style-type: none;
@@ -241,6 +262,7 @@ onMounted(async () => {
     margin-left: 1.5em;
 }
 
+.finished-save li,
 .finished-archive li,
 .finished-delete li {
     margin-bottom: 0.2rem;

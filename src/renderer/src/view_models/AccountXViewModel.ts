@@ -315,6 +315,10 @@ export class AccountXViewModel extends BaseViewModel {
         await this.sleep(seconds * 1000);
         this.log("waitForRateLimit", "finished waiting for rate limit");
 
+        // Reset the rate limit checker
+        await window.electron.X.resetRateLimitInfo(this.account?.id);
+        this.rateLimitInfo = emptyXRateLimitInfo();
+
         // Wait for the user to unpause.
         // This is important because if the computer sleeps and autopauses during a rate limit, this will
         // continue to wait until after the computer wakes up.
@@ -1087,7 +1091,7 @@ Hang on while I scroll down to your earliest tweets.`;
                     this.progress = await window.electron.X.indexTweetsFinished(this.account?.id);
 
                     // On success, set the failure state to false
-                    await window.electron.X.setConfig(this.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "fail");
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "false");
                     break;
                 }
 
@@ -1478,6 +1482,7 @@ Hang on while I scroll down to your earliest likes.`;
         await this.waitForPause();
         await window.electron.X.resetRateLimitInfo(this.account?.id);
         await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username + "/likes");
+        await this.sleep(500);
 
         // Check if likes list is empty
         if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
@@ -1485,6 +1490,8 @@ Hang on while I scroll down to your earliest likes.`;
             this.progress.isIndexLikesFinished = true;
             this.progress.likesIndexed = 0;
             await this.syncProgress();
+        } else {
+            this.log("runJobIndexLikes", "did not find empty state");
         }
 
         if (!this.progress.isIndexLikesFinished) {
@@ -1586,7 +1593,7 @@ Hang on while I scroll down to your earliest likes.`;
                     this.progress = await window.electron.X.indexLikesFinished(this.account?.id);
 
                     // On success, set the failure state to false
-                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "fail");
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
                     break;
                 }
 
