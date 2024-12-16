@@ -141,6 +141,9 @@ export class AccountXViewModel extends BaseViewModel {
             if (this.account?.xAccount?.archiveLikes) {
                 jobTypes.push("indexLikes");
             }
+            if (this.account?.xAccount?.archiveBookmarks) {
+                jobTypes.push("indexBookmarks");
+            }
             if (this.account?.xAccount?.archiveDMs) {
                 jobTypes.push("indexConversations");
                 jobTypes.push("indexMessages");
@@ -151,6 +154,9 @@ export class AccountXViewModel extends BaseViewModel {
             shouldBuildArchive = true;
             if (this.account?.xAccount?.archiveTweetsHTML) {
                 jobTypes.push("archiveTweets");
+            }
+            if (this.account?.xAccount?.archiveBookmarks) {
+                jobTypes.push("indexBookmarks");
             }
             if (this.account?.xAccount?.archiveDMs) {
                 jobTypes.push("indexConversations");
@@ -169,6 +175,10 @@ export class AccountXViewModel extends BaseViewModel {
             }
             if (hasSomeData && this.account?.xAccount?.deleteLikes) {
                 jobTypes.push("deleteLikes");
+                shouldBuildArchive = true;
+            }
+            if (hasSomeData && this.account?.xAccount?.deleteBookmarks) {
+                jobTypes.push("deleteBookmarks");
                 shouldBuildArchive = true;
             }
             if (this.account?.xAccount?.unfollowEveryone) {
@@ -1624,6 +1634,172 @@ Hang on while I scroll down to your earliest likes.`;
         return true;
     }
 
+    async runJobIndexBookmarks(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `**I'm saving your bookmarks.**
+
+Hang on while I scroll down to your earliest boomarks.`;
+        this.showAutomationNotice = true;
+
+        // Start monitoring network requests
+        await this.loadBlank();
+        await window.electron.X.indexStart(this.account?.id);
+        await this.sleep(2000);
+
+        // Start the progress
+        this.progress.isIndexBookmarksFinished = false;
+        this.progress.bookmarksIndexed = 0;
+        await this.syncProgress();
+
+        // Load the bookmarks
+        let errorTriggered = false;
+        await this.waitForPause();
+        await window.electron.X.resetRateLimitInfo(this.account?.id);
+        await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username + "/i/bookmarks");
+        await this.sleep(500);
+
+        // Check if likes list is empty
+        if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
+            this.log("runJobIndexLikes", "no likes found");
+            this.progress.isIndexLikesFinished = true;
+            this.progress.likesIndexed = 0;
+            await this.syncProgress();
+        } else {
+            this.log("runJobIndexLikes", "did not find empty state");
+        }
+
+        if (!this.progress.isIndexLikesFinished) {
+            // Wait for tweets to appear
+            try {
+                await this.waitForSelector('article', "https://x.com/" + this.account?.xAccount?.username + "/likes");
+            } catch (e) {
+                this.log("runJobIndexLikes", ["selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // If the page isn't loading, we assume the user has no likes yet
+                        await this.waitForLoadingToFinish();
+                        this.progress.isIndexLikesFinished = true;
+                        this.progress.likesIndexed = 0;
+                        await this.syncProgress();
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview?.getURL();
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
+                } else {
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
+                }
+            }
+        }
+
+        if (errorTriggered) {
+            await window.electron.X.indexStop(this.account?.id);
+            return false;
+        }
+
+        while (this.progress.isIndexLikesFinished === false) {
+            await this.waitForPause();
+
+            // Scroll to bottom
+            await window.electron.X.resetRateLimitInfo(this.account?.id);
+            let moreToScroll = await this.scrollToBottom();
+            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+            if (this.rateLimitInfo.isRateLimited) {
+                await this.sleep(500);
+                await this.scrollToBottom();
+                await this.waitForRateLimit();
+                if (!await this.indexTweetsHandleRateLimit()) {
+                    // On fail, update the failure state and move on
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "true");
+                    break;
+                }
+                await this.sleep(500);
+                moreToScroll = true;
+            }
+
+            // Parse so far
+            try {
+                this.progress = await window.electron.X.indexParseLikes(this.account?.id);
+            } catch (e) {
+                const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
+                await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
+                    exception: (e as Error).toString()
+                }, {
+                    latestResponseData: latestResponseData
+                });
+                errorTriggered = true;
+                break;
+            }
+            this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+            await window.electron.X.updateJob(this.account?.id, JSON.stringify(this.jobs[jobIndex]));
+
+            // Check if we're done
+            if (!await window.electron.X.indexIsThereMore(this.account?.id)) {
+
+                // Verify that we're actually done
+                let verifyResult = true;
+                try {
+                    verifyResult = await this.indexTweetsVerifyThereIsNoMore();
+                } catch (e) {
+                    const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
+                    await this.error(AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError, {
+                        exception: (e as Error).toString()
+                    }, {
+                        latestResponseData: latestResponseData,
+                        currentURL: this.webview?.getURL()
+                    });
+                    errorTriggered = true;
+                    break;
+                }
+
+                // If we verified that there are no more tweets, we're done
+                if (verifyResult) {
+                    this.progress = await window.electron.X.indexLikesFinished(this.account?.id);
+
+                    // On success, set the failure state to false
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
+                    break;
+                }
+
+                // Otherwise, update the job and keep going
+                this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account?.id, JSON.stringify(this.jobs[jobIndex]));
+
+            } else {
+                if (!moreToScroll) {
+                    // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                    await this.sleep(500);
+                    await this.scrollUp(1000);
+                }
+            }
+
+            // Check if there is a "Something went wrong" message
+            await this.indexTweetsCheckForSomethingWrong();
+        }
+
+        // Stop monitoring network requests
+        await window.electron.X.indexStop(this.account?.id);
+
+        if (errorTriggered) {
+            return false;
+        }
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
     async runJobDeleteTweets(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS, navigator.userAgent);
 
@@ -2334,6 +2510,10 @@ Follow the instructions below to request your archive from X. You will need to v
 
             case "indexLikes":
                 await this.runJobIndexLikes(jobIndex);
+                break;
+
+            case "indexBookmarks":
+                await this.runJobIndexBookmarks(jobIndex);
                 break;
 
             case "deleteTweets":

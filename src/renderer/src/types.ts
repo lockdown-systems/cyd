@@ -18,6 +18,7 @@ export const PlausibleEvents = Object.freeze({
     X_JOB_STARTED_INDEX_TWEETS: 'X Job Started: indexTweets',
     X_JOB_STARTED_ARCHIVE_TWEETS: 'X Job Started: archiveTweets',
     X_JOB_STARTED_INDEX_LIKES: 'X Job Started: indexLikes',
+    X_JOB_STARTED_INDEX_BOOKMARKS: 'X Job Started: indexBookmarks',
     X_JOB_STARTED_INDEX_CONVERSATIONS: 'X Job Started: indexConversations',
     X_JOB_STARTED_INDEX_MESSAGES: 'X Job Started: indexMessages',
     X_JOB_STARTED_DELETE_TWEETS: 'X Job Started: deleteTweets',

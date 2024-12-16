@@ -111,6 +111,7 @@ export type XProgress = {
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
     isArchiveLikesFinished: boolean;
+    isIndexBookmarksFinished: boolean;
     isDeleteTweetsFinished: boolean;
     isDeleteRetweetsFinished: boolean;
     isDeleteLikesFinished: boolean;
@@ -131,6 +132,9 @@ export type XProgress = {
 
     totalLikesToArchive: number;
     likesArchived: number;
+
+    totalBookmarksToIndex: number;
+    bookmarksIndexed: number;
 
     totalConversations: number;
     conversationMessagesIndexed: number;
@@ -160,6 +164,7 @@ export function emptyXProgress(): XProgress {
         isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
         isArchiveLikesFinished: false,
+        isIndexBookmarksFinished: false,
         isDeleteTweetsFinished: false,
         isDeleteRetweetsFinished: false,
         isDeleteLikesFinished: false,
@@ -180,6 +185,9 @@ export function emptyXProgress(): XProgress {
 
         totalLikesToArchive: 0,
         likesArchived: 0,
+
+        totalBookmarksToIndex: 0,
+        bookmarksIndexed: 0,
 
         totalConversations: 0,
         conversationMessagesIndexed: 0,
