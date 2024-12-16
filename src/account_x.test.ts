@@ -162,6 +162,18 @@ class MockMITMController implements IMITMController {
                 },
             ];
         }
+        if (testdata == "indexBookmarks") {
+            this.responseData = [
+                {
+                    host: 'x.com',
+                    url: '/i/api/graphql/Ds7FCVYEIivOKHsGcE84xQ/Bookmarks?variables=%7B%22count%22%3A20%2C%22includePromotedContent%22%3Atrue%7D&features=%7B%22graphql_timeline_v2_bookmark_timeline%22%3Atrue%2C%22profile_label_improvements_pcf_label_in_post_enabled%22%3Afalse%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22premium_content_api_read_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22responsive_web_grok_analyze_button_fetch_trends_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D',
+                    status: 200,
+                    headers: {},
+                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8'),
+                    processed: false
+                }
+            ];
+        }
     }
     setAutomationErrorReportTestdata(filename: string) {
         const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', filename), 'utf8'));
@@ -701,6 +713,19 @@ test('XAccountController.indexParseAllJSON() should return user stats', async ()
     expect(account.followersCount).toBe(45);
     expect(account.tweetsCount).toBe(327);
     expect(account.likesCount).toBe(177);
+})
+
+test("XAccountController.indexParsedTweets() should index bookmarks", async () => {
+    mitmController.setTestdata("indexBookmarks");
+    if (controller.account) {
+        controller.account.username = 'nexamind91325';
+    }
+
+    const progress: XProgress = await controller.indexParseTweets()
+    expect(progress.bookmarksIndexed).toBe(14);
+
+    const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet WHERE isBookmarked=1", [], "all") as XTweetRow[];
+    expect(rows.length).toBe(14);
 })
 
 // Testing the X migrations

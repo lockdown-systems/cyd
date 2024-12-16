@@ -47,6 +47,8 @@ import {
     XAPILegacyUser,
     XAPILegacyTweet,
     XAPIData,
+    XAPIBookmarksData,
+    XAPITimeline,
     XAPIInboxTimeline,
     XAPIInboxInitialState,
     XAPIConversation,
@@ -61,6 +63,8 @@ import {
     XArchiveLike,
     XArchiveLikeContainer,
     isXArchiveLikeContainer,
+    isXAPIBookmarksData,
+    isXAPIData,
     // XArchiveDMConversation,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
@@ -96,6 +100,7 @@ export interface XTweetRow {
     retweetCount: number;
     isLiked: boolean;
     isRetweeted: boolean;
+    isBookmarked: boolean;
     text: string;
     path: string;
     addedToDatabaseAt: string;
@@ -391,7 +396,15 @@ export class XAccountController {
                     `DROP TABLE tweet;`,
                     `ALTER TABLE tweet_new RENAME TO tweet;`
                 ]
-            }
+            },
+            // Add isBookmarked to the tweet table, and update isBookarked for all tweets
+            {
+                name: "20241127_add_isBookmarked",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN isBookmarked BOOLEAN;`,
+                    `UPDATE tweet SET isBookmarked = 0;`
+                ]
+            },
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -537,7 +550,7 @@ export class XAccountController {
         }
 
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -548,13 +561,16 @@ export class XAccountController {
             tweetLegacy["retweet_count"],
             tweetLegacy["favorited"] ? 1 : 0,
             tweetLegacy["retweeted"] ? 1 : 0,
+            tweetLegacy["bookmarked"] ? 1 : 0,
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
             new Date(),
         ]);
 
         // Update progress
-        if (tweetLegacy["full_text"].startsWith("RT @")) {
+        if (tweetLegacy["bookmarked"]) {
+            this.progress.bookmarksIndexed++;
+        } else if (tweetLegacy["full_text"].startsWith("RT @")) {
             // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.retweetsIndexed++;
         }
@@ -590,13 +606,29 @@ export class XAccountController {
 
         // Process the next response
         if (
-            (responseData.url.includes("/UserTweetsAndReplies?") || responseData.url.includes("/Likes?")) &&
+            (
+                // Tweets
+                responseData.url.includes("/UserTweetsAndReplies?") ||
+                // Likes
+                responseData.url.includes("/Likes?") ||
+                // Bookmarks
+                responseData.url.includes("/Bookmarks?")) &&
             responseData.status == 200
         ) {
-            const body: XAPIData = JSON.parse(responseData.body);
+            // For likes and tweets, body is XAPIData
+            // For bookmarks, body is XAPIBookmarksData
+            const body: XAPIData | XAPIBookmarksData = JSON.parse(responseData.body);
+            let timeline: XAPITimeline;
+            if (isXAPIBookmarksData(body)) {
+                timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
+            } else if (isXAPIData(body)) {
+                timeline = (body as XAPIData).data.user.result.timeline_v2;
+            } else {
+                throw new Error('Invalid response data');
+            }
 
             // Loop through instructions
-            body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+            timeline.timeline.instructions.forEach((instructions) => {
                 if (instructions["type"] != "TimelineAddEntries") {
                     return;
                 }
@@ -717,6 +749,20 @@ export class XAccountController {
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
+            this.indexParseTweetsResponseData(i);
+        }
+
+        return this.progress;
+    }
+
+    // Parses the response data so far to index bookmarks that have been collected
+    // Returns the progress object
+    async indexParseBookmarks(): Promise<XProgress> {
+        await this.mitmController.clearProcessed();
+        log.info(`XAccountController.indexParseBookmarks: parsing ${this.mitmController.responseData.length} responses`);
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            // Parsing bookmarks uses indexParseTweetsResponseData too, since it's the same data
             this.indexParseTweetsResponseData(i);
         }
 
@@ -1871,7 +1917,7 @@ export class XAccountController {
                             skipCount++;
                         } else {
                             // Import it
-                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                                 username,
                                 tweet.id_str,
                                 new Date(tweet.created_at),
@@ -1879,6 +1925,7 @@ export class XAccountController {
                                 tweet.retweet_count,
                                 tweet.favorited ? 1 : 0,
                                 tweet.retweeted ? 1 : 0,
+                                0,
                                 tweet.full_text,
                                 `${username}/status/${tweet.id_str}`,
                                 new Date(),
@@ -2245,6 +2292,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexParseLikes();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:indexParseBookmarks', async (_, accountID: number): Promise<XProgress> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.indexParseBookmarks();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

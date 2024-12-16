@@ -121,45 +121,61 @@ export interface XAPIItemContent {
     user_results?: any;
 }
 
+export interface XAPITimeline {
+    timeline: {
+        instructions: {
+            type: string; // "TimelineClearCache", "TimelineAddEntries"
+            entries?: {
+                content: {
+                    entryType: string; // "TimelineTimelineModule", "TimelineTimelineItem", "TimelineTimelineCursor"
+                    __typename: string;
+                    value?: string;
+                    cursorType?: string;
+                    displayType?: string;
+                    // items is there when entryType is "TimelineTimelineModule"
+                    items?: {
+                        entryId: string;
+                        item: {
+                            itemContent: XAPIItemContent;
+                            clientEventInfo: any;
+                        };
+                    }[];
+                    // itemContent is there when entryType is "TimelineTimelineItem"
+                    itemContent?: XAPIItemContent;
+                    clientEventInfo?: any;
+                    metadata?: any;
+                };
+                entryId: string;
+                sortIndex: string;
+            }[];
+        }[];
+        metadata: any;
+    }
+}
+
 export interface XAPIData {
     data: {
         user: {
             result: {
                 __typename: string; // "User"
-                timeline_v2: {
-                    timeline: {
-                        instructions: {
-                            type: string; // "TimelineClearCache", "TimelineAddEntries"
-                            entries?: {
-                                content: {
-                                    entryType: string; // "TimelineTimelineModule", "TimelineTimelineItem", "TimelineTimelineCursor"
-                                    __typename: string;
-                                    value?: string;
-                                    cursorType?: string;
-                                    displayType?: string;
-                                    // items is there when entryType is "TimelineTimelineModule"
-                                    items?: {
-                                        entryId: string;
-                                        item: {
-                                            itemContent: XAPIItemContent;
-                                            clientEventInfo: any;
-                                        };
-                                    }[];
-                                    // itemContent is there when entryType is "TimelineTimelineItem"
-                                    itemContent?: XAPIItemContent;
-                                    clientEventInfo?: any;
-                                    metadata?: any;
-                                };
-                                entryId: string;
-                                sortIndex: string;
-                            }[];
-                        }[];
-                        metadata: any;
-                    }
-                }
+                timeline_v2: XAPITimeline;
             }
         }
     }
+}
+
+export interface XAPIBookmarksData {
+    data: {
+        bookmark_timeline_v2: XAPITimeline;
+    }
+}
+
+export function isXAPIBookmarksData(body: any): body is XAPIBookmarksData {
+    return body.data && body.data.bookmark_timeline_v2;
+}
+
+export function isXAPIData(body: any): body is XAPIData {
+    return body.data && body.data.user && body.data.user.result && body.data.user.result.timeline_v2;
 }
 
 // Index direct messages
