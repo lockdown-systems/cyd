@@ -1610,7 +1610,7 @@ export class XAccountController {
         ) as Sqlite3Count;
         const totalUnknownIndexed: Sqlite3Count = exec(
             this.db,
-            `SELECT COUNT(*) AS count FROM tweet 
+            `SELECT COUNT(*) AS count FROM tweet
              WHERE id NOT IN (
                  SELECT id FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ?
                  UNION
@@ -1748,6 +1748,19 @@ export class XAccountController {
             }
         }
         return null;
+    }
+
+
+    // Unzip twitter archive to the account data folder using unzipper
+    // Return unzipped path if success, else null.
+    async unzipXArchive(archiveZipPath: string): Promise<string | null> {
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        if (!this.account) {
+            return null;
+        }
+        const unzippedPath = getAccountDataPath("X", this.account.username)
+        await archiveZip.extract({ path: unzippedPath });
+        return unzippedPath
     }
 
     // Return null on success, and a string (error message) on error
@@ -2533,6 +2546,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.deleteDMsMarkAllDeleted();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:unzipXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.unzipXArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

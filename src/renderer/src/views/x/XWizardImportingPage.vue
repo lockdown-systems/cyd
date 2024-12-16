@@ -54,9 +54,20 @@ const startClicked = async () => {
     errorMessages.value = [];
     importStarted.value = true;
 
+    // Unarchive the zip
+    statusValidating.value = ImportStatus.Active;
+    const unzippedPath: string | null = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
+    if (unzippedPath === null) {
+        statusValidating.value = ImportStatus.Failed;
+        errorMessages.value.push(unzippedPath);
+        importFailed.value = true;
+        return;
+    }
+    statusValidating.value = ImportStatus.Finished;
+
     // Verify that the archive is valid
     statusValidating.value = ImportStatus.Active;
-    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
+    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, unzippedPath);
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(verifyResp);
@@ -67,7 +78,7 @@ const startClicked = async () => {
 
     // Import tweets
     statusImportingTweets.value = ImportStatus.Active;
-    const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'tweets');
+    const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, unzippedPath, 'tweets');
     tweetCountString.value = createCountString(tweetsResp.importCount, tweetsResp.skipCount);
     if (tweetsResp.status == 'error') {
         statusImportingTweets.value = ImportStatus.Failed;
@@ -80,7 +91,7 @@ const startClicked = async () => {
 
     // Import likes
     statusImportingLikes.value = ImportStatus.Active;
-    const likesResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'likes');
+    const likesResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, unzippedPath, 'likes');
     likeCountString.value = createCountString(likesResp.importCount, likesResp.skipCount);
     if (likesResp.status == 'error') {
         statusImportingLikes.value = ImportStatus.Failed;

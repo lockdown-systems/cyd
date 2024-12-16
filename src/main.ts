@@ -328,8 +328,10 @@ async function createWindow() {
             const dataPath = database.getConfig('dataPath');
 
             const options: Electron.OpenDialogSyncOptions = {
-                properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
+                filters: [{ name: 'Archive', extensions: ['zip'] }],
+                properties: ['openFile'],
             };
+
             if (dataPath) {
                 options.defaultPath = dataPath;
             }
