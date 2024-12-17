@@ -81,6 +81,9 @@ onMounted(async () => {
                     <li v-if="model.account?.xAccount?.archiveLikes">
                         Save likes
                     </li>
+                    <li v-if="model.account?.xAccount?.archiveBookmarks">
+                        Save bookmarks
+                    </li>
                     <li v-if="model.account?.xAccount?.archiveDMs">
                         Save direct messages
                     </li>
