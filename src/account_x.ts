@@ -1164,31 +1164,47 @@ export class XAccountController {
             return false;
         }
 
-        // Select everything from database
+        // Tweets
         const tweets: XTweetRow[] = exec(
             this.db,
             "SELECT * FROM tweet WHERE text NOT LIKE ? AND username = ? ORDER BY createdAt DESC",
             ["RT @%", this.account.username],
             "all"
         ) as XTweetRow[];
+
+        // Retweets
         const retweets: XTweetRow[] = exec(
             this.db,
             "SELECT * FROM tweet WHERE text LIKE ? ORDER BY createdAt DESC",
             ["RT @%"],
             "all"
         ) as XTweetRow[];
+
+        // Likes
         const likes: XTweetRow[] = exec(
             this.db,
             "SELECT * FROM tweet WHERE isLiked = ? ORDER BY createdAt DESC",
             [1],
             "all"
         ) as XTweetRow[];
+
+        // Bookmarks
+        const bookmarks: XTweetRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet WHERE isBookmarked = ? ORDER BY createdAt DESC",
+            [1],
+            "all"
+        ) as XTweetRow[];
+
+        // Users
         const users: XUserRow[] = exec(
             this.db,
             'SELECT * FROM user',
             [],
             "all"
         ) as XUserRow[];
+
+        // Conversations and messages
         const conversations: XConversationRow[] = exec(
             this.db,
             'SELECT * FROM conversation ORDER BY sortTimestamp DESC',
@@ -1264,6 +1280,23 @@ export class XAccountController {
                 deletedAt: tweet.deletedAt,
             }
         });
+        const formattedBookmarks: XArchiveTypes.Tweet[] = bookmarks.map((tweet) => {
+            return {
+                tweetID: tweet.tweetID,
+                username: tweet.username,
+                createdAt: tweet.createdAt,
+                likeCount: tweet.likeCount,
+                quoteCount: tweet.quoteCount,
+                replyCount: tweet.replyCount,
+                retweetCount: tweet.retweetCount,
+                isLiked: tweet.isLiked,
+                isRetweeted: tweet.isRetweeted,
+                text: tweet.text,
+                path: tweet.path,
+                archivedAt: tweet.archivedAt,
+                deletedAt: tweet.deletedAt,
+            }
+        });
         const formattedUsers: Record<string, XArchiveTypes.User> = users.reduce((acc, user) => {
             acc[user.userID] = {
                 userID: user.userID,
@@ -1314,6 +1347,7 @@ export class XAccountController {
             tweets: formattedTweets,
             retweets: formattedRetweets,
             likes: formattedLikes,
+            bookmarks: formattedBookmarks,
             users: formattedUsers,
             conversations: formattedConversations,
             messages: formattedMessages,
