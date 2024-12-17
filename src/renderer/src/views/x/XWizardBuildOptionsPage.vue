@@ -145,7 +145,7 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)" @click="nextClicked">
+                    :disabled="!(archiveTweets || archiveLikes || archiveBookmarks || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

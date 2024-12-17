@@ -183,13 +183,13 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveDMs)"
+                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     <template v-if="model.account?.xAccount?.saveMyData">
                         Build Database
                     </template>
-                    <template v-if="model.account?.xAccount?.archiveMyData">
+                    <template v-else-if="model.account?.xAccount?.archiveMyData">
                         Start Archiving
                     </template>
                     <template v-else>

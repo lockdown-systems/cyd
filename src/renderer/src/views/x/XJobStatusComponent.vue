@@ -24,6 +24,7 @@ const getJobTypeText = (jobType: string) => {
         downloadArchive: 'Downloading archive',
         indexTweets: 'Saving tweets',
         indexLikes: 'Saving likes',
+        indexBookmarks: 'Saving bookmarks',
         indexConversations: 'Saving conversations',
         indexMessages: 'Saving messages',
         archiveTweets: 'Saving tweets HTML',

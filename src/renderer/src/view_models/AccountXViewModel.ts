@@ -99,7 +99,7 @@ export class AccountXViewModel extends BaseViewModel {
     // they delete, this lets them go back and change settings without starting over
     public isDeleteReviewActive: boolean = false;
 
-    // Debug variables
+    // Variables related to debugging
     public debugAutopauseEndOfStep: boolean = false;
 
     async init(webview: WebviewTag) {
@@ -1661,7 +1661,7 @@ Hang on while I scroll down to your earliest boomarks.`;
         let errorTriggered = false;
         await this.waitForPause();
         await window.electron.X.resetRateLimitInfo(this.account?.id);
-        await this.loadURLWithRateLimit("https://x.com/" + this.account?.xAccount?.username + "/i/bookmarks");
+        await this.loadURLWithRateLimit("https://x.com/i/bookmarks");
         await this.sleep(500);
 
         // Check if bookmarks list is empty
@@ -1677,7 +1677,7 @@ Hang on while I scroll down to your earliest boomarks.`;
         if (!this.progress.isIndexBookmarksFinished) {
             // Wait for bookmarks to appear
             try {
-                await this.waitForSelector('article', "https://x.com/" + this.account?.xAccount?.username + "/i/bookmarks");
+                await this.waitForSelector('article', "https://x.com/i/bookmarks");
             } catch (e) {
                 this.log("runJobIndexBookmarks", ["selector never appeared", e]);
                 if (e instanceof TimeoutError) {

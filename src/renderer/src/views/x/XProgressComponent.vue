@@ -120,6 +120,18 @@ onUnmounted(() => {
                 </p>
             </template>
 
+            <!-- Index bookmarks -->
+            <template v-if="progress.currentJob == 'indexBookmarks'">
+                <p>
+                    Saved
+                    <b>{{ progress.bookmarksIndexed.toLocaleString() }} bookmarks</b>.
+                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                    <template v-if="progress.isIndexBookmarksFinished">
+                        Saving complete!
+                    </template>
+                </p>
+            </template>
+
             <!-- Archive Tweets -->
             <template v-if="progress.currentJob == 'archiveTweets'">
                 <p>
