@@ -1164,6 +1164,8 @@ export class XAccountController {
             return false;
         }
 
+        log.info("XAccountController.archiveBuild: building archive");
+
         // Tweets
         const tweets: XTweetRow[] = exec(
             this.db,
@@ -1340,6 +1342,8 @@ export class XAccountController {
             }
         });
 
+        log.info(`XAccountController.archiveBuild: archive has ${tweets.length} tweets, ${retweets.length} retweets, ${likes.length} likes, ${bookmarks.length} bookmarks, ${users.length} users, ${conversations.length} conversations, and ${messages.length} messages`);
+
         const archive: XArchiveTypes.XArchive = {
             appVersion: app.getVersion(),
             username: this.account.username,
@@ -1360,6 +1364,8 @@ export class XAccountController {
         }
         const archivePath = path.join(assetsPath, "archive.js");
         fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive, null, 2)};`);
+
+        log.info(`XAccountController.archiveBuild: archive saved to ${archivePath}`);
 
         // Unzip x-archive.zip to the account data folder using unzipper
         const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
