@@ -2018,10 +2018,6 @@ Hang on while I scroll down to your earliest boomarks.`;
         }
 
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
-            // DEBUG
-            this.pause();
-            await this.waitForPause();
-
             this.currentTweetItem = tweetsToDelete.tweets[i];
 
             // Delete the like
@@ -2625,6 +2621,10 @@ Follow the instructions below to request your archive from X. You will need to v
 
             case "deleteLikes":
                 await this.runJobDeleteLikes(jobIndex);
+                break;
+
+            case "deleteBookmarks":
+                await this.runJobDeleteBookmarks(jobIndex);
                 break;
 
             case "unfollowEveryone":
