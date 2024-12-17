@@ -492,7 +492,7 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
     const progress: XProgress = await controller.indexParseTweets()
     expect(progress.likesIndexed).toBe(2);
     expect(progress.retweetsIndexed).toBe(3);
-    expect(progress.tweetsIndexed).toBe(23);
+    expect(progress.tweetsIndexed).toBe(24);
     expect(progress.unknownIndexed).toBe(16);
 
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];

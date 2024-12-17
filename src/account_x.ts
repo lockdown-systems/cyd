@@ -568,21 +568,22 @@ export class XAccountController {
         ]);
 
         // Update progress
-        if (tweetLegacy["bookmarked"]) {
-            this.progress.bookmarksIndexed++;
-        } else if (tweetLegacy["full_text"].startsWith("RT @")) {
-            // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
-            this.progress.retweetsIndexed++;
-        }
-        else if (tweetLegacy["favorited"]) {
+        if (tweetLegacy["favorited"]) {
             // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.likesIndexed++;
         }
-        else if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
+        if (tweetLegacy["bookmarked"]) {
+            this.progress.bookmarksIndexed++;
+        }
+        if (tweetLegacy["full_text"].startsWith("RT @")) {
+            // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
+            this.progress.retweetsIndexed++;
+        }
+        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
             // console.log("DEBUG-### TWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.tweetsIndexed++;
         }
-        else {
+        if (!tweetLegacy["favorited"] && !tweetLegacy["bookmarked"] && !tweetLegacy["full_text"].startsWith("RT @") && userLegacy["screen_name"] != this.account?.username) {
             // console.log("DEBUG-### UNKNOWN: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.unknownIndexed++;
         }
