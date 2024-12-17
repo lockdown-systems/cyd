@@ -373,7 +373,7 @@ onMounted(async () => {
 
             <div class="buttons">
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
+                    :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || deleteBookmarks || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
