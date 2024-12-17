@@ -149,6 +149,9 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseLikes: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseLikes', accountID)
         },
+        indexParseBookmarks: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseBookmarks', accountID)
+        },
         indexParseConversations: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseConversations', accountID)
         },

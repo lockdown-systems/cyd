@@ -1566,7 +1566,7 @@ Hang on while I scroll down to your earliest likes.`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseLikes(this.account?.id);
+                this.progress = await window.electron.X.indexParseTweets(this.account?.id);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
                 await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
@@ -1732,7 +1732,7 @@ Hang on while I scroll down to your earliest boomarks.`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseBookmarks(this.account?.id);
+                this.progress = await window.electron.X.indexParseTweets(this.account?.id);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
                 await this.error(AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError, {

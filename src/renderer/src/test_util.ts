@@ -46,7 +46,6 @@ export const stubElectron = () => {
             indexStop: cy.stub(),
             indexParseAllJSON: cy.stub(),
             indexParseTweets: cy.stub(),
-            indexParseLikes: cy.stub(),
             indexParseConversations: cy.stub(),
             indexIsThereMore: cy.stub(),
             resetThereIsMore: cy.stub(),

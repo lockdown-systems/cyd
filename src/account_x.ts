@@ -730,39 +730,12 @@ export class XAccountController {
 
     // Parses the response data so far to index tweets that have been collected
     // Returns the progress object
+    // This works for tweets, likes, and bookmarks
     async indexParseTweets(): Promise<XProgress> {
         await this.mitmController.clearProcessed();
         log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            this.indexParseTweetsResponseData(i);
-        }
-
-        return this.progress;
-    }
-
-    // Parses the response data so far to index likes that have been collected
-    // Returns the progress object
-    async indexParseLikes(): Promise<XProgress> {
-        await this.mitmController.clearProcessed();
-        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
-
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
-            this.indexParseTweetsResponseData(i);
-        }
-
-        return this.progress;
-    }
-
-    // Parses the response data so far to index bookmarks that have been collected
-    // Returns the progress object
-    async indexParseBookmarks(): Promise<XProgress> {
-        await this.mitmController.clearProcessed();
-        log.info(`XAccountController.indexParseBookmarks: parsing ${this.mitmController.responseData.length} responses`);
-
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            // Parsing bookmarks uses indexParseTweetsResponseData too, since it's the same data
             this.indexParseTweetsResponseData(i);
         }
 
@@ -2283,24 +2256,6 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.indexParseTweets();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseLikes', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseLikes();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseBookmarks', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseBookmarks();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

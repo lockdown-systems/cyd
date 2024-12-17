@@ -73,7 +73,6 @@ declare global {
                 indexStop: (accountID: number) => void;
                 indexParseAllJSON: (accountID: number) => Promise<XAccount>;
                 indexParseTweets: (accountID: number) => Promise<XProgress>;
-                indexParseLikes: (accountID: number) => Promise<XProgress>;
                 indexParseConversations: (accountID: number) => Promise<XProgress>;
                 indexIsThereMore: (accountID: number) => Promise<boolean>;
                 resetThereIsMore: (accountID: number) => Promise<void>;
