@@ -405,6 +405,20 @@ export class XAccountController {
                     `UPDATE tweet SET isBookmarked = 0;`
                 ]
             },
+            // Add deletedTweetAt, deletedRetweetAt, deletedLikeAt, and deletedBookmarkAt to the tweet table, and
+            // try to guess which types of deletions have already occured
+            {
+                name: "20241127_add_deletedAt_fields",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN deletedTweetAt DATETIME;`,
+                    `ALTER TABLE tweet ADD COLUMN deletedRetweetAt DATETIME;`,
+                    `ALTER TABLE tweet ADD COLUMN deletedLikeAt DATETIME;`,
+                    `ALTER TABLE tweet ADD COLUMN deletedBookmarkAt DATETIME;`,
+                    `UPDATE tweet SET deletedTweetAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 0 AND text NOT LIKE 'RT @%';`,
+                    `UPDATE tweet SET deletedRetweetAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 0 AND text LIKE 'RT @%';`,
+                    `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
+                ]
+            },
         ])
         log.info("XAccountController.initDB: database initialized");
     }
