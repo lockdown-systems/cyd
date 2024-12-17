@@ -11,6 +11,11 @@ provide('archiveData', archiveData);
 onMounted(() => {
   // Make sure the archive data is there
   archiveDataFound.value = 'archiveData' in window;
+
+  // Set the document title
+  if (archiveDataFound.value) {
+    document.title = `@${archiveData.value.username}'s Archive`;
+  }
 })
 </script>
 
@@ -31,20 +36,19 @@ onMounted(() => {
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-              <li class="nav-item">
+              <li v-if="archiveData.tweets.length > 0" class="nav-item">
                 <router-link to="/" class="nav-link">Tweets</router-link>
               </li>
-              <li v-if="archiveData && archiveData.retweets && archiveData.retweets.length > 0" class="nav-item">
+              <li v-if="archiveData.retweets.length > 0" class="nav-item">
                 <router-link to="/retweets" class="nav-link">Retweets</router-link>
               </li>
-              <li v-if="archiveData && archiveData.likes && archiveData.likes.length > 0" class="nav-item">
+              <li v-if="archiveData.likes.length > 0" class="nav-item">
                 <router-link to="/likes" class="nav-link">Likes</router-link>
               </li>
-              <li v-if="archiveData && archiveData.conversations && archiveData.conversations.length > 0"
-                class="nav-item">
+              <li v-if="archiveData.conversations.length > 0" class="nav-item">
                 <router-link to="/messages" class="nav-link">Messages</router-link>
               </li>
-              <li v-if="archiveData && archiveData.bookmarks && archiveData.bookmarks.length > 0" class="nav-item">
+              <li v-if="archiveData.bookmarks.length > 0" class="nav-item">
                 <router-link to="/bookmarks" class="nav-link">Bookmarks</router-link>
               </li>
             </ul>
