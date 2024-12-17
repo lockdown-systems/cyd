@@ -232,81 +232,31 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     // Returns the API response's status code, or 0 on error
-    async apiDeleteTweet(ct0: string, tweetID: string): Promise<number> {
-        this.log("apiDeleteTweet", ["deleting tweet", tweetID]);
+    async graphqlDelete(ct0: string, url: string, referrer: string, body: string): Promise<number> {
+        this.log("graphqlDelete", [url, body]);
         return await this.getWebview()?.executeJavaScript(`
             (async () => {
-                const ct0 = '${ct0}';
-                const username = '${this.account.xAccount?.username}';
-                const tweetID = '${tweetID}';
-
-                const url = "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet";
-                const body = JSON.stringify({ "variables": { "tweet_id": tweetID, "dark_request": false }, "queryId": "VaenaVgh5q5ih7kvyVjgtg" });
                 const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
-
                 try {
-                    const response = await fetch(url, {
+                    const response = await fetch('${url}', {
                         "headers": {
                             "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
                             "content-type": "application/json",
                             "x-client-transaction-id": transactionID,
-                            "x-csrf-token": ct0,
+                            "x-csrf-token": '${ct0}',
                             "x-twitter-active-user": "yes",
                             "x-twitter-auth-type": "OAuth2Session"
                         },
-                        "referrer": 'https://x.com/' + username + '/with_replies',
+                        "referrer": '${referrer}',
                         "referrerPolicy": "strict-origin-when-cross-origin",
-                        "body": body,
+                        "body": '${body}',
                         "method": "POST",
                         "mode": "cors",
                         "credentials": "include",
                         "signal": AbortSignal.timeout(5000)
                     })
                     console.log(response.status);
-                    if(response.status == 200) {
-                        console.log(await response.text());
-                    }
-                    return response.status;
-                } catch (e) {
-                    return 0;
-                }
-            })();
-        `);
-    }
-
-    // Returns the API response's status code, or 0 on error
-    async apiDeleteLike(ct0: string, tweetID: string): Promise<number> {
-        this.log("apiDeleteLike", ["deleting like", tweetID]);
-        return await this.getWebview()?.executeJavaScript(`
-            (async () => {
-                const ct0 = '${ct0}';
-                const username = '${this.account.xAccount?.username}';
-                const tweetID = '${tweetID}';
-
-                const url = "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet";
-                const body = JSON.stringify({ "variables": { "tweet_id": tweetID }, "queryId": "ZYKSe-w7KEslx3JhSIk5LA" });
-                const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
-
-                try {
-                    const response = await fetch(url, {
-                        "headers": {
-                            "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-                            "content-type": "application/json",
-                            "x-client-transaction-id": transactionID,
-                            "x-csrf-token": ct0,
-                            "x-twitter-active-user": "yes",
-                            "x-twitter-auth-type": "OAuth2Session"
-                        },
-                        "referrer": 'https://x.com/' + username + '/with_replies',
-                        "referrerPolicy": "strict-origin-when-cross-origin",
-                        "body": body,
-                        "method": "POST",
-                        "mode": "cors",
-                        "credentials": "include",
-                        "signal": AbortSignal.timeout(5000)
-                    })
-                    console.log(response.status);
-                    if(response.status == 200) {
+                    if (response.status == 200) {
                         console.log(await response.text());
                     }
                     return response.status;
@@ -1857,7 +1807,18 @@ Hang on while I scroll down to your earliest boomarks.`;
             let tweetDeleted = false;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
-                statusCode = await this.apiDeleteTweet(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet',
+                    "https://x.com/" + this.account?.xAccount?.username + "/with_replies",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id,
+                            "dark_request": false
+                        },
+                        "queryId": "VaenaVgh5q5ih7kvyVjgtg"
+                    }),
+                );
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
@@ -1954,7 +1915,18 @@ Hang on while I scroll down to your earliest boomarks.`;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
                 // Delete the retweet (which also uses the delete tweet API route)
-                statusCode = await this.apiDeleteTweet(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet',
+                    "https://x.com/" + this.account?.xAccount?.username + "/with_replies",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id,
+                            "dark_request": false
+                        },
+                        "queryId": "VaenaVgh5q5ih7kvyVjgtg"
+                    }),
+                );
                 if (statusCode == 200) {
                     this.log('runJobDeleteRetweets', ["deleted retweet", tweetsToDelete.tweets[i].id]);
                     // Update the tweet's deletedAt date
@@ -2052,7 +2024,17 @@ Hang on while I scroll down to your earliest boomarks.`;
             let likeDeleted = false;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
-                statusCode = await this.apiDeleteLike(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet',
+                    "https://x.com/" + this.account?.xAccount?.username + "/likes",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id,
+                        },
+                        "queryId": "ZYKSe-w7KEslx3JhSIk5LA"
+                    })
+                );
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
@@ -2149,7 +2131,17 @@ Hang on while I scroll down to your earliest boomarks.`;
             let bookmarkDeleted = false;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
-                statusCode = await this.apiDeleteBookmark(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark',
+                    "https://x.com/i/bookmarks",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id
+                        },
+                        "queryId": "Wlmlj2-xzyS1GN3a6cj-mQ"
+                    })
+                );
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
