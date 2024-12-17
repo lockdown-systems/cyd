@@ -67,6 +67,7 @@ export enum RunJobsState {
     DeleteTweets = "DeleteTweets",
     DeleteRetweets = "DeleteRetweets",
     DeleteLikes = "DeleteLikes",
+    DeleteBookmarks = "DeleteBookmarks",
 }
 
 export enum FailureState {
@@ -1824,7 +1825,7 @@ Hang on while I scroll down to your earliest boomarks.`;
             })
             return false;
         }
-        this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", tweetsToDelete]);
+        this.log('runJobDeleteTweets', `found ${tweetsToDelete.tweets.length} tweets to delete`);
 
         // Start the progress
         this.progress.totalTweetsToDelete = tweetsToDelete.tweets.length;
@@ -2021,7 +2022,7 @@ Hang on while I scroll down to your earliest boomarks.`;
             })
             return false;
         }
-        this.log('runJob', ["jobType=deleteLikes", "deleteLikesStartResponse", tweetsToDelete]);
+        this.log('runJobDeleteLikes', `found ${tweetsToDelete.tweets.length} likes to delete`);
 
         // Start the progress
         this.progress.totalLikesToDelete = tweetsToDelete.tweets.length;
@@ -2083,6 +2084,103 @@ Hang on while I scroll down to your earliest boomarks.`;
 
             if (!likeDeleted) {
                 await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToDelete, {
+                    statusCode: statusCode
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true)
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
+
+            await this.waitForPause();
+        }
+
+        await this.finishJob(jobIndex);
+    }
+
+    async runJobDeleteBookmarks(jobIndex: number) {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_BOOKMARKS, navigator.userAgent);
+
+        // After this job, we want to reload the user stats
+        await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
+
+        this.runJobsState = RunJobsState.DeleteBookmarks;
+        let tweetsToDelete: XDeleteTweetsStartResponse;
+        this.instructions = `**I'm deleting your bookmarks, starting with the earliest.**`;
+
+        // Load the bookmarks to delete
+        try {
+            tweetsToDelete = await window.electron.X.deleteBookmarksStart(this.account?.id);
+        } catch (e) {
+            await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
+                exception: (e as Error).toString()
+            })
+            return false;
+        }
+        this.log('runJobDeleteBookmarks', `found ${tweetsToDelete.tweets.length} bookmarks to delete`);
+
+        // Start the progress
+        this.progress.totalBookmarksToDelete = tweetsToDelete.tweets.length;
+        this.progress.bookmarksDeleted = 0;
+        await this.syncProgress();
+
+        // Load the bookmarks page
+        this.showBrowser = true;
+        this.showAutomationNotice = true;
+        await this.loadURLWithRateLimit("https://x.com/i/bookmarks");
+
+        // Hide the browser and start showing other progress instead
+        this.showBrowser = false;
+
+        // Get the ct0 cookie
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        this.log('runJobDeleteBookmarks', ["ct0", ct0]);
+        if (!ct0) {
+            await this.error(AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound, {})
+            return false;
+        }
+
+        for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+            this.currentTweetItem = tweetsToDelete.tweets[i];
+
+            // Delete the bookmark
+            let bookmarkDeleted = false;
+            let statusCode = 0;
+            for (let tries = 0; tries < 3; tries++) {
+                statusCode = await this.apiDeleteBookmark(ct0, tweetsToDelete.tweets[i].id);
+                if (statusCode == 200) {
+                    // Update the tweet's deletedAt date
+                    try {
+                        // Deleting bookmarks uses the same deleteTweet IPC function as deleting tweets
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        bookmarkDeleted = true;
+                        this.progress.bookmarksDeleted += 1;
+                        await this.syncProgress();
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            tweet: tweetsToDelete.tweets[i],
+                            index: i
+                        }, true)
+                    }
+                    break;
+                } else if (statusCode == 429) {
+                    // Rate limited
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+                    await this.waitForRateLimit();
+                    tries = 0;
+                } else {
+                    // Sleep 1 second and try again
+                    this.log("runJobDeleteLikes", ["statusCode", statusCode, "failed to delete like, try #", tries]);
+                    await this.sleep(1000);
+                }
+            }
+
+            if (!bookmarkDeleted) {
+                await this.error(AutomationErrorType.x_runJob_deleteBookmarks_FailedToDelete, {
                     statusCode: statusCode
                 }, {
                     tweet: tweetsToDelete.tweets[i],
