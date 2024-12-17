@@ -78,11 +78,7 @@ declare global {
                 resetThereIsMore: (accountID: number) => Promise<void>;
                 indexMessagesStart: (accountID: number) => Promise<XIndexMessagesStartResponse>;
                 indexParseMessages: (accountID: number) => Promise<XProgress>;
-                indexTweetsFinished: (accountID: number) => Promise<XProgress>;
-                indexConversationsFinished: (accountID: number) => Promise<XProgress>;
-                indexMessagesFinished: (accountID: number) => Promise<XProgress>;
                 indexConversationFinished: (accountID: number, conversationID: string) => Promise<void>;
-                indexLikesFinished: (accountID: number) => Promise<XProgress>;
                 archiveTweetsStart: (accountID: number) => Promise<XArchiveStartResponse>;
                 archiveTweetsOutputPath: (accountID: number) => Promise<string>;
                 archiveTweet: (accountID: number, tweetID: string) => Promise<void>;

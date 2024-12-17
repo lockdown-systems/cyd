@@ -1099,7 +1099,8 @@ Hang on while I scroll down to your earliest tweets.`;
 
                 // If we verified that there are no more tweets, we're done
                 if (verifyResult) {
-                    this.progress = await window.electron.X.indexTweetsFinished(this.account?.id);
+                    this.progress.isIndexTweetsFinished = true;
+                    await this.syncProgress();
 
                     // On success, set the failure state to false
                     await window.electron.X.setConfig(this.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "false");
@@ -1281,7 +1282,8 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account?.id)) {
-                this.progress = await window.electron.X.indexConversationsFinished(this.account?.id);
+                this.progress.isIndexConversationsFinished = true;
+                await this.syncProgress();
                 break;
             } else {
                 if (!moreToScroll) {
@@ -1601,7 +1603,8 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // If we verified that there are no more tweets, we're done
                 if (verifyResult) {
-                    this.progress = await window.electron.X.indexLikesFinished(this.account?.id);
+                    this.progress.isIndexLikesFinished = true;
+                    await this.syncProgress();
 
                     // On success, set the failure state to false
                     await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
@@ -1767,7 +1770,8 @@ Hang on while I scroll down to your earliest boomarks.`;
 
                 // If we verified that there are no more tweets, we're done
                 if (verifyResult) {
-                    this.progress = await window.electron.X.indexBookmarksFinished(this.account?.id);
+                    this.progress.isIndexBookmarksFinished = true;
+                    await this.syncProgress();
 
                     // On success, set the failure state to false
                     await window.electron.X.setConfig(this.account?.id, FailureState.indexBookmarks_FailedToRetryAfterRateLimit, "false");

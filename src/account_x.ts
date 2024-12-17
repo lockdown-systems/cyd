@@ -1084,24 +1084,6 @@ export class XAccountController {
         return this.progress;
     }
 
-    async indexTweetsFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexTweetsFinished');
-        this.progress.isIndexTweetsFinished = true;
-        return this.progress;
-    }
-
-    async indexConversationsFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexConversationsFinished');
-        this.progress.isIndexConversationsFinished = true;
-        return this.progress;
-    }
-
-    async indexMessagesFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexMessagesFinished');
-        this.progress.isIndexMessagesFinished = true;
-        return this.progress;
-    }
-
     // Set the conversation's shouldIndexMessages to false
     async indexConversationFinished(conversationID: string) {
         if (!this.db) {
@@ -1109,12 +1091,6 @@ export class XAccountController {
         }
 
         exec(this.db, 'UPDATE conversation SET shouldIndexMessages = ? WHERE conversationID = ?', [0, conversationID]);
-    }
-
-    async indexLikesFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexLikesFinished');
-        this.progress.isIndexLikesFinished = true;
-        return this.progress;
     }
 
     // When you start archiving tweets you:
@@ -2261,15 +2237,6 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexTweetsFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexTweetsFinished();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
     ipcMain.handle('X:indexParseConversations', async (_, accountID: number): Promise<XProgress> => {
         try {
             const controller = getXAccountController(accountID);
@@ -2315,37 +2282,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexConversationsFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexConversationsFinished();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexMessagesFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexMessagesFinished();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
     ipcMain.handle('X:indexConversationFinished', async (_, accountID: number, conversationID: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
             await controller.indexConversationFinished(conversationID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexLikesFinished();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

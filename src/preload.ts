@@ -167,20 +167,8 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseMessages: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseMessages', accountID)
         },
-        indexTweetsFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexTweetsFinished', accountID)
-        },
-        indexConversationsFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexConversationsFinished', accountID)
-        },
-        indexMessagesFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexMessagesFinished', accountID)
-        },
         indexConversationFinished: (accountID: number, conversationID: string): Promise<void> => {
             return ipcRenderer.invoke('X:indexConversationFinished', accountID, conversationID)
-        },
-        indexLikesFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexLikesFinished', accountID)
         },
         archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
             return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
