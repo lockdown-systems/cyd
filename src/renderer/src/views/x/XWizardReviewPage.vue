@@ -162,6 +162,9 @@ onMounted(async () => {
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteLikes">
                         <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
                     </li>
+                    <li v-if="hasSomeData && model.account?.xAccount?.deleteBookmarks">
+                        <b>{{ deleteReviewStats.bookmarksToDelete.toLocaleString() }} bookmarks</b>
+                    </li>
                     <li v-if="model.account?.xAccount?.unfollowEveryone">
                         <b>Unfollow everyone</b>
                     </li>

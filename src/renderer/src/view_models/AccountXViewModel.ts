@@ -2018,6 +2018,10 @@ Hang on while I scroll down to your earliest boomarks.`;
         }
 
         for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+            // DEBUG
+            this.pause();
+            await this.waitForPause();
+
             this.currentTweetItem = tweetsToDelete.tweets[i];
 
             // Delete the like

@@ -99,6 +99,7 @@ declare global {
                 deleteTweetsCountNotArchived: (accountID: number, total: boolean) => Promise<number>;
                 deleteRetweetsStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteLikesStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
+                deleteBookmarksStart: (accountID: number) => Promise<XDeleteTweetsStartResponse>;
                 deleteTweet: (accountID: number, tweetID: string) => Promise<void>;
                 deleteDMsMarkAllDeleted: (accountID: number) => Promise<void>;
                 deleteDMsScrollToBottom: (accountID: number) => Promise<void>;

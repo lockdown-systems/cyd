@@ -72,6 +72,7 @@ export const stubElectron = () => {
             deleteTweetsCountNotArchived: cy.stub(),
             deleteRetweetsStart: cy.stub(),
             deleteLikesStart: cy.stub(),
+            deleteBookmarksStart: cy.stub(),
             deleteTweet: cy.stub(),
             deleteDMsMarkAllDeleted: cy.stub(),
             deleteDMsScrollToBottom: cy.stub(),

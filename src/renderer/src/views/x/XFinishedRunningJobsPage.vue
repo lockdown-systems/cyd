@@ -180,6 +180,10 @@ onMounted(async () => {
                         <i class="fa-solid fa-fire delete-bullet" />
                         <strong>{{ model.progress.likesDeleted.toLocaleString() }}</strong> likes
                     </li>
+                    <li v-if="model.account.xAccount?.deleteBookmarks || (model.progress.bookmarksDeleted ?? 0) > 0">
+                        <i class="fa-solid fa-fire delete-bullet" />
+                        <strong>{{ model.progress.bookmarksDeleted.toLocaleString() }}</strong> bookmarks
+                    </li>
                     <li v-if="model.account.xAccount?.deleteDMs">
                         <i class="fa-solid fa-fire delete-bullet" />
                         <strong>{{ model.progress.conversationsDeleted.toLocaleString() }}</strong> direct

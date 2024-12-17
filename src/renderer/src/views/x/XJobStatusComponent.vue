@@ -32,6 +32,7 @@ const getJobTypeText = (jobType: string) => {
         deleteTweets: 'Deleting tweets',
         deleteRetweets: 'Deleting retweets',
         deleteLikes: 'Deleting likes',
+        deleteBookmarks: 'Deleting bookmarks',
         deleteDMs: 'Deleting DMs',
         unfollowEveryone: 'Unfollowing everyone',
     };

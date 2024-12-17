@@ -1508,7 +1508,6 @@ export class XAccountController {
             "all"
         ) as XTweetRow[];
 
-        // log.debug("XAccountController.deleteRetweetsStart", tweets);
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
@@ -1532,7 +1531,29 @@ export class XAccountController {
             "all"
         ) as XTweetRow[];
 
-        // log.debug("XAccountController.deleteLikesStart", tweets);
+        return {
+            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
+        };
+    }
+
+    // When you start deleting bookmarks, return a list of tweets to unbookmark
+    async deleteBookmarksStart(): Promise<XDeleteTweetsStartResponse> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Select just the tweets that need to be unliked based on the settings
+        const tweets: XTweetRow[] = exec(
+            this.db,
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND isBookmarked = ? ORDER BY createdAt ASC',
+            [1],
+            "all"
+        ) as XTweetRow[];
+
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
@@ -1749,10 +1770,12 @@ export class XAccountController {
         const deleteTweetsStartResponse = await this.deleteTweetsStart()
         const deleteRetweetStartResponse = await this.deleteRetweetsStart()
         const deleteLikesStartResponse = await this.deleteLikesStart()
+        const deleteBookmarksStartResponse = await this.deleteBookmarksStart()
 
         deleteReviewStats.tweetsToDelete = deleteTweetsStartResponse.tweets.length;
         deleteReviewStats.retweetsToDelete = deleteRetweetStartResponse.tweets.length;
         deleteReviewStats.likesToDelete = deleteLikesStartResponse.tweets.length;
+        deleteReviewStats.bookmarksToDelete = deleteBookmarksStartResponse.tweets.length;
         return deleteReviewStats;
     }
 
@@ -2506,6 +2529,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.deleteLikesStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteBookmarksStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteBookmarksStart();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
