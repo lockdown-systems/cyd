@@ -44,7 +44,7 @@ import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
 import { setAccountRunning, openURL } from '../../util';
-import { xRequiresPremium } from '../../util_x';
+import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -237,25 +237,7 @@ emitter?.on('signed-out', async () => {
 });
 
 emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
-    const progressInfo = await window.electron.X.getProgressInfo(props.account.id);
-    console.log("AccountXView: submitting progress", "progressInfo", JSON.parse(JSON.stringify(progressInfo)));
-    const postXProgresResp = await apiClient.value.postXProgress({
-        account_uuid: progressInfo.accountUUID,
-        total_tweets_indexed: progressInfo.totalTweetsIndexed,
-        total_tweets_archived: progressInfo.totalTweetsArchived,
-        total_retweets_indexed: progressInfo.totalRetweetsIndexed,
-        total_likes_indexed: progressInfo.totalLikesIndexed,
-        total_unknown_indexed: progressInfo.totalUnknownIndexed,
-        total_tweets_deleted: progressInfo.totalTweetsDeleted,
-        total_retweets_deleted: progressInfo.totalRetweetsDeleted,
-        total_likes_deleted: progressInfo.totalLikesDeleted,
-        total_conversations_deleted: progressInfo.totalConversationsDeleted,
-        total_accounts_unfollowed: progressInfo.totalAccountsUnfollowed,
-    }, deviceInfo.value?.valid ? true : false)
-    if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
-        // Silently log the error and continue
-        console.log("AccountXView: submitting progress", "failed to post progress to the API", postXProgresResp.message);
-    }
+    await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
 });
 
 const startJobs = async () => {
