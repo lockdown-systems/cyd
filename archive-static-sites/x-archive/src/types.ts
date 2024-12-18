@@ -11,7 +11,10 @@ export type Tweet = {
     text: string;
     path: string;
     archivedAt: string | null;
-    deletedAt: string | null;
+    deletedTweetAt: string | null;
+    deletedRetweetAt: string | null;
+    deletedLikeAt: string | null;
+    deletedBookmarkAt: string | null;
 };
 
 export type User = {

@@ -746,3 +746,65 @@ test("test migration: 20241016_add_config", async () => {
     const rows = database.exec(controller.db, "SELECT * FROM config", [], "all") as Record<string, string>[];
     expect(rows.length).toBe(0);
 })
+
+test("test migration: 20241127_add_deletedAt_fields", async () => {
+    // Close the X account database
+    controller.cleanup();
+
+    // Replace it with test data
+    const accountDataPath = getAccountDataPath("X", "test");
+    fs.mkdirSync(accountDataPath, { recursive: true });
+    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', '20241127_add_isBookmarked.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
+
+    // Before the migration, there is only deletedAt fields
+    // Run the migrations
+    controller.initDB()
+
+    // The tweets should all have deletedTweetAt, deletedRetweetAt, and deletedLikeAt values
+    const afterTweetRows = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as Record<string, string>[];
+    expect(afterTweetRows.length).toBe(11);
+
+    expect(afterTweetRows[0].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[0].deletedRetweetAt).toBeDefined();
+    expect(afterTweetRows[0].deletedLikeAt).toBe(null);
+
+    expect(afterTweetRows[1].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[1].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[1].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[2].deletedTweetAt).toBeDefined();
+    expect(afterTweetRows[2].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[2].deletedLikeAt).toBe(null);
+
+    expect(afterTweetRows[3].deletedTweetAt).toBeDefined();
+    expect(afterTweetRows[3].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[3].deletedLikeAt).toBe(null);
+
+    expect(afterTweetRows[4].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[4].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[4].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[5].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[5].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[5].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[6].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[6].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[6].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[7].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[7].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[7].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[8].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[8].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[8].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[9].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[9].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[9].deletedLikeAt).toBeDefined();
+
+    expect(afterTweetRows[10].deletedTweetAt).toBe(null);
+    expect(afterTweetRows[10].deletedRetweetAt).toBe(null);
+    expect(afterTweetRows[10].deletedLikeAt).toBeDefined();
+})

@@ -258,10 +258,12 @@ export type XProgressInfo = {
     totalTweetsArchived: number;
     totalRetweetsIndexed: number;
     totalLikesIndexed: number;
+    totalBookmarksIndexed: number;
     totalUnknownIndexed: number;
     totalTweetsDeleted: number;
     totalRetweetsDeleted: number;
     totalLikesDeleted: number;
+    totalBookmarksDeleted: number;
     totalConversationsDeleted: number;
     totalAccountsUnfollowed: number;
 }
@@ -273,10 +275,12 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalTweetsArchived: 0,
         totalRetweetsIndexed: 0,
         totalLikesIndexed: 0,
+        totalBookmarksIndexed: 0,
         totalUnknownIndexed: 0,
         totalTweetsDeleted: 0,
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
+        totalBookmarksDeleted: 0,
         totalConversationsDeleted: 0,
         totalAccountsUnfollowed: 0
     }
@@ -293,6 +297,8 @@ export type XDatabaseStats = {
     retweetsDeleted: number;
     likesSaved: number;
     likesDeleted: number;
+    bookmarksSaved: number;
+    bookmarksDeleted: number;
     conversationsDeleted: number;
     accountsUnfollowed: number;
 }
@@ -305,6 +311,8 @@ export function emptyXDatabaseStats(): XDatabaseStats {
         retweetsDeleted: 0,
         likesSaved: 0,
         likesDeleted: 0,
+        bookmarksSaved: 0,
+        bookmarksDeleted: 0,
         conversationsDeleted: 0,
         accountsUnfollowed: 0
     }

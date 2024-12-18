@@ -1822,7 +1822,7 @@ Hang on while I scroll down to your earliest boomarks.`;
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "tweet");
                         tweetDeleted = true;
                         this.progress.tweetsDeleted += 1;
                         await this.syncProgress();
@@ -1931,8 +1931,7 @@ Hang on while I scroll down to your earliest boomarks.`;
                     this.log('runJobDeleteRetweets', ["deleted retweet", tweetsToDelete.tweets[i].id]);
                     // Update the tweet's deletedAt date
                     try {
-                        // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "retweet");
                         retweetDeleted = true;
                         this.progress.retweetsDeleted += 1;
                         await this.syncProgress();
@@ -2038,8 +2037,7 @@ Hang on while I scroll down to your earliest boomarks.`;
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
-                        // Deleting likes uses the same deleteTweet IPC function as deleting tweets
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "like");
                         likeDeleted = true;
                         this.progress.likesDeleted += 1;
                         await this.syncProgress();
@@ -2145,8 +2143,7 @@ Hang on while I scroll down to your earliest boomarks.`;
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
-                        // Deleting bookmarks uses the same deleteTweet IPC function as deleting tweets
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "bookmark");
                         bookmarkDeleted = true;
                         this.progress.bookmarksDeleted += 1;
                         await this.syncProgress();

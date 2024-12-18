@@ -233,8 +233,8 @@ contextBridge.exposeInMainWorld('electron', {
         deleteBookmarksStart: (accountID: number): Promise<XDeleteTweetsStartResponse> => {
             return ipcRenderer.invoke('X:deleteBookmarksStart', accountID);
         },
-        deleteTweet: (accountID: number, tweetID: string): Promise<void> => {
-            return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID);
+        deleteTweet: (accountID: number, tweetID: string, deleteType: string): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID, deleteType);
         },
         deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsMarkAllDeleted', accountID);
