@@ -67,11 +67,13 @@ export enum RunJobsState {
     DeleteTweets = "DeleteTweets",
     DeleteRetweets = "DeleteRetweets",
     DeleteLikes = "DeleteLikes",
+    DeleteBookmarks = "DeleteBookmarks",
 }
 
 export enum FailureState {
     indexTweets_FailedToRetryAfterRateLimit = "indexTweets_FailedToRetryAfterRateLimit",
     indexLikes_FailedToRetryAfterRateLimit = "indexLikes_FailedToRetryAfterRateLimit",
+    indexBookmarks_FailedToRetryAfterRateLimit = "indexBookmarks_FailedToRetryAfterRateLimit",
 }
 
 export type XViewModelState = {
@@ -98,7 +100,7 @@ export class AccountXViewModel extends BaseViewModel {
     // they delete, this lets them go back and change settings without starting over
     public isDeleteReviewActive: boolean = false;
 
-    // Debug variables
+    // Variables related to debugging
     public debugAutopauseEndOfStep: boolean = false;
 
     async init(webview: WebviewTag) {
@@ -141,6 +143,9 @@ export class AccountXViewModel extends BaseViewModel {
             if (this.account?.xAccount?.archiveLikes) {
                 jobTypes.push("indexLikes");
             }
+            if (this.account?.xAccount?.archiveBookmarks) {
+                jobTypes.push("indexBookmarks");
+            }
             if (this.account?.xAccount?.archiveDMs) {
                 jobTypes.push("indexConversations");
                 jobTypes.push("indexMessages");
@@ -151,6 +156,9 @@ export class AccountXViewModel extends BaseViewModel {
             shouldBuildArchive = true;
             if (this.account?.xAccount?.archiveTweetsHTML) {
                 jobTypes.push("archiveTweets");
+            }
+            if (this.account?.xAccount?.archiveBookmarks) {
+                jobTypes.push("indexBookmarks");
             }
             if (this.account?.xAccount?.archiveDMs) {
                 jobTypes.push("indexConversations");
@@ -169,6 +177,10 @@ export class AccountXViewModel extends BaseViewModel {
             }
             if (hasSomeData && this.account?.xAccount?.deleteLikes) {
                 jobTypes.push("deleteLikes");
+                shouldBuildArchive = true;
+            }
+            if (hasSomeData && this.account?.xAccount?.deleteBookmarks) {
+                jobTypes.push("deleteBookmarks");
                 shouldBuildArchive = true;
             }
             if (this.account?.xAccount?.unfollowEveryone) {
@@ -220,81 +232,31 @@ export class AccountXViewModel extends BaseViewModel {
     }
 
     // Returns the API response's status code, or 0 on error
-    async apiDeleteTweet(ct0: string, tweetID: string): Promise<number> {
-        this.log("apiDeleteTweet", ["deleting tweet", tweetID]);
+    async graphqlDelete(ct0: string, url: string, referrer: string, body: string): Promise<number> {
+        this.log("graphqlDelete", [url, body]);
         return await this.getWebview()?.executeJavaScript(`
             (async () => {
-                const ct0 = '${ct0}';
-                const username = '${this.account.xAccount?.username}';
-                const tweetID = '${tweetID}';
-
-                const url = "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet";
-                const body = JSON.stringify({ "variables": { "tweet_id": tweetID, "dark_request": false }, "queryId": "VaenaVgh5q5ih7kvyVjgtg" });
                 const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
-
                 try {
-                    const response = await fetch(url, {
+                    const response = await fetch('${url}', {
                         "headers": {
                             "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
                             "content-type": "application/json",
                             "x-client-transaction-id": transactionID,
-                            "x-csrf-token": ct0,
+                            "x-csrf-token": '${ct0}',
                             "x-twitter-active-user": "yes",
                             "x-twitter-auth-type": "OAuth2Session"
                         },
-                        "referrer": 'https://x.com/' + username + '/with_replies',
+                        "referrer": '${referrer}',
                         "referrerPolicy": "strict-origin-when-cross-origin",
-                        "body": body,
+                        "body": '${body}',
                         "method": "POST",
                         "mode": "cors",
                         "credentials": "include",
                         "signal": AbortSignal.timeout(5000)
                     })
                     console.log(response.status);
-                    if(response.status == 200) {
-                        console.log(await response.text());
-                    }
-                    return response.status;
-                } catch (e) {
-                    return 0;
-                }
-            })();
-        `);
-    }
-
-    // Returns the API response's status code, or 0 on error
-    async apiDeleteLike(ct0: string, tweetID: string): Promise<number> {
-        this.log("apiDeleteLike", ["deleting like", tweetID]);
-        return await this.getWebview()?.executeJavaScript(`
-            (async () => {
-                const ct0 = '${ct0}';
-                const username = '${this.account.xAccount?.username}';
-                const tweetID = '${tweetID}';
-
-                const url = "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet";
-                const body = JSON.stringify({ "variables": { "tweet_id": tweetID }, "queryId": "ZYKSe-w7KEslx3JhSIk5LA" });
-                const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
-
-                try {
-                    const response = await fetch(url, {
-                        "headers": {
-                            "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-                            "content-type": "application/json",
-                            "x-client-transaction-id": transactionID,
-                            "x-csrf-token": ct0,
-                            "x-twitter-active-user": "yes",
-                            "x-twitter-auth-type": "OAuth2Session"
-                        },
-                        "referrer": 'https://x.com/' + username + '/with_replies',
-                        "referrerPolicy": "strict-origin-when-cross-origin",
-                        "body": body,
-                        "method": "POST",
-                        "mode": "cors",
-                        "credentials": "include",
-                        "signal": AbortSignal.timeout(5000)
-                    })
-                    console.log(response.status);
-                    if(response.status == 200) {
+                    if (response.status == 200) {
                         console.log(await response.text());
                     }
                     return response.status;
@@ -1088,7 +1050,8 @@ Hang on while I scroll down to your earliest tweets.`;
 
                 // If we verified that there are no more tweets, we're done
                 if (verifyResult) {
-                    this.progress = await window.electron.X.indexTweetsFinished(this.account?.id);
+                    this.progress.isIndexTweetsFinished = true;
+                    await this.syncProgress();
 
                     // On success, set the failure state to false
                     await window.electron.X.setConfig(this.account?.id, FailureState.indexTweets_FailedToRetryAfterRateLimit, "false");
@@ -1270,7 +1233,8 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
             // Check if we're done
             if (!await window.electron.X.indexIsThereMore(this.account?.id)) {
-                this.progress = await window.electron.X.indexConversationsFinished(this.account?.id);
+                this.progress.isIndexConversationsFinished = true;
+                await this.syncProgress();
                 break;
             } else {
                 if (!moreToScroll) {
@@ -1555,7 +1519,7 @@ Hang on while I scroll down to your earliest likes.`;
 
             // Parse so far
             try {
-                this.progress = await window.electron.X.indexParseLikes(this.account?.id);
+                this.progress = await window.electron.X.indexParseTweets(this.account?.id);
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
                 await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
@@ -1590,10 +1554,178 @@ Hang on while I scroll down to your earliest likes.`;
 
                 // If we verified that there are no more tweets, we're done
                 if (verifyResult) {
-                    this.progress = await window.electron.X.indexLikesFinished(this.account?.id);
+                    this.progress.isIndexLikesFinished = true;
+                    await this.syncProgress();
 
                     // On success, set the failure state to false
                     await window.electron.X.setConfig(this.account?.id, FailureState.indexLikes_FailedToRetryAfterRateLimit, "false");
+                    break;
+                }
+
+                // Otherwise, update the job and keep going
+                this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+                await window.electron.X.updateJob(this.account?.id, JSON.stringify(this.jobs[jobIndex]));
+
+            } else {
+                if (!moreToScroll) {
+                    // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
+                    await this.sleep(500);
+                    await this.scrollUp(1000);
+                }
+            }
+
+            // Check if there is a "Something went wrong" message
+            await this.indexTweetsCheckForSomethingWrong();
+        }
+
+        // Stop monitoring network requests
+        await window.electron.X.indexStop(this.account?.id);
+
+        if (errorTriggered) {
+            return false;
+        }
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
+    async runJobIndexBookmarks(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `**I'm saving your bookmarks.**
+
+Hang on while I scroll down to your earliest boomarks.`;
+        this.showAutomationNotice = true;
+
+        // Start monitoring network requests
+        await this.loadBlank();
+        await window.electron.X.indexStart(this.account?.id);
+        await this.sleep(2000);
+
+        // Start the progress
+        this.progress.isIndexBookmarksFinished = false;
+        this.progress.bookmarksIndexed = 0;
+        await this.syncProgress();
+
+        // Load the bookmarks
+        let errorTriggered = false;
+        await this.waitForPause();
+        await window.electron.X.resetRateLimitInfo(this.account?.id);
+        await this.loadURLWithRateLimit("https://x.com/i/bookmarks");
+        await this.sleep(500);
+
+        // Check if bookmarks list is empty
+        if (await this.doesSelectorExist('div[data-testid="emptyState"]')) {
+            this.log("runJobIndexBookmarks", "no bookmarks found");
+            this.progress.isIndexBookmarksFinished = true;
+            this.progress.bookmarksIndexed = 0;
+            await this.syncProgress();
+        } else {
+            this.log("runJobIndexBookmarks", "did not find empty state");
+        }
+
+        if (!this.progress.isIndexBookmarksFinished) {
+            // Wait for bookmarks to appear
+            try {
+                await this.waitForSelector('article', "https://x.com/i/bookmarks");
+            } catch (e) {
+                this.log("runJobIndexBookmarks", ["selector never appeared", e]);
+                if (e instanceof TimeoutError) {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                    } else {
+                        // If the page isn't loading, we assume the user has no bookmarks yet
+                        await this.waitForLoadingToFinish();
+                        this.progress.isIndexBookmarksFinished = true;
+                        this.progress.bookmarksIndexed = 0;
+                        await this.syncProgress();
+                    }
+                } else if (e instanceof URLChangedError) {
+                    const newURL = this.webview?.getURL();
+                    await this.error(AutomationErrorType.x_runJob_indexBookmarks_URLChanged, {
+                        newURL: newURL,
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
+                } else {
+                    await this.error(AutomationErrorType.x_runJob_indexBookmarks_OtherError, {
+                        exception: (e as Error).toString()
+                    })
+                    errorTriggered = true;
+                }
+            }
+        }
+
+        if (errorTriggered) {
+            await window.electron.X.indexStop(this.account?.id);
+            return false;
+        }
+
+        while (this.progress.isIndexBookmarksFinished === false) {
+            await this.waitForPause();
+
+            // Scroll to bottom
+            await window.electron.X.resetRateLimitInfo(this.account?.id);
+            let moreToScroll = await this.scrollToBottom();
+            this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+            if (this.rateLimitInfo.isRateLimited) {
+                await this.sleep(500);
+                await this.scrollToBottom();
+                await this.waitForRateLimit();
+                if (!await this.indexTweetsHandleRateLimit()) {
+                    // On fail, update the failure state and move on
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexBookmarks_FailedToRetryAfterRateLimit, "true");
+                    break;
+                }
+                await this.sleep(500);
+                moreToScroll = true;
+            }
+
+            // Parse so far
+            try {
+                this.progress = await window.electron.X.indexParseTweets(this.account?.id);
+            } catch (e) {
+                const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
+                await this.error(AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError, {
+                    exception: (e as Error).toString()
+                }, {
+                    latestResponseData: latestResponseData
+                });
+                errorTriggered = true;
+                break;
+            }
+            this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
+            await window.electron.X.updateJob(this.account?.id, JSON.stringify(this.jobs[jobIndex]));
+
+            // Check if we're done
+            if (!await window.electron.X.indexIsThereMore(this.account?.id)) {
+
+                // Verify that we're actually done
+                let verifyResult = true;
+                try {
+                    verifyResult = await this.indexTweetsVerifyThereIsNoMore();
+                } catch (e) {
+                    const latestResponseData = await window.electron.X.getLatestResponseData(this.account?.id);
+                    await this.error(AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError, {
+                        exception: (e as Error).toString()
+                    }, {
+                        latestResponseData: latestResponseData,
+                        currentURL: this.webview?.getURL()
+                    });
+                    errorTriggered = true;
+                    break;
+                }
+
+                // If we verified that there are no more tweets, we're done
+                if (verifyResult) {
+                    this.progress.isIndexBookmarksFinished = true;
+                    await this.syncProgress();
+
+                    // On success, set the failure state to false
+                    await window.electron.X.setConfig(this.account?.id, FailureState.indexBookmarks_FailedToRetryAfterRateLimit, "false");
                     break;
                 }
 
@@ -1643,7 +1775,7 @@ Hang on while I scroll down to your earliest likes.`;
             })
             return false;
         }
-        this.log('runJob', ["jobType=deleteTweets", "deleteTweetsStartResponse", tweetsToDelete]);
+        this.log('runJobDeleteTweets', `found ${tweetsToDelete.tweets.length} tweets to delete`);
 
         // Start the progress
         this.progress.totalTweetsToDelete = tweetsToDelete.tweets.length;
@@ -1675,11 +1807,22 @@ Hang on while I scroll down to your earliest likes.`;
             let tweetDeleted = false;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
-                statusCode = await this.apiDeleteTweet(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet',
+                    "https://x.com/" + this.account?.xAccount?.username + "/with_replies",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id,
+                            "dark_request": false
+                        },
+                        "queryId": "VaenaVgh5q5ih7kvyVjgtg"
+                    }),
+                );
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "tweet");
                         tweetDeleted = true;
                         this.progress.tweetsDeleted += 1;
                         await this.syncProgress();
@@ -1772,13 +1915,23 @@ Hang on while I scroll down to your earliest likes.`;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
                 // Delete the retweet (which also uses the delete tweet API route)
-                statusCode = await this.apiDeleteTweet(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet',
+                    "https://x.com/" + this.account?.xAccount?.username + "/with_replies",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id,
+                            "dark_request": false
+                        },
+                        "queryId": "VaenaVgh5q5ih7kvyVjgtg"
+                    }),
+                );
                 if (statusCode == 200) {
                     this.log('runJobDeleteRetweets', ["deleted retweet", tweetsToDelete.tweets[i].id]);
                     // Update the tweet's deletedAt date
                     try {
-                        // Deleting retweets uses the same deleteTweet IPC function as deleting tweets
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "retweet");
                         retweetDeleted = true;
                         this.progress.retweetsDeleted += 1;
                         await this.syncProgress();
@@ -1840,7 +1993,7 @@ Hang on while I scroll down to your earliest likes.`;
             })
             return false;
         }
-        this.log('runJob', ["jobType=deleteLikes", "deleteLikesStartResponse", tweetsToDelete]);
+        this.log('runJobDeleteLikes', `found ${tweetsToDelete.tweets.length} likes to delete`);
 
         // Start the progress
         this.progress.totalLikesToDelete = tweetsToDelete.tweets.length;
@@ -1870,12 +2023,21 @@ Hang on while I scroll down to your earliest likes.`;
             let likeDeleted = false;
             let statusCode = 0;
             for (let tries = 0; tries < 3; tries++) {
-                statusCode = await this.apiDeleteLike(ct0, tweetsToDelete.tweets[i].id);
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet',
+                    "https://x.com/" + this.account?.xAccount?.username + "/likes",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id,
+                        },
+                        "queryId": "ZYKSe-w7KEslx3JhSIk5LA"
+                    })
+                );
                 if (statusCode == 200) {
                     // Update the tweet's deletedAt date
                     try {
-                        // Deleting likes uses the same deleteTweet IPC function as deleting tweets
-                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id);
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "like");
                         likeDeleted = true;
                         this.progress.likesDeleted += 1;
                         await this.syncProgress();
@@ -1902,6 +2064,112 @@ Hang on while I scroll down to your earliest likes.`;
 
             if (!likeDeleted) {
                 await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToDelete, {
+                    statusCode: statusCode
+                }, {
+                    tweet: tweetsToDelete.tweets[i],
+                    index: i
+                }, true)
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
+
+            await this.waitForPause();
+        }
+
+        await this.finishJob(jobIndex);
+    }
+
+    async runJobDeleteBookmarks(jobIndex: number) {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DELETE_BOOKMARKS, navigator.userAgent);
+
+        // After this job, we want to reload the user stats
+        await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'true');
+
+        this.runJobsState = RunJobsState.DeleteBookmarks;
+        let tweetsToDelete: XDeleteTweetsStartResponse;
+        this.instructions = `**I'm deleting your bookmarks, starting with the earliest.**`;
+
+        // Load the bookmarks to delete
+        try {
+            tweetsToDelete = await window.electron.X.deleteBookmarksStart(this.account?.id);
+        } catch (e) {
+            await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
+                exception: (e as Error).toString()
+            })
+            return false;
+        }
+        this.log('runJobDeleteBookmarks', `found ${tweetsToDelete.tweets.length} bookmarks to delete`);
+
+        // Start the progress
+        this.progress.totalBookmarksToDelete = tweetsToDelete.tweets.length;
+        this.progress.bookmarksDeleted = 0;
+        await this.syncProgress();
+
+        // Load the bookmarks page
+        this.showBrowser = true;
+        this.showAutomationNotice = true;
+        await this.loadURLWithRateLimit("https://x.com/i/bookmarks");
+
+        // Hide the browser and start showing other progress instead
+        this.showBrowser = false;
+
+        // Get the ct0 cookie
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        this.log('runJobDeleteBookmarks', ["ct0", ct0]);
+        if (!ct0) {
+            await this.error(AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound, {})
+            return false;
+        }
+
+        for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
+            this.currentTweetItem = tweetsToDelete.tweets[i];
+
+            // Delete the bookmark
+            let bookmarkDeleted = false;
+            let statusCode = 0;
+            for (let tries = 0; tries < 3; tries++) {
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark',
+                    "https://x.com/i/bookmarks",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": tweetsToDelete.tweets[i].id
+                        },
+                        "queryId": "Wlmlj2-xzyS1GN3a6cj-mQ"
+                    })
+                );
+                if (statusCode == 200) {
+                    // Update the tweet's deletedAt date
+                    try {
+                        await window.electron.X.deleteTweet(this.account?.id, tweetsToDelete.tweets[i].id, "bookmark");
+                        bookmarkDeleted = true;
+                        this.progress.bookmarksDeleted += 1;
+                        await this.syncProgress();
+                    } catch (e) {
+                        await this.error(AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp, {
+                            exception: (e as Error).toString()
+                        }, {
+                            tweet: tweetsToDelete.tweets[i],
+                            index: i
+                        }, true)
+                    }
+                    break;
+                } else if (statusCode == 429) {
+                    // Rate limited
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account?.id);
+                    await this.waitForRateLimit();
+                    tries = 0;
+                } else {
+                    // Sleep 1 second and try again
+                    this.log("runJobDeleteLikes", ["statusCode", statusCode, "failed to delete like, try #", tries]);
+                    await this.sleep(1000);
+                }
+            }
+
+            if (!bookmarkDeleted) {
+                await this.error(AutomationErrorType.x_runJob_deleteBookmarks_FailedToDelete, {
                     statusCode: statusCode
                 }, {
                     tweet: tweetsToDelete.tweets[i],
@@ -2336,6 +2604,10 @@ Follow the instructions below to request your archive from X. You will need to v
                 await this.runJobIndexLikes(jobIndex);
                 break;
 
+            case "indexBookmarks":
+                await this.runJobIndexBookmarks(jobIndex);
+                break;
+
             case "deleteTweets":
                 await this.runJobDeleteTweets(jobIndex);
                 break;
@@ -2346,6 +2618,10 @@ Follow the instructions below to request your archive from X. You will need to v
 
             case "deleteLikes":
                 await this.runJobDeleteLikes(jobIndex);
+                break;
+
+            case "deleteBookmarks":
+                await this.runJobDeleteBookmarks(jobIndex);
                 break;
 
             case "unfollowEveryone":

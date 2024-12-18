@@ -81,6 +81,9 @@ onMounted(async () => {
                     <li v-if="model.account?.xAccount?.archiveLikes">
                         Save likes
                     </li>
+                    <li v-if="model.account?.xAccount?.archiveBookmarks">
+                        Save bookmarks
+                    </li>
                     <li v-if="model.account?.xAccount?.archiveDMs">
                         Save direct messages
                     </li>
@@ -159,6 +162,9 @@ onMounted(async () => {
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteLikes">
                         <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
                     </li>
+                    <li v-if="hasSomeData && model.account?.xAccount?.deleteBookmarks">
+                        <b>{{ deleteReviewStats.bookmarksToDelete.toLocaleString() }} bookmarks</b>
+                    </li>
                     <li v-if="model.account?.xAccount?.unfollowEveryone">
                         <b>Unfollow everyone</b>
                     </li>
@@ -180,13 +186,13 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveDMs)"
+                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     <template v-if="model.account?.xAccount?.saveMyData">
                         Build Database
                     </template>
-                    <template v-if="model.account?.xAccount?.archiveMyData">
+                    <template v-else-if="model.account?.xAccount?.archiveMyData">
                         Start Archiving
                     </template>
                     <template v-else>

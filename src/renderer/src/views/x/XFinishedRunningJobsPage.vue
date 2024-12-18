@@ -111,6 +111,10 @@ onMounted(async () => {
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
                         <strong>{{ model.progress.likesIndexed.toLocaleString() }}</strong> likes
                     </li>
+                    <li v-if="model.account.xAccount?.archiveBookmarks || (model.progress.bookmarksIndexed ?? 0) > 0">
+                        <i class="fa-solid fa-floppy-disk archive-bullet" />
+                        <strong>{{ model.progress.bookmarksIndexed.toLocaleString() }}</strong> bookmarks
+                    </li>
                     <li v-if="(model.progress.unknownIndexed ?? 0) > 0">
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
                         <strong>{{ model.progress.unknownIndexed.toLocaleString() }}</strong> other tweets
@@ -175,6 +179,10 @@ onMounted(async () => {
                     <li v-if="model.account.xAccount?.deleteLikes || (model.progress.likesDeleted ?? 0) > 0">
                         <i class="fa-solid fa-fire delete-bullet" />
                         <strong>{{ model.progress.likesDeleted.toLocaleString() }}</strong> likes
+                    </li>
+                    <li v-if="model.account.xAccount?.deleteBookmarks || (model.progress.bookmarksDeleted ?? 0) > 0">
+                        <i class="fa-solid fa-fire delete-bullet" />
+                        <strong>{{ model.progress.bookmarksDeleted.toLocaleString() }}</strong> bookmarks
                     </li>
                     <li v-if="model.account.xAccount?.deleteDMs">
                         <i class="fa-solid fa-fire delete-bullet" />

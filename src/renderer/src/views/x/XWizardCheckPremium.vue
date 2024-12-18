@@ -72,6 +72,9 @@ const backClicked = async () => {
             <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes">
                 Deleting likes
             </li>
+            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteBookmarks">
+                Deleting bookmarks
+            </li>
             <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteDMs">
                 Deleting direct messages
             </li>

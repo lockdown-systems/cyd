@@ -36,6 +36,7 @@ const backClicked = async () => {
 const archiveTweets = ref(false);
 const archiveTweetsHTML = ref(false);
 const archiveLikes = ref(false);
+const archiveBookmarks = ref(false);
 const archiveDMs = ref(false);
 
 const loadSettings = async () => {
@@ -45,6 +46,7 @@ const loadSettings = async () => {
         archiveTweets.value = account.xAccount.archiveTweets;
         archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
         archiveLikes.value = account.xAccount.archiveLikes;
+        archiveBookmarks.value = account.xAccount.archiveBookmarks;
         archiveDMs.value = account.xAccount.archiveDMs;
     }
 };
@@ -64,6 +66,7 @@ const saveSettings = async () => {
         account.xAccount.archiveTweets = archiveTweets.value;
         account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
         account.xAccount.archiveLikes = archiveLikes.value;
+        account.xAccount.archiveBookmarks = archiveBookmarks.value;
         account.xAccount.archiveDMs = archiveDMs.value;
         await window.electron.database.saveAccount(JSON.stringify(account));
         emit('updateAccount');
@@ -124,6 +127,12 @@ onMounted(async () => {
             </div>
             <div class="mb-3">
                 <div class="form-check">
+                    <input id="archiveBookmarks" v-model="archiveBookmarks" type="checkbox" class="form-check-input">
+                    <label class="form-check-label" for="archiveBookmarks">Save my bookmarks</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check">
                     <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
                     <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
                 </div>
@@ -136,7 +145,7 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(archiveTweets || archiveLikes || archiveDMs)" @click="nextClicked">
+                    :disabled="!(archiveTweets || archiveLikes || archiveBookmarks || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

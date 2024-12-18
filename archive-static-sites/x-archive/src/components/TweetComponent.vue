@@ -36,8 +36,17 @@ defineProps<{
             </div>
         </div>
         <div class="meta d-flex gap-2">
-            <span v-if="tweet.deletedAt" class="date text-muted ms-2">
-                deleted {{ formattedDate(tweet.deletedAt) }}
+            <span v-if="tweet.deletedTweetAt" class="date text-muted ms-2">
+                tweet deleted {{ formattedDate(tweet.deletedTweetAt) }}
+            </span>
+            <span v-if="tweet.deletedRetweetAt" class="date text-muted ms-2">
+                retweet deleted {{ formattedDate(tweet.deletedRetweetAt) }}
+            </span>
+            <span v-if="tweet.deletedLikeAt" class="date text-muted ms-2">
+                like deleted {{ formattedDate(tweet.deletedLikeAt) }}
+            </span>
+            <span v-if="tweet.deletedBookmarkAt" class="date text-muted ms-2">
+                bookmark deleted {{ formattedDate(tweet.deletedBookmarkAt) }}
             </span>
             <span v-if="tweet.archivedAt" class="date text-muted ms-2">
                 archived {{ formattedDate(tweet.archivedAt) }}

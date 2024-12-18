@@ -175,6 +175,26 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
+                <div v-if="databaseStats.bookmarksSaved > 0" class="col-12 col-md-6">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            Bookmarks Saved
+                        </div>
+                        <div class="card-body">
+                            <h1>{{ formatStatsNumber(databaseStats.bookmarksSaved) }}</h1>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="databaseStats.bookmarksDeleted > 0" class="col-12 col-md-6">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            Bookmarks Deleted
+                        </div>
+                        <div class="card-body">
+                            <h1>{{ formatStatsNumber(databaseStats.bookmarksDeleted) }}</h1>
+                        </div>
+                    </div>
+                </div>
                 <div v-if="databaseStats.conversationsDeleted > 0" class="col-12 col-md-6">
                     <div class="card text-center">
                         <div class="card-header">
