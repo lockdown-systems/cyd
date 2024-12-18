@@ -75,10 +75,12 @@ export async function xPostProgress(apiClient: CydAPIClient, deviceInfo: DeviceI
         total_tweets_archived: progressInfo.totalTweetsArchived,
         total_retweets_indexed: progressInfo.totalRetweetsIndexed,
         total_likes_indexed: progressInfo.totalLikesIndexed,
+        total_bookmarks_indexed: progressInfo.totalBookmarksIndexed,
         total_unknown_indexed: progressInfo.totalUnknownIndexed,
         total_tweets_deleted: progressInfo.totalTweetsDeleted,
         total_retweets_deleted: progressInfo.totalRetweetsDeleted,
         total_likes_deleted: progressInfo.totalLikesDeleted,
+        total_bookmarks_deleted: progressInfo.totalBookmarksDeleted,
         total_conversations_deleted: progressInfo.totalConversationsDeleted,
         total_accounts_unfollowed: progressInfo.totalAccountsUnfollowed,
     }, deviceInfo?.valid ? true : false)
