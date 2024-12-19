@@ -220,7 +220,7 @@ const iconFromStatus = (status: ImportStatus) => {
                     <i v-else>
                         <RunningIcon />
                     </i>
-                    Validating X archive
+                    Unzipping and validating X archive
                 </li>
                 <li :class="statusImportingTweets == ImportStatus.Pending ? 'text-muted' : ''">
                     <i v-if="statusImportingTweets != ImportStatus.Active"
