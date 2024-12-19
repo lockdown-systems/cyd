@@ -343,7 +343,7 @@ async function createWindow() {
             }
         });
 
-        ipcMain.handle('showSelectFolderDialog', async (_): Promise<string | null> => {
+        ipcMain.handle('showSelectZIPFileDialog', async (_): Promise<string | null> => {
             const dataPath = database.getConfig('dataPath');
 
             const options: Electron.OpenDialogSyncOptions = {
@@ -351,6 +351,27 @@ async function createWindow() {
                 properties: ['openFile'],
             };
 
+            if (dataPath) {
+                options.defaultPath = dataPath;
+            }
+
+            try {
+                const result = dialog.showOpenDialogSync(win, options);
+                if (result && result.length > 0) {
+                    return result[0];
+                }
+                return null;
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
+
+        ipcMain.handle('showSelectFolderDialog', async (_): Promise<string | null> => {
+            const dataPath = database.getConfig('dataPath');
+
+            const options: Electron.OpenDialogSyncOptions = {
+                properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
+            };
             if (dataPath) {
                 options.defaultPath = dataPath;
             }

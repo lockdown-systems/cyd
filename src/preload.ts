@@ -51,6 +51,9 @@ contextBridge.exposeInMainWorld('electron', {
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
+    showSelectZIPFileDialog: (): Promise<string | null> => {
+        return ipcRenderer.invoke('showSelectZIPFileDialog')
+    },
     showSelectFolderDialog: (): Promise<string | null> => {
         return ipcRenderer.invoke('showSelectFolderDialog')
     },

@@ -123,7 +123,7 @@ const startClicked = async () => {
 };
 
 const importFromArchiveBrowserClicked = async () => {
-    const path = await window.electron.showSelectFolderDialog();
+    const path = await window.electron.showSelectZIPFileDialog();
     if (path) {
         importFromArchivePath.value = path;
     }

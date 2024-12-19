@@ -38,6 +38,7 @@ declare global {
             showMessage: (message: string) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
+            showSelectZIPFileDialog: () => Promise<string | null>;
             showSelectFolderDialog: () => Promise<string | null>;
             openURL: (url: string) => void;
             loadFileInWebview: (webContentsId: number, filename: string) => void;
