@@ -245,7 +245,7 @@ const iconFromStatus = (status: ImportStatus) => {
                             Continue to Archive Options
                         </button>
                         <small class="text-center text-muted">
-                            Save tweets as HTML and backup DMs
+                            Save tweets as HTML, backup DMs and bookmarks
                         </small>
                     </div>
                     <div class="d-flex flex-column align-items-center">
