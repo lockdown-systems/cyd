@@ -254,6 +254,9 @@ contextBridge.exposeInMainWorld('electron', {
         unzipXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:unzipXArchive', accountID, archivePath);
         },
+        deleteUnzippedXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:deleteUnzippedXArchive', accountID, archivePath);
+        },
         verifyXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:verifyXArchive', accountID, archivePath);
         },

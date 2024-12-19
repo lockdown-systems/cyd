@@ -1758,9 +1758,21 @@ export class XAccountController {
         if (!this.account) {
             return null;
         }
-        const unzippedPath = getAccountDataPath("X", this.account.username)
+        const unzippedPath = path.join(getAccountDataPath("X", this.account.username), path.parse(archiveZipPath).name)
         await archiveZip.extract({ path: unzippedPath });
         return unzippedPath
+    }
+
+    // Delete the unzipped X archive once the build is completed
+    async deleteUnzippedXArchive(archivePath: string): Promise<string | null> {
+        fs.rm(archivePath, { recursive: true}, err => {
+            if (err) {
+                log.error(`XAccountController.deleteUnzippedXArchive: Error occured while deleting unzipped folder: ${err}`);
+                return `Error occured while deleting unzipped folder: ${err}`;
+            }
+        });
+
+        return null;
     }
 
     // Return null on success, and a string (error message) on error
@@ -2555,6 +2567,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.unzipXArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteUnzippedXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteUnzippedXArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
