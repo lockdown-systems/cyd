@@ -54,20 +54,32 @@ const startClicked = async () => {
     errorMessages.value = [];
     importStarted.value = true;
 
+    // Unarchive the zip
+    statusValidating.value = ImportStatus.Active;
+    const unzippedPath: string | null = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
+    if (unzippedPath === null) {
+        statusValidating.value = ImportStatus.Failed;
+        errorMessages.value.push(unzippedPath);
+        importFailed.value = true;
+        return;
+    }
+    statusValidating.value = ImportStatus.Finished;
+
     // Verify that the archive is valid
     statusValidating.value = ImportStatus.Active;
-    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, importFromArchivePath.value);
+    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, unzippedPath);
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(verifyResp);
         importFailed.value = true;
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
         return;
     }
     statusValidating.value = ImportStatus.Finished;
 
     // Import tweets
     statusImportingTweets.value = ImportStatus.Active;
-    const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'tweets');
+    const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, unzippedPath, 'tweets');
     tweetCountString.value = createCountString(tweetsResp.importCount, tweetsResp.skipCount);
     if (tweetsResp.status == 'error') {
         statusImportingTweets.value = ImportStatus.Failed;
@@ -80,7 +92,7 @@ const startClicked = async () => {
 
     // Import likes
     statusImportingLikes.value = ImportStatus.Active;
-    const likesResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, importFromArchivePath.value, 'likes');
+    const likesResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, unzippedPath, 'likes');
     likeCountString.value = createCountString(likesResp.importCount, likesResp.skipCount);
     if (likesResp.status == 'error') {
         statusImportingLikes.value = ImportStatus.Failed;
@@ -99,20 +111,25 @@ const startClicked = async () => {
         statusBuildCydArchive.value = ImportStatus.Failed;
         errorMessages.value.push(`${e}`);
         importFailed.value = true;
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
         return;
     }
     emitter.emit(`x-update-archive-info-${props.model.account.id}`);
     statusBuildCydArchive.value = ImportStatus.Finished;
+
+    // Delete the unarchived folder whether it's success or fail
+    await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
 
     // Success
     if (!importFailed.value) {
         await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
         importFinished.value = true;
     }
+
 };
 
 const importFromArchiveBrowserClicked = async () => {
-    const path = await window.electron.showSelectFolderDialog();
+    const path = await window.electron.showSelectZIPFileDialog();
     if (path) {
         importFromArchivePath.value = path;
     }
@@ -162,7 +179,7 @@ const iconFromStatus = (status: ImportStatus) => {
         </h2>
         <p class="text-muted">
             <template v-if="!importStarted">
-                Unzip your archive and choose the folder that it's in.
+                Browse for the ZIP file of the X archive you downloaded.
             </template>
             <template v-else>
                 Importing your archive...
@@ -199,7 +216,7 @@ const iconFromStatus = (status: ImportStatus) => {
                     <i v-else>
                         <RunningIcon />
                     </i>
-                    Validating X archive
+                    Unzipping and validating X archive
                 </li>
                 <li :class="statusImportingTweets == ImportStatus.Pending ? 'text-muted' : ''">
                     <i v-if="statusImportingTweets != ImportStatus.Active"

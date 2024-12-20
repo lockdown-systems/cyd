@@ -51,6 +51,9 @@ contextBridge.exposeInMainWorld('electron', {
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
+    showSelectZIPFileDialog: (): Promise<string | null> => {
+        return ipcRenderer.invoke('showSelectZIPFileDialog')
+    },
     showSelectFolderDialog: (): Promise<string | null> => {
         return ipcRenderer.invoke('showSelectFolderDialog')
     },
@@ -241,6 +244,12 @@ contextBridge.exposeInMainWorld('electron', {
         },
         deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
+        },
+        unzipXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:unzipXArchive', accountID, archivePath);
+        },
+        deleteUnzippedXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:deleteUnzippedXArchive', accountID, archivePath);
         },
         verifyXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:verifyXArchive', accountID, archivePath);

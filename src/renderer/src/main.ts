@@ -38,6 +38,7 @@ declare global {
             showMessage: (message: string) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
+            showSelectZIPFileDialog: () => Promise<string | null>;
             showSelectFolderDialog: () => Promise<string | null>;
             openURL: (url: string) => void;
             loadFileInWebview: (webContentsId: number, filename: string) => void;
@@ -103,6 +104,8 @@ declare global {
                 deleteTweet: (accountID: number, tweetID: string, deleteType: string) => Promise<void>;
                 deleteDMsMarkAllDeleted: (accountID: number) => Promise<void>;
                 deleteDMsScrollToBottom: (accountID: number) => Promise<void>;
+                unzipXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
+                deleteUnzippedXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 verifyXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 importXArchive: (accountID: number, archivePath: string, dataType: string) => Promise<XImportArchiveResponse>;
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
