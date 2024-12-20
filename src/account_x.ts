@@ -1764,15 +1764,12 @@ export class XAccountController {
     }
 
     // Delete the unzipped X archive once the build is completed
-    async deleteUnzippedXArchive(archivePath: string): Promise<string | null> {
-        fs.rm(archivePath, { recursive: true}, err => {
+    async deleteUnzippedXArchive(archivePath: string): Promise<void> {
+        fs.rm(archivePath, { recursive: true, force: true }, err => {
             if (err) {
                 log.error(`XAccountController.deleteUnzippedXArchive: Error occured while deleting unzipped folder: ${err}`);
-                return `Error occured while deleting unzipped folder: ${err}`;
             }
         });
-
-        return null;
     }
 
     // Return null on success, and a string (error message) on error

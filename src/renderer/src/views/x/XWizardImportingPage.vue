@@ -72,6 +72,7 @@ const startClicked = async () => {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(verifyResp);
         importFailed.value = true;
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
         return;
     }
     statusValidating.value = ImportStatus.Finished;
@@ -110,19 +111,14 @@ const startClicked = async () => {
         statusBuildCydArchive.value = ImportStatus.Failed;
         errorMessages.value.push(`${e}`);
         importFailed.value = true;
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
         return;
     }
     emitter.emit(`x-update-archive-info-${props.model.account.id}`);
     statusBuildCydArchive.value = ImportStatus.Finished;
 
     // Delete the unarchived folder whether it's success or fail
-    const deleteResp: string | null = await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
-    if (deleteResp !== null) {
-        statusValidating.value = ImportStatus.Failed;
-        errorMessages.value.push(verifyResp);
-        importFailed.value = true;
-        return;
-    }
+    await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
 
     // Success
     if (!importFailed.value) {
