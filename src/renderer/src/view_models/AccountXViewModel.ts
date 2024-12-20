@@ -2734,7 +2734,9 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-I can save an HTML version of each of your tweets. I can also save a more detailed backup of your direct messages than is available in the official X archive.
+- I can save an HTML version of each of your tweets.
+- I can backup a copy of your bookmarks, which isn't included in the official X archive.
+- And I can also save a more detailed backup of your direct messages than is available in the official X archive.
 
 **Which data do you want to save?**`;
                     this.state = State.WizardArchiveOptionsDisplay;
