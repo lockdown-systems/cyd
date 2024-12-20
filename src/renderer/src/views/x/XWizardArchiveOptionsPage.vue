@@ -79,7 +79,7 @@ onMounted(async () => {
                 Archive options
             </h2>
             <p class="text-muted">
-                You can save an HTML version of each tweet, and you can save your direct messages.
+                You can save an HTML version of each tweet, and you can save your bookmarks and your direct messages.
             </p>
         </div>
 
@@ -128,7 +128,7 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(archiveTweetsHTML || archiveDMs)" @click="nextClicked">
+                    :disabled="!(archiveTweetsHTML || archiveBookmarks || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

@@ -29,8 +29,10 @@ const nextClicked = async () => {
 const backClicked = async () => {
     if (props.model.account?.xAccount?.deleteMyData) {
         emit('setState', State.WizardDeleteOptions);
-    } else {
+    } else if (props.model.account?.xAccount?.saveMyData) {
         emit('setState', State.WizardBuildOptions);
+    } else {
+        emit('setState', State.WizardArchiveOptions);
     }
 };
 
@@ -98,6 +100,9 @@ onMounted(async () => {
                 <ul>
                     <li v-if="model.account?.xAccount?.archiveTweetsHTML">
                         Save HTML versions of tweets
+                    </li>
+                    <li v-if="model.account?.xAccount?.archiveBookmarks">
+                        Save bookmarks
                     </li>
                     <li v-if="model.account?.xAccount?.archiveDMs">
                         Save direct messages
@@ -180,8 +185,11 @@ onMounted(async () => {
                     <template v-if="model.account?.xAccount?.deleteMyData">
                         Back to Delete Options
                     </template>
-                    <template v-else>
+                    <template v-else-if="model.account?.xAccount?.saveMyData">
                         Back to Build Options
+                    </template>
+                    <template v-else>
+                        Back to Archive Options
                     </template>
                 </button>
 
