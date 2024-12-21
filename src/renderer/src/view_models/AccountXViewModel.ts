@@ -1595,7 +1595,7 @@ Hang on while I scroll down to your earliest likes.`;
         this.showBrowser = true;
         this.instructions = `**I'm saving your bookmarks.**
 
-Hang on while I scroll down to your earliest boomarks.`;
+Hang on while I scroll down to your earliest bookmarks.`;
         this.showAutomationNotice = true;
 
         // Start monitoring network requests
