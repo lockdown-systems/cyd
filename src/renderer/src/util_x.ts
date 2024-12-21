@@ -50,13 +50,17 @@ export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
         requiresPremium = true;
     }
 
-    // Deleting likes, DMs, and unfollowing everyone are premium features
+    // Deleting likes, bookmarks, DMs, and unfollowing everyone are premium features
     if (xAccount.deleteLikes) {
         console.log('Requires premium: deleteLikes');
         requiresPremium = true;
     }
     if (xAccount.deleteDMs) {
         console.log('Requires premium: deleteDMs');
+        requiresPremium = true;
+    }
+    if (xAccount.deleteBookmarks) {
+        console.log('Requires premium: deleteBookmarks');
         requiresPremium = true;
     }
     if (xAccount.unfollowEveryone) {
