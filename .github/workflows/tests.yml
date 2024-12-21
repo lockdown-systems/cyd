@@ -39,7 +39,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm run tests
+        run: npm run test
 
       - name: Run component tests
-        run: npm run tests:components
+        run: npm run test:components
