@@ -9,6 +9,7 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 import { xHasSomeData } from '../../util_x';
+import { openURL } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -329,7 +330,10 @@ onMounted(async () => {
                 </div>
                 <div class="indent">
                     <small class="form-text text-muted">
-                        Likes are private on X.
+                        Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't delete
+                        <em>ghost likes</em>.
+                        <a href="#" @click="openURL('https://cyd.social/docs-ghost-likes/')">
+                            Read more</a>.
                     </small>
                 </div>
             </div>
@@ -347,6 +351,11 @@ onMounted(async () => {
                         <span v-if="!userAuthenticated || !userPremium"
                             class="premium badge badge-primary">Premium</span>
                     </div>
+                </div>
+                <div class="indent">
+                    <small class="form-text text-muted">
+                        Bookmarks are only visible to you on X.
+                    </small>
                 </div>
             </div>
 
