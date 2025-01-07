@@ -68,7 +68,7 @@ To set up Windows:
 - **Make sure the Windows user does not have spaces in the filename (e.g., "user", not "Micah Lee")!**
 - Install Windows SDK (`winget install Microsoft.WindowsSDK.10.0.26100`)
   - add `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64` to the PATH (even on arm64, you should use teh x64 binary)
-  - example code signing: `signtool.exe sign /v /d "Calculator" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://timestamp.digicert.com .\calc.exe`
+  - example code signing: `signtool.exe sign /v /d "Calculator" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://ts.harica.gr .\calc.exe`
 - Set up code signing
   - Install [Safenet Authentication Client](https://guides.harica.gr/docs/Guides/Software/Safenet-Authentication-Client/Drivers/)
   - Login to [HARICA](https://cm.harica.gr/), download the cert in DER and DER CA format, and install in Windows
