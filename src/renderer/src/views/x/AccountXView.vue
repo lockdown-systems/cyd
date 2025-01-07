@@ -219,15 +219,17 @@ const updateUserPremium = async () => {
         return;
     }
     userPremium.value = userPremiumResp.premium_access;
+
+    if (!userPremium.value) {
+        console.log('User does not have Premium access');
+        emitter?.emit(`x-premium-check-failed-${props.account.id}`);
+    }
 };
 
 emitter?.on('signed-in', async () => {
     console.log('AccountXView: User signed in');
     await updateUserAuthenticated();
     await updateUserPremium();
-    if (!userPremium.value) {
-        emitter?.emit('show-manage-account');
-    }
 });
 
 emitter?.on('signed-out', async () => {
@@ -480,7 +482,7 @@ onUnmounted(async () => {
                     <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" @update-account="updateAccount"
-                        @start-jobs-just-save="startJobsJustSave" />
+                        @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
 
                     <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                         :model="unref(model)"
