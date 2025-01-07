@@ -208,22 +208,6 @@ export class AccountXViewModel extends BaseViewModel {
         }
     }
 
-    async defineJobsDownloadArchive() {
-        const jobTypes = ["login", "downloadArchive"];
-
-        try {
-            this.jobs = await window.electron.X.createJobs(this.account?.id, jobTypes);
-            this.log("defineJobsDownloadArchive", JSON.parse(JSON.stringify(this.jobs)));
-        } catch (e) {
-            await this.error(AutomationErrorType.x_unknownError, {
-                exception: (e as Error).toString()
-            }, {
-                currentURL: this.webview?.getURL()
-            });
-            return;
-        }
-    }
-
     async reset() {
         this.progress = emptyXProgress();
         this.rateLimitInfo = emptyXRateLimitInfo();
@@ -2388,36 +2372,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
         return true;
     }
 
-    async runJobDownloadArchive(jobIndex: number): Promise<boolean> {
-        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_DOWNLOAD_ARCHIVE, navigator.userAgent);
-
-        this.showBrowser = true;
-        this.showAutomationNotice = false;
-        this.instructions = `
-Follow the instructions below to request your archive from X. You will need to verify your identity with X to download your data.`;
-
-        await this.loadURL("https://x.com/settings/download_your_data");
-        await this.sleep(1000);
-
-        // Wait for the user to request the archive
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-            // Check the URL
-            const currentURL = this.webview?.getURL();
-            if (currentURL == "https://x.com/settings/download_your_data") {
-                if (await this.isSelectorLastDisabled('main div div button')) {
-                    // The request archive button is disabled, which means we have requested the archive
-                    await this.sleep(1000);
-                    break;
-                }
-            }
-            await this.sleep(1000);
-        }
-
-        await this.finishJob(jobIndex);
-        return true;
-    }
-
     async runJobUnfollowEveryone(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_UNFOLLOW_EVERYONE, navigator.userAgent);
 
@@ -2631,10 +2585,6 @@ Follow the instructions below to request your archive from X. You will need to v
             case "deleteDMs":
                 await this.runJobDeleteDMs(jobIndex);
                 break;
-
-            case "downloadArchive":
-                await this.runJobDownloadArchive(jobIndex);
-                break;
         }
     }
 
@@ -2644,7 +2594,6 @@ Follow the instructions below to request your archive from X. You will need to v
 
         // Temp variables
         let databaseStatsString: string = "";
-        let downloadArchiveInJobs = false;
 
         this.log("run", `running state: ${this.state}`);
         try {
@@ -2700,7 +2649,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-**Have you already downloaded your archive from X?**`;
+**Before you can import your X archive, you need to download it from X. Here's how.**`;
                     this.state = State.WizardImportStartDisplay;
                     break;
 
@@ -2815,21 +2764,8 @@ You can save all your data for free, but you need a Premium plan to delete your 
 
                     await this.refreshDatabaseStats();
 
-                    // See if the jobs include downloadArchives
-                    downloadArchiveInJobs = false;
-                    for (let i = 0; i < this.jobs.length; i++) {
-                        if (this.jobs[i].jobType === "downloadArchive") {
-                            downloadArchiveInJobs = true;
-                            break;
-                        }
-                    }
-
                     // Determine the next state
-                    if (downloadArchiveInJobs) {
-                        this.state = State.WizardImportDownload;
-                    } else {
-                        this.state = State.FinishedRunningJobs;
-                    }
+                    this.state = State.FinishedRunningJobs;
 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
