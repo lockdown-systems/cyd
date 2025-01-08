@@ -1845,6 +1845,17 @@ export class XAccountController {
         });
     }
 
+    async debugXArchive(archivePath: string): Promise<string[]> {
+        const filenames = await glob(path.join(archivePath, "*"));
+
+        // Stripe archivePath from the beginning of each filename
+        for (let i = 0; i < filenames.length; i++) {
+            filenames[i] = filenames[i].slice(archivePath.length + 1);
+        }
+
+        return filenames;
+    }
+
     // Return null on success, and a string (error message) on error
     async verifyXArchive(archivePath: string): Promise<string | null> {
         const foldersToCheck = [
@@ -2611,6 +2622,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.deleteUnzippedXArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:debugXArchive', async (_, accountID: number, archivePath: string): Promise<string[]> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.debugXArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
