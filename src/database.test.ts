@@ -137,6 +137,66 @@ test("getXAccounts should retrieve all XAccounts", () => {
     expect(accounts).toEqual(expect.arrayContaining([xAccount1, xAccount2]));
 });
 
+test("createBlueskyAccount should create a new BlueskyAccount", () => {
+    const blueskyAccount = database.createBlueskyAccount();
+    expect(blueskyAccount).toHaveProperty('id');
+    expect(blueskyAccount).toHaveProperty('createdAt');
+    expect(blueskyAccount).toHaveProperty('updatedAt');
+    expect(blueskyAccount).toHaveProperty('accessedAt');
+    expect(blueskyAccount).toHaveProperty('username');
+    expect(blueskyAccount).toHaveProperty('profileImageDataURI');
+    expect(blueskyAccount).toHaveProperty('saveMyData');
+    expect(blueskyAccount).toHaveProperty('deleteMyData');
+    expect(blueskyAccount).toHaveProperty('archivePosts');
+    expect(blueskyAccount).toHaveProperty('archivePostsHTML');
+    expect(blueskyAccount).toHaveProperty('archiveLikes');
+    expect(blueskyAccount).toHaveProperty('deletePosts');
+    expect(blueskyAccount).toHaveProperty('deletePostsDaysOld');
+    expect(blueskyAccount).toHaveProperty('deletePostsDaysOldEnabled');
+    expect(blueskyAccount).toHaveProperty('deletePostsLikesThresholdEnabled');
+    expect(blueskyAccount).toHaveProperty('deletePostsLikesThreshold');
+    expect(blueskyAccount).toHaveProperty('deletePostsRepostsThresholdEnabled');
+    expect(blueskyAccount).toHaveProperty('deletePostsRepostsThreshold');
+    expect(blueskyAccount).toHaveProperty('deleteReposts');
+    expect(blueskyAccount).toHaveProperty('deleteRepostsDaysOld');
+    expect(blueskyAccount).toHaveProperty('deleteRepostsDaysOldEnabled');
+    expect(blueskyAccount).toHaveProperty('deleteLikes');
+    expect(blueskyAccount).toHaveProperty('deleteLikesDaysOld');
+    expect(blueskyAccount).toHaveProperty('deleteLikesDaysOldEnabled');
+    expect(blueskyAccount).toHaveProperty('followingCount');
+    expect(blueskyAccount).toHaveProperty('followersCount');
+    expect(blueskyAccount).toHaveProperty('postsCount');
+    expect(blueskyAccount).toHaveProperty('likesCount');
+});
+
+test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
+    const blueskyAccount = database.createBlueskyAccount();
+    blueskyAccount.username = 'newUsername';
+    database.saveBlueskyAccount(blueskyAccount);
+
+    const db = database.getMainDatabase();
+    const result = database.exec(db, 'SELECT * FROM blueskyAccount WHERE id = ?', [blueskyAccount.id], 'get');
+    expect(result).toEqual(expect.objectContaining({ username: 'newUsername' }));
+});
+
+test("getBlueskyAccount should retrieve the correct BlueskyAccount", () => {
+    const blueskyAccount = database.createBlueskyAccount();
+    database.saveBlueskyAccount(blueskyAccount);
+
+    const retrievedAccount = database.getBlueskyAccount(blueskyAccount.id);
+    expect(retrievedAccount).toEqual(blueskyAccount);
+});
+
+test("getBlueskyAccounts should retrieve all BlueskyAccounts", () => {
+    const blueskyAccount1 = database.createBlueskyAccount();
+    const blueskyAccount2 = database.createBlueskyAccount();
+    database.saveBlueskyAccount(blueskyAccount1);
+    database.saveBlueskyAccount(blueskyAccount2);
+
+    const accounts = database.getBlueskyAccounts();
+    expect(accounts).toEqual(expect.arrayContaining([blueskyAccount1, blueskyAccount2]));
+});
+
 test("createAccount should create a new Account", () => {
     const account = database.createAccount();
     expect(account).toHaveProperty('id');
