@@ -5,7 +5,7 @@ import os from 'os'
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
 
-import { app, ipcMain, session, shell } from 'electron'
+import { app, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
@@ -13,14 +13,12 @@ import { glob } from 'glob';
 import {
     getResourcesPath,
     getAccountDataPath,
-    packageExceptionForReport,
     getTimestampDaysAgo
-} from './util'
+} from '../util'
 import {
     XAccount,
     XJob,
     XProgress, emptyXProgress,
-    XTweetItem,
     XTweetItemArchive,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
@@ -32,7 +30,7 @@ import {
     XDeleteReviewStats, emptyXDeleteReviewStats,
     XArchiveInfo, emptyXArchiveInfo,
     XImportArchiveResponse
-} from './shared_types'
+} from '../shared_types'
 import {
     runMigrations,
     getAccount,
@@ -41,9 +39,19 @@ import {
     Sqlite3Count,
     getConfig,
     setConfig,
-} from './database'
-import { IMITMController, getMITMController } from './mitm';
+} from '../database'
+import { IMITMController } from '../mitm';
 import {
+    XJobRow,
+    XTweetRow,
+    XUserRow,
+    XConversationRow,
+    XMessageRow,
+    XConversationParticipantRow,
+    convertXJobRowToXJob,
+    convertTweetRowToXTweetItem,
+    convertTweetRowToXTweetItemArchive,
+    // X API types
     XAPILegacyUser,
     XAPILegacyTweet,
     XAPIData,
@@ -65,121 +73,8 @@ import {
     isXArchiveLikeContainer,
     isXAPIBookmarksData,
     isXAPIData,
-    // XArchiveDMConversation,
-} from './account_x_types'
-import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
-
-function formatDateToYYYYMMDD(dateString: string): string {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-export interface XJobRow {
-    id: number;
-    jobType: string;
-    status: string;
-    scheduledAt: string;
-    startedAt: string | null;
-    finishedAt: string | null;
-    progressJSON: string | null;
-    error: string | null;
-}
-
-export interface XTweetRow {
-    id: number;
-    username: string;
-    tweetID: string;
-    conversationID: string;
-    createdAt: string;
-    likeCount: number;
-    quoteCount: number;
-    replyCount: number;
-    retweetCount: number;
-    isLiked: boolean;
-    isRetweeted: boolean;
-    isBookmarked: boolean;
-    text: string;
-    path: string;
-    addedToDatabaseAt: string;
-    archivedAt: string | null;
-    deletedTweetAt: string | null;
-    deletedRetweetAt: string | null;
-    deletedLikeAt: string | null;
-    deletedBookmarkAt: string | null;
-}
-
-export interface XUserRow {
-    id: number;
-    userID: string;
-    name: string | null;
-    screenName: string;
-    profileImageDataURI: string | null;
-}
-
-export interface XConversationRow {
-    id: number;
-    conversationID: string;
-    type: string;
-    sortTimestamp: string | null;
-    minEntryID: string | null;
-    maxEntryID: string | null;
-    isTrusted: boolean | null;
-    shouldIndexMessages: boolean | null;
-    addedToDatabaseAt: string;
-    updatedInDatabaseAt: string | null;
-    deletedAt: string | null;
-}
-
-export interface XConversationParticipantRow {
-    id: number;
-    conversationID: string;
-    userID: string;
-}
-
-export interface XMessageRow {
-    id: number;
-    messageID: string;
-    conversationID: string;
-    createdAt: string;
-    senderID: string;
-    text: string;
-    deletedAt: string | null;
-}
-
-function convertXJobRowToXJob(row: XJobRow): XJob {
-    return {
-        id: row.id,
-        jobType: row.jobType,
-        status: row.status,
-        scheduledAt: new Date(row.scheduledAt),
-        startedAt: row.startedAt ? new Date(row.startedAt) : null,
-        finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
-        progressJSON: row.progressJSON ? JSON.parse(row.progressJSON) : null,
-        error: row.error,
-    };
-}
-
-function convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
-    return {
-        id: row.tweetID,
-        t: row.text,
-        l: row.likeCount,
-        r: row.retweetCount,
-        d: row.createdAt,
-    };
-}
-
-function convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemArchive {
-    return {
-        url: `https://x.com/${row.path}`,
-        tweetID: row.tweetID,
-        basename: `${formatDateToYYYYMMDD(row.createdAt)}_${row.tweetID}`,
-        username: row.username
-    };
-}
+} from './types'
+import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
 
 export class XAccountController {
     private accountUUID: string = "";
@@ -2248,412 +2143,3 @@ export class XAccountController {
         return setConfig(key, value, this.db);
     }
 }
-
-const controllers: Record<number, XAccountController> = {};
-
-const getXAccountController = (accountID: number): XAccountController => {
-    if (!controllers[accountID]) {
-        controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
-    }
-    controllers[accountID].refreshAccount();
-    return controllers[accountID];
-}
-
-export const defineIPCX = () => {
-    ipcMain.handle('X:resetProgress', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return controller.resetProgress();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:createJobs', async (_, accountID: number, jobTypes: string[]): Promise<XJob[]> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return controller.createJobs(jobTypes);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getLastFinishedJob', async (_, accountID: number, jobType: string): Promise<XJob | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return controller.getLastFinishedJob(jobType);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:updateJob', async (_, accountID: number, jobJSON: string) => {
-        try {
-            const controller = getXAccountController(accountID);
-            const job = JSON.parse(jobJSON) as XJob;
-            controller.updateJob(job);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexStart', async (_, accountID: number) => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.indexStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexStop', async (_, accountID: number) => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.indexStop();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseAllJSON', async (_, accountID: number): Promise<XAccount> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseAllJSON();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseTweets', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseTweets();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseConversations', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseConversations();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexIsThereMore', async (_, accountID: number): Promise<boolean> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexIsThereMore();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:resetThereIsMore', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.resetThereIsMore();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexMessagesStart', async (_, accountID: number): Promise<XIndexMessagesStartResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexMessagesStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseMessages', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseMessages();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexConversationFinished', async (_, accountID: number, conversationID: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.indexConversationFinished(conversationID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:archiveTweetsStart', async (_, accountID: number): Promise<XArchiveStartResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.archiveTweetsStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:archiveTweetsOutputPath', async (_, accountID: number): Promise<string> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.archiveTweetsOutputPath();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:archiveTweet', async (_, accountID: number, tweetID: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.archiveTweet(tweetID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:archiveTweetCheckDate', async (_, accountID: number, tweetID: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.archiveTweetCheckDate(tweetID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:archiveBuild', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.archiveBuild();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:syncProgress', async (_, accountID: number, progressJSON: string) => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.syncProgress(progressJSON);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.openFolder(folderName);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getArchiveInfo', async (_, accountID: number): Promise<XArchiveInfo> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getArchiveInfo();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:resetRateLimitInfo', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.resetRateLimitInfo();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:isRateLimited', async (_, accountID: number): Promise<XRateLimitInfo> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.isRateLimited();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getProgress', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getProgress();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getProgressInfo', async (_, accountID: number): Promise<XProgressInfo> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getProgressInfo();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getDatabaseStats', async (_, accountID: number): Promise<XDatabaseStats> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getDatabaseStats();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getDeleteReviewStats', async (_, accountID: number): Promise<XDeleteReviewStats> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getDeleteReviewStats();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:saveProfileImage', async (_, accountID: number, url: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.saveProfileImage(url);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getLatestResponseData', async (_, accountID: number): Promise<ResponseData | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getLatestResponseData();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteTweetsStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteTweetsStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteTweetsCountNotArchived', async (_, accountID: number, total: boolean): Promise<number> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteTweetsCountNotArchived(total);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteRetweetsStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteRetweetsStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteLikesStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteLikesStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteBookmarksStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.deleteBookmarksStart();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string, deleteType: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.deleteTweet(tweetID, deleteType);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteDMsMarkAllDeleted', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.deleteDMsMarkAllDeleted();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:unzipXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.unzipXArchive(archivePath);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:deleteUnzippedXArchive', async (_, accountID: number, archivePath: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.deleteUnzippedXArchive(archivePath);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:verifyXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.verifyXArchive(archivePath);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:importXArchive', async (_, accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.importXArchive(archivePath, dataType);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getCookie', async (_, accountID: number, name: string): Promise<string | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getCookie(name);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getConfig', async (_, accountID: number, key: string): Promise<string | null> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getConfig(key);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:setConfig', async (_, accountID: number, key: string, value: string): Promise<void> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.setConfig(key, value);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-};
