@@ -55,19 +55,35 @@ const startClicked = async () => {
     importStarted.value = true;
 
     // Unarchive the zip
+    let unzippedPath: string | null = null;
     statusValidating.value = ImportStatus.Active;
-    const unzippedPath: string | null = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
+    try {
+        unzippedPath = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
+    } catch (e) {
+        statusValidating.value = ImportStatus.Failed;
+        errorMessages.value.push(`${e}`);
+        importFailed.value = true;
+        return;
+    }
     if (unzippedPath === null) {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(unzippedPath);
         importFailed.value = true;
         return;
     }
-    statusValidating.value = ImportStatus.Finished;
 
     // Verify that the archive is valid
     statusValidating.value = ImportStatus.Active;
-    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, unzippedPath);
+    let verifyResp: string | null = null;
+    try {
+        verifyResp = await window.electron.X.verifyXArchive(props.model.account.id, unzippedPath);
+    } catch (e) {
+        statusValidating.value = ImportStatus.Failed;
+        errorMessages.value.push(`${e}`);
+        importFailed.value = true;
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+        return;
+    }
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(verifyResp);
