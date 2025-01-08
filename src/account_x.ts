@@ -1826,12 +1826,14 @@ export class XAccountController {
         if (!this.account) {
             return null;
         }
-        const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "official-x-archive");
+        const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "tmp");
 
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: unzippedPath });
 
-        return unzippedPath
+        log.info(`XAccountController.unzipXArchive: unzipped to ${unzippedPath}`);
+
+        return unzippedPath;
     }
 
     // Delete the unzipped X archive once the build is completed
