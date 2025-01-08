@@ -57,7 +57,7 @@ onMounted(async () => {
 
         <div class="select-account row">
           <div class="col-12 col-md-6">
-            <div class="card m-2" @click="accountClicked('X')">
+            <div class="card m-2 select-account-x" @click="accountClicked('X')">
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
                   <i :class="getAccountIcon('X')" />
@@ -75,7 +75,7 @@ onMounted(async () => {
           </div>
 
           <div class="col-12 col-md-6">
-            <div class="card m-2" @click="accountClicked('Bluesky')">
+            <div class="card m-2 select-account-bluesky" @click="accountClicked('Bluesky')">
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
                   <i :class="getAccountIcon('Bluesky')" />
