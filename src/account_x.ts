@@ -2603,10 +2603,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:deleteUnzippedXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+    ipcMain.handle('X:deleteUnzippedXArchive', async (_, accountID: number, archivePath: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.deleteUnzippedXArchive(archivePath);
+            await controller.deleteUnzippedXArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
