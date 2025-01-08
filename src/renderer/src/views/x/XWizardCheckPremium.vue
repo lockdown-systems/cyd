@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue';
+import { ref, getCurrentInstance } from 'vue';
 import {
     AccountXViewModel,
     State
@@ -19,21 +19,31 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: State]
-    startJobsJustSave: []
+    startJobsJustSave: [],
+    updateUserPremium: [],
 }>()
 
 // Buttons
 const signInClicked = async () => {
-    localStorage.setItem('manageAccountMode', 'premium');
-    localStorage.setItem('manageAccountRedirectAccountID', props.model.account?.id.toString());
     emitter?.emit("show-sign-in");
 };
 
 const manageAccountClicked = async () => {
-    localStorage.setItem('manageAccountMode', 'premium');
-    localStorage.setItem('manageAccountRedirectAccountID', props.model.account?.id.toString());
     emitter?.emit("show-manage-account");
 };
+
+const iveUpgradedClicked = async () => {
+    emit('updateUserPremium');
+};
+
+const showNoPremiumError = ref(false);
+
+emitter?.on(`x-premium-check-failed-${props.model.account.id}`, async () => {
+    showNoPremiumError.value = true;
+    setTimeout(() => {
+        showNoPremiumError.value = false;
+    }, 5000);
+});
 
 const backClicked = async () => {
     emit('setState', State.WizardReview);
@@ -52,28 +62,31 @@ const backClicked = async () => {
         <ul v-if="!userAuthenticated || !userPremium">
             <li
                 v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsDaysOldEnabled">
-                Deleting tweets older than a set number of days
+                Delete tweets older than a set number of days
             </li>
             <li
                 v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled">
-                Deleting tweets unless they have at least a certain number of retweets
+                Delete tweets unless they have at least a certain number of retweets
             </li>
             <li
                 v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
-                Deleting tweets unless they have at least a certain number of likes
+                Delete tweets unless they have at least a certain number of likes
             </li>
             <li
                 v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteRetweets && model.account.xAccount?.deleteRetweetsDaysOldEnabled">
-                Deleting retweets older than a set number of days
+                Delete retweets older than a set number of days
             </li>
             <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.unfollowEveryone">
-                Unfollowing everyone
+                Unfollow everyone
             </li>
             <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes">
-                Deleting likes
+                Delete likes
+            </li>
+            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteBookmarks">
+                Delete bookmarks
             </li>
             <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteDMs">
-                Deleting direct messages
+                Delete direct messages
             </li>
         </ul>
 
@@ -95,11 +108,21 @@ const backClicked = async () => {
                     Sign In
                 </button>
 
-                <button v-else-if="userAuthenticated && !userPremium" type="submit"
-                    class="btn btn-lg btn-primary text-nowrap m-1" @click="manageAccountClicked">
-                    <i class="fa-solid fa-user-ninja" />
-                    Manage My Account
-                </button>
+                <div v-else-if="userAuthenticated && !userPremium">
+                    <button type="submit" class="btn btn-primary text-nowrap m-1" @click="manageAccountClicked">
+                        <i class="fa-solid fa-user-ninja" />
+                        Manage My Account
+                    </button>
+
+                    <button type="submit" class="btn btn-success text-nowrap m-1" @click="iveUpgradedClicked">
+                        <i class="fa-solid fa-star" />
+                        I've Upgraded
+                    </button>
+
+                    <div v-if="showNoPremiumError" class="alert alert-warning mt-4" role="alert">
+                        You haven't upgraded to Premium yet. Please try again.
+                    </div>
+                </div>
 
                 <button v-else type="submit" class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-user-ninja" />

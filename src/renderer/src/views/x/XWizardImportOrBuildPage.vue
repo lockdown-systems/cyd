@@ -113,9 +113,8 @@ onMounted(() => {
                                 X restricts how much of your data you can access. You likely won't get all of your data
                                 if you have Cyd build it from scratch. Building from scratch is a great way to backup
                                 your direct messages, though.
-                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
-                                    Read more
-                                </a>.
+                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">Read
+                                    more</a>.
                             </small>
                         </div>
                     </div>
@@ -125,13 +124,13 @@ onMounted(() => {
                             <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
                                 class="form-check-input">
                             <label class="form-check-label" for="archiveData">
-                                Save HTML tweets, direct messages, or both
+                                Save HTML tweets, direct messages, and/or bookmarks
                             </label>
                         </div>
                         <div class="indent">
                             <small>
-                                Cyd can save an HTML version of each tweet for you, and also save a more detailed backup
-                                of your direct messages than is available in the official X archive.
+                                Cyd can save an HTML version of each tweet, and detailed backup of your direct messages,
+                                and your bookmarks.
                             </small>
                         </div>
                     </div>
@@ -154,8 +153,7 @@ onMounted(() => {
                                 profile will be faster. Building from scratch is also a great way to backup your direct
                                 messages.
                                 <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
-                                    Read more
-                                </a>.
+                                    Read more</a>.
                             </small>
                         </div>
                     </div>
@@ -181,13 +179,13 @@ onMounted(() => {
                             <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
                                 class="form-check-input">
                             <label class="form-check-label" for="archiveData">
-                                Save HTML tweets, direct messages, or both
+                                Save HTML tweets, direct messages, and/or bookmarks
                             </label>
                         </div>
                         <div class="indent">
                             <small>
-                                Cyd can save an HTML version of each tweet for you, and also save a more detailed backup
-                                of your direct messages than is available in the official X archive.
+                                Cyd can save an HTML version of each tweet, and detailed backup of your direct messages,
+                                and your bookmarks.
                             </small>
                         </div>
                     </div>
@@ -226,8 +224,7 @@ onMounted(() => {
                                 only works if you have less than about 2,000 tweets or likes. Building from scratch is a
                                 great way to backup your direct messages, though.
                                 <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
-                                    Read more
-                                </a>.
+                                    Read more</a>.
                             </small>
                         </div>
                     </div>
@@ -237,13 +234,13 @@ onMounted(() => {
                             <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
                                 class="form-check-input">
                             <label class="form-check-label" for="archiveData">
-                                Save HTML tweets, direct messages, or both
+                                Save HTML tweets, direct messages, and/or bookmarks
                             </label>
                         </div>
                         <div class="indent">
                             <small>
-                                Cyd can save an HTML version of each tweet for you, and also save a more detailed backup
-                                of your direct messages than is available in the official X archive.
+                                Cyd can save an HTML version of each tweet, and detailed backup of your direct messages,
+                                and your bookmarks.
                             </small>
                         </div>
                     </div>

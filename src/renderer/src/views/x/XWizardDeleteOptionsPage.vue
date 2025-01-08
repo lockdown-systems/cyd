@@ -9,6 +9,7 @@ import {
     State
 } from '../../view_models/AccountXViewModel'
 import { xHasSomeData } from '../../util_x';
+import { openURL } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -56,6 +57,7 @@ const deleteRetweets = ref(false);
 const deleteRetweetsDaysOldEnabled = ref(false);
 const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
+const deleteBookmarks = ref(false);
 const deleteDMs = ref(false);
 const unfollowEveryone = ref(false);
 
@@ -74,6 +76,7 @@ const loadSettings = async () => {
         deleteRetweetsDaysOldEnabled.value = account.xAccount.deleteRetweetsDaysOldEnabled;
         deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
         deleteLikes.value = account.xAccount.deleteLikes;
+        deleteBookmarks.value = account.xAccount.deleteBookmarks;
         deleteDMs.value = account.xAccount.deleteDMs;
         unfollowEveryone.value = account.xAccount.unfollowEveryone;
     }
@@ -119,6 +122,7 @@ const saveSettings = async () => {
         account.xAccount.deleteRetweetsDaysOldEnabled = deleteRetweetsDaysOldEnabled.value;
         account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
         account.xAccount.deleteLikes = deleteLikes.value;
+        account.xAccount.deleteBookmarks = deleteBookmarks.value;
         account.xAccount.deleteDMs = deleteDMs.value;
         account.xAccount.unfollowEveryone = unfollowEveryone.value;
 
@@ -326,7 +330,31 @@ onMounted(async () => {
                 </div>
                 <div class="indent">
                     <small class="form-text text-muted">
-                        Likes are private on X.
+                        Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't delete
+                        <em>ghost likes</em>.
+                        <a href="#" @click="openURL('https://cyd.social/docs-ghost-likes/')">
+                            Read more</a>.
+                    </small>
+                </div>
+            </div>
+
+            <!-- deleteBookmarks -->
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="form-check">
+                        <input id="deleteBookmarks" v-model="deleteBookmarks" type="checkbox" class="form-check-input">
+                        <label class="form-check-label mr-1 text-nowrap" for="deleteBookmarks">
+                            Delete my bookmarks
+                        </label>
+                    </div>
+                    <div class="d-flex align-items-center flex-nowrap">
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
+                    </div>
+                </div>
+                <div class="indent">
+                    <small class="form-text text-muted">
+                        Bookmarks are only visible to you on X.
                     </small>
                 </div>
             </div>
@@ -354,7 +382,7 @@ onMounted(async () => {
 
             <div class="buttons">
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
+                    :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || deleteBookmarks || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review

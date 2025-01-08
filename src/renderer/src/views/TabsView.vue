@@ -5,8 +5,8 @@ import AccountView from './AccountView.vue';
 import CydAPIClient from '../../../cyd-api-client';
 import type { DeviceInfo } from '../types';
 import type { Account } from '../../../shared_types';
-import ManageAccountView from './ManageAccountView.vue';
 import AboutView from './AboutView.vue';
+import { openURL } from '../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -24,12 +24,10 @@ const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
 
 const hideAllAccounts = ref(false);
-const showManageAccount = ref(false);
 
 const showAbout = ref(false);
 
 const accountClicked = async (account: Account) => {
-  hideManageAccountView();
   hideAboutView();
 
   activeAccountID.value = account.id;
@@ -48,7 +46,6 @@ const accountClicked = async (account: Account) => {
 };
 
 const addAccountClicked = async () => {
-  hideManageAccountView();
   hideAboutView();
 
   // Do we already have an unknown account?
@@ -91,7 +88,6 @@ const removeAccount = async (accountID: number) => {
 }
 
 const accountSelected = async (account: Account, accountType: string) => {
-  hideManageAccountView();
   hideAboutView();
 
   try {
@@ -131,44 +127,27 @@ const outsideUserMenuClicked = (event: MouseEvent) => {
   }
 };
 
-const showManageAccountView = () => {
+const openDashboard = async () => {
   userBtnShowMenu.value = false;
 
-  showManageAccount.value = true;
-  showAbout.value = false;
-  hideAllAccounts.value = true;
+  const dashURL = await window.electron.getDashURL();
+  const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}/manage`;
+  openURL(nativeLoginURL);
 };
 
-const hideManageAccountView = () => {
-  showManageAccount.value = false;
-  showAbout.value = false;
-  hideAllAccounts.value = false;
-};
-
-emitter?.on('show-manage-account', showManageAccountView);
+emitter?.on('show-manage-account', openDashboard);
 
 const manageAccountClicked = async () => {
-  localStorage.setItem('manageAccountMode', 'manage');
-  showManageAccountView();
-};
-
-const redirectToAccount = (accountID: number) => {
-  // This forces the account to re-check if the user is signed in and if premium is enabled
-  emitter?.emit('signed-in');
-
-  activeAccountID.value = accountID;
-  hideManageAccountView();
+  openDashboard();
 };
 
 const showAboutView = () => {
   userBtnShowMenu.value = false;
-  showManageAccount.value = false;
   showAbout.value = true;
   hideAllAccounts.value = true;
 };
 
 const hideAboutView = () => {
-  showManageAccount.value = false;
   showAbout.value = false;
   hideAllAccounts.value = false;
 };
@@ -178,7 +157,6 @@ const aboutClicked = async () => {
 };
 
 const signInClicked = async () => {
-  localStorage.setItem('manageAccountMode', 'manage');
   emitter?.emit('show-sign-in');
 };
 
@@ -207,12 +185,9 @@ const signOutClicked = async () => {
   await refreshDeviceInfo();
   await refreshAPIClient();
 
-  showManageAccount.value = false;
   userBtnShowMenu.value = false;
 
   emitter?.emit('signed-out');
-
-  hideManageAccountView();
 };
 
 const checkForUpdatesClicked = async () => {
@@ -242,7 +217,7 @@ onMounted(async () => {
   document.addEventListener('click', outsideUserMenuClicked);
   document.addEventListener('auxclick', outsideUserMenuClicked);
 
-  emitter?.on('signed-in', showManageAccountView);
+  emitter?.on('signed-in', openDashboard);
   emitter?.on('account-updated', reloadAccounts);
 });
 
@@ -338,9 +313,6 @@ onUnmounted(async () => {
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
           :class="{ 'hide': hideAllAccounts || activeAccountID !== account.id }" @account-selected="accountSelected"
           @on-remove-clicked="removeAccount(account.id)" />
-
-        <!-- Manay my Cyd account -->
-        <ManageAccountView :should-show="showManageAccount" @redirect-to-account="redirectToAccount" />
 
         <!-- About -->
         <AboutView :should-show="showAbout" />

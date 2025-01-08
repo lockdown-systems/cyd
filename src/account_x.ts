@@ -47,6 +47,8 @@ import {
     XAPILegacyUser,
     XAPILegacyTweet,
     XAPIData,
+    XAPIBookmarksData,
+    XAPITimeline,
     XAPIInboxTimeline,
     XAPIInboxInitialState,
     XAPIConversation,
@@ -61,6 +63,8 @@ import {
     XArchiveLike,
     XArchiveLikeContainer,
     isXArchiveLikeContainer,
+    isXAPIBookmarksData,
+    isXAPIData,
     // XArchiveDMConversation,
 } from './account_x_types'
 import * as XArchiveTypes from '../archive-static-sites/x-archive/src/types';
@@ -96,11 +100,15 @@ export interface XTweetRow {
     retweetCount: number;
     isLiked: boolean;
     isRetweeted: boolean;
+    isBookmarked: boolean;
     text: string;
     path: string;
     addedToDatabaseAt: string;
     archivedAt: string | null;
-    deletedAt: string | null;
+    deletedTweetAt: string | null;
+    deletedRetweetAt: string | null;
+    deletedLikeAt: string | null;
+    deletedBookmarkAt: string | null;
 }
 
 export interface XUserRow {
@@ -238,7 +246,7 @@ export class XAccountController {
                             this.cookies[parts[0].trim()] = parts[1].trim();
                         }
                     });
-                    log.info("XAccountController: cookies", this.cookies);
+                    // log.info("XAccountController: cookies", this.cookies);
                 }
             }
         });
@@ -391,7 +399,29 @@ export class XAccountController {
                     `DROP TABLE tweet;`,
                     `ALTER TABLE tweet_new RENAME TO tweet;`
                 ]
-            }
+            },
+            // Add isBookmarked to the tweet table, and update isBookarked for all tweets
+            {
+                name: "20241127_add_isBookmarked",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN isBookmarked BOOLEAN;`,
+                    `UPDATE tweet SET isBookmarked = 0;`
+                ]
+            },
+            // Add deletedTweetAt, deletedRetweetAt, deletedLikeAt, and deletedBookmarkAt to the tweet table, and
+            // try to guess which types of deletions have already occured
+            {
+                name: "20241127_add_deletedAt_fields",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN deletedTweetAt DATETIME;`,
+                    `ALTER TABLE tweet ADD COLUMN deletedRetweetAt DATETIME;`,
+                    `ALTER TABLE tweet ADD COLUMN deletedLikeAt DATETIME;`,
+                    `ALTER TABLE tweet ADD COLUMN deletedBookmarkAt DATETIME;`,
+                    `UPDATE tweet SET deletedTweetAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 0 AND text NOT LIKE 'RT @%';`,
+                    `UPDATE tweet SET deletedRetweetAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 0 AND text LIKE 'RT @%';`,
+                    `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
+                ]
+            },
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -537,7 +567,7 @@ export class XAccountController {
         }
 
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -548,25 +578,29 @@ export class XAccountController {
             tweetLegacy["retweet_count"],
             tweetLegacy["favorited"] ? 1 : 0,
             tweetLegacy["retweeted"] ? 1 : 0,
+            tweetLegacy["bookmarked"] ? 1 : 0,
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
             new Date(),
         ]);
 
         // Update progress
+        if (tweetLegacy["favorited"]) {
+            // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
+            this.progress.likesIndexed++;
+        }
+        if (tweetLegacy["bookmarked"]) {
+            this.progress.bookmarksIndexed++;
+        }
         if (tweetLegacy["full_text"].startsWith("RT @")) {
             // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.retweetsIndexed++;
         }
-        else if (tweetLegacy["favorited"]) {
-            // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
-            this.progress.likesIndexed++;
-        }
-        else if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
+        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
             // console.log("DEBUG-### TWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.tweetsIndexed++;
         }
-        else {
+        if (!tweetLegacy["favorited"] && !tweetLegacy["bookmarked"] && !tweetLegacy["full_text"].startsWith("RT @") && userLegacy["screen_name"] != this.account?.username) {
             // console.log("DEBUG-### UNKNOWN: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
             this.progress.unknownIndexed++;
         }
@@ -590,13 +624,29 @@ export class XAccountController {
 
         // Process the next response
         if (
-            (responseData.url.includes("/UserTweetsAndReplies?") || responseData.url.includes("/Likes?")) &&
+            (
+                // Tweets
+                responseData.url.includes("/UserTweetsAndReplies?") ||
+                // Likes
+                responseData.url.includes("/Likes?") ||
+                // Bookmarks
+                responseData.url.includes("/Bookmarks?")) &&
             responseData.status == 200
         ) {
-            const body: XAPIData = JSON.parse(responseData.body);
+            // For likes and tweets, body is XAPIData
+            // For bookmarks, body is XAPIBookmarksData
+            const body: XAPIData | XAPIBookmarksData = JSON.parse(responseData.body);
+            let timeline: XAPITimeline;
+            if (isXAPIBookmarksData(body)) {
+                timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
+            } else if (isXAPIData(body)) {
+                timeline = (body as XAPIData).data.user.result.timeline_v2;
+            } else {
+                throw new Error('Invalid response data');
+            }
 
             // Loop through instructions
-            body.data.user.result.timeline_v2.timeline.instructions.forEach((instructions) => {
+            timeline.timeline.instructions.forEach((instructions) => {
                 if (instructions["type"] != "TimelineAddEntries") {
                     return;
                 }
@@ -698,25 +748,12 @@ export class XAccountController {
 
     // Parses the response data so far to index tweets that have been collected
     // Returns the progress object
+    // This works for tweets, likes, and bookmarks
     async indexParseTweets(): Promise<XProgress> {
         await this.mitmController.clearProcessed();
         log.info(`XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            this.indexParseTweetsResponseData(i);
-        }
-
-        return this.progress;
-    }
-
-    // Parses the response data so far to index likes that have been collected
-    // Returns the progress object
-    async indexParseLikes(): Promise<XProgress> {
-        await this.mitmController.clearProcessed();
-        log.info(`XAccountController.indexParseLikes: parsing ${this.mitmController.responseData.length} responses`);
-
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            // Parsing likes uses indexParseTweetsResponseData too, since it's the same data
             this.indexParseTweetsResponseData(i);
         }
 
@@ -1065,24 +1102,6 @@ export class XAccountController {
         return this.progress;
     }
 
-    async indexTweetsFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexTweetsFinished');
-        this.progress.isIndexTweetsFinished = true;
-        return this.progress;
-    }
-
-    async indexConversationsFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexConversationsFinished');
-        this.progress.isIndexConversationsFinished = true;
-        return this.progress;
-    }
-
-    async indexMessagesFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexMessagesFinished');
-        this.progress.isIndexMessagesFinished = true;
-        return this.progress;
-    }
-
     // Set the conversation's shouldIndexMessages to false
     async indexConversationFinished(conversationID: string) {
         if (!this.db) {
@@ -1090,12 +1109,6 @@ export class XAccountController {
         }
 
         exec(this.db, 'UPDATE conversation SET shouldIndexMessages = ? WHERE conversationID = ?', [0, conversationID]);
-    }
-
-    async indexLikesFinished(): Promise<XProgress> {
-        log.info('XAccountController.indexLikesFinished');
-        this.progress.isIndexLikesFinished = true;
-        return this.progress;
     }
 
     // When you start archiving tweets you:
@@ -1169,31 +1182,49 @@ export class XAccountController {
             return false;
         }
 
-        // Select everything from database
+        log.info("XAccountController.archiveBuild: building archive");
+
+        // Tweets
         const tweets: XTweetRow[] = exec(
             this.db,
             "SELECT * FROM tweet WHERE text NOT LIKE ? AND username = ? ORDER BY createdAt DESC",
             ["RT @%", this.account.username],
             "all"
         ) as XTweetRow[];
+
+        // Retweets
         const retweets: XTweetRow[] = exec(
             this.db,
             "SELECT * FROM tweet WHERE text LIKE ? ORDER BY createdAt DESC",
             ["RT @%"],
             "all"
         ) as XTweetRow[];
+
+        // Likes
         const likes: XTweetRow[] = exec(
             this.db,
             "SELECT * FROM tweet WHERE isLiked = ? ORDER BY createdAt DESC",
             [1],
             "all"
         ) as XTweetRow[];
+
+        // Bookmarks
+        const bookmarks: XTweetRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet WHERE isBookmarked = ? ORDER BY createdAt DESC",
+            [1],
+            "all"
+        ) as XTweetRow[];
+
+        // Users
         const users: XUserRow[] = exec(
             this.db,
             'SELECT * FROM user',
             [],
             "all"
         ) as XUserRow[];
+
+        // Conversations and messages
         const conversations: XConversationRow[] = exec(
             this.db,
             'SELECT * FROM conversation ORDER BY sortTimestamp DESC',
@@ -1217,57 +1248,39 @@ export class XAccountController {
         const accountUser = users.find((user) => user.screenName == this.account?.username);
         const accountUserID = accountUser?.userID;
 
+        const tweetRowToArchiveTweet = (tweet: XTweetRow): XArchiveTypes.Tweet => {
+            return {
+                tweetID: tweet.tweetID,
+                username: tweet.username,
+                createdAt: tweet.createdAt,
+                likeCount: tweet.likeCount,
+                quoteCount: tweet.quoteCount,
+                replyCount: tweet.replyCount,
+                retweetCount: tweet.retweetCount,
+                isLiked: tweet.isLiked,
+                isRetweeted: tweet.isRetweeted,
+                text: tweet.text,
+                path: tweet.path,
+                archivedAt: tweet.archivedAt,
+                deletedTweetAt: tweet.deletedTweetAt,
+                deletedRetweetAt: tweet.deletedRetweetAt,
+                deletedLikeAt: tweet.deletedLikeAt,
+                deletedBookmarkAt: tweet.deletedBookmarkAt,
+            }
+        }
+
         // Build the archive object
         const formattedTweets: XArchiveTypes.Tweet[] = tweets.map((tweet) => {
-            return {
-                tweetID: tweet.tweetID,
-                username: tweet.username,
-                createdAt: tweet.createdAt,
-                likeCount: tweet.likeCount,
-                quoteCount: tweet.quoteCount,
-                replyCount: tweet.replyCount,
-                retweetCount: tweet.retweetCount,
-                isLiked: tweet.isLiked,
-                isRetweeted: tweet.isRetweeted,
-                text: tweet.text,
-                path: tweet.path,
-                archivedAt: tweet.archivedAt,
-                deletedAt: tweet.deletedAt,
-            }
+            return tweetRowToArchiveTweet(tweet);
         });
         const formattedRetweets: XArchiveTypes.Tweet[] = retweets.map((tweet) => {
-            return {
-                tweetID: tweet.tweetID,
-                username: tweet.username,
-                createdAt: tweet.createdAt,
-                likeCount: tweet.likeCount,
-                quoteCount: tweet.quoteCount,
-                replyCount: tweet.replyCount,
-                retweetCount: tweet.retweetCount,
-                isLiked: tweet.isLiked,
-                isRetweeted: tweet.isRetweeted,
-                text: tweet.text,
-                path: tweet.path,
-                archivedAt: tweet.archivedAt,
-                deletedAt: tweet.deletedAt,
-            }
+            return tweetRowToArchiveTweet(tweet);
         });
         const formattedLikes: XArchiveTypes.Tweet[] = likes.map((tweet) => {
-            return {
-                tweetID: tweet.tweetID,
-                username: tweet.username,
-                createdAt: tweet.createdAt,
-                likeCount: tweet.likeCount,
-                quoteCount: tweet.quoteCount,
-                replyCount: tweet.replyCount,
-                retweetCount: tweet.retweetCount,
-                isLiked: tweet.isLiked,
-                isRetweeted: tweet.isRetweeted,
-                text: tweet.text,
-                path: tweet.path,
-                archivedAt: tweet.archivedAt,
-                deletedAt: tweet.deletedAt,
-            }
+            return tweetRowToArchiveTweet(tweet);
+        });
+        const formattedBookmarks: XArchiveTypes.Tweet[] = bookmarks.map((tweet) => {
+            return tweetRowToArchiveTweet(tweet);
         });
         const formattedUsers: Record<string, XArchiveTypes.User> = users.reduce((acc, user) => {
             acc[user.userID] = {
@@ -1312,6 +1325,8 @@ export class XAccountController {
             }
         });
 
+        log.info(`XAccountController.archiveBuild: archive has ${tweets.length} tweets, ${retweets.length} retweets, ${likes.length} likes, ${bookmarks.length} bookmarks, ${users.length} users, ${conversations.length} conversations, and ${messages.length} messages`);
+
         const archive: XArchiveTypes.XArchive = {
             appVersion: app.getVersion(),
             username: this.account.username,
@@ -1319,6 +1334,7 @@ export class XAccountController {
             tweets: formattedTweets,
             retweets: formattedRetweets,
             likes: formattedLikes,
+            bookmarks: formattedBookmarks,
             users: formattedUsers,
             conversations: formattedConversations,
             messages: formattedMessages,
@@ -1331,6 +1347,8 @@ export class XAccountController {
         }
         const archivePath = path.join(assetsPath, "archive.js");
         fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive, null, 2)};`);
+
+        log.info(`XAccountController.archiveBuild: archive saved to ${archivePath}`);
 
         // Unzip x-archive.zip to the account data folder using unzipper
         const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
@@ -1355,7 +1373,7 @@ export class XAccountController {
             // Both likes and retweets thresholds
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1363,7 +1381,7 @@ export class XAccountController {
             // Just likes threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt ASC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1371,7 +1389,7 @@ export class XAccountController {
             // Just retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
                 "all"
             ) as XTweetRow[];
@@ -1379,7 +1397,7 @@ export class XAccountController {
             // Neither likes nor retweets threshold
             tweets = exec(
                 this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt ASC',
+                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt ASC',
                 ["RT @%", this.account.username, daysOldTimestamp],
                 "all"
             ) as XTweetRow[];
@@ -1410,7 +1428,7 @@ export class XAccountController {
             // Count all non-deleted, non-archived tweets, with no filters
             count = exec(
                 this.db,
-                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ?',
+                'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ?',
                 ["RT @%", this.account.username],
                 "get"
             ) as Sqlite3Count;
@@ -1420,7 +1438,7 @@ export class XAccountController {
                 // Both likes and retweets thresholds
                 count = exec(
                     this.db,
-                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ?',
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ?',
                     ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
                     "get"
                 ) as Sqlite3Count;
@@ -1428,7 +1446,7 @@ export class XAccountController {
                 // Just likes threshold
                 count = exec(
                     this.db,
-                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ?',
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ?',
                     ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
                     "get"
                 ) as Sqlite3Count;
@@ -1436,7 +1454,7 @@ export class XAccountController {
                 // Just retweets threshold
                 count = exec(
                     this.db,
-                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ?',
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ?',
                     ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
                     "get"
                 ) as Sqlite3Count;
@@ -1444,7 +1462,7 @@ export class XAccountController {
                 // Neither likes nor retweets threshold
                 count = exec(
                     this.db,
-                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ?',
+                    'SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ?',
                     ["RT @%", this.account.username, daysOldTimestamp],
                     "get"
                 ) as Sqlite3Count;
@@ -1468,12 +1486,11 @@ export class XAccountController {
         const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld) : getTimestampDaysAgo(0);
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt ASC',
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedRetweetAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt ASC',
             ["RT @%", daysOldTimestamp],
             "all"
         ) as XTweetRow[];
 
-        // log.debug("XAccountController.deleteRetweetsStart", tweets);
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
@@ -1492,24 +1509,56 @@ export class XAccountController {
         // Select just the tweets that need to be unliked based on the settings
         const tweets: XTweetRow[] = exec(
             this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedAt IS NULL AND isLiked = ? ORDER BY createdAt ASC',
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedLikeAt IS NULL AND isLiked = ? ORDER BY createdAt ASC',
             [1],
             "all"
         ) as XTweetRow[];
 
-        // log.debug("XAccountController.deleteLikesStart", tweets);
         return {
             tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
         };
     }
 
-    // Save the tweet's deletedAt timestamp
-    async deleteTweet(tweetID: string) {
+    // When you start deleting bookmarks, return a list of tweets to unbookmark
+    async deleteBookmarksStart(): Promise<XDeleteTweetsStartResponse> {
         if (!this.db) {
             this.initDB();
         }
 
-        exec(this.db, 'UPDATE tweet SET deletedAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Select just the tweets that need to be unliked based on the settings
+        const tweets: XTweetRow[] = exec(
+            this.db,
+            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedBookmarkAt IS NULL AND isBookmarked = ? ORDER BY createdAt ASC',
+            [1],
+            "all"
+        ) as XTweetRow[];
+
+        return {
+            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
+        };
+    }
+
+    // Save the tweet's deleted*At timestamp
+    async deleteTweet(tweetID: string, deleteType: string) {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (deleteType == "tweet") {
+            exec(this.db, 'UPDATE tweet SET deletedTweetAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        } else if (deleteType == "retweet") {
+            exec(this.db, 'UPDATE tweet SET deletedRetweetAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        } else if (deleteType == "like") {
+            exec(this.db, 'UPDATE tweet SET deletedLikeAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        } else if (deleteType == "bookmark") {
+            exec(this.db, 'UPDATE tweet SET deletedBookmarkAt = ? WHERE tweetID = ?', [new Date(), tweetID]);
+        } else {
+            throw new Error("Invalid deleteType");
+        }
     }
 
     deleteDMsMarkDeleted(conversationID: string) {
@@ -1608,9 +1657,15 @@ export class XAccountController {
             [1],
             "get"
         ) as Sqlite3Count;
+        const totalBookmarksIndexed: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ?",
+            [1],
+            "get"
+        ) as Sqlite3Count;
         const totalUnknownIndexed: Sqlite3Count = exec(
             this.db,
-            `SELECT COUNT(*) AS count FROM tweet 
+            `SELECT COUNT(*) AS count FROM tweet
              WHERE id NOT IN (
                  SELECT id FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ?
                  UNION
@@ -1623,19 +1678,25 @@ export class XAccountController {
         ) as Sqlite3Count;
         const totalTweetsDeleted: Sqlite3Count = exec(
             this.db,
-            "SELECT COUNT(*) AS count FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ? AND deletedAt IS NOT NULL",
+            "SELECT COUNT(*) AS count FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ? AND deletedTweetAt IS NOT NULL",
             [this.account?.username || "", "RT @%", 0],
             "get"
         ) as Sqlite3Count;
         const totalRetweetsDeleted: Sqlite3Count = exec(
             this.db,
-            "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedAt IS NOT NULL",
+            "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedRetweetAt IS NOT NULL",
             ["RT @%"],
             "get"
         ) as Sqlite3Count;
         const totalLikesDeleted: Sqlite3Count = exec(
             this.db,
-            "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL",
+            "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedLikeAt IS NOT NULL",
+            [1],
+            "get"
+        ) as Sqlite3Count;
+        const totalBookmarksDeleted: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ? AND deletedBookmarkAt IS NOT NULL",
             [1],
             "get"
         ) as Sqlite3Count;
@@ -1658,10 +1719,12 @@ export class XAccountController {
         progressInfo.totalTweetsArchived = totalTweetsArchived.count;
         progressInfo.totalRetweetsIndexed = totalRetweetsIndexed.count;
         progressInfo.totalLikesIndexed = totalLikesIndexed.count;
+        progressInfo.totalBookmarksIndexed = totalBookmarksIndexed.count;
         progressInfo.totalUnknownIndexed = totalUnknownIndexed.count;
         progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
         progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
         progressInfo.totalLikesDeleted = totalLikesDeleted.count;
+        progressInfo.totalBookmarksDeleted = totalBookmarksDeleted.count;
         progressInfo.totalConversationsDeleted = totalConversationsDeleted;
         progressInfo.totalAccountsUnfollowed = totalAccountsUnfollowed;
         return progressInfo;
@@ -1681,11 +1744,13 @@ export class XAccountController {
         const username = this.account.username;
 
         const tweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ?", ["RT @%", 0, username], "get") as Sqlite3Count;
-        const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ? AND deletedAt IS NOT NULL", ["RT @%", 0, username], "get") as Sqlite3Count;
+        const tweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ? AND deletedTweetAt IS NOT NULL", ["RT @%", 0, username], "get") as Sqlite3Count;
         const retweetsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ?", ["RT @%"], "get") as Sqlite3Count;
-        const retweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedAt IS NOT NULL", ["RT @%"], "get") as Sqlite3Count;
+        const retweetsDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedRetweetAt IS NOT NULL", ["RT @%"], "get") as Sqlite3Count;
         const likesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?", [1], "get") as Sqlite3Count;
-        const likesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedAt IS NOT NULL", [1], "get") as Sqlite3Count;
+        const likesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedLikeAt IS NOT NULL", [1], "get") as Sqlite3Count;
+        const bookmarksSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ?", [1], "get") as Sqlite3Count;
+        const bookmarksDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ? AND deletedBookmarkAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const conversationsDeleted = parseInt(await this.getConfig("totalConversationsDeleted") || "0");
         const accountsUnfollowed = parseInt(await this.getConfig("totalAccountsUnfollowed") || "0");
 
@@ -1695,6 +1760,8 @@ export class XAccountController {
         databaseStats.retweetsDeleted = retweetsDeleted.count;
         databaseStats.likesSaved = likesSaved.count;
         databaseStats.likesDeleted = likesDeleted.count;
+        databaseStats.bookmarksSaved = bookmarksSaved.count;
+        databaseStats.bookmarksDeleted = bookmarksDeleted.count;
         databaseStats.conversationsDeleted = conversationsDeleted;
         databaseStats.accountsUnfollowed = accountsUnfollowed
         return databaseStats;
@@ -1714,10 +1781,12 @@ export class XAccountController {
         const deleteTweetsStartResponse = await this.deleteTweetsStart()
         const deleteRetweetStartResponse = await this.deleteRetweetsStart()
         const deleteLikesStartResponse = await this.deleteLikesStart()
+        const deleteBookmarksStartResponse = await this.deleteBookmarksStart()
 
         deleteReviewStats.tweetsToDelete = deleteTweetsStartResponse.tweets.length;
         deleteReviewStats.retweetsToDelete = deleteRetweetStartResponse.tweets.length;
         deleteReviewStats.likesToDelete = deleteLikesStartResponse.tweets.length;
+        deleteReviewStats.bookmarksToDelete = deleteBookmarksStartResponse.tweets.length;
         return deleteReviewStats;
     }
 
@@ -1748,6 +1817,28 @@ export class XAccountController {
             }
         }
         return null;
+    }
+
+
+    // Unzip twitter archive to the account data folder using unzipper
+    // Return unzipped path if success, else null.
+    async unzipXArchive(archiveZipPath: string): Promise<string | null> {
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        if (!this.account) {
+            return null;
+        }
+        const unzippedPath = path.join(getAccountDataPath("X", this.account.username), path.parse(archiveZipPath).name)
+        await archiveZip.extract({ path: unzippedPath });
+        return unzippedPath
+    }
+
+    // Delete the unzipped X archive once the build is completed
+    async deleteUnzippedXArchive(archivePath: string): Promise<void> {
+        fs.rm(archivePath, { recursive: true, force: true }, err => {
+            if (err) {
+                log.error(`XAccountController.deleteUnzippedXArchive: Error occured while deleting unzipped folder: ${err}`);
+            }
+        });
     }
 
     // Return null on success, and a string (error message) on error
@@ -1871,7 +1962,7 @@ export class XAccountController {
                             skipCount++;
                         } else {
                             // Import it
-                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                                 username,
                                 tweet.id_str,
                                 new Date(tweet.created_at),
@@ -1879,6 +1970,7 @@ export class XAccountController {
                                 tweet.retweet_count,
                                 tweet.favorited ? 1 : 0,
                                 tweet.retweeted ? 1 : 0,
+                                0,
                                 tweet.full_text,
                                 `${username}/status/${tweet.id_str}`,
                                 new Date(),
@@ -2241,24 +2333,6 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexParseLikes', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseLikes();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexTweetsFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexTweetsFinished();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
     ipcMain.handle('X:indexParseConversations', async (_, accountID: number): Promise<XProgress> => {
         try {
             const controller = getXAccountController(accountID);
@@ -2304,37 +2378,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:indexConversationsFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexConversationsFinished();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexMessagesFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexMessagesFinished();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
     ipcMain.handle('X:indexConversationFinished', async (_, accountID: number, conversationID: string): Promise<void> => {
         try {
             const controller = getXAccountController(accountID);
             await controller.indexConversationFinished(conversationID);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexLikesFinished', async (_, accountID: number): Promise<XProgress> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexLikesFinished();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -2520,10 +2567,19 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string): Promise<void> => {
+    ipcMain.handle('X:deleteBookmarksStart', async (_, accountID: number): Promise<XDeleteTweetsStartResponse> => {
         try {
             const controller = getXAccountController(accountID);
-            await controller.deleteTweet(tweetID);
+            return await controller.deleteBookmarksStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteTweet', async (_, accountID: number, tweetID: string, deleteType: string): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.deleteTweet(tweetID, deleteType);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -2533,6 +2589,24 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.deleteDMsMarkAllDeleted();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:unzipXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.unzipXArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteUnzippedXArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteUnzippedXArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

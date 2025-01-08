@@ -46,6 +46,7 @@ export type XAccount = {
     archiveTweets: boolean;
     archiveTweetsHTML: boolean;
     archiveLikes: boolean;
+    archiveBookmarks: boolean;
     archiveDMs: boolean;
     deleteTweets: boolean;
     deleteTweetsDaysOldEnabled: boolean;
@@ -58,6 +59,7 @@ export type XAccount = {
     deleteRetweetsDaysOldEnabled: boolean;
     deleteRetweetsDaysOld: number;
     deleteLikes: boolean;
+    deleteBookmarks: boolean;
     deleteDMs: boolean;
     unfollowEveryone: boolean;
     followingCount: number;
@@ -109,9 +111,7 @@ export type XProgress = {
     isIndexLikesFinished: boolean;
     isArchiveTweetsFinished: boolean;
     isArchiveLikesFinished: boolean;
-    isDeleteTweetsFinished: boolean;
-    isDeleteRetweetsFinished: boolean;
-    isDeleteLikesFinished: boolean;
+    isIndexBookmarksFinished: boolean;
     isDeleteDMsFinished: boolean;
     isUnfollowEveryoneFinished: boolean;
 
@@ -130,6 +130,9 @@ export type XProgress = {
     totalLikesToArchive: number;
     likesArchived: number;
 
+    totalBookmarksToIndex: number;
+    bookmarksIndexed: number;
+
     totalConversations: number;
     conversationMessagesIndexed: number;
 
@@ -141,6 +144,9 @@ export type XProgress = {
 
     totalLikesToDelete: number;
     likesDeleted: number;
+
+    totalBookmarksToDelete: number;
+    bookmarksDeleted: number;
 
     conversationsDeleted: number;
     accountsUnfollowed: number;
@@ -158,9 +164,7 @@ export function emptyXProgress(): XProgress {
         isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
         isArchiveLikesFinished: false,
-        isDeleteTweetsFinished: false,
-        isDeleteRetweetsFinished: false,
-        isDeleteLikesFinished: false,
+        isIndexBookmarksFinished: false,
         isDeleteDMsFinished: false,
         isUnfollowEveryoneFinished: false,
 
@@ -179,6 +183,9 @@ export function emptyXProgress(): XProgress {
         totalLikesToArchive: 0,
         likesArchived: 0,
 
+        totalBookmarksToIndex: 0,
+        bookmarksIndexed: 0,
+
         totalConversations: 0,
         conversationMessagesIndexed: 0,
 
@@ -190,6 +197,9 @@ export function emptyXProgress(): XProgress {
 
         totalLikesToDelete: 0,
         likesDeleted: 0,
+
+        totalBookmarksToDelete: 0,
+        bookmarksDeleted: 0,
 
         conversationsDeleted: 0,
         accountsUnfollowed: 0,
@@ -248,10 +258,12 @@ export type XProgressInfo = {
     totalTweetsArchived: number;
     totalRetweetsIndexed: number;
     totalLikesIndexed: number;
+    totalBookmarksIndexed: number;
     totalUnknownIndexed: number;
     totalTweetsDeleted: number;
     totalRetweetsDeleted: number;
     totalLikesDeleted: number;
+    totalBookmarksDeleted: number;
     totalConversationsDeleted: number;
     totalAccountsUnfollowed: number;
 }
@@ -263,10 +275,12 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalTweetsArchived: 0,
         totalRetweetsIndexed: 0,
         totalLikesIndexed: 0,
+        totalBookmarksIndexed: 0,
         totalUnknownIndexed: 0,
         totalTweetsDeleted: 0,
         totalRetweetsDeleted: 0,
         totalLikesDeleted: 0,
+        totalBookmarksDeleted: 0,
         totalConversationsDeleted: 0,
         totalAccountsUnfollowed: 0
     }
@@ -283,6 +297,8 @@ export type XDatabaseStats = {
     retweetsDeleted: number;
     likesSaved: number;
     likesDeleted: number;
+    bookmarksSaved: number;
+    bookmarksDeleted: number;
     conversationsDeleted: number;
     accountsUnfollowed: number;
 }
@@ -295,6 +311,8 @@ export function emptyXDatabaseStats(): XDatabaseStats {
         retweetsDeleted: 0,
         likesSaved: 0,
         likesDeleted: 0,
+        bookmarksSaved: 0,
+        bookmarksDeleted: 0,
         conversationsDeleted: 0,
         accountsUnfollowed: 0
     }
@@ -304,13 +322,15 @@ export type XDeleteReviewStats = {
     tweetsToDelete: number;
     retweetsToDelete: number;
     likesToDelete: number;
+    bookmarksToDelete: number;
 }
 
 export function emptyXDeleteReviewStats(): XDeleteReviewStats {
     return {
         tweetsToDelete: 0,
         retweetsToDelete: 0,
-        likesToDelete: 0
+        likesToDelete: 0,
+        bookmarksToDelete: 0
     }
 }
 

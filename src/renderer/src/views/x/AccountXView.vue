@@ -44,7 +44,7 @@ import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
 import { setAccountRunning, openURL } from '../../util';
-import { xRequiresPremium } from '../../util_x';
+import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -219,15 +219,17 @@ const updateUserPremium = async () => {
         return;
     }
     userPremium.value = userPremiumResp.premium_access;
+
+    if (!userPremium.value) {
+        console.log('User does not have Premium access');
+        emitter?.emit(`x-premium-check-failed-${props.account.id}`);
+    }
 };
 
 emitter?.on('signed-in', async () => {
     console.log('AccountXView: User signed in');
     await updateUserAuthenticated();
     await updateUserPremium();
-    if (!userPremium.value) {
-        emitter?.emit('show-manage-account');
-    }
 });
 
 emitter?.on('signed-out', async () => {
@@ -237,25 +239,7 @@ emitter?.on('signed-out', async () => {
 });
 
 emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
-    const progressInfo = await window.electron.X.getProgressInfo(props.account.id);
-    console.log("AccountXView: submitting progress", "progressInfo", JSON.parse(JSON.stringify(progressInfo)));
-    const postXProgresResp = await apiClient.value.postXProgress({
-        account_uuid: progressInfo.accountUUID,
-        total_tweets_indexed: progressInfo.totalTweetsIndexed,
-        total_tweets_archived: progressInfo.totalTweetsArchived,
-        total_retweets_indexed: progressInfo.totalRetweetsIndexed,
-        total_likes_indexed: progressInfo.totalLikesIndexed,
-        total_unknown_indexed: progressInfo.totalUnknownIndexed,
-        total_tweets_deleted: progressInfo.totalTweetsDeleted,
-        total_retweets_deleted: progressInfo.totalRetweetsDeleted,
-        total_likes_deleted: progressInfo.totalLikesDeleted,
-        total_conversations_deleted: progressInfo.totalConversationsDeleted,
-        total_accounts_unfollowed: progressInfo.totalAccountsUnfollowed,
-    }, deviceInfo.value?.valid ? true : false)
-    if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
-        // Silently log the error and continue
-        console.log("AccountXView: submitting progress", "failed to post progress to the API", postXProgresResp.message);
-    }
+    await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
 });
 
 const startJobs = async () => {
@@ -460,7 +444,7 @@ onUnmounted(async () => {
             <div class="run-jobs-state-container d-flex">
                 <div class="run-jobs-state-content flex-grow-1">
                     <XJobDeleteTweets
-                        v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes"
+                        v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks"
                         :model="unref(model)" />
                 </div>
             </div>
@@ -498,7 +482,7 @@ onUnmounted(async () => {
                     <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" @update-account="updateAccount"
-                        @start-jobs-just-save="startJobsJustSave" />
+                        @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
 
                     <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                         :model="unref(model)"

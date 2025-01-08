@@ -51,6 +51,9 @@ contextBridge.exposeInMainWorld('electron', {
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
+    showSelectZIPFileDialog: (): Promise<string | null> => {
+        return ipcRenderer.invoke('showSelectZIPFileDialog')
+    },
     showSelectFolderDialog: (): Promise<string | null> => {
         return ipcRenderer.invoke('showSelectFolderDialog')
     },
@@ -149,6 +152,9 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseLikes: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseLikes', accountID)
         },
+        indexParseBookmarks: (accountID: number): Promise<XProgress> => {
+            return ipcRenderer.invoke('X:indexParseBookmarks', accountID)
+        },
         indexParseConversations: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseConversations', accountID)
         },
@@ -164,20 +170,8 @@ contextBridge.exposeInMainWorld('electron', {
         indexParseMessages: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseMessages', accountID)
         },
-        indexTweetsFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexTweetsFinished', accountID)
-        },
-        indexConversationsFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexConversationsFinished', accountID)
-        },
-        indexMessagesFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexMessagesFinished', accountID)
-        },
         indexConversationFinished: (accountID: number, conversationID: string): Promise<void> => {
             return ipcRenderer.invoke('X:indexConversationFinished', accountID, conversationID)
-        },
-        indexLikesFinished: (accountID: number): Promise<XProgress> => {
-            return ipcRenderer.invoke('X:indexLikesFinished', accountID)
         },
         archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
             return ipcRenderer.invoke('X:archiveTweetsStart', accountID)
@@ -239,14 +233,23 @@ contextBridge.exposeInMainWorld('electron', {
         deleteLikesStart: (accountID: number): Promise<XDeleteTweetsStartResponse> => {
             return ipcRenderer.invoke('X:deleteLikesStart', accountID);
         },
-        deleteTweet: (accountID: number, tweetID: string): Promise<void> => {
-            return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID);
+        deleteBookmarksStart: (accountID: number): Promise<XDeleteTweetsStartResponse> => {
+            return ipcRenderer.invoke('X:deleteBookmarksStart', accountID);
+        },
+        deleteTweet: (accountID: number, tweetID: string, deleteType: string): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteTweet', accountID, tweetID, deleteType);
         },
         deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsMarkAllDeleted', accountID);
         },
         deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:deleteDMsScrollToBottom', accountID);
+        },
+        unzipXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:unzipXArchive', accountID, archivePath);
+        },
+        deleteUnzippedXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:deleteUnzippedXArchive', accountID, archivePath);
         },
         verifyXArchive: (accountID: number, archivePath: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:verifyXArchive', accountID, archivePath);

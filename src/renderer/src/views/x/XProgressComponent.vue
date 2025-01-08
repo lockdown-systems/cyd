@@ -120,6 +120,18 @@ onUnmounted(() => {
                 </p>
             </template>
 
+            <!-- Index bookmarks -->
+            <template v-if="progress.currentJob == 'indexBookmarks'">
+                <p>
+                    Saved
+                    <b>{{ progress.bookmarksIndexed.toLocaleString() }} bookmarks</b>.
+                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                    <template v-if="progress.isIndexBookmarksFinished">
+                        Saving complete!
+                    </template>
+                </p>
+            </template>
+
             <!-- Archive Tweets -->
             <template v-if="progress.currentJob == 'archiveTweets'">
                 <p>
@@ -150,9 +162,6 @@ onUnmounted(() => {
                     <b>{{ progress.tweetsDeleted.toLocaleString() }} of
                         {{ progress.totalTweetsToDelete.toLocaleString() }} tweets</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
-                    <template v-if="progress.isDeleteTweetsFinished">
-                        Finished deleting tweets!
-                    </template>
                 </p>
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
@@ -173,9 +182,6 @@ onUnmounted(() => {
                     <b>{{ progress.retweetsDeleted.toLocaleString() }} of
                         {{ progress.totalRetweetsToDelete.toLocaleString() }} retweets</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
-                    <template v-if="progress.isDeleteRetweetsFinished">
-                        Finished deleting retweets!
-                    </template>
                 </p>
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
@@ -196,9 +202,6 @@ onUnmounted(() => {
                     <b>{{ progress.likesDeleted.toLocaleString() }} of
                         {{ progress.totalLikesToDelete.toLocaleString() }} likes</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
-                    <template v-if="progress.isDeleteLikesFinished">
-                        Finished deleting likes!
-                    </template>
                 </p>
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
@@ -207,6 +210,26 @@ onUnmounted(() => {
                             :aria-valuenow="(progress.likesDeleted / progress.totalLikesToDelete) * 100"
                             aria-valuemin="0" aria-valuemax="100">
                             {{ Math.round((progress.likesDeleted / progress.totalLikesToDelete) * 100) }}%
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Delete Bookmarks -->
+            <template v-if="progress.currentJob == 'deleteBookmarks'">
+                <p>
+                    Deleted
+                    <b>{{ progress.bookmarksDeleted.toLocaleString() }} of
+                        {{ progress.totalBookmarksToDelete.toLocaleString() }} bookmarks</b>.
+                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.bookmarksDeleted / progress.totalBookmarksToDelete) * 100}%` }"
+                            :aria-valuenow="(progress.bookmarksDeleted / progress.totalBookmarksToDelete) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.bookmarksDeleted / progress.totalBookmarksToDelete) * 100) }}%
                         </div>
                     </div>
                 </div>

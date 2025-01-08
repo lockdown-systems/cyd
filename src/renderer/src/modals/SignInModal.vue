@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, inject, Ref, watch, getCurrentInstance } from 'vue';
 import type { DeviceInfo } from '../types';
-import { Account, XProgressInfo } from '../../../shared_types'
+import { Account } from '../../../shared_types'
 import CydAPIClient, { APIErrorResponse } from '../../../cyd-api-client';
+import { xPostProgress } from '../util_x';
+
 import Modal from 'bootstrap/js/dist/modal';
 
 const emit = defineEmits(['hide']);
@@ -132,24 +134,7 @@ async function registerDevice() {
     for (let i = 0; i < accounts.length; i++) {
         if (accounts[i].type == 'X') {
             try {
-                const progressInfo: XProgressInfo = await window.electron.X.getProgressInfo(accounts[i].id);
-                const postXProgresResp = await apiClient.value.postXProgress({
-                    account_uuid: progressInfo.accountUUID,
-                    total_tweets_indexed: progressInfo.totalTweetsIndexed,
-                    total_tweets_archived: progressInfo.totalTweetsArchived,
-                    total_retweets_indexed: progressInfo.totalRetweetsIndexed,
-                    total_likes_indexed: progressInfo.totalLikesIndexed,
-                    total_unknown_indexed: progressInfo.totalUnknownIndexed,
-                    total_tweets_deleted: progressInfo.totalTweetsDeleted,
-                    total_retweets_deleted: progressInfo.totalRetweetsDeleted,
-                    total_likes_deleted: progressInfo.totalLikesDeleted,
-                    total_conversations_deleted: progressInfo.totalConversationsDeleted,
-                    total_accounts_unfollowed: progressInfo.totalAccountsUnfollowed,
-                }, true);
-                if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
-                    // Silently log the error and continue
-                    console.log("Error posting X progress:", postXProgresResp.message);
-                }
+                await xPostProgress(apiClient.value, deviceInfo.value, accounts[i].id);
             } catch (e) {
                 // Silently log the error and continue
                 console.log("Error getting X progress:", e);

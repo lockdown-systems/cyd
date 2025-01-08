@@ -58,10 +58,12 @@ export type PostXProgressAPIRequest = {
     total_tweets_archived: number;
     total_retweets_indexed: number;
     total_likes_indexed: number;
+    total_bookmarks_indexed: number;
     total_unknown_indexed: number;
     total_tweets_deleted: number;
     total_retweets_deleted: number;
     total_likes_deleted: number;
+    total_bookmarks_deleted: number;
     total_conversations_deleted: number;
     total_accounts_unfollowed: number;
 };

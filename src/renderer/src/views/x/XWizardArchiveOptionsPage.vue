@@ -28,6 +28,7 @@ const backClicked = async () => {
 
 // Settings
 const archiveTweetsHTML = ref(false);
+const archiveBookmarks = ref(false);
 const archiveDMs = ref(false);
 
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
@@ -37,6 +38,7 @@ const loadSettings = async () => {
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
         archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
+        archiveBookmarks.value = account.xAccount.archiveBookmarks;
         archiveDMs.value = account.xAccount.archiveDMs;
     }
 };
@@ -54,6 +56,7 @@ const saveSettings = async () => {
         account.xAccount.archiveMyData = true;
 
         account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
+        account.xAccount.archiveBookmarks = archiveBookmarks.value;
         account.xAccount.archiveDMs = archiveDMs.value;
         await window.electron.database.saveAccount(JSON.stringify(account));
         emit('updateAccount');
@@ -76,7 +79,7 @@ onMounted(async () => {
                 Archive options
             </h2>
             <p class="text-muted">
-                You can save an HTML version of each tweet, and you can save your direct messages.
+                You can save an HTML version of each tweet, and you can save your bookmarks and your direct messages.
             </p>
         </div>
 
@@ -107,6 +110,12 @@ onMounted(async () => {
             </div>
             <div class="mb-3">
                 <div class="form-check">
+                    <input id="archiveBookmarks" v-model="archiveBookmarks" type="checkbox" class="form-check-input">
+                    <label class="form-check-label" for="archiveBookmarks">Save my bookmarks</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check">
                     <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
                     <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
                 </div>
@@ -119,7 +128,7 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(archiveTweetsHTML || archiveDMs)" @click="nextClicked">
+                    :disabled="!(archiveTweetsHTML || archiveBookmarks || archiveDMs)" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review
                 </button>

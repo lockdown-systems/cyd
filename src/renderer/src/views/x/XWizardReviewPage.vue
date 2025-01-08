@@ -29,8 +29,10 @@ const nextClicked = async () => {
 const backClicked = async () => {
     if (props.model.account?.xAccount?.deleteMyData) {
         emit('setState', State.WizardDeleteOptions);
-    } else {
+    } else if (props.model.account?.xAccount?.saveMyData) {
         emit('setState', State.WizardBuildOptions);
+    } else {
+        emit('setState', State.WizardArchiveOptions);
     }
 };
 
@@ -81,6 +83,9 @@ onMounted(async () => {
                     <li v-if="model.account?.xAccount?.archiveLikes">
                         Save likes
                     </li>
+                    <li v-if="model.account?.xAccount?.archiveBookmarks">
+                        Save bookmarks
+                    </li>
                     <li v-if="model.account?.xAccount?.archiveDMs">
                         Save direct messages
                     </li>
@@ -95,6 +100,9 @@ onMounted(async () => {
                 <ul>
                     <li v-if="model.account?.xAccount?.archiveTweetsHTML">
                         Save HTML versions of tweets
+                    </li>
+                    <li v-if="model.account?.xAccount?.archiveBookmarks">
+                        Save bookmarks
                     </li>
                     <li v-if="model.account?.xAccount?.archiveDMs">
                         Save direct messages
@@ -159,6 +167,9 @@ onMounted(async () => {
                     <li v-if="hasSomeData && model.account?.xAccount?.deleteLikes">
                         <b>{{ deleteReviewStats.likesToDelete.toLocaleString() }} likes</b>
                     </li>
+                    <li v-if="hasSomeData && model.account?.xAccount?.deleteBookmarks">
+                        <b>{{ deleteReviewStats.bookmarksToDelete.toLocaleString() }} bookmarks</b>
+                    </li>
                     <li v-if="model.account?.xAccount?.unfollowEveryone">
                         <b>Unfollow everyone</b>
                     </li>
@@ -174,19 +185,22 @@ onMounted(async () => {
                     <template v-if="model.account?.xAccount?.deleteMyData">
                         Back to Delete Options
                     </template>
-                    <template v-else>
+                    <template v-else-if="model.account?.xAccount?.saveMyData">
                         Back to Build Options
+                    </template>
+                    <template v-else>
+                        Back to Archive Options
                     </template>
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveDMs)"
+                    :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     <template v-if="model.account?.xAccount?.saveMyData">
                         Build Database
                     </template>
-                    <template v-if="model.account?.xAccount?.archiveMyData">
+                    <template v-else-if="model.account?.xAccount?.archiveMyData">
                         Start Archiving
                     </template>
                     <template v-else>
