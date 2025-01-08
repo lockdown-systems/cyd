@@ -7,7 +7,7 @@ import Database from 'better-sqlite3'
 import { app, ipcMain, session } from 'electron';
 
 import { getSettingsPath, packageExceptionForReport } from "./util"
-import { ErrorReport, Account, XAccount } from './shared_types'
+import { ErrorReport, Account, XAccount, BlueskyAccount } from './shared_types'
 
 export type Migration = {
     name: string;
@@ -74,7 +74,7 @@ export const runMainMigrations = () => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL DEFAULT 'unknown',
     sortOrder INTEGER NOT NULL DEFAULT 0,
-    xAccountId INTEGER DEFAULT NULL,
+    xAccountID INTEGER DEFAULT NULL,
     uuid TEXT NOT NULL
 );`, `CREATE TABLE xAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -165,9 +165,9 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN deleteBookmarks BOOLEAN DEFAULT 0;`,
             ]
         },
-        // Add Bluesky table
+        // Add Bluesky table, and blueskyAccountID to account
         {
-            name: "add Bluesky table",
+            name: "add Bluesky table, and blueskyAccountID to account",
             sql: [
                 `CREATE TABLE blueskyAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -181,24 +181,26 @@ export const runMainMigrations = () => {
     archivePosts BOOLEAN DEFAULT 1,
     archivePostsHTML BOOLEAN DEFAULT 0,
     archiveLikes BOOLEAN DEFAULT 1,
-    archiveDMs BOOLEAN DEFAULT 1,
     deletePosts BOOLEAN DEFAULT 1,
+    deletePostsDaysOldEnabled BOOLEAN DEFAULT 0,
     deletePostsDaysOld INTEGER DEFAULT 0,
     deletePostsLikesThresholdEnabled BOOLEAN DEFAULT 0,
     deletePostsLikesThreshold INTEGER DEFAULT 20,
     deletePostsRepostsThresholdEnabled BOOLEAN DEFAULT 0,
     deletePostsRepostsThreshold INTEGER DEFAULT 20,
     deleteReposts BOOLEAN DEFAULT 1,
+    deleteRepostsDaysOldEnabled BOOLEAN DEFAULT 0,
     deleteRepostsDaysOld INTEGER DEFAULT 0,
     deleteLikes BOOLEAN DEFAULT 0,
+    deleteLikesDaysOldEnabled BOOLEAN DEFAULT 0,
     deleteLikesDaysOld INTEGER DEFAULT 0,
-    deleteDMs BOOLEAN DEFAULT 0,
     unfollowEveryone BOOLEAN DEFAULT 1,
     followingCount INTEGER DEFAULT 0,
     followersCount INTEGER DEFAULT 0,
     postsCount INTEGER DEFAULT -1,
     likesCount INTEGER DEFAULT -1
 );`,
+                `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
             ]
         },
     ]);
@@ -222,7 +224,8 @@ interface AccountRow {
     id: number;
     type: string;
     sortOrder: number;
-    xAccountId: number | null;
+    xAccountID: number | null;
+    blueskyAccountID: number | null;
     uuid: string;
 }
 
@@ -274,19 +277,19 @@ export interface BlueskyAccountRow {
     archivePosts: boolean;
     archivePostsHTML: boolean;
     archiveLikes: boolean;
-    archiveDMs: boolean;
     deletePosts: boolean;
+    deletePostsDaysOldEnabled: boolean;
     deletePostsDaysOld: number;
     deletePostsLikesThresholdEnabled: boolean;
     deletePostsLikesThreshold: number;
     deletePostsRepostsThresholdEnabled: boolean;
     deletePostsRepostsThreshold: number;
     deleteReposts: boolean;
+    deleteRepostsDaysOldEnabled: boolean;
     deleteRepostsDaysOld: number;
     deleteLikes: boolean;
+    deleteLikesDaysOldEnabled: boolean;
     deleteLikesDaysOld: number;
-    deleteDMs: boolean;
-    unfollowEveryone: boolean;
     followingCount: number;
     followersCount: number;
     postsCount: number;
@@ -614,6 +617,156 @@ export const saveXAccount = (account: XAccount) => {
     ]);
 }
 
+// Bluesky accounts
+// Get a single Bluesky account by ID
+export const getBlueskyAccount = (id: number): BlueskyAccount | null => {
+    const row: BlueskyAccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM blueskyAccount WHERE id = ?', [id], 'get') as BlueskyAccountRow | undefined;
+    if (!row) {
+        return null;
+    }
+    return {
+        id: row.id,
+        createdAt: new Date(row.createdAt),
+        updatedAt: new Date(row.updatedAt),
+        accessedAt: new Date(row.accessedAt),
+        username: row.username,
+        profileImageDataURI: row.profileImageDataURI,
+        saveMyData: !!row.saveMyData,
+        deleteMyData: !!row.deleteMyData,
+        archivePosts: !!row.archivePosts,
+        archivePostsHTML: !!row.archivePostsHTML,
+        archiveLikes: !!row.archiveLikes,
+        deletePosts: !!row.deletePosts,
+        deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
+        deletePostsDaysOld: row.deletePostsDaysOld,
+        deletePostsLikesThresholdEnabled: !!row.deletePostsLikesThresholdEnabled,
+        deletePostsLikesThreshold: row.deletePostsLikesThreshold,
+        deletePostsRepostsThresholdEnabled: !!row.deletePostsRepostsThresholdEnabled,
+        deletePostsRepostsThreshold: row.deletePostsRepostsThreshold,
+        deleteReposts: !!row.deleteReposts,
+        deleteRepostsDaysOldEnabled: !!row.deleteRepostsDaysOldEnabled,
+        deleteRepostsDaysOld: row.deleteRepostsDaysOld,
+        deleteLikes: !!row.deleteLikes,
+        deleteLikesDaysOldEnabled: !!row.deleteLikesDaysOldEnabled,
+        deleteLikesDaysOld: row.deleteLikesDaysOld,
+        followingCount: row.followingCount,
+        followersCount: row.followersCount,
+        postsCount: row.postsCount,
+        likesCount: row.likesCount
+    };
+}
+
+// Get all Bluesky accounts
+export const getBlueskyAccounts = (): BlueskyAccount[] => {
+    const rows: BlueskyAccountRow[] = exec(getMainDatabase(), 'SELECT * FROM blueskyAccount', [], 'all') as BlueskyAccountRow[];
+
+    const accounts: BlueskyAccount[] = [];
+    for (const row of rows) {
+        accounts.push({
+            id: row.id,
+            createdAt: new Date(row.createdAt),
+            updatedAt: new Date(row.updatedAt),
+            accessedAt: new Date(row.accessedAt),
+            username: row.username,
+            profileImageDataURI: row.profileImageDataURI,
+            saveMyData: !!row.saveMyData,
+            deleteMyData: !!row.deleteMyData,
+            archivePosts: !!row.archivePosts,
+            archivePostsHTML: !!row.archivePostsHTML,
+            archiveLikes: !!row.archiveLikes,
+            deletePosts: !!row.deletePosts,
+            deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
+            deletePostsDaysOld: row.deletePostsDaysOld,
+            deletePostsLikesThresholdEnabled: !!row.deletePostsLikesThresholdEnabled,
+            deletePostsLikesThreshold: row.deletePostsLikesThreshold,
+            deletePostsRepostsThresholdEnabled: !!row.deletePostsRepostsThresholdEnabled,
+            deletePostsRepostsThreshold: row.deletePostsRepostsThreshold,
+            deleteReposts: !!row.deleteReposts,
+            deleteRepostsDaysOldEnabled: !!row.deleteRepostsDaysOldEnabled,
+            deleteRepostsDaysOld: row.deleteRepostsDaysOld,
+            deleteLikes: !!row.deleteLikes,
+            deleteLikesDaysOldEnabled: !!row.deleteLikesDaysOldEnabled,
+            deleteLikesDaysOld: row.deleteLikesDaysOld,
+            followingCount: row.followingCount,
+            followersCount: row.followersCount,
+            postsCount: row.postsCount,
+            likesCount: row.likesCount
+        });
+    }
+    return accounts;
+}
+
+// Create a new Bluesky account
+export const createBlueskyAccount = (): BlueskyAccount => {
+    const info: Sqlite3Info = exec(getMainDatabase(), 'INSERT INTO blueskyAccount DEFAULT VALUES') as Sqlite3Info;
+    const account = getBlueskyAccount(info.lastInsertRowid);
+    if (!account) {
+        throw new Error("Failed to create account");
+    }
+    return account;
+}
+
+// Update the Bluesky account based on account.id
+export const saveBlueskyAccount = (account: BlueskyAccount) => {
+    exec(getMainDatabase(), `
+        UPDATE blueskyAccount
+        SET
+            updatedAt = CURRENT_TIMESTAMP,
+            accessedAt = CURRENT_TIMESTAMP,
+            username = ?,
+            profileImageDataURI = ?,
+            saveMyData = ?,
+            deleteMyData = ?,
+            archivePosts = ?,
+            archivePostsHTML = ?,
+            archiveLikes = ?,
+            deletePosts = ?,
+            deletePostsDaysOld = ?,
+            deletePostsDaysOldEnabled = ?,
+            deletePostsLikesThresholdEnabled = ?,
+            deletePostsLikesThreshold = ?,
+            deletePostsRepostsThresholdEnabled = ?,
+            deletePostsRepostsThreshold = ?,
+            deleteReposts = ?,
+            deleteRepostsDaysOldEnabled = ?,
+            deleteRepostsDaysOld = ?,
+            deleteLikes = ?,
+            deleteLikesDaysOldEnabled = ?,
+            deleteLikesDaysOld = ?,
+            followingCount = ?,
+            followersCount = ?,
+            postsCount = ?,
+            likesCount = ?
+        WHERE id = ?
+    `, [
+        account.username,
+        account.profileImageDataURI,
+        account.saveMyData ? 1 : 0,
+        account.deleteMyData ? 1 : 0,
+        account.archivePosts ? 1 : 0,
+        account.archivePostsHTML ? 1 : 0,
+        account.archiveLikes ? 1 : 0,
+        account.deletePosts ? 1 : 0,
+        account.deletePostsDaysOld,
+        account.deletePostsDaysOldEnabled ? 1 : 0,
+        account.deletePostsLikesThresholdEnabled ? 1 : 0,
+        account.deletePostsLikesThreshold,
+        account.deletePostsRepostsThresholdEnabled ? 1 : 0,
+        account.deletePostsRepostsThreshold,
+        account.deleteReposts ? 1 : 0,
+        account.deleteRepostsDaysOldEnabled ? 1 : 0,
+        account.deleteRepostsDaysOld,
+        account.deleteLikes ? 1 : 0,
+        account.deleteLikesDaysOldEnabled ? 1 : 0,
+        account.deleteLikesDaysOld,
+        account.followingCount,
+        account.followersCount,
+        account.postsCount,
+        account.likesCount,
+        account.id
+    ]);
+}
+
 // Accounts, which contain all others
 
 export const getAccount = (id: number): Account | null => {
@@ -623,10 +776,17 @@ export const getAccount = (id: number): Account | null => {
     }
 
     let xAccount: XAccount | null = null;
+    let blueskyAccount: BlueskyAccount | null = null;
     switch (row.type) {
         case "X":
-            if (row.xAccountId) {
-                xAccount = getXAccount(row.xAccountId);
+            if (row.xAccountID) {
+                xAccount = getXAccount(row.xAccountID);
+            }
+            break;
+
+        case "Bluesky":
+            if (row.blueskyAccountID) {
+                blueskyAccount = getBlueskyAccount(row.blueskyAccountID);
             }
             break;
     }
@@ -636,6 +796,7 @@ export const getAccount = (id: number): Account | null => {
         type: row.type,
         sortOrder: row.sortOrder,
         xAccount: xAccount,
+        blueskyAccount: blueskyAccount,
         uuid: row.uuid
     };
 }
@@ -643,6 +804,8 @@ export const getAccount = (id: number): Account | null => {
 export async function getAccountUsername(account: Account): Promise<string | null> {
     if (account.type == "X" && account.xAccount) {
         return account.xAccount?.username;
+    } else if (account.type == "Bluesky" && account.blueskyAccount) {
+        return account.blueskyAccount?.username;
     }
 
     return null;
@@ -654,12 +817,18 @@ export const getAccounts = (): Account[] => {
     const accounts: Account[] = [];
     for (const row of rows) {
         let xAccount: XAccount | null = null;
+        let blueskyAccount: BlueskyAccount | null = null;
         switch (row.type) {
             case "X":
-                if (row.xAccountId) {
-                    xAccount = getXAccount(row.xAccountId);
+                if (row.xAccountID) {
+                    xAccount = getXAccount(row.xAccountID);
                 }
                 break;
+            case "Bluesky":
+                if (row.blueskyAccountID) {
+                    blueskyAccount = getBlueskyAccount(row.blueskyAccountID);
+                }
+                break
         }
 
         accounts.push({
@@ -667,6 +836,7 @@ export const getAccounts = (): Account[] => {
             type: row.type,
             sortOrder: row.sortOrder,
             xAccount: xAccount,
+            blueskyAccount: blueskyAccount,
             uuid: row.uuid
         });
     }
@@ -706,20 +876,28 @@ export const selectAccountType = (accountID: number, type: string): Account => {
         case "X":
             account.xAccount = createXAccount();
             break;
+        case "Bluesky":
+            account.blueskyAccount = createBlueskyAccount();
+            break;
         default:
             throw new Error("Unknown account type");
     }
+
+    const xAccountID = account.xAccount ? account.xAccount.id : null;
+    const blueskyAccountID = account.blueskyAccount ? account.blueskyAccount.id : null;
 
     // Update the account
     exec(getMainDatabase(), `
         UPDATE account
         SET
             type = ?,
-            xAccountId = ?
+            xAccountID = ?,
+            blueskyAccountID = ?
         WHERE id = ?
     `, [
         type,
-        account.xAccount.id,
+        xAccountID,
+        blueskyAccountID,
         account.id
     ]);
 
@@ -731,6 +909,9 @@ export const selectAccountType = (accountID: number, type: string): Account => {
 export const saveAccount = (account: Account) => {
     if (account.xAccount) {
         saveXAccount(account.xAccount);
+    }
+    else if (account.blueskyAccount) {
+        saveBlueskyAccount(account.blueskyAccount);
     }
 
     exec(getMainDatabase(), `
@@ -758,6 +939,11 @@ export const deleteAccount = (accountID: number) => {
         case "X":
             if (account.xAccount) {
                 exec(getMainDatabase(), 'DELETE FROM xAccount WHERE id = ?', [account.xAccount.id]);
+            }
+            break;
+        case "Bluesky":
+            if (account.blueskyAccount) {
+                exec(getMainDatabase(), 'DELETE FROM blueskyAccount WHERE id = ?', [account.blueskyAccount.id]);
             }
             break;
     }

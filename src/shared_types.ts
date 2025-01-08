@@ -29,6 +29,7 @@ export type Account = {
     type: string; // "X"
     sortOrder: number;
     xAccount: XAccount | null;
+    blueskyAccount: BlueskyAccount | null;
     uuid: string;
 }
 
@@ -67,6 +68,37 @@ export type XAccount = {
     tweetsCount: number;
     likesCount: number;
 };
+
+export type BlueskyAccount = {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+    accessedAt: Date;
+    username: string;
+    profileImageDataURI: string;
+    saveMyData: boolean;
+    deleteMyData: boolean;
+    archivePosts: boolean;
+    archivePostsHTML: boolean;
+    archiveLikes: boolean;
+    deletePosts: boolean;
+    deletePostsDaysOldEnabled: boolean;
+    deletePostsDaysOld: number;
+    deletePostsLikesThresholdEnabled: boolean;
+    deletePostsLikesThreshold: number;
+    deletePostsRepostsThresholdEnabled: boolean;
+    deletePostsRepostsThreshold: number;
+    deleteReposts: boolean;
+    deleteRepostsDaysOldEnabled: boolean;
+    deleteRepostsDaysOld: number;
+    deleteLikes: boolean;
+    deleteLikesDaysOldEnabled: boolean;
+    deleteLikesDaysOld: number;
+    followingCount: number;
+    followersCount: number;
+    postsCount: number;
+    likesCount: number;
+}
 
 // X models
 
