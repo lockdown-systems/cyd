@@ -1823,12 +1823,14 @@ export class XAccountController {
     // Unzip twitter archive to the account data folder using unzipper
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
-        const archiveZip = await unzipper.Open.file(archiveZipPath);
         if (!this.account) {
             return null;
         }
-        const unzippedPath = path.join(getAccountDataPath("X", this.account.username), path.parse(archiveZipPath).name)
+        const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "official-x-archive");
+
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: unzippedPath });
+
         return unzippedPath
     }
 
