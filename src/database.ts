@@ -74,7 +74,7 @@ export const runMainMigrations = () => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL DEFAULT 'unknown',
     sortOrder INTEGER NOT NULL DEFAULT 0,
-    xAccountID INTEGER DEFAULT NULL,
+    xAccountId INTEGER DEFAULT NULL,
     uuid TEXT NOT NULL
 );`, `CREATE TABLE xAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -224,7 +224,7 @@ interface AccountRow {
     id: number;
     type: string;
     sortOrder: number;
-    xAccountID: number | null;
+    xAccountId: number | null;
     blueskyAccountID: number | null;
     uuid: string;
 }
@@ -779,8 +779,8 @@ export const getAccount = (id: number): Account | null => {
     let blueskyAccount: BlueskyAccount | null = null;
     switch (row.type) {
         case "X":
-            if (row.xAccountID) {
-                xAccount = getXAccount(row.xAccountID);
+            if (row.xAccountId) {
+                xAccount = getXAccount(row.xAccountId);
             }
             break;
 
@@ -820,8 +820,8 @@ export const getAccounts = (): Account[] => {
         let blueskyAccount: BlueskyAccount | null = null;
         switch (row.type) {
             case "X":
-                if (row.xAccountID) {
-                    xAccount = getXAccount(row.xAccountID);
+                if (row.xAccountId) {
+                    xAccount = getXAccount(row.xAccountId);
                 }
                 break;
             case "Bluesky":
@@ -883,7 +883,7 @@ export const selectAccountType = (accountID: number, type: string): Account => {
             throw new Error("Unknown account type");
     }
 
-    const xAccountID = account.xAccount ? account.xAccount.id : null;
+    const xAccountId = account.xAccount ? account.xAccount.id : null;
     const blueskyAccountID = account.blueskyAccount ? account.blueskyAccount.id : null;
 
     // Update the account
@@ -891,12 +891,12 @@ export const selectAccountType = (accountID: number, type: string): Account => {
         UPDATE account
         SET
             type = ?,
-            xAccountID = ?,
+            xAccountId = ?,
             blueskyAccountID = ?
         WHERE id = ?
     `, [
         type,
-        xAccountID,
+        xAccountId,
         blueskyAccountID,
         account.id
     ]);
