@@ -74,7 +74,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="col-12 col-md-6">
+          <!-- <div class="col-12 col-md-6">
             <div class="card m-2 select-account-bluesky" @click="accountClicked('Bluesky')">
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
@@ -90,7 +90,7 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
         </div>
 
         <p class="text-muted mt-3">
