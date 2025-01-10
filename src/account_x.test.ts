@@ -9,7 +9,7 @@ import {
     XAPILegacyTweet,
     XAPIConversation,
     XAPIUser
-} from './account_x_types';
+} from './account_x';
 import {
     XTweetRow,
     XUserRow,
