@@ -59,6 +59,8 @@ export function getAccountIcon(accountType: string): string {
             // Not using the real X logo to avoid trademark issues
             // return "fa-brands fa-x-twitter";
             return "fa-solid fa-xmark";
+        case "Bluesky":
+            return "fa-brands fa-bluesky";
         default:
             return "fa-solid fa-gears";
     }

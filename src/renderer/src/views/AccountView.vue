@@ -55,22 +55,42 @@ onMounted(async () => {
           Ready to get started? Add a new account.
         </p>
 
-        <div class="select-account select-account-x d-flex flex-wrap" @click="accountClicked('X')">
-          <div class="card m-2">
-            <div class="card-body d-flex align-items-center">
-              <div class="logo mr-2">
-                <i :class="getAccountIcon('X')" />
-              </div>
-              <div class="description">
-                <div class="name">
-                  X
+        <div class="select-account row">
+          <div class="col-12 col-md-6">
+            <div class="card m-2 select-account-x" @click="accountClicked('X')">
+              <div class="card-body d-flex align-items-center">
+                <div class="logo mr-3">
+                  <i :class="getAccountIcon('X')" />
                 </div>
-                <div class="info text-muted">
-                  Formerly Twitter, owned by Elon Musk
+                <div class="description">
+                  <div class="name">
+                    X
+                  </div>
+                  <div class="info text-muted">
+                    Formerly Twitter, owned by Elon Musk
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- <div class="col-12 col-md-6">
+            <div class="card m-2 select-account-bluesky" @click="accountClicked('Bluesky')">
+              <div class="card-body d-flex align-items-center">
+                <div class="logo mr-3">
+                  <i :class="getAccountIcon('Bluesky')" />
+                </div>
+                <div class="description">
+                  <div class="name">
+                    Bluesky
+                  </div>
+                  <div class="info text-muted">
+                    Open source decentralized social media platform
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div> -->
         </div>
 
         <p class="text-muted mt-3">
