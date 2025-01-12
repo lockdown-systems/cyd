@@ -72,11 +72,6 @@ const startClicked = async () => {
         return;
     }
 
-    // Debugging
-    const debugResp = await window.electron.X.debugXArchive(props.model.account.id, unzippedPath);
-    console.log(debugResp);
-    await window.electron.showMessage(`Path: ${unzippedPath}\n\nFilenames:\n${debugResp.join('\n')}`);
-
     // Verify that the archive is valid
     statusValidating.value = ImportStatus.Active;
     let verifyResp: string | null = null;
