@@ -24,6 +24,8 @@ import type {
 } from "../../shared_types";
 import App from "./App.vue";
 
+import { FileFilter } from "electron";
+
 declare global {
     interface Window {
         electron: {
@@ -38,8 +40,7 @@ declare global {
             showMessage: (message: string) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
-            showSelectZIPFileDialog: () => Promise<string | null>;
-            showSelectFolderDialog: () => Promise<string | null>;
+            showOpenDialog: (selectFolders: boolean, selectFiles: boolean, fileFilters: FileFilter[] | undefined) => Promise<string | null>;
             openURL: (url: string) => void;
             loadFileInWebview: (webContentsId: number, filename: string) => void;
             getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,

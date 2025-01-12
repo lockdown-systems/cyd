@@ -53,23 +53,28 @@ const createCountString = (importCount: number, skipCount: number) => {
 const startClicked = async () => {
     errorMessages.value = [];
     importStarted.value = true;
-
-    // Unarchive the zip
     let unzippedPath: string | null = null;
-    statusValidating.value = ImportStatus.Active;
-    try {
-        unzippedPath = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
-    } catch (e) {
-        statusValidating.value = ImportStatus.Failed;
-        errorMessages.value.push(`${e}`);
-        importFailed.value = true;
-        return;
-    }
-    if (unzippedPath === null) {
-        statusValidating.value = ImportStatus.Failed;
-        errorMessages.value.push(unzippedPath);
-        importFailed.value = true;
-        return;
+
+    // Does importFromArchivePath end with .zip?
+    if (!importFromArchivePath.value.endsWith('.zip')) {
+        unzippedPath = importFromArchivePath.value;
+    } else {
+        // Unarchive the zip
+        statusValidating.value = ImportStatus.Active;
+        try {
+            unzippedPath = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
+        } catch (e) {
+            statusValidating.value = ImportStatus.Failed;
+            errorMessages.value.push(`${e}`);
+            importFailed.value = true;
+            return;
+        }
+        if (unzippedPath === null) {
+            statusValidating.value = ImportStatus.Failed;
+            errorMessages.value.push(unzippedPath);
+            importFailed.value = true;
+            return;
+        }
     }
 
     // Verify that the archive is valid
@@ -145,7 +150,7 @@ const startClicked = async () => {
 };
 
 const importFromArchiveBrowserClicked = async () => {
-    const path = await window.electron.showSelectZIPFileDialog();
+    const path = await window.electron.showOpenDialog(true, true, [{ name: 'ZIP Archive', extensions: ['zip'] }]);
     if (path) {
         importFromArchivePath.value = path;
     }
@@ -195,7 +200,8 @@ const iconFromStatus = (status: ImportStatus) => {
         </h2>
         <p class="text-muted">
             <template v-if="!importStarted">
-                Browse for the ZIP file of the X archive you downloaded.
+                Browse for the ZIP file of the X archive you downloaded, or the folder where you have already extracted
+                it.
             </template>
             <template v-else>
                 Importing your archive...

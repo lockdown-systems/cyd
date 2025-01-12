@@ -11,7 +11,7 @@ export const stubElectron = () => {
         showMessage: cy.stub(),
         showError: cy.stub(),
         showQuestion: cy.stub(),
-        showSelectFolderDialog: cy.stub(),
+        showOpenDialog: cy.stub(),
         openURL: cy.stub(),
         loadFileInWebview: cy.stub(),
         getAccountDataPath: cy.stub(),
