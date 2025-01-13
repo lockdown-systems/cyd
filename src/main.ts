@@ -14,7 +14,8 @@ import {
     nativeImage,
     autoUpdater,
     powerSaveBlocker,
-    powerMonitor
+    powerMonitor,
+    FileFilter
 } from 'electron';
 import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
@@ -343,34 +344,22 @@ async function createWindow() {
             }
         });
 
-        ipcMain.handle('showSelectZIPFileDialog', async (_): Promise<string | null> => {
+        ipcMain.handle('showOpenDialog', async (_, selectFolders: boolean, selectFiles: boolean, fileFilters: FileFilter[] | undefined = undefined): Promise<string | null> => {
             const dataPath = database.getConfig('dataPath');
 
-            const options: Electron.OpenDialogSyncOptions = {
-                filters: [{ name: 'Archive', extensions: ['zip'] }],
-                properties: ['openFile'],
-            };
-
-            if (dataPath) {
-                options.defaultPath = dataPath;
+            const properties: ("openFile" | "openDirectory" | "multiSelections" | "showHiddenFiles" | "createDirectory" | "promptToCreate" | "noResolveAliases" | "treatPackageAsDirectory" | "dontAddToRecent")[] = [];
+            if (selectFolders) {
+                properties.push('openDirectory');
+                properties.push('createDirectory');
+                properties.push('promptToCreate');
+            }
+            if (selectFiles) {
+                properties.push('openFile');
             }
 
-            try {
-                const result = dialog.showOpenDialogSync(win, options);
-                if (result && result.length > 0) {
-                    return result[0];
-                }
-                return null;
-            } catch (error) {
-                throw new Error(packageExceptionForReport(error as Error));
-            }
-        });
-
-        ipcMain.handle('showSelectFolderDialog', async (_): Promise<string | null> => {
-            const dataPath = database.getConfig('dataPath');
-
             const options: Electron.OpenDialogSyncOptions = {
-                properties: ['openDirectory', 'createDirectory', 'promptToCreate'],
+                properties: properties,
+                filters: fileFilters,
             };
             if (dataPath) {
                 options.defaultPath = dataPath;

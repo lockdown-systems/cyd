@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, FileFilter } from 'electron'
 import {
     ErrorReport,
     Account,
@@ -51,11 +51,8 @@ contextBridge.exposeInMainWorld('electron', {
     showQuestion: (message: string, trueText: string, falseText: string): Promise<boolean> => {
         return ipcRenderer.invoke('showQuestion', message, trueText, falseText)
     },
-    showSelectZIPFileDialog: (): Promise<string | null> => {
-        return ipcRenderer.invoke('showSelectZIPFileDialog')
-    },
-    showSelectFolderDialog: (): Promise<string | null> => {
-        return ipcRenderer.invoke('showSelectFolderDialog')
+    showOpenDialog: (selectFolders: boolean, selectFiles: boolean, fileFilters: FileFilter[] | undefined = undefined): Promise<string | null> => {
+        return ipcRenderer.invoke('showOpenDialog', selectFolders, selectFiles, fileFilters)
     },
     openURL: (url: string) => {
         ipcRenderer.invoke('openURL', url)

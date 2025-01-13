@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {
     ref,
-    getCurrentInstance
+    getCurrentInstance,
+    onMounted
 } from 'vue';
 import {
     AccountXViewModel,
@@ -24,6 +25,10 @@ const emit = defineEmits<{
     updateAccount: []
     setState: [value: State]
 }>()
+
+// Keep track of platform
+// Mac users can browse for both ZIP or unzipped folder at once, but Windows and Linux users need two separate buttons
+const platform = ref('');
 
 // Buttons
 const backClicked = async () => {
@@ -53,21 +58,42 @@ const createCountString = (importCount: number, skipCount: number) => {
 const startClicked = async () => {
     errorMessages.value = [];
     importStarted.value = true;
+    let unzippedPath: string | null = null;
 
-    // Unarchive the zip
-    statusValidating.value = ImportStatus.Active;
-    const unzippedPath: string | null = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
-    if (unzippedPath === null) {
-        statusValidating.value = ImportStatus.Failed;
-        errorMessages.value.push(unzippedPath);
-        importFailed.value = true;
-        return;
+    // Does importFromArchivePath end with .zip?
+    if (!importFromArchivePath.value.endsWith('.zip')) {
+        unzippedPath = importFromArchivePath.value;
+    } else {
+        // Unarchive the zip
+        statusValidating.value = ImportStatus.Active;
+        try {
+            unzippedPath = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
+        } catch (e) {
+            statusValidating.value = ImportStatus.Failed;
+            errorMessages.value.push(`${e}`);
+            importFailed.value = true;
+            return;
+        }
+        if (unzippedPath === null) {
+            statusValidating.value = ImportStatus.Failed;
+            errorMessages.value.push(unzippedPath);
+            importFailed.value = true;
+            return;
+        }
     }
-    statusValidating.value = ImportStatus.Finished;
 
     // Verify that the archive is valid
     statusValidating.value = ImportStatus.Active;
-    const verifyResp: string | null = await window.electron.X.verifyXArchive(props.model.account.id, unzippedPath);
+    let verifyResp: string | null = null;
+    try {
+        verifyResp = await window.electron.X.verifyXArchive(props.model.account.id, unzippedPath);
+    } catch (e) {
+        statusValidating.value = ImportStatus.Failed;
+        errorMessages.value.push(`${e}`);
+        importFailed.value = true;
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+        return;
+    }
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(verifyResp);
@@ -128,8 +154,22 @@ const startClicked = async () => {
 
 };
 
-const importFromArchiveBrowserClicked = async () => {
-    const path = await window.electron.showSelectZIPFileDialog();
+const importFromArchiveBrowseClicked = async () => {
+    const path = await window.electron.showOpenDialog(true, true, [{ name: 'ZIP Archive', extensions: ['zip'] }]);
+    if (path) {
+        importFromArchivePath.value = path;
+    }
+};
+
+const importFromArchiveBrowseZipClicked = async () => {
+    const path = await window.electron.showOpenDialog(false, true, [{ name: 'ZIP Archive', extensions: ['zip'] }]);
+    if (path) {
+        importFromArchivePath.value = path;
+    }
+};
+
+const importFromArchiveBrowseFolderClicked = async () => {
+    const path = await window.electron.showOpenDialog(true, false, undefined);
     if (path) {
         importFromArchivePath.value = path;
     }
@@ -170,6 +210,10 @@ const iconFromStatus = (status: ImportStatus) => {
     }
 };
 
+onMounted(async () => {
+    platform.value = await window.electron.getPlatform();
+});
+
 </script>
 
 <template>
@@ -179,7 +223,8 @@ const iconFromStatus = (status: ImportStatus) => {
         </h2>
         <p class="text-muted">
             <template v-if="!importStarted">
-                Browse for the ZIP file of the X archive you downloaded.
+                Browse for the ZIP file of the X archive you downloaded, or the folder where you have already extracted
+                it.
             </template>
             <template v-else>
                 Importing your archive...
@@ -190,9 +235,19 @@ const iconFromStatus = (status: ImportStatus) => {
             <div class="input-group">
                 <input v-model="importFromArchivePath" type="text" class="form-control"
                     placeholder="Import your X archive" readonly>
-                <button class="btn btn-secondary" @click="importFromArchiveBrowserClicked">
-                    Browse for Archive
-                </button>
+                <template v-if="platform == 'darwin'">
+                    <button class="btn btn-secondary" @click="importFromArchiveBrowseClicked">
+                        Browse for Archive
+                    </button>
+                </template>
+                <template v-else>
+                    <button class="btn btn-secondary me-1" @click="importFromArchiveBrowseZipClicked">
+                        Browse for ZIP
+                    </button>
+                    <button class="btn btn-secondary" @click="importFromArchiveBrowseFolderClicked">
+                        Browse for Unzipped Folder
+                    </button>
+                </template>
             </div>
 
             <div class="buttons">
@@ -216,7 +271,7 @@ const iconFromStatus = (status: ImportStatus) => {
                     <i v-else>
                         <RunningIcon />
                     </i>
-                    Unzipping and validating X archive
+                    Validating X archive
                 </li>
                 <li :class="statusImportingTweets == ImportStatus.Pending ? 'text-muted' : ''">
                     <i v-if="statusImportingTweets != ImportStatus.Active"

@@ -13,7 +13,7 @@ let modalInstance: Modal | null = null;
 const dataPath = ref('');
 
 const browseClicked = async () => {
-    const newDataPath = await window.electron.showSelectFolderDialog();
+    const newDataPath = await window.electron.showOpenDialog(true, false, undefined);
     if (newDataPath) {
         dataPath.value = newDataPath;
         await window.electron.database.setConfig('dataPath', newDataPath);
