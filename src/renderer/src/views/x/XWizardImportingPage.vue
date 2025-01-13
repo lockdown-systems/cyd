@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import {
     ref,
-    getCurrentInstance
+    getCurrentInstance,
+    onMounted
 } from 'vue';
 import {
     AccountXViewModel,
@@ -24,6 +25,10 @@ const emit = defineEmits<{
     updateAccount: []
     setState: [value: State]
 }>()
+
+// Keep track of platform
+// Mac users can browse for both ZIP or unzipped folder at once, but Windows and Linux users need two separate buttons
+const platform = ref('');
 
 // Buttons
 const backClicked = async () => {
@@ -149,8 +154,22 @@ const startClicked = async () => {
 
 };
 
-const importFromArchiveBrowserClicked = async () => {
+const importFromArchiveBrowseClicked = async () => {
     const path = await window.electron.showOpenDialog(true, true, [{ name: 'ZIP Archive', extensions: ['zip'] }]);
+    if (path) {
+        importFromArchivePath.value = path;
+    }
+};
+
+const importFromArchiveBrowseZipClicked = async () => {
+    const path = await window.electron.showOpenDialog(false, true, [{ name: 'ZIP Archive', extensions: ['zip'] }]);
+    if (path) {
+        importFromArchivePath.value = path;
+    }
+};
+
+const importFromArchiveBrowseFolderClicked = async () => {
+    const path = await window.electron.showOpenDialog(true, false, undefined);
     if (path) {
         importFromArchivePath.value = path;
     }
@@ -191,6 +210,10 @@ const iconFromStatus = (status: ImportStatus) => {
     }
 };
 
+onMounted(async () => {
+    platform.value = await window.electron.getPlatform();
+});
+
 </script>
 
 <template>
@@ -212,9 +235,19 @@ const iconFromStatus = (status: ImportStatus) => {
             <div class="input-group">
                 <input v-model="importFromArchivePath" type="text" class="form-control"
                     placeholder="Import your X archive" readonly>
-                <button class="btn btn-secondary" @click="importFromArchiveBrowserClicked">
-                    Browse for Archive
-                </button>
+                <template v-if="platform == 'darwin'">
+                    <button class="btn btn-secondary" @click="importFromArchiveBrowseClicked">
+                        Browse for Archive
+                    </button>
+                </template>
+                <template v-else>
+                    <button class="btn btn-secondary me-1" @click="importFromArchiveBrowseZipClicked">
+                        Browse for ZIP
+                    </button>
+                    <button class="btn btn-secondary" @click="importFromArchiveBrowseFolderClicked">
+                        Browse for Unzipped Folder
+                    </button>
+                </template>
             </div>
 
             <div class="buttons">
