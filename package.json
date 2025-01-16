@@ -26,6 +26,7 @@
     "open-cypress": "cd src/renderer && cypress open",
     "lint": "eslint ./src",
     "lint-fix": "eslint ./src --fix",
+    "config-open": "./archive-static-sites/build.sh && cp ./config/open.json ./build/config.json",
     "config-local": "./archive-static-sites/build.sh && cp ./config/local.json ./build/config.json",
     "config-dev": "./archive-static-sites/build.sh && cp ./config/dev.json ./build/config.json",
     "config-prod": "./archive-static-sites/build.sh && cp ./config/prod.json ./build/config.json"
