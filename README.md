@@ -2,7 +2,12 @@
 
 ![Cyd logo](./assets/icon.png)
 
-Tech platforms can't be trusted. It's time to regain control of your data. Cyd is an open source app for Windows, Mac, and Linux that lets you back up and selectively delete your data from tech platforms.
+Tech platforms can't be trusted. It's time to regain control of your data. [Cyd](https://cyd.social/) is an open source app for Windows, Mac, and Linux that lets you back up and selectively delete your data across the internet.
+
+At the moment, it supports the following platforms:
+
+- X
+- _More platforms coming soon..._
 
 ## Get started
 
