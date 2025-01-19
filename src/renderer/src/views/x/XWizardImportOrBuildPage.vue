@@ -59,6 +59,7 @@ onMounted(() => {
             recommendedState.value = RecommendedState.BuildFromScratch;
         }
     }
+
     if (recommendedState.value == RecommendedState.ImportArchive || recommendedState.value == RecommendedState.Unknown) {
         buildDatabaseStrategy.value = 'importArchive';
     } else {
@@ -81,74 +82,68 @@ onMounted(() => {
                 :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
                 @set-state="emit('setState', $event)" />
 
-            <form @submit.prevent>
-                <!-- import archive recommended -->
-                <template v-if="recommendedState == RecommendedState.ImportArchive">
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
-                                class="form-check-input">
-                            <label class="form-check-label" for="importArchive">
+            <!-- import archive recommended -->
+            <template v-if="recommendedState == RecommendedState.ImportArchive">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
+                    @click="buildDatabaseStrategy = 'importArchive'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Import X archive
                                 <span class="ms-2 text-muted">(recommended)</span>
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small class="form-text text-muted">
+                            </div>
+                            <small class="info text-muted">
                                 You have a lot of data so importing your X archive is definitely the way to go.
                             </small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3 mt-3">
-                        <div class="form-check">
-                            <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
-                                value="buildFromScratch" class="form-check-input">
-                            <label class="form-check-label" for="buildFromScratch">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
+                    @click="buildDatabaseStrategy = 'buildFromScratch'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Build database from scratch
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small class="form-text text-muted">
+                            </div>
+                            <small class="info text-muted">
                                 X restricts how much of your data you can access. You likely won't get all of your data
                                 if you have Cyd build it from scratch. Building from scratch is a great way to backup
                                 your direct messages, though.
-                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">Read
-                                    more</a>.
+                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                    Read more</a>.
                             </small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3 mt-3">
-                        <div class="form-check">
-                            <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
-                                class="form-check-input">
-                            <label class="form-check-label" for="archiveData">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
+                    @click="buildDatabaseStrategy = 'archiveData'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Save HTML tweets, direct messages, and/or bookmarks
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 Cyd can save an HTML version of each tweet, and detailed backup of your direct messages,
                                 and your bookmarks.
                             </small>
                         </div>
                     </div>
-                </template>
+                </div>
+            </template>
 
-                <!-- build from scratch recommended -->
-                <template v-else-if="recommendedState == RecommendedState.BuildFromScratch">
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
-                                value="buildFromScratch" class="form-check-input">
-                            <label class="form-check-label" for="buildFromScratch">
+            <!-- build from scratch recommended -->
+            <template v-else-if="recommendedState == RecommendedState.BuildFromScratch">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
+                    @click="buildDatabaseStrategy = 'buildFromScratch'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Build database from scratch
                                 <span class="ms-2 text-muted">(recommended)</span>
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 You don't have a lot of data in your X account, so having Cyd scroll through your
                                 profile will be faster. Building from scratch is also a great way to backup your direct
                                 messages.
@@ -157,69 +152,65 @@ onMounted(() => {
                             </small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3 mt-3">
-                        <div class="form-check">
-                            <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
-                                class="form-check-input">
-                            <label class="form-check-label" for="importArchive">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
+                    @click="buildDatabaseStrategy = 'importArchive'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Import X archive
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 Importing your X archive will work great, but you'll need to wait at least a day for X
                                 to send it to you if you don't already have it.
                             </small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3 mt-3">
-                        <div class="form-check">
-                            <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
-                                class="form-check-input">
-                            <label class="form-check-label" for="archiveData">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
+                    @click="buildDatabaseStrategy = 'archiveData'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Save HTML tweets, direct messages, and/or bookmarks
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 Cyd can save an HTML version of each tweet, and detailed backup of your direct messages,
                                 and your bookmarks.
                             </small>
                         </div>
                     </div>
-                </template>
+                </div>
+            </template>
 
-                <!-- unknown which is better -->
-                <template v-else>
-                    <div class="mb-3 mt-3">
-                        <div class="form-check">
-                            <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
-                                class="form-check-input">
-                            <label class="form-check-label" for="importArchive">
+            <!-- unknown which is better -->
+            <template v-else>
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
+                    @click="buildDatabaseStrategy = 'importArchive'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Import X archive
                                 <span class="ms-2 text-muted">(recommended)</span>
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 Importing your X archive will work great, but you'll need to wait at least a day for X
                                 to send it to you if you don't already have it.
                             </small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
-                                value="buildFromScratch" class="form-check-input">
-                            <label class="form-check-label" for="buildFromScratch">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
+                    @click="buildDatabaseStrategy = 'buildFromScratch'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Build database from scratch
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 Having Cyd scroll through your profile is faster than importing your X archive, but it
                                 only works if you have less than about 2,000 tweets or likes. Building from scratch is a
                                 great way to backup your direct messages, though.
@@ -228,24 +219,23 @@ onMounted(() => {
                             </small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3 mt-3">
-                        <div class="form-check">
-                            <input id="archiveData" v-model="buildDatabaseStrategy" type="radio" value="archiveData"
-                                class="form-check-input">
-                            <label class="form-check-label" for="archiveData">
+                <div class="option-card card mb-3" :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
+                    @click="buildDatabaseStrategy = 'archiveData'">
+                    <div class="card-body d-flex align-items-center">
+                        <div>
+                            <div>
                                 Save HTML tweets, direct messages, and/or bookmarks
-                            </label>
-                        </div>
-                        <div class="indent">
-                            <small>
+                            </div>
+                            <small class="info text-muted">
                                 Cyd can save an HTML version of each tweet, and detailed backup of your direct messages,
                                 and your bookmarks.
                             </small>
                         </div>
                     </div>
-                </template>
-            </form>
+                </div>
+            </template>
 
             <div class="buttons">
                 <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
