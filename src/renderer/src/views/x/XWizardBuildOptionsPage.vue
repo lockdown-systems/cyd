@@ -29,7 +29,7 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    emit('setState', State.WizardImportOrBuild);
+    emit('setState', State.WizardDatabase);
 };
 
 // Settings

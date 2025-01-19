@@ -25,8 +25,8 @@ export enum State {
     WizardPrestart = "WizardPrestart",
     WizardStart = "WizardStart",
 
-    WizardImportOrBuild = "WizardImportOrBuild",
-    WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
+    WizardDatabase = "WizardDatabase",
+    WizardDatabaseDisplay = "WizardDatabaseDisplay",
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
     WizardImportDownload = "WizardImportDownload",
@@ -2634,18 +2634,18 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     ) {
                         this.state = State.WizardDeleteOptions;
                     } else {
-                        this.state = State.WizardImportOrBuild;
+                        this.state = State.WizardDatabase;
                     }
                     break;
 
-                case State.WizardImportOrBuild:
+                case State.WizardDatabase:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
 **I need a local database of the data in your X account before I can delete it.**
 
 You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
-                    this.state = State.WizardImportOrBuildDisplay;
+                    this.state = State.WizardDatabaseDisplay;
                     break;
 
                 case State.WizardImportStart:
