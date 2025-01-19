@@ -85,6 +85,27 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-sidebar">
+        <ul class="wizard-nav">
+            <li>
+                <button class="btn btn-light" @click="emit('setState', State.WizardImportOrBuild)">
+                    <i class="fa-solid fa-database" />
+                    Local Database
+                </button>
+            </li>
+            <li>
+                <button class="btn btn-light" @click="emit('setState', State.WizardDeleteOptions)">
+                    <i class="fa-solid fa-fire" />
+                    Delete from X
+                </button>
+            </li>
+            <li>
+                <button class="btn btn-light">
+                    <i class="fa-brands fa-bluesky" />
+                    Migrate to Bluesky
+                </button>
+            </li>
+        </ul>
+
         <p v-if="model.account && model.account.xAccount" class="p-3 small text-muted">
             <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
                 Cyd could not detect how many likes and tweets you have.
@@ -103,6 +124,7 @@ onMounted(async () => {
                 </a>
             </template>
         </p>
+
         <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
             <button class="btn btn-outline-success btn-sm" @click="openArchive">
                 Browse Archive
@@ -239,4 +261,17 @@ onMounted(async () => {
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+ul.wizard-nav {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    margin-bottom: 1em;
+    text-align: center;
+}
+
+ul.wizard-nav button {
+    width: 200px;
+    text-align: left;
+}
+</style>

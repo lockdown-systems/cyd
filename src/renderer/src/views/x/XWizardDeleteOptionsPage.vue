@@ -143,7 +143,7 @@ onMounted(async () => {
     <div class="wizard-content container mb-4 mt-3 mx-auto">
         <div class="mb-4">
             <h2>
-                Delete options
+                Delete from X
             </h2>
             <p class="text-muted">
                 Delete your data from X, except for what you want to keep.

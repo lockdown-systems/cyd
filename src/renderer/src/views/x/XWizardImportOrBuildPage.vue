@@ -72,10 +72,10 @@ onMounted(() => {
     <div class="wizard-content container mb-4 mt-3 mx-auto">
         <div class="mb-4">
             <h2>
-                Build a database of your X data
+                Build your local database
             </h2>
             <p class="text-muted">
-                How would you like to proceed?
+                There are different ways to get data from your X account. How would you like to proceed?
             </p>
 
             <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
