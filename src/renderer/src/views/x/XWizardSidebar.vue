@@ -99,7 +99,7 @@ onMounted(async () => {
                 </button>
             </li>
             <li>
-                <button class="btn btn-light">
+                <button class="btn btn-light" @click="emit('setState', State.WizardMigrate)">
                     <i class="fa-brands fa-bluesky" />
                     Migrate to Bluesky
                 </button>

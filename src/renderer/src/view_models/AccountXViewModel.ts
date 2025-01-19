@@ -52,6 +52,9 @@ export enum State {
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
 
+    WizardMigrate = "WizardMigrate",
+    WizardMigrateDisplay = "WizardMigrateDisplay",
+
     RunJobs = "RunJobs",
 
     FinishedRunningJobs = "FinishedRunningJobs",
@@ -2717,6 +2720,14 @@ You'll be able to access it even after you delete it from X.
                         this.instructions += `\n\nI've saved: **${await this.getDatabaseStatsString()}**.`
                     }
                     this.state = State.WizardDeleteReviewDisplay;
+                    break;
+
+                case State.WizardMigrate:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
+                    this.state = State.WizardMigrateDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
