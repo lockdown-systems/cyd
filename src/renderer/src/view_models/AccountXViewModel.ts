@@ -2726,6 +2726,8 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
+**Just because you're quitting X doesn't mean your posts need to disappear.**
+
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateDisplay;
                     break;

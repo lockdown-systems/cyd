@@ -486,6 +486,7 @@ onUnmounted(async () => {
                         @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
 
                     <XWizardMigrate v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
+                        :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" />
 
                     <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
