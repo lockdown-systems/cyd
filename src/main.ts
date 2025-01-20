@@ -32,6 +32,12 @@ import {
     packageExceptionForReport
 } from './util';
 
+// Initialize the logger
+log.initialize();
+log.transports.file.level = false; // Disable file logging
+log.info('Cyd version:', app.getVersion());
+log.info('User data folder is at:', app.getPath('userData'));
+
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
@@ -70,7 +76,6 @@ if (config.mode == "prod") {
 if (require('electron-squirrel-startup')) {
     app.quit();
 }
-
 
 // Handle cyd:// URLs (or cyd-dev:// in dev mode)
 // See: https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app
@@ -124,12 +129,6 @@ app.on('open-url', (event, url) => {
         cydURLQueue.push(url);
     }
 })
-
-// Initialize the logger
-log.initialize();
-log.transports.file.level = false; // Disable file logging
-log.info('Cyd version:', app.getVersion());
-log.info('User data folder is at:', app.getPath('userData'));
 
 const cydDevMode = process.env.CYD_DEV === "1";
 
