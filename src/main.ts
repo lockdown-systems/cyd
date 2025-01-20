@@ -42,6 +42,11 @@ interface Config {
     plausibleDomain: string;
 }
 
+let isAppReady = false;
+
+// Queue of cyd:// URLs to handle, in case the app is not ready
+const cydURLQueue: string[] = [];
+
 // Load the config
 const configPath = path.join(getResourcesPath(), 'config.json');
 if (!fs.existsSync(configPath)) {
@@ -77,15 +82,21 @@ if (process.defaultApp) {
     app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
 }
 
-const openCydURL = (cydURL: string) => {
+const openCydURL = async (cydURL: string) => {
     const url = new URL(cydURL);
     log.info(`Received ${url.protocol}:// URL: ${url.toString()}`);
 
+    // If there's no main window, open one
+    if (BrowserWindow.getAllWindows().length === 0) {
+        await createWindow();
+    }
+
     // Validate the hostname
-    if ((config.mode == "prod" && url.hostname != 'social.cyd.api') || (config.mode == "dev" && url.hostname != 'social.cyd.dev-api')) {
+    const validHostname = config.mode == "prod" ? 'social.cyd.api' : 'social.cyd.dev-api';
+    if (url.hostname != validHostname) {
         dialog.showMessageBoxSync({
             title: "Cyd",
-            message: `Invalid hostname in cyd:// URL: ${url}`,
+            message: `Invalid hostname in URL ${url.toString()}. I'm expecting "${validHostname}" as the hostname.`,
             type: 'info',
         });
         return;
@@ -100,7 +111,7 @@ const openCydURL = (cydURL: string) => {
     else {
         dialog.showMessageBoxSync({
             title: "Cyd",
-            message: `Invalid path in ${url.protocol}:// URL: ${url.toString()}`,
+            message: `Invalid Cyd URL: ${url.toString()}.`,
             type: 'info',
         });
         return;
@@ -108,7 +119,11 @@ const openCydURL = (cydURL: string) => {
 }
 
 app.on('open-url', (event, url) => {
-    openCydURL(url);
+    if (isAppReady) {
+        openCydURL(url);
+    } else {
+        cydURLQueue.push(url);
+    }
 })
 
 // Initialize the logger
@@ -210,8 +225,17 @@ async function createWindow() {
         icon: icon,
     });
 
-    // Handle power monitor events
+    // Mark the app as ready
+    isAppReady = true;
 
+    // Handle any cyd:// URLs that came in before the app was ready
+    setTimeout(() => {
+        for (const url of cydURLQueue) {
+            openCydURL(url);
+        }
+    }, 100);
+
+    // Handle power monitor events
     powerMonitor.on('suspend', () => {
         log.info('System is suspending');
         try {
@@ -545,11 +569,6 @@ if (!app.requestSingleInstanceLock()) {
             openCydURL(cydURL);
         }
     })
-
-    // Initialize the app
-    app.whenReady().then(async () => {
-        await initializeApp();
-    })
 }
 
 app.enableSandbox();
@@ -561,10 +580,10 @@ app.on('window-all-closed', () => {
     }
 });
 
-app.on('activate', () => {
+app.on('activate', async () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        await createWindow();
     }
 });
