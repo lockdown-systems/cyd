@@ -73,7 +73,7 @@ if (require('electron-squirrel-startup')) {
 
 // Initialize the logger
 log.initialize();
-log.transports.file.level = false; // Disable file logging
+log.transports.file.level = config.mode == "prod" ? false : "debug"; // Disable file logging in prod mode
 log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
