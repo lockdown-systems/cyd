@@ -92,6 +92,21 @@ function removeCodeSignatures(dir: string) {
   });
 }
 
+// For cyd:// and cyd-dev:// URLs
+const protocols = [];
+if (process.env.CYD_ENV == 'prod') {
+  protocols.push({
+    "name": "Cyd",
+    "schemes": ["cyd"]
+  });
+} else {
+  protocols.push({
+    "name": "Cyd Dev",
+    "schemes": ["cyd-dev"]
+  });
+}
+const mimeTypeScheme = process.env.CYD_ENV == 'prod' ? 'x-scheme-handler/cyd' : 'x-scheme-handler/cyd-dev';
+
 const config: ForgeConfig = {
   packagerConfig: {
     name: process.env.CYD_ENV == 'prod' ? 'Cyd' : 'Cyd Dev',
@@ -115,6 +130,7 @@ const config: ForgeConfig = {
       path.join(buildPath, 'config.json'),
       path.join(assetsPath, 'icon.png'),
     ],
+    protocols: protocols,
   },
   rebuildConfig: {},
   makers: [
@@ -165,6 +181,7 @@ const config: ForgeConfig = {
       productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
       bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
       name: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+      mimeType: [mimeTypeScheme],
     }),
     // Linux Debian
     new MakerDeb({
@@ -177,6 +194,7 @@ const config: ForgeConfig = {
         productName: process.env.CYD_ENV == 'prod' ? "Cyd" : "Cyd Dev",
         bin: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
         name: process.env.CYD_ENV == 'prod' ? "cyd" : "cyd-dev",
+        mimeType: [mimeTypeScheme],
       }
     })
   ],
