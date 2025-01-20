@@ -21,6 +21,25 @@ defineProps<{
             <p class="text-muted">
                 Import your old tweets into a Bluesky account.
             </p>
+
+            <div class="alert alert-light" role="alert">
+                <div class="small">
+                    <p>
+                        <strong>Considering making a new Bluesky account just for your old tweets.</strong> This is a
+                        good way to keep your old tweets separate from your new posts.
+                    </p>
+                    <p>
+                        <strong>Not all of your tweets can be imported into Bluesky.</strong> It doesn't
+                        make sense to migrate your replies if the X user you're replying to doesn't exist on Bluesky.
+                        Cyd will import tweets that are not replies, and also tweets where you're replying to yourself,
+                        which will keep your threads intact.
+                    </p>
+                </div>
+            </div>
+
+            <p>
+                You can import TK tweets into Bluesky. Ready to get started?
+            </p>
         </div>
     </div>
 </template>
