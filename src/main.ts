@@ -13,7 +13,6 @@ import {
     webContents,
     nativeImage,
     autoUpdater,
-    protocol,
     powerSaveBlocker,
     powerMonitor,
     FileFilter
@@ -71,16 +70,6 @@ if (!app.requestSingleInstanceLock()) {
     app.quit();
     process.exit(0);
 }
-
-// Register the cyd:// protocol scheme
-protocol.registerSchemesAsPrivileged([
-    {
-        scheme: "cyd",
-        privileges: {
-            standard: true,
-        },
-    },
-]);
 
 // Initialize the logger
 log.initialize();
@@ -179,49 +168,6 @@ async function createWindow() {
         },
         icon: icon,
     });
-
-    // Protocol handler for cyd:// URLs
-    protocol.handle('cyd', (req) => {
-        log.info('Received cyd:// URL:', req.url);
-        const { hostname, pathname } = new URL(req.url)
-
-        // Validate the hostname
-        const validHostnames = ['social.cyd.api', 'social.cyd.dev-api'];
-        if (!validHostnames.includes(hostname)) {
-            dialog.showMessageBoxSync({
-                title: "Cyd",
-                message: `Invalid hostname in cyd:// URL: ${req.url}`,
-                type: 'info',
-            });
-            return new Response('bad', {
-                status: 400,
-                headers: { 'content-type': 'text/html' }
-            })
-        }
-
-        // Make sure the pathname is supported
-        if (pathname == "open") {
-            // Supported! Do nothing, since the app should now be opened
-            log.info('protocol handler opening app');
-        } else {
-            dialog.showMessageBoxSync({
-                title: "Cyd",
-                message: `Invalid path in cyd:// URL: ${req.url}`,
-                type: 'info',
-            });
-            return new Response('bad', {
-                status: 400,
-                headers: { 'content-type': 'text/html' }
-            })
-        }
-
-        // Return a successful response
-        log.info('protocol handler returning ok');
-        return new Response('ok', {
-            status: 200,
-            headers: { 'content-type': 'text/html' }
-        })
-    })
 
     // Handle power monitor events
 
@@ -552,3 +498,35 @@ app.on('activate', () => {
         createWindow();
     }
 });
+
+// Handle cyd:// URLs (or cyd-dev:// in dev mode)
+app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev");
+app.on('open-url', (event, cydURL) => {
+    const url = new URL(cydURL);
+    log.info(`Received ${url.protocol}:// URL: ${url.toString()}`);
+
+    // Validate the hostname
+    if ((config.mode == "prod" && url.hostname != 'social.cyd.api') || (config.mode == "dev" && url.hostname != 'social.cyd.dev-api')) {
+        dialog.showMessageBoxSync({
+            title: "Cyd",
+            message: `Invalid hostname in cyd:// URL: ${url}`,
+            type: 'info',
+        });
+        return;
+    }
+
+    // Handle /open
+    if (url.pathname == "/open") {
+        // Supported! Do nothing, since the app should now be opened
+        log.info('protocol handler opening app');
+    }
+    // For all other paths, show an error
+    else {
+        dialog.showMessageBoxSync({
+            title: "Cyd",
+            message: `Invalid path in ${url.protocol}:// URL: ${url.toString()}`,
+            type: 'info',
+        });
+        return;
+    }
+})
