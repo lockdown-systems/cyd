@@ -88,8 +88,14 @@ if (process.defaultApp) {
 }
 
 const openCydURL = async (cydURL: string) => {
+    if (!isAppReady) {
+        log.debug('Adding cyd:// URL to queue:', cydURL);
+        cydURLQueue.push(cydURL);
+        return;
+    }
+
     const url = new URL(cydURL);
-    log.info(`Received ${url.protocol}:// URL: ${url.toString()}`);
+    log.info(`Opening URL: ${url.toString()}`);
 
     // If there's no main window, open one
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -123,11 +129,7 @@ const openCydURL = async (cydURL: string) => {
 }
 
 app.on('open-url', (event, url) => {
-    if (isAppReady) {
-        openCydURL(url);
-    } else {
-        cydURLQueue.push(url);
-    }
+    openCydURL(url);
 })
 
 const cydDevMode = process.env.CYD_DEV === "1";
