@@ -66,10 +66,50 @@ if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
-if (!app.requestSingleInstanceLock()) {
-    app.quit();
-    process.exit(0);
+
+// Handle cyd:// URLs (or cyd-dev:// in dev mode)
+// See: https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev", process.execPath, [path.resolve(process.argv[1])])
+    }
+} else {
+    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
 }
+
+const openCydURL = (cydURL: string) => {
+    const url = new URL(cydURL);
+    log.info(`Received ${url.protocol}:// URL: ${url.toString()}`);
+
+    // Validate the hostname
+    if ((config.mode == "prod" && url.hostname != 'social.cyd.api') || (config.mode == "dev" && url.hostname != 'social.cyd.dev-api')) {
+        dialog.showMessageBoxSync({
+            title: "Cyd",
+            message: `Invalid hostname in cyd:// URL: ${url}`,
+            type: 'info',
+        });
+        return;
+    }
+
+    // Handle /open
+    if (url.pathname == "/open") {
+        // Supported! Do nothing, since the app should now be opened
+        log.info('protocol handler opening app');
+    }
+    // For all other paths, show an error
+    else {
+        dialog.showMessageBoxSync({
+            title: "Cyd",
+            message: `Invalid path in ${url.protocol}:// URL: ${url.toString()}`,
+            type: 'info',
+        });
+        return;
+    }
+}
+
+app.on('open-url', (event, url) => {
+    openCydURL(url);
+})
 
 // Initialize the logger
 log.initialize();
@@ -154,10 +194,11 @@ async function initializeApp() {
     await createWindow();
 }
 
+let win: BrowserWindow | null = null;
 async function createWindow() {
     // Create the browser window
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         width: 1000,
         height: 850,
         minWidth: 900,
@@ -174,7 +215,7 @@ async function createWindow() {
     powerMonitor.on('suspend', () => {
         log.info('System is suspending');
         try {
-            win.webContents.send('powerMonitor:suspend');
+            win?.webContents.send('powerMonitor:suspend');
         } catch (error) {
             log.error('Failed to send powerMonitor:suspend to renderer:', error);
         }
@@ -183,7 +224,7 @@ async function createWindow() {
     powerMonitor.on('resume', () => {
         log.info('System has resumed');
         try {
-            win.webContents.send('powerMonitor:resume');
+            win?.webContents.send('powerMonitor:resume');
         } catch (error) {
             log.error('Failed to send powerMonitor:resume to renderer:', error);
         }
@@ -366,6 +407,9 @@ async function createWindow() {
             }
 
             try {
+                if (!win) {
+                    throw new Error("Window not initialized");
+                }
                 const result = dialog.showOpenDialogSync(win, options);
                 if (result && result.length > 0) {
                     return result[0];
@@ -473,13 +517,39 @@ async function createWindow() {
 
     // When devtools opens, make sure the window is wide enough
     win.webContents.on('devtools-opened', () => {
-        const [width, height] = win.getSize();
-        if (width < 1500) {
-            win.setSize(1500, height);
+        if (win) {
+            const [width, height] = win.getSize();
+            if (width < 1500) {
+                win.setSize(1500, height);
+            }
         }
     });
 
     return win;
+}
+
+// Make sure there's only one instance of the app running
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+    process.exit(0);
+} else {
+    app.on('second-instance', (event, commandLine, _) => {
+        // Someone tried to run a second instance, focus the window
+        if (win) {
+            if (win.isMinimized()) win.restore()
+            win.focus()
+        }
+        // commandLine is array of strings in which last element is deep link URL
+        const cydURL = commandLine.pop()
+        if (cydURL) {
+            openCydURL(cydURL);
+        }
+    })
+
+    // Initialize the app
+    app.whenReady().then(async () => {
+        await initializeApp();
+    })
 }
 
 app.enableSandbox();
@@ -498,35 +568,3 @@ app.on('activate', () => {
         createWindow();
     }
 });
-
-// Handle cyd:// URLs (or cyd-dev:// in dev mode)
-app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev");
-app.on('open-url', (event, cydURL) => {
-    const url = new URL(cydURL);
-    log.info(`Received ${url.protocol}:// URL: ${url.toString()}`);
-
-    // Validate the hostname
-    if ((config.mode == "prod" && url.hostname != 'social.cyd.api') || (config.mode == "dev" && url.hostname != 'social.cyd.dev-api')) {
-        dialog.showMessageBoxSync({
-            title: "Cyd",
-            message: `Invalid hostname in cyd:// URL: ${url}`,
-            type: 'info',
-        });
-        return;
-    }
-
-    // Handle /open
-    if (url.pathname == "/open") {
-        // Supported! Do nothing, since the app should now be opened
-        log.info('protocol handler opening app');
-    }
-    // For all other paths, show an error
-    else {
-        dialog.showMessageBoxSync({
-            title: "Cyd",
-            message: `Invalid path in ${url.protocol}:// URL: ${url.toString()}`,
-            type: 'info',
-        });
-        return;
-    }
-})
