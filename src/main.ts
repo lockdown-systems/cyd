@@ -78,11 +78,10 @@ log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
 // Handle cyd:// URLs (or cyd-dev:// in dev mode)
-// See: https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app
-if (process.defaultApp) {
-    if (process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev", process.execPath, [path.resolve(process.argv[1])])
-    }
+const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
+const lastArg = process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
+if (lastArg.startsWith(protocolString + "://")) {
+    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev", process.execPath, [lastArg])
 } else {
     app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
 }
