@@ -102,10 +102,9 @@ const openCydURL = async (cydURL: string) => {
         return;
     }
 
-    // Handle /open
-    if (url.pathname == "/open") {
+    // Handle / (which just opens the app)
+    if (url.pathname == "/") {
         // Supported! Do nothing, since the app should now be opened
-        log.info('protocol handler opening app');
     }
     // For all other paths, show an error
     else {
