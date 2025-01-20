@@ -9,6 +9,7 @@ import {
     BrowserWindow,
     ipcMain,
     dialog,
+    protocol,
     shell,
     webContents,
     nativeImage,
@@ -127,6 +128,19 @@ if (lastArg.startsWith(protocolString + "://")) {
 } else {
     app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
 }
+
+// Also register the protocol handler this way, as it seems to be required for Windows
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: protocolString,
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            corsEnabled: true,
+        },
+    },
+]);
 
 // In Linux in Windows, handle the cyd:// URL that was passed in
 if ((process.platform == 'linux' || process.platform == 'win32') && lastArg.startsWith(protocolString + "://")) {
