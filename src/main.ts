@@ -78,14 +78,6 @@ log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
 // Handle cyd:// URLs (or cyd-dev:// in dev mode)
-const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
-const lastArg = process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
-if (lastArg.startsWith(protocolString + "://")) {
-    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev", process.execPath, [lastArg])
-} else {
-    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
-}
-
 const openCydURL = async (cydURL: string) => {
     if (!isAppReady) {
         log.debug('Adding cyd:// URL to queue:', cydURL);
@@ -127,6 +119,21 @@ const openCydURL = async (cydURL: string) => {
     }
 }
 
+// Register the cyd:// (or cyd-dev://) protocol
+const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
+const lastArg = process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
+if (lastArg.startsWith(protocolString + "://")) {
+    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev", process.execPath, [lastArg])
+} else {
+    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
+}
+
+// In Linux in Windows, handle the cyd:// URL that was passed in
+if ((process.platform == 'linux' || process.platform == 'win32') && lastArg.startsWith(protocolString + "://")) {
+    openCydURL(lastArg);
+}
+
+// Handle the cyd:// URL that was passed in on macOS
 app.on('open-url', (event, url) => {
     openCydURL(url);
 })
