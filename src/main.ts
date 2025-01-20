@@ -227,11 +227,10 @@ async function createWindow() {
     isAppReady = true;
 
     // Handle any cyd:// URLs that came in before the app was ready
-    setTimeout(() => {
-        for (const url of cydURLQueue) {
-            openCydURL(url);
-        }
-    }, 100);
+    log.debug('Handling cyd:// URLs in queue:', cydURLQueue);
+    for (const url of cydURLQueue) {
+        openCydURL(url);
+    }
 
     // Handle power monitor events
     powerMonitor.on('suspend', () => {
