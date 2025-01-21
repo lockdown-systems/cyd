@@ -9,7 +9,6 @@ import {
     BrowserWindow,
     ipcMain,
     dialog,
-    protocol,
     shell,
     webContents,
     nativeImage,
