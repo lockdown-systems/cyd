@@ -122,32 +122,15 @@ const openCydURL = async (cydURL: string) => {
 
 // Register the cyd:// (or cyd-dev://) protocol
 const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
+app.setAsDefaultProtocolClient(protocolString)
+
+// In Linux in Windows, handle cyd:// URLs passed in via the CLI
 const lastArg = process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
-if (lastArg.startsWith(protocolString + "://")) {
-    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev", process.execPath, [lastArg])
-} else {
-    app.setAsDefaultProtocolClient(config.mode == "prod" ? "cyd" : "cyd-dev")
-}
-
-// Also register the protocol handler this way, as it seems to be required for Windows
-protocol.registerSchemesAsPrivileged([
-    {
-        scheme: protocolString,
-        privileges: {
-            standard: true,
-            secure: true,
-            supportFetchAPI: true,
-            corsEnabled: true,
-        },
-    },
-]);
-
-// In Linux in Windows, handle the cyd:// URL that was passed in
 if ((process.platform == 'linux' || process.platform == 'win32') && lastArg.startsWith(protocolString + "://")) {
     openCydURL(lastArg);
 }
 
-// Handle the cyd:// URL that was passed in on macOS
+// In macOS, handle the cyd:// URLs
 app.on('open-url', (event, url) => {
     openCydURL(url);
 })
