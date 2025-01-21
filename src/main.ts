@@ -123,7 +123,7 @@ const openCydURL = async (cydURL: string) => {
 const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
 app.setAsDefaultProtocolClient(protocolString)
 
-// In Linux in Windows, handle cyd:// URLs passed in via the CLI
+// In Linux and Windows, handle cyd:// URLs passed in via the CLI
 const lastArg = process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
 if ((process.platform == 'linux' || process.platform == 'win32') && lastArg.startsWith(protocolString + "://")) {
     openCydURL(lastArg);
