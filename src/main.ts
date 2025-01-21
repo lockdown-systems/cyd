@@ -93,30 +93,30 @@ const openCydURL = async (cydURL: string) => {
         await createWindow();
     }
 
-    // Validate the hostname
-    const validHostname = config.mode == "prod" ? 'social.cyd.api' : 'social.cyd.dev-api';
-    if (url.hostname != validHostname) {
+    // If hostname is "open", this just means open Cyd
+    if (url.hostname == "open") {
+        // Success!
+        return;
+    }
+
+    // Check for Bluesky OAuth redirect
+    const blueskyHostname = config.mode == "prod" ? 'social.cyd.api' : 'social.cyd.dev-api';
+    if (url.hostname == blueskyHostname && url.pathname == "/atproto-oauth-callback") {
         dialog.showMessageBoxSync({
             title: "Cyd",
-            message: `Invalid hostname in URL ${url.toString()}. I'm expecting "${validHostname}" as the hostname.`,
+            message: `Bluesky OAuth is not implemented yet.`,
             type: 'info',
         });
         return;
     }
 
-    // Handle / (which just opens the app)
-    if (url.pathname == "/") {
-        // Supported! Do nothing, since the app should now be opened
-    }
     // For all other paths, show an error
-    else {
-        dialog.showMessageBoxSync({
-            title: "Cyd",
-            message: `Invalid Cyd URL: ${url.toString()}.`,
-            type: 'info',
-        });
-        return;
-    }
+    dialog.showMessageBoxSync({
+        title: "Cyd",
+        message: `Invalid Cyd URL: ${url.toString()}.`,
+        type: 'info',
+    });
+    return;
 }
 
 // Register the cyd:// (or cyd-dev://) protocol
