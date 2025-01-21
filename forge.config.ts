@@ -233,7 +233,7 @@ const config: ForgeConfig = {
 
     // macOS codesign here because osxSign seems totally broken
     preMake: async (_forgeConfig) => {
-      if (os.platform() !== 'darwin') {
+      if (os.platform() !== 'darwin' || process.env.MACOS_RELEASE !== 'true') {
         return;
       }
 
@@ -303,7 +303,7 @@ const config: ForgeConfig = {
 
     // macOS notarize here because osxNotarize is broken without using osxSign
     postMake: async (forgeConfig, makeResults) => {
-      if (makeResults[0].platform !== 'darwin') {
+      if (makeResults[0].platform !== 'darwin' || process.env.MACOS_RELEASE !== 'true') {
         return makeResults;
       }
 
