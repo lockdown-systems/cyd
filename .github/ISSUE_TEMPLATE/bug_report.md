@@ -7,6 +7,10 @@ assignees: ''
 
 ---
 
+- [ ] I have searched open and closed issues for duplicates
+- [ ] I am submitting a bug report for existing functionality that does not work as intended
+- [ ] This isn't a security bug (if it is, please email security@lockdown.systems instead)
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
