@@ -34,7 +34,7 @@ onMounted(async () => {
         </div>
         <div class="text-center">
             <p>
-                Find a bug or need help? Email help@cyd.social.
+                Find a bug or need help? Email collective@lockdown.systems.
             </p>
             <p class="text-muted">
                 <img src="/assets/wordmark.svg" class="cyd-wordmark mr-2" alt="Cyd">
