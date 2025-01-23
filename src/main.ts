@@ -144,10 +144,20 @@ async function initializeApp() {
             message: `You're running Cyd ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
             type: 'info',
         });
-    } else if (config.mode == "local") {
+    }
+    // Display message in local mode
+    else if (config.mode == "local") {
         dialog.showMessageBoxSync({
             title: `Cyd Local ${app.getVersion()}`,
             message: `You're running Cyd ${app.getVersion()} in local mode.`,
+            type: 'info',
+        });
+    }
+    // Display message in open mode
+    else if (config.mode == "open") {
+        dialog.showMessageBoxSync({
+            title: `Cyd ${app.getVersion()}`,
+            message: `You're running Cyd ${app.getVersion()} in open mode.\n\nThis is intended for use by open source developers. If you're not contributing to Cyd, please support the project by paying for a Premium plan.`,
             type: 'info',
         });
     }
