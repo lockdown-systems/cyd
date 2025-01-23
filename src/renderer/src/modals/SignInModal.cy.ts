@@ -7,6 +7,8 @@ import { stubElectron } from '../test_util';
 
 describe('<SignInModal />', () => {
   it('starts with the email field visible and the value blank', () => {
+    window.electron = stubElectron();
+
     cy.mount(SignInModal);
 
     cy.vueRef('emailInputEl').should('be.visible');
@@ -14,6 +16,8 @@ describe('<SignInModal />', () => {
   })
 
   it('prepopulates the email field if it is saved', () => {
+    window.electron = stubElectron();
+
     const testEmail = 'test@lockdown.systems';
 
     cy.mount(SignInModal, {

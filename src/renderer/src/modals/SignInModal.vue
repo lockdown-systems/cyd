@@ -24,6 +24,8 @@ const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
 
+const mode = ref('');
+
 const userSubscribe = ref(true);
 const verificationCode = ref('');
 
@@ -165,6 +167,8 @@ async function goBack() {
 }
 
 onMounted(async () => {
+    mode.value = await window.electron.getMode()
+
     const modalElement = signInModal.value;
     if (modalElement) {
         modalInstance = new Modal(modalElement);
@@ -196,7 +200,15 @@ onUnmounted(() => {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="hide" />
                 </div>
                 <div class="modal-body">
-                    <div class="d-flex flex-column align-items-center">
+                    <div v-if="mode == 'open'">
+                        <p>
+                            You're using Cyd in open source developer mode, which does not use a server.
+                        </p>
+                        <p>
+                            If you're not contributing to Cyd, please support the project by paying for a Premium plan.
+                        </p>
+                    </div>
+                    <div v-else class="d-flex flex-column align-items-center">
                         <form @submit.prevent>
                             <template v-if="signInState == 'start'">
                                 <div class="form-group d-flex flex-column mt-4">
