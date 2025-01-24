@@ -1,6 +1,6 @@
-# Cyd
+![Cyd](./assets/cyd-readme-header.png)
 
-![Cyd](./assets/cyd-sign.png)
+# Cyd: Claw back your data from Big Tech
 
 Tech platforms can't be trusted. It's time to regain control of your data. [Cyd](https://cyd.social/) is an open source app for Windows, Mac, and Linux that lets you back up and selectively delete your data, and migrate it to open platforms.
 
