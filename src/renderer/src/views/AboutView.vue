@@ -9,6 +9,10 @@ defineProps<{
     shouldShow: boolean;
 }>();
 
+const sourceClicked = async () => {
+    await window.electron.openURL("https://github.com/lockdown-systems/cyd");
+};
+
 const privacyClicked = async () => {
     await window.electron.openURL("https://cyd.social/privacy");
 };
@@ -34,7 +38,7 @@ onMounted(async () => {
         </div>
         <div class="text-center">
             <p>
-                Find a bug or need help? Email help@cyd.social.
+                Find a bug or need help? Email collective@lockdown.systems.
             </p>
             <p class="text-muted">
                 <img src="/assets/wordmark.svg" class="cyd-wordmark mr-2" alt="Cyd">
@@ -42,7 +46,8 @@ onMounted(async () => {
                 version {{ appVersion }}
             </p>
             <p class="text-muted">
-                Copyright © Lockdown Systems LLC {{ currentYear }}
+                Copyright © Lockdown Systems LLC {{ currentYear }}, licensed under GPLv3<br>
+                <span class="btn btn-link" @click="sourceClicked">Source Code</span>
                 <span class="btn btn-link" @click="privacyClicked">Privacy Policy</span>
                 <span class="btn btn-link" @click="termsClicked">Terms of Use</span>
             </p>

@@ -99,7 +99,7 @@ export class AccountXViewModel extends BaseViewModel {
     public currentJobIndex: number = 0;
     public currentTweetItem: XTweetItem | null = null;
 
-    // This is used to track the user's progress through the wizard. If they want to review before 
+    // This is used to track the user's progress through the wizard. If they want to review before
     // they delete, this lets them go back and change settings without starting over
     public isDeleteReviewActive: boolean = false;
 
@@ -221,6 +221,8 @@ export class AccountXViewModel extends BaseViewModel {
     // Returns the API response's status code, or 0 on error
     async graphqlDelete(ct0: string, url: string, referrer: string, body: string): Promise<number> {
         this.log("graphqlDelete", [url, body]);
+        // Note: The Bearer token in the authorization header is X/Twitter's public web client bearer
+        // token used by x.com. It's publically visible in their web app and is not a secret.
         return await this.getWebview()?.executeJavaScript(`
             (async () => {
                 const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
@@ -2675,7 +2677,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
-I'll help you build a private local database of your X data to the \`Documents\` folder on your computer. 
+I'll help you build a private local database of your X data to the \`Documents\` folder on your computer.
 You'll be able to access it even after you delete it from X.
 
 **Which data do you want to save?**`;

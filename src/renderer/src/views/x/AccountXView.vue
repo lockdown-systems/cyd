@@ -246,20 +246,29 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
 const startJobs = async () => {
     // Premium check
     if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
-        await updateUserAuthenticated();
-        console.log("userAuthenticated", userAuthenticated.value);
-        if (!userAuthenticated.value) {
-            model.value.state = State.WizardCheckPremium;
-            await startStateLoop();
-            return;
+        // In open mode, allow the user to continue
+        if (await window.electron.getMode() == "open") {
+            if (!await window.electron.showQuestion("You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.", "Continue", "Cancel")) {
+                return;
+            }
         }
+        // Otherwise, make sure the user is authenticated
+        else {
+            await updateUserAuthenticated();
+            console.log("userAuthenticated", userAuthenticated.value);
+            if (!userAuthenticated.value) {
+                model.value.state = State.WizardCheckPremium;
+                await startStateLoop();
+                return;
+            }
 
-        await updateUserPremium();
-        console.log("userPremium", userPremium.value);
-        if (!userPremium.value) {
-            model.value.state = State.WizardCheckPremium;
-            await startStateLoop();
-            return;
+            await updateUserPremium();
+            console.log("userPremium", userPremium.value);
+            if (!userPremium.value) {
+                model.value.state = State.WizardCheckPremium;
+                await startStateLoop();
+                return;
+            }
         }
     }
 
