@@ -42,6 +42,11 @@ interface Config {
     plausibleDomain: string;
 }
 
+let isAppReady = false;
+
+// Queue of cyd:// URLs to handle, in case the app is not ready
+const cydURLQueue: string[] = [];
+
 // Load the config
 const configPath = path.join(getResourcesPath(), 'config.json');
 if (!fs.existsSync(configPath)) {
@@ -66,16 +71,68 @@ if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
-if (!app.requestSingleInstanceLock()) {
-    app.quit();
-    process.exit(0);
-}
-
 // Initialize the logger
 log.initialize();
-log.transports.file.level = false; // Disable file logging
+log.transports.file.level = config.mode == "prod" ? false : "debug"; // Disable file logging in prod mode
 log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
+
+// Handle cyd:// URLs (or cyd-dev:// in dev mode)
+const openCydURL = async (cydURL: string) => {
+    if (!isAppReady) {
+        log.debug('Adding cyd:// URL to queue:', cydURL);
+        cydURLQueue.push(cydURL);
+        return;
+    }
+
+    const url = new URL(cydURL);
+    log.info(`Opening URL: ${url.toString()}`);
+
+    // If there's no main window, open one
+    if (BrowserWindow.getAllWindows().length === 0) {
+        await createWindow();
+    }
+
+    // If hostname is "open", this just means open Cyd
+    if (url.hostname == "open") {
+        // Success!
+        return;
+    }
+
+    // Check for Bluesky OAuth redirect
+    const blueskyHostname = config.mode == "prod" ? 'social.cyd.api' : 'social.cyd.dev-api';
+    if (url.hostname == blueskyHostname && url.pathname == "/atproto-oauth-callback") {
+        dialog.showMessageBoxSync({
+            title: "Cyd",
+            message: `Bluesky OAuth is not implemented yet.`,
+            type: 'info',
+        });
+        return;
+    }
+
+    // For all other paths, show an error
+    dialog.showMessageBoxSync({
+        title: "Cyd",
+        message: `Invalid Cyd URL: ${url.toString()}.`,
+        type: 'info',
+    });
+    return;
+}
+
+// Register the cyd:// (or cyd-dev://) protocol
+const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
+app.setAsDefaultProtocolClient(protocolString)
+
+// In Linux and Windows, handle cyd:// URLs passed in via the CLI
+const lastArg = process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
+if ((process.platform == 'linux' || process.platform == 'win32') && lastArg.startsWith(protocolString + "://")) {
+    openCydURL(lastArg);
+}
+
+// In macOS, handle the cyd:// URLs
+app.on('open-url', (event, url) => {
+    openCydURL(url);
+})
 
 const cydDevMode = process.env.CYD_DEV === "1";
 
@@ -106,7 +163,7 @@ async function initializeApp() {
     }
 
     // Set the log level
-    if (config.mode == "open" || config.mode == "dev" || config.mode == "local") {
+    if (config.mode != "prod") {
         log.transports.console.level = "debug";
     } else {
         log.transports.console.level = "info";
@@ -164,10 +221,11 @@ async function initializeApp() {
     await createWindow();
 }
 
+let win: BrowserWindow | null = null;
 async function createWindow() {
     // Create the browser window
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         width: 1000,
         height: 850,
         minWidth: 900,
@@ -179,12 +237,20 @@ async function createWindow() {
         icon: icon,
     });
 
-    // Handle power monitor events
+    // Mark the app as ready
+    isAppReady = true;
 
+    // Handle any cyd:// URLs that came in before the app was ready
+    log.debug('Handling cyd:// URLs in queue:', cydURLQueue);
+    for (const url of cydURLQueue) {
+        openCydURL(url);
+    }
+
+    // Handle power monitor events
     powerMonitor.on('suspend', () => {
         log.info('System is suspending');
         try {
-            win.webContents.send('powerMonitor:suspend');
+            win?.webContents.send('powerMonitor:suspend');
         } catch (error) {
             log.error('Failed to send powerMonitor:suspend to renderer:', error);
         }
@@ -193,7 +259,7 @@ async function createWindow() {
     powerMonitor.on('resume', () => {
         log.info('System has resumed');
         try {
-            win.webContents.send('powerMonitor:resume');
+            win?.webContents.send('powerMonitor:resume');
         } catch (error) {
             log.error('Failed to send powerMonitor:resume to renderer:', error);
         }
@@ -376,6 +442,9 @@ async function createWindow() {
             }
 
             try {
+                if (!win) {
+                    throw new Error("Window not initialized");
+                }
                 const result = dialog.showOpenDialogSync(win, options);
                 if (result && result.length > 0) {
                     return result[0];
@@ -483,13 +552,34 @@ async function createWindow() {
 
     // When devtools opens, make sure the window is wide enough
     win.webContents.on('devtools-opened', () => {
-        const [width, height] = win.getSize();
-        if (width < 1500) {
-            win.setSize(1500, height);
+        if (win) {
+            const [width, height] = win.getSize();
+            if (width < 1500) {
+                win.setSize(1500, height);
+            }
         }
     });
 
     return win;
+}
+
+// Make sure there's only one instance of the app running
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+    process.exit(0);
+} else {
+    app.on('second-instance', (event, commandLine, _) => {
+        // Someone tried to run a second instance, focus the window
+        if (win) {
+            if (win.isMinimized()) win.restore()
+            win.focus()
+        }
+        // commandLine is array of strings in which last element is deep link URL
+        const cydURL = commandLine.pop()
+        if (cydURL) {
+            openCydURL(cydURL);
+        }
+    })
 }
 
 app.enableSandbox();
@@ -501,10 +591,10 @@ app.on('window-all-closed', () => {
     }
 });
 
-app.on('activate', () => {
+app.on('activate', async () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        await createWindow();
     }
 });
