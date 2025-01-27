@@ -1272,7 +1272,7 @@ export class XAccountController {
         await archiveZip.extract({ path: getAccountDataPath("X", this.account.username) });
     }
 
-    async writeJSONArray(streamWriter: fs.WriteStream, items: any[], propertyName: string) {
+    async writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
         streamWriter.write(`  "${propertyName}": [\n`);
         for (let i = 0; i < items.length; i++) {
             const suffix = i < items.length - 1 ? ',\n' : '\n';
