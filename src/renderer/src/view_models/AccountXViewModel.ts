@@ -1077,7 +1077,7 @@ Hang on while I scroll down to your earliest tweets.`;
         let archiveStartResponse: XArchiveStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `**I'm download HTML copies of your tweets, starting with the oldest.**
+        this.instructions = `**I'm downloading HTML copies of your tweets, starting with the oldest.**
 
 This may take a while...`;
         this.showAutomationNotice = true;
