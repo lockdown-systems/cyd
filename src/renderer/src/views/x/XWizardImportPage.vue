@@ -24,7 +24,7 @@ const importClicked = async () => {
 };
 
 const backClicked = async () => {
-    emit('setState', State.WizardImportOrBuild);
+    emit('setState', State.WizardDatabase);
 };
 </script>
 

@@ -20,7 +20,7 @@ import SpeechBubble from '../shared_components/SpeechBubble.vue';
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
-import XWizardImportOrBuildPage from './XWizardImportOrBuildPage.vue';
+import XWizardDatabasePage from './XWizardDatabasePage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportingPage from './XWizardImportingPage.vue';
@@ -29,6 +29,7 @@ import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
+import XWizardMigrate from './XWizardMigrate.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
@@ -463,8 +464,8 @@ onUnmounted(async () => {
         <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
             <div class="wizard-container d-flex">
                 <div class="wizard-content flex-grow-1">
-                    <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
-                        :model="unref(model)" @set-state="setState($event)" />
+                    <XWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay" :model="unref(model)"
+                        @set-state="setState($event)" />
 
                     <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
                         @set-state="setState($event)" />
@@ -492,6 +493,10 @@ onUnmounted(async () => {
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" @update-account="updateAccount"
                         @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
+
+                    <XWizardMigrate v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
+                        :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                        @set-state="setState($event)" />
 
                     <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                         :model="unref(model)"
