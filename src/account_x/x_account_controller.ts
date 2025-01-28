@@ -10,6 +10,8 @@ import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
+import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
+
 import {
     getResourcesPath,
     getAccountDataPath,
@@ -95,6 +97,8 @@ export class XAccountController {
     private progress: XProgress = emptyXProgress();
 
     private cookies: Record<string, string> = {};
+
+    private blueskyClient: NodeOAuthClient | null = null;
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
@@ -2145,5 +2149,53 @@ export class XAccountController {
 
     async setConfig(key: string, value: string) {
         return setConfig(key, value, this.db);
+    }
+
+    async blueskyInitClient(): Promise<NodeOAuthClient> {
+        // Bluesky client, for migrating
+        let host;
+        if (process.env.CYD_MODE === "prod") {
+            host = "https://api.cyd.social"
+        } else {
+            host = "https://dev-api.cyd.social"
+        }
+        const path = "/bluesky-oauth/client-metadata.json";
+
+        return await NodeOAuthClient.fromClientId({
+            clientId: `https://${host}/${path}`,
+            stateStore: {
+                async set(key: string, internalState: NodeSavedState): Promise<void> {
+                    await setConfig(`blueskyStateStore-${key}`, JSON.stringify(internalState));
+                },
+                async get(key: string): Promise<NodeSavedState | undefined> {
+                    const stateStore = await getConfig(`blueskyStateStore-${key}`);
+                    return stateStore ? JSON.parse(stateStore) : undefined;
+                },
+                async del(key: string): Promise<void> {
+                    await setConfig(`blueskyStateStore-${key}`, "");
+                },
+            },
+            sessionStore: {
+                async set(sub: string, session: NodeSavedSession): Promise<void> {
+                    await setConfig(`blueskySessionStore-${sub}`, JSON.stringify(session));
+                },
+                async get(sub: string): Promise<NodeSavedSession | undefined> {
+                    const sessionStore = await getConfig(`blueskySessionStore-${sub}`);
+                    return sessionStore ? JSON.parse(sessionStore) : undefined;
+                },
+                async del(sub: string): Promise<void> {
+                    await setConfig(`blueskySessionStore-${sub}`, "");
+                },
+            },
+        });
+    }
+
+    async blueskyAuthorize(handle: string): Promise<void> {
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        const url = await this.blueskyClient.authorize(handle);
+        await shell.openExternal(url.toString());
     }
 }

@@ -29,16 +29,15 @@ defineProps<{
                         good way to keep your old tweets separate from your new posts.
                     </p>
                     <p>
-                        <strong>Not all of your tweets can be imported into Bluesky.</strong> It doesn't
-                        make sense to migrate your replies if the X user you're replying to doesn't exist on Bluesky.
-                        Cyd will import tweets that are not replies, and also tweets where you're replying to yourself,
-                        which will keep your threads intact.
+                        <strong>Not all of your tweets can be imported into Bluesky.</strong> Cyd will import tweets
+                        that are not replies, and also tweets where you're replying to yourself, which will keep your
+                        threads intact.
                     </p>
                 </div>
             </div>
 
             <p>
-                You can import TK tweets into Bluesky. Ready to get started?
+                asdf
             </p>
         </div>
     </div>
