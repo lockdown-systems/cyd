@@ -1222,26 +1222,47 @@ export class XAccountController {
 
         log.info(`XAccountController.archiveBuild: archive has ${tweets.length} tweets, ${retweets.length} retweets, ${likes.length} likes, ${bookmarks.length} bookmarks, ${users.length} users, ${conversations.length} conversations, and ${messages.length} messages`);
 
-        const archive: XArchiveTypes.XArchive = {
-            appVersion: app.getVersion(),
-            username: this.account.username,
-            createdAt: new Date().toLocaleString(),
-            tweets: formattedTweets,
-            retweets: formattedRetweets,
-            likes: formattedLikes,
-            bookmarks: formattedBookmarks,
-            users: formattedUsers,
-            conversations: formattedConversations,
-            messages: formattedMessages,
-        }
-
-        // Save the archive object to a file
+        // Save the archive object to a file using streaming
         const assetsPath = path.join(getAccountDataPath("X", this.account.username), "assets");
         if (!fs.existsSync(assetsPath)) {
             fs.mkdirSync(assetsPath);
         }
         const archivePath = path.join(assetsPath, "archive.js");
-        fs.writeFileSync(archivePath, `window.archiveData=${JSON.stringify(archive, null, 2)};`);
+
+        const streamWriter = fs.createWriteStream(archivePath);
+        try {
+            // Write the window.archiveData prefix
+            streamWriter.write('window.archiveData=');
+
+            // Write the archive metadata
+            streamWriter.write('{\n');
+            streamWriter.write(`  "appVersion": ${JSON.stringify(app.getVersion())},\n`);
+            streamWriter.write(`  "username": ${JSON.stringify(this.account.username)},\n`);
+            streamWriter.write(`  "createdAt": ${JSON.stringify(new Date().toLocaleString())},\n`);
+
+            // Write each array separately using a streaming approach in case the arrays are large
+            await this.writeJSONArray(streamWriter, formattedTweets, "tweets");
+            streamWriter.write(',\n');
+            await this.writeJSONArray(streamWriter, formattedRetweets, "retweets");
+            streamWriter.write(',\n');
+            await this.writeJSONArray(streamWriter, formattedLikes, "likes");
+            streamWriter.write(',\n');
+            await this.writeJSONArray(streamWriter, formattedBookmarks, "bookmarks");
+            streamWriter.write(',\n');
+            await this.writeJSONArray(streamWriter, Object.values(formattedUsers), "users");
+            streamWriter.write(',\n');
+            await this.writeJSONArray(streamWriter, formattedConversations, "conversations");
+            streamWriter.write(',\n');
+            await this.writeJSONArray(streamWriter, formattedMessages, "messages");
+
+            // Close the object
+            streamWriter.write('};');
+
+            await new Promise((resolve) => streamWriter.end(resolve));
+        } catch (error) {
+            streamWriter.end();
+            throw error;
+        }
 
         log.info(`XAccountController.archiveBuild: archive saved to ${archivePath}`);
 
@@ -1249,6 +1270,15 @@ export class XAccountController {
         const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: getAccountDataPath("X", this.account.username) });
+    }
+
+    async writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
+        streamWriter.write(`  "${propertyName}": [\n`);
+        for (let i = 0; i < items.length; i++) {
+            const suffix = i < items.length - 1 ? ',\n' : '\n';
+            streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
+        }
+        streamWriter.write('  ]');
     }
 
     // When you start deleting tweets, return a list of tweets to delete
