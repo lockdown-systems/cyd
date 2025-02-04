@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { IpcRendererEvent } from 'electron';
 import { ref } from 'vue'
 import {
     AccountXViewModel
@@ -42,6 +43,11 @@ const disconnectClicked = async () => {
     // await window.electron.X.blueskyDisconnect(props.model.account.id);
     state.value = State.NotConnected;
 }
+
+// Listen for blueskyOAuthCallback event
+window.electron.ipcRenderer.on('blueskyOAuthCallback', async (event: IpcRendererEvent, state: string, iss: string, code: string) => {
+    console.log('blueskyOAuthCallback', event, state, iss, code);
+});
 </script>
 
 <template>

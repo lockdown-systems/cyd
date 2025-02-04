@@ -18,6 +18,18 @@ import {
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
+    // Export ipcRenderer to the frontend
+    ipcRenderer: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, args),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        on: (channel: string, func: (...args: any[]) => void) => ipcRenderer.on(channel, (event, ...args) => func(event, ...args)),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        once: (channel: string, func: (...args: any[]) => void) => ipcRenderer.once(channel, (event, ...args) => func(event, ...args)),
+        removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
+    },
+
+    // Global functions
     checkForUpdates: () => {
         ipcRenderer.invoke('checkForUpdates')
     },
@@ -72,6 +84,8 @@ contextBridge.exposeInMainWorld('electron', {
     deleteSettingsAndRestart: () => {
         ipcRenderer.invoke('deleteSettingsAndRestart')
     },
+
+    // Database functions
     database: {
         getConfig: (key: string): Promise<string | null> => {
             return ipcRenderer.invoke('database:getConfig', key);
@@ -113,6 +127,8 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('database:deleteAccount', accountID)
         },
     },
+
+    // Archive functions
     archive: {
         isPageAlreadySaved: (outputPath: string, basename: string): Promise<boolean> => {
             return ipcRenderer.invoke('archive:isPageAlreadySaved', outputPath, basename)
@@ -121,6 +137,8 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('archive:savePage', webContentsID, outputPath, basename)
         }
     },
+
+    // X functions
     X: {
         resetProgress: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:resetProgress', accountID)
@@ -267,6 +285,7 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('X:blueskyAuthorize', accountID, handle);
         },
     },
+
     // Handle events from the main process
     onPowerMonitorSuspend: (callback: () => void) => {
         ipcRenderer.on('powerMonitor:suspend', callback);

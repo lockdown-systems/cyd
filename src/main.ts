@@ -77,6 +77,9 @@ log.transports.file.level = config.mode == "prod" ? false : "debug"; // Disable 
 log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
+// The main window
+let win: BrowserWindow | null = null;
+
 // Handle cyd:// URLs (or cyd-dev:// in dev mode)
 const openCydURL = async (cydURL: string) => {
     if (!isAppReady) {
@@ -106,6 +109,9 @@ const openCydURL = async (cydURL: string) => {
         const code = params.get('code');
 
         // TODO: figure out what account was doing this, and then send an event to finish the OAuth flow
+        if (win) {
+            win.webContents.send('blueskyOAuthCallback', state, iss, code);
+        }
 
         return;
     }
@@ -222,7 +228,6 @@ async function initializeApp() {
     await createWindow();
 }
 
-let win: BrowserWindow | null = null;
 async function createWindow() {
     // Create the browser window
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));
