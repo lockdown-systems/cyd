@@ -31,24 +31,35 @@ const connectClicked = async () => {
     connectButtonText.value = 'Connecting...';
     state.value = State.Connecting;
 
-    const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
-    if (ret !== true) {
-        await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+    try {
+        const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
+        if (ret !== true) {
+            await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+            connectButtonText.value = 'Connect';
+            state.value = State.NotConnected;
+        } else {
+            connectButtonText.value = 'Connect';
+            state.value = State.FinishInBrowser;
+        }
+    } catch (e) {
+        await window.electron.showMessage('Failed to connect to Bluesky: ' + e);
         connectButtonText.value = 'Connect';
         state.value = State.NotConnected;
-    } else {
-        connectButtonText.value = 'Connect';
-        state.value = State.FinishInBrowser;
     }
 }
 
-const oauthCallback = async (paramsState: string, paramsIss: string, paramsCode: string) => {
-    const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, paramsState, paramsIss, paramsCode);
-    if (ret !== true) {
-        await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+const oauthCallback = async (queryString: string) => {
+    try {
+        const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, queryString);
+        if (ret !== true) {
+            await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+            state.value = State.NotConnected;
+        } else {
+            state.value = State.Connected;
+        }
+    } catch (e) {
+        await window.electron.showMessage('Failed to connect to Bluesky: ' + e);
         state.value = State.NotConnected;
-    } else {
-        state.value = State.Connected;
     }
 }
 
@@ -69,8 +80,8 @@ onMounted(async () => {
     }
 
     // Listen for OAuth callback event
-    window.electron.ipcRenderer.on(blueskyOAuthCallbackEventName, async (_event: IpcRendererEvent, state: string, iss: string, code: string) => {
-        await oauthCallback(state, iss, code);
+    window.electron.ipcRenderer.on(blueskyOAuthCallbackEventName, async (_event: IpcRendererEvent, queryString: string) => {
+        await oauthCallback(queryString);
     });
 });
 

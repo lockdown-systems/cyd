@@ -103,11 +103,6 @@ const openCydURL = async (cydURL: string) => {
 
     // If hostname is "bluesky-oauth", this means finish the Bluesky OAuth flow
     if (url.hostname == "bluesky-oauth") {
-        const params = new URLSearchParams(url.search);
-        const state = params.get('state');
-        const iss = params.get('iss');
-        const code = params.get('code');
-
         // Get the account ID that's in the middle of the OAuth flow
         const accountID = database.getConfig('blueskyOAuthAccountID');
         const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
@@ -117,7 +112,7 @@ const openCydURL = async (cydURL: string) => {
 
         // Send the event to the renderer
         if (win) {
-            win.webContents.send(blueskyOAuthCallbackEventName, state, iss, code);
+            win.webContents.send(blueskyOAuthCallbackEventName, url.search);
         }
         return;
     }

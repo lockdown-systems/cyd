@@ -447,10 +447,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:blueskyCallback', async (_, accountID: number, paramsState: string, paramsIss: string, paramsCode: string): Promise<boolean | string> => {
+    ipcMain.handle('X:blueskyCallback', async (_, accountID: number, queryString: string): Promise<boolean | string> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.blueskyCallback(paramsState, paramsIss, paramsCode);
+            return await controller.blueskyCallback(queryString);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

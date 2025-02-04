@@ -288,8 +288,8 @@ contextBridge.exposeInMainWorld('electron', {
         blueskyAuthorize: (accountID: number, handle: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyAuthorize', accountID, handle);
         },
-        blueskyCallback: (accountID: number, paramsState: string, paramsIss: string, paramsCode: string): Promise<boolean | string> => {
-            return ipcRenderer.invoke('X:blueskyCallback', accountID, paramsState, paramsIss, paramsCode)
+        blueskyCallback: (accountID: number, queryString: string): Promise<boolean | string> => {
+            return ipcRenderer.invoke('X:blueskyCallback', accountID, queryString)
         },
     },
 

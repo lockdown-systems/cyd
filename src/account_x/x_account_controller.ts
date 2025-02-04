@@ -2110,18 +2110,24 @@ export class XAccountController {
         }
     }
 
-    async blueskyCallback(paramsState: string, paramsIss: string, paramsCode: string): Promise<boolean | string> {
+    async blueskyCallback(queryString: string): Promise<boolean | string> {
         // Initialize the Bluesky client
         if (!this.blueskyClient) {
             this.blueskyClient = await this.blueskyInitClient();
         }
 
-        const params = new URLSearchParams();
-        params.append("state", paramsState);
-        params.append("iss", paramsIss);
-        params.append("code", paramsCode);
-
+        const params = new URLSearchParams(queryString);
         const { session, state } = await this.blueskyClient.callback(params);
+
+        // Handle errors
+        const error = params.get("error");
+        const errorDescription = params.get("error_description");
+        if (errorDescription) {
+            return errorDescription;
+        }
+        if (error) {
+            return `The authorization failed with error: ${error}`;
+        }
 
         log.info("XAccountController.blueskyCallback: authorize() was called with state", state);
         log.info("XAccountController.blueskyCallback: user authenticated as", session.did);

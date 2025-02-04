@@ -124,7 +124,7 @@ declare global {
                 setConfig: (accountID: number, key: string, value: string) => void;
                 blueskyGetProfile: (accountID: number) => Promise<BlueskyMigrationProfile | null>;
                 blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
-                blueskyCallback: (accountID: number, paramsState: string, paramsIss: string, paramsCode: string) => Promise<boolean | string>;
+                blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;
