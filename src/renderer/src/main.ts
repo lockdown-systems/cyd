@@ -60,6 +60,8 @@ declare global {
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
+                deleteConfig: (key: string) => void;
+                deleteConfigLike: (key: string) => void;
                 getErrorReport: (id: number) => Promise<ErrorReport | null>;
                 getNewErrorReports: (accountID: number) => Promise<ErrorReport[]>;
                 createErrorReport: (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => Promise<void>;
@@ -122,9 +124,12 @@ declare global {
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
+                deleteConfig: (accountID: number, key: string) => void;
+                deleteConfigLike: (accountID: number, key: string) => void;
                 blueskyGetProfile: (accountID: number) => Promise<BlueskyMigrationProfile | null>;
                 blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
                 blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;
+                blueskyDisconnect: (accountID: number) => Promise<void>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;

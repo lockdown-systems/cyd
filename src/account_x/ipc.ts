@@ -429,6 +429,24 @@ export const defineIPCX = () => {
         }
     });
 
+    ipcMain.handle('X:deleteConfig', async (_, accountID: number, key: string): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteConfig(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteConfigLike', async (_, accountID: number, key: string): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteConfigLike(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
     ipcMain.handle('X:blueskyGetProfile', async (_, accountID: number): Promise<BlueskyMigrationProfile | null> => {
         try {
             const controller = getXAccountController(accountID);
@@ -451,6 +469,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyCallback(queryString);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyDisconnect', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyDisconnect();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

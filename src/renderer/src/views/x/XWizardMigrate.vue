@@ -55,6 +55,7 @@ const oauthCallback = async (queryString: string) => {
             await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
             state.value = State.NotConnected;
         } else {
+            blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
             state.value = State.Connected;
         }
     } catch (e) {
@@ -64,7 +65,7 @@ const oauthCallback = async (queryString: string) => {
 }
 
 const disconnectClicked = async () => {
-    // await window.electron.X.blueskyDisconnect(props.model.account.id);
+    await window.electron.X.blueskyDisconnect(props.model.account.id);
     state.value = State.NotConnected;
 }
 
@@ -72,7 +73,11 @@ const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.accoun
 
 onMounted(async () => {
     // Get Bluesky profile
-    blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
+    try {
+        blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
+    } catch (e) {
+        await window.electron.showMessage('Failed to get Bluesky profile: ' + e);
+    }
     if (blueskyProfile.value) {
         state.value = State.Connected;
     } else {

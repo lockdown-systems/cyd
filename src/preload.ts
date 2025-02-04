@@ -94,6 +94,12 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (key: string, value: string) => {
             ipcRenderer.invoke('database:setConfig', key, value)
         },
+        deleteConfig: (key: string) => {
+            ipcRenderer.invoke('database:deleteConfig', key)
+        },
+        deleteConfigLike: (key: string) => {
+            ipcRenderer.invoke('database:deleteConfigLike', key)
+        },
         getErrorReport: (id: number): Promise<ErrorReport | null> => {
             return ipcRenderer.invoke('database:getErrorReport', id)
         },
@@ -282,6 +288,12 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         },
+        deleteConfig: (accountID: number, key: string): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteConfig', accountID, key);
+        },
+        deleteConfigLike: (accountID: number, key: string): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteConfigLike', accountID, key);
+        },
         blueskyGetProfile: (accountID: number): Promise<BlueskyMigrationProfile | null> => {
             return ipcRenderer.invoke('X:blueskyGetProfile', accountID);
         },
@@ -290,6 +302,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         blueskyCallback: (accountID: number, queryString: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyCallback', accountID, queryString)
+        },
+        blueskyDisconnect: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('X:blueskyDisconnect', accountID)
         },
     },
 

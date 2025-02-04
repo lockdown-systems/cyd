@@ -108,7 +108,7 @@ const openCydURL = async (cydURL: string) => {
         const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
 
         // Reset the config value
-        database.setConfig('blueskyOAuthAccountID', '');
+        database.deleteConfig('blueskyOAuthAccountID');
 
         // Send the event to the renderer
         if (win) {

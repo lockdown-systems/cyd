@@ -43,6 +43,8 @@ import {
     Sqlite3Count,
     getConfig as globalGetConfig,
     setConfig as globalSetConfig,
+    deleteConfig as globalDeleteConfig,
+    deleteConfigLike as globalDeleteConfigLike,
 } from '../database'
 import { IMITMController } from '../mitm';
 import {
@@ -2013,6 +2015,14 @@ export class XAccountController {
         return globalSetConfig(key, value, this.db);
     }
 
+    async deleteConfig(key: string) {
+        return globalDeleteConfig(key, this.db);
+    }
+
+    async deleteConfigLike(key: string) {
+        return globalDeleteConfigLike(key, this.db);
+    }
+
     async blueskyInitClient(): Promise<NodeOAuthClient> {
         // Bluesky client, for migrating
         let host;
@@ -2088,9 +2098,6 @@ export class XAccountController {
             // Authorize the handle
             const url = await this.blueskyClient.authorize(handle);
 
-            // Save the handle
-            await this.setConfig("blueskyHandle", handle);
-
             // Save the account ID in the global config
             const accountID = this.account?.id == null ? "" : this.account.id.toString();
             await globalSetConfig("blueskyOAuthAccountID", accountID);
@@ -2147,5 +2154,29 @@ export class XAccountController {
         } else {
             return "agent.did is null";
         }
+    }
+
+    async blueskyDisconnect(): Promise<void> {
+        // Revoke the session
+        try {
+            if (!this.blueskyClient) {
+                this.blueskyClient = await this.blueskyInitClient();
+            }
+            const did = await this.getConfig("blueskyDID");
+            if (did) {
+                const session = await this.blueskyClient.restore(did);
+                await session.signOut();
+            }
+        } catch (e) {
+            log.error("XAccountController.blueskyDisconnect: Error revoking session", e);
+        }
+
+        // Delete from global config
+        await globalDeleteConfig("blueskyOAuthAccountID");
+
+        // Delete from account config
+        await this.deleteConfig("blueskyDID");
+        await this.deleteConfigLike("blueskyStateStore-%");
+        await this.deleteConfigLike("blueskySessionStore-%");
     }
 }
