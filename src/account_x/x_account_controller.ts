@@ -2117,7 +2117,6 @@ export class XAccountController {
         }
 
         const params = new URLSearchParams(queryString);
-        const { session, state } = await this.blueskyClient.callback(params);
 
         // Handle errors
         const error = params.get("error");
@@ -2128,6 +2127,9 @@ export class XAccountController {
         if (error) {
             return `The authorization failed with error: ${error}`;
         }
+
+        // Finish the callback
+        const { session, state } = await this.blueskyClient.callback(params);
 
         log.info("XAccountController.blueskyCallback: authorize() was called with state", state);
         log.info("XAccountController.blueskyCallback: user authenticated as", session.did);
