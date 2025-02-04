@@ -428,7 +428,7 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:blueskyAuthorize', async (_, accountID: number, handle: string): Promise<boolean> => {
+    ipcMain.handle('X:blueskyAuthorize', async (_, accountID: number, handle: string): Promise<boolean | string> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyAuthorize(handle);

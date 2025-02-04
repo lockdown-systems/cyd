@@ -2013,13 +2013,13 @@ export class XAccountController {
 
     async blueskyInitClient(): Promise<NodeOAuthClient> {
         // Bluesky client, for migrating
-        const host = "cyd.social";
-        let path;
+        let host;
         if (process.env.CYD_MODE === "prod") {
-            path = "assets/atproto-client-metadata.json"
+            host = "api.cyd.social"
         } else {
-            path = "assets/atproto-client-metadata-dev1.json"
+            host = "dev-api.cyd.social"
         }
+        const path = "bluesky/client-metadata.json";
         return await NodeOAuthClient.fromClientId({
             clientId: `https://${host}/${path}`,
             stateStore: {

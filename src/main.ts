@@ -100,7 +100,13 @@ const openCydURL = async (cydURL: string) => {
 
     // If hostname is "bluesky-oauth", this means finish the Bluesky OAuth flow
     if (url.hostname == "bluesky-oauth") {
-        // TODO: finish the Bluesky OAuth flow
+        const params = new URLSearchParams(url.search);
+        const state = params.get('state');
+        const iss = params.get('iss');
+        const code = params.get('code');
+
+        // TODO: figure out what account was doing this, and then send an event to finish the OAuth flow
+
         return;
     }
 
