@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import {
     AccountXViewModel
 } from '../../view_models/AccountXViewModel'
+import { BlueskyMigrationProfile } from '../../../../shared_types'
 
 enum State {
     NotConnected,
@@ -13,6 +14,8 @@ enum State {
 }
 
 const state = ref<State>(State.NotConnected);
+
+const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 
 const blueskyHandle = ref('');
 const connectButtonText = ref('Connect');
@@ -39,14 +42,41 @@ const connectClicked = async () => {
     }
 }
 
+const oauthCallback = async (paramsState: string, paramsIss: string, paramsCode: string) => {
+    const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, paramsState, paramsIss, paramsCode);
+    if (ret !== true) {
+        await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+        state.value = State.NotConnected;
+    } else {
+        state.value = State.Connected;
+    }
+}
+
 const disconnectClicked = async () => {
     // await window.electron.X.blueskyDisconnect(props.model.account.id);
     state.value = State.NotConnected;
 }
 
-// Listen for blueskyOAuthCallback event
-window.electron.ipcRenderer.on('blueskyOAuthCallback', async (event: IpcRendererEvent, state: string, iss: string, code: string) => {
-    console.log('blueskyOAuthCallback', event, state, iss, code);
+const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
+
+onMounted(async () => {
+    // Get Bluesky profile
+    blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
+    if (blueskyProfile.value) {
+        state.value = State.Connected;
+    } else {
+        state.value = State.NotConnected;
+    }
+
+    // Listen for OAuth callback event
+    window.electron.ipcRenderer.on(blueskyOAuthCallbackEventName, async (_event: IpcRendererEvent, state: string, iss: string, code: string) => {
+        await oauthCallback(state, iss, code);
+    });
+});
+
+onUnmounted(async () => {
+    // Remove OAuth callback event listener
+    window.electron.ipcRenderer.removeAllListeners(blueskyOAuthCallbackEventName);
 });
 </script>
 
@@ -96,20 +126,39 @@ window.electron.ipcRenderer.on('blueskyOAuthCallback', async (event: IpcRenderer
                 </form>
             </template>
             <template v-else-if="state == State.FinishInBrowser">
-                <p>
-                    Finish connecting to your Bluesky account in your browser.
-                </p>
-                <p>
-                    <button class="btn btn-secondary" type="button" @click="disconnectClicked">
-                        Cancel
-                    </button>
-                </p>
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        Finish connecting to the Bluesky account <strong>@{{ blueskyHandle }}</strong> in web browser.
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" type="button" @click="disconnectClicked">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
             </template>
             <template v-else-if="state == State.Connected">
-                <p>You are connected.</p>
-                <button class="btn btn-secondary" type="button" @click="disconnectClicked">
-                    Disconnect
-                </button>
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <template v-if="blueskyProfile">
+                            <template v-if="blueskyProfile.avatar">
+                                <img :src="blueskyProfile.avatar" class="rounded-circle me-2" width="32" height="32">
+                            </template>
+                            <template v-if="blueskyProfile.displayName">
+                                <span class="fw-bold me-2">{{ blueskyProfile.displayName }}</span>
+                                <small class="text-muted">@{{ blueskyProfile.handle }}</small>
+                            </template>
+                            <template v-else>
+                                <span class="fw-bold">@{{ blueskyProfile.handle }}</span>
+                            </template>
+                        </template>
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" type="button" @click="disconnectClicked">
+                            Disconnect
+                        </button>
+                    </div>
+                </div>
             </template>
         </div>
     </div>

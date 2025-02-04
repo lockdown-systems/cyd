@@ -21,6 +21,7 @@ import type {
     XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
+    BlueskyMigrationProfile,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -121,7 +122,9 @@ declare global {
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
+                blueskyGetProfile: (accountID: number) => Promise<BlueskyMigrationProfile | null>;
                 blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
+                blueskyCallback: (accountID: number, paramsState: string, paramsIss: string, paramsCode: string) => Promise<boolean | string>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;

@@ -15,6 +15,7 @@ import {
     XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
+    BlueskyMigrationProfile,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -281,8 +282,14 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         },
+        blueskyGetProfile: (accountID: number): Promise<BlueskyMigrationProfile | null> => {
+            return ipcRenderer.invoke('X:blueskyGetProfile', accountID);
+        },
         blueskyAuthorize: (accountID: number, handle: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyAuthorize', accountID, handle);
+        },
+        blueskyCallback: (accountID: number, paramsState: string, paramsIss: string, paramsCode: string): Promise<boolean | string> => {
+            return ipcRenderer.invoke('X:blueskyCallback', accountID, paramsState, paramsIss, paramsCode)
         },
     },
 

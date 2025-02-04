@@ -15,7 +15,8 @@ import {
     XDatabaseStats,
     XDeleteReviewStats,
     XArchiveInfo,
-    XImportArchiveResponse
+    XImportArchiveResponse,
+    BlueskyMigrationProfile,
 } from '../shared_types'
 import { getMITMController } from '../mitm';
 import { packageExceptionForReport } from '../util'
@@ -428,10 +429,28 @@ export const defineIPCX = () => {
         }
     });
 
+    ipcMain.handle('X:blueskyGetProfile', async (_, accountID: number): Promise<BlueskyMigrationProfile | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyGetProfile();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
     ipcMain.handle('X:blueskyAuthorize', async (_, accountID: number, handle: string): Promise<boolean | string> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyAuthorize(handle);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyCallback', async (_, accountID: number, paramsState: string, paramsIss: string, paramsCode: string): Promise<boolean | string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyCallback(paramsState, paramsIss, paramsCode);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

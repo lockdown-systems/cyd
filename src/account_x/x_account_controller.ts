@@ -11,6 +11,7 @@ import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
 import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
+import { Agent } from '@atproto/api';
 
 import {
     getResourcesPath,
@@ -31,7 +32,8 @@ import {
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
     XArchiveInfo, emptyXArchiveInfo,
-    XImportArchiveResponse
+    XImportArchiveResponse,
+    BlueskyMigrationProfile,
 } from '../shared_types'
 import {
     runMigrations,
@@ -2050,23 +2052,31 @@ export class XAccountController {
         });
     }
 
-    // async blueskyIsAuthorized(): Promise<string | null> {
-    //     // Do we have a handle saved yet?
-    //     const handle = await getConfig("blueskyHandle");
-    //     if (!handle) {
-    //         return null;
-    //     }
+    async blueskyGetProfile(): Promise<BlueskyMigrationProfile | null> {
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
 
-    //     // Initialize the Bluesky client
-    //     if (!this.blueskyClient) {
-    //         this.blueskyClient = await this.blueskyInitClient();
-    //     }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            return null;
+        }
 
-    //     // Check if the handle is still authorized
-    //     const session = this.blueskyClient.restore(handle, true);
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+        if (!agent.did) {
+            return null;
+        }
 
-    //     return handle;
-    // }
+        const profile = await agent.getProfile({ actor: agent.did })
+        const blueskyMigrationProfile: BlueskyMigrationProfile = {
+            did: profile.data.did,
+            handle: profile.data.handle,
+            displayName: profile.data.displayName,
+            avatar: profile.data.avatar,
+        }
+        return blueskyMigrationProfile;
+    }
 
     async blueskyAuthorize(handle: string): Promise<boolean | string> {
         // Initialize the Bluesky client
@@ -2081,6 +2091,10 @@ export class XAccountController {
             // Save the handle
             await this.setConfig("blueskyHandle", handle);
 
+            // Save the account ID in the global config
+            const accountID = this.account?.id == null ? "" : this.account.id.toString();
+            await globalSetConfig("blueskyOAuthAccountID", accountID);
+
             // Open the URL in the default browser
             await shell.openExternal(url.toString());
 
@@ -2093,6 +2107,37 @@ export class XAccountController {
                 log.error("XAccountController.blueskyAuthorize: Unknown error", e);
                 return String(e);
             }
+        }
+    }
+
+    async blueskyCallback(paramsState: string, paramsIss: string, paramsCode: string): Promise<boolean | string> {
+        // Initialize the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        const params = new URLSearchParams();
+        params.append("state", paramsState);
+        params.append("iss", paramsIss);
+        params.append("code", paramsCode);
+
+        const { session, state } = await this.blueskyClient.callback(params);
+
+        log.info("XAccountController.blueskyCallback: authorize() was called with state", state);
+        log.info("XAccountController.blueskyCallback: user authenticated as", session.did);
+
+        // Save the did
+        await this.setConfig("blueskyDID", session.did);
+
+        const agent = new Agent(session)
+        if (agent.did) {
+            // Make Authenticated API calls
+            const profile = await agent.getProfile({ actor: agent.did })
+            log.info('Bluesky profile:', profile.data)
+
+            return true;
+        } else {
+            return "agent.did is null";
         }
     }
 }

@@ -108,11 +108,17 @@ const openCydURL = async (cydURL: string) => {
         const iss = params.get('iss');
         const code = params.get('code');
 
-        // TODO: figure out what account was doing this, and then send an event to finish the OAuth flow
-        if (win) {
-            win.webContents.send('blueskyOAuthCallback', state, iss, code);
-        }
+        // Get the account ID that's in the middle of the OAuth flow
+        const accountID = database.getConfig('blueskyOAuthAccountID');
+        const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
 
+        // Reset the config value
+        database.setConfig('blueskyOAuthAccountID', '');
+
+        // Send the event to the renderer
+        if (win) {
+            win.webContents.send(blueskyOAuthCallbackEventName, state, iss, code);
+        }
         return;
     }
 
