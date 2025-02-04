@@ -112,7 +112,7 @@ declare global {
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
-                blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean>;
+                blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;

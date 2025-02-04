@@ -263,7 +263,7 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         },
-        blueskyAuthorize: (accountID: number, handle: string): Promise<void> => {
+        blueskyAuthorize: (accountID: number, handle: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyAuthorize', accountID, handle);
         },
     },

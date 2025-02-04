@@ -2018,7 +2018,7 @@ export class XAccountController {
         if (process.env.CYD_MODE === "prod") {
             path = "assets/atproto-client-metadata.json"
         } else {
-            path = "assets/atproto-client-metadata-dev.json"
+            path = "assets/atproto-client-metadata-dev1.json"
         }
         return await NodeOAuthClient.fromClientId({
             clientId: `https://${host}/${path}`,
@@ -2061,11 +2061,13 @@ export class XAccountController {
             this.blueskyClient = await this.blueskyInitClient();
         }
 
-        // TODO: Check if the handle is still authorized
+        // Check if the handle is still authorized
+        const session = this.blueskyClient.restore(handle, true);
+
         return handle;
     }
 
-    async blueskyAuthorize(handle: string): Promise<boolean> {
+    async blueskyAuthorize(handle: string): Promise<boolean | string> {
         // Initialize the Bluesky client
         if (!this.blueskyClient) {
             this.blueskyClient = await this.blueskyInitClient();
@@ -2082,10 +2084,14 @@ export class XAccountController {
             await shell.openExternal(url.toString());
 
             return true;
-        } catch (e) {
-            log.error("XAccountController.blueskyAuthorize: Error authorizing Bluesky client", e);
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                log.error("XAccountController.blueskyAuthorize: Error authorizing Bluesky client", e);
+                return e.message;
+            } else {
+                log.error("XAccountController.blueskyAuthorize: Unknown error", e);
+                return String(e);
+            }
         }
-
-        return false;
     }
 }

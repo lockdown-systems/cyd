@@ -19,8 +19,9 @@ const connectClicked = async () => {
     connectButtonText.value = 'Connecting...';
     isConnecting.value = true;
 
-    if (!await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value)) {
-        await window.electron.showMessage('Failed to connect to Bluesky. Is your handle correct?');
+    const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
+    if (ret !== true) {
+        await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
     }
 
     connectButtonText.value = 'Connect';
