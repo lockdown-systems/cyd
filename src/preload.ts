@@ -262,7 +262,10 @@ contextBridge.exposeInMainWorld('electron', {
         },
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
-        }
+        },
+        blueskyAuthorize: (accountID: number, handle: string): Promise<void> => {
+            return ipcRenderer.invoke('X:blueskyAuthorize', accountID, handle);
+        },
     },
     // Handle events from the main process
     onPowerMonitorSuspend: (callback: () => void) => {

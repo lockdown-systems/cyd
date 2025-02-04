@@ -4,17 +4,27 @@ import {
     AccountXViewModel
 } from '../../view_models/AccountXViewModel'
 
-const blueskyUsername = ref('');
+const blueskyHandle = ref('');
+const connectButtonText = ref('Connect');
+const isConnecting = ref(false);
 
 // Props
-defineProps<{
+const props = defineProps<{
     model: AccountXViewModel;
     userAuthenticated: boolean;
     userPremium: boolean;
 }>();
 
-const connectClicked = () => {
-    console.log('Connect to Bluesky');
+const connectClicked = async () => {
+    connectButtonText.value = 'Connecting...';
+    isConnecting.value = true;
+
+    if (!await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value)) {
+        await window.electron.showMessage('Failed to connect to Bluesky. Is your handle correct?');
+    }
+
+    connectButtonText.value = 'Connect';
+    isConnecting.value = false;
 }
 </script>
 
@@ -48,13 +58,14 @@ const connectClicked = () => {
                     To get started, connect your Bluesky account.
                 </p>
                 <div class="form-group">
-                    <label for="username" class="sr-only">Bluesky Username</label>
+                    <label for="username" class="sr-only">Bluesky Handle</label>
                     <div class="input-group">
-                        <input id="username" v-model="blueskyUsername" type="text" class="form-control"
-                            placeholder="Bluesky Username" required>
+                        <input id="handle" v-model="blueskyHandle" type="text" class="form-control"
+                            placeholder="Bluesky Handle (for example, me.bsky.social)" required
+                            :disabled="isConnecting">
                         <div class="input-group-append">
-                            <button class="btn btn-primary" type="submit">
-                                Connect
+                            <button class="btn btn-primary" type="submit" :disabled="isConnecting">
+                                {{ connectButtonText }}
                             </button>
                         </div>
                     </div>

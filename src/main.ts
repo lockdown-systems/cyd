@@ -95,18 +95,12 @@ const openCydURL = async (cydURL: string) => {
 
     // If hostname is "open", this just means open Cyd
     if (url.hostname == "open") {
-        // Success!
         return;
     }
 
-    // Check for Bluesky OAuth redirect
-    const blueskyHostname = config.mode == "prod" ? 'social.cyd.api' : 'social.cyd.dev-api';
-    if (url.hostname == blueskyHostname && url.pathname == "/atproto-oauth-callback") {
-        dialog.showMessageBoxSync({
-            title: "Cyd",
-            message: `Bluesky OAuth is not implemented yet.`,
-            type: 'info',
-        });
+    // If hostname is "bluesky-oauth", this means finish the Bluesky OAuth flow
+    if (url.hostname == "bluesky-oauth") {
+        // TODO: finish the Bluesky OAuth flow
         return;
     }
 

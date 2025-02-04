@@ -2013,14 +2013,13 @@ export class XAccountController {
 
     async blueskyInitClient(): Promise<NodeOAuthClient> {
         // Bluesky client, for migrating
-        let host;
+        const host = "cyd.social";
+        let path;
         if (process.env.CYD_MODE === "prod") {
-            host = "https://api.cyd.social"
+            path = "assets/atproto-client-metadata.json"
         } else {
-            host = "https://dev-api.cyd.social"
+            path = "assets/atproto-client-metadata-dev.json"
         }
-        const path = "/bluesky-oauth/client-metadata.json";
-
         return await NodeOAuthClient.fromClientId({
             clientId: `https://${host}/${path}`,
             stateStore: {
@@ -2050,12 +2049,43 @@ export class XAccountController {
         });
     }
 
-    async blueskyAuthorize(handle: string): Promise<void> {
+    async blueskyIsAuthorized(): Promise<string | null> {
+        // Do we have a handle saved yet?
+        const handle = await getConfig("blueskyHandle");
+        if (!handle) {
+            return null;
+        }
+
+        // Initialize the Bluesky client
         if (!this.blueskyClient) {
             this.blueskyClient = await this.blueskyInitClient();
         }
 
-        const url = await this.blueskyClient.authorize(handle);
-        await shell.openExternal(url.toString());
+        // TODO: Check if the handle is still authorized
+        return handle;
+    }
+
+    async blueskyAuthorize(handle: string): Promise<boolean> {
+        // Initialize the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        try {
+            // Authorize the handle
+            const url = await this.blueskyClient.authorize(handle);
+
+            // Save the handle
+            await setConfig("blueskyHandle", handle);
+
+            // Open the URL in the default browser
+            await shell.openExternal(url.toString());
+
+            return true;
+        } catch (e) {
+            log.error("XAccountController.blueskyAuthorize: Error authorizing Bluesky client", e);
+        }
+
+        return false;
     }
 }

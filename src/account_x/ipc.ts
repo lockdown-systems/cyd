@@ -427,4 +427,13 @@ export const defineIPCX = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('X:blueskyAuthorize', async (_, accountID: number, handle: string): Promise<boolean> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyAuthorize(handle);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 };
