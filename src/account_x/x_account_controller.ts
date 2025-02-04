@@ -39,8 +39,8 @@ import {
     saveXAccount,
     exec,
     Sqlite3Count,
-    getConfig,
-    setConfig,
+    getConfig as globalGetConfig,
+    setConfig as globalSetConfig,
 } from '../database'
 import { IMITMController } from '../mitm';
 import {
@@ -2004,11 +2004,11 @@ export class XAccountController {
     }
 
     async getConfig(key: string): Promise<string | null> {
-        return getConfig(key, this.db);
+        return globalGetConfig(key, this.db);
     }
 
     async setConfig(key: string, value: string) {
-        return setConfig(key, value, this.db);
+        return globalSetConfig(key, value, this.db);
     }
 
     async blueskyInitClient(): Promise<NodeOAuthClient> {
@@ -2020,52 +2020,53 @@ export class XAccountController {
             host = "dev-api.cyd.social"
         }
         const path = "bluesky/client-metadata.json";
+
         return await NodeOAuthClient.fromClientId({
             clientId: `https://${host}/${path}`,
             stateStore: {
-                async set(key: string, internalState: NodeSavedState): Promise<void> {
-                    await setConfig(`blueskyStateStore-${key}`, JSON.stringify(internalState));
+                set: async (key: string, internalState: NodeSavedState): Promise<void> => {
+                    await this.setConfig(`blueskyStateStore-${key}`, JSON.stringify(internalState));
                 },
-                async get(key: string): Promise<NodeSavedState | undefined> {
-                    const stateStore = await getConfig(`blueskyStateStore-${key}`);
+                get: async (key: string): Promise<NodeSavedState | undefined> => {
+                    const stateStore = await this.getConfig(`blueskyStateStore-${key}`);
                     return stateStore ? JSON.parse(stateStore) : undefined;
                 },
-                async del(key: string): Promise<void> {
-                    await setConfig(`blueskyStateStore-${key}`, "");
+                del: async (key: string): Promise<void> => {
+                    await this.setConfig(`blueskyStateStore-${key}`, "");
                 },
             },
             sessionStore: {
-                async set(sub: string, session: NodeSavedSession): Promise<void> {
-                    await setConfig(`blueskySessionStore-${sub}`, JSON.stringify(session));
+                set: async (sub: string, session: NodeSavedSession): Promise<void> => {
+                    await this.setConfig(`blueskySessionStore-${sub}`, JSON.stringify(session));
                 },
-                async get(sub: string): Promise<NodeSavedSession | undefined> {
-                    const sessionStore = await getConfig(`blueskySessionStore-${sub}`);
+                get: async (sub: string): Promise<NodeSavedSession | undefined> => {
+                    const sessionStore = await this.getConfig(`blueskySessionStore-${sub}`);
                     return sessionStore ? JSON.parse(sessionStore) : undefined;
                 },
-                async del(sub: string): Promise<void> {
-                    await setConfig(`blueskySessionStore-${sub}`, "");
+                del: async (sub: string): Promise<void> => {
+                    await this.setConfig(`blueskySessionStore-${sub}`, "");
                 },
             },
         });
     }
 
-    async blueskyIsAuthorized(): Promise<string | null> {
-        // Do we have a handle saved yet?
-        const handle = await getConfig("blueskyHandle");
-        if (!handle) {
-            return null;
-        }
+    // async blueskyIsAuthorized(): Promise<string | null> {
+    //     // Do we have a handle saved yet?
+    //     const handle = await getConfig("blueskyHandle");
+    //     if (!handle) {
+    //         return null;
+    //     }
 
-        // Initialize the Bluesky client
-        if (!this.blueskyClient) {
-            this.blueskyClient = await this.blueskyInitClient();
-        }
+    //     // Initialize the Bluesky client
+    //     if (!this.blueskyClient) {
+    //         this.blueskyClient = await this.blueskyInitClient();
+    //     }
 
-        // Check if the handle is still authorized
-        const session = this.blueskyClient.restore(handle, true);
+    //     // Check if the handle is still authorized
+    //     const session = this.blueskyClient.restore(handle, true);
 
-        return handle;
-    }
+    //     return handle;
+    // }
 
     async blueskyAuthorize(handle: string): Promise<boolean | string> {
         // Initialize the Bluesky client
@@ -2078,7 +2079,7 @@ export class XAccountController {
             const url = await this.blueskyClient.authorize(handle);
 
             // Save the handle
-            await setConfig("blueskyHandle", handle);
+            await this.setConfig("blueskyHandle", handle);
 
             // Open the URL in the default browser
             await shell.openExternal(url.toString());

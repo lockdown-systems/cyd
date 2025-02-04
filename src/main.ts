@@ -157,7 +157,8 @@ async function initializeApp() {
     else if (config.mode == "open") {
         dialog.showMessageBoxSync({
             title: `Cyd ${app.getVersion()}`,
-            message: `You're running Cyd ${app.getVersion()} in open mode.\n\nThis is intended for use by open source developers. If you're not contributing to Cyd, please support the project by paying for a Premium plan.`,
+            message: `You're running Cyd ${app.getVersion()} in open mode.`,
+            detail: "This is intended for use by open source developers. If you're not contributing to Cyd, please support the project by paying for a Premium plan.",
             type: 'info',
         });
     }
