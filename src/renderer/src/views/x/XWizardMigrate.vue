@@ -15,12 +15,15 @@ enum State {
     Connecting,
     FinishInBrowser,
     Connected,
+    Migrating,
 }
 
 const state = ref<State>(State.Loading);
 
 const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
+const migratedTweetsCount = ref(0);
+const shouldCancelMigration = ref(false);
 
 const blueskyHandle = ref('');
 const connectButtonText = ref('Connect');
@@ -82,7 +85,35 @@ const disconnectClicked = async () => {
 }
 
 const migrateClicked = async () => {
-    //await window.electron.X.blueskyMigrate(props.model.account.id);
+    if (tweetCounts.value === null) {
+        await window.electron.showMessage("You don't have any tweets to migrate.");
+        return;
+    }
+
+    migratedTweetsCount.value = 0;
+    shouldCancelMigration.value = false;
+    state.value = State.Migrating;
+
+    for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
+        //await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
+
+        // wait 1 second
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('Migrated tweet ID:', tweetID);
+
+        migratedTweetsCount.value++;
+
+        // Cancel early
+        if (shouldCancelMigration.value) {
+            await window.electron.showMessage('Migration cancelled, but you already posted ' + migratedTweetsCount.value + ' tweets into your Blueksy account.');
+            state.value = State.Connected;
+            break;
+        }
+    }
+}
+
+const migrateCancelClicked = async () => {
+    shouldCancelMigration.value = true;
 }
 
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
@@ -163,7 +194,7 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </template>
-            <template v-else-if="state == State.Connected">
+            <template v-else-if="state == State.Connected || state == State.Migrating">
                 <!-- Show the Bluesky account that is connected -->
                 <hr>
                 <p>
@@ -192,13 +223,13 @@ onUnmounted(async () => {
                 </div>
                 <hr>
 
-                <!-- Show the preview of what will be migrated -->
-                <template v-if="tweetCounts !== null">
+                <!-- Connected: Show the preview of what will be migrated -->
+                <template v-if="state == State.Connected && tweetCounts !== null">
                     <p class="mt-4">
-                        <span v-if="tweetCounts.toMigrateCount > 0">
+                        <span v-if="tweetCounts.toMigrateTweetIDs.length > 0">
                             Are you ready to migrate
                             <strong>
-                                {{ tweetCounts.toMigrateCount.toLocaleString() }}
+                                {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }}
                             </strong>
                             tweets into Bluesky?
                         </span>
@@ -220,9 +251,38 @@ onUnmounted(async () => {
 
                     <div class="buttons mb-4">
                         <button type="submit" class="btn btn-primary text-nowrap m-1"
-                            :disabled="tweetCounts.toMigrateCount == 0" @click="migrateClicked">
+                            :disabled="tweetCounts.toMigrateTweetIDs.length == 0" @click="migrateClicked">
                             <i class="fa-brands fa-bluesky" />
                             Start Migrating to Bluesky
+                        </button>
+                    </div>
+                </template>
+
+                <!-- Migrating: Migration progress bar, and cancel button -->
+                <template v-if="state == State.Migrating">
+                    <div v-if="tweetCounts !== null">
+                        <p class="text-center">
+                            Posted
+                            <b>
+                                {{ migratedTweetsCount.toLocaleString() }} of
+                                {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }} tweets
+                            </b>
+                            to Bluesky.
+                        </p>
+                        <div class="progress flex-grow-1 me-2">
+                            <div class="progress-bar" role="progressbar"
+                                :style="{ width: `${(migratedTweetsCount / tweetCounts.toMigrateTweetIDs.length) * 100}%` }"
+                                :aria-valuenow="(migratedTweetsCount / tweetCounts.toMigrateTweetIDs.length) * 100"
+                                aria-valuemin="0" aria-valuemax="100">
+                                {{ Math.round((migratedTweetsCount / tweetCounts.toMigrateTweetIDs.length) * 100) }}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="buttons mb-4">
+                        <button type="submit" class="btn btn-primary text-nowrap m-1" @click="migrateCancelClicked">
+                            <i class="fa-solid fa-xmark" />
+                            Cancel
                         </button>
                     </div>
                 </template>

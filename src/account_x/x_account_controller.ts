@@ -2237,15 +2237,16 @@ export class XAccountController {
         // Once we have reply_to, we can filter the ones we cannot migrate.
 
         const username = this.account.username;
-        const toMigrate: Sqlite3Count = exec(this.db, `
-            SELECT COUNT(*) AS count
+        const toMigrateTweets: XTweetRow[] = exec(this.db, `
+            SELECT tweet.*
             FROM tweet
             LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
             WHERE tweet_bsky_migration.tweetID IS NULL
             AND tweet.text NOT LIKE ?
             AND tweet.isLiked = ?
             AND tweet.username = ?
-        `, ["RT @%", 0, username], "get") as Sqlite3Count;
+        `, ["RT @%", 0, username], "all") as XTweetRow[];
+        const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
         const alreadyMigrated: Sqlite3Count = exec(this.db, `
             SELECT COUNT(*) AS count
             FROM tweet
@@ -2257,7 +2258,7 @@ export class XAccountController {
 
         // Return the counts
         const resp: XMigrateTweetCounts = {
-            toMigrateCount: toMigrate.count,
+            toMigrateTweetIDs: toMigrateTweetIDs,
             cannotMigrateCount: 0,
             alreadyMigratedCount: alreadyMigrated.count,
         }
