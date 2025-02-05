@@ -325,6 +325,18 @@ export class XAccountController {
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
                 ]
             },
+            // Add tweet_bsky_migration table
+            {
+                name: "20241127_add_tweet_bsky_migration_table",
+                sql: [
+                    `CREATE TABLE tweet_bsky_migration (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tweetID TEXT NOT NULL,
+    atprotoURI TEXT NOT NULL,
+    migratedAt DATETIME NOT NULL
+);`
+                ]
+            }
         ])
         log.info("XAccountController.initDB: database initialized");
     }
