@@ -17,6 +17,7 @@ import {
     XArchiveInfo,
     XImportArchiveResponse,
     BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from '../shared_types'
 import { getMITMController } from '../mitm';
 import { packageExceptionForReport } from '../util'
@@ -478,6 +479,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyDisconnect();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyGetTweetCounts', async (_, accountID: number): Promise<XMigrateTweetCounts> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyGetTweetCounts();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

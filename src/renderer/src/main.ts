@@ -22,6 +22,7 @@ import type {
     XAccount,
     XImportArchiveResponse,
     BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -130,6 +131,7 @@ declare global {
                 blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
                 blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;
                 blueskyDisconnect: (accountID: number) => Promise<void>;
+                blueskyGetTweetCounts: (accountID: number) => Promise<XMigrateTweetCounts>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;

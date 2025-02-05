@@ -4,18 +4,23 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import {
     AccountXViewModel
 } from '../../view_models/AccountXViewModel'
-import { BlueskyMigrationProfile } from '../../../../shared_types'
+import {
+    BlueskyMigrationProfile,
+    XMigrateTweetCounts,
+} from '../../../../shared_types'
 
 enum State {
+    Loading,
     NotConnected,
     Connecting,
     FinishInBrowser,
     Connected,
 }
 
-const state = ref<State>(State.NotConnected);
+const state = ref<State>(State.Loading);
 
 const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
+const tweetCounts = ref<XMigrateTweetCounts | null>(null);
 
 const blueskyHandle = ref('');
 const connectButtonText = ref('Connect');
@@ -48,6 +53,11 @@ const connectClicked = async () => {
     }
 }
 
+const loadTweetCounts = async () => {
+    tweetCounts.value = await window.electron.X.blueskyGetTweetCounts(props.model.account.id);
+    console.log("Tweet counts", JSON.parse(JSON.stringify(tweetCounts.value)));
+}
+
 const oauthCallback = async (queryString: string) => {
     try {
         const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, queryString);
@@ -57,6 +67,8 @@ const oauthCallback = async (queryString: string) => {
         } else {
             blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
             state.value = State.Connected;
+
+            await loadTweetCounts();
         }
     } catch (e) {
         await window.electron.showMessage('Failed to connect to Bluesky: ' + e);
@@ -67,6 +79,10 @@ const oauthCallback = async (queryString: string) => {
 const disconnectClicked = async () => {
     await window.electron.X.blueskyDisconnect(props.model.account.id);
     state.value = State.NotConnected;
+}
+
+const migrateClicked = async () => {
+    //await window.electron.X.blueskyMigrate(props.model.account.id);
 }
 
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
@@ -80,8 +96,10 @@ onMounted(async () => {
     }
     if (blueskyProfile.value) {
         state.value = State.Connected;
+        await loadTweetCounts();
     } else {
         state.value = State.NotConnected;
+        tweetCounts.value = null;
     }
 
     // Listen for OAuth callback event
@@ -104,23 +122,15 @@ onUnmounted(async () => {
                 <span v-if="!userAuthenticated || !userPremium" class="premium badge badge-primary">Premium</span>
             </h2>
             <p class="text-muted">
-                Import your old tweets into a Bluesky account.
+                Import your old tweets into a Bluesky account. You may want to make a new Bluesky account just for your
+                old tweets.
             </p>
 
-            <div class="alert alert-light" role="alert">
-                <div class="small">
-                    <p>
-                        <strong>Considering making a new Bluesky account just for your old tweets.</strong><br>
-                        This is a good way to keep your old tweets separate from your new posts.
-                    </p>
-                    <p>
-                        <strong>Not all of your tweets can be imported into Bluesky.</strong><br>
-                        Cyd will import tweets that are not replies, and also tweets where you're replying to yourself,
-                        which will keep your threads intact.
-                    </p>
-                </div>
-            </div>
-
+            <template v-if="state == State.Loading">
+                <p>
+                    Loading...
+                </p>
+            </template>
             <template v-if="state == State.NotConnected || state == State.Connecting">
                 <form @submit.prevent="connectClicked">
                     <p>
@@ -154,6 +164,11 @@ onUnmounted(async () => {
                 </div>
             </template>
             <template v-else-if="state == State.Connected">
+                <!-- Show the Bluesky account that is connected -->
+                <hr>
+                <p>
+                    You have connected to the following Bluesky account:
+                </p>
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <template v-if="blueskyProfile">
@@ -175,6 +190,42 @@ onUnmounted(async () => {
                         </button>
                     </div>
                 </div>
+                <hr>
+
+                <!-- Show the preview of what will be migrated -->
+                <template v-if="tweetCounts !== null">
+                    <p class="mt-4">
+                        <span v-if="tweetCounts.toMigrateCount > 0">
+                            Are you ready to migrate
+                            <strong>
+                                {{ tweetCounts.toMigrateCount.toLocaleString() }}
+                            </strong>
+                            tweets into Bluesky?
+                        </span>
+                        <span v-else>
+                            You don't have any tweets to migrate.
+                        </span>
+                        <br>
+                        <small class="text-muted">
+                            <strong>
+                                {{ tweetCounts.cannotMigrateCount.toLocaleString() }}
+                            </strong>
+                            tweets can't be migrated because they're replies to users on X.<br>
+                            <strong>
+                                {{ tweetCounts.alreadyMigratedCount.toLocaleString() }}
+                            </strong>
+                            tweets have already been migrated.
+                        </small>
+                    </p>
+
+                    <div class="buttons mb-4">
+                        <button type="submit" class="btn btn-primary text-nowrap m-1"
+                            :disabled="tweetCounts.toMigrateCount == 0" @click="migrateClicked">
+                            <i class="fa-brands fa-bluesky" />
+                            Start Migrating to Bluesky
+                        </button>
+                    </div>
+                </template>
             </template>
         </div>
     </div>

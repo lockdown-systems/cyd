@@ -16,6 +16,7 @@ import {
     XAccount,
     XImportArchiveResponse,
     BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -305,6 +306,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         blueskyDisconnect: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:blueskyDisconnect', accountID)
+        },
+        blueskyGetTweetCounts: (accountID: number): Promise<XMigrateTweetCounts> => {
+            return ipcRenderer.invoke('X:blueskyGetTweetCounts', accountID)
         },
     },
 

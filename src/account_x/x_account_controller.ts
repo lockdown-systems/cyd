@@ -34,6 +34,7 @@ import {
     XArchiveInfo, emptyXArchiveInfo,
     XImportArchiveResponse,
     BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from '../shared_types'
 import {
     runMigrations,
@@ -2220,5 +2221,46 @@ export class XAccountController {
         await this.deleteConfig("blueskyDID");
         await this.deleteConfigLike("blueskyStateStore-%");
         await this.deleteConfigLike("blueskySessionStore-%");
+    }
+
+    // When you start deleting tweets, return a list of tweets to delete
+    async blueskyGetTweetCounts(): Promise<XMigrateTweetCounts> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // For now, select the count of all tweets.
+        // Once we have reply_to, we can filter the ones we cannot migrate.
+
+        const username = this.account.username;
+        const toMigrate: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet_bsky_migration.tweetID IS NULL
+            AND tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+        `, ["RT @%", 0, username], "get") as Sqlite3Count;
+        const alreadyMigrated: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            INNER JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+        `, ["RT @%", 0, username], "get") as Sqlite3Count;
+
+        // Return the counts
+        const resp: XMigrateTweetCounts = {
+            toMigrateCount: toMigrate.count,
+            cannotMigrateCount: 0,
+            alreadyMigratedCount: alreadyMigrated.count,
+        }
+        return resp;
     }
 }
