@@ -476,8 +476,15 @@ export class XAccountController {
             exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
         }
 
+        // Check if tweet has media and call indexTweetMedia
+        let hasMedia: boolean = false;
+        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length){
+            hasMedia = true;
+            this.indexTweetMedia(tweetLegacy)
+        }
+
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -491,8 +498,12 @@ export class XAccountController {
             tweetLegacy["bookmarked"] ? 1 : 0,
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
+            hasMedia ? 1 : 0,
             new Date(),
         ]);
+
+        // Add media information to tweet_media table
+
 
         // Update progress
         if (tweetLegacy["favorited"]) {
@@ -668,6 +679,59 @@ export class XAccountController {
         }
 
         return this.progress;
+    }
+
+    async saveTweetMedia(mediaPath: string, filename: string) {
+        if (this.account) {
+            // Create path to store tweet media if it doesn't exist already
+            const accountDataPath = getAccountDataPath("X", this.account.username);
+            const outputPath = path.join(accountDataPath, "Tweet Media");
+            if (!fs.existsSync(outputPath)) {
+                fs.mkdirSync(outputPath);
+            }
+
+            // Download and save media from the mediaPath
+            try {
+                const response = await fetch(mediaPath, {});
+                if (!response.ok) {
+                    return "";
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const fileType = mediaPath.substring(mediaPath.lastIndexOf(".") + 1);
+                const outputFileName = path.join(outputPath, `${filename}.${fileType}`);
+                fs.createWriteStream(outputFileName).write(buffer);
+                return outputFileName;
+            } catch {
+                return "";
+            }
+        }
+        throw new Error("Account not found");
+    }
+
+    async indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
+        log.debug("XAccountController.indexMedia");
+
+        // Loop over all media items
+        tweetLegacy["entities"]["media"].forEach((media: any) => {
+            // Download media locally
+            this.saveTweetMedia(media["media_url_https"], media["media_key"]);
+
+            // Have we seen this media before?
+            const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_media WHERE mediaID = ?', [media["media_key"]]);
+            }
+
+            // Index media information in tweet_media table
+            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, tweetID) VALUES (?, ?, ?)', [
+                media["media_key"],
+                media["type"],
+                tweetLegacy["id_str"],
+            ]);
+        })
     }
 
     async getProfileImageDataURI(user: XAPIUser): Promise<string> {
