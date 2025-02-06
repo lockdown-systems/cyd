@@ -2639,104 +2639,104 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
                 case State.WizardImportOrBuild:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 **I need a local database of the data in your X account before I can delete it.**
 
 You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardImportOrBuildDisplay;
                     break;
 
                 case State.WizardImportStart:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 **Before you can import your X archive, you need to download it from X. Here's how.**`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardImportStartDisplay;
                     break;
 
                 case State.WizardImportDownload:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `You have requested your X archive, so now we wait.`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardImportDownloadDisplay;
                     break;
 
                 case State.WizardImporting:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 **I'll help you import your X archive into your local database.**`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardImportingDisplay;
                     break;
 
                 case State.WizardBuildOptions:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 I'll help you build a private local database of your X data to the \`Documents\` folder on your computer.
 You'll be able to access it even after you delete it from X.
 
 **Which data do you want to save?**`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardBuildOptionsDisplay;
                     break;
 
                 case State.WizardArchiveOptions:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 - I can save an HTML version of each of your tweets.
 - I can backup a copy of your bookmarks, which isn't included in the official X archive.
 - And I can also save a more detailed backup of your direct messages than is available in the official X archive.
 
 **Which data do you want to save?**`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardArchiveOptionsDisplay;
                     break;
 
                 case State.WizardDeleteOptions:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 **Which data do you want to delete?**`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardDeleteOptionsDisplay;
                     break;
 
                 case State.WizardReview:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `I'm almost ready to start helping you claw back your data from X!
 
 **Here's what I'm planning on doing.**`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardReviewDisplay;
                     break;
 
                 case State.WizardDeleteReview:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     databaseStatsString = await this.getDatabaseStatsString();
                     this.instructions = "I've finished saving the data I need before I can start deleting."
                     if (databaseStatsString != "") {
                         this.instructions += `\n\nI've saved: **${await this.getDatabaseStatsString()}**.`
                     }
+                    await this.loadURL("about:blank");
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `
 All done!
 
 **Here's what I did.**`;
+                    await this.loadURL("about:blank");
                     this.state = State.FinishedRunningJobsDisplay;
                     break;
 
                 case State.WizardCheckPremium:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
                     this.instructions = `**I'm almost ready to delete your data from X!**
 
 You can save all your data for free, but you need a Premium plan to delete your data.`;
+                    await this.loadURL("about:blank");
                     this.state = State.WizardCheckPremiumDisplay;
                     break;
 
