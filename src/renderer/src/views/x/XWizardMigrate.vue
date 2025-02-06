@@ -93,8 +93,9 @@ const migrateClicked = async () => {
 
     migratedTweetsCount.value = 0;
     skippedTweetsCount.value = 0;
-    shouldCancelMigration.value = false;
+
     state.value = State.Migrating;
+    shouldCancelMigration.value = false;
 
     for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
         if (await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID)) {
@@ -290,7 +291,8 @@ onUnmounted(async () => {
                     </div>
 
                     <div class="buttons mb-4">
-                        <button type="submit" class="btn btn-primary text-nowrap m-1" @click="migrateCancelClicked">
+                        <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="shouldCancelMigration"
+                            @click="migrateCancelClicked">
                             <i class="fa-solid fa-xmark" />
                             Cancel
                         </button>
