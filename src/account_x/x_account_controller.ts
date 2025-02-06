@@ -318,7 +318,7 @@ export class XAccountController {
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
                 ]
             },
-            // Add hasMediato the tweet table, and update isBookarked for all tweets
+            // Add hasMedia to the tweet table, and create tweet_media table
             {
                 name: "20250206_add_hasMedia_and_tweet_media",
                 sql: [
@@ -330,6 +330,19 @@ export class XAccountController {
                     );`,
                     `ALTER TABLE tweet ADD COLUMN hasMedia BOOLEAN;`,
                     `UPDATE tweet SET hasMedia = 0;`
+                ]
+            },
+            // Add isReply, replyTweetID, replyUserID, isQuote and quotedTweet to the tweet table
+            {
+                name: "20250206_add_reply_and_quote_fields",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN isReply BOOLEAN;`,
+                    `ALTER TABLE tweet ADD COLUMN replyTweetID TEXT;`,
+                    `ALTER TABLE tweet ADD COLUMN replyUserID TEXT;`,
+                    `ALTER TABLE tweet ADD COLUMN isQuote BOOLEAN;`,
+                    `ALTER TABLE tweet ADD COLUMN quotedTweet TEXT;`,
+                    `UPDATE tweet SET isReply = 0;`,
+                    `UPDATE tweet SET isQuote = 0;`
                 ]
             },
         ])
@@ -484,7 +497,7 @@ export class XAccountController {
         }
 
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -499,6 +512,11 @@ export class XAccountController {
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
             hasMedia ? 1 : 0,
+            tweetLegacy["in_reply_to_status_id_str"] ? 1 : 0,
+            tweetLegacy["in_reply_to_status_id_str"],
+            tweetLegacy["in_reply_to_user_id_str"],
+            tweetLegacy["is_quote_status"] ? 1 : 0,
+            tweetLegacy["quoted_status_permalink"] ? tweetLegacy["quoted_status_permalink"]["expanded"] : null,
             new Date(),
         ]);
 
