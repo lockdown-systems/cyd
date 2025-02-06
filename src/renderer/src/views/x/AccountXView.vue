@@ -215,7 +215,7 @@ const updateUserPremium = async () => {
     if (resp && 'error' in resp === false) {
         userPremiumResp = resp;
     } else {
-        await window.electron.showMessage("Failed to check if you have Premium access. Please try again later.");
+        await window.electron.showMessage("Failed to check if you have Premium access.", "Please try again later.");
         return;
     }
     userPremium.value = userPremiumResp.premium_access;
