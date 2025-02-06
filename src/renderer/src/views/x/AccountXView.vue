@@ -399,7 +399,9 @@ onUnmounted(async () => {
             @on-remove-clicked="emit('onRemoveClicked')" />
 
         <template v-if="model.state == State.WizardPrestart || model.state == State.WizardStart">
-            loading...
+            <div class="text-center ms-2 mt-5">
+                <img src="/assets/cyd-loading.gif" alt="Loading">
+            </div>
         </template>
 
         <template v-if="model.state != State.WizardPrestart && model.state != State.WizardStart">
