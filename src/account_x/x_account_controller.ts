@@ -328,12 +328,13 @@ export class XAccountController {
             },
             // Add tweet_bsky_migration table
             {
-                name: "20241127_add_tweet_bsky_migration_table",
+                name: "20250205_add_tweet_bsky_migration_table",
                 sql: [
                     `CREATE TABLE tweet_bsky_migration (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tweetID TEXT NOT NULL,
     atprotoURI TEXT NOT NULL,
+    atprotoCID TEXT NOT NULL,
     migratedAt DATETIME NOT NULL
 );`
                 ]
@@ -2225,13 +2226,8 @@ export class XAccountController {
 
     // When you start deleting tweets, return a list of tweets to delete
     async blueskyGetTweetCounts(): Promise<XMigrateTweetCounts> {
-        if (!this.db) {
-            this.initDB();
-        }
-
-        if (!this.account) {
-            throw new Error("Account not found");
-        }
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
 
         // For now, select the count of all tweets.
         // Once we have reply_to, we can filter the ones we cannot migrate.
@@ -2245,6 +2241,7 @@ export class XAccountController {
             AND tweet.text NOT LIKE ?
             AND tweet.isLiked = ?
             AND tweet.username = ?
+            ORDER BY tweet.createdAt ASC
         `, ["RT @%", 0, username], "all") as XTweetRow[];
         const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
         const alreadyMigrated: Sqlite3Count = exec(this.db, `
@@ -2263,5 +2260,54 @@ export class XAccountController {
             alreadyMigratedCount: alreadyMigrated.count,
         }
         return resp;
+    }
+
+    async blueskyMigrateTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // Get the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            throw new Error("Bluesky DID not found");
+        }
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+
+        // Select the tweet
+        const tweet: XTweetRow = exec(this.db, `
+            SELECT *
+            FROM tweet
+            WHERE tweetID = ?
+        `, [tweetID], "get") as XTweetRow;
+
+        // Build the record
+        const record = {
+            '$type': 'app.bsky.feed.post',
+            'text': tweet.text,
+            'createdAt': tweet.createdAt,
+        }
+
+        // TODO: add media, reply_to, and links
+        // See: https://docs.bsky.app/docs/advanced-guides/posts#replies-quote-posts-and-embeds
+
+        try {
+            // Post it to Bluesky
+            const { uri, cid } = await agent.post(record)
+
+            // Record that we migrated this tweet
+            exec(this.db, `
+                INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
+                VALUES (?, ?, ?, ?)
+            `, [tweetID, uri, cid, new Date()]);
+
+            return true;
+        } catch (e) {
+            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
+            return false;
+        }
     }
 }

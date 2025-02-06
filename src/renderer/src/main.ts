@@ -132,6 +132,7 @@ declare global {
                 blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;
                 blueskyDisconnect: (accountID: number) => Promise<void>;
                 blueskyGetTweetCounts: (accountID: number) => Promise<XMigrateTweetCounts>;
+                blueskyMigrateTweet: (accountID: number, tweetID: string) => Promise<boolean>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;

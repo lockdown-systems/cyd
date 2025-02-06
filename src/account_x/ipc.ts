@@ -492,4 +492,13 @@ export const defineIPCX = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('X:blueskyMigrateTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyMigrateTweet(tweetID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 };

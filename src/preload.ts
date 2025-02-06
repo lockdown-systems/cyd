@@ -310,6 +310,9 @@ contextBridge.exposeInMainWorld('electron', {
         blueskyGetTweetCounts: (accountID: number): Promise<XMigrateTweetCounts> => {
             return ipcRenderer.invoke('X:blueskyGetTweetCounts', accountID)
         },
+        blueskyMigrateTweet: (accountID: number, tweetID: string): Promise<void> => {
+            return ipcRenderer.invoke('X:blueskyMigrateTweet', accountID, tweetID)
+        },
     },
 
     // Handle events from the main process

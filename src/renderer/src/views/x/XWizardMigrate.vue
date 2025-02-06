@@ -23,6 +23,7 @@ const state = ref<State>(State.Loading);
 const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
 const migratedTweetsCount = ref(0);
+const skippedTweetsCount = ref(0);
 const shouldCancelMigration = ref(false);
 
 const blueskyHandle = ref('');
@@ -91,22 +92,23 @@ const migrateClicked = async () => {
     }
 
     migratedTweetsCount.value = 0;
+    skippedTweetsCount.value = 0;
     shouldCancelMigration.value = false;
     state.value = State.Migrating;
 
     for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
-        //await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
-
-        // wait 1 second
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('Migrated tweet ID:', tweetID);
-
-        migratedTweetsCount.value++;
+        if (await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID)) {
+            migratedTweetsCount.value++;
+        } else {
+            skippedTweetsCount.value++;
+            console.error('Failed to migrate tweet', tweetID);
+        }
 
         // Cancel early
         if (shouldCancelMigration.value) {
             await window.electron.showMessage('Migration cancelled, but you already posted ' + migratedTweetsCount.value + ' tweets into your Blueksy account.');
             state.value = State.Connected;
+            await loadTweetCounts();
             break;
         }
     }
@@ -268,13 +270,21 @@ onUnmounted(async () => {
                                 {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }} tweets
                             </b>
                             to Bluesky.
+                            <small v-if="skippedTweetsCount > 0" class="text-muted">
+                                Skipped
+                                <b>
+                                    {{ skippedTweetsCount.toLocaleString() }} tweets
+                                </b>
+                                before of errors, but you can try again with them.
+                            </small>
                         </p>
                         <div class="progress flex-grow-1 me-2">
                             <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${(migratedTweetsCount / tweetCounts.toMigrateTweetIDs.length) * 100}%` }"
-                                :aria-valuenow="(migratedTweetsCount / tweetCounts.toMigrateTweetIDs.length) * 100"
+                                :style="{ width: `${((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweetIDs.length) * 100}%` }"
+                                :aria-valuenow="((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweetIDs.length) * 100"
                                 aria-valuemin="0" aria-valuemax="100">
-                                {{ Math.round((migratedTweetsCount / tweetCounts.toMigrateTweetIDs.length) * 100) }}%
+                                {{ Math.round(((migratedTweetsCount + skippedTweetsCount) /
+                                    tweetCounts.toMigrateTweetIDs.length) * 100) }}%
                             </div>
                         </div>
                     </div>
