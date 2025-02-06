@@ -15,6 +15,13 @@ export interface XJobRow {
     error: string | null;
 }
 
+export interface XTweetMediaRow {
+    id: number;
+    mediaID: string;
+    tweetID: string;
+    type: string;
+}
+
 export interface XTweetRow {
     id: number;
     username: string;

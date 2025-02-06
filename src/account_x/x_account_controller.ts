@@ -44,6 +44,7 @@ import { IMITMController } from '../mitm';
 import {
     XJobRow,
     XTweetRow,
+    XTweetMediaRow,
     XUserRow,
     XConversationRow,
     XMessageRow,
@@ -315,6 +316,20 @@ export class XAccountController {
                     `UPDATE tweet SET deletedTweetAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 0 AND text NOT LIKE 'RT @%';`,
                     `UPDATE tweet SET deletedRetweetAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 0 AND text LIKE 'RT @%';`,
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
+                ]
+            },
+            // Add hasMediato the tweet table, and update isBookarked for all tweets
+            {
+                name: "20250206_add_hasMedia_and_tweet_media",
+                sql: [
+                    `CREATE TABLE tweet_media (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        mediaID TEXT NOT NULL UNIQUE,
+                        mediaType TEXT NOT NULL,
+                        tweetID TEXT NOT NULL
+                    );`,
+                    `ALTER TABLE tweet ADD COLUMN hasMedia BOOLEAN;`,
+                    `UPDATE tweet SET hasMedia = 0;`
                 ]
             },
         ])
