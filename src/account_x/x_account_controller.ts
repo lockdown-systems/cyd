@@ -44,6 +44,7 @@ import { IMITMController } from '../mitm';
 import {
     XJobRow,
     XTweetRow,
+    XTweetMediaRow,
     XUserRow,
     XConversationRow,
     XMessageRow,
@@ -317,6 +318,53 @@ export class XAccountController {
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
                 ]
             },
+            // Add hasMedia to the tweet table, and create tweet_media table
+            {
+                name: "20250206_add_hasMedia_and_tweet_media",
+                sql: [
+                    `CREATE TABLE tweet_media (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        mediaID TEXT NOT NULL UNIQUE,
+                        mediaType TEXT NOT NULL,
+                        tweetID TEXT NOT NULL
+                    );`,
+                    `ALTER TABLE tweet ADD COLUMN hasMedia BOOLEAN;`,
+                    `UPDATE tweet SET hasMedia = 0;`
+                ]
+            },
+            // Add isReply, replyTweetID, replyUserID, isQuote and quotedTweet to the tweet table
+            {
+                name: "20250206_add_reply_and_quote_fields",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN isReply BOOLEAN;`,
+                    `ALTER TABLE tweet ADD COLUMN replyTweetID TEXT;`,
+                    `ALTER TABLE tweet ADD COLUMN replyUserID TEXT;`,
+                    `ALTER TABLE tweet ADD COLUMN isQuote BOOLEAN;`,
+                    `ALTER TABLE tweet ADD COLUMN quotedTweet TEXT;`,
+                    `UPDATE tweet SET isReply = 0;`,
+                    `UPDATE tweet SET isQuote = 0;`
+                ]
+            },
+            // Add tweet_url table. Add url and indices to tweet_media table
+            {
+                name: "20250207_add_tweet_urls_and_more_tweet_media_fields",
+                sql: [
+                    `CREATE TABLE tweet_url (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        url TEXT NOT NULL,
+                        displayURL TEXT NOT NULL,
+                        expandedURL TEXT NOT NULL,
+                        start_index INTEGER NOT NULL,
+                        end_index INTEGER NOT NULL,
+                        tweetID TEXT NOT NULL,
+                        UNIQUE(url, tweetID)
+                    );`,
+                    `ALTER TABLE tweet_media ADD COLUMN url TEXT;`,
+                    `ALTER TABLE tweet_media ADD COLUMN filename TEXT;`,
+                    `ALTER TABLE tweet_media ADD COLUMN start_index INTEGER;`,
+                    `ALTER TABLE tweet_media ADD COLUMN end_index INTEGER;`
+                ]
+            },
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -461,8 +509,15 @@ export class XAccountController {
             exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
         }
 
+        // Check if tweet has media and call indexTweetMedia
+        let hasMedia: boolean = false;
+        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length){
+            hasMedia = true;
+            this.indexTweetMedia(tweetLegacy)
+        }
+
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -476,8 +531,17 @@ export class XAccountController {
             tweetLegacy["bookmarked"] ? 1 : 0,
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
+            hasMedia ? 1 : 0,
+            tweetLegacy["in_reply_to_status_id_str"] ? 1 : 0,
+            tweetLegacy["in_reply_to_status_id_str"],
+            tweetLegacy["in_reply_to_user_id_str"],
+            tweetLegacy["is_quote_status"] ? 1 : 0,
+            tweetLegacy["quoted_status_permalink"] ? tweetLegacy["quoted_status_permalink"]["expanded"] : null,
             new Date(),
         ]);
+
+        // Add media information to tweet_media table
+
 
         // Update progress
         if (tweetLegacy["favorited"]) {
@@ -653,6 +717,81 @@ export class XAccountController {
         }
 
         return this.progress;
+    }
+
+    async saveTweetMedia(mediaPath: string, filename: string) {
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Create path to store tweet media if it doesn't exist already
+        const accountDataPath = getAccountDataPath("X", this.account.username);
+        const outputPath = path.join(accountDataPath, "Tweet Media");
+        if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath);
+        }
+
+        // Download and save media from the mediaPath
+        try {
+            const response = await fetch(mediaPath, {});
+            if (!response.ok) {
+                return "";
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const outputFileName = path.join(outputPath, filename);
+            fs.createWriteStream(outputFileName).write(buffer);
+            return outputFileName;
+        } catch {
+            return "";
+        }
+    }
+
+    indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
+        log.debug("XAccountController.indexMedia");
+
+        // Loop over all media items
+        tweetLegacy["entities"]["media"].forEach((media: any) => {
+            // Download media locally
+            const filename = `${media["media_key"]}.${media["media_url_https"].substring(media["media_url_https"].lastIndexOf(".") + 1)}`;
+            this.saveTweetMedia(media["media_url_https"], filename);
+
+            // Have we seen this media before?
+            const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_media WHERE mediaID = ?', [media["media_key"]]);
+            }
+
+            // Index media information in tweet_media table
+            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+                media["media_key"],
+                media["type"],
+                media["url"],
+                filename,
+                media["indices"]?.[0],
+                media["indices"]?.[1],
+                tweetLegacy["id_str"],
+            ]);
+        })
+    }
+
+    indexTweetURLs(tweetLegacy: XAPILegacyTweet) {
+        log.debug("XAccountController.indexTweetURL");
+
+        // Loop over all URL items
+        tweetLegacy["entities"]["urls"].forEach((url: any) => {
+            // Index url information in tweet_url table
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+                url["url"],
+                url["display_url"],
+                url["expanded_url"],
+                url["indices"]?.[0],
+                url["indices"]?.[1],
+                tweetLegacy["id_str"],
+            ]);
+        })
     }
 
     async getProfileImageDataURI(user: XAPIUser): Promise<string> {

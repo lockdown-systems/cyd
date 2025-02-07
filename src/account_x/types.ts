@@ -15,6 +15,13 @@ export interface XJobRow {
     error: string | null;
 }
 
+export interface XTweetMediaRow {
+    id: number;
+    mediaID: string;
+    tweetID: string;
+    type: string;
+}
+
 export interface XTweetRow {
     id: number;
     username: string;
@@ -36,6 +43,12 @@ export interface XTweetRow {
     deletedRetweetAt: string | null;
     deletedLikeAt: string | null;
     deletedBookmarkAt: string | null;
+    hasMedia: boolean;
+    isReply: boolean;
+    replyTweetID: string | null;
+    replyUserID: string | null;
+    isQuote: boolean;
+    quotedTweet: string | null;
 }
 
 export interface XUserRow {
@@ -143,6 +156,7 @@ export interface XAPILegacyTweet {
     user_id_str: string;
     id_str: string;
     entities: any;
+    quoted_status_permalink: any;
 }
 
 export interface XAPILegacyUser {
