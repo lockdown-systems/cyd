@@ -148,7 +148,8 @@ async function initializeApp() {
     if (config.mode == "dev") {
         dialog.showMessageBoxSync({
             title: `Cyd Dev ${app.getVersion()}`,
-            message: `You're running Cyd ${app.getVersion()}. It uses the dev server and it might contain bugs.`,
+            message: `You're running Cyd ${app.getVersion()}.`,
+            detail: 'It uses the dev server and it might contain bugs.',
             type: 'info',
         });
     }
@@ -285,7 +286,8 @@ async function createWindow() {
                     const updateAvailable = () => {
                         dialog.showMessageBoxSync({
                             title: "Cyd",
-                            message: `An update is available and is downloading in the background. You will be prompted to install it once it's ready.`,
+                            message: 'An update is available and is downloading in the background.',
+                            detail: "You will be prompted to install it once it's ready.",
                             type: 'info',
                         });
                         autoUpdater.off('update-available', updateAvailable);
@@ -327,7 +329,8 @@ async function createWindow() {
                     // Linux updates are done through the package manager
                     dialog.showMessageBoxSync({
                         title: "Cyd",
-                        message: `You are running Cyd ${app.getVersion()}.\n\nInstall updates with your Linux package manager to make sure you're on the latest version.`,
+                        message: `You are running Cyd ${app.getVersion()}.`,
+                        detail: "Install updates with your Linux package manager to make sure you're on the latest version.",
                         type: 'info',
                     });
                 }
@@ -392,13 +395,17 @@ async function createWindow() {
             }
         });
 
-        ipcMain.handle('showMessage', async (_, message: string) => {
+        ipcMain.handle('showMessage', async (_, message: string, detail: string) => {
             try {
-                dialog.showMessageBoxSync({
+                const opts: Electron.MessageBoxSyncOptions = {
                     title: "Cyd",
                     message: message,
                     type: 'info',
-                });
+                }
+                if (detail) {
+                    opts.detail = detail;
+                }
+                dialog.showMessageBoxSync(opts);
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }

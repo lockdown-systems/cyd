@@ -43,7 +43,7 @@ const connectClicked = async () => {
     try {
         const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
         if (ret !== true) {
-            await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+            await window.electron.showMessage('Failed to connect to Bluesky.', `${ret}`);
             connectButtonText.value = 'Connect';
             state.value = State.NotConnected;
         } else {
@@ -51,7 +51,7 @@ const connectClicked = async () => {
             state.value = State.FinishInBrowser;
         }
     } catch (e) {
-        await window.electron.showMessage('Failed to connect to Bluesky: ' + e);
+        await window.electron.showMessage('Failed to connect to Bluesky', `${e}`);
         connectButtonText.value = 'Connect';
         state.value = State.NotConnected;
     }
@@ -66,7 +66,7 @@ const oauthCallback = async (queryString: string) => {
     try {
         const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, queryString);
         if (ret !== true) {
-            await window.electron.showMessage('Failed to connect to Bluesky: ' + ret);
+            await window.electron.showMessage('Failed to connect to Bluesky.', `${ret}`);
             state.value = State.NotConnected;
         } else {
             blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
@@ -75,7 +75,7 @@ const oauthCallback = async (queryString: string) => {
             await loadTweetCounts();
         }
     } catch (e) {
-        await window.electron.showMessage('Failed to connect to Bluesky: ' + e);
+        await window.electron.showMessage('Failed to connect to Bluesky', `${e}`);
         state.value = State.NotConnected;
     }
 }
@@ -87,7 +87,7 @@ const disconnectClicked = async () => {
 
 const migrateClicked = async () => {
     if (tweetCounts.value === null) {
-        await window.electron.showMessage("You don't have any tweets to migrate.");
+        await window.electron.showMessage("You don't have any tweets to migrate.", '');
         return;
     }
 
@@ -107,7 +107,7 @@ const migrateClicked = async () => {
 
         // Cancel early
         if (shouldCancelMigration.value) {
-            await window.electron.showMessage('Migration cancelled, but you already posted ' + migratedTweetsCount.value + ' tweets into your Blueksy account.');
+            await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
             state.value = State.Connected;
             await loadTweetCounts();
             break;
@@ -126,7 +126,7 @@ onMounted(async () => {
     try {
         blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
     } catch (e) {
-        await window.electron.showMessage('Failed to get Bluesky profile: ' + e);
+        await window.electron.showMessage('Failed to get Bluesky profile.', `${e}`);
     }
     if (blueskyProfile.value) {
         state.value = State.Connected;

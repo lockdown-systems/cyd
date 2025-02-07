@@ -48,7 +48,7 @@ declare global {
             getDashURL: () => Promise<string>;
             trackEvent: (eventName: string, userAgent: string) => Promise<string>;
             shouldOpenDevtools: () => Promise<boolean>;
-            showMessage: (message: string) => void;
+            showMessage: (message: string, detail: string) => void;
             showError: (message: string) => void;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             showOpenDialog: (selectFolders: boolean, selectFiles: boolean, fileFilters: FileFilter[] | undefined) => Promise<string | null>;
