@@ -345,6 +345,23 @@ export class XAccountController {
                     `UPDATE tweet SET isQuote = 0;`
                 ]
             },
+            // Add tweet_url table. Add url and indices to tweet_media table
+            {
+                name: "20250207_add_tweet_urls_and_more_tweet_media_fields",
+                sql: [
+                    `CREATE TABLE tweet_url (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        url TEXT NOT NULL,
+                        expandedURL TEXT NOT NULL,
+                        tweetID TEXT NOT NULL,
+                        UNIQUE(url, tweetID)
+                    );`,
+                    `ALTER TABLE tweet_media ADD COLUMN url TEXT;`,
+                    `ALTER TABLE tweet_media ADD COLUMN filename TEXT;`,
+                    `ALTER TABLE tweet_media ADD COLUMN start_index INTEGER;`,
+                    `ALTER TABLE tweet_media ADD COLUMN end_index INTEGER;`
+                ]
+            },
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -700,32 +717,32 @@ export class XAccountController {
     }
 
     async saveTweetMedia(mediaPath: string, filename: string) {
-        if (this.account) {
-            // Create path to store tweet media if it doesn't exist already
-            const accountDataPath = getAccountDataPath("X", this.account.username);
-            const outputPath = path.join(accountDataPath, "Tweet Media");
-            if (!fs.existsSync(outputPath)) {
-                fs.mkdirSync(outputPath);
-            }
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
 
-            // Download and save media from the mediaPath
-            try {
-                const response = await fetch(mediaPath, {});
-                if (!response.ok) {
-                    return "";
-                }
+        // Create path to store tweet media if it doesn't exist already
+        const accountDataPath = getAccountDataPath("X", this.account.username);
+        const outputPath = path.join(accountDataPath, "Tweet Media");
+        if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath);
+        }
 
-                const arrayBuffer = await response.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-                const fileType = mediaPath.substring(mediaPath.lastIndexOf(".") + 1);
-                const outputFileName = path.join(outputPath, `${filename}.${fileType}`);
-                fs.createWriteStream(outputFileName).write(buffer);
-                return outputFileName;
-            } catch {
+        // Download and save media from the mediaPath
+        try {
+            const response = await fetch(mediaPath, {});
+            if (!response.ok) {
                 return "";
             }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const outputFileName = path.join(outputPath, filename);
+            fs.createWriteStream(outputFileName).write(buffer);
+            return outputFileName;
+        } catch {
+            return "";
         }
-        throw new Error("Account not found");
     }
 
     async indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
@@ -734,7 +751,8 @@ export class XAccountController {
         // Loop over all media items
         tweetLegacy["entities"]["media"].forEach((media: any) => {
             // Download media locally
-            this.saveTweetMedia(media["media_url_https"], media["media_key"]);
+            const filename = `${media["media_key"]}.${media["media_url_https"].substring(media["media_url_https"].lastIndexOf(".") + 1)}`;
+            this.saveTweetMedia(media["media_url_https"], filename);
 
             // Have we seen this media before?
             const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
@@ -744,9 +762,13 @@ export class XAccountController {
             }
 
             // Index media information in tweet_media table
-            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, tweetID) VALUES (?, ?, ?)', [
+            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
                 media["media_key"],
                 media["type"],
+                media["url"],
+                filename,
+                media["indices"]?.[0],
+                media["indices"]?.[1],
                 tweetLegacy["id_str"],
             ]);
         })
