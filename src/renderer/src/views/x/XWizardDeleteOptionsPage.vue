@@ -143,15 +143,15 @@ onMounted(async () => {
     <div class="wizard-content container mb-4 mt-3 mx-auto">
         <div class="mb-4">
             <h2>
-                Delete options
+                Delete from X
             </h2>
             <p class="text-muted">
                 Delete your data from X, except for what you want to keep.
             </p>
         </div>
 
-        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Import or Build Database Again'"
-            :button-text-no-data="'Import or Build Database First'" :button-state="State.WizardImportOrBuild"
+        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Build Local Database Again'"
+            :button-text-no-data="'Build Local Database First'" :button-state="State.WizardDatabase"
             @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>

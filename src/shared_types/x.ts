@@ -282,3 +282,9 @@ export interface XImportArchiveResponse {
     importCount: number;
     skipCount: number;
 }
+
+export type XMigrateTweetCounts = {
+    toMigrateTweetIDs: string[];
+    cannotMigrateCount: number;
+    alreadyMigratedCount: number;
+}

@@ -15,7 +15,9 @@ import {
     XDatabaseStats,
     XDeleteReviewStats,
     XArchiveInfo,
-    XImportArchiveResponse
+    XImportArchiveResponse,
+    BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from '../shared_types'
 import { getMITMController } from '../mitm';
 import { packageExceptionForReport } from '../util'
@@ -423,6 +425,78 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.setConfig(key, value);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteConfig', async (_, accountID: number, key: string): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteConfig(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:deleteConfigLike', async (_, accountID: number, key: string): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.deleteConfigLike(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyGetProfile', async (_, accountID: number): Promise<BlueskyMigrationProfile | null> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyGetProfile();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyAuthorize', async (_, accountID: number, handle: string): Promise<boolean | string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyAuthorize(handle);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyCallback', async (_, accountID: number, queryString: string): Promise<boolean | string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyCallback(queryString);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyDisconnect', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyDisconnect();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyGetTweetCounts', async (_, accountID: number): Promise<XMigrateTweetCounts> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyGetTweetCounts();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:blueskyMigrateTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.blueskyMigrateTweet(tweetID);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

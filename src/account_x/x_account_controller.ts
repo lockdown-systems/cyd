@@ -10,6 +10,9 @@ import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
+import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
+import { Agent } from '@atproto/api';
+
 import {
     getResourcesPath,
     getAccountDataPath,
@@ -29,7 +32,9 @@ import {
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
     XArchiveInfo, emptyXArchiveInfo,
-    XImportArchiveResponse
+    XImportArchiveResponse,
+    BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from '../shared_types'
 import {
     runMigrations,
@@ -37,8 +42,10 @@ import {
     saveXAccount,
     exec,
     Sqlite3Count,
-    getConfig,
-    setConfig,
+    getConfig as globalGetConfig,
+    setConfig as globalSetConfig,
+    deleteConfig as globalDeleteConfig,
+    deleteConfigLike as globalDeleteConfigLike,
 } from '../database'
 import { IMITMController } from '../mitm';
 import {
@@ -95,6 +102,8 @@ export class XAccountController {
     private progress: XProgress = emptyXProgress();
 
     private cookies: Record<string, string> = {};
+
+    private blueskyClient: NodeOAuthClient | null = null;
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
@@ -317,6 +326,19 @@ export class XAccountController {
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
                 ]
             },
+            // Add tweet_bsky_migration table
+            {
+                name: "20250205_add_tweet_bsky_migration_table",
+                sql: [
+                    `CREATE TABLE tweet_bsky_migration (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tweetID TEXT NOT NULL,
+    atprotoURI TEXT NOT NULL,
+    atprotoCID TEXT NOT NULL,
+    migratedAt DATETIME NOT NULL
+);`
+                ]
+            }
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -2017,146 +2039,6 @@ export class XAccountController {
             };
         }
 
-        // // Import direct message groups
-        // else if (dataType == "dmGroups" || dataType == "dms") {
-        //     let dmsFilename: string;
-        //     if (dataType == "dmGroups") {
-        //         dmsFilename = "direct-messages-group.js";
-        //         if (!fs.existsSync(dmsFilename)) {
-        //             // Old X archives might put it in direct-message-group.js
-        //             dmsFilename = path.join(archivePath, "data", "direct-message-group.js");
-        //             if (!fs.existsSync(dmsFilename)) {
-        //                 return {
-        //                     status: "error",
-        //                     errorMessage: "direct-messages-group.js",
-        //                     importCount: importCount,
-        //                     skipCount: skipCount,
-        //                 };
-        //             }
-        //         }
-        //     } else {
-        //         dmsFilename = "direct-messages.js";
-        //         if (!fs.existsSync(dmsFilename)) {
-        //             // Old X archives might put it in direct-message.js
-        //             dmsFilename = path.join(archivePath, "data", "direct-message.js");
-        //             if (!fs.existsSync(dmsFilename)) {
-        //                 return {
-        //                     status: "error",
-        //                     errorMessage: "direct-messages.js",
-        //                     importCount: importCount,
-        //                     skipCount: skipCount,
-        //                 };
-        //             }
-        //         }
-        //     }
-
-        //     // Load the data
-        //     const dmsPath = path.join(archivePath, "data", dmsFilename);
-        //     let dmsData: XArchiveDMConversation[];
-        //     try {
-        //         const dmsFile = fs.readFileSync(dmsPath, 'utf8');
-        //         dmsData = JSON.parse(dmsFile.slice(dmsFile.indexOf('[')));
-        //     } catch (e) {
-        //         return {
-        //             status: "error",
-        //             errorMessage: `Error parsing JSON in ${dmsFilename}`,
-        //             importCount: importCount,
-        //             skipCount: skipCount,
-        //         };
-        //     }
-
-        //     // Loop through the DM conversations/messages and add them to the database
-        //     try {
-        //         dmsData.forEach((conversation) => {
-        //             // Find the min and max entry ID
-        //             let minEntryID: string | null = null, maxEntryID: string | null = null;
-        //             // Find the first messageCreate message
-        //             for (let i = 0; i < conversation.dmConversation.messages.length; i++) {
-        //                 if (conversation.dmConversation.messages[i].messageCreate) {
-        //                     minEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
-        //                     break;
-        //                 }
-        //             }
-        //             // Find the last messageCreate message
-        //             for (let i = conversation.dmConversation.messages.length - 1; i >= 0; i--) {
-        //                 if (conversation.dmConversation.messages[i].messageCreate) {
-        //                     maxEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
-        //                     break;
-        //                 }
-        //             }
-
-        //             // Is this conversation already there?
-        //             const existingConversation = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.dmConversation.conversationId], "get") as XConversationRow;
-        //             if (existingConversation) {
-        //                 // Update
-        //                 const newMinEntryID = minEntryID ? minEntryID : existingConversation.minEntryID;
-        //                 const newMaxEntryID = maxEntryID ? maxEntryID : existingConversation.maxEntryID;
-        //                 exec(this.db, 'UPDATE conversation SET minEntryID = ?, maxEntryID = ?, updatedInDatabaseAt = ? WHERE conversationID = ?', [newMinEntryID, newMaxEntryID, new Date(), conversation.dmConversation.conversationId]);
-        //             } else {
-        //                 // Create
-        //                 exec(this.db, 'INSERT INTO conversation (conversationID, type, minEntryID, maxEntryID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
-        //                     conversation.dmConversation.conversationId,
-        //                     dataType == "dmGroups" ? 'GROUP_DM' : 'ONE_TO_ONE',
-        //                     minEntryID,
-        //                     maxEntryID,
-        //                     new Date(),
-        //                 ]);
-        //             }
-
-        //             // Keep track of participant user IDs
-        //             const participantUserIDs: string[] = [];
-
-        //             // Add the messages
-        //             conversation.dmConversation.messages.forEach((message => {
-        //                 if (message.messageCreate) {
-        //                     // Does this message exist?
-        //                     const existingMessage = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.messageCreate.id], "get") as XMessageRow;
-        //                     if (existingMessage) {
-        //                         skipCount++;
-        //                     } else {
-        //                         // Import it
-        //                         exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text) VALUES (?, ?, ?, ?, ?)', [
-        //                             message.messageCreate.id,
-        //                             conversation.dmConversation.conversationId,
-        //                             message.messageCreate.createdAt,
-        //                             message.messageCreate.senderId,
-        //                             message.messageCreate.text
-        //                         ]);
-        //                         importCount++;
-
-        //                         // Add this to the list of participant user IDs, if it's not already there
-        //                         if (participantUserIDs.includes(message.messageCreate.senderId) == false) {
-        //                             participantUserIDs.push(message.messageCreate.senderId);
-        //                         }
-        //                     }
-        //                 }
-        //             }))
-
-        //             // Add the participants
-        //             participantUserIDs.forEach((userID) => {
-        //                 const existingParticipant = exec(this.db, 'SELECT * FROM conversation_participant WHERE conversationID = ? AND userID = ?', [conversation.dmConversation.conversationId, userID], "get") as XConversationParticipantRow;
-        //                 if (!existingParticipant) {
-        //                     exec(this.db, 'INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)', [conversation.dmConversation.conversationId, userID]);
-        //                 }
-        //             });
-        //         });
-        //     } catch (e) {
-        //         return {
-        //             status: "error",
-        //             errorMessage: "Error importing direct messages: " + e,
-        //             importCount: importCount,
-        //             skipCount: skipCount,
-        //         };
-        //     }
-
-        //     return {
-        //         status: "success",
-        //         errorMessage: "",
-        //         importCount: importCount,
-        //         skipCount: skipCount,
-        //     };
-        // }
-
         return {
             status: "error",
             errorMessage: "Invalid data type.",
@@ -2170,10 +2052,262 @@ export class XAccountController {
     }
 
     async getConfig(key: string): Promise<string | null> {
-        return getConfig(key, this.db);
+        return globalGetConfig(key, this.db);
     }
 
     async setConfig(key: string, value: string) {
-        return setConfig(key, value, this.db);
+        return globalSetConfig(key, value, this.db);
+    }
+
+    async deleteConfig(key: string) {
+        return globalDeleteConfig(key, this.db);
+    }
+
+    async deleteConfigLike(key: string) {
+        return globalDeleteConfigLike(key, this.db);
+    }
+
+    async blueskyInitClient(): Promise<NodeOAuthClient> {
+        // Bluesky client, for migrating
+        let host;
+        if (process.env.CYD_MODE === "prod") {
+            host = "api.cyd.social"
+        } else {
+            host = "dev-api.cyd.social"
+        }
+        const path = "bluesky/client-metadata.json";
+
+        return await NodeOAuthClient.fromClientId({
+            clientId: `https://${host}/${path}`,
+            stateStore: {
+                set: async (key: string, internalState: NodeSavedState): Promise<void> => {
+                    await this.setConfig(`blueskyStateStore-${key}`, JSON.stringify(internalState));
+                },
+                get: async (key: string): Promise<NodeSavedState | undefined> => {
+                    const stateStore = await this.getConfig(`blueskyStateStore-${key}`);
+                    return stateStore ? JSON.parse(stateStore) : undefined;
+                },
+                del: async (key: string): Promise<void> => {
+                    await this.setConfig(`blueskyStateStore-${key}`, "");
+                },
+            },
+            sessionStore: {
+                set: async (sub: string, session: NodeSavedSession): Promise<void> => {
+                    await this.setConfig(`blueskySessionStore-${sub}`, JSON.stringify(session));
+                },
+                get: async (sub: string): Promise<NodeSavedSession | undefined> => {
+                    const sessionStore = await this.getConfig(`blueskySessionStore-${sub}`);
+                    return sessionStore ? JSON.parse(sessionStore) : undefined;
+                },
+                del: async (sub: string): Promise<void> => {
+                    await this.setConfig(`blueskySessionStore-${sub}`, "");
+                },
+            },
+        });
+    }
+
+    async blueskyGetProfile(): Promise<BlueskyMigrationProfile | null> {
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            return null;
+        }
+
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+        if (!agent.did) {
+            return null;
+        }
+
+        const profile = await agent.getProfile({ actor: agent.did })
+        const blueskyMigrationProfile: BlueskyMigrationProfile = {
+            did: profile.data.did,
+            handle: profile.data.handle,
+            displayName: profile.data.displayName,
+            avatar: profile.data.avatar,
+        }
+        return blueskyMigrationProfile;
+    }
+
+    async blueskyAuthorize(handle: string): Promise<boolean | string> {
+        // Initialize the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        try {
+            // Authorize the handle
+            const url = await this.blueskyClient.authorize(handle);
+
+            // Save the account ID in the global config
+            const accountID = this.account?.id == null ? "" : this.account.id.toString();
+            await globalSetConfig("blueskyOAuthAccountID", accountID);
+
+            // Open the URL in the default browser
+            await shell.openExternal(url.toString());
+
+            return true;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                log.error("XAccountController.blueskyAuthorize: Error authorizing Bluesky client", e);
+                return e.message;
+            } else {
+                log.error("XAccountController.blueskyAuthorize: Unknown error", e);
+                return String(e);
+            }
+        }
+    }
+
+    async blueskyCallback(queryString: string): Promise<boolean | string> {
+        // Initialize the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        const params = new URLSearchParams(queryString);
+
+        // Handle errors
+        const error = params.get("error");
+        const errorDescription = params.get("error_description");
+        if (errorDescription) {
+            return errorDescription;
+        }
+        if (error) {
+            return `The authorization failed with error: ${error}`;
+        }
+
+        // Finish the callback
+        const { session, state } = await this.blueskyClient.callback(params);
+
+        log.info("XAccountController.blueskyCallback: authorize() was called with state", state);
+        log.info("XAccountController.blueskyCallback: user authenticated as", session.did);
+
+        // Save the did
+        await this.setConfig("blueskyDID", session.did);
+
+        const agent = new Agent(session)
+        if (agent.did) {
+            // Make Authenticated API calls
+            const profile = await agent.getProfile({ actor: agent.did })
+            log.info('Bluesky profile:', profile.data)
+
+            return true;
+        } else {
+            return "agent.did is null";
+        }
+    }
+
+    async blueskyDisconnect(): Promise<void> {
+        // Revoke the session
+        try {
+            if (!this.blueskyClient) {
+                this.blueskyClient = await this.blueskyInitClient();
+            }
+            const did = await this.getConfig("blueskyDID");
+            if (did) {
+                const session = await this.blueskyClient.restore(did);
+                await session.signOut();
+            }
+        } catch (e) {
+            log.error("XAccountController.blueskyDisconnect: Error revoking session", e);
+        }
+
+        // Delete from global config
+        await globalDeleteConfig("blueskyOAuthAccountID");
+
+        // Delete from account config
+        await this.deleteConfig("blueskyDID");
+        await this.deleteConfigLike("blueskyStateStore-%");
+        await this.deleteConfigLike("blueskySessionStore-%");
+    }
+
+    // When you start deleting tweets, return a list of tweets to delete
+    async blueskyGetTweetCounts(): Promise<XMigrateTweetCounts> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // For now, select the count of all tweets.
+        // Once we have reply_to, we can filter the ones we cannot migrate.
+
+        const username = this.account.username;
+        const toMigrateTweets: XTweetRow[] = exec(this.db, `
+            SELECT tweet.*
+            FROM tweet
+            LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet_bsky_migration.tweetID IS NULL
+            AND tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+            ORDER BY tweet.createdAt ASC
+        `, ["RT @%", 0, username], "all") as XTweetRow[];
+        const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
+        const alreadyMigrated: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            INNER JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+        `, ["RT @%", 0, username], "get") as Sqlite3Count;
+
+        // Return the counts
+        const resp: XMigrateTweetCounts = {
+            toMigrateTweetIDs: toMigrateTweetIDs,
+            cannotMigrateCount: 0,
+            alreadyMigratedCount: alreadyMigrated.count,
+        }
+        return resp;
+    }
+
+    async blueskyMigrateTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // Get the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            throw new Error("Bluesky DID not found");
+        }
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+
+        // Select the tweet
+        const tweet: XTweetRow = exec(this.db, `
+            SELECT *
+            FROM tweet
+            WHERE tweetID = ?
+        `, [tweetID], "get") as XTweetRow;
+
+        // Build the record
+        const record = {
+            '$type': 'app.bsky.feed.post',
+            'text': tweet.text,
+            'createdAt': tweet.createdAt,
+        }
+
+        // TODO: add media, reply_to, and links
+        // See: https://docs.bsky.app/docs/advanced-guides/posts#replies-quote-posts-and-embeds
+
+        try {
+            // Post it to Bluesky
+            const { uri, cid } = await agent.post(record)
+
+            // Record that we migrated this tweet
+            exec(this.db, `
+                INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
+                VALUES (?, ?, ?, ?)
+            `, [tweetID, uri, cid, new Date()]);
+
+            return true;
+        } catch (e) {
+            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
+            return false;
+        }
     }
 }

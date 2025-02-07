@@ -21,6 +21,8 @@ import type {
     XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
+    BlueskyMigrationProfile,
+    XMigrateTweetCounts,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -29,6 +31,15 @@ import { FileFilter } from "electron";
 declare global {
     interface Window {
         electron: {
+            ipcRenderer: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                send: (channel: string, ...args: any[]) => void;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                on: (channel: string, func: (...args: any[]) => void) => void;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                once: (channel: string, func: (...args: any[]) => void) => void;
+                removeAllListeners: (channel: string) => void;
+            },
             checkForUpdates: () => void;
             getVersion: () => Promise<string>;
             getMode: () => Promise<string>;
@@ -50,6 +61,8 @@ declare global {
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => void;
+                deleteConfig: (key: string) => void;
+                deleteConfigLike: (key: string) => void;
                 getErrorReport: (id: number) => Promise<ErrorReport | null>;
                 getNewErrorReports: (accountID: number) => Promise<ErrorReport[]>;
                 createErrorReport: (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => Promise<void>;
@@ -112,6 +125,14 @@ declare global {
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => void;
+                deleteConfig: (accountID: number, key: string) => void;
+                deleteConfigLike: (accountID: number, key: string) => void;
+                blueskyGetProfile: (accountID: number) => Promise<BlueskyMigrationProfile | null>;
+                blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
+                blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;
+                blueskyDisconnect: (accountID: number) => Promise<void>;
+                blueskyGetTweetCounts: (accountID: number) => Promise<XMigrateTweetCounts>;
+                blueskyMigrateTweet: (accountID: number, tweetID: string) => Promise<boolean>;
             };
             onPowerMonitorSuspend: (callback: () => void) => void;
             onPowerMonitorResume: (callback: () => void) => void;

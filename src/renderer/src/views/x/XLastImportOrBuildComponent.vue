@@ -41,7 +41,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="alert alert-light small text-center" role="alert">
+    <div class="small text-center mb-3">
         <div v-if="lastImportArchive">
             You last imported your X archive {{ formatDistanceToNow(lastImportArchive, {
                 addSuffix: true

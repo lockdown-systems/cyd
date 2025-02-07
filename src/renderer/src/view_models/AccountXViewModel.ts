@@ -25,8 +25,8 @@ export enum State {
     WizardPrestart = "WizardPrestart",
     WizardStart = "WizardStart",
 
-    WizardImportOrBuild = "WizardImportOrBuild",
-    WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
+    WizardDatabase = "WizardDatabase",
+    WizardDatabaseDisplay = "WizardDatabaseDisplay",
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
     WizardImportDownload = "WizardImportDownload",
@@ -51,6 +51,9 @@ export enum State {
 
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
+
+    WizardMigrate = "WizardMigrate",
+    WizardMigrateDisplay = "WizardMigrateDisplay",
 
     RunJobs = "RunJobs",
 
@@ -2633,18 +2636,18 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     ) {
                         this.state = State.WizardDeleteOptions;
                     } else {
-                        this.state = State.WizardImportOrBuild;
+                        this.state = State.WizardDatabase;
                     }
                     break;
 
-                case State.WizardImportOrBuild:
+                case State.WizardDatabase:
                     this.showBrowser = false;
                     this.instructions = `
 **I need a local database of the data in your X account before I can delete it.**
 
 You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
+                    this.state = State.WizardDatabaseDisplay;
                     await this.loadURL("about:blank");
-                    this.state = State.WizardImportOrBuildDisplay;
                     break;
 
                 case State.WizardImportStart:
@@ -2719,6 +2722,16 @@ You'll be able to access it even after you delete it from X.
                     }
                     await this.loadURL("about:blank");
                     this.state = State.WizardDeleteReviewDisplay;
+                    break;
+
+                case State.WizardMigrate:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+**Just because you're quitting X doesn't mean your posts need to disappear.**
+
+After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
+                    this.state = State.WizardMigrateDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
