@@ -75,6 +75,15 @@ export const defineIPCFacebook = () => {
         }
     });
 
+    ipcMain.handle('Facebook:getCookie', async (_, accountID: number, name: string): Promise<string | null> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.getCookie(name);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
     ipcMain.handle('Facebook:getConfig', async (_, accountID: number, key: string): Promise<string | null> => {
         try {
             const controller = getFacebookAccountController(accountID);

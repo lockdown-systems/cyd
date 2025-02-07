@@ -39,6 +39,8 @@ export class FacebookAccountController {
     public mitmController: IMITMController;
     private progress: FacebookProgress = emptyFacebookProgress();
 
+    private cookies: Record<string, string> = {};
+
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
 
@@ -49,6 +51,24 @@ export class FacebookAccountController {
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         ses.webRequest.onCompleted((_details) => {
             // TODO: Monitor for rate limits
+        });
+
+        ses.webRequest.onSendHeaders((details) => {
+            // Keep track of cookies
+            if (details.url.startsWith("https://www.facebook.com/") && details.requestHeaders) {
+                this.cookies = {};
+
+                const cookieHeader = details.requestHeaders['Cookie'];
+                if (cookieHeader) {
+                    const cookies = cookieHeader.split(';');
+                    cookies.forEach((cookie) => {
+                        const parts = cookie.split('=');
+                        if (parts.length == 2) {
+                            this.cookies[parts[0].trim()] = parts[1].trim();
+                        }
+                    });
+                }
+            }
         });
     }
 
@@ -184,6 +204,10 @@ export class FacebookAccountController {
 
     async getProgress(): Promise<FacebookProgress> {
         return this.progress;
+    }
+
+    async getCookie(name: string): Promise<string | null> {
+        return this.cookies[name] || null;
     }
 
     async getConfig(key: string): Promise<string | null> {

@@ -1,5 +1,5 @@
 import { WebviewTag } from 'electron';
-import { BaseViewModel } from './BaseViewModel';
+import { BaseViewModel, InternetDownError, URLChangedError } from './BaseViewModel';
 import {
     FacebookJob,
     FacebookProgress,
@@ -127,8 +127,99 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.Facebook.syncProgress(this.account?.id, JSON.stringify(this.progress));
     }
 
+    async loadFacebookURL(url: string, expectedURLs: (string | RegExp)[] = [], redirectOk: boolean = false) {
+        this.log("loadFacebookURL", [url, expectedURLs, redirectOk]);
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            // Load the URL
+            try {
+                await this.loadURL(url);
+                this.log("loadFacebookURL", "URL loaded successfully");
+            } catch (e) {
+                if (e instanceof InternetDownError) {
+                    this.log("loadFacebookURL", "internet is down");
+                    this.emitter?.emit(`cancel-automation-${this.account?.id}`);
+                } else {
+                    await this.error(AutomationErrorType.facebook_loadURLError, {
+                        url: url,
+                        exception: (e as Error).toString()
+                    }, {
+                        currentURL: this.webview?.getURL()
+                    });
+                }
+                break;
+            }
+
+            // Did the URL change?
+            if (!redirectOk) {
+                this.log("loadFacebookURL", "checking if URL changed");
+                const newURL = new URL(this.webview?.getURL() || '');
+                const originalURL = new URL(url);
+                // Check if the URL has changed, ignoring query strings
+                // e.g. a change from https://www.facebook.com/ to https://www.facebook.com/?mx=2 is ok
+                if (newURL.origin + newURL.pathname !== originalURL.origin + originalURL.pathname) {
+                    let changedToUnexpected = true;
+                    for (const expectedURL of expectedURLs) {
+                        if (typeof expectedURL === 'string' && newURL.toString().startsWith(expectedURL)) {
+                            changedToUnexpected = false;
+                            break;
+                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL.toString())) {
+                            changedToUnexpected = false;
+                            break;
+                        }
+                    }
+
+                    if (changedToUnexpected) {
+                        this.log("loadFacebookURL", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
+                        throw new URLChangedError(url, this.webview?.getURL() || '');
+                    } else {
+                        this.log("loadFacebookURL", `expected, URL change to ${this.webview?.getURL()}`);
+                    }
+                }
+            }
+
+            // TODO: handle Facebook rate limits
+
+            // Finished successfully so break out of the loop
+            this.log("loadFacebookURL", "finished loading URL");
+            break;
+        }
+    }
+
     async login() {
+        this.showBrowser = true;
+        this.log("login", "logging in");
+
+        // Load facebook.com and see if we're logged in
+        await this.loadFacebookURL("https://www.facebook.com");
+
+        // Wait for the c_user cookie to be set
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const c_user = await window.electron.Facebook.getCookie(this.account?.id, "c_user");
+            if (c_user !== null) {
+                this.log("login", "logged in");
+                break;
+            }
+            await this.sleep(1000);
+        }
+
+        // We're logged in
+        this.log("login", "login succeeded");
+        this.showAutomationNotice = true;
+
+        // If this is the first time we're logging in, track it
+        if (this.state === State.Login) {
+            await window.electron.trackEvent(PlausibleEvents.FACEBOOK_USER_SIGNED_IN, navigator.userAgent);
+        }
+
+        await this.waitForPause();
+
+        // Get the user's name, account ID, and profile image
         // TODO: implement
+
     }
 
     async runJobLogin(jobIndex: number): Promise<boolean> {

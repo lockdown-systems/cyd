@@ -124,6 +124,7 @@ declare global {
                 archiveBuild: (accountID: number) => Promise<void>;
                 syncProgress: (accountID: number, progressJSON: string) => Promise<void>;
                 getProgress: (accountID: number) => Promise<FacebookProgress>;
+                getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => Promise<void>;
             },

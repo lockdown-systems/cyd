@@ -287,6 +287,9 @@ contextBridge.exposeInMainWorld('electron', {
         getProgress: (accountID: number): Promise<FacebookProgress> => {
             return ipcRenderer.invoke('Facebook:getProgress', accountID);
         },
+        getCookie: (accountID: number, name: string): Promise<string | null> => {
+            return ipcRenderer.invoke('Facebook:getCookie', accountID, name);
+        },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('Facebook:getConfig', accountID, key);
         },

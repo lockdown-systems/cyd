@@ -141,7 +141,6 @@ export class XAccountController {
                             this.cookies[parts[0].trim()] = parts[1].trim();
                         }
                     });
-                    // log.info("XAccountController: cookies", this.cookies);
                 }
             }
         });
