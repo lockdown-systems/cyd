@@ -66,9 +66,27 @@ onMounted(async () => {
                   <div class="name">
                     X
                   </div>
-                  <div class="info text-muted">
-                    Formerly Twitter, owned by Elon Musk
+                  <small class="info text-muted">
+                    Formerly Twitter, owned by billionaire Elon Musk
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="card m-2 select-account-facebook" @click="accountClicked('Facebook')">
+              <div class="card-body d-flex align-items-center">
+                <div class="logo mr-3">
+                  <i :class="getAccountIcon('Facebook')" />
+                </div>
+                <div class="description">
+                  <div class="name">
+                    Facebook
                   </div>
+                  <small class="info text-muted">
+                    A subsidiary of Meta, owned by billionaire Mark Zuckerberg
+                  </small>
                 </div>
               </div>
             </div>
@@ -133,9 +151,5 @@ onMounted(async () => {
 .select-account .description .name {
   font-size: 1.2rem;
   font-weight: bold;
-}
-
-.select-account .description .info {
-  font-size: 1rem;
 }
 </style>
