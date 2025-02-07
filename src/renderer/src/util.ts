@@ -126,3 +126,11 @@ export const formattedDatetime = (date: string): string => {
     };
     return new Date(date).toLocaleString('en-US', options);
 }
+
+export const showQuestionOpenModePremiumFeature = async (): Promise<boolean> => {
+    return await window.electron.showQuestion(
+        "You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.",
+        "Continue",
+        "Cancel"
+    );
+}

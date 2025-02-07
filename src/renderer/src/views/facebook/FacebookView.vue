@@ -15,18 +15,19 @@ import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
 import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
+import U2FNotice from '../shared_components/U2FNotice.vue';
+import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import type {
     Account,
-    XProgress,
-    XJob,
-    XRateLimitInfo,
+    FacebookProgress,
+    FacebookJob,
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
-import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
-import { setAccountRunning, openURL } from '../../util';
-import { xRequiresPremium, xPostProgress } from '../../util_x';
+import { FacebookViewModel, State, FacebookViewModelState } from '../../view_models/FacebookViewModel'
+import { setAccountRunning, showQuestionOpenModePremiumFeature } from '../../util';
+import { facebookRequiresPremium, facebookPostProgress } from '../../util_facebook';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -42,20 +43,17 @@ const apiClient = inject('apiClient') as Ref<CydAPIClient>;
 const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
 
 const currentState = ref<State>(State.Login);
-const failureStateIndexTweets_FailedToRetryAfterRateLimit = ref(false);
-const failureStateIndexLikes_FailedToRetryAfterRateLimit = ref(false);
 
-const progress = ref<XProgress | null>(null);
-const rateLimitInfo = ref<XRateLimitInfo | null>(null);
-const currentJobs = ref<XJob[]>([]);
+const progress = ref<FacebookProgress | null>(null);
+const currentJobs = ref<FacebookJob[]>([]);
 const isPaused = ref<boolean>(false);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
-// The X view model
-const model = ref<AccountXViewModel>(new AccountXViewModel(props.account, emitter));
+// The Facebook view model
+const model = ref<FacebookViewModel>(new FacebookViewModel(props.account, emitter));
 
 // Keep currentState in sync
 watch(
@@ -63,9 +61,6 @@ watch(
     async (newState) => {
         if (newState) {
             currentState.value = newState as State;
-            // Update failure states on state change
-            failureStateIndexTweets_FailedToRetryAfterRateLimit.value = await window.electron.X.getConfig(props.account.id, FailureState.indexTweets_FailedToRetryAfterRateLimit) == "true" ? true : false;
-            failureStateIndexLikes_FailedToRetryAfterRateLimit.value = await window.electron.X.getConfig(props.account.id, FailureState.indexLikes_FailedToRetryAfterRateLimit) == "true" ? true : false;
         }
     },
     { deep: true, }
@@ -75,13 +70,6 @@ watch(
 watch(
     () => model.value.progress,
     (newProgress) => { if (newProgress) progress.value = newProgress; },
-    { deep: true, }
-);
-
-// Keep rateLimitInfo updated
-watch(
-    () => model.value.rateLimitInfo,
-    (newRateLimitInfo) => { if (newRateLimitInfo) rateLimitInfo.value = newRateLimitInfo; },
     { deep: true, }
 );
 
@@ -99,16 +87,16 @@ watch(
     { deep: true, }
 );
 
-const updateAccount = async () => {
-    await model.value.reloadAccount();
-    emitter?.emit('account-updated');
-};
+// const updateAccount = async () => {
+//     await model.value.reloadAccount();
+//     emitter?.emit('account-updated');
+// };
 
-const setState = async (state: State) => {
-    console.log('Setting state', state);
-    model.value.state = state;
-    await startStateLoop();
-};
+// const setState = async (state: State) => {
+//     console.log('Setting state', state);
+//     model.value.state = state;
+//     await startStateLoop();
+// };
 
 const startStateLoop = async () => {
     console.log('State loop started');
@@ -133,15 +121,7 @@ const startStateLoop = async () => {
 const onAutomationErrorRetry = async () => {
     console.log('Retrying automation after error');
 
-    // If we're currently on the finished page, then move back to the review page
-    if (model.value.state == State.FinishedRunningJobsDisplay) {
-        await setState(State.WizardReview);
-    } else {
-        // Store the state of the view model before the error
-        const state: XViewModelState | undefined = model.value.saveState();
-        localStorage.setItem(`account-${props.account.id}-state`, JSON.stringify(state));
-        emit('onRefreshClicked');
-    }
+    // TODO: implent retry logic
 };
 
 const onAutomationErrorCancel = () => {
@@ -170,7 +150,7 @@ const onReportBug = async () => {
     model.value.pause();
 
     // Submit error report
-    await model.value.error(AutomationErrorType.X_manualBugReport, {
+    await model.value.error(AutomationErrorType.Facebook_manualBugReport, {
         message: 'User is manually reporting a bug',
         state: model.value.saveState()
     }, {
@@ -209,113 +189,86 @@ const updateUserPremium = async () => {
 };
 
 emitter?.on('signed-in', async () => {
-    console.log('AccountXView: User signed in');
+    console.log('FacebookView: User signed in');
     await updateUserAuthenticated();
     await updateUserPremium();
 });
 
 emitter?.on('signed-out', async () => {
-    console.log('AccountXView: User signed out');
+    console.log('FacebookView: User signed out');
     userAuthenticated.value = false;
     userPremium.value = false;
 });
 
-emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
-    await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
+emitter?.on(`facebook-submit-progress-${props.account.id}`, async () => {
+    await facebookPostProgress(apiClient.value, deviceInfo.value, props.account.id);
 });
 
-const startJobs = async () => {
-    // Premium check
-    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
-        // In open mode, allow the user to continue
-        if (await window.electron.getMode() == "open") {
-            if (!await window.electron.showQuestion("You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.", "Continue", "Cancel")) {
-                return;
-            }
-        }
-        // Otherwise, make sure the user is authenticated
-        else {
-            await updateUserAuthenticated();
-            console.log("userAuthenticated", userAuthenticated.value);
-            if (!userAuthenticated.value) {
-                model.value.state = State.WizardCheckPremium;
-                await startStateLoop();
-                return;
-            }
+// const startJobs = async () => {
+//     // Premium check
+//     if (model.value.account?.xAccount && await facebookRequiresPremium(model.value.account?.facebookAccount)) {
+//         // In open mode, allow the user to continue
+//         if (await window.electron.getMode() == "open") {
+//             if (!await showQuestionOpenModePremiumFeature()) {
+//                 return;
+//             }
+//         }
+//         // Otherwise, make sure the user is authenticated
+//         else {
+//             await updateUserAuthenticated();
+//             console.log("userAuthenticated", userAuthenticated.value);
+//             if (!userAuthenticated.value) {
+//                 model.value.state = State.WizardCheckPremium;
+//                 await startStateLoop();
+//                 return;
+//             }
 
-            await updateUserPremium();
-            console.log("userPremium", userPremium.value);
-            if (!userPremium.value) {
-                model.value.state = State.WizardCheckPremium;
-                await startStateLoop();
-                return;
-            }
-        }
-    }
+//             await updateUserPremium();
+//             console.log("userPremium", userPremium.value);
+//             if (!userPremium.value) {
+//                 model.value.state = State.WizardCheckPremium;
+//                 await startStateLoop();
+//                 return;
+//             }
+//         }
+//     }
 
-    // All good, start the jobs
-    console.log('Starting jobs');
-    await model.value.defineJobs();
-    model.value.state = State.RunJobs;
-    await startStateLoop();
-};
-
-const startJobsJustSave = async () => {
-    if (model.value.account.xAccount == null) {
-        console.error('startJobsJustSave', 'Account is null');
-        return;
-    }
-
-    const updatedAccount: Account = {
-        ...model.value.account,
-        xAccount: {
-            ...model.value.account.xAccount,
-            saveMyData: true,
-            deleteMyData: false,
-        }
-    };
-
-    await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
-    await updateAccount();
-
-    model.value.state = State.WizardReview;
-    await startStateLoop();
-};
-
-const finishedRunAgainClicked = async () => {
-    model.value.state = State.WizardReview;
-    await startStateLoop();
-};
+//     // All good, start the jobs
+//     console.log('Starting jobs');
+//     await model.value.defineJobs();
+//     model.value.state = State.RunJobs;
+//     await startStateLoop();
+// };
 
 // Debug functions
 
-const debugAutopauseEndOfStepChanged = async (value: boolean) => {
-    model.value.debugAutopauseEndOfStep = value;
-};
+// const debugAutopauseEndOfStepChanged = async (value: boolean) => {
+//     model.value.debugAutopauseEndOfStep = value;
+// };
 
-const debugModeTriggerError = async (count: number = 1) => {
-    console.log('Debug mode error triggered', count);
-    if (count == 1) {
-        await model.value.error(AutomationErrorType.x_unknownError, {
-            message: "Debug mode error triggered",
-        }, {
-            currentURL: model.value.webview?.getURL()
-        });
-    } else {
-        for (let i = 0; i < count; i++) {
-            await model.value.error(AutomationErrorType.x_unknownError, {
-                message: `Debug mode error triggered ${i + 1} of ${count}`,
-            }, {
-                currentURL: model.value.webview?.getURL()
-            }, true);
-        }
-        await model.value.showErrorModal();
-    }
-};
+// const debugModeTriggerError = async (count: number = 1) => {
+//     console.log('Debug mode error triggered', count);
+//     if (count == 1) {
+//         await model.value.error(AutomationErrorType.facebook_unknownError, {
+//             message: "Debug mode error triggered",
+//         }, {
+//             currentURL: model.value.webview?.getURL()
+//         });
+//     } else {
+//         for (let i = 0; i < count; i++) {
+//             await model.value.error(AutomationErrorType.facebook_unknownError, {
+//                 message: `Debug mode error triggered ${i + 1} of ${count}`,
+//             }, {
+//                 currentURL: model.value.webview?.getURL()
+//             }, true);
+//         }
+//         await model.value.showErrorModal();
+//     }
+// };
 
-const debugModeDisable = async () => {
-    model.value.state = State.WizardPrestart;
-};
+// const debugModeDisable = async () => {
+//     model.value.state = State.WizardStart;
+// };
 
 // Lifecycle
 
@@ -331,7 +284,7 @@ onMounted(async () => {
             const savedState = localStorage.getItem(`account-${props.account.id}-state`);
             if (savedState) {
                 console.log('Restoring saved state', savedState);
-                const savedStateObj: XViewModelState = JSON.parse(savedState);
+                const savedStateObj: FacebookViewModelState = JSON.parse(savedState);
 
                 model.value.restoreState(savedStateObj);
                 currentState.value = savedStateObj.state as State;
@@ -380,13 +333,13 @@ onUnmounted(async () => {
         <AccountHeader :account="account" :show-refresh-button="true" @on-refresh-clicked="emit('onRefreshClicked')"
             @on-remove-clicked="emit('onRemoveClicked')" />
 
-        <template v-if="model.state == State.WizardPrestart || model.state == State.WizardStart">
+        <template v-if="model.state == State.WizardStart">
             <div class="text-center ms-2 mt-5">
                 <img src="/assets/cyd-loading.gif" alt="Loading">
             </div>
         </template>
 
-        <template v-if="model.state != State.WizardPrestart && model.state != State.WizardStart">
+        <template v-if="model.state != State.WizardStart">
             <div class="d-flex ms-2">
                 <div class="d-flex flex-column flex-grow-1">
                     <!-- Speech bubble -->
@@ -401,24 +354,8 @@ onUnmounted(async () => {
                 </div>
             </div>
 
-            <!-- U2F security key notice -->
-            <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
-                <i class="fa-solid fa-circle-info me-2" />
-                If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
-                screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
-            </p>
-
-            <!-- Automation notice -->
-            <p v-if="(model.showBrowser && model.showAutomationNotice)"
-                class="text-muted text-center automation-notice">
-                <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
-                your computer for other things.
-            </p>
-
-            <!-- Ready for input -->
-            <p v-if="(model.showBrowser && !model.showAutomationNotice)" class="text-muted text-center ready-for-input">
-                <i class="fa-solid fa-computer-mouse" /> Ready for input.
-            </p>
+            <U2FNotice v-if="model.state == State.Login" />
+            <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
         </template>
 
         <!-- Webview -->

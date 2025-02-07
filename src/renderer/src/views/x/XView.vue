@@ -16,6 +16,8 @@ import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
 import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
+import U2FNotice from '../shared_components/U2FNotice.vue';
+import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
@@ -43,7 +45,7 @@ import type {
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
-import { setAccountRunning, openURL } from '../../util';
+import { setAccountRunning, showQuestionOpenModePremiumFeature } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
@@ -227,13 +229,13 @@ const updateUserPremium = async () => {
 };
 
 emitter?.on('signed-in', async () => {
-    console.log('AccountXView: User signed in');
+    console.log('XView: User signed in');
     await updateUserAuthenticated();
     await updateUserPremium();
 });
 
 emitter?.on('signed-out', async () => {
-    console.log('AccountXView: User signed out');
+    console.log('XView: User signed out');
     userAuthenticated.value = false;
     userPremium.value = false;
 });
@@ -247,7 +249,7 @@ const startJobs = async () => {
     if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
         // In open mode, allow the user to continue
         if (await window.electron.getMode() == "open") {
-            if (!await window.electron.showQuestion("You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.", "Continue", "Cancel")) {
+            if (!await showQuestionOpenModePremiumFeature()) {
                 return;
             }
         }
@@ -426,24 +428,8 @@ onUnmounted(async () => {
                 </div>
             </div>
 
-            <!-- U2F security key notice -->
-            <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
-                <i class="fa-solid fa-circle-info me-2" />
-                If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
-                screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
-            </p>
-
-            <!-- Automation notice -->
-            <p v-if="(model.showBrowser && model.showAutomationNotice)"
-                class="text-muted text-center automation-notice">
-                <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
-                your computer for other things.
-            </p>
-
-            <!-- Ready for input -->
-            <p v-if="(model.showBrowser && !model.showAutomationNotice)" class="text-muted text-center ready-for-input">
-                <i class="fa-solid fa-computer-mouse" /> Ready for input.
-            </p>
+            <U2FNotice v-if="model.state == State.Login" />
+            <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
         </template>
 
         <!-- Webview -->
