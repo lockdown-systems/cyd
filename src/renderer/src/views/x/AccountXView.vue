@@ -29,7 +29,7 @@ import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
-import XWizardMigrate from './XWizardMigrate.vue';
+import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
@@ -494,7 +494,7 @@ onUnmounted(async () => {
                         @set-state="setState($event)" @update-account="updateAccount"
                         @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
 
-                    <XWizardMigrate v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
+                    <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
                         :user-authenticated="userAuthenticated" :user-premium="userPremium"
                         @set-state="setState($event)" />
 
