@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { AccountXViewModel, State } from '../../view_models/AccountXViewModel'
+import { XViewModel, State } from '../../view_models/XViewModel'
 import type { XDatabaseStats } from '../../../../shared_types';
 import { emptyXDatabaseStats } from '../../../../shared_types';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Emits

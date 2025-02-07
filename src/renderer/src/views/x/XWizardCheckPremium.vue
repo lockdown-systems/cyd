@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, getCurrentInstance } from 'vue';
 import {
-    AccountXViewModel,
+    XViewModel,
     State
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -11,7 +11,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
     userAuthenticated: boolean;
     userPremium: boolean;
 }>();

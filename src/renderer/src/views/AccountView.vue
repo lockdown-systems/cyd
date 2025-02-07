@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import AccountXView from './x/AccountXView.vue';
+import XView from './x/XView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
@@ -118,7 +118,7 @@ onMounted(async () => {
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+      <XView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
     </template>
 
     <template v-else>

@@ -6,8 +6,8 @@ import {
 } from 'vue';
 import {
     State,
-    AccountXViewModel,
-} from '../../view_models/AccountXViewModel'
+    XViewModel,
+} from '../../view_models/XViewModel'
 import type {
     XArchiveInfo,
     XDatabaseStats
@@ -23,7 +23,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Emits

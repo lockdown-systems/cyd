@@ -42,7 +42,7 @@ import type {
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
-import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
+import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
 import { setAccountRunning, openURL } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
@@ -73,7 +73,7 @@ const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
 // The X view model
-const model = ref<AccountXViewModel>(new AccountXViewModel(props.account, emitter));
+const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
 // Keep currentState in sync
 watch(
