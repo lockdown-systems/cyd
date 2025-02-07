@@ -24,10 +24,9 @@ import type {
     FacebookJob,
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
-import { AutomationErrorType } from '../../automation_errors';
 import { FacebookViewModel, State, FacebookViewModelState } from '../../view_models/FacebookViewModel'
-import { setAccountRunning, showQuestionOpenModePremiumFeature } from '../../util';
-import { facebookRequiresPremium, facebookPostProgress } from '../../util_facebook';
+import { setAccountRunning } from '../../util';
+import { facebookPostProgress } from '../../util_facebook';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -143,20 +142,20 @@ const onCancelAutomation = () => {
     emit('onRefreshClicked');
 };
 
-const onReportBug = async () => {
-    console.log('Report bug clicked');
+// const onReportBug = async () => {
+//     console.log('Report bug clicked');
 
-    // Pause
-    model.value.pause();
+//     // Pause
+//     model.value.pause();
 
-    // Submit error report
-    await model.value.error(AutomationErrorType.Facebook_manualBugReport, {
-        message: 'User is manually reporting a bug',
-        state: model.value.saveState()
-    }, {
-        currentURL: model.value.webview?.getURL()
-    });
-}
+//     // Submit error report
+//     await model.value.error(AutomationErrorType.facebook_manualBugReport, {
+//         message: 'User is manually reporting a bug',
+//         state: model.value.saveState()
+//     }, {
+//         currentURL: model.value.webview?.getURL()
+//     });
+// }
 
 // User variables
 const userAuthenticated = ref(false);
