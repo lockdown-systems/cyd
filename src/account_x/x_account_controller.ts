@@ -352,7 +352,10 @@ export class XAccountController {
                     `CREATE TABLE tweet_url (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         url TEXT NOT NULL,
+                        displayURL TEXT NOT NULL,
                         expandedURL TEXT NOT NULL,
+                        start_index INTEGER NOT NULL,
+                        end_index INTEGER NOT NULL,
                         tweetID TEXT NOT NULL,
                         UNIQUE(url, tweetID)
                     );`,
@@ -511,6 +514,11 @@ export class XAccountController {
         if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length){
             hasMedia = true;
             this.indexTweetMedia(tweetLegacy)
+        }
+
+        // Check if tweet has URLs and index it
+        if (tweetLegacy["entities"]["url"] && tweetLegacy["entities"]["url"].length) {
+            this.indexTweetURLs(tweetLegacy)
         }
 
         // Add the tweet
@@ -745,7 +753,7 @@ export class XAccountController {
         }
     }
 
-    async indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
+    indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
         log.debug("XAccountController.indexMedia");
 
         // Loop over all media items
@@ -769,6 +777,23 @@ export class XAccountController {
                 filename,
                 media["indices"]?.[0],
                 media["indices"]?.[1],
+                tweetLegacy["id_str"],
+            ]);
+        })
+    }
+
+    indexTweetURLs(tweetLegacy: XAPILegacyTweet) {
+        log.debug("XAccountController.indexTweetURL");
+
+        // Loop over all URL items
+        tweetLegacy["entities"]["urls"].forEach((url: any) => {
+            // Index url information in tweet_url table
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+                url["url"],
+                url["display_url"],
+                url["expanded_url"],
+                url["indices"]?.[0],
+                url["indices"]?.[1],
                 tweetLegacy["id_str"],
             ]);
         })
