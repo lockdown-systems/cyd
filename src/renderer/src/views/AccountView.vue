@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import XView from './x/XView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
 import { getAccountRunning, setAccountRunning } from '../util';
 
 import CydAvatarComponent from './shared_components/CydAvatarComponent.vue';
+
+import XView from './x/XView.vue';
+import FacebookView from './facebook/FacebookView.vue';
 
 const props = defineProps<{
   account: Account;
@@ -119,6 +121,10 @@ onMounted(async () => {
 
     <template v-else-if="account.type == 'X'">
       <XView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+    </template>
+
+    <template v-else-if="account.type == 'Facebook'">
+      <FacebookView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
     </template>
 
     <template v-else>

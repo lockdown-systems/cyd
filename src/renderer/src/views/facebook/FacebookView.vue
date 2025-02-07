@@ -276,7 +276,7 @@ onMounted(async () => {
         const webview = webviewComponent.value;
 
         // Start the state loop
-        if (props.account.xAccount !== null) {
+        if (props.account.facebookAccount !== null) {
             await model.value.init(webview);
 
             // If there's a saved state from a retry, restore it
