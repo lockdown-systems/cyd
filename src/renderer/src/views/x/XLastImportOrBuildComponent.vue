@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 import { formatDistanceToNow } from 'date-fns';
 import {
     State
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 
 const props = defineProps<{
     accountID: number;

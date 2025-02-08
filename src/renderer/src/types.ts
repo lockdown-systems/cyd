@@ -13,6 +13,7 @@ export const PlausibleEvents = Object.freeze({
     AUTOMATION_ERROR_REPORT_SUBMITTED: 'Automation Error Report Submitted',
     AUTOMATION_ERROR_REPORT_NOT_SUBMITTED: 'Automation Error Report Not Submitted',
     AUTOMATION_ERROR_REPORT_ERROR: 'Automation Error Report Error',
+
     X_USER_SIGNED_IN: 'X User Signed In',
     X_JOB_STARTED_LOGIN: 'X Job Started: login',
     X_JOB_STARTED_INDEX_TWEETS: 'X Job Started: indexTweets',
@@ -28,4 +29,11 @@ export const PlausibleEvents = Object.freeze({
     X_JOB_STARTED_DELETE_DMS: 'X Job Started: deleteDMs',
     X_JOB_STARTED_ARCHIVE_BUILD: 'X Job Started: archiveBuild',
     X_JOB_STARTED_UNFOLLOW_EVERYONE: 'X Job Started: unfollowEveryone',
+
+    FACEBOOK_USER_SIGNED_IN: 'Facebook User Signed In',
+    FACEBOOK_JOB_STARTED_LOGIN: 'Facebook Job Started: login',
+    FACEBOOK_JOB_STARTED_SAVE_POSTS: 'Facebook Job Started: savePosts',
+    FACEBOOK_JOB_STARTED_SAVE_POSTS_HTML: 'Facebook Job Started: savePostsHTML',
+    FACEBOOK_JOB_STARTED_DELETE_POSTS: 'Facebook Job Started: deletePosts',
+    FACEBOOK_JOB_STARTED_ARCHIVE_BUILD: 'Facebook Job Started: archiveBuild',
 });

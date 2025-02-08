@@ -68,6 +68,15 @@ onUnmounted(async () => {
                     @{{ props.account.xAccount?.username }}
                 </template>
             </template>
+            <template v-else-if="props.account.type == 'Facebook'">
+                <template v-if="props.account.facebookAccount?.accountID == null">
+                    Login to your Facebook account
+                </template>
+                <template v-else>
+                    <i :class="getAccountIcon(account.type)" />
+                    {{ props.account.facebookAccount?.name }}
+                </template>
+            </template>
         </div>
         <div v-if="showMenu" ref="menuPopupEl" class="menu-popup">
             <ul>

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { AccountXViewModel, RunJobsState } from '../../view_models/AccountXViewModel'
+import { XViewModel, RunJobsState } from '../../view_models/XViewModel'
 import { formattedDatetime } from '../../util';
 
 import { XTweetItem } from '../../../../shared_types';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Keep tweetItem updated

@@ -3,7 +3,8 @@ import { ipcMain, session } from 'electron';
 import { exec, getMainDatabase, Sqlite3Info } from './common';
 import { createXAccount, getXAccount, saveXAccount } from './x_account';
 import { createBlueskyAccount, getBlueskyAccount, saveBlueskyAccount } from './bluesky_account';
-import { Account, XAccount, BlueskyAccount } from '../shared_types'
+import { createFacebookAccount, getFacebookAccount, saveFacebookAccount } from './facebook_account';
+import { Account, XAccount, BlueskyAccount, FacebookAccount } from '../shared_types'
 import { packageExceptionForReport } from "../util"
 
 // Types
@@ -14,19 +15,14 @@ interface AccountRow {
     sortOrder: number;
     xAccountId: number | null;
     blueskyAccountID: number | null;
+    facebookAccountID: number | null;
     uuid: string;
 }
 
-// Functions
-
-export const getAccount = (id: number): Account | null => {
-    const row: AccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM account WHERE id = ?', [id], 'get') as AccountRow | undefined;
-    if (!row) {
-        return null;
-    }
-
+function accountFromAccountRow(row: AccountRow): Account {
     let xAccount: XAccount | null = null;
     let blueskyAccount: BlueskyAccount | null = null;
+    let facebookAccount: FacebookAccount | null = null;
     switch (row.type) {
         case "X":
             if (row.xAccountId) {
@@ -39,6 +35,12 @@ export const getAccount = (id: number): Account | null => {
                 blueskyAccount = getBlueskyAccount(row.blueskyAccountID);
             }
             break;
+
+        case "Facebook":
+            if (row.facebookAccountID) {
+                facebookAccount = getFacebookAccount(row.facebookAccountID);
+            }
+            break;
     }
 
     return {
@@ -47,8 +49,20 @@ export const getAccount = (id: number): Account | null => {
         sortOrder: row.sortOrder,
         xAccount: xAccount,
         blueskyAccount: blueskyAccount,
+        facebookAccount: facebookAccount,
         uuid: row.uuid
     };
+}
+
+// Functions
+
+export const getAccount = (id: number): Account | null => {
+    const row: AccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM account WHERE id = ?', [id], 'get') as AccountRow | undefined;
+    if (!row) {
+        return null;
+    }
+
+    return accountFromAccountRow(row);
 }
 
 export async function getAccountUsername(account: Account): Promise<string | null> {
@@ -56,6 +70,8 @@ export async function getAccountUsername(account: Account): Promise<string | nul
         return account.xAccount?.username;
     } else if (account.type == "Bluesky" && account.blueskyAccount) {
         return account.blueskyAccount?.username;
+    } else if (account.type == "Facebook" && account.facebookAccount) {
+        return account.facebookAccount?.name;
     }
 
     return null;
@@ -66,29 +82,7 @@ export const getAccounts = (): Account[] => {
 
     const accounts: Account[] = [];
     for (const row of rows) {
-        let xAccount: XAccount | null = null;
-        let blueskyAccount: BlueskyAccount | null = null;
-        switch (row.type) {
-            case "X":
-                if (row.xAccountId) {
-                    xAccount = getXAccount(row.xAccountId);
-                }
-                break;
-            case "Bluesky":
-                if (row.blueskyAccountID) {
-                    blueskyAccount = getBlueskyAccount(row.blueskyAccountID);
-                }
-                break
-        }
-
-        accounts.push({
-            id: row.id,
-            type: row.type,
-            sortOrder: row.sortOrder,
-            xAccount: xAccount,
-            blueskyAccount: blueskyAccount,
-            uuid: row.uuid
-        });
+        accounts.push(accountFromAccountRow(row));
     }
     return accounts;
 }
@@ -129,12 +123,16 @@ export const selectAccountType = (accountID: number, type: string): Account => {
         case "Bluesky":
             account.blueskyAccount = createBlueskyAccount();
             break;
+        case "Facebook":
+            account.facebookAccount = createFacebookAccount();
+            break;
         default:
             throw new Error("Unknown account type");
     }
 
     const xAccountId = account.xAccount ? account.xAccount.id : null;
     const blueskyAccountID = account.blueskyAccount ? account.blueskyAccount.id : null;
+    const facebookAccountID = account.facebookAccount ? account.facebookAccount.id : null;
 
     // Update the account
     exec(getMainDatabase(), `
@@ -142,12 +140,14 @@ export const selectAccountType = (accountID: number, type: string): Account => {
         SET
             type = ?,
             xAccountId = ?,
-            blueskyAccountID = ?
+            blueskyAccountID = ?,
+            facebookAccountID = ?
         WHERE id = ?
     `, [
         type,
         xAccountId,
         blueskyAccountID,
+        facebookAccountID,
         account.id
     ]);
 
@@ -159,9 +159,10 @@ export const selectAccountType = (accountID: number, type: string): Account => {
 export const saveAccount = (account: Account) => {
     if (account.xAccount) {
         saveXAccount(account.xAccount);
-    }
-    else if (account.blueskyAccount) {
+    } else if (account.blueskyAccount) {
         saveBlueskyAccount(account.blueskyAccount);
+    } else if (account.facebookAccount) {
+        saveFacebookAccount(account.facebookAccount);
     }
 
     exec(getMainDatabase(), `
@@ -194,6 +195,11 @@ export const deleteAccount = (accountID: number) => {
         case "Bluesky":
             if (account.blueskyAccount) {
                 exec(getMainDatabase(), 'DELETE FROM blueskyAccount WHERE id = ?', [account.blueskyAccount.id]);
+            }
+            break;
+        case "Facebook":
+            if (account.facebookAccount) {
+                exec(getMainDatabase(), 'DELETE FROM facebookAccount WHERE id = ?', [account.facebookAccount.id]);
             }
             break;
     }

@@ -85,7 +85,7 @@ export type XViewModelState = {
     currentJobIndex: number;
 }
 
-export class AccountXViewModel extends BaseViewModel {
+export class XViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
