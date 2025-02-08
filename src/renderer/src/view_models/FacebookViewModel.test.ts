@@ -2,7 +2,11 @@ import fs from 'fs';
 import path from 'path';
 
 import { test, expect } from 'vitest';
-import { findCurrentUserInitialData, CurrentUserInitialData } from './FacebookViewModel';
+import {
+    CurrentUserInitialData,
+    findCurrentUserInitialData,
+    findProfilePictureURI
+} from './FacebookViewModel';
 
 test('findCurrentUserInitialData() successfully finds CurrentUserInitialData', async () => {
     const faceDataItemsJSON = fs.readFileSync(path.join(__dirname, '..', '..', '..', '..', 'testdata', 'facebook', 'FacebookDataItems.json'), 'utf8');
@@ -25,4 +29,11 @@ test('findCurrentUserInitialData() successfully finds CurrentUserInitialData', a
         "APP_ID": "2220391788200892",
         "IS_BUSINESS_DOMAIN": false
     });
+})
+
+test('findProfilePictureURI() successfully finds the profile picture URI', async () => {
+    const faceDataItemsJSON = fs.readFileSync(path.join(__dirname, '..', '..', '..', '..', 'testdata', 'facebook', 'FacebookDataItems.json'), 'utf8');
+    const facebookDataItems = JSON.parse(faceDataItemsJSON);
+    const profilePictureURI: string | null = findProfilePictureURI(facebookDataItems);
+    expect(profilePictureURI).toEqual("https://scontent.fsac1-2.fna.fbcdn.net/v/t39.30808-1/476279280_122101936418758687_8298574481110740604_n.jpg?stp=c434.0.1080.1080a_cp0_dst-jpg_s80x80_tt6&_nc_cat=105&ccb=1-7&_nc_sid=e99d92&_nc_ohc=pIxGW_rtPb4Q7kNvgH-lasu&_nc_oc=AditzkgBRRzY8wq4iVBGX4zS6csLNqI_etFbqsc_Vfmq4NIiPWL2sDxJd-iMlw6k22I&_nc_zt=24&_nc_ht=scontent.fsac1-2.fna&_nc_gid=ANXdZFZVCbQsbR38YXNk10r&oh=00_AYAR9jJI57lhGRMB5jmY4gmvBvCU9SHC6rU0vILNWIDUAQ&oe=67AC6A9A");
 })

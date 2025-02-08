@@ -35,6 +35,7 @@ export type FacebookViewModelState = {
 }
 
 // For traversing the Facebook JSON data embedded in the HTML
+
 interface FacebookDataItem {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
@@ -86,6 +87,42 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
         }
     }
     // If nothing is found, return null
+    return null;
+}
+
+export function findProfilePictureURI(data: unknown): string | null {
+    // Handle arrays by checking each element
+    if (Array.isArray(data)) {
+        for (const item of data) {
+            const result = findProfilePictureURI(item);
+            if (result) return result;
+        }
+    }
+    // Handle objects
+    else if (typeof data === "object" && data !== null) {
+        const obj = data as Record<string, unknown>;
+
+        // Check if this is the actor object we're looking for
+        if (obj.actor && typeof obj.actor === "object") {
+            const actor = obj.actor as Record<string, unknown>;
+            if (actor.__typename === "User" &&
+                actor.profile_picture &&
+                typeof actor.profile_picture === "object") {
+                const profilePicture = actor.profile_picture as Record<string, unknown>;
+                if (typeof profilePicture.uri === "string") {
+                    return profilePicture.uri;
+                }
+            }
+        }
+
+        // Recursively search through all object properties
+        for (const key of Object.keys(obj)) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                const result = findProfilePictureURI(obj[key]);
+                if (result) return result;
+            }
+        }
+    }
     return null;
 }
 
@@ -296,10 +333,19 @@ export class FacebookViewModel extends BaseViewModel {
 
         await this.waitForPause();
 
-        // Get the user's name, account ID, and profile image
+        // Get the user's name and account ID
         const facebookData = await this.getFacebookDataFromHTML();
         const currentUserInitialData = findCurrentUserInitialData(facebookData);
         console.log('currentUserInitialData', currentUserInitialData);
+
+        if (currentUserInitialData && this.account && this.account?.facebookAccount) {
+            this.account.facebookAccount.name = currentUserInitialData.NAME;
+            this.account.facebookAccount.accountID = currentUserInitialData.ACCOUNT_ID;
+        }
+        await window.electron.database.saveAccount(JSON.stringify(this.account));
+        this.log("login", "saved name and account ID");
+
+        // Get the user's profile image
 
         this.pause();
         await this.waitForPause();
