@@ -34,6 +34,62 @@ export type FacebookViewModelState = {
     currentJobIndex: number;
 }
 
+// For traversing the Facebook JSON data embedded in the HTML
+interface FacebookDataItem {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any;
+}
+
+export interface CurrentUserInitialData {
+    ACCOUNT_ID: string;
+    USER_ID: string;
+    NAME: string;
+    [key: string]: unknown;
+}
+
+export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
+    // If the current item is an array, iterate through its elements
+    if (Array.isArray(data)) {
+        for (const item of data) {
+            // Check if the first element is "CurrentUserInitialData"
+            if (Array.isArray(item) && item[0] === "CurrentUserInitialData") {
+                // Check if the third element is an object with the required keys
+                if (
+                    item[2] &&
+                    typeof item[2] === "object" &&
+                    "ACCOUNT_ID" in item[2] &&
+                    "USER_ID" in item[2] &&
+                    "NAME" in item[2]
+                ) {
+                    return item[2] as CurrentUserInitialData;
+                }
+            }
+            // Recursively search nested arrays
+            const result = findCurrentUserInitialData(item);
+            if (result) {
+                return result;
+            }
+        }
+    }
+    // If the current item is an object, recursively search its values
+    else if (typeof data === "object" && data !== null) {
+        // Use type assertion for object iteration
+        const obj = data as Record<string, unknown>;
+        for (const key of Object.keys(obj)) {
+            // Safe property check
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                const result = findCurrentUserInitialData(obj[key]);
+                if (result) {
+                    return result;
+                }
+            }
+        }
+    }
+    // If nothing is found, return null
+    return null;
+}
+
+
 export class FacebookViewModel extends BaseViewModel {
     public progress: FacebookProgress = emptyFacebookProgress();
     public jobs: FacebookJob[] = [];
@@ -187,6 +243,29 @@ export class FacebookViewModel extends BaseViewModel {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async getFacebookDataFromHTML(): Promise<FacebookDataItem[]> {
+        this.log("getFacebookData");
+
+        // When loading the Facebook home page, there are dozens of `<script type="application/ld+json">` elements.
+        // This function will extract the JSON data from each of them and return it as an array of objects.
+        return await this.getWebview()?.executeJavaScript(`
+            (async () => {
+                const json = [];
+                const scripts = document.querySelectorAll('script[type="application/json"]');
+                for (const script of scripts) {
+                    try {
+                        const data = JSON.parse(script.textContent);
+                        json.push(data);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                return json;
+            })();
+        `);
+    }
+
     async login() {
         this.showBrowser = true;
         this.log("login", "logging in");
@@ -218,7 +297,12 @@ export class FacebookViewModel extends BaseViewModel {
         await this.waitForPause();
 
         // Get the user's name, account ID, and profile image
-        // TODO: implement
+        const facebookData = await this.getFacebookDataFromHTML();
+        const currentUserInitialData = findCurrentUserInitialData(facebookData);
+        console.log('currentUserInitialData', currentUserInitialData);
+
+        this.pause();
+        await this.waitForPause();
 
     }
 
