@@ -84,6 +84,15 @@ export const defineIPCFacebook = () => {
         }
     });
 
+    ipcMain.handle('Facebook:getProfileImageDataURI', async (_, accountID: number, profilePictureURI: string): Promise<string> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.getProfileImageDataURI(profilePictureURI);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
     ipcMain.handle('Facebook:getConfig', async (_, accountID: number, key: string): Promise<string | null> => {
         try {
             const controller = getFacebookAccountController(accountID);

@@ -342,14 +342,17 @@ export class FacebookViewModel extends BaseViewModel {
             this.account.facebookAccount.name = currentUserInitialData.NAME;
             this.account.facebookAccount.accountID = currentUserInitialData.ACCOUNT_ID;
         }
-        await window.electron.database.saveAccount(JSON.stringify(this.account));
-        this.log("login", "saved name and account ID");
 
         // Get the user's profile image
+        const profilePictureURI = findProfilePictureURI(facebookData);
+        console.log('profilePictureURI', profilePictureURI);
+        if (profilePictureURI && this.account && this.account.facebookAccount) {
+            this.account.facebookAccount.profileImageDataURI = await window.electron.Facebook.getProfileImageDataURI(this.account.id, profilePictureURI);
+        }
 
-        this.pause();
+        await window.electron.database.saveAccount(JSON.stringify(this.account));
+
         await this.waitForPause();
-
     }
 
     async runJobLogin(jobIndex: number): Promise<boolean> {

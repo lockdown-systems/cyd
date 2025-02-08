@@ -290,6 +290,9 @@ contextBridge.exposeInMainWorld('electron', {
         getCookie: (accountID: number, name: string): Promise<string | null> => {
             return ipcRenderer.invoke('Facebook:getCookie', accountID, name);
         },
+        getProfileImageDataURI: (profilePictureURI: string): Promise<string> => {
+            return ipcRenderer.invoke('Facebook:getProfileImageDataURI', profilePictureURI);
+        },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('Facebook:getConfig', accountID, key);
         },

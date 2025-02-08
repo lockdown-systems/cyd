@@ -125,6 +125,7 @@ declare global {
                 syncProgress: (accountID: number, progressJSON: string) => Promise<void>;
                 getProgress: (accountID: number) => Promise<FacebookProgress>;
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
+                getProfileImageDataURI: (accountID: number, profilePictureURI: string) => Promise<string>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => Promise<void>;
             },

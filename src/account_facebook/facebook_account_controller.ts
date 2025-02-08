@@ -1,5 +1,6 @@
 import path from 'path'
 
+import fetch from 'node-fetch';
 import { session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
@@ -208,6 +209,19 @@ export class FacebookAccountController {
 
     async getCookie(name: string): Promise<string | null> {
         return this.cookies[name] || null;
+    }
+
+    async getProfileImageDataURI(profilePictureURI: string): Promise<string> {
+        try {
+            const response = await fetch(profilePictureURI, {});
+            if (!response.ok) {
+                return "";
+            }
+            const buffer = await response.buffer();
+            return `data:${response.headers.get('content-type')};base64,${buffer.toString('base64')}`;
+        } catch {
+            return "";
+        }
     }
 
     async getConfig(key: string): Promise<string | null> {
