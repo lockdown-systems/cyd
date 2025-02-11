@@ -4,7 +4,7 @@ import path from 'path';
 import { ipcMain, webContents, shell } from 'electron';
 import log from 'electron-log/main';
 
-import { packageExceptionForReport, getAccountDataPath } from './util';
+import { packageExceptionForReport, getAccountDataPath, getDataPath } from './util';
 import { Account, ArchiveInfo, emptyArchiveInfo } from './shared_types';
 import { getAccount } from './database'
 
@@ -14,8 +14,20 @@ import { JSDOM } from 'jsdom';
 const getArchivePath = (account: Account): string | null => {
     if (account.type == "X" && account.xAccount && account.xAccount.username) {
         return getAccountDataPath("X", account.xAccount.username);
-    } else if (account.type == "Facebook" && account.facebookAccount && account.facebookAccount.name) {
-        return getAccountDataPath("Facebook", account.facebookAccount.name);
+    } else if (account.type == "Facebook" && account.facebookAccount && account.facebookAccount.accountID && account.facebookAccount.name) {
+        const facebookDataPath = path.join(getDataPath(), "Facebook");
+
+        // See if there is a folder in this path that starts with account.facebookAccount.accountID
+        // This way if the user changes their name, we can still find the folder
+        const facebookAccountFolders = fs.readdirSync(facebookDataPath);
+        for (const folder of facebookAccountFolders) {
+            if (folder.startsWith(account.facebookAccount.accountID)) {
+                return path.join(facebookDataPath, folder);
+            }
+        }
+
+        // Otherwise, fallback to the accountID and name
+        return getAccountDataPath("Facebook", `${account.facebookAccount.accountID} ${account.facebookAccount.name}`);
     }
     return null;
 }
