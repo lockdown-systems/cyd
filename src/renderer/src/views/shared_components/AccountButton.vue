@@ -53,6 +53,8 @@ onUnmounted(async () => {
             @mouseover="showInfo = true" @mouseleave="showInfo = false" @auxclick="menuAuxClicked">
             <img v-if="props.account.type == 'X' && props.account.xAccount?.profileImageDataURI != '' && props.account.xAccount?.profileImageDataURI != null"
                 :src="props.account.xAccount?.profileImageDataURI">
+            <img v-if="props.account.type == 'Facebook' && props.account.facebookAccount?.profileImageDataURI != '' && props.account.facebookAccount?.profileImageDataURI != null"
+                :src="props.account.facebookAccount?.profileImageDataURI">
             <i v-else :class="getAccountIcon(account.type)" />
         </div>
         <div v-if="showInfo" class="info-popup">
