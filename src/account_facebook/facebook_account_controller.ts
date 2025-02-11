@@ -212,14 +212,17 @@ export class FacebookAccountController {
     }
 
     async getProfileImageDataURI(profilePictureURI: string): Promise<string> {
+        log.info("FacebookAccountController.getProfileImageDataURI: profilePictureURI", profilePictureURI);
         try {
             const response = await fetch(profilePictureURI, {});
             if (!response.ok) {
                 return "";
             }
             const buffer = await response.buffer();
+            log.info("FacebookAccountController.getProfileImageDataURI: buffer", buffer);
             return `data:${response.headers.get('content-type')};base64,${buffer.toString('base64')}`;
-        } catch {
+        } catch (e) {
+            log.error("FacebookAccountController.getProfileImageDataURI: error", e);
             return "";
         }
     }
