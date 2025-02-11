@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import AccountXView from './x/AccountXView.vue';
 import { getAccountIcon } from '../util';
 import type { Account } from '../../../shared_types';
 
 import { getAccountRunning, setAccountRunning } from '../util';
 
 import CydAvatarComponent from './shared_components/CydAvatarComponent.vue';
+
+import XView from './x/XView.vue';
+import FacebookView from './facebook/FacebookView.vue';
 
 const props = defineProps<{
   account: Account;
@@ -66,9 +68,27 @@ onMounted(async () => {
                   <div class="name">
                     X
                   </div>
-                  <div class="info text-muted">
-                    Formerly Twitter, owned by Elon Musk
+                  <small class="info text-muted">
+                    Formerly Twitter, owned by American oligarch Elon Musk
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="card m-2 select-account-facebook" @click="accountClicked('Facebook')">
+              <div class="card-body d-flex align-items-center">
+                <div class="logo mr-3">
+                  <i :class="getAccountIcon('Facebook')" />
+                </div>
+                <div class="description">
+                  <div class="name">
+                    Facebook
                   </div>
+                  <small class="info text-muted">
+                    A subsidiary of Meta, owned by American oligarch Mark Zuckerberg
+                  </small>
                 </div>
               </div>
             </div>
@@ -100,7 +120,11 @@ onMounted(async () => {
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <AccountXView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+      <XView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+    </template>
+
+    <template v-else-if="account.type == 'Facebook'">
+      <FacebookView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
     </template>
 
     <template v-else>
@@ -133,9 +157,5 @@ onMounted(async () => {
 .select-account .description .name {
   font-size: 1.2rem;
   font-weight: bold;
-}
-
-.select-account .description .info {
-  font-size: 1rem;
 }
 </style>

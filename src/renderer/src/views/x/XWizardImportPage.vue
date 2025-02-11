@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {
-    AccountXViewModel,
+    XViewModel,
     State
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 import { openURL } from '../../util';
 
 // Props
 defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Emits

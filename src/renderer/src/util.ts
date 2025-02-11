@@ -59,6 +59,8 @@ export function getAccountIcon(accountType: string): string {
             // Not using the real X logo to avoid trademark issues
             // return "fa-brands fa-x-twitter";
             return "fa-solid fa-xmark";
+        case "Facebook":
+            return "fa-brands fa-facebook";
         case "Bluesky":
             return "fa-brands fa-bluesky";
         default:
@@ -123,4 +125,12 @@ export const formattedDatetime = (date: string): string => {
         hour12: true
     };
     return new Date(date).toLocaleString('en-US', options);
+}
+
+export const showQuestionOpenModePremiumFeature = async (): Promise<boolean> => {
+    return await window.electron.showQuestion(
+        "You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.",
+        "Continue",
+        "Cancel"
+    );
 }

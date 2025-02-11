@@ -1,12 +1,36 @@
 import fs from 'fs';
 import path from 'path';
 
-import { ipcMain, webContents } from 'electron';
+import { ipcMain, webContents, shell } from 'electron';
+import log from 'electron-log/main';
 
-import { packageExceptionForReport } from './util';
+import { packageExceptionForReport, getAccountDataPath, getDataPath } from './util';
+import { Account, ArchiveInfo, emptyArchiveInfo } from './shared_types';
+import { getAccount } from './database'
 
 import mhtml2html from 'mhtml2html';
 import { JSDOM } from 'jsdom';
+
+const getArchivePath = (account: Account): string | null => {
+    if (account.type == "X" && account.xAccount && account.xAccount.username) {
+        return getAccountDataPath("X", account.xAccount.username);
+    } else if (account.type == "Facebook" && account.facebookAccount && account.facebookAccount.accountID && account.facebookAccount.name) {
+        const facebookDataPath = path.join(getDataPath(), "Facebook");
+
+        // See if there is a folder in this path that starts with account.facebookAccount.accountID
+        // This way if the user changes their name, we can still find the folder
+        const facebookAccountFolders = fs.readdirSync(facebookDataPath);
+        for (const folder of facebookAccountFolders) {
+            if (folder.startsWith(account.facebookAccount.accountID)) {
+                return path.join(facebookDataPath, folder);
+            }
+        }
+
+        // Otherwise, fallback to the accountID and name
+        return getAccountDataPath("Facebook", `${account.facebookAccount.accountID} ${account.facebookAccount.name}`);
+    }
+    return null;
+}
 
 export const defineIPCArchive = () => {
     ipcMain.handle('archive:isPageAlreadySaved', async (_, outputPath: string, basename: string): Promise<boolean> => {
@@ -47,5 +71,44 @@ export const defineIPCArchive = () => {
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
+    });
+
+    ipcMain.handle('archive:openFolder', async (_, accountID: number, folderName: string): Promise<void> => {
+        const account = getAccount(accountID);
+        if (!account) {
+            log.error('archive:openFolder', `Account not found: ${accountID}`);
+            return;
+        }
+
+        const archivePath = getArchivePath(account);
+        if (!archivePath) {
+            log.error('archive:openFolder', `error getting archive path`);
+            return;
+        }
+
+        const folderPath = path.join(archivePath, folderName);
+        await shell.openPath(folderPath);
+    });
+
+    ipcMain.handle('archive:getInfo', async (_, accountID: number): Promise<ArchiveInfo> => {
+        const archiveInfo = emptyArchiveInfo();
+
+        const account = getAccount(accountID);
+        if (!account) {
+            log.error('archive:getInfo', `Account not found: ${accountID}`);
+            return archiveInfo;
+        }
+
+        const archivePath = getArchivePath(account);
+        if (!archivePath) {
+            log.error('archive:getInfo', `error getting archive path`);
+            return archiveInfo;
+        }
+
+        const indexHTMLFilename = path.join(archivePath, "index.html");
+
+        archiveInfo.folderEmpty = !fs.existsSync(archivePath) || fs.readdirSync(archivePath).length === 0;
+        archiveInfo.indexHTMLExists = fs.existsSync(indexHTMLFilename);
+        return archiveInfo;
     });
 }

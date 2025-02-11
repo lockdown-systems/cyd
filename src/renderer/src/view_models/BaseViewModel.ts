@@ -226,6 +226,15 @@ export class BaseViewModel {
             case "X":
                 username = this.account?.xAccount?.username ? this.account?.xAccount.username : "";
                 break;
+            case "Facebook":
+                if (this.account?.facebookAccount?.accountID && this.account?.facebookAccount?.name) {
+                    username = this.account?.facebookAccount.accountID + " " + this.account?.facebookAccount.name;
+                } else if (this.account?.facebookAccount?.accountID) {
+                    username = this.account?.facebookAccount.accountID;
+                } else if (this.account?.facebookAccount?.name) {
+                    username = this.account?.facebookAccount.name;
+                }
+                break;
             default:
                 break;
         }

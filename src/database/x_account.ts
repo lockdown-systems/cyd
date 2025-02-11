@@ -39,13 +39,7 @@ interface XAccountRow {
     likesCount: number;
 }
 
-// Functions
-
-export const getXAccount = (id: number): XAccount | null => {
-    const row: XAccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM xAccount WHERE id = ?', [id], 'get') as XAccountRow | undefined;
-    if (!row) {
-        return null;
-    }
+function xAccountRowtoXAccount(row: XAccountRow): XAccount {
     return {
         id: row.id,
         createdAt: new Date(row.createdAt),
@@ -80,7 +74,17 @@ export const getXAccount = (id: number): XAccount | null => {
         followersCount: row.followersCount,
         tweetsCount: row.tweetsCount,
         likesCount: row.likesCount
-    };
+    }
+}
+
+// Functions
+
+export const getXAccount = (id: number): XAccount | null => {
+    const row: XAccountRow | undefined = exec(getMainDatabase(), 'SELECT * FROM xAccount WHERE id = ?', [id], 'get') as XAccountRow | undefined;
+    if (!row) {
+        return null;
+    }
+    return xAccountRowtoXAccount(row);
 }
 
 export const getXAccounts = (): XAccount[] => {
@@ -88,41 +92,7 @@ export const getXAccounts = (): XAccount[] => {
 
     const accounts: XAccount[] = [];
     for (const row of rows) {
-        accounts.push({
-            id: row.id,
-            createdAt: new Date(row.createdAt),
-            updatedAt: new Date(row.updatedAt),
-            accessedAt: new Date(row.accessedAt),
-            username: row.username,
-            profileImageDataURI: row.profileImageDataURI,
-            importFromArchive: !!row.importFromArchive,
-            saveMyData: !!row.saveMyData,
-            deleteMyData: !!row.deleteMyData,
-            archiveMyData: !!row.archiveMyData,
-            archiveTweets: !!row.archiveTweets,
-            archiveTweetsHTML: !!row.archiveTweetsHTML,
-            archiveLikes: !!row.archiveLikes,
-            archiveBookmarks: !!row.archiveBookmarks,
-            archiveDMs: !!row.archiveDMs,
-            deleteTweets: !!row.deleteTweets,
-            deleteTweetsDaysOldEnabled: !!row.deleteTweetsDaysOldEnabled,
-            deleteTweetsDaysOld: row.deleteTweetsDaysOld,
-            deleteTweetsLikesThresholdEnabled: !!row.deleteTweetsLikesThresholdEnabled,
-            deleteTweetsLikesThreshold: row.deleteTweetsLikesThreshold,
-            deleteTweetsRetweetsThresholdEnabled: !!row.deleteTweetsRetweetsThresholdEnabled,
-            deleteTweetsRetweetsThreshold: row.deleteTweetsRetweetsThreshold,
-            deleteRetweets: !!row.deleteRetweets,
-            deleteRetweetsDaysOldEnabled: !!row.deleteRetweetsDaysOldEnabled,
-            deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
-            deleteLikes: !!row.deleteLikes,
-            deleteBookmarks: !!row.deleteBookmarks,
-            deleteDMs: !!row.deleteDMs,
-            unfollowEveryone: !!row.unfollowEveryone,
-            followingCount: row.followingCount,
-            followersCount: row.followersCount,
-            tweetsCount: row.tweetsCount,
-            likesCount: row.likesCount
-        });
+        accounts.push(xAccountRowtoXAccount(row));
     }
     return accounts;
 }

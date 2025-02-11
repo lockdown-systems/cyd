@@ -21,6 +21,7 @@ import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
+import { defineIPCFacebook } from './account_facebook';
 import { defineIPCArchive } from './archive';
 import {
     getUpdatesBaseURL,
@@ -541,6 +542,7 @@ async function createWindow() {
         // Other IPC events
         database.defineIPCDatabase();
         defineIPCX();
+        defineIPCFacebook();
         defineIPCArchive();
     }
     // @ts-expect-error: typescript doesn't know about this global variable
