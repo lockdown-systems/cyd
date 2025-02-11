@@ -51,10 +51,16 @@ onUnmounted(async () => {
     <div class="btn-container" :class="{ 'active': active }">
         <div ref="menuBtnEl" class="account-btn d-flex justify-content-center align-items-center"
             @mouseover="showInfo = true" @mouseleave="showInfo = false" @auxclick="menuAuxClicked">
-            <img v-if="props.account.type == 'X' && props.account.xAccount?.profileImageDataURI != '' && props.account.xAccount?.profileImageDataURI != null"
-                :src="props.account.xAccount?.profileImageDataURI">
-            <img v-if="props.account.type == 'Facebook' && props.account.facebookAccount?.profileImageDataURI != '' && props.account.facebookAccount?.profileImageDataURI != null"
-                :src="props.account.facebookAccount?.profileImageDataURI">
+            <template v-if="props.account.type == 'X'">
+                <img v-if="props.account.xAccount?.profileImageDataURI != '' && props.account.xAccount?.profileImageDataURI != null"
+                    :src="props.account.xAccount?.profileImageDataURI">
+                <i v-else :class="getAccountIcon(account.type)" />
+            </template>
+            <template v-else-if="props.account.type == 'Facebook'">
+                <img v-if="props.account.facebookAccount?.profileImageDataURI != '' && props.account.facebookAccount?.profileImageDataURI != null"
+                    :src="props.account.facebookAccount?.profileImageDataURI">
+                <i v-else :class="getAccountIcon(account.type)" />
+            </template>
             <i v-else :class="getAccountIcon(account.type)" />
         </div>
         <div v-if="showInfo" class="info-popup">

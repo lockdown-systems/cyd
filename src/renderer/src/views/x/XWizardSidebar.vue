@@ -8,14 +8,10 @@ import {
     State,
     XViewModel,
 } from '../../view_models/XViewModel'
-import type {
-    XArchiveInfo,
-    XDatabaseStats
-} from '../../../../shared_types';
 import {
-    emptyXArchiveInfo,
-    emptyXDatabaseStats
+    XDatabaseStats, emptyXDatabaseStats
 } from '../../../../shared_types';
+import SidebarArchive from '../shared_components/SidebarArchive.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -33,14 +29,6 @@ const emit = defineEmits<{
 }>()
 
 // Buttons
-const openArchiveFolder = async () => {
-    await window.electron.X.openFolder(props.model.account?.id, "");
-};
-
-const openArchive = async () => {
-    await window.electron.X.openFolder(props.model.account?.id, "index.html");
-};
-
 const reloadUserStats = async () => {
     await window.electron.X.setConfig(props.model.account?.id, 'reloadUserStats', 'true');
     emit('setState', State.WizardPrestart);
@@ -53,12 +41,6 @@ function formatStatsNumber(num: number): string {
     }
     return num.toString();
 }
-
-// Keep archiveInfo in sync
-const archiveInfo = ref<XArchiveInfo>(emptyXArchiveInfo());
-emitter?.on(`x-update-archive-info-${props.model.account.id}`, async () => {
-    archiveInfo.value = await window.electron.X.getArchiveInfo(props.model.account.id);
-});
 
 // Keep databaseStats in sync
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
@@ -103,15 +85,8 @@ onMounted(async () => {
                 </a>
             </template>
         </p>
-        <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
-            <button class="btn btn-outline-success btn-sm" @click="openArchive">
-                Browse Archive
-            </button>
 
-            <button class="btn btn-outline-secondary btn-sm" @click="openArchiveFolder">
-                Open Folder
-            </button>
-        </p>
+        <SidebarArchive :account-i-d="model.account.id" :account-type="model.account.type" />
 
         <div class="stats container mt-4">
             <div class="row g-2">

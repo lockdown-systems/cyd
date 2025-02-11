@@ -7,6 +7,18 @@ export type ResponseData = {
     processed: boolean;
 }
 
+export type ArchiveInfo = {
+    folderEmpty: boolean;
+    indexHTMLExists: boolean;
+}
+
+export function emptyArchiveInfo(): ArchiveInfo {
+    return {
+        folderEmpty: true,
+        indexHTMLExists: false
+    }
+}
+
 // Models
 
 export type ErrorReport = {

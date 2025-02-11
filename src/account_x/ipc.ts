@@ -3,6 +3,7 @@ import { ipcMain } from 'electron'
 import { XAccountController } from './x_account_controller';
 
 import {
+    ArchiveInfo,
     XAccount,
     XJob,
     XProgress,
@@ -14,7 +15,6 @@ import {
     ResponseData,
     XDatabaseStats,
     XDeleteReviewStats,
-    XArchiveInfo,
     XImportArchiveResponse
 } from '../shared_types'
 import { getMITMController } from '../mitm';
@@ -221,7 +221,7 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:getArchiveInfo', async (_, accountID: number): Promise<XArchiveInfo> => {
+    ipcMain.handle('X:getArchiveInfo', async (_, accountID: number): Promise<ArchiveInfo> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.getArchiveInfo();

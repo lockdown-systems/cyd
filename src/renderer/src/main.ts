@@ -9,6 +9,7 @@ import type {
     ErrorReport,
     Account,
     ResponseData,
+    ArchiveInfo,
     // X
     XJob,
     XProgress,
@@ -19,7 +20,6 @@ import type {
     XProgressInfo,
     XDatabaseStats,
     XDeleteReviewStats,
-    XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
     // Facebook
@@ -69,6 +69,8 @@ declare global {
             archive: {
                 isPageAlreadySaved: (outputPath: string, basename: string) => Promise<boolean>;
                 savePage: (webContentsID: number, outputPath: string, basename: string) => Promise<boolean>;
+                openFolder: (accountID: number, folderName: string) => Promise<void>;
+                getInfo: (accountID: number) => Promise<ArchiveInfo>;
             },
             X: {
                 resetProgress: (accountID: number) => Promise<XProgress>;
@@ -91,8 +93,6 @@ declare global {
                 archiveTweetCheckDate: (accountID: number, tweetID: string) => Promise<void>;
                 archiveBuild: (accountID: number) => Promise<void>;
                 syncProgress: (accountID: number, progressJSON: string) => Promise<void>;
-                openFolder: (accountID: number, folderName: string) => Promise<void>;
-                getArchiveInfo: (accountID: number) => Promise<XArchiveInfo>;
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
                 getProgress: (accountID: number) => Promise<XProgress>;

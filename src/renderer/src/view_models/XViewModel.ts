@@ -1,6 +1,7 @@
 import { WebviewTag } from 'electron';
 import { BaseViewModel, TimeoutError, URLChangedError, InternetDownError } from './BaseViewModel';
 import {
+    ArchiveInfo, emptyArchiveInfo,
     XJob,
     XProgress, emptyXProgress,
     XTweetItem,
@@ -12,7 +13,6 @@ import {
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo,
     XAccount
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
@@ -91,7 +91,7 @@ export class XViewModel extends BaseViewModel {
     public progressInfo: XProgressInfo = emptyXProgressInfo();
     public databaseStats: XDatabaseStats = emptyXDatabaseStats();
     public deleteReviewStats: XDeleteReviewStats = emptyXDeleteReviewStats();
-    public archiveInfo: XArchiveInfo = emptyXArchiveInfo();
+    public archiveInfo: ArchiveInfo = emptyArchiveInfo();
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
     public currentTweetItem: XTweetItem | null = null;
@@ -120,7 +120,7 @@ export class XViewModel extends BaseViewModel {
     async refreshDatabaseStats() {
         this.databaseStats = await window.electron.X.getDatabaseStats(this.account?.id);
         this.deleteReviewStats = await window.electron.X.getDeleteReviewStats(this.account?.id);
-        this.archiveInfo = await window.electron.X.getArchiveInfo(this.account?.id);
+        this.archiveInfo = await window.electron.archive.getInfo(this.account?.id);
         this.emitter?.emit(`x-update-database-stats-${this.account?.id}`);
         this.emitter?.emit(`x-update-archive-info-${this.account?.id}`);
     }
@@ -2620,6 +2620,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     ) {
                         await this.loadUserStats();
                     }
+                    this.showBrowser = false;
                     this.state = State.WizardStart;
                     break;
 

@@ -2,6 +2,7 @@
 import {
     Ref,
     ref,
+    unref,
     watch,
     onMounted,
     onUnmounted,
@@ -18,12 +19,15 @@ import SpeechBubble from '../shared_components/SpeechBubble.vue';
 import U2FNotice from '../shared_components/U2FNotice.vue';
 import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
+
+
 import type {
     Account,
     FacebookProgress,
     FacebookJob,
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
+import { AutomationErrorType } from '../../automation_errors';
 import { FacebookViewModel, State, FacebookViewModelState } from '../../view_models/FacebookViewModel'
 import { setAccountRunning } from '../../util';
 import { facebookPostProgress } from '../../util_facebook';
@@ -91,11 +95,11 @@ watch(
 //     emitter?.emit('account-updated');
 // };
 
-// const setState = async (state: State) => {
-//     console.log('Setting state', state);
-//     model.value.state = state;
-//     await startStateLoop();
-// };
+const setState = async (state: State) => {
+    console.log('Setting state', state);
+    model.value.state = state;
+    await startStateLoop();
+};
 
 const startStateLoop = async () => {
     console.log('State loop started');
@@ -241,33 +245,33 @@ emitter?.on(`facebook-submit-progress-${props.account.id}`, async () => {
 
 // Debug functions
 
-// const debugAutopauseEndOfStepChanged = async (value: boolean) => {
-//     model.value.debugAutopauseEndOfStep = value;
-// };
+const debugAutopauseEndOfStepChanged = async (value: boolean) => {
+    model.value.debugAutopauseEndOfStep = value;
+};
 
-// const debugModeTriggerError = async (count: number = 1) => {
-//     console.log('Debug mode error triggered', count);
-//     if (count == 1) {
-//         await model.value.error(AutomationErrorType.facebook_unknownError, {
-//             message: "Debug mode error triggered",
-//         }, {
-//             currentURL: model.value.webview?.getURL()
-//         });
-//     } else {
-//         for (let i = 0; i < count; i++) {
-//             await model.value.error(AutomationErrorType.facebook_unknownError, {
-//                 message: `Debug mode error triggered ${i + 1} of ${count}`,
-//             }, {
-//                 currentURL: model.value.webview?.getURL()
-//             }, true);
-//         }
-//         await model.value.showErrorModal();
-//     }
-// };
+const debugModeTriggerError = async (count: number = 1) => {
+    console.log('Debug mode error triggered', count);
+    if (count == 1) {
+        await model.value.error(AutomationErrorType.facebook_unknownError, {
+            message: "Debug mode error triggered",
+        }, {
+            currentURL: model.value.webview?.getURL()
+        });
+    } else {
+        for (let i = 0; i < count; i++) {
+            await model.value.error(AutomationErrorType.facebook_unknownError, {
+                message: `Debug mode error triggered ${i + 1} of ${count}`,
+            }, {
+                currentURL: model.value.webview?.getURL()
+            }, true);
+        }
+        await model.value.showErrorModal();
+    }
+};
 
-// const debugModeDisable = async () => {
-//     model.value.state = State.WizardStart;
-// };
+const debugModeDisable = async () => {
+    model.value.state = State.WizardStart;
+};
 
 // Lifecycle
 
@@ -364,6 +368,42 @@ onUnmounted(async () => {
                 'webview-automation-border': model.showAutomationNotice,
                 'webview-input-border': !model.showAutomationNotice
             }" />
+
+        <template v-if="model.state != State.WizardStart">
+            <!-- Wizard -->
+            <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
+                <div class="wizard-container d-flex">
+                    <div class="wizard-content flex-grow-1">
+                        <!-- <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
+                            :model="unref(model)" @set-state="setState($event)" /> -->
+
+                        <!-- Debug state -->
+                        <div v-if="model.state == State.Debug">
+                            <p>Debug debug debug!!!</p>
+                            <p>
+                                <button class="btn btn-danger" @click="debugModeTriggerError(1)">
+                                    Trigger Error
+                                </button>
+                            </p>
+                            <p>
+                                <button class="btn btn-danger" @click="debugModeTriggerError(3)">
+                                    Trigger 3 Errors
+                                </button>
+                            </p>
+                            <p>
+                                <button class="btn btn-primary" @click="debugModeDisable">
+                                    Cancel Debug Mode
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- wizard side bar -->
+                    <FacebookWizardSidebar :model="unref(model)" @set-state="setState($event)"
+                        @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
+                </div>
+            </div>
+        </template>
     </div>
 </template>
 

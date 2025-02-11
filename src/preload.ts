@@ -3,6 +3,7 @@ import {
     ErrorReport,
     Account,
     ResponseData,
+    ArchiveInfo,
     // X
     XJob,
     XProgress,
@@ -13,7 +14,6 @@ import {
     XProgressInfo,
     XDatabaseStats,
     XDeleteReviewStats,
-    XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
     // Facebook
@@ -123,7 +123,13 @@ contextBridge.exposeInMainWorld('electron', {
         },
         savePage: (webContentsID: number, outputPath: string, basename: string): Promise<boolean> => {
             return ipcRenderer.invoke('archive:savePage', webContentsID, outputPath, basename)
-        }
+        },
+        openFolder: (accountID: number, folderName: string) => {
+            ipcRenderer.invoke('archive:openFolder', accountID, folderName);
+        },
+        getInfo: (accountID: number): Promise<ArchiveInfo> => {
+            return ipcRenderer.invoke('archive:getInfo', accountID);
+        },
     },
     X: {
         resetProgress: (accountID: number): Promise<XProgress> => {
@@ -191,12 +197,6 @@ contextBridge.exposeInMainWorld('electron', {
         },
         syncProgress: (accountID: number, progressJSON: string) => {
             ipcRenderer.invoke('X:syncProgress', accountID, progressJSON)
-        },
-        openFolder: (accountID: number, folderName: string) => {
-            ipcRenderer.invoke('X:openFolder', accountID, folderName);
-        },
-        getArchiveInfo: (accountID: number): Promise<XArchiveInfo> => {
-            return ipcRenderer.invoke('X:getArchiveInfo', accountID);
         },
         resetRateLimitInfo: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:resetRateLimitInfo', accountID);
