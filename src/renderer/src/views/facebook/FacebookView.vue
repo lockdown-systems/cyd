@@ -19,7 +19,8 @@ import SpeechBubble from '../shared_components/SpeechBubble.vue';
 import U2FNotice from '../shared_components/U2FNotice.vue';
 import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
-
+import FacebookWizardImportOrBuildPage from './FacebookWizardImportOrBuildPage.vue';
+import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
 
 import type {
     Account,
@@ -374,8 +375,8 @@ onUnmounted(async () => {
             <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
                 <div class="wizard-container d-flex">
                     <div class="wizard-content flex-grow-1">
-                        <!-- <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
-                            :model="unref(model)" @set-state="setState($event)" /> -->
+                        <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">

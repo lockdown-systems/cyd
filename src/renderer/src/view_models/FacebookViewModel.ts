@@ -17,10 +17,23 @@ export enum State {
     WizardImportOrBuild = "WizardImportOrBuild",
     WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
 
+    WizardImportStart = "WizardImportStart",
+    WizardImportStartDisplay = "WizardImportStartDisplay",
+    WizardImportDownload = "WizardImportDownload",
+    WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
+    WizardImporting = "WizardImporting",
+    WizardImportingDisplay = "WizardImportingDisplay",
+
+    WizardBuildOptions = "WizardBuildOptions",
+    WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
+
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
 
     RunJobs = "RunJobs",
+
+    FinishedRunningJobs = "FinishedRunningJobs",
+    FinishedRunningJobsDisplay = "FinishedRunningJobsDisplay",
 
     Debug = "Debug",
 }
