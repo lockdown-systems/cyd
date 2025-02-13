@@ -69,7 +69,7 @@ onMounted(async () => {
                     X
                   </div>
                   <small class="info text-muted">
-                    Formerly Twitter, owned by oligarch Elon Musk
+                    Formerly Twitter, owned by billionaire Elon Musk
                   </small>
                 </div>
               </div>
@@ -87,7 +87,7 @@ onMounted(async () => {
                     Facebook
                   </div>
                   <small class="info text-muted">
-                    A subsidiary of Meta, owned by oligarch Mark Zuckerberg
+                    A subsidiary of Meta, owned by billionaire Mark Zuckerberg
                   </small>
                 </div>
               </div>
