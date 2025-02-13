@@ -16,7 +16,6 @@ import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
 import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
-import U2FNotice from '../shared_components/U2FNotice.vue';
 import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import XProgressComponent from './XProgressComponent.vue';
@@ -45,7 +44,7 @@ import type {
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
-import { setAccountRunning, showQuestionOpenModePremiumFeature } from '../../util';
+import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
@@ -428,7 +427,13 @@ onUnmounted(async () => {
                 </div>
             </div>
 
-            <U2FNotice v-if="model.state == State.Login" />
+            <!-- U2F security key notice -->
+            <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
+                <i class="fa-solid fa-circle-info me-2" />
+                If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
+                screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
+            </p>
+
             <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
         </template>
 
