@@ -6,6 +6,7 @@ export const stubElectron = () => {
         getPlatform: cy.stub().resolves('win32'),
         getAPIURL: cy.stub().resolves('https://api.example.com'),
         getDashURL: cy.stub().resolves('https://dash.example.com'),
+        isFeatureEnabled: cy.stub().resolves(false),
         trackEvent: cy.stub().resolves('tracked'),
         shouldOpenDevtools: cy.stub().resolves(false),
         showMessage: cy.stub(),
