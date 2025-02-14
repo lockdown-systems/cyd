@@ -55,6 +55,8 @@ import {
     // X API types
     XAPILegacyUser,
     XAPILegacyTweet,
+    XAPILegacyTweetMedia,
+    XAPILegacyTweetMediaVideoVariant,
     XAPIData,
     XAPIBookmarksData,
     XAPITimeline,
@@ -511,7 +513,7 @@ export class XAccountController {
 
         // Check if tweet has media and call indexTweetMedia
         let hasMedia: boolean = false;
-        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length){
+        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length) {
             hasMedia = true;
             this.indexTweetMedia(tweetLegacy)
         }
@@ -544,9 +546,6 @@ export class XAccountController {
             tweetLegacy["quoted_status_permalink"] ? tweetLegacy["quoted_status_permalink"]["expanded"] : null,
             new Date(),
         ]);
-
-        // Add media information to tweet_media table
-
 
         // Update progress
         if (tweetLegacy["favorited"]) {
@@ -757,10 +756,36 @@ export class XAccountController {
         log.debug("XAccountController.indexMedia");
 
         // Loop over all media items
-        tweetLegacy["entities"]["media"].forEach((media: any) => {
+        tweetLegacy["entities"]["media"].forEach((media: XAPILegacyTweetMedia) => {
+            // Get the HTTPS URL of the media -- this works for photos
+            let mediaURL = media["media_url_https"];
+
+            // If it's a video, set mediaURL to the video variant with the highest bitrate
+            if (media["type"] == "video") {
+                let highestBitrate = 0;
+                if (media["video_info"] && media["video_info"]["variants"]) {
+                    media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
+                        if (variant["bitrate"] && variant["bitrate"] > highestBitrate) {
+                            highestBitrate = variant["bitrate"];
+                            mediaURL = variant["url"];
+
+                            // Stripe query parameters from the URL.
+                            // For some reason video variants end with `?tag=12`, and when we try downloading with that
+                            // it responds with 404.
+                            const queryIndex = mediaURL.indexOf("?");
+                            if (queryIndex > -1) {
+                                mediaURL = mediaURL.substring(0, queryIndex);
+                            }
+                        }
+                    });
+                };
+            }
+
+            const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
+
             // Download media locally
-            const filename = `${media["media_key"]}.${media["media_url_https"].substring(media["media_url_https"].lastIndexOf(".") + 1)}`;
-            this.saveTweetMedia(media["media_url_https"], filename);
+            const filename = `${media["media_key"]}.${mediaExtension}`;
+            this.saveTweetMedia(mediaURL, filename);
 
             // Have we seen this media before?
             const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
