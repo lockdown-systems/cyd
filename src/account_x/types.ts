@@ -18,8 +18,12 @@ export interface XJobRow {
 export interface XTweetMediaRow {
     id: number;
     mediaID: string;
+    mediaType: string;
     tweetID: string;
-    type: string;
+    url: string;
+    filename: string;
+    startIndex: number;
+    endIndex: number;
 }
 
 export interface XTweetRow {
@@ -185,8 +189,8 @@ export interface XAPILegacyTweet {
     user_id_str: string;
     id_str: string;
     entities: any;
-    quoted_status_permalink: any;
-    media: XAPILegacyTweetMedia[];
+    quoted_status_permalink?: any;
+    media?: XAPILegacyTweetMedia[];
 }
 
 export interface XAPILegacyUser {
