@@ -40,6 +40,10 @@ onMounted(() => {
                 How would you like to proceed?
             </p>
 
+            <h1>
+                THIS FEATURE IS NOT IMPLEMENTED YET
+            </h1>
+
             <form @submit.prevent>
                 <div class="mb-3">
                     <div class="form-check">
