@@ -39,6 +39,7 @@ declare global {
             getPlatform: () => Promise<string>;
             getAPIURL: () => Promise<string>;
             getDashURL: () => Promise<string>;
+            isFeatureEnabled: (feature: string) => Promise<boolean>;
             trackEvent: (eventName: string, userAgent: string) => Promise<string>;
             shouldOpenDevtools: () => Promise<boolean>;
             showMessage: (message: string, detail: string) => Promise<void>;

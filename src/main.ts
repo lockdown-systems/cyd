@@ -30,7 +30,8 @@ import {
     getSettingsPath,
     getDataPath,
     trackEvent,
-    packageExceptionForReport
+    packageExceptionForReport,
+    isFeatureEnabled
 } from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -135,6 +136,7 @@ app.on('open-url', (event, url) => {
     openCydURL(url);
 })
 
+// Check if we're in dev mode
 const cydDevMode = process.env.CYD_DEV === "1";
 
 async function initializeApp() {
@@ -372,6 +374,10 @@ async function createWindow() {
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));
             }
+        });
+
+        ipcMain.handle('isFeatureEnabled', async (_, feature: string): Promise<boolean> => {
+            return isFeatureEnabled(feature);
         });
 
         ipcMain.handle('trackEvent', async (_, eventName: string, userAgent: string) => {

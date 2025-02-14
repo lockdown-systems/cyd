@@ -19,6 +19,10 @@ const emit = defineEmits<{
   onRemoveClicked: []
 }>()
 
+// Feature flags
+const featureFacebook = ref(false);
+const blueskyFeature = ref(false);
+
 const isRefreshing = ref(false);
 
 const refresh = async () => {
@@ -34,6 +38,9 @@ const accountClicked = (accountType: string) => {
 };
 
 onMounted(async () => {
+  featureFacebook.value = await window.electron.isFeatureEnabled('facebook');
+  blueskyFeature.value = await window.electron.isFeatureEnabled('bluesky');
+
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {
     console.error('Account was running and got interrupted');
@@ -76,7 +83,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="col-12 col-md-6">
+          <div v-if="featureFacebook" class="col-12 col-md-6">
             <div class="card m-2 select-account-facebook" @click="accountClicked('Facebook')">
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
@@ -85,6 +92,7 @@ onMounted(async () => {
                 <div class="description">
                   <div class="name">
                     Facebook
+                    <span class="alpha badge badge-primary">Alpha</span>
                   </div>
                   <small class="info text-muted">
                     A subsidiary of Meta, owned by billionaire Mark Zuckerberg
@@ -94,7 +102,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- <div class="col-12 col-md-6">
+          <div v-if="blueskyFeature" class="col-12 col-md-6">
             <div class="card m-2 select-account-bluesky" @click="accountClicked('Bluesky')">
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
@@ -103,14 +111,15 @@ onMounted(async () => {
                 <div class="description">
                   <div class="name">
                     Bluesky
+                    <span class="alpha badge badge-primary">Alpha</span>
                   </div>
-                  <div class="info text-muted">
-                    Open source decentralized social media platform
-                  </div>
+                  <small class="info text-muted">
+                    Open source social media platform based on AT Protocol
+                  </small>
                 </div>
               </div>
             </div>
-          </div> -->
+          </div>
         </div>
 
         <p class="text-muted mt-3">

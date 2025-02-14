@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld('electron', {
     getDashURL: (): Promise<string> => {
         return ipcRenderer.invoke('getDashURL')
     },
+    isFeatureEnabled: (feature: string): Promise<boolean> => {
+        return ipcRenderer.invoke('isFeatureEnabled', feature)
+    },
     trackEvent: (eventName: string, userAgent: string): Promise<string> => {
         return ipcRenderer.invoke('trackEvent', eventName, userAgent)
     },
