@@ -356,15 +356,15 @@ export class XAccountController {
                         url TEXT NOT NULL,
                         displayURL TEXT NOT NULL,
                         expandedURL TEXT NOT NULL,
-                        start_index INTEGER NOT NULL,
-                        end_index INTEGER NOT NULL,
+                        startIndex INTEGER NOT NULL,
+                        endIndex INTEGER NOT NULL,
                         tweetID TEXT NOT NULL,
                         UNIQUE(url, tweetID)
                     );`,
                     `ALTER TABLE tweet_media ADD COLUMN url TEXT;`,
                     `ALTER TABLE tweet_media ADD COLUMN filename TEXT;`,
-                    `ALTER TABLE tweet_media ADD COLUMN start_index INTEGER;`,
-                    `ALTER TABLE tweet_media ADD COLUMN end_index INTEGER;`
+                    `ALTER TABLE tweet_media ADD COLUMN startIndex INTEGER;`,
+                    `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`
                 ]
             },
         ])
@@ -795,7 +795,7 @@ export class XAccountController {
             }
 
             // Index media information in tweet_media table
-            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
                 media["media_key"],
                 media["type"],
                 media["url"],
@@ -813,7 +813,7 @@ export class XAccountController {
         // Loop over all URL items
         tweetLegacy["entities"]["urls"].forEach((url: any) => {
             // Index url information in tweet_url table
-            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url["url"],
                 url["display_url"],
                 url["expanded_url"],
