@@ -5,9 +5,9 @@ import {
     onMounted
 } from 'vue';
 import {
-    AccountXViewModel,
+    XViewModel,
     State
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 import { XImportArchiveResponse } from '../../../../shared_types'
 import RunningIcon from '../shared_components/RunningIcon.vue'
 
@@ -17,7 +17,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Emits

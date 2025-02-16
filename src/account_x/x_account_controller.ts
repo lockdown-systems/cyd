@@ -5,7 +5,7 @@ import os from 'os'
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
 
-import { app, session, shell } from 'electron'
+import { app, session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
@@ -28,7 +28,6 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo,
     XImportArchiveResponse
 } from '../shared_types'
 import {
@@ -141,7 +140,6 @@ export class XAccountController {
                             this.cookies[parts[0].trim()] = parts[1].trim();
                         }
                     });
-                    // log.info("XAccountController: cookies", this.cookies);
                 }
             }
         });
@@ -1518,27 +1516,6 @@ export class XAccountController {
 
     async syncProgress(progressJSON: string) {
         this.progress = JSON.parse(progressJSON);
-    }
-
-    async openFolder(folderName: string) {
-        if (!this.account) {
-            return;
-        }
-        const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
-        await shell.openPath(folderPath);
-    }
-
-    async getArchiveInfo(): Promise<XArchiveInfo> {
-        const archiveInfo = emptyXArchiveInfo();
-        if (!this.account || !this.account.username) {
-            return archiveInfo;
-        }
-        const accountDataPath = getAccountDataPath("X", this.account?.username);
-        const indexHTMLFilename = path.join(accountDataPath, "index.html");
-
-        archiveInfo.folderEmpty = !fs.existsSync(accountDataPath) || fs.readdirSync(accountDataPath).length === 0;
-        archiveInfo.indexHTMLExists = fs.existsSync(indexHTMLFilename);
-        return archiveInfo;
     }
 
     async resetRateLimitInfo(): Promise<void> {

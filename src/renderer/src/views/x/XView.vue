@@ -16,6 +16,7 @@ import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
 import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
+import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
@@ -42,8 +43,8 @@ import type {
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
-import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
-import { setAccountRunning, openURL } from '../../util';
+import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
+import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
@@ -73,7 +74,7 @@ const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
 // The X view model
-const model = ref<AccountXViewModel>(new AccountXViewModel(props.account, emitter));
+const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
 // Keep currentState in sync
 watch(
@@ -227,13 +228,13 @@ const updateUserPremium = async () => {
 };
 
 emitter?.on('signed-in', async () => {
-    console.log('AccountXView: User signed in');
+    console.log('XView: User signed in');
     await updateUserAuthenticated();
     await updateUserPremium();
 });
 
 emitter?.on('signed-out', async () => {
-    console.log('AccountXView: User signed out');
+    console.log('XView: User signed out');
     userAuthenticated.value = false;
     userPremium.value = false;
 });
@@ -247,7 +248,7 @@ const startJobs = async () => {
     if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
         // In open mode, allow the user to continue
         if (await window.electron.getMode() == "open") {
-            if (!await window.electron.showQuestion("You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.", "Continue", "Cancel")) {
+            if (!await showQuestionOpenModePremiumFeature()) {
                 return;
             }
         }
@@ -398,13 +399,13 @@ onUnmounted(async () => {
         <AccountHeader :account="account" :show-refresh-button="true" @on-refresh-clicked="emit('onRefreshClicked')"
             @on-remove-clicked="emit('onRemoveClicked')" />
 
-        <template v-if="model.state == State.WizardPrestart || model.state == State.WizardStart">
+        <template v-if="model.state == State.WizardStart">
             <div class="text-center ms-2 mt-5">
                 <img src="/assets/cyd-loading.gif" alt="Loading">
             </div>
         </template>
 
-        <template v-if="model.state != State.WizardPrestart && model.state != State.WizardStart">
+        <template v-if="model.state != State.WizardStart">
             <div class="d-flex ms-2">
                 <div class="d-flex flex-column flex-grow-1">
                     <!-- Speech bubble -->
@@ -433,17 +434,7 @@ onUnmounted(async () => {
                 screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
             </p>
 
-            <!-- Automation notice -->
-            <p v-if="(model.showBrowser && model.showAutomationNotice)"
-                class="text-muted text-center automation-notice">
-                <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
-                your computer for other things.
-            </p>
-
-            <!-- Ready for input -->
-            <p v-if="(model.showBrowser && !model.showAutomationNotice)" class="text-muted text-center ready-for-input">
-                <i class="fa-solid fa-computer-mouse" /> Ready for input.
-            </p>
+            <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
         </template>
 
         <!-- Webview -->
@@ -454,7 +445,7 @@ onUnmounted(async () => {
                 'webview-input-border': !model.showAutomationNotice
             }" />
 
-        <template v-if="model.state != State.WizardPrestart && model.state != State.WizardStart">
+        <template v-if="model.state != State.WizardStart">
             <!-- RunJobs states -->
             <div :class="{
                 'hidden': model.showBrowser || !(model.state == State.RunJobs && model.runJobsState != RunJobsState.Default),

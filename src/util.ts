@@ -152,3 +152,8 @@ export function getTimestampDaysAgo(days: number): string {
     now.setDate(now.getDate() - days);
     return now.toISOString();
 }
+
+export function isFeatureEnabled(feature: string): boolean {
+    const envVar = `CYD_FEATURE_${feature.toUpperCase()}`;
+    return process.env[envVar] === "1";
+};

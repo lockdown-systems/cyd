@@ -424,6 +424,16 @@ body {
   border-radius: 0.25rem;
 }
 
+.alpha {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  margin-left: 1rem;
+  padding: 0.2em 0.5em;
+  background-color: #e289ff;
+  color: white;
+  border-radius: 0.25rem;
+}
+
 .fa-heart {
   color: red;
 }
