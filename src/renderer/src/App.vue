@@ -98,6 +98,15 @@ onMounted(async () => {
     isSignedIn.value = true;
   }
 
+  // If logged in, update the server with user activity (gets truncated to day)
+  if (isSignedIn.value) {
+    try {
+      await apiClient.value.postUserActivity();
+    } catch (error) {
+      console.error("Failed to update user activity:", error);
+    }
+  }
+
   isReady.value = true;
 
   // Change the app title
