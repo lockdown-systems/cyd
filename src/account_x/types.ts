@@ -26,6 +26,16 @@ export interface XTweetMediaRow {
     endIndex: number;
 }
 
+export interface XTweetURLRow {
+    id: number;
+    url: string;
+    displayURL: string;
+    expandedURL: string;
+    startIndex: number;
+    endIndex: number;
+    tweetID: string;
+}
+
 export interface XTweetRow {
     id: number;
     username: string;
@@ -166,6 +176,21 @@ export interface XAPILegacyTweetMedia {
         variants: XAPILegacyTweetMediaVideoVariant[];
     };
     media_results?: any;
+}
+
+export interface XAPILegacyURL {
+    display_url: string;
+    expanded_url: string;
+    url: string;
+    indices: number[];
+}
+
+export interface XAPILegacyEntities {
+    hashtags: any[];
+    symbols: any[];
+    timestamps: any[];
+    urls: XAPILegacyURL[];
+    user_mentions: any[];
 }
 
 export interface XAPILegacyTweet {

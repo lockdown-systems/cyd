@@ -57,6 +57,7 @@ import {
     XAPILegacyTweet,
     XAPILegacyTweetMedia,
     XAPILegacyTweetMediaVideoVariant,
+    XAPILegacyURL,
     XAPIData,
     XAPIBookmarksData,
     XAPITimeline,
@@ -519,7 +520,7 @@ export class XAccountController {
         }
 
         // Check if tweet has URLs and index it
-        if (tweetLegacy["entities"]["url"] && tweetLegacy["entities"]["url"].length) {
+        if (tweetLegacy["entities"]["urls"] && tweetLegacy["entities"]["urls"].length) {
             this.indexTweetURLs(tweetLegacy)
         }
 
@@ -811,7 +812,7 @@ export class XAccountController {
         log.debug("XAccountController.indexTweetURL");
 
         // Loop over all URL items
-        tweetLegacy["entities"]["urls"].forEach((url: any) => {
+        tweetLegacy["entities"]["urls"].forEach((url: XAPILegacyURL) => {
             // Index url information in tweet_url table
             exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url["url"],
