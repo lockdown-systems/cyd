@@ -45,6 +45,7 @@ import {
     XJobRow,
     XTweetRow,
     XTweetMediaRow,
+    XTweetURLRow,
     XUserRow,
     XConversationRow,
     XMessageRow,
@@ -813,6 +814,13 @@ export class XAccountController {
 
         // Loop over all URL items
         tweetLegacy["entities"]["urls"].forEach((url: XAPILegacyURL) => {
+            // Have we seen this URL before?
+            const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]], "all") as XTweetURLRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]]);
+            }
+
             // Index url information in tweet_url table
             exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url["url"],
@@ -1281,6 +1289,20 @@ export class XAccountController {
             "all"
         ) as XTweetRow[];
 
+        // Load all media and URLs, to process later
+        const media: XTweetMediaRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_media",
+            [],
+            "all"
+        ) as XTweetMediaRow[];
+        const urls: XTweetURLRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_url",
+            [],
+            "all"
+        ) as XTweetURLRow[];
+
         // Users
         const users: XUserRow[] = exec(
             this.db,
@@ -1314,7 +1336,7 @@ export class XAccountController {
         const accountUserID = accountUser?.userID;
 
         const tweetRowToArchiveTweet = (tweet: XTweetRow): XArchiveTypes.Tweet => {
-            return {
+            const archiveTweet: XArchiveTypes.Tweet = {
                 tweetID: tweet.tweetID,
                 username: tweet.username,
                 createdAt: tweet.createdAt,
@@ -1331,7 +1353,30 @@ export class XAccountController {
                 deletedRetweetAt: tweet.deletedRetweetAt,
                 deletedLikeAt: tweet.deletedLikeAt,
                 deletedBookmarkAt: tweet.deletedBookmarkAt,
-            }
+                media: [],
+                urls: [],
+            };
+            // Loop through media and URLs
+            media.forEach((media) => {
+                if (media.tweetID == tweet.tweetID) {
+                    archiveTweet.media.push({
+                        mediaType: media.mediaType,
+                        url: media.url,
+                        filename: media.filename,
+                    });
+                }
+            });
+            urls.forEach((url) => {
+                if (url.tweetID == tweet.tweetID) {
+                    archiveTweet.urls.push({
+                        url: url.url,
+                        displayURL: url.displayURL,
+                        expandedURL: url.expandedURL,
+                    });
+                }
+            });
+
+            return archiveTweet
         }
 
         // Build the archive object

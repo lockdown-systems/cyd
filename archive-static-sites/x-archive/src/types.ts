@@ -15,6 +15,17 @@ export type Tweet = {
     deletedRetweetAt: string | null;
     deletedLikeAt: string | null;
     deletedBookmarkAt: string | null;
+    media: {
+        mediaType: string;
+        url: string;
+        filename: string;
+    }[];
+    urls: {
+        url: string;
+        displayURL: string;
+        expandedURL: string;
+    }[];
+
 };
 
 export type User = {
