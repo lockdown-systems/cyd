@@ -2085,18 +2085,18 @@ export class XAccountController {
                         } else {
                             // Check if tweet has media and call importXArchiveMedia
                             let hasMedia: boolean = false;
-                            if (tweet.entities?.media && tweet.entities?.media?.length){
+                            if (tweet.entities?.media && tweet.entities?.media?.length) {
                                 hasMedia = true;
                                 this.importXArchiveMedia(tweet, archivePath);
                             }
 
                             // Check if tweet has urls and call importXArchiveURLs
-                            if (tweet.entities?.urls && tweet.entities?.urls?.length){
+                            if (tweet.entities?.urls && tweet.entities?.urls?.length) {
                                 this.importXArchiveURLs(tweet);
                             }
 
                             // Import it
-                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                                 username,
                                 tweet.id_str,
                                 new Date(tweet.created_at),
@@ -2405,7 +2405,7 @@ export class XAccountController {
         });
     }
 
-    saveXArchiveMedia(tweet_id:string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
+    saveXArchiveMedia(tweet_id: string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
         if (!this.account) {
             throw new Error("Account not found");
         }
