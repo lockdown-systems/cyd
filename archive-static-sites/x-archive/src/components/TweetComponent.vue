@@ -21,18 +21,11 @@ const formattedText = computed(() => {
     return text.trim();
 });
 
-const selfQuoteTweet = computed(() => {
+const quoteTweet = computed(() => {
     if (!props.tweet.quotedTweet) {
         return null;
     }
     const tweetID = props.tweet.quotedTweet.split('/').pop();
-    const username = props.tweet.quotedTweet.split('/')[3];
-    if (!tweetID || !username) {
-        return null;
-    }
-    if (username != archiveData.value.username) {
-        return null;
-    }
     return archiveData.value.tweets.find(t => t.tweetID == tweetID);
 });
 
@@ -69,8 +62,8 @@ const selfQuoteTweet = computed(() => {
             <!-- Quote tweet -->
             <div v-if="tweet.quotedTweet" class="mt-2 p-3 border rounded">
                 <small>Quoted tweet: <a :href="tweet.quotedTweet" target="_blank">{{ tweet.quotedTweet }}</a></small>
-                <template v-if="selfQuoteTweet">
-                    <TweetComponent :tweet="selfQuoteTweet" />
+                <template v-if="quoteTweet">
+                    <TweetComponent :tweet="quoteTweet" />
                 </template>
             </div>
         </div>
