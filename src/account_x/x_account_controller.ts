@@ -55,6 +55,9 @@ import {
     // X API types
     XAPILegacyUser,
     XAPILegacyTweet,
+    XAPILegacyTweetMedia,
+    XAPILegacyTweetMediaVideoVariant,
+    XAPILegacyURL,
     XAPIData,
     XAPIBookmarksData,
     XAPITimeline,
@@ -354,15 +357,15 @@ export class XAccountController {
                         url TEXT NOT NULL,
                         displayURL TEXT NOT NULL,
                         expandedURL TEXT NOT NULL,
-                        start_index INTEGER NOT NULL,
-                        end_index INTEGER NOT NULL,
+                        startIndex INTEGER NOT NULL,
+                        endIndex INTEGER NOT NULL,
                         tweetID TEXT NOT NULL,
                         UNIQUE(url, tweetID)
                     );`,
                     `ALTER TABLE tweet_media ADD COLUMN url TEXT;`,
                     `ALTER TABLE tweet_media ADD COLUMN filename TEXT;`,
-                    `ALTER TABLE tweet_media ADD COLUMN start_index INTEGER;`,
-                    `ALTER TABLE tweet_media ADD COLUMN end_index INTEGER;`
+                    `ALTER TABLE tweet_media ADD COLUMN startIndex INTEGER;`,
+                    `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`
                 ]
             },
         ])
@@ -511,13 +514,13 @@ export class XAccountController {
 
         // Check if tweet has media and call indexTweetMedia
         let hasMedia: boolean = false;
-        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length){
+        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length) {
             hasMedia = true;
             this.indexTweetMedia(tweetLegacy)
         }
 
         // Check if tweet has URLs and index it
-        if (tweetLegacy["entities"]["url"] && tweetLegacy["entities"]["url"].length) {
+        if (tweetLegacy["entities"]["urls"] && tweetLegacy["entities"]["urls"].length) {
             this.indexTweetURLs(tweetLegacy)
         }
 
@@ -754,10 +757,36 @@ export class XAccountController {
         log.debug("XAccountController.indexMedia");
 
         // Loop over all media items
-        tweetLegacy["entities"]["media"].forEach((media: any) => {
+        tweetLegacy["entities"]["media"].forEach((media: XAPILegacyTweetMedia) => {
+            // Get the HTTPS URL of the media -- this works for photos
+            let mediaURL = media["media_url_https"];
+
+            // If it's a video, set mediaURL to the video variant with the highest bitrate
+            if (media["type"] == "video") {
+                let highestBitrate = 0;
+                if (media["video_info"] && media["video_info"]["variants"]) {
+                    media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
+                        if (variant["bitrate"] && variant["bitrate"] > highestBitrate) {
+                            highestBitrate = variant["bitrate"];
+                            mediaURL = variant["url"];
+
+                            // Stripe query parameters from the URL.
+                            // For some reason video variants end with `?tag=12`, and when we try downloading with that
+                            // it responds with 404.
+                            const queryIndex = mediaURL.indexOf("?");
+                            if (queryIndex > -1) {
+                                mediaURL = mediaURL.substring(0, queryIndex);
+                            }
+                        }
+                    });
+                };
+            }
+
+            const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
+
             // Download media locally
-            const filename = `${media["media_key"]}.${media["media_url_https"].substring(media["media_url_https"].lastIndexOf(".") + 1)}`;
-            this.saveTweetMedia(media["media_url_https"], filename);
+            const filename = `${media["media_key"]}.${mediaExtension}`;
+            this.saveTweetMedia(mediaURL, filename);
 
             // Have we seen this media before?
             const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
@@ -767,7 +796,7 @@ export class XAccountController {
             }
 
             // Index media information in tweet_media table
-            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
                 media["media_key"],
                 media["type"],
                 media["url"],
@@ -783,9 +812,9 @@ export class XAccountController {
         log.debug("XAccountController.indexTweetURL");
 
         // Loop over all URL items
-        tweetLegacy["entities"]["urls"].forEach((url: any) => {
+        tweetLegacy["entities"]["urls"].forEach((url: XAPILegacyURL) => {
             // Index url information in tweet_url table
-            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url["url"],
                 url["display_url"],
                 url["expanded_url"],

@@ -18,8 +18,22 @@ export interface XJobRow {
 export interface XTweetMediaRow {
     id: number;
     mediaID: string;
+    mediaType: string;
     tweetID: string;
-    type: string;
+    url: string;
+    filename: string;
+    startIndex: number;
+    endIndex: number;
+}
+
+export interface XTweetURLRow {
+    id: number;
+    url: string;
+    displayURL: string;
+    expandedURL: string;
+    startIndex: number;
+    endIndex: number;
+    tweetID: string;
 }
 
 export interface XTweetRow {
@@ -135,6 +149,50 @@ export function convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemAr
 
 // Index tweets
 
+export interface XAPILegacyTweetMediaVideoVariant {
+    bitrate?: number;
+    content_type: string;
+    url: string;
+}
+
+export interface XAPILegacyTweetMedia {
+    display_url: string;
+    expanded_url: string;
+    id_str: string;
+    indices: number[];
+    media_key: string;
+    media_url_https: string;
+    type: string;
+    url: string;
+    additional_media_info: any;
+    ext_media_availability: any;
+    features?: any;
+    sizes: any;
+    original_info: any;
+    allow_download_status?: any;
+    video_info?: {
+        aspect_ratio: number[];
+        duration_millis: number;
+        variants: XAPILegacyTweetMediaVideoVariant[];
+    };
+    media_results?: any;
+}
+
+export interface XAPILegacyURL {
+    display_url: string;
+    expanded_url: string;
+    url: string;
+    indices: number[];
+}
+
+export interface XAPILegacyEntities {
+    hashtags: any[];
+    symbols: any[];
+    timestamps: any[];
+    urls: XAPILegacyURL[];
+    user_mentions: any[];
+}
+
 export interface XAPILegacyTweet {
     bookmark_count: number;
     bookmarked: boolean;
@@ -156,7 +214,8 @@ export interface XAPILegacyTweet {
     user_id_str: string;
     id_str: string;
     entities: any;
-    quoted_status_permalink: any;
+    quoted_status_permalink?: any;
+    media?: XAPILegacyTweetMedia[];
 }
 
 export interface XAPILegacyUser {
