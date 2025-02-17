@@ -80,6 +80,33 @@ import {
 } from './types'
 import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
 
+const getMediaURL = (media: XAPILegacyTweetMedia): string => {
+    // Get the HTTPS URL of the media -- this works for photos
+    let mediaURL = media["media_url_https"];
+
+    // If it's a video, set mediaURL to the video variant with the highest bitrate
+    if (media["type"] == "video") {
+        let highestBitrate = 0;
+        if (media["video_info"] && media["video_info"]["variants"]) {
+            media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
+                if (variant["bitrate"] && variant["bitrate"] > highestBitrate) {
+                    highestBitrate = variant["bitrate"];
+                    mediaURL = variant["url"];
+
+                    // Stripe query parameters from the URL.
+                    // For some reason video variants end with `?tag=12`, and when we try downloading with that
+                    // it responds with 404.
+                    const queryIndex = mediaURL.indexOf("?");
+                    if (queryIndex > -1) {
+                        mediaURL = mediaURL.substring(0, queryIndex);
+                    }
+                }
+            });
+        };
+    }
+    return mediaURL;
+};
+
 export class XAccountController {
     private accountUUID: string = "";
     // Making this public so it can be accessed in tests
@@ -513,13 +540,13 @@ export class XAccountController {
 
         // Check if tweet has media and call indexTweetMedia
         let hasMedia: boolean = false;
-        if (tweetLegacy["entities"]["media"] && tweetLegacy["entities"]["media"].length) {
+        if (tweetLegacy.extended_entities?.media && tweetLegacy.extended_entities?.media.length) {
             hasMedia = true;
             this.indexTweetMedia(tweetLegacy)
         }
 
         // Check if tweet has URLs and index it
-        if (tweetLegacy["entities"]["urls"] && tweetLegacy["entities"]["urls"].length) {
+        if (tweetLegacy.entities?.urls && tweetLegacy.entities?.urls.length) {
             this.indexTweetURLs(tweetLegacy)
         }
 
@@ -756,31 +783,8 @@ export class XAccountController {
         log.debug("XAccountController.indexMedia");
 
         // Loop over all media items
-        tweetLegacy["entities"]["media"].forEach((media: XAPILegacyTweetMedia) => {
-            // Get the HTTPS URL of the media -- this works for photos
-            let mediaURL = media["media_url_https"];
-
-            // If it's a video, set mediaURL to the video variant with the highest bitrate
-            if (media["type"] == "video") {
-                let highestBitrate = 0;
-                if (media["video_info"] && media["video_info"]["variants"]) {
-                    media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
-                        if (variant["bitrate"] && variant["bitrate"] > highestBitrate) {
-                            highestBitrate = variant["bitrate"];
-                            mediaURL = variant["url"];
-
-                            // Stripe query parameters from the URL.
-                            // For some reason video variants end with `?tag=12`, and when we try downloading with that
-                            // it responds with 404.
-                            const queryIndex = mediaURL.indexOf("?");
-                            if (queryIndex > -1) {
-                                mediaURL = mediaURL.substring(0, queryIndex);
-                            }
-                        }
-                    });
-                };
-            }
-
+        tweetLegacy.extended_entities?.media.forEach((media: XAPILegacyTweetMedia) => {
+            const mediaURL = getMediaURL(media);
             const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
 
             // Download media locally
@@ -811,7 +815,7 @@ export class XAccountController {
         log.debug("XAccountController.indexTweetURL");
 
         // Loop over all URL items
-        tweetLegacy["entities"]["urls"].forEach((url: XAPILegacyURL) => {
+        tweetLegacy.entities?.urls.forEach((url: XAPILegacyURL) => {
             // Have we seen this URL before?
             const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]], "all") as XTweetURLRow[];
             if (existing.length > 0) {
@@ -2085,7 +2089,7 @@ export class XAccountController {
                         } else {
                             // Check if tweet has media and call importXArchiveMedia
                             let hasMedia: boolean = false;
-                            if (tweet.entities?.media && tweet.entities?.media?.length) {
+                            if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
                                 hasMedia = true;
                                 this.importXArchiveMedia(tweet, archivePath);
                             }
@@ -2375,18 +2379,11 @@ export class XAccountController {
     }
 
     importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
-        // Check if extended_entities has more item than entities. In archived
-        // data, sometimes tweets with multiple media has only one entity in entities
-        // but multiple in extended_entities
-        let mediaList = tweet.entities?.media;
-        if (tweet.extended_entities?.media.length > mediaList.length) {
-            mediaList = tweet.extended_entities?.media;
-        }
-
         // Loop over all media items
-        mediaList.forEach((media: XAPILegacyTweetMedia) => {
+        tweet.extended_entities?.media.forEach((media: XAPILegacyTweetMedia) => {
             const existingMedia = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media.id_str], "get") as XTweetMediaRow;
             if (existingMedia) {
+                log.debug(`XAccountController.importXArchiveMedia: media already exists: ${media.id_str}`);
                 return;
             }
             const filename = this.saveXArchiveMedia(tweet.id_str, media, archivePath);
@@ -2405,20 +2402,26 @@ export class XAccountController {
         });
     }
 
-    saveXArchiveMedia(tweet_id: string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
+    saveXArchiveMedia(tweetID: string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
         if (!this.account) {
             throw new Error("Account not found");
         }
 
-        const filename = `${media.id_str}.${media.media_url_https.substring(media.media_url_https.lastIndexOf(".") + 1)}`;
+        log.info(`XAccountController.saveXArchiveMedia: saving media: ${JSON.stringify(media)}`);
+
+        const mediaURL = getMediaURL(media);
+        const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
+        const filename = `${media["id_str"]}.${mediaExtension}`;
         const archiveMediaFilename = path.join(
             archivePath,
             "data",
-            `${tweet_id}-${media.media_url_https.substring(media.media_url_https.lastIndexOf("/") + 1)}`
+            "tweets_media",
+            `${tweetID}-${mediaURL.substring(mediaURL.lastIndexOf("/") + 1)}`
         );
 
         // If file doesn't exist in archive, don't save information in db
         if (!fs.existsSync(archiveMediaFilename)) {
+            log.info(`XAccountController.saveXArchiveMedia: media file not found: ${archiveMediaFilename}`);
             return null;
         }
 

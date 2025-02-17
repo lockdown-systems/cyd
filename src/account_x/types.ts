@@ -190,6 +190,7 @@ export interface XAPILegacyEntities {
     symbols: any[];
     timestamps: any[];
     urls: XAPILegacyURL[];
+    media: XAPILegacyTweetMedia[];
     user_mentions: any[];
 }
 
@@ -213,9 +214,9 @@ export interface XAPILegacyTweet {
     retweeted: boolean;
     user_id_str: string;
     id_str: string;
-    entities: any;
+    entities?: XAPILegacyEntities;
+    extended_entities?: XAPILegacyEntities;
     quoted_status_permalink?: any;
-    media?: XAPILegacyTweetMedia[];
 }
 
 export interface XAPILegacyUser {
@@ -561,8 +562,8 @@ export interface XArchiveTweet {
     edit_info: any;
     retweeted: boolean;
     source: string;
-    entities: any;
-    extended_entities: any;
+    entities: XAPILegacyEntities;
+    extended_entities: XAPILegacyEntities;
     display_text_range: any;
     favorite_count: number;
     in_reply_to_status_id_str: string | null;
