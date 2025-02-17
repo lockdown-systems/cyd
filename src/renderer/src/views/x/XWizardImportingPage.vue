@@ -59,12 +59,14 @@ const startClicked = async () => {
     errorMessages.value = [];
     importStarted.value = true;
     let unzippedPath: string | null = null;
+    let isZip: boolean = false;
 
     // Does importFromArchivePath end with .zip?
     if (!importFromArchivePath.value.endsWith('.zip')) {
         unzippedPath = importFromArchivePath.value;
     } else {
         // Unarchive the zip
+        isZip = true;
         statusValidating.value = ImportStatus.Active;
         try {
             unzippedPath = await window.electron.X.unzipXArchive(props.model.account.id, importFromArchivePath.value);
@@ -143,8 +145,10 @@ const startClicked = async () => {
     emitter.emit(`x-update-archive-info-${props.model.account.id}`);
     statusBuildCydArchive.value = ImportStatus.Finished;
 
-    // Delete the unarchived folder whether it's success or fail
-    await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+    // If we unarchived it, delete the unarchived folder whether it's success or fail
+    if (isZip) {
+        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+    }
 
     // Success
     if (!importFailed.value) {
