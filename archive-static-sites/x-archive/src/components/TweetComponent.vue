@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { defineProps, computed } from 'vue'
+import { defineProps, computed, inject, Ref } from 'vue'
 import { formattedDatetime, formattedDate, formatDateToYYYYMMDD } from '../helpers'
-import { Tweet } from '../types'
+import { XArchive, Tweet } from '../types'
 
 const props = defineProps<{
     tweet: Tweet;
 }>();
+
+const archiveData = inject('archiveData') as Ref<XArchive>;
 
 const formattedText = computed(() => {
     let text = props.tweet.text;
@@ -18,6 +20,22 @@ const formattedText = computed(() => {
     text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
     return text.trim();
 });
+
+const selfQuoteTweet = computed(() => {
+    if (!props.tweet.quotedTweet) {
+        return null;
+    }
+    const tweetID = props.tweet.quotedTweet.split('/').pop();
+    const username = props.tweet.quotedTweet.split('/')[3];
+    if (!tweetID || !username) {
+        return null;
+    }
+    if (username != archiveData.value.username) {
+        return null;
+    }
+    return archiveData.value.tweets.find(t => t.tweetID == tweetID);
+});
+
 </script>
 
 <template>
@@ -33,7 +51,9 @@ const formattedText = computed(() => {
             <small v-else class="text-muted">unknown date</small>
         </div>
         <div class="mt-2">
+            <!-- Text -->
             <p v-html="formattedText"></p>
+            <!-- Media -->
             <div v-if="tweet.media.length > 0">
                 <div v-for="media in tweet.media" v-bind:key="media.filename" class="mt-2">
                     <template v-if="media.mediaType == 'video'">
@@ -45,6 +65,13 @@ const formattedText = computed(() => {
                         <img :src="`./Tweet Media/${media.filename}`" class="img-fluid" />
                     </template>
                 </div>
+            </div>
+            <!-- Quote tweet -->
+            <div v-if="tweet.quotedTweet" class="mt-2 p-3 border rounded">
+                <small>Quoted tweet: <a :href="tweet.quotedTweet" target="_blank">{{ tweet.quotedTweet }}</a></small>
+                <template v-if="selfQuoteTweet">
+                    <TweetComponent :tweet="selfQuoteTweet" />
+                </template>
             </div>
         </div>
         <div v-if="tweet.replyCount != undefined || tweet.retweetCount != undefined || tweet.likeCount != undefined"

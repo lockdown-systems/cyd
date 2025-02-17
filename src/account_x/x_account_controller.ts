@@ -1348,6 +1348,7 @@ export class XAccountController {
                 isRetweeted: tweet.isRetweeted,
                 text: tweet.text,
                 path: tweet.path,
+                quotedTweet: tweet.quotedTweet,
                 archivedAt: tweet.archivedAt,
                 deletedTweetAt: tweet.deletedTweetAt,
                 deletedRetweetAt: tweet.deletedRetweetAt,

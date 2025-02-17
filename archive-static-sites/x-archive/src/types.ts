@@ -10,6 +10,7 @@ export type Tweet = {
     isRetweeted: boolean;
     text: string;
     path: string;
+    quotedTweet: string | null;
     archivedAt: string | null;
     deletedTweetAt: string | null;
     deletedRetweetAt: string | null;
