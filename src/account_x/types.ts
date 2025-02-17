@@ -562,9 +562,10 @@ export interface XArchiveTweet {
     retweeted: boolean;
     source: string;
     entities: any;
+    extended_entities: any;
     display_text_range: any;
     favorite_count: number;
-    in_reply_to_status_id_str?: string;
+    in_reply_to_status_id_str: string | null;
     id_str: string;
     in_reply_to_user_id?: string;
     truncated: boolean;
@@ -577,7 +578,7 @@ export interface XArchiveTweet {
     full_text: string;
     lang: string;
     in_reply_to_screen_name?: string;
-    in_reply_to_user_id_str?: string;
+    in_reply_to_user_id_str: string | null;
 }
 
 export interface XArchiveTweetContainer {

@@ -2106,8 +2106,20 @@ export class XAccountController {
                         if (existingTweet) {
                             skipCount++;
                         } else {
+                            // Check if tweet has media and call importXArchiveMedia
+                            let hasMedia: boolean = false;
+                            if (tweet.entities?.media && tweet.entities?.media?.length){
+                                hasMedia = true;
+                                this.importXArchiveMedia(tweet, archivePath);
+                            }
+
+                            // Check if tweet has urls and call importXArchiveURLs
+                            if (tweet.entities?.urls && tweet.entities?.urls?.length){
+                                this.importXArchiveURLs(tweet);
+                            }
+
                             // Import it
-                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                                 username,
                                 tweet.id_str,
                                 new Date(tweet.created_at),
@@ -2118,6 +2130,10 @@ export class XAccountController {
                                 0,
                                 tweet.full_text,
                                 `${username}/status/${tweet.id_str}`,
+                                hasMedia ? 1 : 0,
+                                tweet.in_reply_to_status_id_str ? 1 : 0,
+                                tweet.in_reply_to_status_id_str,
+                                tweet.in_reply_to_user_id_str,
                                 new Date(),
                             ]);
                             importCount++;
@@ -2379,6 +2395,83 @@ export class XAccountController {
             importCount: importCount,
             skipCount: skipCount,
         };
+    }
+
+    importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
+        // Check if extended_entities has more item than entities. In archived
+        // data, sometimes tweets with multiple media has only one entity in entities
+        // but multiple in extended_entities
+        let mediaList = tweet.entities?.media;
+        if (tweet.extended_entities?.media.length > mediaList.length) {
+            mediaList = tweet.extended_entities?.media.length;
+        }
+
+        // Loop over all media items
+        mediaList.forEach((media: XAPILegacyTweetMedia) => {
+            const existingMedia = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media.id_str], "get") as XTweetMediaRow;
+            if (existingMedia) {
+                return;
+            }
+            const filename = this.saveXArchiveMedia(tweet.id_str, media, archivePath);
+            if (filename) {
+                // Index media information in tweet_media table
+                exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+                    media.id_str,
+                    media.type,
+                    media.url,
+                    filename,
+                    media.indices?.[0],
+                    media.indices?.[1],
+                    tweet.id_str,
+                ]);
+            }
+        });
+    }
+
+    saveXArchiveMedia(tweet_id:string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        const filename = `${media.id_str}.${media.media_url_https.substring(media.media_url_https.lastIndexOf(".") + 1)}`;
+        const archiveMediaFilename = path.join(
+            archivePath,
+            "data",
+            `${tweet_id}-${media.media_url_https.substring(media.media_url_https.lastIndexOf("/") + 1)}`
+        );
+
+        // If file doesn't exist in archive, don't save information in db
+        if (!fs.existsSync(archiveMediaFilename)) {
+            return null;
+        }
+
+        // Create path to store tweet media if it doesn't exist already
+        const accountDataPath = getAccountDataPath("X", this.account.username);
+        const outputPath = path.join(accountDataPath, "Tweet Media");
+        if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath);
+        }
+
+        // Copy media from archive
+        fs.copyFileSync(archiveMediaFilename, path.join(outputPath, filename));
+
+        return filename
+    }
+
+    importXArchiveURLs(tweet: XArchiveTweet) {
+
+        // Loop over all URL items
+        tweet?.entities?.urls.forEach((url: XAPILegacyURL) => {
+            // Index url information in tweet_url table
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+                url.url,
+                url.display_url,
+                url.expanded_url,
+                url.indices?.[0],
+                url.indices?.[1],
+                tweet.id_str,
+            ]);
+        })
     }
 
     async getCookie(name: string): Promise<string | null> {
