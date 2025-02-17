@@ -2085,40 +2085,41 @@ export class XAccountController {
                         // Is this tweet already there?
                         const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
                         if (existingTweet) {
-                            skipCount++;
-                        } else {
-                            // Check if tweet has media and call importXArchiveMedia
-                            let hasMedia: boolean = false;
-                            if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
-                                hasMedia = true;
-                                this.importXArchiveMedia(tweet, archivePath);
-                            }
-
-                            // Check if tweet has urls and call importXArchiveURLs
-                            if (tweet.entities?.urls && tweet.entities?.urls?.length) {
-                                this.importXArchiveURLs(tweet);
-                            }
-
-                            // Import it
-                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                                username,
-                                tweet.id_str,
-                                new Date(tweet.created_at),
-                                tweet.favorite_count,
-                                tweet.retweet_count,
-                                tweet.favorited ? 1 : 0,
-                                tweet.retweeted ? 1 : 0,
-                                0,
-                                tweet.full_text,
-                                `${username}/status/${tweet.id_str}`,
-                                hasMedia ? 1 : 0,
-                                tweet.in_reply_to_status_id_str ? 1 : 0,
-                                tweet.in_reply_to_status_id_str,
-                                tweet.in_reply_to_user_id_str,
-                                new Date(),
-                            ]);
-                            importCount++;
+                            // Delete the existing tweet to re-import
+                            exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweet.id_str]);
                         }
+
+                        // Check if tweet has media and call importXArchiveMedia
+                        let hasMedia: boolean = false;
+                        if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
+                            hasMedia = true;
+                            this.importXArchiveMedia(tweet, archivePath);
+                        }
+
+                        // Check if tweet has urls and call importXArchiveURLs
+                        if (tweet.entities?.urls && tweet.entities?.urls?.length) {
+                            this.importXArchiveURLs(tweet);
+                        }
+
+                        // Import it
+                        exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            username,
+                            tweet.id_str,
+                            new Date(tweet.created_at),
+                            tweet.favorite_count,
+                            tweet.retweet_count,
+                            tweet.favorited ? 1 : 0,
+                            tweet.retweeted ? 1 : 0,
+                            0,
+                            tweet.full_text,
+                            `${username}/status/${tweet.id_str}`,
+                            hasMedia ? 1 : 0,
+                            tweet.in_reply_to_status_id_str ? 1 : 0,
+                            tweet.in_reply_to_status_id_str,
+                            tweet.in_reply_to_user_id_str,
+                            new Date(),
+                        ]);
+                        importCount++;
                     });
                 } catch (e) {
                     return {
