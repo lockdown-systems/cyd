@@ -2380,7 +2380,7 @@ export class XAccountController {
         // but multiple in extended_entities
         let mediaList = tweet.entities?.media;
         if (tweet.extended_entities?.media.length > mediaList.length) {
-            mediaList = tweet.extended_entities?.media.length;
+            mediaList = tweet.extended_entities?.media;
         }
 
         // Loop over all media items
@@ -2392,7 +2392,7 @@ export class XAccountController {
             const filename = this.saveXArchiveMedia(tweet.id_str, media, archivePath);
             if (filename) {
                 // Index media information in tweet_media table
-                exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+                exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
                     media.id_str,
                     media.type,
                     media.url,
@@ -2439,8 +2439,15 @@ export class XAccountController {
 
         // Loop over all URL items
         tweet?.entities?.urls.forEach((url: XAPILegacyURL) => {
+            // Have we seen this URL before?
+            const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url.url, tweet.id_str], "all") as XTweetURLRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_url WHERE url = ? AND tweetID = ?', [url.url, tweet.id_str]);
+            }
+
             // Index url information in tweet_url table
-            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url.url,
                 url.display_url,
                 url.expanded_url,
