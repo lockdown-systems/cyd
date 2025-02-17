@@ -1941,7 +1941,6 @@ export class XAccountController {
         return null;
     }
 
-
     // Unzip twitter archive to the account data folder using unzipper
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
@@ -1969,6 +1968,12 @@ export class XAccountController {
 
     // Return null on success, and a string (error message) on error
     async verifyXArchive(archivePath: string): Promise<string | null> {
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
+
         const foldersToCheck = [
             archivePath,
             path.join(archivePath, "data"),
@@ -2018,6 +2023,12 @@ export class XAccountController {
     async importXArchive(archivePath: string, dataType: string): Promise<XImportArchiveResponse> {
         let importCount = 0;
         let skipCount = 0;
+
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
 
         // Load the username
         let username: string;
