@@ -4,16 +4,16 @@ import {
     onMounted
 } from 'vue';
 import {
-    AccountXViewModel,
+    XViewModel,
     State
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 import { openURL } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Emits

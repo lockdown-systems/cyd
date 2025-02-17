@@ -2,8 +2,11 @@ import { contextBridge, ipcRenderer, FileFilter } from 'electron'
 import {
     ErrorReport,
     Account,
-    XProgress,
+    ResponseData,
+    ArchiveInfo,
+    // X
     XJob,
+    XProgress,
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
@@ -11,10 +14,11 @@ import {
     XProgressInfo,
     XDatabaseStats,
     XDeleteReviewStats,
-    ResponseData,
-    XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
+    // Facebook
+    FacebookJob,
+    FacebookProgress,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -35,6 +39,9 @@ contextBridge.exposeInMainWorld('electron', {
     },
     getDashURL: (): Promise<string> => {
         return ipcRenderer.invoke('getDashURL')
+    },
+    isFeatureEnabled: (feature: string): Promise<boolean> => {
+        return ipcRenderer.invoke('isFeatureEnabled', feature)
     },
     trackEvent: (eventName: string, userAgent: string): Promise<string> => {
         return ipcRenderer.invoke('trackEvent', eventName, userAgent)
@@ -119,7 +126,13 @@ contextBridge.exposeInMainWorld('electron', {
         },
         savePage: (webContentsID: number, outputPath: string, basename: string): Promise<boolean> => {
             return ipcRenderer.invoke('archive:savePage', webContentsID, outputPath, basename)
-        }
+        },
+        openFolder: (accountID: number, folderName: string) => {
+            ipcRenderer.invoke('archive:openFolder', accountID, folderName);
+        },
+        getInfo: (accountID: number): Promise<ArchiveInfo> => {
+            return ipcRenderer.invoke('archive:getInfo', accountID);
+        },
     },
     X: {
         resetProgress: (accountID: number): Promise<XProgress> => {
@@ -187,12 +200,6 @@ contextBridge.exposeInMainWorld('electron', {
         },
         syncProgress: (accountID: number, progressJSON: string) => {
             ipcRenderer.invoke('X:syncProgress', accountID, progressJSON)
-        },
-        openFolder: (accountID: number, folderName: string) => {
-            ipcRenderer.invoke('X:openFolder', accountID, folderName);
-        },
-        getArchiveInfo: (accountID: number): Promise<XArchiveInfo> => {
-            return ipcRenderer.invoke('X:getArchiveInfo', accountID);
         },
         resetRateLimitInfo: (accountID: number): Promise<void> => {
             return ipcRenderer.invoke('X:resetRateLimitInfo', accountID);
@@ -263,6 +270,38 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
         }
+    },
+    Facebook: {
+        resetProgress: (accountID: number): Promise<FacebookProgress> => {
+            return ipcRenderer.invoke('Facebook:resetProgress', accountID);
+        },
+        createJobs: (accountID: number, jobTypes: string[]): Promise<FacebookJob[]> => {
+            return ipcRenderer.invoke('Facebook:createJobs', accountID, jobTypes);
+        },
+        updateJob: (accountID: number, jobJSON: string) => {
+            ipcRenderer.invoke('Facebook:updateJob', accountID, jobJSON);
+        },
+        archiveBuild: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('Facebook:archiveBuild', accountID);
+        },
+        syncProgress: (accountID: number, progressJSON: string) => {
+            ipcRenderer.invoke('Facebook:syncProgress', accountID, progressJSON);
+        },
+        getProgress: (accountID: number): Promise<FacebookProgress> => {
+            return ipcRenderer.invoke('Facebook:getProgress', accountID);
+        },
+        getCookie: (accountID: number, name: string): Promise<string | null> => {
+            return ipcRenderer.invoke('Facebook:getCookie', accountID, name);
+        },
+        getProfileImageDataURI: (accountID: number, profilePictureURI: string): Promise<string> => {
+            return ipcRenderer.invoke('Facebook:getProfileImageDataURI', accountID, profilePictureURI);
+        },
+        getConfig: (accountID: number, key: string): Promise<string | null> => {
+            return ipcRenderer.invoke('Facebook:getConfig', accountID, key);
+        },
+        setConfig: (accountID: number, key: string, value: string): Promise<void> => {
+            return ipcRenderer.invoke('Facebook:setConfig', accountID, key, value);
+        },
     },
     // Handle events from the main process
     onPowerMonitorSuspend: (callback: () => void) => {

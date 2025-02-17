@@ -1,4 +1,5 @@
 export enum AutomationErrorType {
+    // X
     X_manualBugReport = "X_manualBugReport",
     X_login_FailedToGetUsername = "X_login_FailedToGetUsername",
     X_login_URLChanged = "X_login_URLChanged",
@@ -74,9 +75,15 @@ export enum AutomationErrorType {
     x_unknownError = "x_unknown",
     x_loadURLError = "x_loadURLError",
     x_loadURLURLChanged = "x_loadURLURLChanged",
+
+    // Facebook
+    facebook_manualBugReport = "facebook_manualBugReport",
+    facebook_unknownError = "facebook_unknown",
+    facebook_loadURLError = "facebook_loadURLError",
 }
 
 export const AutomationErrorTypeToMessage = {
+    // X
     [AutomationErrorType.X_manualBugReport]: "You're manually reporting a bug",
     [AutomationErrorType.X_login_FailedToGetUsername]: "Failed to get username on login",
     [AutomationErrorType.X_login_URLChanged]: "URL changed on login",
@@ -152,4 +159,9 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.x_unknownError]: "An unknown error occurred",
     [AutomationErrorType.x_loadURLError]: "Error while loading URL",
     [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
+
+    // Facebook
+    [AutomationErrorType.facebook_manualBugReport]: "You're manually reporting a bug",
+    [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
+    [AutomationErrorType.facebook_loadURLError]: "Error while loading URL",
 }

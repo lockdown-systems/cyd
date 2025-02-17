@@ -143,5 +143,30 @@ export const runMainMigrations = () => {
                 `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
             ]
         },
+        // Add Facebook table, and facebookAccountID to account
+        {
+            name: "add Facebook table, and facebookAccountID to account",
+            sql: [
+                `CREATE TABLE facebookAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accountID TEXT,
+    name TEXT,
+    profileImageDataURI TEXT,
+    saveMyData BOOLEAN DEFAULT 1,
+    deleteMyData BOOLEAN DEFAULT 0,
+    savePosts BOOLEAN DEFAULT 1,
+    savePostsHTML BOOLEAN DEFAULT 0,
+    deletePosts BOOLEAN DEFAULT 1,
+    deletePostsDaysOldEnabled BOOLEAN DEFAULT 0,
+    deletePostsDaysOld INTEGER DEFAULT 0,
+    deletePostsReactsThresholdEnabled BOOLEAN DEFAULT 0,
+    deletePostsReactsThreshold INTEGER DEFAULT 20
+);`,
+                `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
+            ]
+        },
     ]);
 }

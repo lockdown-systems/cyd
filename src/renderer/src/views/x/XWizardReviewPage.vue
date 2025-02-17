@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import {
-    AccountXViewModel,
+    XViewModel,
     State
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 import { openPreventSleepURL } from '../../util';
 import { emptyXDeleteReviewStats } from '../../../../shared_types';
 import type { XDeleteReviewStats } from '../../../../shared_types';
@@ -11,7 +11,7 @@ import { xHasSomeData } from '../../util_x';
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
 }>();
 
 // Emits
