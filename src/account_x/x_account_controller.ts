@@ -2068,7 +2068,7 @@ export class XAccountController {
                             }
 
                             // Check if tweet has urls and call importXArchiveURLs
-                            if (tweet.entities?.media && tweet.entities?.media?.length){
+                            if (tweet.entities?.urls && tweet.entities?.urls?.length){
                                 this.importXArchiveURLs(tweet);
                             }
 
@@ -2361,7 +2361,7 @@ export class XAccountController {
         }
 
         // Loop over all media items
-        mediaList.forEach((media: any) => {
+        mediaList.forEach((media: XAPILegacyTweetMedia) => {
             const existingMedia = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media.id_str], "get") as XTweetMediaRow;
             if (existingMedia) {
                 return;
@@ -2382,7 +2382,7 @@ export class XAccountController {
         });
     }
 
-    saveXArchiveMedia(tweet_id:string, media, archivePath: string): string | null {
+    saveXArchiveMedia(tweet_id:string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
         if (!this.account) {
             throw new Error("Account not found");
         }
@@ -2415,7 +2415,7 @@ export class XAccountController {
     importXArchiveURLs(tweet: XArchiveTweet) {
 
         // Loop over all URL items
-        tweet?.entities?.urls.forEach((url: any) => {
+        tweet?.entities?.urls.forEach((url: XAPILegacyURL) => {
             // Index url information in tweet_url table
             exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, start_index, end_index, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url.url,
