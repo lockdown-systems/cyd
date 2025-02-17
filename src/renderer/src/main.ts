@@ -8,19 +8,23 @@ import { createApp } from "vue";
 import type {
     ErrorReport,
     Account,
-    XProgress,
+    ResponseData,
+    ArchiveInfo,
+    // X
     XJob,
+    XProgress,
     XArchiveStartResponse,
     XIndexMessagesStartResponse,
     XDeleteTweetsStartResponse,
     XRateLimitInfo,
     XProgressInfo,
     XDatabaseStats,
-    ResponseData,
     XDeleteReviewStats,
-    XArchiveInfo,
     XAccount,
     XImportArchiveResponse,
+    // Facebook
+    FacebookProgress,
+    FacebookJob,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -29,50 +33,53 @@ import { FileFilter } from "electron";
 declare global {
     interface Window {
         electron: {
-            checkForUpdates: () => void;
+            checkForUpdates: () => Promise<void>;
             getVersion: () => Promise<string>;
             getMode: () => Promise<string>;
             getPlatform: () => Promise<string>;
             getAPIURL: () => Promise<string>;
             getDashURL: () => Promise<string>;
+            isFeatureEnabled: (feature: string) => Promise<boolean>;
             trackEvent: (eventName: string, userAgent: string) => Promise<string>;
             shouldOpenDevtools: () => Promise<boolean>;
-            showMessage: (message: string, detail: string) => void;
-            showError: (message: string) => void;
+            showMessage: (message: string, detail: string) => Promise<void>;
+            showError: (message: string) => Promise<void>;
             showQuestion: (message: string, trueText: string, falseText: string) => Promise<boolean>;
             showOpenDialog: (selectFolders: boolean, selectFiles: boolean, fileFilters: FileFilter[] | undefined) => Promise<string | null>;
-            openURL: (url: string) => void;
-            loadFileInWebview: (webContentsId: number, filename: string) => void;
+            openURL: (url: string) => Promise<void>;
+            loadFileInWebview: (webContentsId: number, filename: string) => Promise<void>;
             getAccountDataPath: (accountID: number, filename: string) => Promise<string | null>,
             startPowerSaveBlocker: () => Promise<number>;
-            stopPowerSaveBlocker: (powerSaveBlockerID: number) => void;
-            deleteSettingsAndRestart: () => void;
+            stopPowerSaveBlocker: (powerSaveBlockerID: number) => Promise<void>;
+            deleteSettingsAndRestart: () => Promise<void>;
             database: {
                 getConfig: (key: string) => Promise<string | null>;
-                setConfig: (key: string, value: string) => void;
+                setConfig: (key: string, value: string) => Promise<void>;
                 getErrorReport: (id: number) => Promise<ErrorReport | null>;
                 getNewErrorReports: (accountID: number) => Promise<ErrorReport[]>;
                 createErrorReport: (accountID: number, accountType: string, errorReportType: string, errorReportData: string, accountUsername: string | null, screenshotDataURI: string | null, sensitiveContextData: string | null) => Promise<void>;
-                updateErrorReportSubmitted: (id: number) => void;
-                dismissNewErrorReports: (accountID: number) => void;
+                updateErrorReportSubmitted: (id: number) => Promise<void>;
+                dismissNewErrorReports: (accountID: number) => Promise<void>;
                 getAccount: (accountID: number) => Promise<Account | null>;
                 getAccounts: () => Promise<Account[]>;
                 createAccount: () => Promise<Account>;
                 selectAccountType: (accountID: number, type: string) => Promise<Account>;
-                saveAccount: (accountJSON: string) => void;
-                deleteAccount: (accountID: number) => void;
+                saveAccount: (accountJSON: string) => Promise<void>;
+                deleteAccount: (accountID: number) => Promise<void>;
             },
             archive: {
                 isPageAlreadySaved: (outputPath: string, basename: string) => Promise<boolean>;
                 savePage: (webContentsID: number, outputPath: string, basename: string) => Promise<boolean>;
+                openFolder: (accountID: number, folderName: string) => Promise<void>;
+                getInfo: (accountID: number) => Promise<ArchiveInfo>;
             },
             X: {
                 resetProgress: (accountID: number) => Promise<XProgress>;
                 createJobs: (accountID: number, jobTypes: string[]) => Promise<XJob[]>;
                 getLastFinishedJob: (accountID: number, jobType: string) => Promise<XJob | null>;
-                updateJob: (accountID: number, jobJSON: string) => void;
-                indexStart: (accountID: number) => void;
-                indexStop: (accountID: number) => void;
+                updateJob: (accountID: number, jobJSON: string) => Promise<void>;
+                indexStart: (accountID: number) => Promise<void>;
+                indexStop: (accountID: number) => Promise<void>;
                 indexParseAllJSON: (accountID: number) => Promise<XAccount>;
                 indexParseTweets: (accountID: number) => Promise<XProgress>;
                 indexParseConversations: (accountID: number) => Promise<XProgress>;
@@ -86,9 +93,7 @@ declare global {
                 archiveTweet: (accountID: number, tweetID: string) => Promise<void>;
                 archiveTweetCheckDate: (accountID: number, tweetID: string) => Promise<void>;
                 archiveBuild: (accountID: number) => Promise<void>;
-                syncProgress: (accountID: number, progressJSON: string) => void;
-                openFolder: (accountID: number, folderName: string) => void;
-                getArchiveInfo: (accountID: number) => Promise<XArchiveInfo>;
+                syncProgress: (accountID: number, progressJSON: string) => Promise<void>;
                 resetRateLimitInfo: (accountID: number) => Promise<void>;
                 isRateLimited: (accountID: number) => Promise<XRateLimitInfo>;
                 getProgress: (accountID: number) => Promise<XProgress>;
@@ -111,10 +116,22 @@ declare global {
                 importXArchive: (accountID: number, archivePath: string, dataType: string) => Promise<XImportArchiveResponse>;
                 getCookie: (accountID: number, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
-                setConfig: (accountID: number, key: string, value: string) => void;
+                setConfig: (accountID: number, key: string, value: string) => Promise<void>;
             };
-            onPowerMonitorSuspend: (callback: () => void) => void;
-            onPowerMonitorResume: (callback: () => void) => void;
+            Facebook: {
+                resetProgress: (accountID: number) => Promise<FacebookProgress>;
+                createJobs: (accountID: number, jobTypes: string[]) => Promise<FacebookJob[]>;
+                updateJob: (accountID: number, jobJSON: string) => Promise<void>;
+                archiveBuild: (accountID: number) => Promise<void>;
+                syncProgress: (accountID: number, progressJSON: string) => Promise<void>;
+                getProgress: (accountID: number) => Promise<FacebookProgress>;
+                getCookie: (accountID: number, name: string) => Promise<string | null>;
+                getProfileImageDataURI: (accountID: number, profilePictureURI: string) => Promise<string>;
+                getConfig: (accountID: number, key: string) => Promise<string | null>;
+                setConfig: (accountID: number, key: string, value: string) => Promise<void>;
+            },
+            onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
+            onPowerMonitorResume: (callback: () => void) => Promise<void>;
         };
     }
 }

@@ -5,10 +5,10 @@ import {
     getCurrentInstance,
 } from 'vue';
 import {
-    AccountXViewModel,
+    XViewModel,
     State,
     FailureState
-} from '../../view_models/AccountXViewModel'
+} from '../../view_models/XViewModel'
 import { openURL } from '../../util';
 
 // Get the global emitter
@@ -17,7 +17,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
     // eslint-disable-next-line vue/prop-name-casing
     failureStateIndexTweets_FailedToRetryAfterRateLimit: boolean;
     // eslint-disable-next-line vue/prop-name-casing
