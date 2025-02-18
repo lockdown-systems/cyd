@@ -2660,6 +2660,63 @@ export class XAccountController {
             });
         }
 
+        // Get the current user's user ID
+        const userRow: XUserRow = exec(this.db, `
+            SELECT *
+            FROM user
+            WHERE screenName = ?
+        `, [this.account.username], "get") as XUserRow;
+
+        // Handle replies
+        let reply = null;
+        if (tweet.isReply && tweet.replyUserID == userRow.userID) {
+            // Find the parent tweet migration
+            const parentMigration: XTweetBlueskyMigrationRow = exec(this.db, `
+                SELECT *
+                FROM tweet_bsky_migration
+                WHERE tweetID = ?
+            `, [tweet.replyTweetID], "get") as XTweetBlueskyMigrationRow;
+            if (parentMigration) {
+                // Find the root tweet in the thread
+                let foundRoot = false;
+                let rootTweetID = tweet.replyTweetID;
+                while (!foundRoot) {
+                    const parentTweet: XTweetRow = exec(this.db, `
+                        SELECT *
+                        FROM tweet
+                        WHERE tweetID = ?
+                    `, [rootTweetID], "get") as XTweetRow;
+                    if (parentTweet && parentTweet.isReply && parentTweet.replyUserID == userRow.userID) {
+                        rootTweetID = parentTweet.replyTweetID;
+                    } else {
+                        foundRoot = true;
+                    }
+                }
+
+                if (foundRoot) {
+                    // Get the root migration
+                    const rootMigration: XTweetBlueskyMigrationRow = exec(this.db, `
+                        SELECT *
+                        FROM tweet_bsky_migration
+                        WHERE tweetID = ?
+                    `, [rootTweetID], "get") as XTweetBlueskyMigrationRow;
+                    if (rootMigration) {
+                        // Build the reply
+                        reply = {
+                            root: {
+                                uri: rootMigration.atprotoURI,
+                                cid: rootMigration.atprotoCID,
+                            },
+                            parent: {
+                                uri: parentMigration.atprotoURI,
+                                cid: parentMigration.atprotoCID,
+                            },
+                        };
+                    }
+                }
+            }
+        }
+
         // Build the record
         const record: BskyPostRecord = {
             '$type': 'app.bsky.feed.post',
@@ -2668,6 +2725,9 @@ export class XAccountController {
         }
         if (facets.length > 0) {
             record['facets'] = facets;
+        }
+        if (reply) {
+            record['reply'] = reply;
         }
 
         // TODO: add media, reply_to, quotes
