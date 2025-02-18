@@ -2537,10 +2537,18 @@ export class XAccountController {
         if (!this.db) { this.initDB(); }
         if (!this.account) { throw new Error("Account not found"); }
 
-        // For now, select the count of all tweets.
-        // Once we have reply_to, we can filter the ones we cannot migrate.
-
         const username = this.account.username;
+
+        // Get the current user's X userID
+        const userRow: XUserRow = exec(this.db, `
+            SELECT *
+            FROM user
+            WHERE screenName = ?
+        `, [username], "get") as XUserRow;
+        if (!userRow) {
+            throw new Error("User not found");
+        }
+
         const toMigrateTweets: XTweetRow[] = exec(this.db, `
             SELECT tweet.*
             FROM tweet
@@ -2549,9 +2557,24 @@ export class XAccountController {
             AND tweet.text NOT LIKE ?
             AND tweet.isLiked = ?
             AND tweet.username = ?
+            AND tweet.deletedTweetAt IS NULL
+            AND (tweet.isReply = ? OR (tweet.isReply = ? AND tweet.replyUserID = ?))
             ORDER BY tweet.createdAt ASC
-        `, ["RT @%", 0, username], "all") as XTweetRow[];
+        `, ["RT @%", 0, username, 0, 1, userRow.userID], "all") as XTweetRow[];
         const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
+
+        const cannotMigrate: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet_bsky_migration.tweetID IS NULL
+            AND tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+            AND tweet.deletedTweetAt IS NULL
+            AND (tweet.isReply = ? AND tweet.replyUserID != ?)
+        `, ["RT @%", 0, username, 1, userRow.userID], "get") as Sqlite3Count;
+
         const alreadyMigrated: Sqlite3Count = exec(this.db, `
             SELECT COUNT(*) AS count
             FROM tweet
@@ -2564,9 +2587,10 @@ export class XAccountController {
         // Return the counts
         const resp: XMigrateTweetCounts = {
             toMigrateTweetIDs: toMigrateTweetIDs,
-            cannotMigrateCount: 0,
+            cannotMigrateCount: cannotMigrate.count,
             alreadyMigratedCount: alreadyMigrated.count,
         }
+        log.info("XAccountController.blueskyGetTweetCounts: returning", resp);
         return resp;
     }
 
