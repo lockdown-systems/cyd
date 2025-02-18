@@ -4,6 +4,8 @@ import os from 'os'
 
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
+import mime from 'mime-types';
+import sharp from 'sharp';
 
 import { app, session, shell } from 'electron'
 import log from 'electron-log/main';
@@ -11,7 +13,7 @@ import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
 import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
-import { Agent } from '@atproto/api';
+import { Agent, BlobRef } from '@atproto/api';
 import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
 import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
 
@@ -2619,18 +2621,13 @@ export class XAccountController {
             FROM tweet
             WHERE tweetID = ?
         `, [tweetID], "get") as XTweetRow;
+
+        // Replace t.co links with actual links
         const tweetURLs: XTweetURLRow[] = exec(this.db, `
             SELECT *
             FROM tweet_url
             WHERE tweetID = ?
         `, [tweetID], "all") as XTweetURLRow[];
-        // const tweetMedia: XTweetMediaRow[] = exec(this.db, `
-        //     SELECT *
-        //     FROM tweet_media
-        //     WHERE tweetID = ?
-        // `, [tweetID], "all") as XTweetMediaRow[];
-
-        // Replace t.co links with actual links
         const facets: {
             index: {
                 byteStart: number,
@@ -2756,7 +2753,108 @@ export class XAccountController {
                     }
                 }
             }
+        }
 
+        // Handle media
+        const tweetMedia: XTweetMediaRow[] = exec(this.db, `
+            SELECT *
+            FROM tweet_media
+            WHERE tweetID = ?
+        `, [tweetID], "all") as XTweetMediaRow[];
+
+        if (tweetMedia.length == 1 && tweetMedia[0].mediaType == "video") {
+            // Video media
+            // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
+            // const maxSize = 50000000;
+
+        } else {
+            // Images media
+            // max size for images: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/images.json
+            const maxSize = 1000000;
+
+            // Keep track of images for the embed
+            const images: {
+                alt: string,
+                image: BlobRef,
+                aspectRatio?: {
+                    width: number;
+                    height: number;
+                }
+            }[] = [];
+
+            for (const media of tweetMedia) {
+                // Load the media file
+                const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", media.filename);
+                const mediaData = fs.readFileSync(mediaPath);
+
+                // Make sure it's not too big
+                if (mediaData.length > maxSize) {
+                    log.warn(`XAccountController.blueskyMigrateTweet: media file too large: ${media.filename}`);
+                    continue;
+                }
+
+                // Determine the MIME type
+                const mimeType = mime.lookup(mediaPath);
+                if (!mimeType) {
+                    log.warn(`XAccountController.blueskyMigrateTweet: could not determine MIME type for media file: ${media.filename}`);
+                    continue;
+                }
+
+                // Determine the aspect ratio
+                const metadata = await sharp(mediaData).metadata();
+
+                // Upload the image
+                const resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
+
+                // Add it to the list
+                images.push({
+                    alt: "",
+                    image: resp.data.blob,
+                    aspectRatio: {
+                        width: metadata.width ? metadata.width : 1,
+                        height: metadata.height ? metadata.height : 1,
+                    }
+                });
+
+                // Remove the link from the tweet text
+                text = text.replace(media.url, "");
+                text = text.trim();
+            }
+
+            // If there's already an embedded record, turn it into a recordWithMedia embed
+            if (embed && embed['$type'] == 'app.bsky.embed.record') {
+                embed = {
+                    '$type': 'app.bsky.embed.recordWithMedia',
+                    record: embed,
+                    media: {
+                        '$type': 'app.bsky.embed.images',
+                        images: images
+                    }
+                }
+            } else {
+                // If there's an embedded external link, turn it into a facet
+                if (embed && embed['$type'] == 'app.bsky.embed.external' && embed.external?.uri) {
+                    text += ` ${embed.external.uri}`;
+                    facets.push({
+                        'index': {
+                            'byteStart': text.length - embed.external.uri.length,
+                            'byteEnd': text.length,
+                        },
+                        'features': [
+                            {
+                                '$type': 'app.bsky.richtext.facet#link',
+                                'uri': embed.external.uri,
+                            }
+                        ],
+                    });
+                }
+
+                // Embed the images
+                embed = {
+                    '$type': 'app.bsky.embed.images',
+                    images: images
+                }
+            }
         }
 
         // Build the record

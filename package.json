@@ -51,8 +51,10 @@
     "jsdom": "^24.1.1",
     "marked": "^13.0.0",
     "mhtml2html": "^3.0.0",
+    "mime-types": "^2.1.35",
     "mitt": "^3.0.1",
     "moment": "^2.30.1",
+    "sharp": "^0.33.5",
     "unzipper": "^0.12.3",
     "update-electron-app": "^3.0.0",
     "vue": "^3.4.21"
@@ -77,6 +79,7 @@
     "@types/eslint__js": "^8.42.3",
     "@types/jest": "^29.5.12",
     "@types/jsdom": "^21.1.7",
+    "@types/mime-types": "^2.1.4",
     "@types/node": "^20.12.8",
     "@types/node-fetch": "^2.6.11",
     "@types/unzipper": "^0.10.10",
