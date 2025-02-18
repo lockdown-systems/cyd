@@ -26,7 +26,7 @@ export type Tweet = {
         displayURL: string;
         expandedURL: string;
     }[];
-
+    blueskyMigrationURIs: string[];
 };
 
 export type User = {

@@ -1318,7 +1318,7 @@ export class XAccountController {
             "all"
         ) as XTweetRow[];
 
-        // Load all media and URLs, to process later
+        // Load all media, URLs, and Bluesky migrations, to process later
         const media: XTweetMediaRow[] = exec(
             this.db,
             "SELECT * FROM tweet_media",
@@ -1331,6 +1331,12 @@ export class XAccountController {
             [],
             "all"
         ) as XTweetURLRow[];
+        const blueskyMigration: XTweetBlueskyMigrationRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_bsky_migration",
+            [],
+            "all"
+        ) as XTweetBlueskyMigrationRow[];
 
         // Users
         const users: XUserRow[] = exec(
@@ -1385,6 +1391,7 @@ export class XAccountController {
                 deletedBookmarkAt: tweet.deletedBookmarkAt,
                 media: [],
                 urls: [],
+                blueskyMigrationURIs: [],
             };
             // Loop through media and URLs
             media.forEach((media) => {
@@ -1403,6 +1410,11 @@ export class XAccountController {
                         displayURL: url.displayURL,
                         expandedURL: url.expandedURL,
                     });
+                }
+            });
+            blueskyMigration.forEach((migration) => {
+                if (migration.tweetID == tweet.tweetID) {
+                    archiveTweet.blueskyMigrationURIs.push(migration.atprotoURI);
                 }
             });
 

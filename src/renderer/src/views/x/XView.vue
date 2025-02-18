@@ -204,6 +204,7 @@ const userPremium = ref(false);
 
 const updateUserAuthenticated = async () => {
     userAuthenticated.value = await apiClient.value.ping() && deviceInfo.value?.valid ? true : false;
+    console.log('updateUserAuthenticated', 'User authenticated', userAuthenticated.value);
 };
 
 const updateUserPremium = async () => {
@@ -226,6 +227,8 @@ const updateUserPremium = async () => {
         console.log('User does not have Premium access');
         emitter?.emit(`x-premium-check-failed-${props.account.id}`);
     }
+
+    console.log('updateUserPremium', 'User premium', userPremium.value);
 };
 
 emitter?.on('signed-in', async () => {
@@ -500,7 +503,8 @@ onUnmounted(async () => {
 
                         <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
                             :user-authenticated="userAuthenticated" :user-premium="userPremium"
-                            @set-state="setState($event)" />
+                            @set-state="setState($event)" @update-user-authenticated="updateUserAuthenticated"
+                            @update-user-premium="updateUserPremium" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                             :model="unref(model)"

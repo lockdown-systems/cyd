@@ -47,6 +47,8 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: XState]
+    updateUserAuthenticated: []
+    updateUserPremium: []
 }>()
 
 const connectClicked = async () => {
@@ -147,6 +149,7 @@ const migrateClicked = async () => {
     }
 
     await loadTweetCounts();
+    await window.electron.X.archiveBuild(props.model.account.id);
     state.value = State.Finished;
 }
 
@@ -179,6 +182,7 @@ const deleteClicked = async () => {
     }
 
     await loadTweetCounts();
+    await window.electron.X.archiveBuild(props.model.account.id);
     state.value = State.Connected;
 }
 
@@ -189,6 +193,9 @@ const viewBlueskyProfileClicked = async () => {
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
 
 onMounted(async () => {
+    emit('updateUserAuthenticated');
+    emit('updateUserPremium');
+
     // Get Bluesky profile
     try {
         blueskyProfile.value = await window.electron.X.blueskyGetProfile(props.model.account.id);
