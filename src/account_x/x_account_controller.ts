@@ -31,7 +31,6 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XArchiveInfo, emptyXArchiveInfo,
     XImportArchiveResponse,
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
@@ -150,7 +149,6 @@ export class XAccountController {
                             this.cookies[parts[0].trim()] = parts[1].trim();
                         }
                     });
-                    // log.info("XAccountController: cookies", this.cookies);
                 }
             }
         });
@@ -1540,27 +1538,6 @@ export class XAccountController {
 
     async syncProgress(progressJSON: string) {
         this.progress = JSON.parse(progressJSON);
-    }
-
-    async openFolder(folderName: string) {
-        if (!this.account) {
-            return;
-        }
-        const folderPath = path.join(getAccountDataPath("X", this.account?.username), folderName);
-        await shell.openPath(folderPath);
-    }
-
-    async getArchiveInfo(): Promise<XArchiveInfo> {
-        const archiveInfo = emptyXArchiveInfo();
-        if (!this.account || !this.account.username) {
-            return archiveInfo;
-        }
-        const accountDataPath = getAccountDataPath("X", this.account?.username);
-        const indexHTMLFilename = path.join(accountDataPath, "index.html");
-
-        archiveInfo.folderEmpty = !fs.existsSync(accountDataPath) || fs.readdirSync(accountDataPath).length === 0;
-        archiveInfo.indexHTMLExists = fs.existsSync(indexHTMLFilename);
-        return archiveInfo;
     }
 
     async resetRateLimitInfo(): Promise<void> {

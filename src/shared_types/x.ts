@@ -264,18 +264,6 @@ export function emptyXDeleteReviewStats(): XDeleteReviewStats {
     }
 }
 
-export type XArchiveInfo = {
-    folderEmpty: boolean;
-    indexHTMLExists: boolean;
-}
-
-export function emptyXArchiveInfo(): XArchiveInfo {
-    return {
-        folderEmpty: true,
-        indexHTMLExists: false
-    }
-}
-
 export interface XImportArchiveResponse {
     status: string; // "success", "error"
     errorMessage: string;

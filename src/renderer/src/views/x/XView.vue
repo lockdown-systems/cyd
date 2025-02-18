@@ -16,6 +16,7 @@ import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
 import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
+import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
@@ -43,8 +44,8 @@ import type {
 } from '../../../../shared_types';
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
-import { AccountXViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/AccountXViewModel'
-import { setAccountRunning, openURL } from '../../util';
+import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
+import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
@@ -74,7 +75,7 @@ const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
 // The X view model
-const model = ref<AccountXViewModel>(new AccountXViewModel(props.account, emitter));
+const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
 // Keep currentState in sync
 watch(
@@ -228,13 +229,13 @@ const updateUserPremium = async () => {
 };
 
 emitter?.on('signed-in', async () => {
-    console.log('AccountXView: User signed in');
+    console.log('XView: User signed in');
     await updateUserAuthenticated();
     await updateUserPremium();
 });
 
 emitter?.on('signed-out', async () => {
-    console.log('AccountXView: User signed out');
+    console.log('XView: User signed out');
     userAuthenticated.value = false;
     userPremium.value = false;
 });
@@ -248,7 +249,7 @@ const startJobs = async () => {
     if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
         // In open mode, allow the user to continue
         if (await window.electron.getMode() == "open") {
-            if (!await window.electron.showQuestion("You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.", "Continue", "Cancel")) {
+            if (!await showQuestionOpenModePremiumFeature()) {
                 return;
             }
         }
@@ -399,43 +400,43 @@ onUnmounted(async () => {
         <AccountHeader :account="account" :show-refresh-button="true" @on-refresh-clicked="emit('onRefreshClicked')"
             @on-remove-clicked="emit('onRemoveClicked')" />
 
-        <div class="d-flex ms-2">
-            <div class="d-flex flex-column flex-grow-1">
-                <!-- Speech bubble -->
-                <SpeechBubble ref="speechBubbleComponent" :message="model.instructions || ''" class="mb-2"
-                    :class="{ 'w-100': currentJobs.length === 0 }" />
+        <template v-if="model.state == State.WizardStart">
+            <div class="text-center ms-2 mt-5">
+                <img src="/assets/cyd-loading.gif" alt="Loading">
+            </div>
+        </template>
 
-                <!-- Progress -->
-                <XProgressComponent
-                    v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && model.state == State.RunJobs"
-                    :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
+        <template v-if="model.state != State.WizardStart">
+            <div class="d-flex ms-2">
+                <div class="d-flex flex-column flex-grow-1">
+                    <!-- Speech bubble -->
+                    <SpeechBubble ref="speechBubbleComponent" :message="model.instructions || ''" class="mb-2"
+                        :class="{ 'w-100': currentJobs.length === 0 }" />
+
+                    <!-- Progress -->
+                    <XProgressComponent
+                        v-if="((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) && model.state == State.RunJobs"
+                        :progress="progress" :rate-limit-info="rateLimitInfo" :account-i-d="account.id" />
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <!-- Job status -->
+                    <XJobStatusComponent v-if="currentJobs.length > 0 && model.state == State.RunJobs"
+                        :jobs="currentJobs" :is-paused="isPaused" class="job-status-component" @on-pause="model.pause()"
+                        @on-resume="model.resume()" @on-cancel="emit('onRefreshClicked')"
+                        @on-report-bug="onReportBug" />
+                </div>
             </div>
 
-            <div class="d-flex align-items-center">
-                <!-- Job status -->
-                <XJobStatusComponent v-if="currentJobs.length > 0 && model.state == State.RunJobs" :jobs="currentJobs"
-                    :is-paused="isPaused" class="job-status-component" @on-pause="model.pause()"
-                    @on-resume="model.resume()" @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug" />
-            </div>
-        </div>
+            <!-- U2F security key notice -->
+            <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
+                <i class="fa-solid fa-circle-info me-2" />
+                If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
+                screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
+            </p>
 
-        <!-- U2F security key notice -->
-        <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
-            <i class="fa-solid fa-circle-info me-2" />
-            If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white
-            screen. <a href="#" @click="openURL('https://cyd.social/docs-u2f')">Read more</a>.
-        </p>
-
-        <!-- Automation notice -->
-        <p v-if="(model.showBrowser && model.showAutomationNotice)" class="text-muted text-center automation-notice">
-            <i class="fa-solid fa-robot" /> I'm following your instructions. Feel free to switch windows and use
-            your computer for other things.
-        </p>
-
-        <!-- Ready for input -->
-        <p v-if="(model.showBrowser && !model.showAutomationNotice)" class="text-muted text-center ready-for-input">
-            <i class="fa-solid fa-computer-mouse" /> Ready for input.
-        </p>
+            <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
+        </template>
 
         <!-- Webview -->
         <webview ref="webviewComponent" src="about:blank" class="webview" :partition="`persist:account-${account.id}`"
@@ -445,92 +446,94 @@ onUnmounted(async () => {
                 'webview-input-border': !model.showAutomationNotice
             }" />
 
-        <!-- RunJobs states -->
-        <div :class="{
-            'hidden': model.showBrowser || !(model.state == State.RunJobs && model.runJobsState != RunJobsState.Default),
-            'run-jobs-state': true,
-            'ms-2': true
-        }">
-            <div class="run-jobs-state-container d-flex">
-                <div class="run-jobs-state-content flex-grow-1">
-                    <XJobDeleteTweets
-                        v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks"
-                        :model="unref(model)" />
-                </div>
-            </div>
-        </div>
-
-        <!-- Wizard -->
-        <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
-            <div class="wizard-container d-flex">
-                <div class="wizard-content flex-grow-1">
-                    <XWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay" :model="unref(model)"
-                        @set-state="setState($event)" />
-
-                    <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
-                        @set-state="setState($event)" />
-
-                    <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
-                        @set-state="setState($event)" />
-
-                    <XWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
-                        @set-state="setState($event)" />
-
-                    <XWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay" :model="unref(model)"
-                        @set-state="setState($event)" @update-account="updateAccount" />
-
-                    <XWizardArchiveOptionsPage v-if="model.state == State.WizardArchiveOptionsDisplay"
-                        :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
-
-                    <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
-                        :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
-                        @update-account="updateAccount" @set-state="setState($event)" />
-
-                    <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
-                        @set-state="setState($event)" @update-account="updateAccount" @start-jobs="startJobs" />
-
-                    <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
-                        :user-authenticated="userAuthenticated" :user-premium="userPremium"
-                        @set-state="setState($event)" @update-account="updateAccount"
-                        @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
-
-                    <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
-                        :user-authenticated="userAuthenticated" :user-premium="userPremium"
-                        @set-state="setState($event)" />
-
-                    <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
-                        :model="unref(model)"
-                        :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
-                        :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
-                        @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"
-                        @on-refresh-clicked="emit('onRefreshClicked')" />
-
-                    <!-- Debug state -->
-                    <div v-if="model.state == State.Debug">
-                        <p>Debug debug debug!!!</p>
-                        <p>
-                            <button class="btn btn-danger" @click="debugModeTriggerError(1)">
-                                Trigger Error
-                            </button>
-                        </p>
-                        <p>
-                            <button class="btn btn-danger" @click="debugModeTriggerError(3)">
-                                Trigger 3 Errors
-                            </button>
-                        </p>
-                        <p>
-                            <button class="btn btn-primary" @click="debugModeDisable">
-                                Cancel Debug Mode
-                            </button>
-                        </p>
+        <template v-if="model.state != State.WizardStart">
+            <!-- RunJobs states -->
+            <div :class="{
+                'hidden': model.showBrowser || !(model.state == State.RunJobs && model.runJobsState != RunJobsState.Default),
+                'run-jobs-state': true,
+                'ms-2': true
+            }">
+                <div class="run-jobs-state-container d-flex">
+                    <div class="run-jobs-state-content flex-grow-1">
+                        <XJobDeleteTweets
+                            v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks"
+                            :model="unref(model)" />
                     </div>
                 </div>
-
-                <!-- wizard side bar -->
-                <XWizardSidebar :model="unref(model)" @set-state="setState($event)"
-                    @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
             </div>
-        </div>
+
+            <!-- Wizard -->
+            <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
+                <div class="wizard-container d-flex">
+                    <div class="wizard-content flex-grow-1">
+                        <XWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
+                        <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
+                        <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
+                            @set-state="setState($event)" />
+
+                        <XWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
+                        <XWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
+
+                        <XWizardArchiveOptionsPage v-if="model.state == State.WizardArchiveOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
+
+                        <XWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
+                            :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                            @update-account="updateAccount" @set-state="setState($event)" />
+
+                        <XWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
+                            @set-state="setState($event)" @update-account="updateAccount" @start-jobs="startJobs" />
+
+                        <XWizardCheckPremium v-if="model.state == State.WizardCheckPremiumDisplay" :model="unref(model)"
+                            :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                            @set-state="setState($event)" @update-account="updateAccount"
+                            @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
+
+                        <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
+                            :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                            @set-state="setState($event)" />
+
+                        <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
+                            :model="unref(model)"
+                            :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
+                            :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
+                            @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"
+                            @on-refresh-clicked="emit('onRefreshClicked')" />
+
+                        <!-- Debug state -->
+                        <div v-if="model.state == State.Debug">
+                            <p>Debug debug debug!!!</p>
+                            <p>
+                                <button class="btn btn-danger" @click="debugModeTriggerError(1)">
+                                    Trigger Error
+                                </button>
+                            </p>
+                            <p>
+                                <button class="btn btn-danger" @click="debugModeTriggerError(3)">
+                                    Trigger 3 Errors
+                                </button>
+                            </p>
+                            <p>
+                                <button class="btn btn-primary" @click="debugModeDisable">
+                                    Cancel Debug Mode
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- wizard side bar -->
+                    <XWizardSidebar :model="unref(model)" @set-state="setState($event)"
+                        @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
+                </div>
+            </div>
+        </template>
     </div>
 </template>
 

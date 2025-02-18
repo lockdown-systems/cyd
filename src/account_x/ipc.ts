@@ -14,7 +14,6 @@ import {
     ResponseData,
     XDatabaseStats,
     XDeleteReviewStats,
-    XArchiveInfo,
     XImportArchiveResponse,
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
@@ -209,24 +208,6 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.syncProgress(progressJSON);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:openFolder', async (_, accountID: number, folderName: string) => {
-        try {
-            const controller = getXAccountController(accountID);
-            await controller.openFolder(folderName);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:getArchiveInfo', async (_, accountID: number): Promise<XArchiveInfo> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.getArchiveInfo();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

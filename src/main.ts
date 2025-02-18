@@ -21,6 +21,7 @@ import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
+import { defineIPCFacebook } from './account_facebook';
 import { defineIPCArchive } from './archive';
 import {
     getUpdatesBaseURL,
@@ -29,7 +30,8 @@ import {
     getSettingsPath,
     getDataPath,
     trackEvent,
-    packageExceptionForReport
+    packageExceptionForReport,
+    isFeatureEnabled
 } from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -141,6 +143,7 @@ app.on('open-url', (event, url) => {
     openCydURL(url);
 })
 
+// Check if we're in dev mode
 const cydDevMode = process.env.CYD_DEV === "1";
 
 async function initializeApp() {
@@ -379,6 +382,10 @@ async function createWindow() {
             }
         });
 
+        ipcMain.handle('isFeatureEnabled', async (_, feature: string): Promise<boolean> => {
+            return isFeatureEnabled(feature);
+        });
+
         ipcMain.handle('trackEvent', async (_, eventName: string, userAgent: string) => {
             try {
                 trackEvent(eventName, userAgent, config.plausibleDomain);
@@ -547,6 +554,7 @@ async function createWindow() {
         // Other IPC events
         database.defineIPCDatabase();
         defineIPCX();
+        defineIPCFacebook();
         defineIPCArchive();
     }
     // @ts-expect-error: typescript doesn't know about this global variable
