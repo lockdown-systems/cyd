@@ -2947,9 +2947,6 @@ export class XAccountController {
             record['embed'] = embed;
         }
 
-        // TODO: add media
-        // See: https://docs.bsky.app/docs/advanced-guides/posts
-
         try {
             // Post it to Bluesky
             const { uri, cid } = await agent.post(record)
