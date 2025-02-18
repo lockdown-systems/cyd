@@ -12,6 +12,8 @@ import { glob } from 'glob';
 
 import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
 import { Agent } from '@atproto/api';
+import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
+import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
 
 import {
     getResourcesPath,
@@ -32,8 +34,8 @@ import {
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
     XImportArchiveResponse,
-    BlueskyMigrationProfile,
     XMigrateTweetCounts,
+    BlueskyMigrationProfile,
 } from '../shared_types'
 import {
     runMigrations,
@@ -2615,12 +2617,55 @@ export class XAccountController {
             FROM tweet
             WHERE tweetID = ?
         `, [tweetID], "get") as XTweetRow;
+        const tweetURLs: XTweetURLRow[] = exec(this.db, `
+            SELECT *
+            FROM tweet_url
+            WHERE tweetID = ?
+        `, [tweetID], "all") as XTweetURLRow[];
+        // const tweetMedia: XTweetMediaRow[] = exec(this.db, `
+        //     SELECT *
+        //     FROM tweet_media
+        //     WHERE tweetID = ?
+        // `, [tweetID], "all") as XTweetMediaRow[];
+
+        // Replace t.co links with actual links
+        const facets: {
+            index: {
+                byteStart: number,
+                byteEnd: number,
+            },
+            features: BskyRichtextFacetLink[],
+        }[] = [];
+        let text = tweet.text;
+        for (const tweetURL of tweetURLs) {
+            // Replace url with expandedURL
+            const byteStart = text.indexOf(tweetURL.url);
+            text = text.substring(0, byteStart) + tweetURL.expandedURL + text.substring(byteStart + tweetURL.url.length);
+            const byteEnd = byteStart + tweetURL.expandedURL.length;
+
+            // Add the link facet
+            facets.push({
+                'index': {
+                    'byteStart': byteStart,
+                    'byteEnd': byteEnd,
+                },
+                'features': [
+                    {
+                        '$type': 'app.bsky.richtext.facet#link',
+                        'uri': tweetURL.expandedURL,
+                    }
+                ],
+            });
+        }
 
         // Build the record
-        const record = {
+        const record: BskyPostRecord = {
             '$type': 'app.bsky.feed.post',
-            'text': tweet.text,
+            'text': text,
             'createdAt': tweet.createdAt,
+        }
+        if (facets.length > 0) {
+            record['facets'] = facets;
         }
 
         // TODO: add media, reply_to, and links

@@ -105,6 +105,9 @@ const migrateClicked = async () => {
             console.error('Failed to migrate tweet', tweetID);
         }
 
+        // Wait 5 second before migrating the next tweet
+        // await new Promise(resolve => setTimeout(resolve, 5000));
+
         // Cancel early
         if (shouldCancelMigration.value) {
             await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
@@ -276,7 +279,7 @@ onUnmounted(async () => {
                                 <b>
                                     {{ skippedTweetsCount.toLocaleString() }} tweets
                                 </b>
-                                before of errors, but you can try again with them.
+                                because of errors, but you can try again with them.
                             </small>
                         </p>
                         <div class="progress flex-grow-1 me-2">
