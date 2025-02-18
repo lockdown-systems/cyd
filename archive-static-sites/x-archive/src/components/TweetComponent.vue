@@ -1,11 +1,34 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { defineProps, computed, inject, Ref } from 'vue'
 import { formattedDatetime, formattedDate, formatDateToYYYYMMDD } from '../helpers'
-import { Tweet } from '../types'
+import { XArchive, Tweet } from '../types'
 
-defineProps<{
+const props = defineProps<{
     tweet: Tweet;
 }>();
+
+const archiveData = inject('archiveData') as Ref<XArchive>;
+
+const formattedText = computed(() => {
+    let text = props.tweet.text;
+    for (const url of props.tweet.urls) {
+        text = text.replace(url.url, `<a href="${url.expandedURL}" target="_blank">${url.displayURL}</a>`);
+    }
+    for (const media of props.tweet.media) {
+        text = text.replace(media.url, ``);
+    }
+    text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    return text.trim();
+});
+
+const quoteTweet = computed(() => {
+    if (!props.tweet.quotedTweet) {
+        return null;
+    }
+    const tweetID = props.tweet.quotedTweet.split('/').pop();
+    return archiveData.value.tweets.find(t => t.tweetID == tweetID);
+});
+
 </script>
 
 <template>
@@ -21,7 +44,28 @@ defineProps<{
             <small v-else class="text-muted">unknown date</small>
         </div>
         <div class="mt-2">
-            <p>{{ tweet.text }}</p>
+            <!-- Text -->
+            <p v-html="formattedText"></p>
+            <!-- Media -->
+            <div v-if="tweet.media.length > 0">
+                <div v-for="media in tweet.media" v-bind:key="media.filename" class="mt-2">
+                    <template v-if="media.mediaType == 'video'">
+                        <video controls class="img-fluid">
+                            <source :src="`./Tweet Media/${media.filename}`" type="video/mp4" />
+                        </video>
+                    </template>
+                    <template v-else>
+                        <img :src="`./Tweet Media/${media.filename}`" class="img-fluid" />
+                    </template>
+                </div>
+            </div>
+            <!-- Quote tweet -->
+            <div v-if="tweet.quotedTweet" class="mt-2 p-3 border rounded">
+                <small>Quoted tweet: <a :href="tweet.quotedTweet" target="_blank">{{ tweet.quotedTweet }}</a></small>
+                <template v-if="quoteTweet">
+                    <TweetComponent :tweet="quoteTweet" />
+                </template>
+            </div>
         </div>
         <div v-if="tweet.replyCount != undefined || tweet.retweetCount != undefined || tweet.likeCount != undefined"
             class="d-flex mt-2 gap-3">
