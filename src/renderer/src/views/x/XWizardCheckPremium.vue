@@ -204,10 +204,18 @@ onMounted(async () => {
                     </div>
                 </div>
 
-                <button v-else type="submit" class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
-                    <i class="fa-solid fa-user-ninja" />
-                    Review Your Choices
-                </button>
+                <div v-else>
+                    <button v-if="checkReason == 'deleteData'" type="submit"
+                        class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
+                        <i class="fa-solid fa-user-ninja" />
+                        Review Your Choices
+                    </button>
+                    <button v-if="checkReason == 'migrateTweetsToBluesky'" type="submit"
+                        class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
+                        <i class="fa-solid fa-user-ninja" />
+                        Migrate to Bluesky
+                    </button>
+                </div>
             </div>
 
             <div v-if="!userPremium" class="buttons">
