@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
 import { ref, onMounted, onUnmounted } from 'vue'
+
 import {
-    XViewModel
+    XViewModel,
+    State as XState,
 } from '../../view_models/XViewModel'
 import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
-import { openURL } from '../../util'
+import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
 
 enum State {
     Loading,
@@ -41,6 +43,11 @@ const props = defineProps<{
     userAuthenticated: boolean;
     userPremium: boolean;
 }>();
+
+// Emits
+const emit = defineEmits<{
+    setState: [value: XState]
+}>()
 
 const connectClicked = async () => {
     connectButtonText.value = 'Connecting...';
@@ -95,6 +102,22 @@ const migrateClicked = async () => {
     if (tweetCounts.value === null) {
         await window.electron.showMessage("You don't have any tweets to migrate.", '');
         return;
+    }
+
+    // Premium check
+    if (await window.electron.getMode() == "open") {
+        if (!await showQuestionOpenModePremiumFeature()) {
+            return;
+        }
+    }
+    // Otherwise, make sure the user is authenticated
+    else {
+        if (!props.userAuthenticated || !props.userPremium) {
+            localStorage.setItem(`premiumCheckReason-${props.model.account.id}`, 'migrateTweetsToBluesky');
+            localStorage.setItem(`premiumTasks-${props.model.account.id}`, JSON.stringify(['Migrate tweets to Bluesky']));
+            emit('setState', XState.WizardCheckPremium);
+            return;
+        }
     }
 
     migratedTweetsCount.value = 0;

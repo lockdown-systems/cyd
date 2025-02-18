@@ -258,6 +258,7 @@ const startJobs = async () => {
             await updateUserAuthenticated();
             console.log("userAuthenticated", userAuthenticated.value);
             if (!userAuthenticated.value) {
+                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
@@ -266,6 +267,7 @@ const startJobs = async () => {
             await updateUserPremium();
             console.log("userPremium", userPremium.value);
             if (!userPremium.value) {
+                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
