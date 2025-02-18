@@ -137,6 +137,10 @@ const deleteClicked = async () => {
         return;
     }
 
+    if (!await window.electron.showQuestion('Are you sure you want to delete all migrated tweets from Bluesky?', 'Yes, delete them all', 'No, keep them')) {
+        return;
+    }
+
     deletedPostsCount.value = 0;
     skippedDeletePostsCount.value = 0;
 
