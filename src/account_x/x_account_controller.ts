@@ -2794,7 +2794,9 @@ export class XAccountController {
 
             if (shouldContinue) {
                 // Upload the video
+                log.info(`XAccountController.blueskyMigrateTweet: uploading video ${tweetMedia[0].filename}`);
                 const resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
+                log.info(`XAccountController.blueskyMigrateTweet: uploaded video ${tweetMedia[0].filename} response`, resp);
                 const videoBlob: BlobRef = resp.data.blob;
 
                 // Remove the link from the tweet text
@@ -2874,7 +2876,9 @@ export class XAccountController {
                 const metadata = await sharp(mediaData).metadata();
 
                 // Upload the image
+                log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
                 const resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
+                log.info(`XAccountController.blueskyMigrateTweet: uploaded image ${media.filename} response`, resp);
 
                 // Add it to the list
                 images.push({
