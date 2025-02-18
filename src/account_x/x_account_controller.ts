@@ -2717,6 +2717,48 @@ export class XAccountController {
             }
         }
 
+        // Handle quotes
+        let embed = null;
+        if (tweet.isQuote && tweet.quotedTweet) {
+            // Parse the quoted tweet URL to see if it's a self-quote
+            // URL looks like: https://twitter.com/{username}/status/{tweetID}
+            const quotedTweetURL = new URL(tweet.quotedTweet);
+            const quotedTweetUsername = quotedTweetURL.pathname.split('/')[1];
+            const quotedTweetID = quotedTweetURL.pathname.split('/')[3];
+
+            // Self quote
+            if (quotedTweetUsername == this.account.username) {
+                // Load the quoted tweet migration
+                const quotedMigration: XTweetBlueskyMigrationRow = exec(this.db, `
+                    SELECT *
+                    FROM tweet_bsky_migration
+                    WHERE tweetID = ?
+                `, [quotedTweetID], "get") as XTweetBlueskyMigrationRow;
+                if (quotedMigration) {
+                    embed = {
+                        '$type': 'app.bsky.embed.record',
+                        record: {
+                            uri: quotedMigration.atprotoURI,
+                            cid: quotedMigration.atprotoCID,
+                        }
+                    }
+                }
+            }
+
+            // External quote? Make it a website card
+            if (!embed) {
+                embed = {
+                    '$type': 'app.bsky.embed.external',
+                    external: {
+                        uri: tweet.quotedTweet,
+                        title: "Quoted Tweet on X",
+                        description: `View tweet at ` + quotedTweetURL,
+                    }
+                }
+            }
+
+        }
+
         // Build the record
         const record: BskyPostRecord = {
             '$type': 'app.bsky.feed.post',
@@ -2729,9 +2771,12 @@ export class XAccountController {
         if (reply) {
             record['reply'] = reply;
         }
+        if (embed) {
+            record['embed'] = embed;
+        }
 
-        // TODO: add media, reply_to, quotes
-        // See: https://docs.bsky.app/docs/advanced-guides/posts#replies-quote-posts-and-embeds
+        // TODO: add media
+        // See: https://docs.bsky.app/docs/advanced-guides/posts
 
         try {
             // Post it to Bluesky
