@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 import {
     XViewModel,
@@ -11,6 +11,7 @@ import {
     XMigrateTweetCounts,
 } from '../../../../shared_types'
 import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
+import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 enum State {
     Loading,
@@ -36,6 +37,10 @@ const shouldCancelMigration = ref(false);
 
 const blueskyHandle = ref('');
 const connectButtonText = ref('Connect');
+
+const hasSomeData = ref<boolean>(false);
+const lastImportArchive = ref<Date | null>(null);
+const lastBuildDatabase = ref<Date | null>(null);
 
 // Props
 const props = defineProps<{
@@ -192,9 +197,21 @@ const viewBlueskyProfileClicked = async () => {
 
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
 
+const isArchiveOld = computed(() => {
+    // The date before media was added to the Cyd archive, February 18, 2025
+    const oldDate = new Date('2025-02-18T00:00:00Z');
+    return lastImportArchive.value !== null && lastImportArchive.value < oldDate ||
+        lastBuildDatabase.value !== null && lastBuildDatabase.value < oldDate;
+});
+
 onMounted(async () => {
     emit('updateUserAuthenticated');
     emit('updateUserPremium');
+
+    // Load the last time the archive was imported and the database was built
+    hasSomeData.value = await xHasSomeData(props.model.account.id);
+    lastImportArchive.value = await xGetLastImportArchive(props.model.account.id);
+    lastBuildDatabase.value = await xGetLastBuildDatabase(props.model.account.id);
 
     // Get Bluesky profile
     try {
@@ -233,6 +250,25 @@ onUnmounted(async () => {
                 Import your old tweets into a Bluesky account. You may want to make a new Bluesky account just for your
                 old tweets.
             </p>
+
+            <div v-if="isArchiveOld" class="alert alert-warning">
+                <p>
+                    <strong>
+                        We recommend that you reimport your local database of tweets, or rebuild it from scratch,
+                        before migrating to Bluesky.
+                    </strong>
+                </p>
+                <p>
+                    When you built your local database of tweets, Cyd didn't keep track of things like media, replies,
+                    and quote tweets. If you migrate to Bluesky now, you may lose some of your data.
+                </p>
+                <p class="text-center">
+                    <button type="submit" class="btn btn-sm btn-primary"
+                        @click="emit('setState', XState.WizardDatabase)">
+                        Rebuild Your Local Database
+                    </button>
+                </p>
+            </div>
 
             <template v-if="state == State.Loading">
                 <p>

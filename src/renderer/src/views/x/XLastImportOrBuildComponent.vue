@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { formatDistanceToNow } from 'date-fns';
-import {
-    State
-} from '../../view_models/XViewModel'
+import { State } from '../../view_models/XViewModel'
+import { xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 const props = defineProps<{
     accountID: number;
@@ -25,18 +24,8 @@ const buttonClicked = async () => {
 };
 
 onMounted(async () => {
-    const lastFinishedJob_importArchive = await window.electron.X.getConfig(props.accountID, 'lastFinishedJob_importArchive');
-    if (lastFinishedJob_importArchive) {
-        lastImportArchive.value = new Date(lastFinishedJob_importArchive);
-    }
-
-    const lastFinishedJob_indexTweets = await window.electron.X.getConfig(props.accountID, 'lastFinishedJob_indexTweets');
-    const lastFinishedJob_indexLikes = await window.electron.X.getConfig(props.accountID, 'lastFinishedJob_indexLikes');
-    if (lastFinishedJob_indexTweets || lastFinishedJob_indexLikes) {
-        const lastFinishedJob_indexTweets_date = lastFinishedJob_indexTweets ? new Date(lastFinishedJob_indexTweets) : new Date(0);
-        const lastFinishedJob_indexLikes_date = lastFinishedJob_indexLikes ? new Date(lastFinishedJob_indexLikes) : new Date(0);
-        lastBuildDatabase.value = lastFinishedJob_indexTweets_date > lastFinishedJob_indexLikes_date ? lastFinishedJob_indexTweets_date : lastFinishedJob_indexLikes_date;
-    }
+    lastImportArchive.value = await xGetLastImportArchive(props.accountID);
+    lastBuildDatabase.value = await xGetLastBuildDatabase(props.accountID);
 });
 </script>
 
