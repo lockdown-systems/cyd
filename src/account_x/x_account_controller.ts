@@ -2765,7 +2765,77 @@ export class XAccountController {
         if (tweetMedia.length == 1 && tweetMedia[0].mediaType == "video") {
             // Video media
             // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
-            // const maxSize = 50000000;
+            const maxSize = 50000000;
+
+            // Load the video
+            const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", tweetMedia[0].filename);
+            const mediaData = fs.readFileSync(mediaPath);
+
+            let shouldContinue = true;
+
+            // Make sure it's not too big
+            if (mediaData.length > maxSize) {
+                log.warn(`XAccountController.blueskyMigrateTweet: media file too large: ${tweetMedia[0].filename}`);
+                shouldContinue = false;
+            }
+
+            if (shouldContinue) {
+                // Determine the MIME type
+                const mimeType = mime.lookup(mediaPath);
+                if (!mimeType) {
+                    log.warn(`XAccountController.blueskyMigrateTweet: could not determine MIME type for media file: ${tweetMedia[0].filename}`);
+                    shouldContinue = false;
+                }
+                if (mimeType != 'video/mp4') {
+                    log.warn(`XAccountController.blueskyMigrateTweet: video file is not mp4: ${tweetMedia[0].filename}`);
+                    shouldContinue = false;
+                }
+            }
+
+            if (shouldContinue) {
+                // Upload the video
+                const resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
+                const videoBlob: BlobRef = resp.data.blob;
+
+                // Remove the link from the tweet text
+                text = text.replace(tweetMedia[0].url, "");
+                text = text.trim();
+
+                // If there's already an embedded record, turn it into a recordWithMedia embed
+                if (embed && embed['$type'] == 'app.bsky.embed.record') {
+                    embed = {
+                        '$type': 'app.bsky.embed.recordWithMedia',
+                        record: embed,
+                        media: {
+                            '$type': 'app.bsky.embed.video',
+                            video: videoBlob
+                        }
+                    }
+                } else {
+                    // If there's an embedded external link, turn it into a facet
+                    if (embed && embed['$type'] == 'app.bsky.embed.external' && embed.external?.uri) {
+                        text += ` ${embed.external.uri}`;
+                        facets.push({
+                            'index': {
+                                'byteStart': text.length - embed.external.uri.length,
+                                'byteEnd': text.length,
+                            },
+                            'features': [
+                                {
+                                    '$type': 'app.bsky.richtext.facet#link',
+                                    'uri': embed.external.uri,
+                                }
+                            ],
+                        });
+                    }
+
+                    // Embed the video
+                    embed = {
+                        '$type': 'app.bsky.embed.video',
+                        video: videoBlob
+                    }
+                }
+            }
 
         } else {
             // Images media
@@ -2783,7 +2853,7 @@ export class XAccountController {
             }[] = [];
 
             for (const media of tweetMedia) {
-                // Load the media file
+                // Load the image
                 const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", media.filename);
                 const mediaData = fs.readFileSync(mediaPath);
 
