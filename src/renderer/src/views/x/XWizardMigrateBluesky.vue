@@ -2,8 +2,8 @@
 import { IpcRendererEvent } from 'electron';
 import { ref, onMounted, onUnmounted } from 'vue'
 import {
-    AccountXViewModel
-} from '../../view_models/AccountXViewModel'
+    XViewModel
+} from '../../view_models/XViewModel'
 import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
@@ -31,7 +31,7 @@ const connectButtonText = ref('Connect');
 
 // Props
 const props = defineProps<{
-    model: AccountXViewModel;
+    model: XViewModel;
     userAuthenticated: boolean;
     userPremium: boolean;
 }>();
