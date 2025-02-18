@@ -138,6 +138,7 @@ declare global {
                 blueskyDisconnect: (accountID: number) => Promise<void>;
                 blueskyGetTweetCounts: (accountID: number) => Promise<XMigrateTweetCounts>;
                 blueskyMigrateTweet: (accountID: number, tweetID: string) => Promise<boolean>;
+                blueskyDeleteMigratedTweet: (accountID: number, tweetID: string) => Promise<boolean>;
             };
             Facebook: {
                 resetProgress: (accountID: number) => Promise<FacebookProgress>;

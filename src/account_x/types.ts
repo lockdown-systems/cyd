@@ -103,6 +103,14 @@ export interface XMessageRow {
     deletedAt: string | null;
 }
 
+export type XTweetBlueskyMigrationRow = {
+    id: number;
+    tweetID: string;
+    atprotoURI: string;
+    atprotoCID: string;
+    migratedAt: string;
+}
+
 // Converters
 
 export function convertXJobRowToXJob(row: XJobRow): XJob {

@@ -317,9 +317,12 @@ contextBridge.exposeInMainWorld('electron', {
         blueskyGetTweetCounts: (accountID: number): Promise<XMigrateTweetCounts> => {
             return ipcRenderer.invoke('X:blueskyGetTweetCounts', accountID)
         },
-        blueskyMigrateTweet: (accountID: number, tweetID: string): Promise<void> => {
+        blueskyMigrateTweet: (accountID: number, tweetID: string): Promise<boolean> => {
             return ipcRenderer.invoke('X:blueskyMigrateTweet', accountID, tweetID)
         },
+        blueskyDeleteMigratedTweet: (accountID: number, tweetID: string): Promise<boolean> => {
+            return ipcRenderer.invoke('X:blueskyDeleteMigratedTweet', accountID, tweetID)
+        }
     },
     Facebook: {
         resetProgress: (accountID: number): Promise<FacebookProgress> => {

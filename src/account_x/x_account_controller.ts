@@ -58,6 +58,7 @@ import {
     XConversationRow,
     XMessageRow,
     XConversationParticipantRow,
+    XTweetBlueskyMigrationRow,
     convertXJobRowToXJob,
     convertTweetRowToXTweetItem,
     convertTweetRowToXTweetItemArchive,
@@ -2577,20 +2578,21 @@ export class XAccountController {
             AND (tweet.isReply = ? AND tweet.replyUserID != ?)
         `, ["RT @%", 0, username, 1, userRow.userID], "get") as Sqlite3Count;
 
-        const alreadyMigrated: Sqlite3Count = exec(this.db, `
-            SELECT COUNT(*) AS count
+        const alreadyMigratedTweets: XTweetRow[] = exec(this.db, `
+            SELECT tweet.*
             FROM tweet
             INNER JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
             WHERE tweet.text NOT LIKE ?
             AND tweet.isLiked = ?
             AND tweet.username = ?
-        `, ["RT @%", 0, username], "get") as Sqlite3Count;
+        `, ["RT @%", 0, username], "all") as XTweetRow[];
+        const alreadyMigratedTweetIDs = alreadyMigratedTweets.map((tweet) => tweet.tweetID);
 
         // Return the counts
         const resp: XMigrateTweetCounts = {
             toMigrateTweetIDs: toMigrateTweetIDs,
             cannotMigrateCount: cannotMigrate.count,
-            alreadyMigratedCount: alreadyMigrated.count,
+            alreadyMigratedTweetIDs: alreadyMigratedTweetIDs,
         }
         log.info("XAccountController.blueskyGetTweetCounts: returning", resp);
         return resp;
@@ -2684,6 +2686,45 @@ export class XAccountController {
             return true;
         } catch (e) {
             log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
+            return false;
+        }
+    }
+
+    async blueskyDeleteMigratedTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // Get the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            throw new Error("Bluesky DID not found");
+        }
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+
+        // Select the migration record
+        const migration: XTweetBlueskyMigrationRow = exec(this.db, `
+            SELECT *
+            FROM tweet_bsky_migration
+            WHERE tweetID = ?
+        `, [tweetID], "get") as XTweetBlueskyMigrationRow;
+
+
+        try {
+            // Delete it from Bluesky
+            await agent.deletePost(migration.atprotoURI)
+
+            // Delete the migration record
+            exec(this.db, `
+                DELETE FROM tweet_bsky_migration WHERE tweetID = ?
+            `, [tweetID]);
+
+            return true;
+        } catch (e) {
+            log.error("XAccountController.blueskyDeleteMigratedTweet: Error deleting migrated tweet from Bluesky", e);
             return false;
         }
     }

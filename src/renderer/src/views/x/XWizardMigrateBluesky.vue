@@ -17,6 +17,7 @@ enum State {
     FinishInBrowser,
     Connected,
     Migrating,
+    Deleting,
     Finished,
 }
 
@@ -26,6 +27,8 @@ const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
 const migratedTweetsCount = ref(0);
 const skippedTweetsCount = ref(0);
+const deletedPostsCount = ref(0);
+const skippedDeletePostsCount = ref(0);
 const shouldCancelMigration = ref(false);
 
 const blueskyHandle = ref('');
@@ -124,6 +127,30 @@ const migrateCancelClicked = async () => {
     shouldCancelMigration.value = true;
 }
 
+const deleteClicked = async () => {
+    if (tweetCounts.value === null) {
+        await window.electron.showMessage("You don't have any tweets to delete.", '');
+        return;
+    }
+
+    deletedPostsCount.value = 0;
+    skippedDeletePostsCount.value = 0;
+
+    state.value = State.Deleting;
+
+    for (const tweetID of tweetCounts.value.alreadyMigratedTweetIDs) {
+        if (await window.electron.X.blueskyDeleteMigratedTweet(props.model.account.id, tweetID)) {
+            deletedPostsCount.value++;
+        } else {
+            skippedDeletePostsCount.value++;
+            console.error('Failed to delete migrated tweet', tweetID);
+        }
+    }
+
+    await loadTweetCounts();
+    state.value = State.Connected;
+}
+
 const viewBlueskyProfileClicked = async () => {
     await openURL(`https://bsky.app/profile/${blueskyProfile.value?.handle}`);
 }
@@ -206,7 +233,7 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </template>
-            <template v-else-if="state == State.Connected || state == State.Migrating">
+            <template v-else-if="state == State.Connected || state == State.Migrating || state == State.Deleting">
                 <!-- Show the Bluesky account that is connected -->
                 <hr>
                 <p>
@@ -255,18 +282,27 @@ onUnmounted(async () => {
                             </strong>
                             tweets can't be migrated because they're replies to users on X.<br>
                             <strong>
-                                {{ tweetCounts.alreadyMigratedCount.toLocaleString() }}
+                                {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }}
                             </strong>
                             tweets have already been migrated.
                         </small>
                     </p>
 
                     <div class="buttons mb-4">
-                        <button type="submit" class="btn btn-primary text-nowrap m-1"
-                            :disabled="tweetCounts.toMigrateTweetIDs.length == 0" @click="migrateClicked">
-                            <i class="fa-brands fa-bluesky" />
-                            Start Migrating to Bluesky
-                        </button>
+                        <p>
+                            <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                :disabled="tweetCounts.toMigrateTweetIDs.length == 0" @click="migrateClicked">
+                                <i class="fa-brands fa-bluesky" />
+                                Start Migrating to Bluesky
+                            </button>
+                        </p>
+                        <p>
+                            <button v-if="tweetCounts.alreadyMigratedTweetIDs.length > 0" type="submit"
+                                class="btn btn-sm btn-danger text-nowrap m-1" @click="deleteClicked">
+                                <i class="fa-solid fa-trash" />
+                                Delete Migrated Tweets from Bluesky
+                            </button>
+                        </p>
                     </div>
                 </template>
 
@@ -305,6 +341,36 @@ onUnmounted(async () => {
                             <i class="fa-solid fa-xmark" />
                             Cancel
                         </button>
+                    </div>
+                </template>
+
+                <!-- Deleting: Deleting progress bar -->
+                <template v-if="state == State.Deleting">
+                    <div v-if="tweetCounts !== null">
+                        <p class="text-center">
+                            Deleted
+                            <b>
+                                {{ deletedPostsCount.toLocaleString() }} of
+                                {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }} migrated tweets
+                            </b>
+                            from Bluesky.
+                            <small v-if="skippedDeletePostsCount > 0" class="text-muted">
+                                Skipped
+                                <b>
+                                    {{ skippedDeletePostsCount.toLocaleString() }} migrated tweets
+                                </b>
+                                because of errors, but you can try again with them.
+                            </small>
+                        </p>
+                        <div class="progress flex-grow-1 me-2">
+                            <div class="progress-bar" role="progressbar"
+                                :style="{ width: `${((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweetIDs.length) * 100}%` }"
+                                :aria-valuenow="((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweetIDs.length) * 100"
+                                aria-valuemin="0" aria-valuemax="100">
+                                {{ Math.round(((deletedPostsCount + skippedDeletePostsCount) /
+                                    tweetCounts.alreadyMigratedTweetIDs.length) * 100) }}%
+                            </div>
+                        </div>
                     </div>
                 </template>
             </template>
