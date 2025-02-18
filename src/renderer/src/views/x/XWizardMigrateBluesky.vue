@@ -27,6 +27,7 @@ const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
 const migratedTweetsCount = ref(0);
 const skippedTweetsCount = ref(0);
+const skippedTweetsErrors = ref<Record<string, string>>({});
 const deletedPostsCount = ref(0);
 const skippedDeletePostsCount = ref(0);
 const shouldCancelMigration = ref(false);
@@ -98,16 +99,19 @@ const migrateClicked = async () => {
 
     migratedTweetsCount.value = 0;
     skippedTweetsCount.value = 0;
+    skippedTweetsErrors.value = {};
 
     state.value = State.Migrating;
     shouldCancelMigration.value = false;
 
     for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
-        if (await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID)) {
-            migratedTweetsCount.value++;
-        } else {
+        const resp = await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
+        if (typeof resp === 'string') {
             skippedTweetsCount.value++;
-            console.error('Failed to migrate tweet', tweetID);
+            skippedTweetsErrors.value[tweetID] = resp;
+            console.error('Failed to migrate tweet', tweetID, resp);
+        } else {
+            migratedTweetsCount.value++;
         }
 
         // Cancel early
@@ -233,7 +237,8 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </template>
-            <template v-else-if="state == State.Connected || state == State.Migrating || state == State.Deleting">
+            <template
+                v-else-if="state == State.Connected || state == State.Migrating || state == State.Deleting || state == State.Finished">
                 <!-- Show the Bluesky account that is connected -->
                 <hr>
                 <p>
@@ -373,22 +378,45 @@ onUnmounted(async () => {
                         </div>
                     </div>
                 </template>
-            </template>
 
-            <!-- Finished -->
-            <template v-if="state == State.Finished">
-                <!-- TODO: display errors -->
-
-                <p class="text-center">
-                    Finished migrating tweets to Bluesky. <a href="#" @click="viewBlueskyProfileClicked">Check out your
-                        Bluesky profile!</a>
-                </p>
-                <div class="buttons mb-4">
-                    <button type="submit" class="btn btn-primary text-nowrap m-1" @click="state = State.Connected;">
-                        <i class="fa-solid fa-sync" />
-                        Continue
-                    </button>
-                </div>
+                <!-- Finished -->
+                <template v-if="state == State.Finished">
+                    <h2 class="mt-4">
+                        Finished migrating tweets to Bluesky!
+                    </h2>
+                    <p>
+                        You migrated <strong>{{ migratedTweetsCount.toLocaleString() }} tweets</strong> to Bluesky.
+                    </p>
+                    <div v-if="skippedTweetsCount > 0" class="alert alert-warning mt-4">
+                        <p>
+                            <strong>
+                                {{ skippedTweetsCount.toLocaleString() }} tweets
+                            </strong>
+                            were skipped because of errors:
+                        </p>
+                        <ul>
+                            <li v-for="(error, tweetID) in skippedTweetsErrors" :key="tweetID">
+                                <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="buttons mb-4">
+                        <p>
+                            <button type="submit" class="btn btn-success text-nowrap m-1"
+                                @click="viewBlueskyProfileClicked">
+                                <i class="fa-brands fa-bluesky" />
+                                Check out your Bluesky profile!
+                            </button>
+                        </p>
+                        <p>
+                            <button type="submit" class="btn btn-primary text-nowrap m-1"
+                                @click="state = State.Connected;">
+                                <i class="fa-solid fa-forward" />
+                                Continue
+                            </button>
+                        </p>
+                    </div>
+                </template>
             </template>
         </div>
     </div>

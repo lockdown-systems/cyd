@@ -2600,7 +2600,8 @@ export class XAccountController {
         return resp;
     }
 
-    async blueskyMigrateTweet(tweetID: string): Promise<boolean> {
+    // Return true on success, and a string (error message) on error
+    async blueskyMigrateTweet(tweetID: string): Promise<boolean | string> {
         if (!this.db) { this.initDB(); }
         if (!this.account) { throw new Error("Account not found"); }
 
@@ -2610,24 +2611,34 @@ export class XAccountController {
         }
         const did = await this.getConfig("blueskyDID");
         if (!did) {
-            throw new Error("Bluesky DID not found");
+            return 'Bluesky DID not found';
         }
         const session = await this.blueskyClient.restore(did);
         const agent = new Agent(session)
 
         // Select the tweet
-        const tweet: XTweetRow = exec(this.db, `
-            SELECT *
-            FROM tweet
-            WHERE tweetID = ?
-        `, [tweetID], "get") as XTweetRow;
+        let tweet: XTweetRow;
+        try {
+            tweet = exec(this.db, `
+                SELECT *
+                FROM tweet
+                WHERE tweetID = ?
+            `, [tweetID], "get") as XTweetRow;
+        } catch (e) {
+            return `Error selecting tweet: ${e}`;
+        }
 
         // Replace t.co links with actual links
-        const tweetURLs: XTweetURLRow[] = exec(this.db, `
-            SELECT *
-            FROM tweet_url
-            WHERE tweetID = ?
-        `, [tweetID], "all") as XTweetURLRow[];
+        let tweetURLs: XTweetURLRow[];
+        try {
+            tweetURLs = exec(this.db, `
+                SELECT *
+                FROM tweet_url
+                WHERE tweetID = ?
+            `, [tweetID], "all") as XTweetURLRow[];
+        } catch (e) {
+            return `Error selecting tweet URLs: ${e}`;
+        }
         const facets: {
             index: {
                 byteStart: number,
@@ -2658,31 +2669,46 @@ export class XAccountController {
         }
 
         // Get the current user's user ID
-        const userRow: XUserRow = exec(this.db, `
-            SELECT *
-            FROM user
-            WHERE screenName = ?
-        `, [this.account.username], "get") as XUserRow;
+        let userRow: XUserRow;
+        try {
+            userRow = exec(this.db, `
+                SELECT *
+                FROM user
+                WHERE screenName = ?
+            `, [this.account.username], "get") as XUserRow;
+        } catch (e) {
+            return `Error selecting user: ${e}`;
+        }
 
         // Handle replies
         let reply = null;
         if (tweet.isReply && tweet.replyUserID == userRow.userID) {
             // Find the parent tweet migration
-            const parentMigration: XTweetBlueskyMigrationRow = exec(this.db, `
-                SELECT *
-                FROM tweet_bsky_migration
-                WHERE tweetID = ?
-            `, [tweet.replyTweetID], "get") as XTweetBlueskyMigrationRow;
+            let parentMigration: XTweetBlueskyMigrationRow;
+            try {
+                parentMigration = exec(this.db, `
+                    SELECT *
+                    FROM tweet_bsky_migration
+                    WHERE tweetID = ?
+                `, [tweet.replyTweetID], "get") as XTweetBlueskyMigrationRow;
+            } catch (e) {
+                return `Error selecting parent migration: ${e}`;
+            }
             if (parentMigration) {
                 // Find the root tweet in the thread
                 let foundRoot = false;
                 let rootTweetID = tweet.replyTweetID;
                 while (!foundRoot) {
-                    const parentTweet: XTweetRow = exec(this.db, `
-                        SELECT *
-                        FROM tweet
-                        WHERE tweetID = ?
-                    `, [rootTweetID], "get") as XTweetRow;
+                    let parentTweet: XTweetRow;
+                    try {
+                        parentTweet = exec(this.db, `
+                            SELECT *
+                            FROM tweet
+                            WHERE tweetID = ?
+                        `, [rootTweetID], "get") as XTweetRow;
+                    } catch (e) {
+                        return `Error selecting parent tweet: ${e}`;
+                    }
                     if (parentTweet && parentTweet.isReply && parentTweet.replyUserID == userRow.userID) {
                         rootTweetID = parentTweet.replyTweetID;
                     } else {
@@ -2692,11 +2718,16 @@ export class XAccountController {
 
                 if (foundRoot) {
                     // Get the root migration
-                    const rootMigration: XTweetBlueskyMigrationRow = exec(this.db, `
-                        SELECT *
-                        FROM tweet_bsky_migration
-                        WHERE tweetID = ?
-                    `, [rootTweetID], "get") as XTweetBlueskyMigrationRow;
+                    let rootMigration: XTweetBlueskyMigrationRow;
+                    try {
+                        rootMigration = exec(this.db, `
+                            SELECT *
+                            FROM tweet_bsky_migration
+                            WHERE tweetID = ?
+                        `, [rootTweetID], "get") as XTweetBlueskyMigrationRow;
+                    } catch (e) {
+                        return `Error selecting root migration: ${e}`;
+                    }
                     if (rootMigration) {
                         // Build the reply
                         reply = {
@@ -2726,11 +2757,16 @@ export class XAccountController {
             // Self quote
             if (quotedTweetUsername == this.account.username) {
                 // Load the quoted tweet migration
-                const quotedMigration: XTweetBlueskyMigrationRow = exec(this.db, `
-                    SELECT *
-                    FROM tweet_bsky_migration
-                    WHERE tweetID = ?
-                `, [quotedTweetID], "get") as XTweetBlueskyMigrationRow;
+                let quotedMigration: XTweetBlueskyMigrationRow;
+                try {
+                    quotedMigration = exec(this.db, `
+                        SELECT *
+                        FROM tweet_bsky_migration
+                        WHERE tweetID = ?
+                    `, [quotedTweetID], "get") as XTweetBlueskyMigrationRow;
+                } catch (e) {
+                    return `Error selecting quoted migration: ${e}`;
+                }
                 if (quotedMigration) {
                     embed = {
                         '$type': 'app.bsky.embed.record',
@@ -2756,11 +2792,16 @@ export class XAccountController {
         }
 
         // Handle media
-        const tweetMedia: XTweetMediaRow[] = exec(this.db, `
-            SELECT *
-            FROM tweet_media
-            WHERE tweetID = ?
-        `, [tweetID], "all") as XTweetMediaRow[];
+        let tweetMedia: XTweetMediaRow[];
+        try {
+            tweetMedia = exec(this.db, `
+                SELECT *
+                FROM tweet_media
+                WHERE tweetID = ?
+            `, [tweetID], "all") as XTweetMediaRow[];
+        } catch (e) {
+            return `Error selecting tweet media: ${e}`;
+        }
 
         if (tweetMedia.length == 1 && tweetMedia[0].mediaType == "video") {
             // Video media
@@ -2769,7 +2810,12 @@ export class XAccountController {
 
             // Load the video
             const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", tweetMedia[0].filename);
-            const mediaData = fs.readFileSync(mediaPath);
+            let mediaData;
+            try {
+                mediaData = fs.readFileSync(mediaPath);
+            } catch (e) {
+                return `Error reading media file: ${e}`;
+            }
 
             let shouldContinue = true;
 
@@ -2795,7 +2841,12 @@ export class XAccountController {
             if (shouldContinue) {
                 // Upload the video
                 log.info(`XAccountController.blueskyMigrateTweet: uploading video ${tweetMedia[0].filename}`);
-                const resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
+                let resp;
+                try {
+                    resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
+                } catch (e) {
+                    return `Error uploading video: ${e}`;
+                }
                 log.info(`XAccountController.blueskyMigrateTweet: uploaded video ${tweetMedia[0].filename} response`, resp);
                 const videoBlob: BlobRef = resp.data.blob;
 
@@ -2857,7 +2908,12 @@ export class XAccountController {
             for (const media of tweetMedia) {
                 // Load the image
                 const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", media.filename);
-                const mediaData = fs.readFileSync(mediaPath);
+                let mediaData;
+                try {
+                    mediaData = fs.readFileSync(mediaPath);
+                } catch (e) {
+                    return `Error reading media file: ${e}`;
+                }
 
                 // Make sure it's not too big
                 if (mediaData.length > maxSize) {
@@ -2877,7 +2933,12 @@ export class XAccountController {
 
                 // Upload the image
                 log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
-                const resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
+                let resp;
+                try {
+                    resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
+                } catch (e) {
+                    return `Error uploading image: ${e}`;
+                }
                 log.info(`XAccountController.blueskyMigrateTweet: uploaded image ${media.filename} response`, resp);
 
                 // Add it to the list
@@ -2959,8 +3020,7 @@ export class XAccountController {
 
             return true;
         } catch (e) {
-            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
-            return false;
+            return `Error posting to Bluesky: ${e}`;
         }
     }
 

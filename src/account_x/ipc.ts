@@ -474,7 +474,7 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:blueskyMigrateTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+    ipcMain.handle('X:blueskyMigrateTweet', async (_, accountID: number, tweetID: string): Promise<boolean | string> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyMigrateTweet(tweetID);

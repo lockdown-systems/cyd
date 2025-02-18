@@ -137,7 +137,7 @@ declare global {
                 blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;
                 blueskyDisconnect: (accountID: number) => Promise<void>;
                 blueskyGetTweetCounts: (accountID: number) => Promise<XMigrateTweetCounts>;
-                blueskyMigrateTweet: (accountID: number, tweetID: string) => Promise<boolean>;
+                blueskyMigrateTweet: (accountID: number, tweetID: string) => Promise<boolean | string>;
                 blueskyDeleteMigratedTweet: (accountID: number, tweetID: string) => Promise<boolean>;
             };
             Facebook: {
