@@ -8,6 +8,7 @@ import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
+import { openURL } from '../../util'
 
 enum State {
     Loading,
@@ -16,6 +17,7 @@ enum State {
     FinishInBrowser,
     Connected,
     Migrating,
+    Finished,
 }
 
 const state = ref<State>(State.Loading);
@@ -105,21 +107,25 @@ const migrateClicked = async () => {
             console.error('Failed to migrate tweet', tweetID);
         }
 
-        // Wait 5 second before migrating the next tweet
-        // await new Promise(resolve => setTimeout(resolve, 5000));
-
         // Cancel early
         if (shouldCancelMigration.value) {
             await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
             state.value = State.Connected;
             await loadTweetCounts();
-            break;
+            return;
         }
     }
+
+    await loadTweetCounts();
+    state.value = State.Finished;
 }
 
 const migrateCancelClicked = async () => {
     shouldCancelMigration.value = true;
+}
+
+const viewBlueskyProfileClicked = async () => {
+    await openURL(`https://bsky.app/profile/${blueskyProfile.value?.handle}`);
 }
 
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
@@ -301,6 +307,22 @@ onUnmounted(async () => {
                         </button>
                     </div>
                 </template>
+            </template>
+
+            <!-- Finished -->
+            <template v-if="state == State.Finished">
+                <!-- TODO: display errors -->
+
+                <p class="text-center">
+                    Finished migrating tweets to Bluesky. <a href="#" @click="viewBlueskyProfileClicked">Check out your
+                        Bluesky profile!</a>
+                </p>
+                <div class="buttons mb-4">
+                    <button type="submit" class="btn btn-primary text-nowrap m-1" @click="state = State.Connected;">
+                        <i class="fa-solid fa-sync" />
+                        Continue
+                    </button>
+                </div>
             </template>
         </div>
     </div>

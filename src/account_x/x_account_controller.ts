@@ -2668,7 +2668,7 @@ export class XAccountController {
             record['facets'] = facets;
         }
 
-        // TODO: add media, reply_to, and links
+        // TODO: add media, reply_to, quotes
         // See: https://docs.bsky.app/docs/advanced-guides/posts#replies-quote-posts-and-embeds
 
         try {
