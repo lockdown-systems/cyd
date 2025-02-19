@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 
 import {
     XViewModel,
@@ -44,6 +44,9 @@ const hasSomeData = ref<boolean>(false);
 const lastImportArchive = ref<Date | null>(null);
 const lastBuildDatabase = ref<Date | null>(null);
 
+const xUpdateUserAuthenticated = inject('xUpdateUserAuthenticated') as () => Promise<void>;
+const xUpdateUserPremium = inject('xUpdateUserPremium') as () => Promise<void>;
+
 // Props
 const props = defineProps<{
     model: XViewModel;
@@ -54,8 +57,6 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
     setState: [value: XState]
-    updateUserAuthenticated: []
-    updateUserPremium: []
 }>()
 
 const connectClicked = async () => {
@@ -121,6 +122,9 @@ const migrateClicked = async () => {
     }
     // Otherwise, make sure the user is authenticated
     else {
+        await xUpdateUserAuthenticated();
+        await xUpdateUserPremium();
+
         if (!props.userAuthenticated || !props.userPremium) {
             localStorage.setItem(`premiumCheckReason-${props.model.account.id}`, 'migrateTweetsToBluesky');
             localStorage.setItem(`premiumTasks-${props.model.account.id}`, JSON.stringify(['Migrate tweets to Bluesky']));
@@ -207,9 +211,6 @@ const isArchiveOld = computed(() => {
 });
 
 onMounted(async () => {
-    emit('updateUserAuthenticated');
-    emit('updateUserPremium');
-
     // Load the last time the archive was imported and the database was built
     hasSomeData.value = await xHasSomeData(props.model.account.id);
     lastImportArchive.value = await xGetLastImportArchive(props.model.account.id);

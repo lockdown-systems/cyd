@@ -8,6 +8,7 @@ import {
     onUnmounted,
     inject,
     getCurrentInstance,
+    provide,
 } from 'vue'
 import Electron from 'electron';
 
@@ -206,6 +207,7 @@ const updateUserAuthenticated = async () => {
     userAuthenticated.value = await apiClient.value.ping() && deviceInfo.value?.valid ? true : false;
     console.log('updateUserAuthenticated', 'User authenticated', userAuthenticated.value);
 };
+provide('xUpdateUserAuthenticated', updateUserAuthenticated);
 
 const updateUserPremium = async () => {
     if (!userAuthenticated.value) {
@@ -230,6 +232,7 @@ const updateUserPremium = async () => {
 
     console.log('updateUserPremium', 'User premium', userPremium.value);
 };
+provide('xUpdateUserPremium', updateUserPremium);
 
 emitter?.on('signed-in', async () => {
     console.log('XView: User signed in');
@@ -503,8 +506,7 @@ onUnmounted(async () => {
 
                         <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
                             :user-authenticated="userAuthenticated" :user-premium="userPremium"
-                            @set-state="setState($event)" @update-user-authenticated="updateUserAuthenticated"
-                            @update-user-premium="updateUserPremium" />
+                            @set-state="setState($event)" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                             :model="unref(model)"
