@@ -96,7 +96,7 @@ const updateUserActivity = async () => {
 };
 
 // Update user activity periodically (every 6 hours)
-let userActivityInterval: NodeJS.Timeout | null = null;
+let userActivityInterval: ReturnType<typeof setTimeout> | null = null;
 
 const startUserActivityInterval = () => {
   if (userActivityInterval) {
