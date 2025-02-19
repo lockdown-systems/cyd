@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
+import unzipper from 'unzipper';
 
 import {
     getAccountDataPath,
@@ -236,9 +237,20 @@ export class FacebookAccountController {
         return setConfig(key, value, this.db);
     }
 
-    async unzipFacebookArchive(archivePath: string): Promise<string | null> {
-        // TODO: implement
-        return null;
+    // Unzip facebook archive to the account data folder using unzipper
+    // Return null if error, else return the unzipped path
+    async unzipFacebookArchive(archiveZipPath: string): Promise<string | null> {
+        if (!this.account) {
+            return null;
+        }
+        const unzippedPath = path.join(getAccountDataPath("Facebook", this.account.accountID), "tmp");
+
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        await archiveZip.extract({ path: unzippedPath });
+
+        log.info(`FacebookAccountController.unzipFacebookArchive: unzipped to ${unzippedPath}`);
+
+        return unzippedPath;
     }
 
     async deleteUnzippedFacebookArchive(archivePath: string): Promise<void> {
