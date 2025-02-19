@@ -157,6 +157,9 @@ async function registerDevice() {
     signInState.value = 'token';
     hide();
 
+    // Update user activity immediately after successful sign in
+    await apiClient.value.postUserActivity();
+
     // Emit the signed-in event
     emitter?.emit('signed-in');
 }
