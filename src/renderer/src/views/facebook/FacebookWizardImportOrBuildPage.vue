@@ -20,7 +20,11 @@ const emit = defineEmits<{
 
 // Buttons
 const nextClicked = async () => {
-    emit('setState', State.WizardBuildOptions);
+    if (buildDatabaseStrategy.value === 'importArchive') {
+        emit('setState', State.WizardImportStart);
+    } else if (buildDatabaseStrategy.value === 'buildFromScratch') {
+        emit('setState', State.WizardBuildOptions);
+    }
 };
 
 // Settings
