@@ -84,6 +84,35 @@ emitter?.on('show-advanced-settings', () => {
   showAdvancedSettingsModal.value = true;
 });
 
+// Track whether a user is actively using Cyd
+const updateUserActivity = async () => {
+  if (isSignedIn.value) {
+    try {
+      await apiClient.value.postUserActivity();
+    } catch (error) {
+      console.error("Failed to update user activity:", error);
+    }
+  }
+};
+
+// Update user activity periodically (every 6 hours)
+let userActivityInterval: NodeJS.Timeout | null = null;
+
+const startUserActivityInterval = () => {
+  if (userActivityInterval) {
+    clearInterval(userActivityInterval);
+  }
+  // Update every 6 hours (6 * 60 * 60 * 1000 = 21600000 ms)
+  userActivityInterval = setInterval(updateUserActivity, 21600000);
+};
+
+// Stop the interval when signing out
+emitter?.on('signed-out', () => {
+  if (userActivityInterval) {
+    clearInterval(userActivityInterval);
+    userActivityInterval = null;
+  }
+});
 
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
@@ -100,11 +129,8 @@ onMounted(async () => {
 
   // If logged in, update the server with user activity (gets truncated to day)
   if (isSignedIn.value) {
-    try {
-      await apiClient.value.postUserActivity();
-    } catch (error) {
-      console.error("Failed to update user activity:", error);
-    }
+    await updateUserActivity();
+    startUserActivityInterval();
   }
 
   isReady.value = true;
