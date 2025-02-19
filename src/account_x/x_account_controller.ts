@@ -2522,16 +2522,7 @@ export class XAccountController {
         if (!this.account) { throw new Error("Account not found"); }
 
         const username = this.account.username;
-
-        // Get the current user's X userID
-        const userRow: XUserRow = exec(this.db, `
-            SELECT *
-            FROM user
-            WHERE screenName = ?
-        `, [username], "get") as XUserRow;
-        if (!userRow) {
-            throw new Error("User not found");
-        }
+        const userID = this.account.userID;
 
         const toMigrateTweets: XTweetRow[] = exec(this.db, `
             SELECT tweet.*
@@ -2544,7 +2535,7 @@ export class XAccountController {
             AND tweet.deletedTweetAt IS NULL
             AND (tweet.isReply = ? OR (tweet.isReply = ? AND tweet.replyUserID = ?))
             ORDER BY tweet.createdAt ASC
-        `, ["RT @%", 0, username, 0, 1, userRow.userID], "all") as XTweetRow[];
+        `, ["RT @%", 0, username, 0, 1, userID], "all") as XTweetRow[];
         const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
 
         const cannotMigrate: Sqlite3Count = exec(this.db, `
@@ -2557,7 +2548,7 @@ export class XAccountController {
             AND tweet.username = ?
             AND tweet.deletedTweetAt IS NULL
             AND (tweet.isReply = ? AND tweet.replyUserID != ?)
-        `, ["RT @%", 0, username, 1, userRow.userID], "get") as Sqlite3Count;
+        `, ["RT @%", 0, username, 1, userID], "get") as Sqlite3Count;
 
         const alreadyMigratedTweets: XTweetRow[] = exec(this.db, `
             SELECT tweet.*
