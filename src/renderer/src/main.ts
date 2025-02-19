@@ -132,6 +132,7 @@ declare global {
                 setConfig: (accountID: number, key: string, value: string) => Promise<void>;
                 deleteConfig: (accountID: number, key: string) => Promise<void>;
                 deleteConfigLike: (accountID: number, key: string) => Promise<void>;
+                getImageDataURI: (accountID: number, url: string) => Promise<string>;
                 blueskyGetProfile: (accountID: number) => Promise<BlueskyMigrationProfile | null>;
                 blueskyAuthorize: (accountID: number, handle: string) => Promise<boolean | string>;
                 blueskyCallback: (accountID: number, queryString: string) => Promise<boolean | string>;

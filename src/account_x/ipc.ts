@@ -429,6 +429,15 @@ export const defineIPCX = () => {
         }
     });
 
+    ipcMain.handle('X:getImageDataURI', async (_, accountID: number, url: string): Promise<string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getImageDataURI(url);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
     ipcMain.handle('X:blueskyGetProfile', async (_, accountID: number): Promise<BlueskyMigrationProfile | null> => {
         try {
             const controller = getXAccountController(accountID);

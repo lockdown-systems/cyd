@@ -866,12 +866,12 @@ export class XAccountController {
         })
     }
 
-    async getProfileImageDataURI(user: XAPIUser): Promise<string> {
-        if (!user.profile_image_url_https) {
+    async getImageDataURI(url: string): Promise<string> {
+        if (!url) {
             return "";
         }
         try {
-            const response = await fetch(user.profile_image_url_https, {});
+            const response = await fetch(url, {});
             if (!response.ok) {
                 return "";
             }
@@ -889,7 +889,7 @@ export class XAccountController {
         }
 
         // Download the profile image
-        const profileImageDataURI = await this.getProfileImageDataURI(user);
+        const profileImageDataURI = user.profile_image_url_https ? await this.getImageDataURI(user.profile_image_url_https) : "";
 
         // Have we seen this user before?
         const existing: XUserRow[] = exec(this.db, 'SELECT * FROM user WHERE userID = ?', [user.id_str], "all") as XUserRow[];
@@ -2390,7 +2390,10 @@ export class XAccountController {
     }
 
     async getCookie(hostname: string, name: string): Promise<string | null> {
-        log.debug(`XAccountController.getCookie: hostname=${hostname}, name=${name}, cookies=${JSON.stringify(this.cookies)}`);
+        log.debug(`XAccountController.getCookie: hostname=${hostname}, name=${name}`);
+        if (!this.cookies[hostname]) {
+            return null;
+        }
         return this.cookies[hostname][name] || null;
     }
 

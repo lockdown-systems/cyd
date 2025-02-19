@@ -15,9 +15,13 @@ import {
     XDeleteReviewStats, emptyXDeleteReviewStats,
     XAccount
 } from '../../../shared_types';
+import { XViewerResults, XUserInfo } from "../types_x"
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
 import { xHasSomeData } from '../util_x';
+
+// This is the Bearer token used by X's public web client, it's not a secret
+const X_AUTHORIZATION_HEADER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 
 export enum State {
     Login = "Login",
@@ -225,15 +229,13 @@ export class XViewModel extends BaseViewModel {
     // Returns the API response's status code, or 0 on error
     async graphqlDelete(ct0: string, url: string, referrer: string, body: string): Promise<number> {
         this.log("graphqlDelete", [url, body]);
-        // Note: The Bearer token in the authorization header is X/Twitter's public web client bearer
-        // token used by x.com. It's publically visible in their web app and is not a secret.
         return await this.getWebview()?.executeJavaScript(`
             (async () => {
                 const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
                 try {
                     const response = await fetch('${url}', {
                         "headers": {
-                            "authorization": "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+                            "authorization": "${X_AUTHORIZATION_HEADER}",
                             "content-type": "application/json",
                             "x-client-transaction-id": transactionID,
                             "x-csrf-token": '${ct0}',
@@ -258,6 +260,73 @@ export class XViewModel extends BaseViewModel {
                 }
             })();
         `);
+    }
+
+    // Returns an XUserInfo object, or null on error
+    async graphqlGetViewerUser(): Promise<XUserInfo | null> {
+        this.log("graphqlGetViewerUser");
+        const url = 'https://api.x.com/graphql/WBT8ommFCSHiy3z2_4k1Vg/Viewer?variables=%7B%22withCommunitiesMemberships%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%7D&fieldToggles=%7B%22isDelegate%22%3Afalse%2C%22withAuxiliaryUserLabels%22%3Afalse%7D';
+        const ct0 = await window.electron.X.getCookie(this.account?.id, 'api.x.com', 'ct0');
+
+        if (ct0 === null) {
+            this.log("graphqlGetViewerUser", "ct0 is null");
+            return null;
+        }
+
+        const resp: string | null = await this.getWebview()?.executeJavaScript(`
+            (async () => {
+                const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
+                try {
+                    const response = await fetch('${url}', {
+                        "headers": {
+                            "authorization": "${X_AUTHORIZATION_HEADER}",
+                            "content-type": "application/json",
+                            "x-client-transaction-id": transactionID,
+                            "x-csrf-token": '${ct0}',
+                            "x-twitter-client-language": "en",
+                            "x-twitter-active-user": "yes",
+                            "origin": 'https://x.com',
+                            "sec-fetch-site": "same-site",
+                            "sec-fetch-mode": "cors",
+                            "sec-fetch-dest": "empty"
+                        },
+                        "referrer": 'https://x.com/',
+                        "method": "GET",
+                        "mode": "cors",
+                        "credentials": "include",
+                        "signal": AbortSignal.timeout(5000)
+                    })
+                    if (response.status == 200) {
+                        return await response.text();
+                    }
+                    return null;
+                } catch (e) {
+                    return null;
+                }
+            })();
+        `);
+
+        if (resp === null) {
+            this.log("graphqlGetViewerUser", "response is null");
+            return null;
+        } else {
+            try {
+                const viewerResults: XViewerResults = JSON.parse(resp);
+                const userInfo: XUserInfo = {
+                    username: viewerResults.data.viewer.user_results.result.legacy.screen_name,
+                    userID: viewerResults.data.viewer.user_results.result.rest_id,
+                    profileImageDataURI: await window.electron.X.getImageDataURI(this.account.id, viewerResults.data.viewer.user_results.result.legacy.profile_image_url_https),
+                    followingCount: viewerResults.data.viewer.user_results.result.legacy.friends_count,
+                    followersCount: viewerResults.data.viewer.user_results.result.legacy.followers_count,
+                    tweetsCount: viewerResults.data.viewer.user_results.result.legacy.statuses_count,
+                    likesCount: viewerResults.data.viewer.user_results.result.legacy.favourites_count,
+                };
+                return userInfo;
+            } catch (e) {
+                this.log("graphqlGetViewerUser", `error parsing response: ${resp}`);
+                return null;
+            }
+        }
     }
 
     async waitForRateLimit() {
@@ -504,8 +573,6 @@ export class XViewModel extends BaseViewModel {
     }
 
     async login() {
-        const originalUsername = this.account && this.account?.xAccount && this.account?.xAccount.username ? this.account?.xAccount.username : null;
-
         this.showBrowser = true;
 
         this.log("login", "logging in");
@@ -545,10 +612,6 @@ export class XViewModel extends BaseViewModel {
         this.log("login", "getting username and userID and profile picture");
         this.instructions = `I'm discovering your username and profile picture...`;
 
-        // /graphql/WBT8ommFCSHiy3z2_4k1Vg/Viewer
-
-
-
         if (this.webview?.getURL() != "https://x.com/home") {
             await this.loadURLWithRateLimit("https://x.com/home");
         }
@@ -560,42 +623,26 @@ export class XViewModel extends BaseViewModel {
             await this.scriptClickElementWithinElementLast('div[data-testid="BottomBar"]', 'button');
         }
 
-        // Wait for profile button to appear, and click it
-        await this.waitForSelector('a[data-testid="AppTabBar_Profile_Link"]', "https://x.com/home");
-        await this.scriptClickElement('a[data-testid="AppTabBar_Profile_Link"]');
-
-        // Wait for profile page to load, and get the username from the URL
-        await this.waitForSelector('div[data-testid="UserName"]');
-        const url = this.webview?.getURL() || '';
-        const urlObj = new URL(url);
-        const username = urlObj.pathname.substring(1);
-
-        if (originalUsername !== null && username != originalUsername) {
-            this.log("login", `username changed from ${this.account?.xAccount?.username} to ${username}`);
-            // TODO: username changed error
-            console.error(`Username changed from ${originalUsername} to ${username}!`);
+        const userInfo: XUserInfo | null = await this.graphqlGetViewerUser();
+        if (userInfo === null) {
+            await this.error(AutomationErrorType.X_login_GetViewerUserFailed, {
+                exception: "userInfo is null"
+            });
             return;
         }
 
-        // Save the username
-        if (this.account && this.account?.xAccount && username) {
-            this.account.xAccount.username = username;
+        // Save the user information
+        if (this.account && this.account?.xAccount) {
+            this.account.xAccount.username = userInfo.username;
+            this.account.xAccount.userID = userInfo.userID;
+            this.account.xAccount.profileImageDataURI = userInfo.profileImageDataURI;
+            this.account.xAccount.followersCount = userInfo.followersCount;
+            this.account.xAccount.followingCount = userInfo.followingCount;
+            this.account.xAccount.tweetsCount = userInfo.tweetsCount;
+            this.account.xAccount.likesCount = userInfo.likesCount;
         }
         await window.electron.database.saveAccount(JSON.stringify(this.account));
-        this.log("login", "saved username");
-
-        await this.waitForPause();
-
-        // Get the profile image
-        this.log("login", "getting profile image");
-        this.instructions = `You're logged in as **@${username}**. I'm downloading your profile image...`;
-
-        await this.loadURLWithRateLimit(`https://x.com/${username}/photo`);
-        await this.waitForSelector('div[data-testid="swipe-to-dismiss"]', `https://x.com/${username}/photo`);
-
-        const profileImageURL = await this.getWebview()?.executeJavaScript(`document.querySelector('div[data-testid="swipe-to-dismiss"]').querySelector('img').src`);
-        await window.electron.X.saveProfileImage(this.account?.id, profileImageURL);
-        this.log("login", ["saved profile image", profileImageURL]);
+        this.log("login", "saved user information");
 
         await this.waitForPause();
     }

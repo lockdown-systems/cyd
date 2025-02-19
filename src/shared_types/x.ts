@@ -30,6 +30,14 @@ export type XTweet = {
     deletedAt: Date | null;
 };
 
+export interface XUser {
+    id: number | null;
+    userID: string;
+    name: string | null;
+    screenName: string;
+    profileImageDataURI: string | null;
+}
+
 // Other X types
 
 export type XProgress = {

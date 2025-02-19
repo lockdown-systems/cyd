@@ -302,6 +302,9 @@ contextBridge.exposeInMainWorld('electron', {
         deleteConfigLike: (accountID: number, key: string): Promise<void> => {
             return ipcRenderer.invoke('X:deleteConfigLike', accountID, key);
         },
+        getImageDataURI: (accountID: number, url: string): Promise<void> => {
+            return ipcRenderer.invoke('X:getImageDataURI', accountID, url);
+        },
         blueskyGetProfile: (accountID: number): Promise<BlueskyMigrationProfile | null> => {
             return ipcRenderer.invoke('X:blueskyGetProfile', accountID);
         },
