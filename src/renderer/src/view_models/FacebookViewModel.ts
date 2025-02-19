@@ -27,6 +27,8 @@ export enum State {
     WizardBuildOptions = "WizardBuildOptions",
     WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
 
+    WizardDeleteOptions = "WizardDeleteOptions",
+
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
 
