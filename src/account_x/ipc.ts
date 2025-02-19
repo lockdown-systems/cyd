@@ -3,7 +3,6 @@ import { ipcMain } from 'electron'
 import { XAccountController } from './x_account_controller';
 
 import {
-    XAccount,
     XJob,
     XProgress,
     XArchiveStartResponse,
@@ -82,15 +81,6 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             await controller.indexStop();
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('X:indexParseAllJSON', async (_, accountID: number): Promise<XAccount> => {
-        try {
-            const controller = getXAccountController(accountID);
-            return await controller.indexParseAllJSON();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

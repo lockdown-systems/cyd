@@ -79,7 +79,6 @@ import {
     XAPIConversationTimeline,
     XAPIMessage,
     XAPIUser,
-    XAPIAll,
     XArchiveAccount,
     XArchiveTweet,
     XArchiveTweetContainer,
@@ -502,59 +501,6 @@ export class XAccountController {
         await this.mitmController.stopMonitoring();
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await this.mitmController.stopMITM(ses);
-    }
-
-    // Parse all.json and returns stats about the user
-    async indexParseAllJSON(): Promise<XAccount> {
-        if (!this.account) {
-            throw new Error("XAccountController.indexParseAllJSON: account not found");
-        }
-
-        await this.mitmController.clearProcessed();
-        log.info(`XAccountController.indexParseAllJSON: parsing ${this.mitmController.responseData.length} responses`);
-
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            const responseData = this.mitmController.responseData[i];
-            log.info('XAccountController.indexParseAllJSON: processing', responseData.url);
-
-            if (responseData.processed) {
-                continue;
-            }
-
-            if (
-                responseData.url.includes("/i/api/2/notifications/all.json?") &&
-                responseData.status == 200
-            ) {
-                const body: XAPIAll = JSON.parse(responseData.body);
-                if (!body.globalObjects || !body.globalObjects.users) {
-                    continue;
-                }
-
-                // Loop through the users
-                Object.values(body.globalObjects.users).forEach((user: XAPIUser) => {
-                    // If it's the logged in user, get the stats
-                    if (user.screen_name == this.account?.username) {
-                        // Update the account
-                        this.account.followingCount = user.friends_count;
-                        this.account.followersCount = user.followers_count;
-                        this.account.tweetsCount = user.statuses_count;
-                        this.account.likesCount = user.favourites_count;
-                        log.info('XAccountController.indexParseAllJSON: found the following data', {
-                            followingCount: this.account.followingCount,
-                            followersCount: this.account.followersCount,
-                            tweetsCount: this.account.tweetsCount,
-                            likesCount: this.account.likesCount
-                        });
-                        saveXAccount(this.account);
-                    }
-                });
-            }
-
-            this.mitmController.responseData[i].processed = true;
-            log.info('XAccountController.indexParseAllJSON: processed', i);
-        }
-
-        return this.account;
     }
 
     indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {

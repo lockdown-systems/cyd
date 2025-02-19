@@ -15,7 +15,6 @@ import {
     XProgressInfo,
     XDatabaseStats,
     XDeleteReviewStats,
-    XAccount,
     XImportArchiveResponse,
     XMigrateTweetCounts,
     // Facebook
@@ -178,9 +177,6 @@ contextBridge.exposeInMainWorld('electron', {
         },
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
-        },
-        indexParseAllJSON: (accountID: number): Promise<XAccount> => {
-            return ipcRenderer.invoke('X:indexParseAllJSON', accountID)
         },
         indexParseTweets: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseTweets', accountID)

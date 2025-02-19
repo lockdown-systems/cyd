@@ -538,17 +538,6 @@ export interface XAPIConversationTimeline {
     }
 }
 
-// Gather user stats
-
-export interface XAPIAll {
-    globalObjects: {
-        users: {
-            [key: string]: XAPIUser
-        }
-    },
-    timeline: any
-}
-
 // Official X Archive types
 
 export interface XArchiveAccount {

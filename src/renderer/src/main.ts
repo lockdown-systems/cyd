@@ -21,7 +21,6 @@ import type {
     XProgressInfo,
     XDatabaseStats,
     XDeleteReviewStats,
-    XAccount,
     XImportArchiveResponse,
     XMigrateTweetCounts,
     // Facebook
@@ -93,7 +92,6 @@ declare global {
                 updateJob: (accountID: number, jobJSON: string) => Promise<void>;
                 indexStart: (accountID: number) => Promise<void>;
                 indexStop: (accountID: number) => Promise<void>;
-                indexParseAllJSON: (accountID: number) => Promise<XAccount>;
                 indexParseTweets: (accountID: number) => Promise<XProgress>;
                 indexParseConversations: (accountID: number) => Promise<XProgress>;
                 indexIsThereMore: (accountID: number) => Promise<boolean>;
