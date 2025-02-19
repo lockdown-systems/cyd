@@ -515,6 +515,21 @@ You can either import a Facebook archive, or I can build it from scratch by scro
                     this.state = State.WizardImportOrBuildDisplay;
                     break;
 
+                case State.WizardImportStart:
+                    this.showBrowser = false;
+                    this.instructions = `
+**Before you can import your Facebook archive, you need to download it.**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardImportStartDisplay;
+                    break;
+
+                case State.WizardImportDownload:
+                    this.showBrowser = false;
+                    this.instructions = `You have requested your Facebook archive, so now we wait.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardImportDownloadDisplay;
+                    break;
+
                 case State.Debug:
                     // Stay in this state until the user cancels it
                     this.showBrowser = false
