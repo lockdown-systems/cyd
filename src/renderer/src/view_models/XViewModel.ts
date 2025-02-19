@@ -12,8 +12,7 @@ import {
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
-    XDeleteReviewStats, emptyXDeleteReviewStats,
-    XAccount
+    XDeleteReviewStats, emptyXDeleteReviewStats
 } from '../../../shared_types';
 import { XViewerResults, XUserInfo } from "../types_x"
 import { PlausibleEvents } from "../types";
@@ -600,6 +599,7 @@ export class XViewModel extends BaseViewModel {
         // We're logged in
         this.log("login", "login succeeded");
         this.showAutomationNotice = true;
+        await this.sleep(1000);
 
         // If this is the first time we're logging in, track it
         if (this.state === State.Login) {
@@ -652,32 +652,10 @@ export class XViewModel extends BaseViewModel {
         this.showBrowser = true;
         this.showAutomationNotice = true;
 
-        // Start monitoring network requests so we can detect all.json, which should include user stats like tweet count, like count, etc.
-        await window.electron.X.indexStart(this.account?.id);
-
-        // Load notifications
         this.log("login", "getting user stats");
         this.instructions = `I'm trying to determine your total tweets and likes, according to X...`;
 
-        await this.loadURLWithRateLimit('https://x.com/home');
-        await this.loadURLWithRateLimit('https://x.com/notifications');
-        try {
-            await this.waitForSelector('div[data-testid="primaryColumn"]', 'https://x.com/notifications', 5000);
-        } catch (e) {
-            this.log("loadUserStats", ["selector never appeared", e]);
-        }
-        await this.sleep(3000);
-
-        // Stop monitoring network requests
-        await window.electron.X.indexStop(this.account?.id);
-
-        // Get user stats
-        const account: XAccount = await window.electron.X.indexParseAllJSON(this.account?.id);
-        this.account.xAccount = account;
-        this.emitter?.emit("account-updated");
-
-        this.log("loadUserStats", `${account.tweetsCount} tweets, ${account.likesCount} likes, ${account.followingCount} following, ${account.followersCount} followers`);
-
+        await this.login()
         await window.electron.X.setConfig(this.account?.id, 'reloadUserStats', 'false');
 
         await this.waitForPause();
