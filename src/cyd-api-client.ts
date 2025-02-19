@@ -567,4 +567,22 @@ export default class CydAPIClient {
             return this.returnError("Failed to subscribe to newsletter. Maybe the server is down?")
         }
     }
+
+    // User activity
+
+    async postUserActivity(): Promise<boolean | APIErrorResponse> {
+        if (!await this.validateAPIToken()) {
+            return this.returnError("Failed to get a new API token.")
+        }
+
+        try {
+            const response = await this.fetchAuthenticated("POST", `${this.apiURL}/user/activity`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to update user activity.", response.status)
+            }
+            return true;
+        } catch {
+            return this.returnError("Failed to update user activity. Maybe the server is down?")
+        }
+    }
 }
