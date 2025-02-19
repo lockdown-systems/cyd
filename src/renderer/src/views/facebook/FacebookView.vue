@@ -22,6 +22,7 @@ import FacebookWizardImportOrBuildPage from './FacebookWizardImportOrBuildPage.v
 import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
 import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
 import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage.vue';
+import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
 
 import type {
     Account,
@@ -391,6 +392,9 @@ onUnmounted(async () => {
                             @set-state="setState($event)" />
 
                         <FacebookWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
+                        <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
                             @set-state="setState($event)" />
 
                         <!-- Debug state -->
