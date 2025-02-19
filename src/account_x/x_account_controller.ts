@@ -2284,15 +2284,28 @@ export class XAccountController {
         const mediaURL = getMediaURL(media);
         const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
         const filename = `${media["id_str"]}.${mediaExtension}`;
-        const archiveMediaFilename = path.join(
-            archivePath,
-            "data",
-            "tweets_media",
-            `${tweetID}-${mediaURL.substring(mediaURL.lastIndexOf("/") + 1)}`
-        );
+
+        let archiveMediaFilename = null;
+        if (media.type === "video" && media.video_info?.variants) {
+            // For videos, find the highest quality MP4 variant
+            const mp4Variants = media.video_info.variants
+                .filter(v => v.content_type === "video/mp4")
+                .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+
+            if (mp4Variants.length > 0) {
+                const highestQualityVariant = mp4Variants[0];
+                const videoFilename = highestQualityVariant.url.split('/').pop()?.split('?')[0];
+                if (videoFilename) {
+                    archiveMediaFilename = path.join(archivePath, "data", "tweets_media", `${tweetID}-${videoFilename}`);
+                }
+            }
+        } else {
+            // For non-videos
+            archiveMediaFilename = path.join(archivePath, "data", "tweets_media", `${tweetID}-${mediaURL.substring(mediaURL.lastIndexOf("/") + 1)}`);
+        }
 
         // If file doesn't exist in archive, don't save information in db
-        if (!fs.existsSync(archiveMediaFilename)) {
+        if (!archiveMediaFilename || !fs.existsSync(archiveMediaFilename)) {
             log.info(`XAccountController.saveXArchiveMedia: media file not found: ${archiveMediaFilename}`);
             return null;
         }
