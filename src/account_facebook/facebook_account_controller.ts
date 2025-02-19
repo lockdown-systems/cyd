@@ -6,6 +6,7 @@ import { session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import unzipper from 'unzipper';
+import { JSDOM } from 'jsdom';
 
 import {
     getAccountDataPath,
@@ -263,12 +264,78 @@ export class FacebookAccountController {
         });
     }
 
+    // Return null on success, and a string (error message) on error
     async verifyFacebookArchive(archivePath: string): Promise<string | null> {
-        // TODO: implement
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
+
+        const foldersToCheck = [
+            archivePath,
+            path.join(archivePath, "personal_information/profile_information"),
+        ];
+
+        // Make sure folders exist
+        for (let i = 0; i < foldersToCheck.length; i++) {
+            if (!fs.existsSync(foldersToCheck[i])) {
+                log.error(`XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]}`);
+                return `The folder ${foldersToCheck[i]} doesn't exist.`;
+            }
+        }
+
+        // Make sure profile_information.html exists and is readable
+        const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.html");
+        if (!fs.existsSync(profileInformationPath)) {
+            log.error(`FacebookAccountController.verifyFacebookArchive: file does not exist: ${profileInformationPath}`);
+            return `The file ${profileInformationPath} doesn't exist.`;
+        }
+        try {
+            fs.accessSync(profileInformationPath, fs.constants.R_OK);
+        } catch {
+            log.error(`FacebookAccountController.verifyFacebookArchive: file is not readable: ${profileInformationPath}`);
+            return `The file ${profileInformationPath} is not readable.`;
+        }
+
+        // Make sure the profile_information.html file belongs to the right account
+        try {
+            const html = fs.readFileSync(profileInformationPath, 'utf-8');
+            const dom = new JSDOM(html);
+
+            // Find the profile URL in the table
+            const profileCell = Array.from(dom.window.document.querySelectorAll('td')).find(
+                td => td.textContent?.includes('facebook.com/profile.php?id=')
+            );
+
+            if (!profileCell) {
+                log.error("FacebookAccountController.verifyFacebookArchive: Could not find profile ID in archive");
+                return "Could not find profile ID in archive";
+            }
+
+            const profileUrl = profileCell.querySelector('a')?.href;
+            const profileId = profileUrl?.split('id=')[1];
+
+            if (!profileId) {
+                log.error("FacebookAccountController.verifyFacebookArchive: Could not extract profile ID from URL");
+                return "Could not extract profile ID from URL";
+            }
+
+            if (profileId !== this.account?.accountID) {
+                log.error(`FacebookAccountController.verifyFacebookArchive: profile_information.html does not belong to the right account`);
+                return `This archive is for @${profileId}, not @${this.account?.accountID}.`;
+            }
+        } catch {
+            return "Error parsing JSON in profile_information.html";
+        }
+
         return null;
     }
 
     async importFacebookArchive(archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> {
+        log.info("FacebookAccountController.importFacebookArchive: importing ", archivePath);
+        log.info("FacebookAccountController.importFacebookArchive: dataType ", dataType);
+
         // TODO: implement
         return {
             status: 'error',
