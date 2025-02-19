@@ -2901,8 +2901,7 @@ export class XAccountController {
                     }
                 }
             }
-
-        } else {
+        } else if (tweetMedia.length > 0) {
             // Images media
             // max size for images: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/images.json
             const maxSize = 1000000;
