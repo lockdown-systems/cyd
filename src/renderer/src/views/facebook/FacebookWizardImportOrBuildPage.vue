@@ -47,11 +47,26 @@ onMounted(() => {
             <form @submit.prevent>
                 <div class="mb-3">
                     <div class="form-check">
+                        <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
+                            class="form-check-input">
+                        <label class="form-check-label" for="importArchive">
+                            Import Meta archive
+                            <span class="ms-2 text-muted">(recommended)</span>
+                        </label>
+                    </div>
+                    <div class="indent">
+                        <small>
+                            Importing your Meta archive will give you the most complete backup of your data, but you'll need to wait for Meta to send it to you.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
                         <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
                             value="buildFromScratch" class="form-check-input">
                         <label class="form-check-label" for="buildFromScratch">
                             Build database from scratch
-                            <span class="ms-2 text-muted">(recommended)</span>
                         </label>
                     </div>
                     <div class="indent">
@@ -65,8 +80,14 @@ onMounted(() => {
             <div class="buttons">
                 <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    <template v-if="buildDatabaseStrategy == 'buildFromScratch'">
+                    <template v-if="buildDatabaseStrategy == 'importArchive'">
+                        Continue to Import Archive
+                    </template>
+                    <template v-else-if="buildDatabaseStrategy == 'buildFromScratch'">
                         Continue to Build Options
+                    </template>
+                    <template v-else>
+                        Continue to Archive Options
                     </template>
                 </button>
             </div>
