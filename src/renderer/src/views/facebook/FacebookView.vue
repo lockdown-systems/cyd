@@ -142,7 +142,8 @@ const onCancelAutomation = () => {
     console.log('Cancelling automation');
 
     // Submit progress to the API
-    emitter.value.emit(`x-submit-progress-${props.account.id}`);
+    // TODO: impl?
+    emitter.value.emit(`facebook-submit-progress-${props.account.id}`);
 
     emit('onRefreshClicked');
 };
@@ -188,7 +189,8 @@ const updateUserPremium = async () => {
 
     if (!userPremium.value) {
         console.log('User does not have Premium access');
-        emitter?.emit(`x-premium-check-failed-${props.account.id}`);
+        // TODO: `facebook-premium-check-failed` emit
+        emitter?.emit(`facebook-premium-check-failed-${props.account.id}`);
     }
 };
 
