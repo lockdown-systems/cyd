@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 
 import fetch from 'node-fetch';
 import { session } from 'electron'
@@ -253,8 +254,13 @@ export class FacebookAccountController {
         return unzippedPath;
     }
 
+    // Delete the unzipped facebook archive once the build is completed
     async deleteUnzippedFacebookArchive(archivePath: string): Promise<void> {
-        // TODO: implement
+        fs.rm(archivePath, { recursive: true, force: true }, err => {
+            if (err) {
+                log.error(`FacebookAccountController.deleteUnzippedFacebookArchive: Error occured while deleting unzipped folder: ${err}`);
+            }
+        });
     }
 
     async verifyFacebookArchive(archivePath: string): Promise<string | null> {
