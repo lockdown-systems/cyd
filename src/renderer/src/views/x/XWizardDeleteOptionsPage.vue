@@ -40,7 +40,7 @@ const deleteTweetsShowMoreClicked = () => {
 };
 
 const deleteRetweetsShowMore = ref(false);
-const deleteRetweetsShowMoreButtonText = computed(() => deleteTweetsShowMore.value ? 'Hide more options' : 'Show more options');
+const deleteRetweetsShowMoreButtonText = computed(() => deleteRetweetsShowMore.value ? 'Hide more options' : 'Show more options');
 const deleteRetweetsShowMoreClicked = () => {
     deleteRetweetsShowMore.value = !deleteRetweetsShowMore.value;
 };
@@ -136,6 +136,12 @@ const hasSomeData = ref(false);
 onMounted(async () => {
     await loadSettings();
     hasSomeData.value = await xHasSomeData(props.model.account.id);
+
+    if (!hasSomeData.value) {
+        deleteTweets.value = false;
+        deleteRetweets.value = false;
+        deleteLikes.value = false;
+    }
 });
 </script>
 
@@ -150,16 +156,17 @@ onMounted(async () => {
             </p>
         </div>
 
-        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Build Local Database Again'"
-            :button-text-no-data="'Build Local Database First'" :button-state="State.WizardDatabase"
+        <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true" :show-no-data-warning="true"
+            :button-text="'Build Your Local Database'" :button-state="State.WizardDatabase"
             @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>
             <!-- deleteTweets -->
-            <div v-if="hasSomeData" class="mb-3">
+            <div class="mb-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="form-check">
-                        <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input">
+                        <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input"
+                            :disabled="!hasSomeData">
                         <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
                             Delete my tweets
                         </label>
@@ -174,7 +181,7 @@ onMounted(async () => {
                         <div class="d-flex align-items-center flex-nowrap">
                             <div class="form-check">
                                 <input id="deleteTweetsDaysOldEnabled" v-model="deleteTweetsDaysOldEnabled"
-                                    type="checkbox" class="form-check-input" :disabled="!deleteTweets">
+                                    type="checkbox" class="form-check-input" :disabled="!deleteTweets || !hasSomeData">
                                 <label class="form-check-label mr-1 text-nowrap" for="deleteTweetsDaysOldEnabled">
                                     older than
                                 </label>
@@ -186,7 +193,7 @@ onMounted(async () => {
                                 <div class="input-group flex-nowrap">
                                     <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
                                         class="form-control form-short small"
-                                        :disabled="!deleteTweets || !deleteTweetsDaysOldEnabled">
+                                        :disabled="!deleteTweets || !deleteTweetsDaysOldEnabled || !hasSomeData">
                                     <div class="input-group-append">
                                         <span class="input-group-text small">days</span>
                                     </div>
@@ -201,7 +208,7 @@ onMounted(async () => {
                             <div class="form-check">
                                 <input id="deleteTweetsRetweetsThresholdEnabled"
                                     v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
-                                    class="form-check-input" :disabled="!deleteTweets">
+                                    class="form-check-input" :disabled="!deleteTweets || !hasSomeData">
                                 <label class="form-check-label mr-1 text-nowrap"
                                     for="deleteTweetsRetweetsThresholdEnabled">
                                     unless they have at least
@@ -214,7 +221,7 @@ onMounted(async () => {
                                 <div class="input-group flex-nowrap">
                                     <input id="deleteTweetsRetweetsThreshold" v-model="deleteTweetsRetweetsThreshold"
                                         type="text" class="form-control form-short small"
-                                        :disabled="!deleteTweets || !deleteTweetsRetweetsThresholdEnabled">
+                                        :disabled="!deleteTweets || !deleteTweetsRetweetsThresholdEnabled || !hasSomeData">
                                     <div class="input-group-append">
                                         <span class="input-group-text small">retweets</span>
                                     </div>
@@ -229,7 +236,7 @@ onMounted(async () => {
                             <div class="form-check">
                                 <input id="deleteTweetsLikesThresholdEnabled"
                                     v-model="deleteTweetsLikesThresholdEnabled" type="checkbox" class="form-check-input"
-                                    :disabled="!deleteTweets">
+                                    :disabled="!deleteTweets || !hasSomeData">
                                 <label class="form-check-label mr-1 text-nowrap"
                                     for="deleteTweetsLikesThresholdEnabled">
                                     or at least
@@ -256,10 +263,11 @@ onMounted(async () => {
             </div>
 
             <!-- deleteRetweets -->
-            <div v-if="hasSomeData" class="mb-3">
+            <div class="mb-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="form-check">
-                        <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox" class="form-check-input">
+                        <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox" class="form-check-input"
+                            :disabled="!hasSomeData">
                         <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
                             Delete my retweets
                         </label>
@@ -274,7 +282,8 @@ onMounted(async () => {
                         <div class="d-flex align-items-center flex-nowrap">
                             <div class="form-check">
                                 <input id="deleteRetweetsDaysOldEnabled" v-model="deleteRetweetsDaysOldEnabled"
-                                    type="checkbox" class="form-check-input" :disabled="!deleteRetweets">
+                                    type="checkbox" class="form-check-input"
+                                    :disabled="!deleteRetweets || !hasSomeData">
                                 <label class="form-check-label mr-1 text-nowrap" for="deleteRetweetsDaysOldEnabled">
                                     older than
                                 </label>
@@ -315,10 +324,11 @@ onMounted(async () => {
             </div>
 
             <!-- deleteLikes -->
-            <div v-if="hasSomeData" class="mb-3">
+            <div class="mb-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="form-check">
-                        <input id="deleteLikes" v-model="deleteLikes" type="checkbox" class="form-check-input">
+                        <input id="deleteLikes" v-model="deleteLikes" type="checkbox" class="form-check-input"
+                            :disabled="!hasSomeData">
                         <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
                             Delete my likes
                         </label>

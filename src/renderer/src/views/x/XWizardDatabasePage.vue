@@ -8,6 +8,7 @@ import {
     State
 } from '../../view_models/XViewModel'
 import { openURL } from '../../util';
+import { xHasSomeData } from '../../util_x';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -42,7 +43,11 @@ enum RecommendedState {
 }
 const recommendedState = ref(RecommendedState.Unknown);
 
-onMounted(() => {
+const hasSomeData = ref(false);
+
+onMounted(async () => {
+    hasSomeData.value = await xHasSomeData(props.model.account.id);
+
     // If the user has a lot of data, recommend importing the archive
     if (props.model.account && props.model.account.xAccount) {
         if (
@@ -78,9 +83,8 @@ onMounted(() => {
                 There are different ways to get data from your X account. How would you like to proceed?
             </p>
 
-            <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
-                :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
-                @set-state="emit('setState', $event)" />
+            <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="false"
+                :show-no-data-warning="false" @set-state="emit('setState', $event)" />
 
             <!-- import archive recommended -->
             <template v-if="recommendedState == RecommendedState.ImportArchive">

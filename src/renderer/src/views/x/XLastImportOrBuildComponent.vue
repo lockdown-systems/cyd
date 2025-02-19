@@ -6,9 +6,8 @@ import { xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 const props = defineProps<{
     accountID: number;
-    buttonText: string;
-    buttonTextNoData: string;
-    buttonState: State;
+    showButton: boolean;
+    showNoDataWarning: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -19,8 +18,7 @@ const lastImportArchive = ref<Date | null>(null);
 const lastBuildDatabase = ref<Date | null>(null);
 
 const buttonClicked = async () => {
-    console.log('XLastImportOrBuildComponent', 'buttonClicked', props.buttonText, props.buttonState);
-    emit('setState', props.buttonState);
+    emit('setState', State.WizardDatabase);
 };
 
 onMounted(async () => {
@@ -30,7 +28,8 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="small text-center mb-3">
+    <div v-if="lastImportArchive || lastBuildDatabase || (showNoDataWarning && !lastImportArchive && !lastBuildDatabase)"
+        :class="{ 'alert-warning': showNoDataWarning && !lastImportArchive && !lastBuildDatabase, 'alert-info': !(showNoDataWarning && !lastImportArchive && !lastBuildDatabase), 'alert': true }">
         <div v-if="lastImportArchive">
             You last imported your X archive {{ formatDistanceToNow(lastImportArchive, {
                 addSuffix: true
@@ -42,23 +41,24 @@ onMounted(async () => {
                     addSuffix: true
                 }) }}.
         </div>
-        <div v-if="!lastImportArchive && !lastBuildDatabase">
-            <div>
-                Cyd can unfollow everyone and delete your direct messages right away
-            </div>
-            <div>
-                <i class="fa-solid fa-triangle-exclamation" />
-                You'll need to import or build your database to delete your tweets
+        <div v-if="showNoDataWarning && !lastImportArchive && !lastBuildDatabase">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-triangle-exclamation fa-2x me-3" />
+                <div>
+                    You'll need to import your local database of tweets, or build it from scratch, before you can delete
+                    your tweets or likes, or migrate your tweets to Bluesky.
+                </div>
             </div>
         </div>
-        <button type="submit" class="btn btn-sm btn-link text-nowrap" @click="buttonClicked">
-            <template v-if="lastImportArchive || lastBuildDatabase">
-                {{ buttonText }}
-            </template>
-            <template v-else>
-                {{ buttonTextNoData }}
-            </template>
-        </button>
+        <div v-if="showButton" class="text-center">
+            <button v-if="lastImportArchive || lastBuildDatabase" type="submit" class="btn btn-sm btn-secondary mt-2"
+                @click="buttonClicked">
+                Rebuild Your Local Database
+            </button>
+            <button v-else type="submit" class="btn btn-sm btn-primary mt-2" @click="buttonClicked">
+                Build Your Local Database
+            </button>
+        </div>
     </div>
 </template>
 

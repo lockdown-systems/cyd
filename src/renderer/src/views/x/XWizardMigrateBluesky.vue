@@ -13,6 +13,8 @@ import {
 import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
+import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
 enum State {
     Loading,
     NotConnected,
@@ -255,20 +257,18 @@ onUnmounted(async () => {
                 <p>
                     <strong>
                         We recommend that you reimport your local database of tweets, or rebuild it from scratch,
-                        before migrating to Bluesky.
+                        <em>before</em> migrating to Bluesky.
                     </strong>
                 </p>
                 <p>
-                    When you built your local database of tweets, Cyd didn't keep track of things like media, replies,
-                    and quote tweets. If you migrate to Bluesky now, you may lose some of your data.
-                </p>
-                <p class="text-center">
-                    <button type="submit" class="btn btn-sm btn-primary"
-                        @click="emit('setState', XState.WizardDatabase)">
-                        Rebuild Your Local Database
-                    </button>
+                    When you last built your local database of tweets, Cyd didn't keep track of things like media,
+                    replies, and quote tweets. If you migrate to Bluesky now, you may lose some of your data.
                 </p>
             </div>
+
+            <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true"
+                :show-no-data-warning="true" :button-text="'Build Your Local Database'"
+                :button-state="XState.WizardDatabase" @set-state="emit('setState', $event)" />
 
             <template v-if="state == State.Loading">
                 <p>
