@@ -14,6 +14,8 @@ export enum State {
 
     WizardStart = "WizardStart",
 
+    WizardArchiveOptions = "WizardArchiveOptions",
+
     WizardImportOrBuild = "WizardImportOrBuild",
     WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
 
@@ -528,6 +530,13 @@ You can either import a Facebook archive, or I can build it from scratch by scro
                     this.instructions = `You have requested your Facebook archive, so now we wait.`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardImportDownloadDisplay;
+                    break;
+
+                case State.WizardImporting:
+                    this.showBrowser = false;
+                    this.instructions = `I'll help you import your Facebook archive into your local database.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardImportingDisplay;
                     break;
 
                 case State.Debug:
