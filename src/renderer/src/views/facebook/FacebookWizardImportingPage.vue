@@ -105,30 +105,16 @@ const startClicked = async () => {
     }
     statusValidating.value = ImportStatus.Finished;
 
-    // Import tweets
-    statusImportingTweets.value = ImportStatus.Active;
-    const tweetsResp: FacebookImportArchiveResponse = await window.electron.Facebook.importFacebookArchive(props.model.account.id, unzippedPath, 'tweets');
-    tweetCountString.value = createCountString(tweetsResp.importCount, tweetsResp.skipCount);
-    if (tweetsResp.status == 'error') {
-        statusImportingTweets.value = ImportStatus.Failed;
-        errorMessages.value.push(tweetsResp.errorMessage);
+    // Import posts
+    statusImportingPosts.value = ImportStatus.Active;
+    const postsResp: FacebookImportArchiveResponse = await window.electron.Facebook.importFacebookArchive(props.model.account.id, unzippedPath, 'posts');
+    postCountString.value = createCountString(postsResp.importCount, postsResp.skipCount);
+    if (postsResp.status == 'error') {
+        statusImportingPosts.value = ImportStatus.Failed;
+        errorMessages.value.push(postsResp.errorMessage);
         importFailed.value = true;
     } else {
-        statusImportingTweets.value = ImportStatus.Finished;
-    }
-    // todo
-    emitter.emit(`facebook-update-database-stats-${props.model.account.id}`);
-
-    // Import likes
-    statusImportingLikes.value = ImportStatus.Active;
-    const likesResp: FacebookImportArchiveResponse = await window.electron.Facebook.importFacebookArchive(props.model.account.id, unzippedPath, 'likes');
-    likeCountString.value = createCountString(likesResp.importCount, likesResp.skipCount);
-    if (likesResp.status == 'error') {
-        statusImportingLikes.value = ImportStatus.Failed;
-        errorMessages.value.push(likesResp.errorMessage);
-        importFailed.value = true;
-    } else {
-        statusImportingLikes.value = ImportStatus.Finished;
+        statusImportingPosts.value = ImportStatus.Finished;
     }
     // todo
     emitter.emit(`facebook-update-database-stats-${props.model.account.id}`);
