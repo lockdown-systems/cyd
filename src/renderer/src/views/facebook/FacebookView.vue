@@ -20,6 +20,7 @@ import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import FacebookWizardImportOrBuildPage from './FacebookWizardImportOrBuildPage.vue';
 import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
+import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
 
 import type {
     Account,
@@ -382,6 +383,9 @@ onUnmounted(async () => {
                     <div class="wizard-content flex-grow-1">
                         <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
                             :model="unref(model)" @set-state="setState($event)" />
+
+                        <FacebookWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
