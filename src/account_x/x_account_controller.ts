@@ -137,7 +137,7 @@ export class XAccountController {
     public mitmController: IMITMController;
     private progress: XProgress = emptyXProgress();
 
-    private cookies: Record<string, string> = {};
+    private cookies: Record<string, Record<string, string>> = {};
 
     private blueskyClient: NodeOAuthClient | null = null;
 
@@ -176,14 +176,18 @@ export class XAccountController {
 
         ses.webRequest.onSendHeaders((details) => {
             // Keep track of cookies
-            if (details.url.startsWith("https://x.com/") && details.requestHeaders) {
+            if (details.requestHeaders) {
+                const hostname = new URL(details.url).hostname;
                 const cookieHeader = details.requestHeaders['Cookie'];
                 if (cookieHeader) {
                     const cookies = cookieHeader.split(';');
                     cookies.forEach((cookie) => {
                         const parts = cookie.split('=');
                         if (parts.length == 2) {
-                            this.cookies[parts[0].trim()] = parts[1].trim();
+                            if (!this.cookies[hostname]) {
+                                this.cookies[hostname] = {};
+                            }
+                            this.cookies[hostname][parts[0].trim()] = parts[1].trim();
                         }
                     });
                 }
@@ -2385,8 +2389,9 @@ export class XAccountController {
         })
     }
 
-    async getCookie(name: string): Promise<string | null> {
-        return this.cookies[name] || null;
+    async getCookie(hostname: string, name: string): Promise<string | null> {
+        log.debug(`XAccountController.getCookie: hostname=${hostname}, name=${name}, cookies=${JSON.stringify(this.cookies)}`);
+        return this.cookies[hostname][name] || null;
     }
 
     async getConfig(key: string): Promise<string | null> {

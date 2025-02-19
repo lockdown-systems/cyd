@@ -127,7 +127,7 @@ declare global {
                 deleteUnzippedXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 verifyXArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 importXArchive: (accountID: number, archivePath: string, dataType: string) => Promise<XImportArchiveResponse>;
-                getCookie: (accountID: number, name: string) => Promise<string | null>;
+                getCookie: (accountID: number, hostname: string, name: string) => Promise<string | null>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => Promise<void>;
                 deleteConfig: (accountID: number, key: string) => Promise<void>;

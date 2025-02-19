@@ -384,10 +384,10 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:getCookie', async (_, accountID: number, name: string): Promise<string | null> => {
+    ipcMain.handle('X:getCookie', async (_, accountID: number, hostname: string, name: string): Promise<string | null> => {
         try {
             const controller = getXAccountController(accountID);
-            return await controller.getCookie(name);
+            return await controller.getCookie(hostname, name);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

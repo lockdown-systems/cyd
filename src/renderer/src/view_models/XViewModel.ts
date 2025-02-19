@@ -542,8 +542,13 @@ export class XViewModel extends BaseViewModel {
         await this.waitForPause();
 
         // Load home
-        this.log("login", "getting username");
-        this.instructions = `I'm discovering your username...`;
+        this.log("login", "getting username and userID and profile picture");
+        this.instructions = `I'm discovering your username and profile picture...`;
+
+        // /graphql/WBT8ommFCSHiy3z2_4k1Vg/Viewer
+
+
+
         if (this.webview?.getURL() != "https://x.com/home") {
             await this.loadURLWithRateLimit("https://x.com/home");
         }
@@ -1786,7 +1791,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.showBrowser = false;
 
         // Get the ct0 cookie
-        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "x.com", "ct0");
         this.log('runJobDeleteTweets', ["ct0", ct0]);
         if (!ct0) {
             await this.error(AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound, {})
@@ -1893,7 +1898,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.showBrowser = false;
 
         // Get the ct0 cookie
-        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "x.com", "ct0");
         this.log('runJobDeleteRetweets', ["ct0", ct0]);
         if (!ct0) {
             await this.error(AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound, {})
@@ -2002,7 +2007,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.showBrowser = false;
 
         // Get the ct0 cookie
-        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "x.com", "ct0");
         this.log('runJobDeleteLikes', ["ct0", ct0]);
         if (!ct0) {
             await this.error(AutomationErrorType.x_runJob_deleteLikes_Ct0CookieNotFound, {})
@@ -2108,7 +2113,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.showBrowser = false;
 
         // Get the ct0 cookie
-        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "ct0");
+        const ct0: string | null = await window.electron.X.getCookie(this.account?.id, "x.com", "ct0");
         this.log('runJobDeleteBookmarks', ["ct0", ct0]);
         if (!ct0) {
             await this.error(AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound, {})
