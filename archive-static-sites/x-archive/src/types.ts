@@ -10,11 +10,23 @@ export type Tweet = {
     isRetweeted: boolean;
     text: string;
     path: string;
+    quotedTweet: string | null;
     archivedAt: string | null;
     deletedTweetAt: string | null;
     deletedRetweetAt: string | null;
     deletedLikeAt: string | null;
     deletedBookmarkAt: string | null;
+    media: {
+        mediaType: string;
+        url: string;
+        filename: string;
+    }[];
+    urls: {
+        url: string;
+        displayURL: string;
+        expandedURL: string;
+    }[];
+
 };
 
 export type User = {

@@ -12,6 +12,8 @@ import {
 } from './account_x';
 import {
     XTweetRow,
+    XTweetMediaRow,
+    XTweetURLRow,
     XUserRow,
     XConversationRow,
     XConversationParticipantRow,
@@ -69,6 +71,10 @@ vi.mock('electron', () => ({
         getPath: vi.fn().mockReturnValue(path.join(__dirname, '..', 'testdata', 'tmp'))
     }
 }));
+
+// Mock fetch
+const fetchMock = vi.fn();
+global.fetch = fetchMock;
 
 // Import the local modules after stuff has been mocked
 import { Account, ResponseData, XProgress } from './shared_types'
@@ -174,6 +180,31 @@ class MockMITMController implements IMITMController {
                 }
             ];
         }
+        if (testdata == "indexTweetsMedia") {
+            this.responseData = [
+                {
+                    host: 'x.com',
+                    url: '/i/api/graphql/pZXwh96YGRqmBbbxu7Vk2Q/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22premium_content_api_read_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22responsive_web_grok_analyze_button_fetch_trends_enabled%22%3Afalse%2C%22responsive_web_grok_analyze_post_followups_enabled%22%3Atrue%2C%22responsive_web_jetfuel_frame%22%3Afalse%2C%22responsive_web_grok_share_attachment_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22responsive_web_grok_analysis_button_from_backend%22%3Atrue%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_grok_image_annotation_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
+                    status: 200,
+                    headers: {},
+                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesMedia.json'), 'utf8'),
+                    processed: false
+                }
+            ];
+        }
+        if (testdata == "indexTweetsLinks") {
+            this.responseData = [
+                {
+                    host: 'x.com',
+                    url: '/i/api/graphql/pZXwh96YGRqmBbbxu7Vk2Q/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22premium_content_api_read_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22responsive_web_grok_analyze_button_fetch_trends_enabled%22%3Afalse%2C%22responsive_web_grok_analyze_post_followups_enabled%22%3Atrue%2C%22responsive_web_jetfuel_frame%22%3Afalse%2C%22responsive_web_grok_share_attachment_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22responsive_web_grok_analysis_button_from_backend%22%3Atrue%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_grok_image_annotation_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
+                    status: 200,
+                    headers: {},
+                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesLinks.json'), 'utf8'),
+                    processed: false
+                }
+            ];
+        }
+
     }
     setAutomationErrorReportTestdata(filename: string) {
         const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', filename), 'utf8'));
@@ -210,13 +241,17 @@ afterEach(() => {
         controller.cleanup();
     }
 
-    // Delete databases from disk
-    fs.readdirSync(getSettingsPath()).forEach(file => {
-        fs.unlinkSync(path.join(getSettingsPath(), file));
-    });
-    fs.readdirSync(getAccountDataPath("X", "test")).forEach(file => {
-        fs.unlinkSync(path.join(getAccountDataPath("X", "test"), file));
-    });
+    // Delete data from disk
+    const settingsPath = getSettingsPath();
+    const accountDataPath = getAccountDataPath("X", "test");
+
+    if (fs.existsSync(settingsPath)) {
+        fs.rmSync(settingsPath, { recursive: true, force: true });
+    }
+
+    if (fs.existsSync(accountDataPath)) {
+        fs.rmSync(accountDataPath, { recursive: true, force: true });
+    }
 });
 
 // Fixtures
@@ -726,6 +761,57 @@ test("XAccountController.indexParsedTweets() should index bookmarks", async () =
 
     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet WHERE isBookmarked=1", [], "all") as XTweetRow[];
     expect(rows.length).toBe(14);
+})
+
+test("XAccountController.indexParsedTweets() should index and download media", async () => {
+    mitmController.setTestdata("indexTweetsMedia");
+    if (controller.account) {
+        controller.account.username = 'nexamind91326';
+    }
+
+    await controller.indexParseTweets()
+
+    // Verify the video tweet
+    let tweetRows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1890513848811090236'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1890513848811090236');
+    expect(tweetRows[0].text).toBe('check out this video i found https://t.co/MMfXeoZEdi');
+
+    let mediaRows: XTweetMediaRow[] = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1890513848811090236'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaType).toBe('video');
+    expect(mediaRows[0].filename).toBe('7_1890513743144185859.mp4');
+    expect(mediaRows[0].startIndex).toBe(29);
+    expect(mediaRows[0].endIndex).toBe(52);
+
+    // Verify the image tweet
+    tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1890512076189114426'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1890512076189114426');
+    expect(tweetRows[0].text).toBe('what a pretty photo https://t.co/eBFfDPOPz6');
+
+    mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1890512076189114426'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaType).toBe('photo');
+    expect(mediaRows[0].filename).toBe('3_1890512052424466432.jpg');
+    expect(mediaRows[0].startIndex).toBe(20);
+    expect(mediaRows[0].endIndex).toBe(43);
+})
+
+test("XAccountController.indexParsedTweets() should index and parse links", async () => {
+    mitmController.setTestdata("indexTweetsLinks");
+    if (controller.account) {
+        controller.account.username = 'nexamind91326';
+    }
+
+    await controller.indexParseTweets()
+
+    // Verify the link tweet
+    const linkRows: XTweetURLRow[] = database.exec(controller.db, "SELECT * FROM tweet_url WHERE tweetID=?", ['1891186072995946783'], "all") as XTweetURLRow[];
+    expect(linkRows.length).toBe(3);
+    expect(linkRows[0].expandedURL).toBe('https://en.wikipedia.org/wiki/Moon');
+    expect(linkRows[1].expandedURL).toBe('https://en.wikipedia.org/wiki/Sun');
+    expect(linkRows[2].expandedURL).toBe('https://x.com/nexamind91326/status/1890513848811090236');
 })
 
 // Testing the X migrations

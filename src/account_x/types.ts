@@ -15,6 +15,27 @@ export interface XJobRow {
     error: string | null;
 }
 
+export interface XTweetMediaRow {
+    id: number;
+    mediaID: string;
+    mediaType: string;
+    tweetID: string;
+    url: string;
+    filename: string;
+    startIndex: number;
+    endIndex: number;
+}
+
+export interface XTweetURLRow {
+    id: number;
+    url: string;
+    displayURL: string;
+    expandedURL: string;
+    startIndex: number;
+    endIndex: number;
+    tweetID: string;
+}
+
 export interface XTweetRow {
     id: number;
     username: string;
@@ -36,6 +57,12 @@ export interface XTweetRow {
     deletedRetweetAt: string | null;
     deletedLikeAt: string | null;
     deletedBookmarkAt: string | null;
+    hasMedia: boolean;
+    isReply: boolean;
+    replyTweetID: string | null;
+    replyUserID: string | null;
+    isQuote: boolean;
+    quotedTweet: string | null;
 }
 
 export interface XUserRow {
@@ -122,6 +149,51 @@ export function convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemAr
 
 // Index tweets
 
+export interface XAPILegacyTweetMediaVideoVariant {
+    bitrate?: number;
+    content_type: string;
+    url: string;
+}
+
+export interface XAPILegacyTweetMedia {
+    display_url: string;
+    expanded_url: string;
+    id_str: string;
+    indices: number[];
+    media_key: string;
+    media_url_https: string;
+    type: string;
+    url: string;
+    additional_media_info: any;
+    ext_media_availability: any;
+    features?: any;
+    sizes: any;
+    original_info: any;
+    allow_download_status?: any;
+    video_info?: {
+        aspect_ratio: number[];
+        duration_millis: number;
+        variants: XAPILegacyTweetMediaVideoVariant[];
+    };
+    media_results?: any;
+}
+
+export interface XAPILegacyURL {
+    display_url: string;
+    expanded_url: string;
+    url: string;
+    indices: number[];
+}
+
+export interface XAPILegacyEntities {
+    hashtags: any[];
+    symbols: any[];
+    timestamps: any[];
+    urls: XAPILegacyURL[];
+    media: XAPILegacyTweetMedia[];
+    user_mentions: any[];
+}
+
 export interface XAPILegacyTweet {
     bookmark_count: number;
     bookmarked: boolean;
@@ -142,7 +214,9 @@ export interface XAPILegacyTweet {
     retweeted: boolean;
     user_id_str: string;
     id_str: string;
-    entities: any;
+    entities?: XAPILegacyEntities;
+    extended_entities?: XAPILegacyEntities;
+    quoted_status_permalink?: any;
 }
 
 export interface XAPILegacyUser {
@@ -488,10 +562,11 @@ export interface XArchiveTweet {
     edit_info: any;
     retweeted: boolean;
     source: string;
-    entities: any;
+    entities: XAPILegacyEntities;
+    extended_entities: XAPILegacyEntities;
     display_text_range: any;
     favorite_count: number;
-    in_reply_to_status_id_str?: string;
+    in_reply_to_status_id_str: string | null;
     id_str: string;
     in_reply_to_user_id?: string;
     truncated: boolean;
@@ -504,7 +579,7 @@ export interface XArchiveTweet {
     full_text: string;
     lang: string;
     in_reply_to_screen_name?: string;
-    in_reply_to_user_id_str?: string;
+    in_reply_to_user_id_str: string | null;
 }
 
 export interface XArchiveTweetContainer {

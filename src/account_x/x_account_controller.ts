@@ -43,6 +43,8 @@ import { IMITMController } from '../mitm';
 import {
     XJobRow,
     XTweetRow,
+    XTweetMediaRow,
+    XTweetURLRow,
     XUserRow,
     XConversationRow,
     XMessageRow,
@@ -53,6 +55,9 @@ import {
     // X API types
     XAPILegacyUser,
     XAPILegacyTweet,
+    XAPILegacyTweetMedia,
+    XAPILegacyTweetMediaVideoVariant,
+    XAPILegacyURL,
     XAPIData,
     XAPIBookmarksData,
     XAPITimeline,
@@ -74,6 +79,33 @@ import {
     isXAPIData,
 } from './types'
 import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
+
+const getMediaURL = (media: XAPILegacyTweetMedia): string => {
+    // Get the HTTPS URL of the media -- this works for photos
+    let mediaURL = media["media_url_https"];
+
+    // If it's a video, set mediaURL to the video variant with the highest bitrate
+    if (media["type"] == "video") {
+        let highestBitrate = 0;
+        if (media["video_info"] && media["video_info"]["variants"]) {
+            media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
+                if (variant["bitrate"] && variant["bitrate"] > highestBitrate) {
+                    highestBitrate = variant["bitrate"];
+                    mediaURL = variant["url"];
+
+                    // Stripe query parameters from the URL.
+                    // For some reason video variants end with `?tag=12`, and when we try downloading with that
+                    // it responds with 404.
+                    const queryIndex = mediaURL.indexOf("?");
+                    if (queryIndex > -1) {
+                        mediaURL = mediaURL.substring(0, queryIndex);
+                    }
+                }
+            });
+        };
+    }
+    return mediaURL;
+};
 
 export class XAccountController {
     private accountUUID: string = "";
@@ -315,6 +347,53 @@ export class XAccountController {
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
                 ]
             },
+            // Add hasMedia to the tweet table, and create tweet_media table
+            {
+                name: "20250206_add_hasMedia_and_tweet_media",
+                sql: [
+                    `CREATE TABLE tweet_media (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        mediaID TEXT NOT NULL UNIQUE,
+                        mediaType TEXT NOT NULL,
+                        tweetID TEXT NOT NULL
+                    );`,
+                    `ALTER TABLE tweet ADD COLUMN hasMedia BOOLEAN;`,
+                    `UPDATE tweet SET hasMedia = 0;`
+                ]
+            },
+            // Add isReply, replyTweetID, replyUserID, isQuote and quotedTweet to the tweet table
+            {
+                name: "20250206_add_reply_and_quote_fields",
+                sql: [
+                    `ALTER TABLE tweet ADD COLUMN isReply BOOLEAN;`,
+                    `ALTER TABLE tweet ADD COLUMN replyTweetID TEXT;`,
+                    `ALTER TABLE tweet ADD COLUMN replyUserID TEXT;`,
+                    `ALTER TABLE tweet ADD COLUMN isQuote BOOLEAN;`,
+                    `ALTER TABLE tweet ADD COLUMN quotedTweet TEXT;`,
+                    `UPDATE tweet SET isReply = 0;`,
+                    `UPDATE tweet SET isQuote = 0;`
+                ]
+            },
+            // Add tweet_url table. Add url and indices to tweet_media table
+            {
+                name: "20250207_add_tweet_urls_and_more_tweet_media_fields",
+                sql: [
+                    `CREATE TABLE tweet_url (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        url TEXT NOT NULL,
+                        displayURL TEXT NOT NULL,
+                        expandedURL TEXT NOT NULL,
+                        startIndex INTEGER NOT NULL,
+                        endIndex INTEGER NOT NULL,
+                        tweetID TEXT NOT NULL,
+                        UNIQUE(url, tweetID)
+                    );`,
+                    `ALTER TABLE tweet_media ADD COLUMN url TEXT;`,
+                    `ALTER TABLE tweet_media ADD COLUMN filename TEXT;`,
+                    `ALTER TABLE tweet_media ADD COLUMN startIndex INTEGER;`,
+                    `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`
+                ]
+            },
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -459,8 +538,20 @@ export class XAccountController {
             exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
         }
 
+        // Check if tweet has media and call indexTweetMedia
+        let hasMedia: boolean = false;
+        if (tweetLegacy.extended_entities?.media && tweetLegacy.extended_entities?.media.length) {
+            hasMedia = true;
+            this.indexTweetMedia(tweetLegacy)
+        }
+
+        // Check if tweet has URLs and index it
+        if (tweetLegacy.entities?.urls && tweetLegacy.entities?.urls.length) {
+            this.indexTweetURLs(tweetLegacy)
+        }
+
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -474,6 +565,12 @@ export class XAccountController {
             tweetLegacy["bookmarked"] ? 1 : 0,
             tweetLegacy["full_text"],
             `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
+            hasMedia ? 1 : 0,
+            tweetLegacy["in_reply_to_status_id_str"] ? 1 : 0,
+            tweetLegacy["in_reply_to_status_id_str"],
+            tweetLegacy["in_reply_to_user_id_str"],
+            tweetLegacy["is_quote_status"] ? 1 : 0,
+            tweetLegacy["quoted_status_permalink"] ? tweetLegacy["quoted_status_permalink"]["expanded"] : null,
             new Date(),
         ]);
 
@@ -651,6 +748,91 @@ export class XAccountController {
         }
 
         return this.progress;
+    }
+
+    async saveTweetMedia(mediaPath: string, filename: string) {
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Create path to store tweet media if it doesn't exist already
+        const accountDataPath = getAccountDataPath("X", this.account.username);
+        const outputPath = path.join(accountDataPath, "Tweet Media");
+        if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath);
+        }
+
+        // Download and save media from the mediaPath
+        try {
+            const response = await fetch(mediaPath, {});
+            if (!response.ok) {
+                return "";
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const outputFileName = path.join(outputPath, filename);
+            fs.createWriteStream(outputFileName).write(buffer);
+            return outputFileName;
+        } catch {
+            return "";
+        }
+    }
+
+    indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
+        log.debug("XAccountController.indexMedia");
+
+        // Loop over all media items
+        tweetLegacy.extended_entities?.media.forEach((media: XAPILegacyTweetMedia) => {
+            const mediaURL = getMediaURL(media);
+            const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
+
+            // Download media locally
+            const filename = `${media["media_key"]}.${mediaExtension}`;
+            this.saveTweetMedia(mediaURL, filename);
+
+            // Have we seen this media before?
+            const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_media WHERE mediaID = ?', [media["media_key"]]);
+            }
+
+            // Index media information in tweet_media table
+            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+                media["media_key"],
+                media["type"],
+                media["url"],
+                filename,
+                media["indices"]?.[0],
+                media["indices"]?.[1],
+                tweetLegacy["id_str"],
+            ]);
+        })
+    }
+
+    indexTweetURLs(tweetLegacy: XAPILegacyTweet) {
+        log.debug("XAccountController.indexTweetURL");
+
+        // Loop over all URL items
+        tweetLegacy.entities?.urls.forEach((url: XAPILegacyURL) => {
+            // Have we seen this URL before?
+            const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]], "all") as XTweetURLRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]]);
+            }
+
+            // Index url information in tweet_url table
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+                url["url"],
+                url["display_url"],
+                url["expanded_url"],
+                url["indices"]?.[0],
+                url["indices"]?.[1],
+                tweetLegacy["id_str"],
+            ]);
+        })
     }
 
     async getProfileImageDataURI(user: XAPIUser): Promise<string> {
@@ -1109,6 +1291,20 @@ export class XAccountController {
             "all"
         ) as XTweetRow[];
 
+        // Load all media and URLs, to process later
+        const media: XTweetMediaRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_media",
+            [],
+            "all"
+        ) as XTweetMediaRow[];
+        const urls: XTweetURLRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_url",
+            [],
+            "all"
+        ) as XTweetURLRow[];
+
         // Users
         const users: XUserRow[] = exec(
             this.db,
@@ -1142,7 +1338,7 @@ export class XAccountController {
         const accountUserID = accountUser?.userID;
 
         const tweetRowToArchiveTweet = (tweet: XTweetRow): XArchiveTypes.Tweet => {
-            return {
+            const archiveTweet: XArchiveTypes.Tweet = {
                 tweetID: tweet.tweetID,
                 username: tweet.username,
                 createdAt: tweet.createdAt,
@@ -1154,12 +1350,36 @@ export class XAccountController {
                 isRetweeted: tweet.isRetweeted,
                 text: tweet.text,
                 path: tweet.path,
+                quotedTweet: tweet.quotedTweet,
                 archivedAt: tweet.archivedAt,
                 deletedTweetAt: tweet.deletedTweetAt,
                 deletedRetweetAt: tweet.deletedRetweetAt,
                 deletedLikeAt: tweet.deletedLikeAt,
                 deletedBookmarkAt: tweet.deletedBookmarkAt,
-            }
+                media: [],
+                urls: [],
+            };
+            // Loop through media and URLs
+            media.forEach((media) => {
+                if (media.tweetID == tweet.tweetID) {
+                    archiveTweet.media.push({
+                        mediaType: media.mediaType,
+                        url: media.url,
+                        filename: media.filename,
+                    });
+                }
+            });
+            urls.forEach((url) => {
+                if (url.tweetID == tweet.tweetID) {
+                    archiveTweet.urls.push({
+                        url: url.url,
+                        displayURL: url.displayURL,
+                        expandedURL: url.expandedURL,
+                    });
+                }
+            });
+
+            return archiveTweet
         }
 
         // Build the archive object
@@ -1721,7 +1941,6 @@ export class XAccountController {
         return null;
     }
 
-
     // Unzip twitter archive to the account data folder using unzipper
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
@@ -1749,6 +1968,12 @@ export class XAccountController {
 
     // Return null on success, and a string (error message) on error
     async verifyXArchive(archivePath: string): Promise<string | null> {
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
+
         const foldersToCheck = [
             archivePath,
             path.join(archivePath, "data"),
@@ -1798,6 +2023,12 @@ export class XAccountController {
     async importXArchive(archivePath: string, dataType: string): Promise<XImportArchiveResponse> {
         let importCount = 0;
         let skipCount = 0;
+
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
 
         // Load the username
         let username: string;
@@ -1865,24 +2096,41 @@ export class XAccountController {
                         // Is this tweet already there?
                         const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
                         if (existingTweet) {
-                            skipCount++;
-                        } else {
-                            // Import it
-                            exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                                username,
-                                tweet.id_str,
-                                new Date(tweet.created_at),
-                                tweet.favorite_count,
-                                tweet.retweet_count,
-                                tweet.favorited ? 1 : 0,
-                                tweet.retweeted ? 1 : 0,
-                                0,
-                                tweet.full_text,
-                                `${username}/status/${tweet.id_str}`,
-                                new Date(),
-                            ]);
-                            importCount++;
+                            // Delete the existing tweet to re-import
+                            exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweet.id_str]);
                         }
+
+                        // Check if tweet has media and call importXArchiveMedia
+                        let hasMedia: boolean = false;
+                        if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
+                            hasMedia = true;
+                            this.importXArchiveMedia(tweet, archivePath);
+                        }
+
+                        // Check if tweet has urls and call importXArchiveURLs
+                        if (tweet.entities?.urls && tweet.entities?.urls?.length) {
+                            this.importXArchiveURLs(tweet);
+                        }
+
+                        // Import it
+                        exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                            username,
+                            tweet.id_str,
+                            new Date(tweet.created_at),
+                            tweet.favorite_count,
+                            tweet.retweet_count,
+                            tweet.favorited ? 1 : 0,
+                            tweet.retweeted ? 1 : 0,
+                            0,
+                            tweet.full_text,
+                            `${username}/status/${tweet.id_str}`,
+                            hasMedia ? 1 : 0,
+                            tweet.in_reply_to_status_id_str ? 1 : 0,
+                            tweet.in_reply_to_status_id_str,
+                            tweet.in_reply_to_user_id_str,
+                            new Date(),
+                        ]);
+                        importCount++;
                     });
                 } catch (e) {
                     return {
@@ -1994,152 +2242,108 @@ export class XAccountController {
             };
         }
 
-        // // Import direct message groups
-        // else if (dataType == "dmGroups" || dataType == "dms") {
-        //     let dmsFilename: string;
-        //     if (dataType == "dmGroups") {
-        //         dmsFilename = "direct-messages-group.js";
-        //         if (!fs.existsSync(dmsFilename)) {
-        //             // Old X archives might put it in direct-message-group.js
-        //             dmsFilename = path.join(archivePath, "data", "direct-message-group.js");
-        //             if (!fs.existsSync(dmsFilename)) {
-        //                 return {
-        //                     status: "error",
-        //                     errorMessage: "direct-messages-group.js",
-        //                     importCount: importCount,
-        //                     skipCount: skipCount,
-        //                 };
-        //             }
-        //         }
-        //     } else {
-        //         dmsFilename = "direct-messages.js";
-        //         if (!fs.existsSync(dmsFilename)) {
-        //             // Old X archives might put it in direct-message.js
-        //             dmsFilename = path.join(archivePath, "data", "direct-message.js");
-        //             if (!fs.existsSync(dmsFilename)) {
-        //                 return {
-        //                     status: "error",
-        //                     errorMessage: "direct-messages.js",
-        //                     importCount: importCount,
-        //                     skipCount: skipCount,
-        //                 };
-        //             }
-        //         }
-        //     }
-
-        //     // Load the data
-        //     const dmsPath = path.join(archivePath, "data", dmsFilename);
-        //     let dmsData: XArchiveDMConversation[];
-        //     try {
-        //         const dmsFile = fs.readFileSync(dmsPath, 'utf8');
-        //         dmsData = JSON.parse(dmsFile.slice(dmsFile.indexOf('[')));
-        //     } catch (e) {
-        //         return {
-        //             status: "error",
-        //             errorMessage: `Error parsing JSON in ${dmsFilename}`,
-        //             importCount: importCount,
-        //             skipCount: skipCount,
-        //         };
-        //     }
-
-        //     // Loop through the DM conversations/messages and add them to the database
-        //     try {
-        //         dmsData.forEach((conversation) => {
-        //             // Find the min and max entry ID
-        //             let minEntryID: string | null = null, maxEntryID: string | null = null;
-        //             // Find the first messageCreate message
-        //             for (let i = 0; i < conversation.dmConversation.messages.length; i++) {
-        //                 if (conversation.dmConversation.messages[i].messageCreate) {
-        //                     minEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
-        //                     break;
-        //                 }
-        //             }
-        //             // Find the last messageCreate message
-        //             for (let i = conversation.dmConversation.messages.length - 1; i >= 0; i--) {
-        //                 if (conversation.dmConversation.messages[i].messageCreate) {
-        //                     maxEntryID = conversation.dmConversation.messages[i].messageCreate?.id || null;
-        //                     break;
-        //                 }
-        //             }
-
-        //             // Is this conversation already there?
-        //             const existingConversation = exec(this.db, 'SELECT * FROM conversation WHERE conversationID = ?', [conversation.dmConversation.conversationId], "get") as XConversationRow;
-        //             if (existingConversation) {
-        //                 // Update
-        //                 const newMinEntryID = minEntryID ? minEntryID : existingConversation.minEntryID;
-        //                 const newMaxEntryID = maxEntryID ? maxEntryID : existingConversation.maxEntryID;
-        //                 exec(this.db, 'UPDATE conversation SET minEntryID = ?, maxEntryID = ?, updatedInDatabaseAt = ? WHERE conversationID = ?', [newMinEntryID, newMaxEntryID, new Date(), conversation.dmConversation.conversationId]);
-        //             } else {
-        //                 // Create
-        //                 exec(this.db, 'INSERT INTO conversation (conversationID, type, minEntryID, maxEntryID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
-        //                     conversation.dmConversation.conversationId,
-        //                     dataType == "dmGroups" ? 'GROUP_DM' : 'ONE_TO_ONE',
-        //                     minEntryID,
-        //                     maxEntryID,
-        //                     new Date(),
-        //                 ]);
-        //             }
-
-        //             // Keep track of participant user IDs
-        //             const participantUserIDs: string[] = [];
-
-        //             // Add the messages
-        //             conversation.dmConversation.messages.forEach((message => {
-        //                 if (message.messageCreate) {
-        //                     // Does this message exist?
-        //                     const existingMessage = exec(this.db, 'SELECT * FROM message WHERE messageID = ?', [message.messageCreate.id], "get") as XMessageRow;
-        //                     if (existingMessage) {
-        //                         skipCount++;
-        //                     } else {
-        //                         // Import it
-        //                         exec(this.db, 'INSERT INTO message (messageID, conversationID, createdAt, senderID, text) VALUES (?, ?, ?, ?, ?)', [
-        //                             message.messageCreate.id,
-        //                             conversation.dmConversation.conversationId,
-        //                             message.messageCreate.createdAt,
-        //                             message.messageCreate.senderId,
-        //                             message.messageCreate.text
-        //                         ]);
-        //                         importCount++;
-
-        //                         // Add this to the list of participant user IDs, if it's not already there
-        //                         if (participantUserIDs.includes(message.messageCreate.senderId) == false) {
-        //                             participantUserIDs.push(message.messageCreate.senderId);
-        //                         }
-        //                     }
-        //                 }
-        //             }))
-
-        //             // Add the participants
-        //             participantUserIDs.forEach((userID) => {
-        //                 const existingParticipant = exec(this.db, 'SELECT * FROM conversation_participant WHERE conversationID = ? AND userID = ?', [conversation.dmConversation.conversationId, userID], "get") as XConversationParticipantRow;
-        //                 if (!existingParticipant) {
-        //                     exec(this.db, 'INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)', [conversation.dmConversation.conversationId, userID]);
-        //                 }
-        //             });
-        //         });
-        //     } catch (e) {
-        //         return {
-        //             status: "error",
-        //             errorMessage: "Error importing direct messages: " + e,
-        //             importCount: importCount,
-        //             skipCount: skipCount,
-        //         };
-        //     }
-
-        //     return {
-        //         status: "success",
-        //         errorMessage: "",
-        //         importCount: importCount,
-        //         skipCount: skipCount,
-        //     };
-        // }
-
         return {
             status: "error",
             errorMessage: "Invalid data type.",
             importCount: importCount,
             skipCount: skipCount,
         };
+    }
+
+    importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
+        // Loop over all media items
+        tweet.extended_entities?.media.forEach((media: XAPILegacyTweetMedia) => {
+            const existingMedia = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media.id_str], "get") as XTweetMediaRow;
+            if (existingMedia) {
+                log.debug(`XAccountController.importXArchiveMedia: media already exists: ${media.id_str}`);
+                return;
+            }
+            const filename = this.saveXArchiveMedia(tweet.id_str, media, archivePath);
+            if (filename) {
+                // Index media information in tweet_media table
+                exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+                    media.id_str,
+                    media.type,
+                    media.url,
+                    filename,
+                    media.indices?.[0],
+                    media.indices?.[1],
+                    tweet.id_str,
+                ]);
+            }
+        });
+    }
+
+    saveXArchiveMedia(tweetID: string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        log.info(`XAccountController.saveXArchiveMedia: saving media: ${JSON.stringify(media)}`);
+
+        const mediaURL = getMediaURL(media);
+        const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
+        const filename = `${media["id_str"]}.${mediaExtension}`;
+
+        let archiveMediaFilename = null;
+        if (media.type === "video" && media.video_info?.variants) {
+            // For videos, find the highest quality MP4 variant
+            const mp4Variants = media.video_info.variants
+                .filter(v => v.content_type === "video/mp4")
+                .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+
+            if (mp4Variants.length > 0) {
+                const highestQualityVariant = mp4Variants[0];
+                const videoFilename = highestQualityVariant.url.split('/').pop()?.split('?')[0];
+                if (videoFilename) {
+                    archiveMediaFilename = path.join(archivePath, "data", "tweets_media", `${tweetID}-${videoFilename}`);
+                }
+            }
+        } else {
+            // For non-videos
+            archiveMediaFilename = path.join(archivePath, "data", "tweets_media", `${tweetID}-${mediaURL.substring(mediaURL.lastIndexOf("/") + 1)}`);
+        }
+
+        // If file doesn't exist in archive, don't save information in db
+        if (!archiveMediaFilename || !fs.existsSync(archiveMediaFilename)) {
+            log.info(`XAccountController.saveXArchiveMedia: media file not found: ${archiveMediaFilename}`);
+            return null;
+        }
+
+        // Create path to store tweet media if it doesn't exist already
+        const accountDataPath = getAccountDataPath("X", this.account.username);
+        const outputPath = path.join(accountDataPath, "Tweet Media");
+        if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath);
+        }
+
+        // Copy media from archive
+        fs.copyFileSync(archiveMediaFilename, path.join(outputPath, filename));
+
+        return filename
+    }
+
+    importXArchiveURLs(tweet: XArchiveTweet) {
+
+        // Loop over all URL items
+        tweet?.entities?.urls.forEach((url: XAPILegacyURL) => {
+            // Have we seen this URL before?
+            const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url.url, tweet.id_str], "all") as XTweetURLRow[];
+            if (existing.length > 0) {
+                // Delete it, so we can re-add it
+                exec(this.db, 'DELETE FROM tweet_url WHERE url = ? AND tweetID = ?', [url.url, tweet.id_str]);
+            }
+
+            // Index url information in tweet_url table
+            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+                url.url,
+                url.display_url,
+                url.expanded_url,
+                url.indices?.[0],
+                url.indices?.[1],
+                tweet.id_str,
+            ]);
+        })
     }
 
     async getCookie(name: string): Promise<string | null> {
