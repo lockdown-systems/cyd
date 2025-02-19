@@ -13,6 +13,7 @@ import {
     FacebookJob,
     FacebookProgress,
     emptyFacebookProgress,
+    FacebookImportArchiveResponse,
 } from '../shared_types'
 import {
     runMigrations,
@@ -233,5 +234,29 @@ export class FacebookAccountController {
 
     async setConfig(key: string, value: string) {
         return setConfig(key, value, this.db);
+    }
+
+    async unzipFacebookArchive(archivePath: string): Promise<string | null> {
+        // TODO: implement
+        return null;
+    }
+
+    async deleteUnzippedFacebookArchive(archivePath: string): Promise<void> {
+        // TODO: implement
+    }
+
+    async verifyFacebookArchive(archivePath: string): Promise<string | null> {
+        // TODO: implement
+        return null;
+    }
+
+    async importFacebookArchive(archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> {
+        // TODO: implement
+        return {
+            status: 'error',
+            errorMessage: 'Not implemented',
+            importCount: 0,
+            skipCount: 0,
+        };
     }
 }
