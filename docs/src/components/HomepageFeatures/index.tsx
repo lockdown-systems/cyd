@@ -12,6 +12,36 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
+    title: 'Backup Your Data',
+    // https://www.flaticon.com/free-icon/archive_1750866
+    imgSrc: '/img/archive.png',
+    description: (
+      <>
+        Save a searchable copy of your data from tech platforms locally on your computer.
+      </>
+    ),
+  },
+  {
+    title: 'Delete Your Data',
+    // https://www.flaticon.com/free-icon/fire_14261136
+    imgSrc: '/img/fire.png',
+    description: (
+      <>
+        Delete your tweets, likes, direct messages, and other data from X.
+      </>
+    ),
+  },
+  {
+    title: 'Migrate Your Data',
+    // https://www.flaticon.com/free-icon/moving_9494775
+    imgSrc: '/img/moving.png',
+    description: (
+      <>
+        Migrate your tweets from closed platforms like X into open platforms like Bluesky.
+      </>
+    ),
+  },
+  {
     title: 'Private and Secure',
     // https://www.flaticon.com/free-icon/hacker_8293502
     imgSrc: '/img/hacker.png',
@@ -47,9 +77,9 @@ const FeatureList: FeatureItem[] = [
 
 function Feature({ title, Svg, imgSrc, description }: FeatureItem) {
   return (
-    <div className={clsx('col col--4')}>
+    <div className={clsx('col col--4', styles.feature)}>
       <div className="text--center">
-        {Svg ? <Svg className={styles.featureSvg} role="img" /> : <img src={imgSrc} className={styles.featureImg} alt={title} />}
+        {Svg ? <Svg className={styles.featureImage} role="img" /> : <img src={imgSrc} className={styles.featureImage} alt={title} />}
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
