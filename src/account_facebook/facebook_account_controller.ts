@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 
 import fetch from 'node-fetch';
 import { session } from 'electron'
@@ -7,6 +8,7 @@ import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import unzipper from 'unzipper';
 import { JSDOM } from 'jsdom';
+import { glob } from 'glob';
 
 import {
     getAccountDataPath,
@@ -29,6 +31,8 @@ import { IMITMController } from '../mitm';
 import {
     FacebookJobRow,
     convertFacebookJobRowToFacebookJob,
+    FacebookArchivePost,
+    FacebookArchivePostContainer,
 } from './types'
 
 export class FacebookAccountController {
@@ -274,7 +278,7 @@ export class FacebookAccountController {
 
         const foldersToCheck = [
             archivePath,
-            path.join(archivePath, "personal_information/profile_information"),
+            path.join(archivePath, "personal_information", "profile_information"),
         ];
 
         // Make sure folders exist
@@ -332,16 +336,189 @@ export class FacebookAccountController {
         return null;
     }
 
+    // Return null on success, and a string (error message) on error
     async importFacebookArchive(archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> {
-        log.info("FacebookAccountController.importFacebookArchive: importing ", archivePath);
-        log.info("FacebookAccountController.importFacebookArchive: dataType ", dataType);
+        let importCount = 0;
+        let skipCount = 0;
 
-        // TODO: implement
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
+
+        // Load the username
+        let profileId: string;
+        try {
+            const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.html");
+            const html = fs.readFileSync(profileInformationPath, 'utf-8');
+            const dom = new JSDOM(html);
+
+            const profileCell = Array.from(dom.window.document.querySelectorAll('td')).find(
+                td => td.textContent?.includes('facebook.com/profile.php?id=')
+            );
+
+            if (!profileCell) {
+                return {
+                    status: "error",
+                    errorMessage: "Could not find profile ID in archive",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            const profileUrl = profileCell.querySelector('a')?.href;
+            profileId = profileUrl?.split('id=')[1] || '';
+
+            if (!profileId) {
+                return {
+                    status: "error",
+                    errorMessage: "Could not extract profile ID from URL",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+        } catch (e) {
+            return {
+                status: "error",
+                errorMessage: "Error parsing profile information HTML",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import posts
+        if (dataType == "posts") {
+            const postsFilenames = await glob(
+                [
+                    // TODO: for really big Facebook archives, are there more files here?
+                    path.join(archivePath, "your_facebook_activity", "posts", "your_posts__check_ins__photos_and_videos_1.html"),
+                ],
+                {
+                    windowsPathsNoEscape: os.platform() == 'win32'
+                }
+            );
+            if (postsFilenames.length === 0) {
+                return {
+                    status: "error",
+                    errorMessage: "No posts files found",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Go through each file and import the posts
+            for (let i = 0; i < postsFilenames.length; i++) {
+                // Load the data from the file
+                let postsData: FacebookArchivePost[] = [];
+                try {
+                    const postsFile = fs.readFileSync(postsFilenames[i], 'utf8');
+                    const dom = new JSDOM(postsFile);
+
+                    // TODO: better ways to grab the data than using these classes?
+                    // Find all post containers with class "_a6-g"
+                    const postElements = dom.window.document.querySelectorAll('._a6-g');
+
+                    postElements.forEach(postElement => {
+                        const titleElement = postElement.querySelector('._a6-h');
+                        const contentElement = postElement.querySelector('._2pin');
+                        const dateElement = postElement.querySelector('._a72d');
+
+                        if (titleElement && contentElement && dateElement) {
+                            postsData.push({
+                                title: titleElement.textContent || '',
+                                full_text: contentElement.textContent || '',
+                                created_at: dateElement.textContent || '',
+                            });
+                        }
+                    });
+                } catch (e) {
+                    return {
+                        status: "error",
+                        errorMessage: "Error parsing HTML in exported posts",
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
+
+                // Loop through the posts and add them to the database
+                try {
+                    postsData.forEach((post) => {
+                        log.info(`FacebookAccountController.importFacebookArchive: loaded`);
+                        // TODO: implement for facebook
+                        // let post: XArchivePost;
+                        // if (isXArchivePostContainer(postContainer)) {
+                        //     post = postContainer.post;
+                        // } else {
+                        //     post = postContainer;
+                        // }
+
+                        // Is this post already there?
+                        // TODO: implement for facebook
+                        // const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
+                        // if (existingTweet) {
+                        //     // Delete the existing tweet to re-import
+                        //     exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweet.id_str]);
+                        // }
+
+                        // Check if tweet has media and call importXArchiveMedia
+                        let hasMedia: boolean = false;
+                        // TODO: implement for facebook
+                        // if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
+                        //     hasMedia = true;
+                        //     this.importXArchiveMedia(tweet, archivePath);
+                        // }
+
+                        // Check if tweet has urls and call importXArchiveURLs
+                        // TODO: implement for facebook
+                        // if (tweet.entities?.urls && tweet.entities?.urls?.length) {
+                        //     this.importXArchiveURLs(tweet);
+                        // }
+
+                        // Import it
+                        // TODO: Implement insert into posts table
+                        // exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                        //     username,
+                        //     tweet.id_str,
+                        //     new Date(tweet.created_at),
+                        //     tweet.favorite_count,
+                        //     tweet.retweet_count,
+                        //     tweet.favorited ? 1 : 0,
+                        //     tweet.retweeted ? 1 : 0,
+                        //     0,
+                        //     tweet.full_text,
+                        //     `${username}/status/${tweet.id_str}`,
+                        //     hasMedia ? 1 : 0,
+                        //     tweet.in_reply_to_status_id_str ? 1 : 0,
+                        //     tweet.in_reply_to_status_id_str,
+                        //     tweet.in_reply_to_user_id_str,
+                        //     new Date(),
+                        // ]);
+                        importCount++;
+                    });
+                } catch (e) {
+                    return {
+                        status: "error",
+                        errorMessage: "Error importing posts: " + e,
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
         return {
-            status: 'error',
-            errorMessage: 'Not implemented',
-            importCount: 0,
-            skipCount: 0,
+            status: "error",
+            errorMessage: "Invalid data type.",
+            importCount: importCount,
+            skipCount: skipCount,
         };
     }
 }
