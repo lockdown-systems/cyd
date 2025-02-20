@@ -28,7 +28,7 @@ const nextClicked = async () => {
 };
 
 // Settings
-const buildDatabaseStrategy = ref('buildFromScratch');
+const buildDatabaseStrategy = ref('importArchive');
 
 onMounted(() => {
 });
@@ -43,10 +43,6 @@ onMounted(() => {
             <p class="text-muted">
                 How would you like to proceed?
             </p>
-
-            <h1>
-                THIS FEATURE IS NOT IMPLEMENTED YET
-            </h1>
 
             <form @submit.prevent>
                 <div class="mb-3">
@@ -70,7 +66,7 @@ onMounted(() => {
                         <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
                             value="buildFromScratch" class="form-check-input">
                         <label class="form-check-label" for="buildFromScratch">
-                            Build database from scratch
+                            Build database from scratch - NOT IMPLEMENTED YET!
                         </label>
                     </div>
                     <div class="indent">
