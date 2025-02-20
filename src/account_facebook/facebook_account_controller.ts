@@ -435,7 +435,17 @@ export class FacebookAccountController {
                     // Find all post containers with class "_a6-g"
                     const postElements = dom.window.document.querySelectorAll('._a6-g');
 
-                    postElements.forEach(postElement => {
+                    for (const postElement of postElements) {
+                        // Status updates have exactly one text div inside _2pin
+                        const contentDiv = postElement.querySelector('._2pin');
+                        const directTextDiv = contentDiv?.querySelector(':scope > div');
+                        const hasComplexStructure = directTextDiv?.querySelector('div');
+
+                        if (hasComplexStructure) {
+                            log.info("FacebookAccountController.importFacebookArchive: skipping post with complex nested structure");
+                            continue; // Skip posts with complex nested structure (shared posts, groups, etc)
+                        }
+
                         const titleElement = postElement.querySelector('._a6-h');
                         const contentElement = postElement.querySelector('._2pin');
                         const dateElement = postElement.querySelector('._a72d');
@@ -452,7 +462,7 @@ export class FacebookAccountController {
                                 created_at: dateElement.textContent || '',
                             });
                         }
-                    });
+                    };
                 } catch (e) {
                     return {
                         status: "error",
