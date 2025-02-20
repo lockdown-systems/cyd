@@ -40,11 +40,6 @@ export interface FacebookArchivePost {
     // lang: string;
 }
 
-export interface FacebookArchivePostContainer {
-    post: FacebookArchivePost;
-}
-
-
 export interface FacebookPostRow {
     id: number;
     username: string;
