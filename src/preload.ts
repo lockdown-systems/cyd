@@ -4,6 +4,7 @@ import {
     Account,
     ResponseData,
     ArchiveInfo,
+    BlueskyMigrationProfile,
     // X
     XJob,
     XProgress,
@@ -14,14 +15,26 @@ import {
     XProgressInfo,
     XDatabaseStats,
     XDeleteReviewStats,
-    XAccount,
     XImportArchiveResponse,
+    XMigrateTweetCounts,
     // Facebook
     FacebookJob,
     FacebookProgress,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
+    // Export ipcRenderer to the frontend
+    ipcRenderer: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, args),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        on: (channel: string, func: (...args: any[]) => void) => ipcRenderer.on(channel, (event, ...args) => func(event, ...args)),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        once: (channel: string, func: (...args: any[]) => void) => ipcRenderer.once(channel, (event, ...args) => func(event, ...args)),
+        removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
+    },
+
+    // Global functions
     checkForUpdates: () => {
         ipcRenderer.invoke('checkForUpdates')
     },
@@ -79,12 +92,20 @@ contextBridge.exposeInMainWorld('electron', {
     deleteSettingsAndRestart: () => {
         ipcRenderer.invoke('deleteSettingsAndRestart')
     },
+
+    // Database functions
     database: {
         getConfig: (key: string): Promise<string | null> => {
             return ipcRenderer.invoke('database:getConfig', key);
         },
         setConfig: (key: string, value: string) => {
             ipcRenderer.invoke('database:setConfig', key, value)
+        },
+        deleteConfig: (key: string) => {
+            ipcRenderer.invoke('database:deleteConfig', key)
+        },
+        deleteConfigLike: (key: string) => {
+            ipcRenderer.invoke('database:deleteConfigLike', key)
         },
         getErrorReport: (id: number): Promise<ErrorReport | null> => {
             return ipcRenderer.invoke('database:getErrorReport', id)
@@ -120,6 +141,8 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('database:deleteAccount', accountID)
         },
     },
+
+    // Archive functions
     archive: {
         isPageAlreadySaved: (outputPath: string, basename: string): Promise<boolean> => {
             return ipcRenderer.invoke('archive:isPageAlreadySaved', outputPath, basename)
@@ -134,6 +157,8 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('archive:getInfo', accountID);
         },
     },
+
+    // X functions
     X: {
         resetProgress: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:resetProgress', accountID)
@@ -152,9 +177,6 @@ contextBridge.exposeInMainWorld('electron', {
         },
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('X:indexStop', accountID)
-        },
-        indexParseAllJSON: (accountID: number): Promise<XAccount> => {
-            return ipcRenderer.invoke('X:indexParseAllJSON', accountID)
         },
         indexParseTweets: (accountID: number): Promise<XProgress> => {
             return ipcRenderer.invoke('X:indexParseTweets', accountID)
@@ -261,14 +283,44 @@ contextBridge.exposeInMainWorld('electron', {
         importXArchive: (accountID: number, archivePath: string, dataType: string): Promise<XImportArchiveResponse> => {
             return ipcRenderer.invoke('X:importXArchive', accountID, archivePath, dataType);
         },
-        getCookie: (accountID: number, name: string): Promise<string | null> => {
-            return ipcRenderer.invoke('X:getCookie', accountID, name);
+        getCookie: (accountID: number, hostname: string, name: string): Promise<string | null> => {
+            return ipcRenderer.invoke('X:getCookie', accountID, hostname, name);
         },
         getConfig: (accountID: number, key: string): Promise<string | null> => {
             return ipcRenderer.invoke('X:getConfig', accountID, key);
         },
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('X:setConfig', accountID, key, value);
+        },
+        deleteConfig: (accountID: number, key: string): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteConfig', accountID, key);
+        },
+        deleteConfigLike: (accountID: number, key: string): Promise<void> => {
+            return ipcRenderer.invoke('X:deleteConfigLike', accountID, key);
+        },
+        getImageDataURI: (accountID: number, url: string): Promise<void> => {
+            return ipcRenderer.invoke('X:getImageDataURI', accountID, url);
+        },
+        blueskyGetProfile: (accountID: number): Promise<BlueskyMigrationProfile | null> => {
+            return ipcRenderer.invoke('X:blueskyGetProfile', accountID);
+        },
+        blueskyAuthorize: (accountID: number, handle: string): Promise<boolean | string> => {
+            return ipcRenderer.invoke('X:blueskyAuthorize', accountID, handle);
+        },
+        blueskyCallback: (accountID: number, queryString: string): Promise<boolean | string> => {
+            return ipcRenderer.invoke('X:blueskyCallback', accountID, queryString)
+        },
+        blueskyDisconnect: (accountID: number): Promise<void> => {
+            return ipcRenderer.invoke('X:blueskyDisconnect', accountID)
+        },
+        blueskyGetTweetCounts: (accountID: number): Promise<XMigrateTweetCounts> => {
+            return ipcRenderer.invoke('X:blueskyGetTweetCounts', accountID)
+        },
+        blueskyMigrateTweet: (accountID: number, tweetID: string): Promise<boolean | string> => {
+            return ipcRenderer.invoke('X:blueskyMigrateTweet', accountID, tweetID)
+        },
+        blueskyDeleteMigratedTweet: (accountID: number, tweetID: string): Promise<boolean> => {
+            return ipcRenderer.invoke('X:blueskyDeleteMigratedTweet', accountID, tweetID)
         }
     },
     Facebook: {

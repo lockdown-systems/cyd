@@ -168,5 +168,12 @@ export const runMainMigrations = () => {
                 `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
             ]
         },
+        // Add userID to xAccount table
+        {
+            name: "add userID to xAccount table",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN userID TEXT;`,
+            ]
+        },
     ]);
 }

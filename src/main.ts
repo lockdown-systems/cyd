@@ -79,6 +79,9 @@ log.transports.file.level = config.mode == "prod" ? false : "debug"; // Disable 
 log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
+// The main window
+let win: BrowserWindow | null = null;
+
 // Handle cyd:// URLs (or cyd-dev:// in dev mode)
 const openCydURL = async (cydURL: string) => {
     if (!isAppReady) {
@@ -97,18 +100,22 @@ const openCydURL = async (cydURL: string) => {
 
     // If hostname is "open", this just means open Cyd
     if (url.hostname == "open") {
-        // Success!
         return;
     }
 
-    // Check for Bluesky OAuth redirect
-    const blueskyHostname = config.mode == "prod" ? 'social.cyd.api' : 'social.cyd.dev-api';
-    if (url.hostname == blueskyHostname && url.pathname == "/atproto-oauth-callback") {
-        dialog.showMessageBoxSync({
-            title: "Cyd",
-            message: `Bluesky OAuth is not implemented yet.`,
-            type: 'info',
-        });
+    // If hostname is "bluesky-oauth", this means finish the Bluesky OAuth flow
+    if (url.hostname == "bluesky-oauth") {
+        // Get the account ID that's in the middle of the OAuth flow
+        const accountID = database.getConfig('blueskyOAuthAccountID');
+        const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
+
+        // Reset the config value
+        database.deleteConfig('blueskyOAuthAccountID');
+
+        // Send the event to the renderer
+        if (win) {
+            win.webContents.send(blueskyOAuthCallbackEventName, url.search);
+        }
         return;
     }
 
@@ -226,7 +233,6 @@ async function initializeApp() {
     await createWindow();
 }
 
-let win: BrowserWindow | null = null;
 async function createWindow() {
     // Create the browser window
     const icon = nativeImage.createFromPath(path.join(getResourcesPath(), 'icon.png'));

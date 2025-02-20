@@ -47,7 +47,6 @@ export const stubElectron = () => {
             updateJob: cy.stub(),
             indexStart: cy.stub(),
             indexStop: cy.stub(),
-            indexParseAllJSON: cy.stub().resolves({}),
             indexParseTweets: cy.stub().resolves({}),
             indexParseConversations: cy.stub().resolves({}),
             indexIsThereMore: cy.stub().resolves(false),
