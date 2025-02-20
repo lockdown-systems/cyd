@@ -264,7 +264,7 @@ onMounted(async () => {
                     <i v-else>
                         <RunningIcon />
                     </i>
-                    Validating X archive
+                    Validating Facebook archive
                 </li>
                 <li :class="statusImportingPosts == ImportStatus.Pending ? 'text-muted' : ''">
                     <i v-if="statusImportingPosts != ImportStatus.Active"
