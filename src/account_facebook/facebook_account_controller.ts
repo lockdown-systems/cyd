@@ -32,7 +32,7 @@ import {
     FacebookJobRow,
     convertFacebookJobRowToFacebookJob,
     FacebookArchivePost,
-    FacebookArchivePostContainer,
+    FacebookPostRow
 } from './types'
 
 export class FacebookAccountController {
@@ -146,7 +146,19 @@ export class FacebookAccountController {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL UNIQUE,
     value TEXT NOT NULL
-);`
+);`]
+            },
+            {
+                name: "20250220_add_post_table",
+                sql: [
+                    `CREATE TABLE post (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    postID TEXT NOT NULL UNIQUE,
+    createdAt DATETIME NOT NULL,
+    title TEXT,
+    text TEXT,
+    addedToDatabaseAt DATETIME NOT NULL
+                    );`
                 ]
             },
         ])
@@ -228,7 +240,7 @@ export class FacebookAccountController {
             }
             const buffer = await response.buffer();
             log.info("FacebookAccountController.getProfileImageDataURI: buffer", buffer);
-            return `data:${response.headers.get('content-type')};base64,${buffer.toString('base64')}`;
+            return `data: ${response.headers.get('content-type')}; base64, ${buffer.toString('base64')}`;
         } catch (e) {
             log.error("FacebookAccountController.getProfileImageDataURI: error", e);
             return "";
@@ -263,7 +275,7 @@ export class FacebookAccountController {
     async deleteUnzippedFacebookArchive(archivePath: string): Promise<void> {
         fs.rm(archivePath, { recursive: true, force: true }, err => {
             if (err) {
-                log.error(`FacebookAccountController.deleteUnzippedFacebookArchive: Error occured while deleting unzipped folder: ${err}`);
+                log.error(`FacebookAccountController.deleteUnzippedFacebookArchive: Error occured while deleting unzipped folder: ${err} `);
             }
         });
     }
@@ -284,7 +296,7 @@ export class FacebookAccountController {
         // Make sure folders exist
         for (let i = 0; i < foldersToCheck.length; i++) {
             if (!fs.existsSync(foldersToCheck[i])) {
-                log.error(`XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]}`);
+                log.error(`XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]} `);
                 return `The folder ${foldersToCheck[i]} doesn't exist.`;
             }
         }
@@ -338,8 +350,12 @@ export class FacebookAccountController {
 
     // Return null on success, and a string (error message) on error
     async importFacebookArchive(archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> {
+        if (!this.db) {
+            this.initDB();
+        }
+
         let importCount = 0;
-        let skipCount = 0;
+        const skipCount = 0;
 
         // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
         const archiveContents = fs.readdirSync(archivePath);
@@ -410,7 +426,7 @@ export class FacebookAccountController {
             // Go through each file and import the posts
             for (let i = 0; i < postsFilenames.length; i++) {
                 // Load the data from the file
-                let postsData: FacebookArchivePost[] = [];
+                const postsData: FacebookArchivePost[] = [];
                 try {
                     const postsFile = fs.readFileSync(postsFilenames[i], 'utf8');
                     const dom = new JSDOM(postsFile);
@@ -423,9 +439,14 @@ export class FacebookAccountController {
                         const titleElement = postElement.querySelector('._a6-h');
                         const contentElement = postElement.querySelector('._2pin');
                         const dateElement = postElement.querySelector('._a72d');
+                        const linkElement = postElement.querySelector('._a6-o a');
 
-                        if (titleElement && contentElement && dateElement) {
+                        if (titleElement && contentElement && dateElement && linkElement) {
+                            const href = linkElement.getAttribute('href');
+                            const id = href ? new URL(href).searchParams.get('l') || '' : '';
+
                             postsData.push({
+                                id_str: id,
                                 title: titleElement.textContent || '',
                                 full_text: contentElement.textContent || '',
                                 created_at: dateElement.textContent || '',
@@ -444,56 +465,35 @@ export class FacebookAccountController {
                 // Loop through the posts and add them to the database
                 try {
                     postsData.forEach((post) => {
-                        log.info(`FacebookAccountController.importFacebookArchive: loaded`);
-                        // TODO: implement for facebook
-                        // let post: XArchivePost;
-                        // if (isXArchivePostContainer(postContainer)) {
-                        //     post = postContainer.post;
-                        // } else {
-                        //     post = postContainer;
-                        // }
-
                         // Is this post already there?
-                        // TODO: implement for facebook
-                        // const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
-                        // if (existingTweet) {
-                        //     // Delete the existing tweet to re-import
-                        //     exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweet.id_str]);
-                        // }
+                        const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [post.id_str], "get") as FacebookPostRow;
+                        if (existingPost) {
+                            // Delete the existing post to re-import
+                            exec(this.db, 'DELETE FROM post WHERE postID = ?', [post.id_str]);
+                        }
 
-                        // Check if tweet has media and call importXArchiveMedia
-                        let hasMedia: boolean = false;
+                        // Check if post has media and call importXArchiveMedia
+                        //let hasMedia: boolean = false;
                         // TODO: implement for facebook
                         // if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
                         //     hasMedia = true;
                         //     this.importXArchiveMedia(tweet, archivePath);
                         // }
 
-                        // Check if tweet has urls and call importXArchiveURLs
+                        // Check if post has urls and call importXArchiveURLs
                         // TODO: implement for facebook
                         // if (tweet.entities?.urls && tweet.entities?.urls?.length) {
                         //     this.importXArchiveURLs(tweet);
                         // }
 
                         // Import it
-                        // TODO: Implement insert into posts table
-                        // exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                        //     username,
-                        //     tweet.id_str,
-                        //     new Date(tweet.created_at),
-                        //     tweet.favorite_count,
-                        //     tweet.retweet_count,
-                        //     tweet.favorited ? 1 : 0,
-                        //     tweet.retweeted ? 1 : 0,
-                        //     0,
-                        //     tweet.full_text,
-                        //     `${username}/status/${tweet.id_str}`,
-                        //     hasMedia ? 1 : 0,
-                        //     tweet.in_reply_to_status_id_str ? 1 : 0,
-                        //     tweet.in_reply_to_status_id_str,
-                        //     tweet.in_reply_to_user_id_str,
-                        //     new Date(),
-                        // ]);
+                        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                            post.id_str,
+                            new Date(post.created_at),
+                            post.title,
+                            post.full_text,
+                            new Date(),
+                        ]);
                         importCount++;
                     });
                 } catch (e) {
