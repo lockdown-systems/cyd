@@ -33,6 +33,7 @@ import {
     FacebookArchivePost,
     FacebookPostRow
 } from './types'
+import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
 export class FacebookAccountController {
     private accountUUID: string = "";
@@ -214,6 +215,18 @@ export class FacebookAccountController {
         }
 
         log.info("FacebookAccountController.archiveBuild: building archive");
+
+        // Posts
+        const posts: FacebookPostRow[] = exec(
+            this.db,
+            "SELECT * FROM post ORDER BY createdAt DESC",
+            [],
+            "all"
+        ) as FacebookPostRow[];
+
+        // const accountUser = users.find((user) => user.screenName == this.account?.username);
+        // const accountUserID = accountUser?.userID;
+
 
         // TODO: implement
     }
