@@ -62,7 +62,7 @@ const config: Config = {
           position: 'left',
           label: 'Docs',
         },
-        { to: '/blog', label: 'Dev Blog', position: 'left' },
+        { to: '/blog', label: 'Development Blog', position: 'left' },
         {
           href: 'https://github.com/lockdown-systems/cyd',
           label: 'Source Code',
