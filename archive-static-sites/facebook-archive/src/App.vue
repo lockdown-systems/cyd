@@ -6,12 +6,12 @@ import { FacebookArchive } from './types'
 const archiveDataFound = ref(false);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const archiveData = ref<FacebookArchive>((window as any).archiveData);
+
 provide('archiveData', archiveData);
 
 onMounted(() => {
   // Make sure the archive data is there
   archiveDataFound.value = 'archiveData' in window;
-
   // Set the document title
   if (archiveDataFound.value) {
     document.title = `${archiveData.value.username}'s Facebook Archive`;
@@ -28,7 +28,7 @@ onMounted(() => {
             <img src="./assets/icon.svg" alt="Cyd" class="icon" style="height: 40px;">
           </a>
           <span class="navbar-text">
-            <i class="fa-brands fa-facebook"></i> Archive: <b>{{ archiveData.username }}</b>
+            <i class="fa-brands fa-facebook"></i> Archive: <b>{{ archiveData?.username }}</b>
           </span>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@ onMounted(() => {
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-              <li v-if="archiveData.posts.length > 0" class="nav-item">
+              <li v-if="archiveData?.posts?.length && archiveData.posts.length > 0" class="nav-item">
                 <router-link to="/" class="nav-link">Posts</router-link>
               </li>
             </ul>
@@ -49,8 +49,8 @@ onMounted(() => {
       <footer class="mt-auto bg-light py-3">
         <div class="container">
           <p class="text-center mb-0">Archive created with <a href="https://cyd.social/">Cyd</a> v{{
-            archiveData.appVersion }} | Exported {{
-              formattedDate(archiveData.createdAt) }}</p>
+            archiveData?.appVersion }} | Exported {{
+              formattedDate(archiveData?.createdAt || '') }}</p>
         </div>
       </footer>
     </div>

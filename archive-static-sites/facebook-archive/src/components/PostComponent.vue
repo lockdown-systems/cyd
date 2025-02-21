@@ -24,7 +24,6 @@ const formattedText = computed(() => {
             <a v-if="post.archivedAt"
                 :href="`./Archived Posts/${formatDateToYYYYMMDD(post.createdAt)}_${post.postID}.html`"
                 target="_blank">archived</a>
-            <a :href="`https://facebook.com/${post.path}`" target="_blank">original</a>
             <small v-if="post.createdAt">{{ formattedDatetime(post.createdAt) }}</small>
             <small v-else class="text-muted">unknown date</small>
         </div>
