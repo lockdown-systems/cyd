@@ -12,6 +12,6 @@ Before deleting your tweets, you need to create a local database of your data. W
 
 There are three different ways of building your local database:
 
-- [Build Database from Scratch](./build.md): Cyd can scroll through your data to discover it.
-- [Import X Archive](./import.md): You can import an official archive from X.
-- [Save HTML Tweets, DMs, and/or Bookmarks](./archive.md): Cyd can scroll through your data to import types of data that aren't included in the official archive.
+- [Build Database from Scratch](./build): Cyd can scroll through your data to discover it.
+- [Import X Archive](./import): You can import an official archive from X.
+- [Save HTML Tweets, DMs, and/or Bookmarks](./archive): Cyd can scroll through your data to import types of data that aren't included in the official archive.
