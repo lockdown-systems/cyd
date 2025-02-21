@@ -51,3 +51,10 @@ If you're having problems with Cyd, you can try resetting all settings with the 
 :::info
 Resetting Cyd won't touch your Data Folder, so you won't lose any data. You'll just need to login to your accounts again.
 :::
+
+## Using Cyd
+
+Each platform that Cyd supports works in its own unique way. To learn how to use each platform, refer to the documentation for that platform:
+
+- [X (formerly Twitter)](../x/login)
+- _More platforms coming soon..._

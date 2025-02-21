@@ -31,3 +31,7 @@
   --ifm-color-secondary: #ffc663;
   --ifm-footer-link-hover-color: #ffeed1;
 }
+
+video {
+  max-width: 100%;
+}
