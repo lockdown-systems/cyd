@@ -162,6 +162,24 @@ export class FacebookAccountController {
                     );`
                 ]
             },
+            {
+                name: "20250220_add_isReposted_to_post",
+                sql: [
+                    `CREATE TABLE post_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        postID TEXT NOT NULL UNIQUE,
+                        createdAt DATETIME NOT NULL,
+                        title TEXT,
+                        text TEXT,
+                        isReposted BOOLEAN NOT NULL DEFAULT 0,
+                        addedToDatabaseAt DATETIME NOT NULL
+                    );`,
+                    `INSERT INTO post_new (id, postID, createdAt, title, text, addedToDatabaseAt)
+                     SELECT id, postID, createdAt, title, text, addedToDatabaseAt FROM post;`,
+                    `DROP TABLE post;`,
+                    `ALTER TABLE post_new RENAME TO post;`
+                ]
+            },
         ])
         log.info("FacebookAccountController.initDB: database initialized");
     }
