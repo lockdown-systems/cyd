@@ -1,0 +1,8 @@
+{
+    "label": "Premium Dashboard",
+    "position": 4,
+    "link": {
+        "type": "generated-index",
+        "description": "How to manage your Premium plan."
+    }
+}
