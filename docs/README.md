@@ -6,13 +6,12 @@ The Cyd docs website is built using [Docusaurus](https://docusaurus.io/).
 
 ```sh
 npm install
-npm run build
 ```
 
 ### Local Development
 
 ```sh
-npm run serve
+npm run start
 ```
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
