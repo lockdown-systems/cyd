@@ -235,7 +235,6 @@ export class FacebookAccountController {
                 postID: post.postID,
                 createdAt: post.createdAt,
                 text: post.text,
-                path: post.path,
                 archivedAt: post.archivedAt,
             };
             return archivePost
