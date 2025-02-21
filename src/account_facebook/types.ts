@@ -37,6 +37,7 @@ export interface FacebookArchivePost {
     created_at: string;
     full_text: string;
     title: string;
+    isReposted: boolean;
     // lang: string;
 }
 
@@ -51,4 +52,5 @@ export interface FacebookPostRow {
     archivedAt: string | null;
     deletedPostAt: string | null;
     hasMedia: boolean;
+    isReposted: boolean;
 }

@@ -3,6 +3,7 @@ export type Post = {
     createdAt: string;
     text: string;
     archivedAt: string | null;
+    isReposted: boolean;
 };
 
 export type FacebookArchive = {
