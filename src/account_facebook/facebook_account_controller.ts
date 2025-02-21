@@ -234,6 +234,7 @@ export class FacebookAccountController {
                 postID: post.postID,
                 createdAt: post.createdAt,
                 text: post.text,
+                isReposted: post.isReposted,
                 archivedAt: post.archivedAt,
             };
             return archivePost
