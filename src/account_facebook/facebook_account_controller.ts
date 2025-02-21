@@ -536,6 +536,7 @@ export class FacebookAccountController {
                                 title: titleElement.textContent || '',
                                 full_text: contentElement.textContent || '',
                                 created_at: dateElement.textContent || '',
+                                isReposted: false,
                             });
                         }
                     };
