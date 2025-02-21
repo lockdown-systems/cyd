@@ -2,6 +2,7 @@ export type Post = {
     postID: string;
     createdAt: string;
     text: string;
+    title: string;
     archivedAt: string | null;
     isReposted: boolean;
 };
