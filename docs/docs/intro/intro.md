@@ -10,28 +10,6 @@ Cyd helps you create a local, private backup of your data &mdash; like all of yo
 
 ![Screenshot of Cyd](./img/cyd.png)
 
-## Free and Premium Features
-
-Cyd is developed by the [Lockdown Systems Collective](https://lockdown.systems), a worker-owned cooperative. Even though it's open source &mdash; you can check out the code [on GitHub](https://github.com/lockdown-systems/cyd) &mdash; some of the features cost money. By running the collective as a sustainable business, we can make a living continually improving Cyd.
-
-You can [download the Cyd app](https://cyd.social/download/) for free, and you can use it without buying anything or signing up for an account. If you try to use a premium feature, you will be prompted to sign up and pay for a Premium plan.
-
-In general, the features that help you to save copies of your data are free, and the features that help you delete your data require a Premium plan. We make some exceptions to this though. For example, it's free to delete all of your tweets from X, but you'll need a Premium plan if you want to choose to keep the ones that went viral.
-
-Check out the [Pricing page](https://cyd.social/pricing/) for details on how much Premium plans cost and what features they include. We try to keep it very affordable &mdash; about half the price of a cup of coffee each month.
-
-## Cyd for Teams
-
-If you run a business or an organization and would like to give your employees privacy, peace of mind, and protection from doxing and harassment (*ehem*, newsrooms, I'm looking at you), then Cyd for Teams is for you.
-
-Cyd for Teams gives you central management and billing of Premium plans for everyone at your organization. You can invite individual people to your plan, or anyone who signs up with Cyd using an email address from your organization's domain they can get added automatically. Seats are transferrable, so if one employee leaves you can give that seat to the next person without needing to buy new seat.
-
-To get started, load the [Cyd for Teams page](https://dash.cyd.social/#/teams/new) on the Cyd Dashboard. If you don't have a Cyd account yet, create one by entering your email address. From there, you can create a new organization and sign up for a Cyd for Teams plan.
-
-## Support
-
-If you need help with Cyd, contact collective@lockdown.systems.
-
 ## In the Media
 
 ### December 13, 2024 | Lifehacker
