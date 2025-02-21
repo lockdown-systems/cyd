@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, getCurrentInstance } from 'vue';
+import { ref, getCurrentInstance, onMounted } from 'vue';
 import {
     XViewModel,
     State
@@ -22,6 +22,9 @@ const emit = defineEmits<{
     startJobsJustSave: [],
     updateUserPremium: [],
 }>()
+
+const checkReason = ref<string>('');
+const tasks = ref<string[]>([]);
 
 // Buttons
 const signInClicked = async () => {
@@ -46,8 +49,30 @@ emitter?.on(`x-premium-check-failed-${props.model.account.id}`, async () => {
 });
 
 const backClicked = async () => {
-    emit('setState', State.WizardReview);
+    if (checkReason.value == 'deleteData') {
+        emit('setState', State.WizardReview);
+    } else if (checkReason.value == 'migrateTweetsToBluesky') {
+        emit('setState', State.WizardMigrate);
+    }
 };
+
+onMounted(async () => {
+    // Load the reason for this check
+    const premiumCheckReason = localStorage.getItem(`premiumCheckReason-${props.model.account.id}`);
+    console.log(`premiumCheckReason-${props.model.account.id}`, premiumCheckReason);
+    if (premiumCheckReason) {
+        checkReason.value = premiumCheckReason;
+        localStorage.removeItem(`premiumCheckReason-${props.model.account.id}`);
+    }
+
+    // See if there are any premium tasks in localStorage
+    const premiumTasks = localStorage.getItem(`premiumTasks-${props.model.account.id}`);
+    console.log(`premiumTasks-${props.model.account.id}`, premiumTasks);
+    if (premiumTasks) {
+        tasks.value = JSON.parse(premiumTasks);
+        localStorage.removeItem(`premiumTasks-${props.model.account.id}`);
+    }
+});
 </script>
 
 <template>
@@ -57,47 +82,102 @@ const backClicked = async () => {
             <i class="fa-solid fa-heart" />
         </h2>
         <h2 v-else>
-            You need to upgrade to Premium to do the following:
+            The following features require a Premium account:
         </h2>
-        <ul v-if="!userAuthenticated || !userPremium">
-            <li
-                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsDaysOldEnabled">
-                Delete tweets older than a set number of days
+        <ul v-if="!userAuthenticated || !userPremium" class="features-list">
+            <!-- X tasks -->
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsDaysOldEnabled"
+                class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-calendar-alt me-2" />
+                        Delete tweets older than a set number of days
+                    </small>
+                </div>
             </li>
-            <li
-                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled">
-                Delete tweets unless they have at least a certain number of retweets
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled"
+                class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-retweet me-2" />
+                        Delete tweets unless they have at least a certain number of retweets
+                    </small>
+                </div>
             </li>
-            <li
-                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsLikesThresholdEnabled">
-                Delete tweets unless they have at least a certain number of likes
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsLikesThresholdEnabled"
+                class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-heart me-2" />
+                        Delete tweets unless they have at least a certain number of likes
+                    </small>
+                </div>
             </li>
-            <li
-                v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteRetweets && model.account.xAccount?.deleteRetweetsDaysOldEnabled">
-                Delete retweets older than a set number of days
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteRetweets && model.account.xAccount?.deleteRetweetsDaysOldEnabled"
+                class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-calendar-alt me-2" />
+                        Delete retweets older than a set number of days
+                    </small>
+                </div>
             </li>
-            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.unfollowEveryone">
-                Unfollow everyone
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.unfollowEveryone" class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-user-minus me-2" />
+                        Unfollow everyone
+                    </small>
+                </div>
             </li>
-            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes">
-                Delete likes
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteLikes" class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-heart-broken me-2" />
+                        Delete likes
+                    </small>
+                </div>
             </li>
-            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteBookmarks">
-                Delete bookmarks
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteBookmarks" class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-bookmark me-2" />
+                        Delete bookmarks
+                    </small>
+                </div>
             </li>
-            <li v-if="model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteDMs">
-                Delete direct messages
+            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteDMs" class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-envelope me-2" />
+                        Delete direct messages
+                    </small>
+                </div>
+            </li>
+            <!-- other tasks -->
+            <li v-for="task in tasks" :key="task" class="mb-1">
+                <div class="card">
+                    <small class="card-body">
+                        <i class="fa-solid fa-tasks me-2" />
+                        {{ task }}
+                    </small>
+                </div>
             </li>
         </ul>
 
         <template v-if="!userAuthenticated">
-            <p>First, sign in to your Cyd account.</p>
+            <p>To get started, sign in to your Cyd account.</p>
         </template>
         <template v-else-if="userAuthenticated && !userPremium">
             <p>Manage your account to upgrade to Premium.</p>
         </template>
         <template v-else>
-            <p>Ready to delete your data from X? <em>Let's go!</em></p>
+            <p v-if="checkReason == 'deleteData'">
+                Ready to delete your data from X? <em>Let's go!</em>
+            </p>
+            <p v-if="checkReason == 'migrateTweetsToBluesky'">
+                Ready to migrate your tweets into Bluesky? <em>Let's go!</em>
+            </p>
         </template>
 
         <form @submit.prevent>
@@ -124,20 +204,39 @@ const backClicked = async () => {
                     </div>
                 </div>
 
-                <button v-else type="submit" class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
-                    <i class="fa-solid fa-user-ninja" />
-                    Review Your Choices
-                </button>
+                <div v-else>
+                    <button v-if="checkReason == 'deleteData'" type="submit"
+                        class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
+                        <i class="fa-solid fa-user-ninja" />
+                        Review Your Choices
+                    </button>
+                    <button v-if="checkReason == 'migrateTweetsToBluesky'" type="submit"
+                        class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
+                        <i class="fa-solid fa-user-ninja" />
+                        Migrate to Bluesky
+                    </button>
+                </div>
             </div>
 
             <div v-if="!userPremium" class="buttons">
-                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                <button v-if="checkReason == 'deleteData'" type="submit"
+                    class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
                     Back to Review
+                </button>
+                <button v-if="checkReason == 'migrateTweetsToBluesky'" type="submit"
+                    class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                    <i class="fa-solid fa-backward" />
+                    Back to Migrate to Bluesky
                 </button>
             </div>
         </form>
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+ul.features-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+</style>

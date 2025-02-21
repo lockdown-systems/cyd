@@ -4,11 +4,18 @@ import os from 'os'
 
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
+import mime from 'mime-types';
+import sharp from 'sharp';
 
-import { app, session } from 'electron'
+import { app, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
+
+import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
+import { Agent, BlobRef } from '@atproto/api';
+import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
+import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
 
 import {
     getResourcesPath,
@@ -28,7 +35,9 @@ import {
     ResponseData,
     XDatabaseStats, emptyXDatabaseStats,
     XDeleteReviewStats, emptyXDeleteReviewStats,
-    XImportArchiveResponse
+    XImportArchiveResponse,
+    XMigrateTweetCounts,
+    BlueskyMigrationProfile,
 } from '../shared_types'
 import {
     runMigrations,
@@ -36,8 +45,10 @@ import {
     saveXAccount,
     exec,
     Sqlite3Count,
-    getConfig,
-    setConfig,
+    getConfig as globalGetConfig,
+    setConfig as globalSetConfig,
+    deleteConfig as globalDeleteConfig,
+    deleteConfigLike as globalDeleteConfigLike,
 } from '../database'
 import { IMITMController } from '../mitm';
 import {
@@ -49,6 +60,7 @@ import {
     XConversationRow,
     XMessageRow,
     XConversationParticipantRow,
+    XTweetBlueskyMigrationRow,
     convertXJobRowToXJob,
     convertTweetRowToXTweetItem,
     convertTweetRowToXTweetItemArchive,
@@ -67,7 +79,6 @@ import {
     XAPIConversationTimeline,
     XAPIMessage,
     XAPIUser,
-    XAPIAll,
     XArchiveAccount,
     XArchiveTweet,
     XArchiveTweetContainer,
@@ -125,7 +136,9 @@ export class XAccountController {
     public mitmController: IMITMController;
     private progress: XProgress = emptyXProgress();
 
-    private cookies: Record<string, string> = {};
+    private cookies: Record<string, Record<string, string>> = {};
+
+    private blueskyClient: NodeOAuthClient | null = null;
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
@@ -162,14 +175,18 @@ export class XAccountController {
 
         ses.webRequest.onSendHeaders((details) => {
             // Keep track of cookies
-            if (details.url.startsWith("https://x.com/") && details.requestHeaders) {
+            if (details.requestHeaders) {
+                const hostname = new URL(details.url).hostname;
                 const cookieHeader = details.requestHeaders['Cookie'];
                 if (cookieHeader) {
                     const cookies = cookieHeader.split(';');
                     cookies.forEach((cookie) => {
                         const parts = cookie.split('=');
                         if (parts.length == 2) {
-                            this.cookies[parts[0].trim()] = parts[1].trim();
+                            if (!this.cookies[hostname]) {
+                                this.cookies[hostname] = {};
+                            }
+                            this.cookies[hostname][parts[0].trim()] = parts[1].trim();
                         }
                     });
                 }
@@ -347,6 +364,19 @@ export class XAccountController {
                     `UPDATE tweet SET deletedLikeAt = deletedAt WHERE deletedAt IS NOT NULL AND isLiked = 1;`
                 ]
             },
+            // Add tweet_bsky_migration table
+            {
+                name: "20250205_add_tweet_bsky_migration_table",
+                sql: [
+                    `CREATE TABLE tweet_bsky_migration (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tweetID TEXT NOT NULL,
+    atprotoURI TEXT NOT NULL,
+    atprotoCID TEXT NOT NULL,
+    migratedAt DATETIME NOT NULL
+);`
+                ]
+            },
             // Add hasMedia to the tweet table, and create tweet_media table
             {
                 name: "20250206_add_hasMedia_and_tweet_media",
@@ -471,59 +501,6 @@ export class XAccountController {
         await this.mitmController.stopMonitoring();
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await this.mitmController.stopMITM(ses);
-    }
-
-    // Parse all.json and returns stats about the user
-    async indexParseAllJSON(): Promise<XAccount> {
-        if (!this.account) {
-            throw new Error("XAccountController.indexParseAllJSON: account not found");
-        }
-
-        await this.mitmController.clearProcessed();
-        log.info(`XAccountController.indexParseAllJSON: parsing ${this.mitmController.responseData.length} responses`);
-
-        for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            const responseData = this.mitmController.responseData[i];
-            log.info('XAccountController.indexParseAllJSON: processing', responseData.url);
-
-            if (responseData.processed) {
-                continue;
-            }
-
-            if (
-                responseData.url.includes("/i/api/2/notifications/all.json?") &&
-                responseData.status == 200
-            ) {
-                const body: XAPIAll = JSON.parse(responseData.body);
-                if (!body.globalObjects || !body.globalObjects.users) {
-                    continue;
-                }
-
-                // Loop through the users
-                Object.values(body.globalObjects.users).forEach((user: XAPIUser) => {
-                    // If it's the logged in user, get the stats
-                    if (user.screen_name == this.account?.username) {
-                        // Update the account
-                        this.account.followingCount = user.friends_count;
-                        this.account.followersCount = user.followers_count;
-                        this.account.tweetsCount = user.statuses_count;
-                        this.account.likesCount = user.favourites_count;
-                        log.info('XAccountController.indexParseAllJSON: found the following data', {
-                            followingCount: this.account.followingCount,
-                            followersCount: this.account.followersCount,
-                            tweetsCount: this.account.tweetsCount,
-                            likesCount: this.account.likesCount
-                        });
-                        saveXAccount(this.account);
-                    }
-                });
-            }
-
-            this.mitmController.responseData[i].processed = true;
-            log.info('XAccountController.indexParseAllJSON: processed', i);
-        }
-
-        return this.account;
     }
 
     indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
@@ -835,12 +812,12 @@ export class XAccountController {
         })
     }
 
-    async getProfileImageDataURI(user: XAPIUser): Promise<string> {
-        if (!user.profile_image_url_https) {
+    async getImageDataURI(url: string): Promise<string> {
+        if (!url) {
             return "";
         }
         try {
-            const response = await fetch(user.profile_image_url_https, {});
+            const response = await fetch(url, {});
             if (!response.ok) {
                 return "";
             }
@@ -858,7 +835,7 @@ export class XAccountController {
         }
 
         // Download the profile image
-        const profileImageDataURI = await this.getProfileImageDataURI(user);
+        const profileImageDataURI = user.profile_image_url_https ? await this.getImageDataURI(user.profile_image_url_https) : "";
 
         // Have we seen this user before?
         const existing: XUserRow[] = exec(this.db, 'SELECT * FROM user WHERE userID = ?', [user.id_str], "all") as XUserRow[];
@@ -1291,7 +1268,7 @@ export class XAccountController {
             "all"
         ) as XTweetRow[];
 
-        // Load all media and URLs, to process later
+        // Load all media, URLs, and Bluesky migrations, to process later
         const media: XTweetMediaRow[] = exec(
             this.db,
             "SELECT * FROM tweet_media",
@@ -1304,6 +1281,12 @@ export class XAccountController {
             [],
             "all"
         ) as XTweetURLRow[];
+        const blueskyMigration: XTweetBlueskyMigrationRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_bsky_migration",
+            [],
+            "all"
+        ) as XTweetBlueskyMigrationRow[];
 
         // Users
         const users: XUserRow[] = exec(
@@ -1358,6 +1341,7 @@ export class XAccountController {
                 deletedBookmarkAt: tweet.deletedBookmarkAt,
                 media: [],
                 urls: [],
+                blueskyMigrationURIs: [],
             };
             // Loop through media and URLs
             media.forEach((media) => {
@@ -1376,6 +1360,11 @@ export class XAccountController {
                         displayURL: url.displayURL,
                         expandedURL: url.expandedURL,
                     });
+                }
+            });
+            blueskyMigration.forEach((migration) => {
+                if (migration.tweetID == tweet.tweetID) {
+                    archiveTweet.blueskyMigrationURIs.push(migration.atprotoURI);
                 }
             });
 
@@ -2346,15 +2335,700 @@ export class XAccountController {
         })
     }
 
-    async getCookie(name: string): Promise<string | null> {
-        return this.cookies[name] || null;
+    async getCookie(hostname: string, name: string): Promise<string | null> {
+        log.debug(`XAccountController.getCookie: hostname=${hostname}, name=${name}`);
+        if (!this.cookies[hostname]) {
+            return null;
+        }
+        return this.cookies[hostname][name] || null;
     }
 
     async getConfig(key: string): Promise<string | null> {
-        return getConfig(key, this.db);
+        return globalGetConfig(key, this.db);
     }
 
     async setConfig(key: string, value: string) {
-        return setConfig(key, value, this.db);
+        return globalSetConfig(key, value, this.db);
+    }
+
+    async deleteConfig(key: string) {
+        return globalDeleteConfig(key, this.db);
+    }
+
+    async deleteConfigLike(key: string) {
+        return globalDeleteConfigLike(key, this.db);
+    }
+
+    async blueskyInitClient(): Promise<NodeOAuthClient> {
+        // Bluesky client, for migrating
+        let host;
+        if (process.env.CYD_MODE === "prod") {
+            host = "api.cyd.social"
+        } else {
+            host = "dev-api.cyd.social"
+        }
+        const path = "bluesky/client-metadata.json";
+
+        return await NodeOAuthClient.fromClientId({
+            clientId: `https://${host}/${path}`,
+            stateStore: {
+                set: async (key: string, internalState: NodeSavedState): Promise<void> => {
+                    await this.setConfig(`blueskyStateStore-${key}`, JSON.stringify(internalState));
+                },
+                get: async (key: string): Promise<NodeSavedState | undefined> => {
+                    const stateStore = await this.getConfig(`blueskyStateStore-${key}`);
+                    return stateStore ? JSON.parse(stateStore) : undefined;
+                },
+                del: async (key: string): Promise<void> => {
+                    await this.setConfig(`blueskyStateStore-${key}`, "");
+                },
+            },
+            sessionStore: {
+                set: async (sub: string, session: NodeSavedSession): Promise<void> => {
+                    await this.setConfig(`blueskySessionStore-${sub}`, JSON.stringify(session));
+                },
+                get: async (sub: string): Promise<NodeSavedSession | undefined> => {
+                    const sessionStore = await this.getConfig(`blueskySessionStore-${sub}`);
+                    return sessionStore ? JSON.parse(sessionStore) : undefined;
+                },
+                del: async (sub: string): Promise<void> => {
+                    await this.setConfig(`blueskySessionStore-${sub}`, "");
+                },
+            },
+        });
+    }
+
+    async blueskyGetProfile(): Promise<BlueskyMigrationProfile | null> {
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            return null;
+        }
+
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+        if (!agent.did) {
+            return null;
+        }
+
+        const profile = await agent.getProfile({ actor: agent.did })
+        const blueskyMigrationProfile: BlueskyMigrationProfile = {
+            did: profile.data.did,
+            handle: profile.data.handle,
+            displayName: profile.data.displayName,
+            avatar: profile.data.avatar,
+        }
+        return blueskyMigrationProfile;
+    }
+
+    async blueskyAuthorize(handle: string): Promise<boolean | string> {
+        // Initialize the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        try {
+            // Authorize the handle
+            const url = await this.blueskyClient.authorize(handle);
+
+            // Save the account ID in the global config
+            const accountID = this.account?.id == null ? "" : this.account.id.toString();
+            await globalSetConfig("blueskyOAuthAccountID", accountID);
+
+            // Open the URL in the default browser
+            await shell.openExternal(url.toString());
+
+            return true;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                log.error("XAccountController.blueskyAuthorize: Error authorizing Bluesky client", e);
+                return e.message;
+            } else {
+                log.error("XAccountController.blueskyAuthorize: Unknown error", e);
+                return String(e);
+            }
+        }
+    }
+
+    async blueskyCallback(queryString: string): Promise<boolean | string> {
+        // Initialize the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+
+        const params = new URLSearchParams(queryString);
+
+        // Handle errors
+        const error = params.get("error");
+        const errorDescription = params.get("error_description");
+        if (errorDescription) {
+            return errorDescription;
+        }
+        if (error) {
+            return `The authorization failed with error: ${error}`;
+        }
+
+        // Finish the callback
+        const { session, state } = await this.blueskyClient.callback(params);
+
+        log.info("XAccountController.blueskyCallback: authorize() was called with state", state);
+        log.info("XAccountController.blueskyCallback: user authenticated as", session.did);
+
+        // Save the did
+        await this.setConfig("blueskyDID", session.did);
+
+        const agent = new Agent(session)
+        if (agent.did) {
+            // Make Authenticated API calls
+            const profile = await agent.getProfile({ actor: agent.did })
+            log.info('Bluesky profile:', profile.data)
+
+            return true;
+        } else {
+            return "agent.did is null";
+        }
+    }
+
+    async blueskyDisconnect(): Promise<void> {
+        // Revoke the session
+        try {
+            if (!this.blueskyClient) {
+                this.blueskyClient = await this.blueskyInitClient();
+            }
+            const did = await this.getConfig("blueskyDID");
+            if (did) {
+                const session = await this.blueskyClient.restore(did);
+                await session.signOut();
+            }
+        } catch (e) {
+            log.error("XAccountController.blueskyDisconnect: Error revoking session", e);
+        }
+
+        // Delete from global config
+        await globalDeleteConfig("blueskyOAuthAccountID");
+
+        // Delete from account config
+        await this.deleteConfig("blueskyDID");
+        await this.deleteConfigLike("blueskyStateStore-%");
+        await this.deleteConfigLike("blueskySessionStore-%");
+    }
+
+    // When you start deleting tweets, return a list of tweets to delete
+    async blueskyGetTweetCounts(): Promise<XMigrateTweetCounts> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        const username = this.account.username;
+        const userID = this.account.userID;
+
+        const toMigrateTweets: XTweetRow[] = exec(this.db, `
+            SELECT tweet.*
+            FROM tweet
+            LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet_bsky_migration.tweetID IS NULL
+            AND tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+            AND tweet.deletedTweetAt IS NULL
+            AND (tweet.isReply = ? OR (tweet.isReply = ? AND tweet.replyUserID = ?))
+            ORDER BY tweet.createdAt ASC
+        `, ["RT @%", 0, username, 0, 1, userID], "all") as XTweetRow[];
+        const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
+
+        const cannotMigrate: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet_bsky_migration.tweetID IS NULL
+            AND tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+            AND tweet.deletedTweetAt IS NULL
+            AND (tweet.isReply = ? AND tweet.replyUserID != ?)
+        `, ["RT @%", 0, username, 1, userID], "get") as Sqlite3Count;
+
+        const alreadyMigratedTweets: XTweetRow[] = exec(this.db, `
+            SELECT tweet.*
+            FROM tweet
+            INNER JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
+            WHERE tweet.text NOT LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+        `, ["RT @%", 0, username], "all") as XTweetRow[];
+        const alreadyMigratedTweetIDs = alreadyMigratedTweets.map((tweet) => tweet.tweetID);
+
+        // Return the counts
+        const resp: XMigrateTweetCounts = {
+            toMigrateTweetIDs: toMigrateTweetIDs,
+            cannotMigrateCount: cannotMigrate.count,
+            alreadyMigratedTweetIDs: alreadyMigratedTweetIDs,
+        }
+        log.info("XAccountController.blueskyGetTweetCounts: returning", resp);
+        return resp;
+    }
+
+    // Return true on success, and a string (error message) on error
+    async blueskyMigrateTweet(tweetID: string): Promise<boolean | string> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // Get the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            return 'Bluesky DID not found';
+        }
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+
+        // Select the tweet
+        let tweet: XTweetRow;
+        try {
+            tweet = exec(this.db, `
+                SELECT *
+                FROM tweet
+                WHERE tweetID = ?
+            `, [tweetID], "get") as XTweetRow;
+        } catch (e) {
+            return `Error selecting tweet: ${e}`;
+        }
+
+        // Replace t.co links with actual links
+        let tweetURLs: XTweetURLRow[];
+        try {
+            tweetURLs = exec(this.db, `
+                SELECT *
+                FROM tweet_url
+                WHERE tweetID = ?
+            `, [tweetID], "all") as XTweetURLRow[];
+        } catch (e) {
+            return `Error selecting tweet URLs: ${e}`;
+        }
+        const facets: {
+            index: {
+                byteStart: number,
+                byteEnd: number,
+            },
+            features: BskyRichtextFacetLink[],
+        }[] = [];
+        let text = tweet.text;
+        for (const tweetURL of tweetURLs) {
+            // Replace url with expandedURL
+            const byteStart = text.indexOf(tweetURL.url);
+            text = text.substring(0, byteStart) + tweetURL.expandedURL + text.substring(byteStart + tweetURL.url.length);
+            const byteEnd = byteStart + tweetURL.expandedURL.length;
+
+            // Add the link facet
+            facets.push({
+                'index': {
+                    'byteStart': byteStart,
+                    'byteEnd': byteEnd,
+                },
+                'features': [
+                    {
+                        '$type': 'app.bsky.richtext.facet#link',
+                        'uri': tweetURL.expandedURL,
+                    }
+                ],
+            });
+        }
+
+        // Get the current user's user ID
+        let userRow: XUserRow;
+        try {
+            userRow = exec(this.db, `
+                SELECT *
+                FROM user
+                WHERE screenName = ?
+            `, [this.account.username], "get") as XUserRow;
+        } catch (e) {
+            return `Error selecting user: ${e}`;
+        }
+
+        // Handle replies
+        let reply = null;
+        if (tweet.isReply && tweet.replyUserID == userRow.userID) {
+            // Find the parent tweet migration
+            let parentMigration: XTweetBlueskyMigrationRow;
+            try {
+                parentMigration = exec(this.db, `
+                    SELECT *
+                    FROM tweet_bsky_migration
+                    WHERE tweetID = ?
+                `, [tweet.replyTweetID], "get") as XTweetBlueskyMigrationRow;
+            } catch (e) {
+                return `Error selecting parent migration: ${e}`;
+            }
+            if (parentMigration) {
+                // Find the root tweet in the thread
+                let foundRoot = false;
+                let rootTweetID = tweet.replyTweetID;
+                while (!foundRoot) {
+                    let parentTweet: XTweetRow;
+                    try {
+                        parentTweet = exec(this.db, `
+                            SELECT *
+                            FROM tweet
+                            WHERE tweetID = ?
+                        `, [rootTweetID], "get") as XTweetRow;
+                    } catch (e) {
+                        return `Error selecting parent tweet: ${e}`;
+                    }
+                    if (parentTweet && parentTweet.isReply && parentTweet.replyUserID == userRow.userID) {
+                        rootTweetID = parentTweet.replyTweetID;
+                    } else {
+                        foundRoot = true;
+                    }
+                }
+
+                if (foundRoot) {
+                    // Get the root migration
+                    let rootMigration: XTweetBlueskyMigrationRow;
+                    try {
+                        rootMigration = exec(this.db, `
+                            SELECT *
+                            FROM tweet_bsky_migration
+                            WHERE tweetID = ?
+                        `, [rootTweetID], "get") as XTweetBlueskyMigrationRow;
+                    } catch (e) {
+                        return `Error selecting root migration: ${e}`;
+                    }
+                    if (rootMigration) {
+                        // Build the reply
+                        reply = {
+                            root: {
+                                uri: rootMigration.atprotoURI,
+                                cid: rootMigration.atprotoCID,
+                            },
+                            parent: {
+                                uri: parentMigration.atprotoURI,
+                                cid: parentMigration.atprotoCID,
+                            },
+                        };
+                    }
+                }
+            }
+        }
+
+        // Handle quotes
+        let embed = null;
+        if (tweet.isQuote && tweet.quotedTweet) {
+            // Parse the quoted tweet URL to see if it's a self-quote
+            // URL looks like: https://twitter.com/{username}/status/{tweetID}
+            const quotedTweetURL = new URL(tweet.quotedTweet);
+            const quotedTweetUsername = quotedTweetURL.pathname.split('/')[1];
+            const quotedTweetID = quotedTweetURL.pathname.split('/')[3];
+
+            // Self quote
+            if (quotedTweetUsername == this.account.username) {
+                // Load the quoted tweet migration
+                let quotedMigration: XTweetBlueskyMigrationRow;
+                try {
+                    quotedMigration = exec(this.db, `
+                        SELECT *
+                        FROM tweet_bsky_migration
+                        WHERE tweetID = ?
+                    `, [quotedTweetID], "get") as XTweetBlueskyMigrationRow;
+                } catch (e) {
+                    return `Error selecting quoted migration: ${e}`;
+                }
+                if (quotedMigration) {
+                    embed = {
+                        '$type': 'app.bsky.embed.record',
+                        record: {
+                            uri: quotedMigration.atprotoURI,
+                            cid: quotedMigration.atprotoCID,
+                        }
+                    }
+                }
+            }
+
+            // External quote? Make it a website card
+            if (!embed) {
+                embed = {
+                    '$type': 'app.bsky.embed.external',
+                    external: {
+                        uri: tweet.quotedTweet,
+                        title: "Quoted Tweet on X",
+                        description: `View tweet at ` + quotedTweetURL,
+                    }
+                }
+            }
+        }
+
+        // Handle media
+        let tweetMedia: XTweetMediaRow[];
+        try {
+            tweetMedia = exec(this.db, `
+                SELECT *
+                FROM tweet_media
+                WHERE tweetID = ?
+            `, [tweetID], "all") as XTweetMediaRow[];
+        } catch (e) {
+            return `Error selecting tweet media: ${e}`;
+        }
+
+        if (tweetMedia.length == 1 && tweetMedia[0].mediaType == "video") {
+            // Video media
+            // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
+            const maxSize = 50000000;
+
+            // Load the video
+            const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", tweetMedia[0].filename);
+            let mediaData;
+            try {
+                mediaData = fs.readFileSync(mediaPath);
+            } catch (e) {
+                return `Error reading media file: ${e}`;
+            }
+
+            let shouldContinue = true;
+
+            // Make sure it's not too big
+            if (mediaData.length > maxSize) {
+                log.warn(`XAccountController.blueskyMigrateTweet: media file too large: ${tweetMedia[0].filename}`);
+                shouldContinue = false;
+            }
+
+            if (shouldContinue) {
+                // Determine the MIME type
+                const mimeType = mime.lookup(mediaPath);
+                if (!mimeType) {
+                    log.warn(`XAccountController.blueskyMigrateTweet: could not determine MIME type for media file: ${tweetMedia[0].filename}`);
+                    shouldContinue = false;
+                }
+                if (mimeType != 'video/mp4') {
+                    log.warn(`XAccountController.blueskyMigrateTweet: video file is not mp4: ${tweetMedia[0].filename}`);
+                    shouldContinue = false;
+                }
+            }
+
+            if (shouldContinue) {
+                // Upload the video
+                log.info(`XAccountController.blueskyMigrateTweet: uploading video ${tweetMedia[0].filename}`);
+                let resp;
+                try {
+                    resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
+                } catch (e) {
+                    return `Error uploading video: ${e}`;
+                }
+                log.info(`XAccountController.blueskyMigrateTweet: uploaded video ${tweetMedia[0].filename} response`, resp);
+                const videoBlob: BlobRef = resp.data.blob;
+
+                // Remove the link from the tweet text
+                text = text.replace(tweetMedia[0].url, "");
+                text = text.trim();
+
+                // If there's already an embedded record, turn it into a recordWithMedia embed
+                if (embed && embed['$type'] == 'app.bsky.embed.record') {
+                    embed = {
+                        '$type': 'app.bsky.embed.recordWithMedia',
+                        record: embed,
+                        media: {
+                            '$type': 'app.bsky.embed.video',
+                            video: videoBlob
+                        }
+                    }
+                } else {
+                    // If there's an embedded external link, turn it into a facet
+                    if (embed && embed['$type'] == 'app.bsky.embed.external' && embed.external?.uri) {
+                        text += ` ${embed.external.uri}`;
+                        facets.push({
+                            'index': {
+                                'byteStart': text.length - embed.external.uri.length,
+                                'byteEnd': text.length,
+                            },
+                            'features': [
+                                {
+                                    '$type': 'app.bsky.richtext.facet#link',
+                                    'uri': embed.external.uri,
+                                }
+                            ],
+                        });
+                    }
+
+                    // Embed the video
+                    embed = {
+                        '$type': 'app.bsky.embed.video',
+                        video: videoBlob
+                    }
+                }
+            }
+        } else if (tweetMedia.length > 0) {
+            // Images media
+            // max size for images: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/images.json
+            const maxSize = 1000000;
+
+            // Keep track of images for the embed
+            const images: {
+                alt: string,
+                image: BlobRef,
+                aspectRatio?: {
+                    width: number;
+                    height: number;
+                }
+            }[] = [];
+
+            for (const media of tweetMedia) {
+                // Load the image
+                const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", media.filename);
+                let mediaData;
+                try {
+                    mediaData = fs.readFileSync(mediaPath);
+                } catch (e) {
+                    return `Error reading media file: ${e}`;
+                }
+
+                // Make sure it's not too big
+                if (mediaData.length > maxSize) {
+                    log.warn(`XAccountController.blueskyMigrateTweet: media file too large: ${media.filename}`);
+                    continue;
+                }
+
+                // Determine the MIME type
+                const mimeType = mime.lookup(mediaPath);
+                if (!mimeType) {
+                    log.warn(`XAccountController.blueskyMigrateTweet: could not determine MIME type for media file: ${media.filename}`);
+                    continue;
+                }
+
+                // Determine the aspect ratio
+                const metadata = await sharp(mediaData).metadata();
+
+                // Upload the image
+                log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
+                let resp;
+                try {
+                    resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
+                } catch (e) {
+                    return `Error uploading image: ${e}`;
+                }
+                log.info(`XAccountController.blueskyMigrateTweet: uploaded image ${media.filename} response`, resp);
+
+                // Add it to the list
+                images.push({
+                    alt: "",
+                    image: resp.data.blob,
+                    aspectRatio: {
+                        width: metadata.width ? metadata.width : 1,
+                        height: metadata.height ? metadata.height : 1,
+                    }
+                });
+
+                // Remove the link from the tweet text
+                text = text.replace(media.url, "");
+                text = text.trim();
+            }
+
+            // If there's already an embedded record, turn it into a recordWithMedia embed
+            if (embed && embed['$type'] == 'app.bsky.embed.record') {
+                embed = {
+                    '$type': 'app.bsky.embed.recordWithMedia',
+                    record: embed,
+                    media: {
+                        '$type': 'app.bsky.embed.images',
+                        images: images
+                    }
+                }
+            } else {
+                // If there's an embedded external link, turn it into a facet
+                if (embed && embed['$type'] == 'app.bsky.embed.external' && embed.external?.uri) {
+                    text += ` ${embed.external.uri}`;
+                    facets.push({
+                        'index': {
+                            'byteStart': text.length - embed.external.uri.length,
+                            'byteEnd': text.length,
+                        },
+                        'features': [
+                            {
+                                '$type': 'app.bsky.richtext.facet#link',
+                                'uri': embed.external.uri,
+                            }
+                        ],
+                    });
+                }
+
+                // Embed the images
+                embed = {
+                    '$type': 'app.bsky.embed.images',
+                    images: images
+                }
+            }
+        }
+
+        // Build the record
+        const record: BskyPostRecord = {
+            '$type': 'app.bsky.feed.post',
+            'text': text,
+            'createdAt': tweet.createdAt,
+        }
+        if (facets.length > 0) {
+            record['facets'] = facets;
+        }
+        if (reply) {
+            record['reply'] = reply;
+        }
+        if (embed) {
+            record['embed'] = embed;
+        }
+
+        try {
+            // Post it to Bluesky
+            const { uri, cid } = await agent.post(record)
+
+            // Record that we migrated this tweet
+            exec(this.db, `
+                INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
+                VALUES (?, ?, ?, ?)
+            `, [tweetID, uri, cid, new Date()]);
+
+            return true;
+        } catch (e) {
+            return `Error posting to Bluesky: ${e}`;
+        }
+    }
+
+    async blueskyDeleteMigratedTweet(tweetID: string): Promise<boolean> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // Get the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            throw new Error("Bluesky DID not found");
+        }
+        const session = await this.blueskyClient.restore(did);
+        const agent = new Agent(session)
+
+        // Select the migration record
+        const migration: XTweetBlueskyMigrationRow = exec(this.db, `
+            SELECT *
+            FROM tweet_bsky_migration
+            WHERE tweetID = ?
+        `, [tweetID], "get") as XTweetBlueskyMigrationRow;
+
+
+        try {
+            // Delete it from Bluesky
+            await agent.deletePost(migration.atprotoURI)
+
+            // Delete the migration record
+            exec(this.db, `
+                DELETE FROM tweet_bsky_migration WHERE tweetID = ?
+            `, [tweetID]);
+
+            return true;
+        } catch (e) {
+            log.error("XAccountController.blueskyDeleteMigratedTweet: Error deleting migrated tweet from Bluesky", e);
+            return false;
+        }
     }
 }

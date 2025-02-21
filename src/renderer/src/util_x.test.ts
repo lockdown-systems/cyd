@@ -10,6 +10,7 @@ function createXAccountFromDefaults(changes: object) {
         updatedAt: new Date(),
         accessedAt: new Date(),
         username: 'test',
+        userID: '',
         profileImageDataURI: '',
         importFromArchive: false,
         saveMyData: false,

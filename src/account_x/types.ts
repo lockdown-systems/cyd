@@ -103,6 +103,14 @@ export interface XMessageRow {
     deletedAt: string | null;
 }
 
+export type XTweetBlueskyMigrationRow = {
+    id: number;
+    tweetID: string;
+    atprotoURI: string;
+    atprotoCID: string;
+    migratedAt: string;
+}
+
 // Converters
 
 export function convertXJobRowToXJob(row: XJobRow): XJob {
@@ -528,17 +536,6 @@ export interface XAPIConversationTimeline {
             [key: string]: XAPIConversation
         },
     }
-}
-
-// Gather user stats
-
-export interface XAPIAll {
-    globalObjects: {
-        users: {
-            [key: string]: XAPIUser
-        }
-    },
-    timeline: any
 }
 
 // Official X Archive types

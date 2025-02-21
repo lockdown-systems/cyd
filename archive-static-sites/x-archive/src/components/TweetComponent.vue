@@ -29,6 +29,16 @@ const quoteTweet = computed(() => {
     return archiveData.value.tweets.find(t => t.tweetID == tweetID);
 });
 
+// https://github.com/bluesky-social/atproto/discussions/2523#discussioncomment-9552109
+function atUriToBlueskyUrl(atUri: string): string {
+    const parts = atUri.split('/');
+    if (!(parts.length === 5 && parts[0] === 'at:' && parts[1] === '')) {
+        throw new Error('Invalid AT URI');
+    }
+    const did = parts[2];
+    const rkey = parts[4];
+    return `https://bsky.app/profile/${did}/post/${rkey}`;
+}
 </script>
 
 <template>
@@ -40,6 +50,8 @@ const quoteTweet = computed(() => {
                 :href="`./Archived Tweets/${formatDateToYYYYMMDD(tweet.createdAt)}_${tweet.tweetID}.html`"
                 target="_blank">archived</a>
             <a :href="`https://x.com/${tweet.path}`" target="_blank">original</a>
+            <a v-for="atprotoURI in tweet.blueskyMigrationURIs" :key="atprotoURI" :href="atUriToBlueskyUrl(atprotoURI)"
+                target="_blank">migrated to Bluesky</a>
             <small v-if="tweet.createdAt">{{ formattedDatetime(tweet.createdAt) }}</small>
             <small v-else class="text-muted">unknown date</small>
         </div>

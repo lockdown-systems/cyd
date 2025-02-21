@@ -2,6 +2,7 @@
 import {
     ref,
     getCurrentInstance,
+    onMounted,
 } from 'vue';
 import {
     ArchiveInfo, emptyArchiveInfo
@@ -32,6 +33,9 @@ const openArchive = async () => {
     await window.electron.archive.openFolder(props.accountID, "index.html");
 };
 
+onMounted(async () => {
+    archiveInfo.value = await window.electron.archive.getInfo(props.accountID);
+});
 </script>
 
 <template>

@@ -8,6 +8,7 @@ import {
     onUnmounted,
     inject,
     getCurrentInstance,
+    provide,
 } from 'vue'
 import Electron from 'electron';
 
@@ -21,7 +22,7 @@ import AutomationNotice from '../shared_components/AutomationNotice.vue';
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
-import XWizardImportOrBuildPage from './XWizardImportOrBuildPage.vue';
+import XWizardDatabasePage from './XWizardDatabasePage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportingPage from './XWizardImportingPage.vue';
@@ -30,6 +31,7 @@ import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
 import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
+import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
@@ -203,7 +205,9 @@ const userPremium = ref(false);
 
 const updateUserAuthenticated = async () => {
     userAuthenticated.value = await apiClient.value.ping() && deviceInfo.value?.valid ? true : false;
+    console.log('updateUserAuthenticated', 'User authenticated', userAuthenticated.value);
 };
+provide('xUpdateUserAuthenticated', updateUserAuthenticated);
 
 const updateUserPremium = async () => {
     if (!userAuthenticated.value) {
@@ -225,7 +229,10 @@ const updateUserPremium = async () => {
         console.log('User does not have Premium access');
         emitter?.emit(`x-premium-check-failed-${props.account.id}`);
     }
+
+    console.log('updateUserPremium', 'User premium', userPremium.value);
 };
+provide('xUpdateUserPremium', updateUserPremium);
 
 emitter?.on('signed-in', async () => {
     console.log('XView: User signed in');
@@ -257,6 +264,7 @@ const startJobs = async () => {
             await updateUserAuthenticated();
             console.log("userAuthenticated", userAuthenticated.value);
             if (!userAuthenticated.value) {
+                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
@@ -265,6 +273,7 @@ const startJobs = async () => {
             await updateUserPremium();
             console.log("userPremium", userPremium.value);
             if (!userPremium.value) {
+                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
@@ -465,8 +474,8 @@ onUnmounted(async () => {
             <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
                 <div class="wizard-container d-flex">
                     <div class="wizard-content flex-grow-1">
-                        <XWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
-                            :model="unref(model)" @set-state="setState($event)" />
+                        <XWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
 
                         <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
                             @set-state="setState($event)" />
@@ -494,6 +503,10 @@ onUnmounted(async () => {
                             :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @set-state="setState($event)" @update-account="updateAccount"
                             @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
+
+                        <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
+                            :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                            @set-state="setState($event)" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                             :model="unref(model)"

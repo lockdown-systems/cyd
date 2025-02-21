@@ -412,6 +412,14 @@ body {
   padding-left: 1.5rem;
 }
 
+.option-card {
+  cursor: pointer;
+}
+
+.option-card.selected {
+  background-color: #f0f0f0;
+}
+
 /* Run Jobs styles */
 
 .run-jobs-state {

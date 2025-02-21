@@ -28,6 +28,20 @@ export const setConfig = (key: string, value: string, db: Database.Database | nu
     exec(db, 'INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', [key, value]);
 }
 
+export const deleteConfig = (key: string, db: Database.Database | null = null) => {
+    if (!db) {
+        db = getMainDatabase();
+    }
+    exec(db, 'DELETE FROM config WHERE key = ?', [key]);
+}
+
+export const deleteConfigLike = (key: string, db: Database.Database | null = null) => {
+    if (!db) {
+        db = getMainDatabase();
+    }
+    exec(db, 'DELETE FROM config WHERE key LIKE ?', [key]);
+}
+
 // IPC
 
 export const defineIPCDatabaseConfig = () => {
@@ -42,6 +56,22 @@ export const defineIPCDatabaseConfig = () => {
     ipcMain.handle('database:setConfig', async (_, key, value) => {
         try {
             setConfig(key, value);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:deleteConfig', async (_, key) => {
+        try {
+            deleteConfig(key);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('database:deleteConfigLike', async (_, key) => {
+        try {
+            deleteConfigLike(key);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
