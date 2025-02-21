@@ -515,13 +515,9 @@ export class FacebookAccountController {
                         // Check if it's a shared post by looking for external_context in attachments
                         const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
 
-                        // Skip if it's a shared/repost, group post, shares a group, etc. We will extend the import logic
+                        // Skip if it's a group post, shares a group, etc. We will extend the import logic
                         // to include other data types in the future.
-                        if (isSharedPost) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping shared post");
-                            continue;
-                        }
-                        else if (post.attachments) {
+                        if (post.attachments) {
                             log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type");
                             continue;
                         }
@@ -531,6 +527,7 @@ export class FacebookAccountController {
                             title: post.title || '',
                             full_text: postText,
                             created_at: new Date(post.timestamp * 1000).toISOString(),
+                            isReposted: isSharedPost,
                         });
                     }
                 } catch (e) {
