@@ -240,6 +240,7 @@ export class FacebookAccountController {
                 postID: post.postID,
                 createdAt: post.createdAt,
                 text: decodeUnicode(post.text),
+                isReposted: post.isReposted,
                 archivedAt: post.archivedAt,
             };
             return archivePost
@@ -535,6 +536,7 @@ export class FacebookAccountController {
                             id_str: post.timestamp.toString(),
                             title: post.title || '',
                             full_text: postText,
+                            isReposted: isSharedPost,
                             created_at: new Date(post.timestamp * 1000).toISOString(),
                         });
                     }
