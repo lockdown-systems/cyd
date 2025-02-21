@@ -2,8 +2,6 @@ export type Post = {
     postID: string;
     createdAt: string;
     text: string;
-    isLiked: boolean;
-    isRetweeted: boolean;
     path: string;
     archivedAt: string | null;
 };
