@@ -8,6 +8,10 @@ const archiveData = inject('archiveData') as Ref<FacebookArchive>;
 const filterText = ref('');
 
 const filteredPosts = computed(() => {
+  if (!archiveData.value?.posts) {
+    console.log('No posts found in archive data:', archiveData.value);
+    return [];
+  }
   return archiveData.value.posts.filter(post => {
     const lowerCaseFilterText = filterText.value.toLowerCase();
     const postText = post.text ? post.text.toLowerCase() : '';
@@ -20,7 +24,7 @@ const filteredPosts = computed(() => {
 <template>
   <div class="tweets-container">
     <div class="filter-container">
-      <p><input type="text" v-model="filterText" class="form-control" placeholder="Filter your tweets"></p>
+      <p><input type="text" v-model="filterText" class="form-control" placeholder="Filter your posts"></p>
       <p class="text-center text-muted small">Showing {{ filteredPosts.length.toLocaleString() }} posts</p>
     </div>
 
