@@ -46,6 +46,7 @@ export interface FacebookPostRow {
     username: string;
     postID: string;
     createdAt: string;
+    title: string;
     text: string;
     path: string;
     addedToDatabaseAt: string;
