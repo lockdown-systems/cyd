@@ -121,7 +121,7 @@ export class FacebookAccountController {
         }
 
         // Make sure the account data folder exists
-        this.accountDataPath = getAccountDataPath('Facebook', this.account.name);
+        this.accountDataPath = getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`);
         log.info(`FacebookAccountController.initDB: accountDataPath=${this.accountDataPath}`);
 
         // Open the database
@@ -261,7 +261,7 @@ export class FacebookAccountController {
         if (!this.account) {
             return null;
         }
-        const unzippedPath = path.join(getAccountDataPath("Facebook", this.account.accountID), "tmp");
+        const unzippedPath = path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`), "tmp");
 
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: unzippedPath });
