@@ -258,6 +258,7 @@ export class FacebookAccountController {
                 postID: post.postID,
                 createdAt: post.createdAt,
                 text: decodeUnicode(post.text),
+                title: post.title,
                 isReposted: post.isReposted,
                 archivedAt: post.archivedAt,
             };
