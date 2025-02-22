@@ -163,6 +163,24 @@ export class FacebookAccountController {
                     );`
                 ]
             },
+            {
+                name: "20250220_add_isReposted_to_post",
+                sql: [
+                    `CREATE TABLE post_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        postID TEXT NOT NULL UNIQUE,
+                        createdAt DATETIME NOT NULL,
+                        title TEXT,
+                        text TEXT,
+                        isReposted BOOLEAN NOT NULL DEFAULT 0,
+                        addedToDatabaseAt DATETIME NOT NULL
+                    );`,
+                    `INSERT INTO post_new (id, postID, createdAt, title, text, addedToDatabaseAt)
+                     SELECT id, postID, createdAt, title, text, addedToDatabaseAt FROM post;`,
+                    `DROP TABLE post;`,
+                    `ALTER TABLE post_new RENAME TO post;`
+                ]
+            },
         ])
         log.info("FacebookAccountController.initDB: database initialized");
     }
@@ -235,6 +253,8 @@ export class FacebookAccountController {
                 postID: post.postID,
                 createdAt: post.createdAt,
                 text: post.text,
+                title: post.title,
+                isReposted: post.isReposted,
                 archivedAt: post.archivedAt,
             };
             return archivePost
@@ -511,14 +531,11 @@ export class FacebookAccountController {
                     const postElements = dom.window.document.querySelectorAll('._a6-g');
 
                     for (const postElement of postElements) {
-                        // Status updates have exactly one text div inside _2pin
-                        const contentDiv = postElement.querySelector('._2pin');
-                        const directTextDiv = contentDiv?.querySelector(':scope > div');
-                        const hasComplexStructure = directTextDiv?.querySelector('div');
+                        const postType = getPostType(postElement);
 
-                        if (hasComplexStructure) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping post with complex nested structure");
-                            continue; // Skip posts with complex nested structure (shared posts, groups, etc)
+                        if (postType === 'shared_group') {
+                            log.info("FacebookAccountController.importFacebookArchive: skipping group posts");
+                            continue;
                         }
 
                         const titleElement = postElement.querySelector('._a6-h');
@@ -535,6 +552,7 @@ export class FacebookAccountController {
                                 title: titleElement.textContent || '',
                                 full_text: contentElement.textContent || '',
                                 created_at: dateElement.textContent || '',
+                                isReposted: postType === 'shared_post',
                             });
                         }
                     };
@@ -607,3 +625,26 @@ export class FacebookAccountController {
         };
     }
 }
+
+const getPostType = (element: Element): 'status' | 'shared_post' | 'shared_group' | 'other' => {
+    const pinDivs = element.querySelectorAll('._2pin');
+
+    if (pinDivs.length === 1) {
+        return 'status';
+    }
+
+    if (pinDivs.length === 2) {
+        // Check for group name structure
+        const firstPinContent = pinDivs[0].textContent?.trim();
+        if (firstPinContent && !firstPinContent.includes('div')) {
+            return 'shared_group';
+        }
+        // Shared posts have empty nested divs
+        const emptyDivs = pinDivs[0].querySelectorAll('div div div div');
+        if (emptyDivs.length > 0) {
+            return 'shared_post';
+        }
+    }
+
+    return 'other';
+};
