@@ -121,7 +121,7 @@ export class FacebookAccountController {
         }
 
         // Make sure the account data folder exists
-        this.accountDataPath = getAccountDataPath('X', this.account.name);
+        this.accountDataPath = getAccountDataPath('Facebook', this.account.name);
         log.info(`FacebookAccountController.initDB: accountDataPath=${this.accountDataPath}`);
 
         // Open the database
