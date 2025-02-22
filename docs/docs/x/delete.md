@@ -84,7 +84,7 @@ If you've been using X for years there's a good chance you have a lot of private
 
 ## Free and Premium Features
 
-Some of the Delete Options require a Premium plan - [learn more about Premium plans here](../premium-dashboard/intro.md). And some of the options are free. If you're only using free options, there's no reason to create a Cyd account or sign up for a Premium plan.
+Some of the Delete Options require a Premium plan - [learn more about Premium plans here](../premium/intro). And some of the options are free. If you're only using free options, there's no reason to create a Cyd account or sign up for a Premium plan.
 
 It's free to:
 
