@@ -7,12 +7,14 @@ sidebar_position: 1
 Cyd is desktop app available for Windows, Mac, and Linux.
 
 :::info
-Unfortunately, there are no plans to make a mobile verson of Cyd for Android or iPhone. Cyd works by controlling a web browser on your device, sometimes for several hours at a time without sleep, and this is notoriously hard to do on mobile operating systems.
+There are currently no plans to make a mobile verson of Cyd for Android or iPhone. Cyd works by controlling a web browser on your device, sometimes for several hours at a time without sleep, and this is notoriously hard to do on mobile operating systems.
 :::
 
 ## Cyd for Windows and Mac
 
-**Download the latest version of Cyd for your platform at from the [Download page](https://cyd.social/download/).**
+If you're using Windows or Mac, download Cyd from the main website:
+
+<a class="button button--primary button--lg" href="https://cyd.social/download/">Download Cyd for Windows and Mac</a>
 
 ## Cyd for Linux
 
