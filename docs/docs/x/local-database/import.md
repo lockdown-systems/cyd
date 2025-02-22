@@ -51,7 +51,7 @@ Cyd will validate that the archive actually appears to be an X archive and belon
 
 ![Finished importing an X archive](./img/import-finished.png)
 
-In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive.md) for more information about these. There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, 38 saved retweets, and 213 saved likes.
+In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive) for more information about these. There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, 38 saved retweets, and 213 saved likes.
 
 :::tip The official X archive is missing some data
 

@@ -68,4 +68,4 @@ When you build your database from scratch you might save some "other tweets" too
 
 :::
 
-In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive.md) for more information about these. There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, 4 saved retweets, and 6 saved likes.
+In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive) for more information about these. There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, 4 saved retweets, and 6 saved likes.

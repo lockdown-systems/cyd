@@ -58,7 +58,7 @@ Delete all of the **likes** in your account.
 
 Likes are only visible to you on X (and, of course, to Elon Musk, X's employees, and anyone who can hack your X account). If you're primarily concerned about cleaning up OSINT crumbs about yourself, deleting your likes are optional.
 
-If you've been liking tweets for a very long time, there's a good chance that many of your old likes are [ghost likes](./tips/ghost-likes.md) and cannot be deleted.
+If you've been liking tweets for a very long time, there's a good chance that many of your old likes are [ghost likes](./tips/ghost-likes) and cannot be deleted.
 
 :::
 

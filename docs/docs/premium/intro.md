@@ -14,6 +14,6 @@ Check out the [Pricing page](https://cyd.social/pricing/) for details on how muc
 
 We also are actively working with progressive organizations to give free and discounted Premium plans to vulnerable users who need them.
 
-If you'd like to sign up for a Premium plan, see [Sign Up for Premium](./sign-up.md).
+If you'd like to sign up for a Premium plan, see [Sign Up for Premium](./sign-up).
 
-If you're part of an organization and you think Premium accounts would be useful for your members, check out [Cyd for Teams](../cyd-for-teams/intro.md).
+If you're part of an organization and you think Premium accounts would be useful for your members, check out [Cyd for Teams](../cyd-for-teams/intro).
