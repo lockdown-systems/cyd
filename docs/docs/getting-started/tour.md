@@ -56,5 +56,5 @@ Resetting Cyd won't touch your Data Folder, so you won't lose any data. You'll j
 
 Each platform that Cyd supports works in its own unique way. To learn how to use each platform, refer to the documentation for that platform:
 
-- [X (formerly Twitter)](../x/login)
+- [X (formerly Twitter)](../x/sign-in)
 - _More platforms coming soon..._

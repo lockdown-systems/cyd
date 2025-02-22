@@ -135,6 +135,9 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
     },
+    plugins: [[require.resolve('docusaurus-lunr-search'), {
+      languages: ['en'] // language codes
+    }]],
   } satisfies Preset.ThemeConfig,
 };
 
