@@ -39,6 +39,7 @@ const filteredPosts = computed(() => {
         :key="post.postID"
         :post="post"
         :isRepost="post.isReposted"
+        :title="post.title"
       />
     </div>
   </div>
