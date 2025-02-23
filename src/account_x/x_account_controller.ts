@@ -5,7 +5,7 @@ import os from 'os'
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
 import mime from 'mime-types';
-import sharp from 'sharp';
+import sizeOf from 'image-size';
 
 import { app, session, shell } from 'electron'
 import log from 'electron-log/main';
@@ -2898,7 +2898,7 @@ export class XAccountController {
                 }
 
                 // Determine the aspect ratio
-                const metadata = await sharp(mediaData).metadata();
+                const dimensions = sizeOf(mediaPath);
 
                 // Upload the image
                 log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
@@ -2915,8 +2915,8 @@ export class XAccountController {
                     alt: "",
                     image: resp.data.blob,
                     aspectRatio: {
-                        width: metadata.width ? metadata.width : 1,
-                        height: metadata.height ? metadata.height : 1,
+                        width: dimensions.width ? dimensions.width : 1,
+                        height: dimensions.height ? dimensions.height : 1,
                     }
                 });
 
