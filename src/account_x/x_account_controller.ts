@@ -12,7 +12,7 @@ import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
-import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
+import { NodeOAuthClient, NodeSavedState, NodeSavedSession, OAuthSession } from '@atproto/oauth-client-node'
 import { Agent, BlobRef } from '@atproto/api';
 import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
 import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
@@ -2408,7 +2408,13 @@ export class XAccountController {
             return null;
         }
 
-        const session = await this.blueskyClient.restore(did);
+        let session: OAuthSession;
+        try {
+            session = await this.blueskyClient.restore(did);
+        } catch (e) {
+            log.error("XAccountController.blueskyGetProfile: Error restoring session", e);
+            return null;
+        }
         const agent = new Agent(session)
         if (!agent.did) {
             return null;
