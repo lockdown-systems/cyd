@@ -62,6 +62,7 @@ const enableDebugMode = async () => {
 
 onMounted(async () => {
     shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
+    databaseStats.value = await window.electron.X.getDatabaseStats(props.model.account.id);
 });
 </script>
 
