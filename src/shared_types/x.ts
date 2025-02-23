@@ -204,6 +204,7 @@ export type XProgressInfo = {
     totalBookmarksDeleted: number;
     totalConversationsDeleted: number;
     totalAccountsUnfollowed: number;
+    totalTweetsMigratedToBluesky: number;
 }
 
 export function emptyXProgressInfo(): XProgressInfo {
@@ -220,7 +221,8 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalLikesDeleted: 0,
         totalBookmarksDeleted: 0,
         totalConversationsDeleted: 0,
-        totalAccountsUnfollowed: 0
+        totalAccountsUnfollowed: 0,
+        totalTweetsMigratedToBluesky: 0,
     }
 }
 
@@ -239,6 +241,7 @@ export type XDatabaseStats = {
     bookmarksDeleted: number;
     conversationsDeleted: number;
     accountsUnfollowed: number;
+    tweetsMigratedToBluesky: number;
 }
 
 export function emptyXDatabaseStats(): XDatabaseStats {
@@ -252,7 +255,8 @@ export function emptyXDatabaseStats(): XDatabaseStats {
         bookmarksSaved: 0,
         bookmarksDeleted: 0,
         conversationsDeleted: 0,
-        accountsUnfollowed: 0
+        accountsUnfollowed: 0,
+        tweetsMigratedToBluesky: 0,
     }
 }
 
