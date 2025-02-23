@@ -86,6 +86,7 @@ const loadTweetCounts = async () => {
 }
 
 const oauthCallback = async (queryString: string) => {
+    console.log('Bluesky OAuth callback', queryString);
     try {
         const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, queryString);
         if (ret !== true) {
@@ -231,6 +232,7 @@ onMounted(async () => {
     }
 
     // Listen for OAuth callback event
+    console.log('Bluesky OAuth callback event name', blueskyOAuthCallbackEventName);
     window.electron.ipcRenderer.on(blueskyOAuthCallbackEventName, async (_event: IpcRendererEvent, queryString: string) => {
         await oauthCallback(queryString);
     });
@@ -298,8 +300,9 @@ onUnmounted(async () => {
             </template>
             <template v-else-if="state == State.FinishInBrowser">
                 <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        Finish connecting to the Bluesky account <strong>@{{ blueskyHandle }}</strong> in web browser.
+                    <div class="flex-grow-1 fs-4">
+                        Finish connecting to the Bluesky account <strong>@{{ blueskyHandle }}</strong> in your web
+                        browser.
                     </div>
                     <div>
                         <button class="btn btn-secondary" type="button" @click="disconnectClicked">

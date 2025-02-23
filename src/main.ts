@@ -100,6 +100,7 @@ const openCydURL = async (cydURL: string) => {
 
     // If hostname is "open", this just means open Cyd
     if (url.hostname == "open") {
+        log.info('Opening Cyd');
         return;
     }
 
@@ -114,6 +115,7 @@ const openCydURL = async (cydURL: string) => {
 
         // Send the event to the renderer
         if (win) {
+            log.info('Sending Bluesky OAuth callback event to renderer:', blueskyOAuthCallbackEventName, url.search);
             win.webContents.send(blueskyOAuthCallbackEventName, url.search);
         }
         return;

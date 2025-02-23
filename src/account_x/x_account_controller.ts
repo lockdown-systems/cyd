@@ -2441,8 +2441,7 @@ export class XAccountController {
             const url = await this.blueskyClient.authorize(handle);
 
             // Save the account ID in the global config
-            const accountID = this.account?.id == null ? "" : this.account.id.toString();
-            await globalSetConfig("blueskyOAuthAccountID", accountID);
+            await globalSetConfig("blueskyOAuthAccountID", this.accountID.toString());
 
             // Open the URL in the default browser
             await shell.openExternal(url.toString());
