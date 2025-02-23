@@ -204,6 +204,7 @@ export type XProgressInfo = {
     totalBookmarksDeleted: number;
     totalConversationsDeleted: number;
     totalAccountsUnfollowed: number;
+    totalTweetsMigratedToBluesky: number;
 }
 
 export function emptyXProgressInfo(): XProgressInfo {
@@ -220,7 +221,8 @@ export function emptyXProgressInfo(): XProgressInfo {
         totalLikesDeleted: 0,
         totalBookmarksDeleted: 0,
         totalConversationsDeleted: 0,
-        totalAccountsUnfollowed: 0
+        totalAccountsUnfollowed: 0,
+        totalTweetsMigratedToBluesky: 0,
     }
 }
 

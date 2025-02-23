@@ -161,11 +161,13 @@ const migrateClicked = async () => {
         if (shouldCancelMigration.value) {
             await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
             state.value = State.Connected;
+            emitter?.emit(`x-submit-progress-${props.model.account.id}`);
             await loadTweetCounts();
             return;
         }
     }
 
+    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
     await loadTweetCounts();
     await window.electron.X.archiveBuild(props.model.account.id);
     state.value = State.Finished;
@@ -199,6 +201,8 @@ const deleteClicked = async () => {
         }
         emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
     }
+
+    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
 
     await loadTweetCounts();
     await window.electron.X.archiveBuild(props.model.account.id);

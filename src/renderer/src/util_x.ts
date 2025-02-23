@@ -92,6 +92,7 @@ export async function xPostProgress(apiClient: CydAPIClient, deviceInfo: DeviceI
         total_bookmarks_deleted: progressInfo.totalBookmarksDeleted,
         total_conversations_deleted: progressInfo.totalConversationsDeleted,
         total_accounts_unfollowed: progressInfo.totalAccountsUnfollowed,
+        total_tweets_migrated_to_bluesky: progressInfo.totalTweetsMigratedToBluesky,
     }, deviceInfo?.valid ? true : false)
     if (postXProgresResp !== true && postXProgresResp !== false && postXProgresResp.error) {
         // Silently log the error and continue

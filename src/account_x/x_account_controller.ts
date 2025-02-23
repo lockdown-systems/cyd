@@ -1811,6 +1811,12 @@ export class XAccountController {
             [1],
             "get"
         ) as Sqlite3Count;
+        const totalTweetsMigratedToBluesky: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet_bsky_migration",
+            [],
+            "get"
+        ) as Sqlite3Count;
 
         const totalConversationsDeletedConfig: string | null = await this.getConfig("totalConversationsDeleted");
         let totalConversationsDeleted: number = 0;
@@ -1838,6 +1844,7 @@ export class XAccountController {
         progressInfo.totalBookmarksDeleted = totalBookmarksDeleted.count;
         progressInfo.totalConversationsDeleted = totalConversationsDeleted;
         progressInfo.totalAccountsUnfollowed = totalAccountsUnfollowed;
+        progressInfo.totalTweetsMigratedToBluesky = totalTweetsMigratedToBluesky.count;
         return progressInfo;
     }
 
