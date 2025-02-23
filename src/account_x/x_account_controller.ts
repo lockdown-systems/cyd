@@ -1864,6 +1864,7 @@ export class XAccountController {
         const bookmarksDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ? AND deletedBookmarkAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const conversationsDeleted = parseInt(await this.getConfig("totalConversationsDeleted") || "0");
         const accountsUnfollowed = parseInt(await this.getConfig("totalAccountsUnfollowed") || "0");
+        const tweetsMigratedToBluesky: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet_bsky_migration", [], "get") as Sqlite3Count;
 
         databaseStats.tweetsSaved = tweetsSaved.count;
         databaseStats.tweetsDeleted = tweetsDeleted.count;
@@ -1875,6 +1876,7 @@ export class XAccountController {
         databaseStats.bookmarksDeleted = bookmarksDeleted.count;
         databaseStats.conversationsDeleted = conversationsDeleted;
         databaseStats.accountsUnfollowed = accountsUnfollowed
+        databaseStats.tweetsMigratedToBluesky = tweetsMigratedToBluesky.count;
         return databaseStats;
     }
 

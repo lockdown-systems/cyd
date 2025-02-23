@@ -132,6 +132,19 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
+                <div v-if="databaseStats.tweetsSaved > 0" class="col-12 col-md-6">
+                    <div class="card text-center">
+                        <div class="card-header">
+                            <div>
+                                Migrated to
+                                <i class="fa-brands fa-bluesky" />
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h1>{{ formatStatsNumber(databaseStats.tweetsMigratedToBluesky) }}</h1>
+                        </div>
+                    </div>
+                </div>
                 <div v-if="databaseStats.retweetsSaved > 0" class="col-12 col-md-6">
                     <div class="card text-center">
                         <div class="card-header">

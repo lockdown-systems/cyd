@@ -239,6 +239,7 @@ export type XDatabaseStats = {
     bookmarksDeleted: number;
     conversationsDeleted: number;
     accountsUnfollowed: number;
+    tweetsMigratedToBluesky: number;
 }
 
 export function emptyXDatabaseStats(): XDatabaseStats {
@@ -252,7 +253,8 @@ export function emptyXDatabaseStats(): XDatabaseStats {
         bookmarksSaved: 0,
         bookmarksDeleted: 0,
         conversationsDeleted: 0,
-        accountsUnfollowed: 0
+        accountsUnfollowed: 0,
+        tweetsMigratedToBluesky: 0,
     }
 }
 
