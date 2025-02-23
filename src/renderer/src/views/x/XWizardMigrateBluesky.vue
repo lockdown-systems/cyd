@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
+import { ref, onMounted, onUnmounted, computed, inject, getCurrentInstance } from 'vue'
 
 import {
     XViewModel,
@@ -14,6 +14,10 @@ import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 enum State {
     Loading,
@@ -151,6 +155,8 @@ const migrateClicked = async () => {
             migratedTweetsCount.value++;
         }
 
+        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
+
         // Cancel early
         if (shouldCancelMigration.value) {
             await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
@@ -191,6 +197,7 @@ const deleteClicked = async () => {
             skippedDeletePostsCount.value++;
             console.error('Failed to delete migrated tweet', tweetID);
         }
+        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
     }
 
     await loadTweetCounts();
