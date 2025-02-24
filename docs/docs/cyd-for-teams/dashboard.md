@@ -16,11 +16,7 @@ There are two ways to add new seats to your account. You can invite people using
 
 ### Inviting People to Your Team
 
-To invite someone, under **Seat Invitations**, enter their email address and click **Invite**. This will create a seat invitation and email them a link they can use to join your Cyd team:
-
-![Inviting people to a team](./img/seat-invitations.png)
-
-Alternatively, you can click **Copy Link** to copy the link to your clipboard, which lets you send it to them some other way.
+To invite someone, under **Seat Invitations**, enter their email address and click **Invite**. This will create a seat invitation and email them a link they can use to join your Cyd team. After inviting someone, you can click **Copy Link** to copy the link to your clipboard, which lets you send it to them some other way.
 
 Seat invitations use up the number of seats you've paid for. If someone is not accepting a seat invitation, you can cancel their invitation to get the seat back.
 
