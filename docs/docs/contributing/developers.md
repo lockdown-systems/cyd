@@ -1,4 +1,8 @@
-# Developing Cyd
+---
+sidebar_position: 2
+---
+
+# For Developers
 
 Cyd is a desktop app for Windows, Mac, and Linux written in Node.js. To run Cyd locally, all you need is [Node.JS LTS](https://nodejs.org/en) for your operating systems.
 
