@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Cyd Documentation',
+  title: 'Cyd Docs',
   tagline: "Tech platforms can't be trusted. It's time to regain control of your data.",
   favicon: 'img/logo.png',
   url: 'https://docs.cyd.social',
@@ -54,7 +54,7 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/social-card.png',
     navbar: {
-      title: 'Cyd Documentation',
+      title: 'Cyd Docs',
       logo: {
         alt: 'Cyd Logo',
         src: 'img/logo.png',
@@ -64,9 +64,14 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
-          label: 'Documentation',
+          label: 'Docs',
         },
         { to: '/blog', label: 'Development Blog', position: 'left' },
+        {
+          href: 'https://cyd.social',
+          label: 'Cyd Website',
+          position: 'right',
+        },
         {
           href: 'https://github.com/lockdown-systems/cyd',
           label: 'Source Code',
@@ -78,11 +83,19 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Navigation',
           items: [
             {
-              label: 'Documentation',
+              label: 'Docs',
               to: '/docs/intro',
+            },
+            {
+              label: 'Development Blog',
+              to: '/blog',
+            },
+            {
+              label: 'Cyd Website',
+              to: 'https://cyd.social',
             },
           ],
         },
