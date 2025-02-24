@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
+import { ref, onMounted, onUnmounted, computed, inject, getCurrentInstance } from 'vue'
 
 import {
     XViewModel,
@@ -14,6 +14,10 @@ import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 enum State {
     Loading,
@@ -86,6 +90,7 @@ const loadTweetCounts = async () => {
 }
 
 const oauthCallback = async (queryString: string) => {
+    console.log('Bluesky OAuth callback', queryString);
     try {
         const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, queryString);
         if (ret !== true) {
@@ -150,15 +155,19 @@ const migrateClicked = async () => {
             migratedTweetsCount.value++;
         }
 
+        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
+
         // Cancel early
         if (shouldCancelMigration.value) {
             await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
             state.value = State.Connected;
+            emitter?.emit(`x-submit-progress-${props.model.account.id}`);
             await loadTweetCounts();
             return;
         }
     }
 
+    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
     await loadTweetCounts();
     await window.electron.X.archiveBuild(props.model.account.id);
     state.value = State.Finished;
@@ -190,7 +199,10 @@ const deleteClicked = async () => {
             skippedDeletePostsCount.value++;
             console.error('Failed to delete migrated tweet', tweetID);
         }
+        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
     }
+
+    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
 
     await loadTweetCounts();
     await window.electron.X.archiveBuild(props.model.account.id);
@@ -231,6 +243,7 @@ onMounted(async () => {
     }
 
     // Listen for OAuth callback event
+    console.log('Bluesky OAuth callback event name', blueskyOAuthCallbackEventName);
     window.electron.ipcRenderer.on(blueskyOAuthCallbackEventName, async (_event: IpcRendererEvent, queryString: string) => {
         await oauthCallback(queryString);
     });
@@ -298,8 +311,9 @@ onUnmounted(async () => {
             </template>
             <template v-else-if="state == State.FinishInBrowser">
                 <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        Finish connecting to the Bluesky account <strong>@{{ blueskyHandle }}</strong> in web browser.
+                    <div class="flex-grow-1 fs-4">
+                        Finish connecting to the Bluesky account <strong>@{{ blueskyHandle }}</strong> in your web
+                        browser.
                     </div>
                     <div>
                         <button class="btn btn-secondary" type="button" @click="disconnectClicked">

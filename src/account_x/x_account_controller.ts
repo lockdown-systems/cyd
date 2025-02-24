@@ -5,14 +5,14 @@ import os from 'os'
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
 import mime from 'mime-types';
-import sharp from 'sharp';
+import sizeOf from 'image-size';
 
 import { app, session, shell } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
-import { NodeOAuthClient, NodeSavedState, NodeSavedSession } from '@atproto/oauth-client-node'
+import { NodeOAuthClient, NodeSavedState, NodeSavedSession, OAuthSession } from '@atproto/oauth-client-node'
 import { Agent, BlobRef } from '@atproto/api';
 import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
 import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
@@ -1811,6 +1811,12 @@ export class XAccountController {
             [1],
             "get"
         ) as Sqlite3Count;
+        const totalTweetsMigratedToBluesky: Sqlite3Count = exec(
+            this.db,
+            "SELECT COUNT(*) AS count FROM tweet_bsky_migration",
+            [],
+            "get"
+        ) as Sqlite3Count;
 
         const totalConversationsDeletedConfig: string | null = await this.getConfig("totalConversationsDeleted");
         let totalConversationsDeleted: number = 0;
@@ -1838,6 +1844,7 @@ export class XAccountController {
         progressInfo.totalBookmarksDeleted = totalBookmarksDeleted.count;
         progressInfo.totalConversationsDeleted = totalConversationsDeleted;
         progressInfo.totalAccountsUnfollowed = totalAccountsUnfollowed;
+        progressInfo.totalTweetsMigratedToBluesky = totalTweetsMigratedToBluesky.count;
         return progressInfo;
     }
 
@@ -1864,6 +1871,7 @@ export class XAccountController {
         const bookmarksDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ? AND deletedBookmarkAt IS NOT NULL", [1], "get") as Sqlite3Count;
         const conversationsDeleted = parseInt(await this.getConfig("totalConversationsDeleted") || "0");
         const accountsUnfollowed = parseInt(await this.getConfig("totalAccountsUnfollowed") || "0");
+        const tweetsMigratedToBluesky: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM tweet_bsky_migration", [], "get") as Sqlite3Count;
 
         databaseStats.tweetsSaved = tweetsSaved.count;
         databaseStats.tweetsDeleted = tweetsDeleted.count;
@@ -1875,6 +1883,7 @@ export class XAccountController {
         databaseStats.bookmarksDeleted = bookmarksDeleted.count;
         databaseStats.conversationsDeleted = conversationsDeleted;
         databaseStats.accountsUnfollowed = accountsUnfollowed
+        databaseStats.tweetsMigratedToBluesky = tweetsMigratedToBluesky.count;
         return databaseStats;
     }
 
@@ -2408,7 +2417,13 @@ export class XAccountController {
             return null;
         }
 
-        const session = await this.blueskyClient.restore(did);
+        let session: OAuthSession;
+        try {
+            session = await this.blueskyClient.restore(did);
+        } catch (e) {
+            log.error("XAccountController.blueskyGetProfile: Error restoring session", e);
+            return null;
+        }
         const agent = new Agent(session)
         if (!agent.did) {
             return null;
@@ -2435,8 +2450,7 @@ export class XAccountController {
             const url = await this.blueskyClient.authorize(handle);
 
             // Save the account ID in the global config
-            const accountID = this.account?.id == null ? "" : this.account.id.toString();
-            await globalSetConfig("blueskyOAuthAccountID", accountID);
+            await globalSetConfig("blueskyOAuthAccountID", this.accountID.toString());
 
             // Open the URL in the default browser
             await shell.openExternal(url.toString());
@@ -2898,7 +2912,7 @@ export class XAccountController {
                 }
 
                 // Determine the aspect ratio
-                const metadata = await sharp(mediaData).metadata();
+                const dimensions = sizeOf(mediaPath);
 
                 // Upload the image
                 log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
@@ -2915,8 +2929,8 @@ export class XAccountController {
                     alt: "",
                     image: resp.data.blob,
                     aspectRatio: {
-                        width: metadata.width ? metadata.width : 1,
-                        height: metadata.height ? metadata.height : 1,
+                        width: dimensions.width ? dimensions.width : 1,
+                        height: dimensions.height ? dimensions.height : 1,
                     }
                 });
 
