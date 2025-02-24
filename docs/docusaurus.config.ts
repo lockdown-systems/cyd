@@ -21,6 +21,10 @@ const config: Config = {
     locales: ['en'],
   },
 
+  plugins: [[require.resolve('docusaurus-lunr-search'), {
+    languages: ['en'] // language codes
+  }]],
+
   presets: [
     [
       'classic',
@@ -135,9 +139,6 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
     },
-    plugins: [[require.resolve('docusaurus-lunr-search'), {
-      languages: ['en'] // language codes
-    }]],
   } satisfies Preset.ThemeConfig,
 };
 
