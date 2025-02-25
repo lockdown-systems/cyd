@@ -6,7 +6,9 @@ sidebar_position: 1
 
 Cyd is an open source app for Windows, Mac, and Linux that makes it easy for you to claw back your data from Big Tech platforms. Right now Cyd supports X, but more platforms (*cough Facebook cough*) are coming soon.
 
-Cyd helps you create a local, private backup of your data &mdash; like all of your tweets, retweets, likes, bookmarks, and direct messages. Once you've done this, Cyd helps you choose what data you want to delete from your online account. You can delete it all, or you can be selective, deleting most of it but keeping what went viral. It can also help you migrate your data from closed platforms into open ones &mdash; for example, you can migrate your tweets from X into Bluesky.
+Cyd helps you create a local, private backup of your data &mdash; like all of your tweets, retweets, likes, bookmarks, and direct messages. Once you've done this, Cyd helps you choose what data you want to delete from your online account. You can delete it all, or you can be selective, deleting most of it but keeping what went viral.
+
+Cyd can also help you migrate your data from closed platforms into open ones &mdash; for example, you can migrate your tweets from X into Bluesky.
 
 ![Screenshot of Cyd](./img/cyd.png)
 
