@@ -2538,6 +2538,23 @@ export class XAccountController {
         const username = this.account.username;
         const userID = this.account.userID;
 
+        const totalTweets: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            WHERE tweet.isLiked = ?
+            AND tweet.username = ?
+            AND tweet.deletedTweetAt IS NULL
+        `, [0, username], "get") as Sqlite3Count;
+
+        const totalRetweets: Sqlite3Count = exec(this.db, `
+            SELECT COUNT(*) AS count
+            FROM tweet
+            WHERE tweet.text LIKE ?
+            AND tweet.isLiked = ?
+            AND tweet.username = ?
+            AND tweet.deletedTweetAt IS NULL
+        `, ["RT @%", 0, username], "get") as Sqlite3Count;
+
         const toMigrateTweets: XTweetRow[] = exec(this.db, `
             SELECT tweet.*
             FROM tweet
@@ -2576,6 +2593,8 @@ export class XAccountController {
 
         // Return the counts
         const resp: XMigrateTweetCounts = {
+            totalTweetsCount: totalTweets.count,
+            totalRetweetsCount: totalRetweets.count,
             toMigrateTweetIDs: toMigrateTweetIDs,
             cannotMigrateCount: cannotMigrate.count,
             alreadyMigratedTweetIDs: alreadyMigratedTweetIDs,
