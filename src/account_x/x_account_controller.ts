@@ -2652,21 +2652,10 @@ export class XAccountController {
             });
         }
 
-        // Get the current user's user ID
-        let userRow: XUserRow;
-        try {
-            userRow = exec(this.db, `
-                SELECT *
-                FROM user
-                WHERE screenName = ?
-            `, [this.account.username], "get") as XUserRow;
-        } catch (e) {
-            return `Error selecting user: ${e}`;
-        }
-
         // Handle replies
+        const userID = this.account.userID;
         let reply = null;
-        if (tweet.isReply && tweet.replyUserID == userRow.userID) {
+        if (tweet.isReply && tweet.replyUserID == userID) {
             // Find the parent tweet migration
             let parentMigration: XTweetBlueskyMigrationRow;
             try {
@@ -2693,7 +2682,7 @@ export class XAccountController {
                     } catch (e) {
                         return `Error selecting parent tweet: ${e}`;
                     }
-                    if (parentTweet && parentTweet.isReply && parentTweet.replyUserID == userRow.userID) {
+                    if (parentTweet && parentTweet.isReply && parentTweet.replyUserID == userID) {
                         rootTweetID = parentTweet.replyTweetID;
                     } else {
                         foundRoot = true;
