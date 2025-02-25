@@ -504,8 +504,8 @@ onUnmounted(async () => {
                             @set-state="setState($event)" @update-account="updateAccount"
                             @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
 
-                        <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
-                            :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                        <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateToBlueskyDisplay"
+                            :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @set-state="setState($event)" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"

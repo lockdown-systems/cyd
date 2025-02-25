@@ -52,7 +52,7 @@ const backClicked = async () => {
     if (checkReason.value == 'deleteData') {
         emit('setState', State.WizardReview);
     } else if (checkReason.value == 'migrateTweetsToBluesky') {
-        emit('setState', State.WizardMigrate);
+        emit('setState', State.WizardMigrateToBluesky);
     }
 };
 

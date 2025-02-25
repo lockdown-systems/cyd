@@ -59,8 +59,8 @@ export enum State {
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
 
-    WizardMigrate = "WizardMigrate",
-    WizardMigrateDisplay = "WizardMigrateDisplay",
+    WizardMigrateToBluesky = "WizardMigrateToBluesky",
+    WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
     RunJobs = "RunJobs",
 
@@ -2759,14 +2759,14 @@ You'll be able to access it even after you delete it from X.
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
-                case State.WizardMigrate:
+                case State.WizardMigrateToBluesky:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     this.instructions = `
 **Just because you're quitting X doesn't mean your posts need to disappear.**
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
-                    this.state = State.WizardMigrateDisplay;
+                    this.state = State.WizardMigrateToBlueskyDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
