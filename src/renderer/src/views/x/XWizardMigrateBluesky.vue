@@ -2,6 +2,9 @@
 import { IpcRendererEvent } from 'electron';
 import { ref, onMounted, onUnmounted, computed, inject, getCurrentInstance } from 'vue'
 
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import { Pie } from 'vue-chartjs'
+
 import {
     XViewModel,
     State as XState,
@@ -14,6 +17,8 @@ import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -354,29 +359,69 @@ onUnmounted(async () => {
 
                 <!-- Connected: Show the preview of what will be migrated -->
                 <template v-if="state == State.Connected && tweetCounts !== null">
-                    <p class="mt-4">
-                        <span v-if="tweetCounts.toMigrateTweetIDs.length > 0">
-                            Are you ready to migrate
-                            <strong>
-                                {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }}
-                            </strong>
-                            tweets into Bluesky?
-                        </span>
-                        <span v-else>
-                            You don't have any tweets to migrate.
-                        </span>
-                        <br>
-                        <small class="text-muted">
-                            <strong>
-                                {{ tweetCounts.cannotMigrateCount.toLocaleString() }}
-                            </strong>
-                            tweets can't be migrated because they're replies to users on X.<br>
-                            <strong>
-                                {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }}
-                            </strong>
-                            tweets have already been migrated.
-                        </small>
-                    </p>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <p v-if="tweetCounts.toMigrateTweetIDs.length > 0">
+                                    <strong>You can migrate
+                                        {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }}
+                                        tweets into Bluesky.</strong>
+                                </p>
+                                <p v-else>
+                                    You don't have any tweets to migrate.
+                                </p>
+                                <ul class="small text-muted">
+                                    <li>
+                                        Your local database has a total of <strong>
+                                            {{ tweetCounts.totalTweetsCount.toLocaleString() }}
+                                            tweets</strong>.
+                                    </li>
+                                    <li>
+                                        <strong>
+                                            {{ tweetCounts.totalRetweetsCount.toLocaleString() }}
+                                            tweets
+                                        </strong>
+                                        can't be migrated because they're retweets.
+                                    </li>
+                                    <li>
+                                        <strong>
+                                            {{ tweetCounts.cannotMigrateCount.toLocaleString() }}
+                                            tweets
+                                        </strong>
+                                        can't be migrated because they're replies to users on X.
+                                    </li>
+                                    <li>
+                                        <strong>
+                                            {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }}
+                                            tweets
+                                        </strong>
+                                        have already been migrated.
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col">
+                                <Pie :data="{
+                                    labels: ['Ready to Migrate', 'Already Migrated', 'Replies', 'Retweets',],
+                                    datasets: [{
+                                        backgroundColor: ['#377eb8', '#ff7f00', '#4daf4a', '#984ea3'],
+                                        data: [tweetCounts.toMigrateTweetIDs.length, tweetCounts.alreadyMigratedTweetIDs.length, tweetCounts.cannotMigrateCount, tweetCounts.totalRetweetsCount]
+                                    }],
+                                }" :options="{
+                                    plugins: {
+                                        legend: {
+                                            display: true,
+                                            position: 'bottom'
+                                        },
+                                        tooltip: {
+                                            enabled: true
+                                        }
+                                    },
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                }" />
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="buttons mb-4">
                         <p>
