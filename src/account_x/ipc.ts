@@ -490,4 +490,13 @@ export const defineIPCX = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('X:getMediaPath', async (_, accountID: number): Promise<string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getMediaPath();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 };

@@ -81,6 +81,8 @@ const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
+const mediaPath = ref("");
+
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
@@ -363,6 +365,8 @@ const debugModeDisable = async () => {
 // Lifecycle
 
 onMounted(async () => {
+    mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
+
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
@@ -480,7 +484,7 @@ onUnmounted(async () => {
                     <div class="run-jobs-state-content flex-grow-1">
                         <XDisplayTweet
                             v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks || model.runJobsState == RunJobsState.MigrateBluesky || model.runJobsState == RunJobsState.MigrateBlueskyDelete"
-                            :model="unref(model)" />
+                            :model="unref(model)" :media-path="mediaPath" />
                     </div>
                 </div>
             </div>

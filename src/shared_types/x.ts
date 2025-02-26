@@ -170,6 +170,8 @@ export type XTweetItem = {
     l: number; // likeCount
     r: number; // retweetCount
     d: string; // createdAt
+    i: string[]; // image filenames
+    v: string[]; // video filenames
 }
 
 export type XTweetItemArchive = {

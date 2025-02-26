@@ -62,6 +62,9 @@ declare global {
             startPowerSaveBlocker: () => Promise<number>;
             stopPowerSaveBlocker: (powerSaveBlockerID: number) => Promise<void>;
             deleteSettingsAndRestart: () => Promise<void>;
+            onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
+            onPowerMonitorResume: (callback: () => void) => Promise<void>;
+            getImageDataURIFromFile: (filename: string) => Promise<string>;
             database: {
                 getConfig: (key: string) => Promise<string | null>;
                 setConfig: (key: string, value: string) => Promise<void>;
@@ -138,6 +141,7 @@ declare global {
                 blueskyGetTweetCounts: (accountID: number) => Promise<XMigrateTweetCounts>;
                 blueskyMigrateTweet: (accountID: number, tweetID: string) => Promise<boolean | string>;
                 blueskyDeleteMigratedTweet: (accountID: number, tweetID: string) => Promise<boolean | string>;
+                getMediaPath: (accountID: number) => Promise<string>;
             };
             Facebook: {
                 resetProgress: (accountID: number) => Promise<FacebookProgress>;
@@ -150,9 +154,7 @@ declare global {
                 getProfileImageDataURI: (accountID: number, profilePictureURI: string) => Promise<string>;
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => Promise<void>;
-            },
-            onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
-            onPowerMonitorResume: (callback: () => void) => Promise<void>;
+            }
         };
     }
 }

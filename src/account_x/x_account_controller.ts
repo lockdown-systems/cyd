@@ -502,12 +502,50 @@ export class XAccountController {
     }
 
     convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
+        const media: XTweetMediaRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_media WHERE tweetID = ?",
+            [row.tweetID],
+            "all"
+        ) as XTweetMediaRow[];
+        const urls: XTweetURLRow[] = exec(
+            this.db,
+            "SELECT * FROM tweet_url WHERE tweetID = ?",
+            [row.tweetID],
+            "all"
+        ) as XTweetURLRow[];
+
+        // Update the text
+        let text = row.text;
+        for (const url of urls) {
+            text = text.replace(url.url, url.expandedURL);
+        }
+        for (const mediaItem of media) {
+            text = text.replace(mediaItem.url, "");
+        }
+        text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
+        text = text.trim()
+
+        // Prepare images and videos objects
+        const images: string[] = [];
+        const videos: string[] = [];
+        for (const mediaItem of media) {
+            if (mediaItem.mediaType === "photo") {
+                images.push(mediaItem.filename);
+            }
+            if (mediaItem.mediaType === "video") {
+                videos.push(mediaItem.filename);
+            }
+        }
+
         return {
             id: row.tweetID,
-            t: row.text,
+            t: text,
             l: row.likeCount,
             r: row.retweetCount,
             d: row.createdAt,
+            i: images,
+            v: videos
         };
     }
 
@@ -772,8 +810,7 @@ export class XAccountController {
         }
 
         // Create path to store tweet media if it doesn't exist already
-        const accountDataPath = getAccountDataPath("X", this.account.username);
-        const outputPath = path.join(accountDataPath, "Tweet Media");
+        const outputPath = await this.getMediaPath();
         if (!fs.existsSync(outputPath)) {
             fs.mkdirSync(outputPath);
         }
@@ -2122,7 +2159,7 @@ export class XAccountController {
 
                 // Loop through the tweets and add them to the database
                 try {
-                    tweetsData.forEach((tweetContainer) => {
+                    tweetsData.forEach(async (tweetContainer) => {
                         let tweet: XArchiveTweet;
                         if (isXArchiveTweetContainer(tweetContainer)) {
                             tweet = tweetContainer.tweet;
@@ -2141,7 +2178,7 @@ export class XAccountController {
                         let hasMedia: boolean = false;
                         if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
                             hasMedia = true;
-                            this.importXArchiveMedia(tweet, archivePath);
+                            await this.importXArchiveMedia(tweet, archivePath);
                         }
 
                         // Check if tweet has urls and call importXArchiveURLs
@@ -2287,15 +2324,15 @@ export class XAccountController {
         };
     }
 
-    importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
+    async importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
         // Loop over all media items
-        tweet.extended_entities?.media.forEach((media: XAPILegacyTweetMedia) => {
+        tweet.extended_entities?.media.forEach(async (media: XAPILegacyTweetMedia) => {
             const existingMedia = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media.id_str], "get") as XTweetMediaRow;
             if (existingMedia) {
                 log.debug(`XAccountController.importXArchiveMedia: media already exists: ${media.id_str}`);
                 return;
             }
-            const filename = this.saveXArchiveMedia(tweet.id_str, media, archivePath);
+            const filename = await this.saveXArchiveMedia(tweet.id_str, media, archivePath);
             if (filename) {
                 // Index media information in tweet_media table
                 exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
@@ -2311,7 +2348,7 @@ export class XAccountController {
         });
     }
 
-    saveXArchiveMedia(tweetID: string, media: XAPILegacyTweetMedia, archivePath: string): string | null {
+    async saveXArchiveMedia(tweetID: string, media: XAPILegacyTweetMedia, archivePath: string): Promise<string | null> {
         if (!this.account) {
             throw new Error("Account not found");
         }
@@ -2348,8 +2385,7 @@ export class XAccountController {
         }
 
         // Create path to store tweet media if it doesn't exist already
-        const accountDataPath = getAccountDataPath("X", this.account.username);
-        const outputPath = path.join(accountDataPath, "Tweet Media");
+        const outputPath = await this.getMediaPath();
         if (!fs.existsSync(outputPath)) {
             fs.mkdirSync(outputPath);
         }
@@ -2838,7 +2874,8 @@ export class XAccountController {
             const maxSize = 50000000;
 
             // Load the video
-            const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", tweetMedia[0].filename);
+            const outputPath = await this.getMediaPath();
+            const mediaPath = path.join(outputPath, tweetMedia[0].filename);
             let mediaData;
             try {
                 mediaData = fs.readFileSync(mediaPath);
@@ -2935,7 +2972,8 @@ export class XAccountController {
 
             for (const media of tweetMedia) {
                 // Load the image
-                const mediaPath = path.join(getAccountDataPath("X", this.account.username), "Tweet Media", media.filename);
+                const outputPath = await this.getMediaPath();
+                const mediaPath = path.join(outputPath, media.filename);
                 let mediaData;
                 try {
                     mediaData = fs.readFileSync(mediaPath);
@@ -3088,5 +3126,13 @@ export class XAccountController {
         } catch (e) {
             return `Error deleting migrated tweet from Bluesky: ${e}`;
         }
+    }
+
+    async getMediaPath(): Promise<string> {
+        if (!this.account) {
+            return "";
+        }
+        const accountDataPath = getAccountDataPath("X", this.account.username);
+        return path.join(accountDataPath, "Tweet Media");
     }
 }
