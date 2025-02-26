@@ -4,6 +4,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
+import { getPremiumCheckReason, clearPremiumCheckReason, getPremiumTasks, clearPremiumTasks } from '../../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -58,19 +59,17 @@ const backClicked = async () => {
 
 onMounted(async () => {
     // Load the reason for this check
-    const premiumCheckReason = localStorage.getItem(`premiumCheckReason-${props.model.account.id}`);
-    console.log(`premiumCheckReason-${props.model.account.id}`, premiumCheckReason);
+    const premiumCheckReason = getPremiumCheckReason(props.model.account.id);
     if (premiumCheckReason) {
         checkReason.value = premiumCheckReason;
-        localStorage.removeItem(`premiumCheckReason-${props.model.account.id}`);
+        clearPremiumCheckReason(props.model.account.id);
     }
 
     // See if there are any premium tasks in localStorage
-    const premiumTasks = localStorage.getItem(`premiumTasks-${props.model.account.id}`);
-    console.log(`premiumTasks-${props.model.account.id}`, premiumTasks);
+    const premiumTasks = getPremiumTasks(props.model.account.id);
     if (premiumTasks) {
-        tasks.value = JSON.parse(premiumTasks);
-        localStorage.removeItem(`premiumTasks-${props.model.account.id}`);
+        tasks.value = premiumTasks;
+        clearPremiumTasks(props.model.account.id);
     }
 });
 </script>

@@ -13,7 +13,7 @@ import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
-import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
+import { showQuestionOpenModePremiumFeature, openURL, setPremiumCheckReason, setPremiumTasks } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
@@ -136,8 +136,8 @@ const migrateClicked = async () => {
         await xUpdateUserPremium();
 
         if (!props.userAuthenticated || !props.userPremium) {
-            localStorage.setItem(`premiumCheckReason-${props.model.account.id}`, 'migrateTweetsToBluesky');
-            localStorage.setItem(`premiumTasks-${props.model.account.id}`, JSON.stringify(['Migrate tweets to Bluesky']));
+            setPremiumCheckReason(props.model.account.id, 'migrateTweetsToBluesky');
+            setPremiumTasks(props.model.account.id, ['Migrate tweets to Bluesky']);
             emit('setState', XState.WizardCheckPremium);
             return;
         }

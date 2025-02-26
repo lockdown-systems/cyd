@@ -46,7 +46,7 @@ import type {
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
-import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL } from '../../util';
+import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL, setPremiumCheckReason } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
@@ -264,7 +264,7 @@ const startJobs = async () => {
             await updateUserAuthenticated();
             console.log("userAuthenticated", userAuthenticated.value);
             if (!userAuthenticated.value) {
-                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
+                setPremiumCheckReason(model.value.account.id, 'deleteData');
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
@@ -273,7 +273,7 @@ const startJobs = async () => {
             await updateUserPremium();
             console.log("userPremium", userPremium.value);
             if (!userPremium.value) {
-                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
+                setPremiumCheckReason(model.value.account.id, 'deleteData');
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;

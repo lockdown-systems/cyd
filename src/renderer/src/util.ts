@@ -132,3 +132,30 @@ export const showQuestionOpenModePremiumFeature = async (): Promise<boolean> => 
         "Cancel"
     );
 }
+
+// Premium check
+
+export const setPremiumCheckReason = (accountID: number, reason: string): void => {
+    localStorage.setItem(`premiumCheckReason-${accountID}`, reason);
+}
+
+export const getPremiumCheckReason = (accountID: number): string | null => {
+    return localStorage.getItem(`premiumCheckReason-${accountID}`);
+}
+
+export const clearPremiumCheckReason = (accountID: number): void => {
+    localStorage.removeItem(`premiumCheckReason-${accountID}`);
+}
+
+export const setPremiumTasks = (accountID: number, tasks: string[]): void => {
+    localStorage.setItem(`premiumTasks-${accountID}`, JSON.stringify(tasks));
+}
+
+export const getPremiumTasks = (accountID: number): string[] | null => {
+    const tasks = localStorage.getItem(`premiumTasks-${accountID}`);
+    return tasks ? JSON.parse(tasks) : null;
+}
+
+export const clearPremiumTasks = (accountID: number): void => {
+    localStorage.removeItem(`premiumTasks-${accountID}`);
+}
