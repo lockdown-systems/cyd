@@ -2567,7 +2567,6 @@ export class XAccountController {
             AND (tweet.isReply = ? OR (tweet.isReply = ? AND tweet.replyUserID = ?))
             ORDER BY tweet.createdAt ASC
         `, ["RT @%", 0, username, 0, 1, userID], "all") as XTweetRow[];
-        const toMigrateTweetIDs = toMigrateTweets.map((tweet) => tweet.tweetID);
 
         const cannotMigrate: Sqlite3Count = exec(this.db, `
             SELECT COUNT(*) AS count
@@ -2589,15 +2588,14 @@ export class XAccountController {
             AND tweet.isLiked = ?
             AND tweet.username = ?
         `, ["RT @%", 0, username], "all") as XTweetRow[];
-        const alreadyMigratedTweetIDs = alreadyMigratedTweets.map((tweet) => tweet.tweetID);
 
         // Return the counts
         const resp: XMigrateTweetCounts = {
             totalTweetsCount: totalTweets.count,
             totalRetweetsCount: totalRetweets.count,
-            toMigrateTweetIDs: toMigrateTweetIDs,
+            toMigrateTweets: toMigrateTweets.map((row) => (convertTweetRowToXTweetItem(row))),
             cannotMigrateCount: cannotMigrate.count,
-            alreadyMigratedTweetIDs: alreadyMigratedTweetIDs,
+            alreadyMigratedTweets: alreadyMigratedTweets.map((row) => (convertTweetRowToXTweetItem(row)))
         }
         log.info("XAccountController.blueskyGetTweetCounts: returning", resp);
         return resp;

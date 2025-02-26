@@ -197,7 +197,7 @@ onMounted(async () => {
                 <ul>
                     <li>
                         Migrate
-                        <b>{{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }} tweets</b>
+                        <b>{{ tweetCounts.toMigrateTweets.length.toLocaleString() }} tweets</b>
                         to Bluesky
                     </li>
                 </ul>
@@ -211,7 +211,7 @@ onMounted(async () => {
                 <ul>
                     <li>
                         Delete
-                        <b>{{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }} posts</b>
+                        <b>{{ tweetCounts.alreadyMigratedTweets.length.toLocaleString() }} posts</b>
                         from Bluesky
                     </li>
                 </ul>

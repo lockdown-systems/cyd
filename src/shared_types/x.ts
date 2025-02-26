@@ -306,17 +306,17 @@ export interface XImportArchiveResponse {
 export type XMigrateTweetCounts = {
     totalTweetsCount: number;
     totalRetweetsCount: number;
-    toMigrateTweetIDs: string[];
+    toMigrateTweets: XTweetItem[];
     cannotMigrateCount: number;
-    alreadyMigratedTweetIDs: string[];
+    alreadyMigratedTweets: XTweetItem[];
 }
 
 export function emptyXMigrateTweetCounts(): XMigrateTweetCounts {
     return {
         totalTweetsCount: 0,
         totalRetweetsCount: 0,
-        toMigrateTweetIDs: [],
+        toMigrateTweets: [],
         cannotMigrateCount: 0,
-        alreadyMigratedTweetIDs: []
+        alreadyMigratedTweets: []
     }
 }

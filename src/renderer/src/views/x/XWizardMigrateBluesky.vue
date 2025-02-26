@@ -282,9 +282,9 @@ onUnmounted(async () => {
                     <div class="container">
                         <div class="row">
                             <div class="col">
-                                <p v-if="tweetCounts.toMigrateTweetIDs.length > 0">
+                                <p v-if="tweetCounts.toMigrateTweets.length > 0">
                                     <strong>You can migrate
-                                        {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }}
+                                        {{ tweetCounts.toMigrateTweets.length.toLocaleString() }}
                                         tweets into Bluesky.</strong>
                                 </p>
                                 <p v-else>
@@ -312,7 +312,7 @@ onUnmounted(async () => {
                                     </li>
                                     <li>
                                         <strong>
-                                            {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }}
+                                            {{ tweetCounts.alreadyMigratedTweets.length.toLocaleString() }}
                                             tweets
                                         </strong>
                                         have already been migrated.
@@ -324,7 +324,7 @@ onUnmounted(async () => {
                                     labels: ['Ready to Migrate', 'Already Migrated', 'Replies', 'Retweets',],
                                     datasets: [{
                                         backgroundColor: ['#377eb8', '#ff7f00', '#4daf4a', '#984ea3'],
-                                        data: [tweetCounts.toMigrateTweetIDs.length, tweetCounts.alreadyMigratedTweetIDs.length, tweetCounts.cannotMigrateCount, tweetCounts.totalRetweetsCount]
+                                        data: [tweetCounts.toMigrateTweets.length, tweetCounts.alreadyMigratedTweets.length, tweetCounts.cannotMigrateCount, tweetCounts.totalRetweetsCount]
                                     }],
                                 }" :options="{
                                     plugins: {
@@ -346,13 +346,13 @@ onUnmounted(async () => {
                     <div class="buttons mb-4">
                         <p>
                             <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                :disabled="tweetCounts.toMigrateTweetIDs.length == 0" @click="migrateClicked">
+                                :disabled="tweetCounts.toMigrateTweets.length == 0" @click="migrateClicked">
                                 <i class="fa-solid fa-forward" />
                                 Continue to Review
                             </button>
                         </p>
                         <p>
-                            <button v-if="tweetCounts.alreadyMigratedTweetIDs.length > 0" type="submit"
+                            <button v-if="tweetCounts.alreadyMigratedTweets.length > 0" type="submit"
                                 class="btn btn-sm btn-danger text-nowrap m-1" @click="deleteClicked">
                                 <i class="fa-solid fa-trash" />
                                 Delete Migrated Tweets from Bluesky
@@ -368,7 +368,7 @@ onUnmounted(async () => {
                             Posted
                             <b>
                                 {{ migratedTweetsCount.toLocaleString() }} of
-                                {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }} tweets
+                                {{ tweetCounts.toMigrateTweets.length.toLocaleString() }} tweets
                             </b>
                             to Bluesky.
                             <small v-if="skippedTweetsCount > 0" class="text-muted">
@@ -381,11 +381,11 @@ onUnmounted(async () => {
                         </p>
                         <div class="progress flex-grow-1 me-2">
                             <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweetIDs.length) * 100}%` }"
-                                :aria-valuenow="((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweetIDs.length) * 100"
+                                :style="{ width: `${((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweets.length) * 100}%` }"
+                                :aria-valuenow="((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweets.length) * 100"
                                 aria-valuemin="0" aria-valuemax="100">
                                 {{ Math.round(((migratedTweetsCount + skippedTweetsCount) /
-                                    tweetCounts.toMigrateTweetIDs.length) * 100) }}%
+                                    tweetCounts.toMigrateTweets.length) * 100) }}%
                             </div>
                         </div>
                     </div>
@@ -406,7 +406,7 @@ onUnmounted(async () => {
                             Deleted
                             <b>
                                 {{ deletedPostsCount.toLocaleString() }} of
-                                {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }} migrated tweets
+                                {{ tweetCounts.alreadyMigratedTweets.length.toLocaleString() }} migrated tweets
                             </b>
                             from Bluesky.
                             <small v-if="skippedDeletePostsCount > 0" class="text-muted">
@@ -419,11 +419,11 @@ onUnmounted(async () => {
                         </p>
                         <div class="progress flex-grow-1 me-2">
                             <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweetIDs.length) * 100}%` }"
-                                :aria-valuenow="((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweetIDs.length) * 100"
+                                :style="{ width: `${((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweets.length) * 100}%` }"
+                                :aria-valuenow="((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweets.length) * 100"
                                 aria-valuemin="0" aria-valuemax="100">
                                 {{ Math.round(((deletedPostsCount + skippedDeletePostsCount) /
-                                    tweetCounts.alreadyMigratedTweetIDs.length) * 100) }}%
+                                    tweetCounts.alreadyMigratedTweets.length) * 100) }}%
                             </div>
                         </div>
                     </div>

@@ -35,7 +35,7 @@ import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
-import XJobDeleteTweets from './XJobDeleteTweets.vue';
+import XDisplayTweet from './XDisplayTweet.vue';
 
 import type {
     Account,
@@ -483,8 +483,8 @@ onUnmounted(async () => {
             }">
                 <div class="run-jobs-state-container d-flex">
                     <div class="run-jobs-state-content flex-grow-1">
-                        <XJobDeleteTweets
-                            v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks"
+                        <XDisplayTweet
+                            v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks || model.runJobsState == RunJobsState.MigrateBluesky || model.runJobsState == RunJobsState.MigrateBlueskyDelete"
                             :model="unref(model)" />
                     </div>
                 </div>
