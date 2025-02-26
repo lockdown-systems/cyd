@@ -9,7 +9,7 @@ import {
     State
 } from '../../view_models/XViewModel'
 import { xHasSomeData } from '../../util_x';
-import { openURL, setReviewType } from '../../util';
+import { openURL, setJobsType } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -29,7 +29,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
-    setReviewType(props.model.account.id, 'delete');
+    setJobsType(props.model.account.id, 'delete');
     emit('setState', State.WizardReview);
 };
 

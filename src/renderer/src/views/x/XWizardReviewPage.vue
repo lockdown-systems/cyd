@@ -4,9 +4,8 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { openPreventSleepURL, getReviewType } from '../../util';
-import { emptyXDeleteReviewStats } from '../../../../shared_types';
-import type { XDeleteReviewStats } from '../../../../shared_types';
+import { openPreventSleepURL, getJobsType } from '../../util';
+import { XDeleteReviewStats, emptyXDeleteReviewStats, XMigrateTweetCounts, emptyXMigrateTweetCounts } from '../../../../shared_types';
 import { xHasSomeData } from '../../util_x';
 
 // Props
@@ -35,7 +34,7 @@ const backClicked = async () => {
         emit('setState', State.WizardBuildOptions);
     } else if (reviewType.value == 'archive') {
         emit('setState', State.WizardArchiveOptions);
-    } else if (reviewType.value == 'migrateToBluesky') {
+    } else if (reviewType.value == 'migrateToBluesky' || reviewType.value == 'deleteFromBluesky') {
         emit('setState', State.WizardMigrateToBluesky);
     } else {
         // Display error
@@ -50,17 +49,18 @@ const archiveClicked = async () => {
 
 // Settings
 const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
-
 const hasSomeData = ref(false);
+const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
 
 const deleteTweetsCountNotArchived = ref(0);
 
 onMounted(async () => {
-    reviewType.value = getReviewType(props.model.account.id) || '';
+    reviewType.value = getJobsType(props.model.account.id) || '';
 
     await props.model.refreshDatabaseStats();
     deleteReviewStats.value = props.model.deleteReviewStats;
     hasSomeData.value = await xHasSomeData(props.model.account.id);
+    tweetCounts.value = await window.electron.X.blueskyGetTweetCounts(props.model.account.id) || emptyXMigrateTweetCounts();
 
     if (reviewType.value == 'delete' && props.model.account?.xAccount?.deleteTweets) {
         deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
@@ -191,12 +191,28 @@ onMounted(async () => {
 
             <div v-if="reviewType == 'migrateToBluesky'">
                 <h3>
-                    <i class="fa-solid fa-bluesky me-1" />
+                    <i class="fa-brands fa-bluesky me-1" />
                     Migrate to Bluesky
                 </h3>
                 <ul>
                     <li>
-                        Migrate your tweets to Bluesky
+                        Migrate
+                        <b>{{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }} tweets</b>
+                        to Bluesky
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="reviewType == 'deleteFromBluesky'">
+                <h3>
+                    <i class="fa-brands fa-bluesky me-1" />
+                    Delete Migrated Bluesky Posts
+                </h3>
+                <ul>
+                    <li>
+                        Delete
+                        <b>{{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }} posts</b>
+                        from Bluesky
                     </li>
                 </ul>
             </div>
@@ -213,7 +229,7 @@ onMounted(async () => {
                     <template v-else-if="reviewType == 'archive'">
                         Back to Archive Options
                     </template>
-                    <template v-else-if="reviewType == 'migrateToBluesky'">
+                    <template v-else-if="reviewType == 'migrateToBluesky' || reviewType == 'deleteFromBluesky'">
                         Back to Migrate to Bluesky Options
                     </template>
                 </button>
@@ -228,7 +244,7 @@ onMounted(async () => {
                     <template v-else-if="reviewType == 'archive'">
                         Start Archiving
                     </template>
-                    <template v-else-if="reviewType == 'delete'">
+                    <template v-else-if="reviewType == 'delete' || reviewType == 'deleteFromBluesky'">
                         Start Deleting
                     </template>
                     <template v-else-if="reviewType == 'migrateToBluesky'">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted, computed, inject, getCurrentInstance } from 'vue'
+import { ref, onMounted, onUnmounted, computed, getCurrentInstance } from 'vue'
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'vue-chartjs'
@@ -13,7 +13,7 @@ import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
-import { showQuestionOpenModePremiumFeature, openURL, setPremiumCheckReason, setPremiumTasks } from '../../util'
+import { openURL, setJobsType } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
@@ -52,9 +52,6 @@ const connectButtonText = ref('Connect');
 const hasSomeData = ref<boolean>(false);
 const lastImportArchive = ref<Date | null>(null);
 const lastBuildDatabase = ref<Date | null>(null);
-
-const xUpdateUserAuthenticated = inject('xUpdateUserAuthenticated') as () => Promise<void>;
-const xUpdateUserPremium = inject('xUpdateUserPremium') as () => Promise<void>;
 
 // Props
 const props = defineProps<{
@@ -119,29 +116,9 @@ const disconnectClicked = async () => {
 }
 
 const migrateClicked = async () => {
-    if (tweetCounts.value === null) {
-        await window.electron.showMessage("You don't have any tweets to migrate.", '');
-        return;
-    }
-
-    // Premium check
-    if (await window.electron.getMode() == "open") {
-        if (!await showQuestionOpenModePremiumFeature()) {
-            return;
-        }
-    }
-    // Otherwise, make sure the user is authenticated
-    else {
-        await xUpdateUserAuthenticated();
-        await xUpdateUserPremium();
-
-        if (!props.userAuthenticated || !props.userPremium) {
-            setPremiumCheckReason(props.model.account.id, 'migrateTweetsToBluesky');
-            setPremiumTasks(props.model.account.id, ['Migrate tweets to Bluesky']);
-            emit('setState', XState.WizardCheckPremium);
-            return;
-        }
-    }
+    setJobsType(props.model.account.id, 'migrateToBluesky');
+    emit('setState', XState.WizardReview);
+    return;
 
     migratedTweetsCount.value = 0;
     skippedTweetsCount.value = 0;
@@ -427,8 +404,8 @@ onUnmounted(async () => {
                         <p>
                             <button type="submit" class="btn btn-primary text-nowrap m-1"
                                 :disabled="tweetCounts.toMigrateTweetIDs.length == 0" @click="migrateClicked">
-                                <i class="fa-brands fa-bluesky" />
-                                Start Migrating to Bluesky
+                                <i class="fa-solid fa-forward" />
+                                Continue to Review
                             </button>
                         </p>
                         <p>

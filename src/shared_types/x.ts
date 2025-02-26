@@ -292,3 +292,13 @@ export type XMigrateTweetCounts = {
     cannotMigrateCount: number;
     alreadyMigratedTweetIDs: string[];
 }
+
+export function emptyXMigrateTweetCounts(): XMigrateTweetCounts {
+    return {
+        totalTweetsCount: 0,
+        totalRetweetsCount: 0,
+        toMigrateTweetIDs: [],
+        cannotMigrateCount: 0,
+        alreadyMigratedTweetIDs: []
+    }
+}

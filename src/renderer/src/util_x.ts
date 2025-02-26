@@ -1,6 +1,7 @@
 import CydAPIClient from '../../cyd-api-client';
 import type { DeviceInfo } from './types';
 import { XAccount, XProgressInfo } from '../../shared_types';
+import { getJobsType } from './util';
 
 export async function xGetLastImportArchive(accountID: number): Promise<Date | null> {
     const lastFinishedJob_importArchive = await window.electron.X.getConfig(accountID, 'lastFinishedJob_importArchive');
@@ -29,6 +30,11 @@ export async function xHasSomeData(accountID: number): Promise<boolean> {
 
 export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
     let requiresPremium = false;
+
+    // Migrating to Bluesky is a premium feature
+    if (getJobsType(xAccount.id) == 'migrateToBluesky') {
+        return true;
+    }
 
     // All premium features are part of deleting
     if (!xAccount.deleteMyData) {

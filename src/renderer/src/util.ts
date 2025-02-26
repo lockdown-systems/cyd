@@ -161,17 +161,17 @@ export const clearPremiumTasks = (accountID: number): void => {
     localStorage.removeItem(`premiumTasks-${accountID}`);
 }
 
-// Review helper functions
-// Before switching to a review view, we need to store the review type that the user was trying to perform
+// Jobs type helper functions
+// Before switching starting a set of jobs (save, archive, delete, migrate, etc.) we need to store the jobs type that the user was trying to perform
 
-export const setReviewType = (accountID: number, type: string): void => {
-    localStorage.setItem(`reviewType-${accountID}`, type);
+export const setJobsType = (accountID: number, type: string): void => {
+    localStorage.setItem(`jobsType-${accountID}`, type);
 }
 
-export const getReviewType = (accountID: number): string | null => {
-    return localStorage.getItem(`reviewType-${accountID}`);
+export const getJobsType = (accountID: number): string | null => {
+    return localStorage.getItem(`jobsType-${accountID}`);
 }
 
-export const clearReviewType = (accountID: number): void => {
-    localStorage.removeItem(`reviewType-${accountID}`);
+export const clearJobsType = (accountID: number): void => {
+    localStorage.removeItem(`jobsType-${accountID}`);
 }

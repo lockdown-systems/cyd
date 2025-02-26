@@ -46,7 +46,14 @@ import type {
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
-import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL, setPremiumCheckReason } from '../../util';
+import {
+    setAccountRunning,
+    showQuestionOpenModePremiumFeature,
+    openURL,
+    setPremiumCheckReason,
+    setPremiumTasks,
+    getJobsType
+} from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 
 // Get the global emitter
@@ -261,19 +268,32 @@ const startJobs = async () => {
         }
         // Otherwise, make sure the user is authenticated
         else {
+            // Determine the premium check reason and tasks -- defaults to deleting data
+            const reviewType = getJobsType(model.value.account.id);
+            let premiumCheckReason = 'deleteData';
+            let premiumTasks: string[] = [];
+            if (reviewType == 'migrateToBluesky') {
+                premiumCheckReason = 'migrateTweetsToBluesky';
+                premiumTasks = ['Migrate tweets to Bluesky'];
+            }
+
+            // If the user is not authenticated, go to premium check
             await updateUserAuthenticated();
             console.log("userAuthenticated", userAuthenticated.value);
             if (!userAuthenticated.value) {
-                setPremiumCheckReason(model.value.account.id, 'deleteData');
+                setPremiumCheckReason(model.value.account.id, premiumCheckReason);
+                setPremiumTasks(model.value.account.id, premiumTasks);
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
             }
 
+            // If the user is authenticated but does not have a premium plan, go to premium check
             await updateUserPremium();
             console.log("userPremium", userPremium.value);
             if (!userPremium.value) {
-                setPremiumCheckReason(model.value.account.id, 'deleteData');
+                setPremiumCheckReason(model.value.account.id, premiumCheckReason);
+                setPremiumTasks(model.value.account.id, premiumTasks);
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
