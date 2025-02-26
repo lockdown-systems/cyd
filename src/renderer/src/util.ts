@@ -136,18 +136,6 @@ export const showQuestionOpenModePremiumFeature = async (): Promise<boolean> => 
 // Premium check helper functions
 // Before switching to a premium check view, we need to store the reason and tasks that the user was trying to perform
 
-export const setPremiumCheckReason = (accountID: number, reason: string): void => {
-    localStorage.setItem(`premiumCheckReason-${accountID}`, reason);
-}
-
-export const getPremiumCheckReason = (accountID: number): string | null => {
-    return localStorage.getItem(`premiumCheckReason-${accountID}`);
-}
-
-export const clearPremiumCheckReason = (accountID: number): void => {
-    localStorage.removeItem(`premiumCheckReason-${accountID}`);
-}
-
 export const setPremiumTasks = (accountID: number, tasks: string[]): void => {
     localStorage.setItem(`premiumTasks-${accountID}`, JSON.stringify(tasks));
 }

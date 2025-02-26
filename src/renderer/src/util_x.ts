@@ -28,9 +28,9 @@ export async function xHasSomeData(accountID: number): Promise<boolean> {
     return lastImportArchive !== null || lastBuildDatabase !== null;
 }
 
-export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
+export async function xRequiresPremium(accountID: number, xAccount: XAccount): Promise<boolean> {
     let requiresPremium = false;
-    const jobsType = getJobsType(xAccount.id);
+    const jobsType = getJobsType(accountID);
 
     // Migrating to Bluesky is a premium feature
     if (jobsType == 'migrateBluesky') {
@@ -38,7 +38,7 @@ export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
     }
 
     // All other premium features are part of deleting
-    if (jobsType != 'deleete') {
+    if (jobsType != 'delete') {
         return requiresPremium;
     }
 

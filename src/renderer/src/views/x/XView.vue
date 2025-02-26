@@ -50,7 +50,6 @@ import {
     setAccountRunning,
     showQuestionOpenModePremiumFeature,
     openURL,
-    setPremiumCheckReason,
     setPremiumTasks,
     getJobsType
 } from '../../util';
@@ -259,7 +258,7 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
 
 const startJobs = async () => {
     // Premium check
-    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
+    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account.id, model.value.account.xAccount)) {
         // In open mode, allow the user to continue
         if (await window.electron.getMode() == "open") {
             if (!await showQuestionOpenModePremiumFeature()) {
@@ -270,10 +269,8 @@ const startJobs = async () => {
         else {
             // Determine the premium check reason and tasks -- defaults to deleting data
             const jobsType = getJobsType(model.value.account.id);
-            let premiumCheckReason = 'deleteData';
             let premiumTasks: string[] = [];
             if (jobsType == 'migrateBluesky') {
-                premiumCheckReason = 'migrateTweetsToBluesky';
                 premiumTasks = ['Migrate tweets to Bluesky'];
             }
 
@@ -281,7 +278,6 @@ const startJobs = async () => {
             await updateUserAuthenticated();
             console.log("userAuthenticated", userAuthenticated.value);
             if (!userAuthenticated.value) {
-                setPremiumCheckReason(model.value.account.id, premiumCheckReason);
                 setPremiumTasks(model.value.account.id, premiumTasks);
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
@@ -292,7 +288,6 @@ const startJobs = async () => {
             await updateUserPremium();
             console.log("userPremium", userPremium.value);
             if (!userPremium.value) {
-                setPremiumCheckReason(model.value.account.id, premiumCheckReason);
                 setPremiumTasks(model.value.account.id, premiumTasks);
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
