@@ -482,7 +482,7 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:blueskyDeleteMigratedTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+    ipcMain.handle('X:blueskyDeleteMigratedTweet', async (_, accountID: number, tweetID: string): Promise<boolean | string> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyDeleteMigratedTweet(tweetID);

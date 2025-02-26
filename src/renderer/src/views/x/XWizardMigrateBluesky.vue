@@ -13,7 +13,7 @@ import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
-import { openURL, setJobsType } from '../../util'
+import { setJobsType } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
@@ -26,21 +26,12 @@ enum State {
     Connecting,
     FinishInBrowser,
     Connected,
-    Migrating,
-    Deleting,
-    Finished,
 }
 
 const state = ref<State>(State.Loading);
 
 const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
-const migratedTweetsCount = ref(0);
-const skippedTweetsCount = ref(0);
-const skippedTweetsErrors = ref<Record<string, string>>({});
-const deletedPostsCount = ref(0);
-const skippedDeletePostsCount = ref(0);
-const shouldCancelMigration = ref(false);
 
 const blueskyHandle = ref('');
 const connectButtonText = ref('Connect');
@@ -116,10 +107,6 @@ const migrateClicked = async () => {
     emit('setState', XState.WizardReview);
 }
 
-const migrateCancelClicked = async () => {
-    shouldCancelMigration.value = true;
-}
-
 const deleteClicked = async () => {
     if (tweetCounts.value === null) {
         await window.electron.showMessage("You don't have any tweets to delete.", '');
@@ -132,10 +119,6 @@ const deleteClicked = async () => {
 
     setJobsType(props.model.account.id, 'migrateBlueskyDelete');
     emit('setState', XState.WizardReview);
-}
-
-const viewBlueskyProfileClicked = async () => {
-    await openURL(`https://bsky.app/profile/${blueskyProfile.value?.handle}`);
 }
 
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
@@ -247,8 +230,7 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </template>
-            <template
-                v-else-if="state == State.Connected || state == State.Migrating || state == State.Deleting || state == State.Finished">
+            <template v-else-if="state == State.Connected">
                 <!-- Show the Bluesky account that is connected -->
                 <hr>
                 <p>
@@ -356,113 +338,6 @@ onUnmounted(async () => {
                                 class="btn btn-sm btn-danger text-nowrap m-1" @click="deleteClicked">
                                 <i class="fa-solid fa-trash" />
                                 Delete Migrated Tweets from Bluesky
-                            </button>
-                        </p>
-                    </div>
-                </template>
-
-                <!-- Migrating: Migration progress bar, and cancel button -->
-                <template v-if="state == State.Migrating">
-                    <div v-if="tweetCounts !== null">
-                        <p class="text-center">
-                            Posted
-                            <b>
-                                {{ migratedTweetsCount.toLocaleString() }} of
-                                {{ tweetCounts.toMigrateTweets.length.toLocaleString() }} tweets
-                            </b>
-                            to Bluesky.
-                            <small v-if="skippedTweetsCount > 0" class="text-muted">
-                                Skipped
-                                <b>
-                                    {{ skippedTweetsCount.toLocaleString() }} tweets
-                                </b>
-                                because of errors, but you can try again with them.
-                            </small>
-                        </p>
-                        <div class="progress flex-grow-1 me-2">
-                            <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweets.length) * 100}%` }"
-                                :aria-valuenow="((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweets.length) * 100"
-                                aria-valuemin="0" aria-valuemax="100">
-                                {{ Math.round(((migratedTweetsCount + skippedTweetsCount) /
-                                    tweetCounts.toMigrateTweets.length) * 100) }}%
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="buttons mb-4">
-                        <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="shouldCancelMigration"
-                            @click="migrateCancelClicked">
-                            <i class="fa-solid fa-xmark" />
-                            Cancel
-                        </button>
-                    </div>
-                </template>
-
-                <!-- Deleting: Deleting progress bar -->
-                <template v-if="state == State.Deleting">
-                    <div v-if="tweetCounts !== null">
-                        <p class="text-center">
-                            Deleted
-                            <b>
-                                {{ deletedPostsCount.toLocaleString() }} of
-                                {{ tweetCounts.alreadyMigratedTweets.length.toLocaleString() }} migrated tweets
-                            </b>
-                            from Bluesky.
-                            <small v-if="skippedDeletePostsCount > 0" class="text-muted">
-                                Skipped
-                                <b>
-                                    {{ skippedDeletePostsCount.toLocaleString() }} migrated tweets
-                                </b>
-                                because of errors, but you can try again with them.
-                            </small>
-                        </p>
-                        <div class="progress flex-grow-1 me-2">
-                            <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweets.length) * 100}%` }"
-                                :aria-valuenow="((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweets.length) * 100"
-                                aria-valuemin="0" aria-valuemax="100">
-                                {{ Math.round(((deletedPostsCount + skippedDeletePostsCount) /
-                                    tweetCounts.alreadyMigratedTweets.length) * 100) }}%
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- Finished -->
-                <template v-if="state == State.Finished">
-                    <h2 class="mt-4">
-                        Finished migrating tweets to Bluesky!
-                    </h2>
-                    <p>
-                        You migrated <strong>{{ migratedTweetsCount.toLocaleString() }} tweets</strong> to Bluesky.
-                    </p>
-                    <div v-if="skippedTweetsCount > 0" class="alert alert-warning mt-4">
-                        <p>
-                            <strong>
-                                {{ skippedTweetsCount.toLocaleString() }} tweets
-                            </strong>
-                            were skipped because of errors:
-                        </p>
-                        <ul>
-                            <li v-for="(error, tweetID) in skippedTweetsErrors" :key="tweetID">
-                                <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="buttons mb-4">
-                        <p>
-                            <button type="submit" class="btn btn-success text-nowrap m-1"
-                                @click="viewBlueskyProfileClicked">
-                                <i class="fa-brands fa-bluesky" />
-                                Check out your Bluesky profile!
-                            </button>
-                        </p>
-                        <p>
-                            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                @click="state = State.Connected;">
-                                <i class="fa-solid fa-forward" />
-                                Continue
                             </button>
                         </p>
                     </div>

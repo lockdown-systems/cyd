@@ -3014,7 +3014,7 @@ export class XAccountController {
         }
     }
 
-    async blueskyDeleteMigratedTweet(tweetID: string): Promise<boolean> {
+    async blueskyDeleteMigratedTweet(tweetID: string): Promise<boolean | string> {
         if (!this.db) { this.initDB(); }
         if (!this.account) { throw new Error("Account not found"); }
 
@@ -3024,7 +3024,7 @@ export class XAccountController {
         }
         const did = await this.getConfig("blueskyDID");
         if (!did) {
-            throw new Error("Bluesky DID not found");
+            return 'Bluesky DID not found';
         }
         const session = await this.blueskyClient.restore(did);
         const agent = new Agent(session)
@@ -3035,7 +3035,6 @@ export class XAccountController {
             FROM tweet_bsky_migration
             WHERE tweetID = ?
         `, [tweetID], "get") as XTweetBlueskyMigrationRow;
-
 
         try {
             // Delete it from Bluesky
@@ -3048,8 +3047,7 @@ export class XAccountController {
 
             return true;
         } catch (e) {
-            log.error("XAccountController.blueskyDeleteMigratedTweet: Error deleting migrated tweet from Bluesky", e);
-            return false;
+            return `Error deleting migrated tweet from Bluesky: ${e}`;
         }
     }
 }

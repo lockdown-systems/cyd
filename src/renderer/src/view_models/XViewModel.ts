@@ -2582,7 +2582,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.progress.migrateTweetsCount = 0;
         this.progress.migrateSkippedTweetsCount = 0;
         this.progress.migrateSkippedTweetsErrors = {};
-        this.progress.errorsOccured = 0;
 
         this.currentTweetItem = null;
 
@@ -2593,7 +2592,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
             if (typeof resp === 'string') {
                 this.progress.migrateSkippedTweetsCount++;
                 this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
-                this.progress.errorsOccured++;
                 console.error('Failed to migrate tweet', tweet.id, resp);
             } else {
                 this.progress.migrateTweetsCount++;
@@ -2630,18 +2628,26 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.progress.totalMigratedPostsToDelete = tweetCounts.alreadyMigratedTweets.length;
         this.progress.migrateDeletePostsCount = 0;
         this.progress.migrateDeleteSkippedPostsCount = 0;
-        this.progress.errorsOccured = 0;
+        this.progress.migrateSkippedTweetsErrors = {};
 
         this.currentTweetItem = null;
 
         // Loop through migrated posts and delete them
         for (const tweet of tweetCounts.alreadyMigratedTweets) {
             this.currentTweetItem = tweet;
+            const resp = await window.electron.X.blueskyDeleteMigratedTweet(this.account.id, tweet.id);
+            if (typeof resp === 'string') {
+                this.progress.migrateDeleteSkippedPostsCount++;
+                this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
+                console.error('Failed to delete migrated tweet', tweet.id);
+            } else {
+                this.progress.migrateDeletePostsCount++;
+            }
+
             if (await window.electron.X.blueskyDeleteMigratedTweet(this.account.id, tweet.id)) {
                 this.progress.migrateDeletePostsCount++;
             } else {
                 this.progress.migrateDeleteSkippedPostsCount++;
-                this.progress.errorsOccured++;
                 console.error('Failed to delete migrated tweet', tweet.id);
             }
             this.emitter?.emit(`x-update-database-stats-${this.account.id}`);

@@ -44,6 +44,15 @@ const nextClicked = async () => {
     }
 };
 
+const viewBlueskyProfileClicked = async () => {
+    const blueskyProfile = await window.electron.X.blueskyGetProfile(props.model.account.id);
+    if (!blueskyProfile) {
+        await window.electron.showError('Something is wrong. No Bluesky profile found for this account.');
+        return;
+    }
+    await openURL(`https://bsky.app/profile/${blueskyProfile.handle}`);
+}
+
 const submitErrorReportClicked = async () => {
     hideErrors.value = true;
     emitter.emit("show-automation-error", props.model.account.id);
@@ -212,6 +221,27 @@ onMounted(async () => {
                         Bluesky
                     </li>
                 </ul>
+
+                <div v-if="model.progress.migrateSkippedTweetsCount > 0" class="alert alert-warning mt-4">
+                    <p>
+                        <strong>
+                            {{ model.progress.migrateSkippedTweetsCount.toLocaleString() }} tweets
+                        </strong>
+                        were skipped because of errors:
+                    </p>
+                    <ul>
+                        <li v-for="(error, tweetID) in model.progress.migrateSkippedTweetsErrors" :key="tweetID">
+                            <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-success" @click="viewBlueskyProfileClicked">
+                        <i class="fa-brands fa-bluesky" />
+                        View Bluesky Profile
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -225,6 +255,27 @@ onMounted(async () => {
                         migrated to Bluesky
                     </li>
                 </ul>
+
+                <div v-if="model.progress.migrateDeleteSkippedPostsCount > 0" class="alert alert-warning mt-4">
+                    <p>
+                        <strong>
+                            {{ model.progress.migrateDeleteSkippedPostsCount.toLocaleString() }} tweets
+                        </strong>
+                        were skipped because of errors:
+                    </p>
+                    <ul>
+                        <li v-for="(error, tweetID) in model.progress.migrateSkippedTweetsErrors" :key="tweetID">
+                            <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-success" @click="viewBlueskyProfileClicked">
+                        <i class="fa-brands fa-bluesky" />
+                        View Bluesky Profile
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -270,11 +321,13 @@ onMounted(async () => {
                 </button>
 
                 <button class="btn btn-secondary" @click="nextClicked">
+                    <i class="fa-solid fa-forward" />
                     Continue
                 </button>
             </template>
             <template v-else>
                 <button class="btn btn-primary" @click="nextClicked">
+                    <i class="fa-solid fa-forward" />
                     Continue
                 </button>
             </template>

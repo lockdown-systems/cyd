@@ -319,7 +319,7 @@ contextBridge.exposeInMainWorld('electron', {
         blueskyMigrateTweet: (accountID: number, tweetID: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyMigrateTweet', accountID, tweetID)
         },
-        blueskyDeleteMigratedTweet: (accountID: number, tweetID: string): Promise<boolean> => {
+        blueskyDeleteMigratedTweet: (accountID: number, tweetID: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyDeleteMigratedTweet', accountID, tweetID)
         }
     },
