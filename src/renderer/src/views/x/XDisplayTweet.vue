@@ -98,6 +98,7 @@ const getImageClass = (_index: number) => {
 .tweet-text {
     word-wrap: break-word;
     overflow-wrap: break-word;
+    text-align: left;
 }
 
 .images-container {

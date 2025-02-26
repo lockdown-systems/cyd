@@ -270,15 +270,18 @@ onUnmounted(() => {
                     Migrated
                     <b>{{ progress.migrateTweetsCount.toLocaleString() }} of
                         {{ progress.totalTweetsToMigrate.toLocaleString() }} tweets</b>.
-                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                    <XProgressErrorsOccuredComponent
+                        :errors-occured="Object.keys(progress.migrateSkippedTweetsErrors).length" />
                 </p>
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
-                            :style="{ width: `${(progress.migrateTweetsCount / progress.totalTweetsToMigrate) * 100}%` }"
-                            :aria-valuenow="(progress.migrateTweetsCount / progress.totalTweetsToMigrate) * 100"
+                            :style="{ width: `${((progress.migrateTweetsCount + Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalTweetsToMigrate) * 100}%` }"
+                            :aria-valuenow="((progress.migrateTweetsCount + Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalTweetsToMigrate) * 100"
                             aria-valuemin="0" aria-valuemax="100">
-                            {{ Math.round((progress.migrateTweetsCount / progress.totalTweetsToMigrate) * 100) }}%
+                            {{ Math.round(((progress.migrateTweetsCount +
+                                Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalTweetsToMigrate) *
+                            100) }}%
                         </div>
                     </div>
                 </div>
@@ -290,15 +293,18 @@ onUnmounted(() => {
                     Deleted
                     <b>{{ progress.migrateDeletePostsCount.toLocaleString() }} of
                         {{ progress.totalMigratedPostsToDelete.toLocaleString() }} posts</b>.
-                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                    <XProgressErrorsOccuredComponent
+                        :errors-occured="Object.keys(progress.migrateSkippedTweetsErrors).length" />
                 </p>
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
-                            :style="{ width: `${(progress.migrateDeletePostsCount / progress.totalMigratedPostsToDelete) * 100}%` }"
-                            :aria-valuenow="(progress.migrateDeletePostsCount / progress.totalMigratedPostsToDelete) * 100"
+                            :style="{ width: `${((progress.migrateDeletePostsCount + Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalMigratedPostsToDelete) * 100}%` }"
+                            :aria-valuenow="((progress.migrateDeletePostsCount + Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalMigratedPostsToDelete) * 100"
                             aria-valuemin="0" aria-valuemax="100">
-                            {{ Math.round((progress.migrateDeletePostsCount / progress.totalMigratedPostsToDelete) *
+                            {{ Math.round(((progress.migrateDeletePostsCount +
+                                Object.keys(progress.migrateSkippedTweetsErrors).length) /
+                                progress.totalMigratedPostsToDelete) *
                             100) }}%
                         </div>
                     </div>
