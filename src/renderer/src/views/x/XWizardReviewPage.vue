@@ -34,7 +34,7 @@ const backClicked = async () => {
         emit('setState', State.WizardBuildOptions);
     } else if (jobsType.value == 'archive') {
         emit('setState', State.WizardArchiveOptions);
-    } else if (jobsType.value == 'migrateToBluesky' || jobsType.value == 'deleteFromBluesky') {
+    } else if (jobsType.value == 'migrateBluesky' || jobsType.value == 'migrateBlueskyDelete') {
         emit('setState', State.WizardMigrateToBluesky);
     } else {
         // Display error
@@ -189,7 +189,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="jobsType == 'migrateToBluesky'">
+            <div v-if="jobsType == 'migrateBluesky'">
                 <h3>
                     <i class="fa-brands fa-bluesky me-1" />
                     Migrate to Bluesky
@@ -203,7 +203,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="jobsType == 'deleteFromBluesky'">
+            <div v-if="jobsType == 'migrateBlueskyDelete'">
                 <h3>
                     <i class="fa-brands fa-bluesky me-1" />
                     Delete Migrated Bluesky Posts
@@ -229,7 +229,7 @@ onMounted(async () => {
                     <template v-else-if="jobsType == 'archive'">
                         Back to Archive Options
                     </template>
-                    <template v-else-if="jobsType == 'migrateToBluesky' || jobsType == 'deleteFromBluesky'">
+                    <template v-else-if="jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete'">
                         Back to Migrate to Bluesky Options
                     </template>
                 </button>
@@ -244,10 +244,10 @@ onMounted(async () => {
                     <template v-else-if="jobsType == 'archive'">
                         Start Archiving
                     </template>
-                    <template v-else-if="jobsType == 'delete' || jobsType == 'deleteFromBluesky'">
+                    <template v-else-if="jobsType == 'delete' || jobsType == 'migrateBlueskyDelete'">
                         Start Deleting
                     </template>
-                    <template v-else-if="jobsType == 'migrateToBluesky'">
+                    <template v-else-if="jobsType == 'migrateBluesky'">
                         Start Migrating
                     </template>
                 </button>

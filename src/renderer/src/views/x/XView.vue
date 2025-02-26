@@ -272,7 +272,7 @@ const startJobs = async () => {
             const jobsType = getJobsType(model.value.account.id);
             let premiumCheckReason = 'deleteData';
             let premiumTasks: string[] = [];
-            if (jobsType == 'migrateToBluesky') {
+            if (jobsType == 'migrateBluesky') {
                 premiumCheckReason = 'migrateTweetsToBluesky';
                 premiumTasks = ['Migrate tweets to Bluesky'];
             }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted, computed, getCurrentInstance } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'vue-chartjs'
@@ -19,10 +19,6 @@ import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../.
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
-
-// Get the global emitter
-const vueInstance = getCurrentInstance();
-const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 enum State {
     Loading,
@@ -116,43 +112,8 @@ const disconnectClicked = async () => {
 }
 
 const migrateClicked = async () => {
-    setJobsType(props.model.account.id, 'migrateToBluesky');
+    setJobsType(props.model.account.id, 'migrateBluesky');
     emit('setState', XState.WizardReview);
-    return;
-
-    migratedTweetsCount.value = 0;
-    skippedTweetsCount.value = 0;
-    skippedTweetsErrors.value = {};
-
-    state.value = State.Migrating;
-    shouldCancelMigration.value = false;
-
-    for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
-        const resp = await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
-        if (typeof resp === 'string') {
-            skippedTweetsCount.value++;
-            skippedTweetsErrors.value[tweetID] = resp;
-            console.error('Failed to migrate tweet', tweetID, resp);
-        } else {
-            migratedTweetsCount.value++;
-        }
-
-        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
-
-        // Cancel early
-        if (shouldCancelMigration.value) {
-            await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
-            state.value = State.Connected;
-            emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-            await loadTweetCounts();
-            return;
-        }
-    }
-
-    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-    await loadTweetCounts();
-    await window.electron.X.archiveBuild(props.model.account.id);
-    state.value = State.Finished;
 }
 
 const migrateCancelClicked = async () => {
@@ -169,26 +130,8 @@ const deleteClicked = async () => {
         return;
     }
 
-    deletedPostsCount.value = 0;
-    skippedDeletePostsCount.value = 0;
-
-    state.value = State.Deleting;
-
-    for (const tweetID of tweetCounts.value.alreadyMigratedTweetIDs) {
-        if (await window.electron.X.blueskyDeleteMigratedTweet(props.model.account.id, tweetID)) {
-            deletedPostsCount.value++;
-        } else {
-            skippedDeletePostsCount.value++;
-            console.error('Failed to delete migrated tweet', tweetID);
-        }
-        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
-    }
-
-    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-
-    await loadTweetCounts();
-    await window.electron.X.archiveBuild(props.model.account.id);
-    state.value = State.Connected;
+    setJobsType(props.model.account.id, 'migrateBlueskyDelete');
+    emit('setState', XState.WizardReview);
 }
 
 const viewBlueskyProfileClicked = async () => {

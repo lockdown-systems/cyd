@@ -79,7 +79,8 @@ export enum RunJobsState {
     DeleteRetweets = "DeleteRetweets",
     DeleteLikes = "DeleteLikes",
     DeleteBookmarks = "DeleteBookmarks",
-    MigrateToBluesky = "MigrateToBluesky",
+    MigrateBluesky = "MigrateBluesky",
+    MigrateBlueskyDelete = "MigrateBlueskyDelete",
 }
 
 export enum FailureState {
@@ -142,64 +143,75 @@ export class XViewModel extends BaseViewModel {
         const hasSomeData = await xHasSomeData(this.account.id);
 
         const jobTypes = [];
-        jobTypes.push("login");
 
-        if (this.account.xAccount?.saveMyData) {
+        const jobsType = getJobsType(this.account.id);
+        if (jobsType == 'migrateBluesky') {
+            jobTypes.push("migrateBluesky");
             shouldBuildArchive = true;
-            if (this.account.xAccount?.archiveTweets) {
-                jobTypes.push("indexTweets");
+        }
+        else if (jobsType == 'migrateBlueskyDelete') {
+            jobTypes.push("migrateBlueskyDelete");
+            shouldBuildArchive = true;
+        } else {
+            jobTypes.push("login");
+
+            if (this.account.xAccount?.saveMyData) {
+                shouldBuildArchive = true;
+                if (this.account.xAccount?.archiveTweets) {
+                    jobTypes.push("indexTweets");
+                    if (this.account.xAccount?.archiveTweetsHTML) {
+                        jobTypes.push("archiveTweets");
+                    }
+                }
+                if (this.account.xAccount?.archiveLikes) {
+                    jobTypes.push("indexLikes");
+                }
+                if (this.account.xAccount?.archiveBookmarks) {
+                    jobTypes.push("indexBookmarks");
+                }
+                if (this.account.xAccount?.archiveDMs) {
+                    jobTypes.push("indexConversations");
+                    jobTypes.push("indexMessages");
+                }
+            }
+
+            if (this.account.xAccount?.archiveMyData) {
+                shouldBuildArchive = true;
                 if (this.account.xAccount?.archiveTweetsHTML) {
                     jobTypes.push("archiveTweets");
                 }
+                if (this.account.xAccount?.archiveBookmarks) {
+                    jobTypes.push("indexBookmarks");
+                }
+                if (this.account.xAccount?.archiveDMs) {
+                    jobTypes.push("indexConversations");
+                    jobTypes.push("indexMessages");
+                }
             }
-            if (this.account.xAccount?.archiveLikes) {
-                jobTypes.push("indexLikes");
-            }
-            if (this.account.xAccount?.archiveBookmarks) {
-                jobTypes.push("indexBookmarks");
-            }
-            if (this.account.xAccount?.archiveDMs) {
-                jobTypes.push("indexConversations");
-                jobTypes.push("indexMessages");
-            }
-        }
 
-        if (this.account.xAccount?.archiveMyData) {
-            shouldBuildArchive = true;
-            if (this.account.xAccount?.archiveTweetsHTML) {
-                jobTypes.push("archiveTweets");
-            }
-            if (this.account.xAccount?.archiveBookmarks) {
-                jobTypes.push("indexBookmarks");
-            }
-            if (this.account.xAccount?.archiveDMs) {
-                jobTypes.push("indexConversations");
-                jobTypes.push("indexMessages");
-            }
-        }
-
-        if (this.account.xAccount?.deleteMyData) {
-            if (hasSomeData && this.account.xAccount?.deleteTweets) {
-                jobTypes.push("deleteTweets");
-                shouldBuildArchive = true;
-            }
-            if (hasSomeData && this.account.xAccount?.deleteRetweets) {
-                jobTypes.push("deleteRetweets");
-                shouldBuildArchive = true;
-            }
-            if (hasSomeData && this.account.xAccount?.deleteLikes) {
-                jobTypes.push("deleteLikes");
-                shouldBuildArchive = true;
-            }
-            if (hasSomeData && this.account.xAccount?.deleteBookmarks) {
-                jobTypes.push("deleteBookmarks");
-                shouldBuildArchive = true;
-            }
-            if (this.account.xAccount?.unfollowEveryone) {
-                jobTypes.push("unfollowEveryone");
-            }
-            if (this.account.xAccount?.deleteDMs) {
-                jobTypes.push("deleteDMs");
+            if (this.account.xAccount?.deleteMyData) {
+                if (hasSomeData && this.account.xAccount?.deleteTweets) {
+                    jobTypes.push("deleteTweets");
+                    shouldBuildArchive = true;
+                }
+                if (hasSomeData && this.account.xAccount?.deleteRetweets) {
+                    jobTypes.push("deleteRetweets");
+                    shouldBuildArchive = true;
+                }
+                if (hasSomeData && this.account.xAccount?.deleteLikes) {
+                    jobTypes.push("deleteLikes");
+                    shouldBuildArchive = true;
+                }
+                if (hasSomeData && this.account.xAccount?.deleteBookmarks) {
+                    jobTypes.push("deleteBookmarks");
+                    shouldBuildArchive = true;
+                }
+                if (this.account.xAccount?.unfollowEveryone) {
+                    jobTypes.push("unfollowEveryone");
+                }
+                if (this.account.xAccount?.deleteDMs) {
+                    jobTypes.push("deleteDMs");
+                }
             }
         }
 
@@ -2551,6 +2563,85 @@ Hang on while I scroll down to your earliest bookmarks.`;
         return true;
     }
 
+    async runJobMigrateBluesky(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY, navigator.userAgent);
+
+        // TODO: implement
+
+        // migratedTweetsCount.value = 0;
+        // skippedTweetsCount.value = 0;
+        // skippedTweetsErrors.value = {};
+
+        // state.value = State.Migrating;
+        // shouldCancelMigration.value = false;
+
+        // for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
+        //     const resp = await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
+        //     if (typeof resp === 'string') {
+        //         skippedTweetsCount.value++;
+        //         skippedTweetsErrors.value[tweetID] = resp;
+        //         console.error('Failed to migrate tweet', tweetID, resp);
+        //     } else {
+        //         migratedTweetsCount.value++;
+        //     }
+
+        //     emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
+
+        //     // Cancel early
+        //     if (shouldCancelMigration.value) {
+        //         await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
+        //         state.value = State.Connected;
+        //         emitter?.emit(`x-submit-progress-${props.model.account.id}`);
+        //         await loadTweetCounts();
+        //         return;
+        //     }
+        // }
+
+        // emitter?.emit(`x-submit-progress-${props.model.account.id}`);
+        // await loadTweetCounts();
+        // await window.electron.X.archiveBuild(props.model.account.id);
+        // state.value = State.Finished;
+
+        // Submit progress to the API
+        this.emitter?.emit(`x-submit-progress-${this.account.id}`);
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
+    async runJobMigrateBlueskyDelete(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY_DELETE, navigator.userAgent);
+
+        // TODO: implement
+
+        // deletedPostsCount.value = 0;
+        // skippedDeletePostsCount.value = 0;
+
+        // state.value = State.Deleting;
+
+        // for (const tweetID of tweetCounts.value.alreadyMigratedTweetIDs) {
+        //     if (await window.electron.X.blueskyDeleteMigratedTweet(props.model.account.id, tweetID)) {
+        //         deletedPostsCount.value++;
+        //     } else {
+        //         skippedDeletePostsCount.value++;
+        //         console.error('Failed to delete migrated tweet', tweetID);
+        //     }
+        //     emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
+        // }
+
+        // emitter?.emit(`x-submit-progress-${props.model.account.id}`);
+
+        // await loadTweetCounts();
+        // await window.electron.X.archiveBuild(props.model.account.id);
+        // state.value = State.Connected;
+
+        // Submit progress to the API
+        this.emitter?.emit(`x-submit-progress-${this.account.id}`);
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
     async runJob(jobIndex: number) {
         this.runJobsState = RunJobsState.Default;
 
@@ -2625,6 +2716,14 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
             case "deleteDMs":
                 await this.runJobDeleteDMs(jobIndex);
+                break;
+
+            case "migrateBluesky":
+                await this.runJobMigrateBluesky(jobIndex);
+                break;
+
+            case "migrateBlueskyDelete":
+                await this.runJobMigrateBlueskyDelete(jobIndex);
                 break;
         }
     }

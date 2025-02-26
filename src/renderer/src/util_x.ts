@@ -32,7 +32,7 @@ export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
     let requiresPremium = false;
 
     // Migrating to Bluesky is a premium feature
-    if (getJobsType(xAccount.id) == 'migrateToBluesky') {
+    if (getJobsType(xAccount.id) == 'migrateBluesky') {
         return true;
     }
 
