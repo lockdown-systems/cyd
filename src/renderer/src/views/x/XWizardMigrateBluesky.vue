@@ -193,9 +193,12 @@ onUnmounted(async () => {
                 :button-state="XState.WizardDatabase" @set-state="emit('setState', $event)" />
 
             <template v-if="state == State.Loading">
-                <p>
-                    Loading...
-                </p>
+                <div class="loading text-center">
+                    <img src="/assets/cyd-loading.gif" alt="Loading">
+                    <p class="text-muted">
+                        Loading...
+                    </p>
+                </div>
             </template>
             <template v-if="state == State.NotConnected || state == State.Connecting">
                 <form @submit.prevent="connectClicked">
@@ -347,4 +350,9 @@ onUnmounted(async () => {
     </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.loading img {
+    width: 50%;
+    height: 50%;
+}
+</style>
