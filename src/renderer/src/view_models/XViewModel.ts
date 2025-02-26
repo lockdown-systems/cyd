@@ -12,7 +12,8 @@ import {
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
-    XDeleteReviewStats, emptyXDeleteReviewStats
+    XDeleteReviewStats, emptyXDeleteReviewStats,
+    XMigrateTweetCounts
 } from '../../../shared_types';
 import { XViewerResults, XUserInfo } from "../types_x"
 import { PlausibleEvents } from "../types";
@@ -2566,41 +2567,44 @@ Hang on while I scroll down to your earliest bookmarks.`;
     async runJobMigrateBluesky(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY, navigator.userAgent);
 
-        // TODO: implement
+        // Start the progress
+        await this.syncProgress();
+        this.progress.migrateTweetsCount = 0;
+        this.progress.migrateSkippedTweetsCount = 0;
+        this.progress.migrateSkippedTweetsErrors = {};
 
-        // migratedTweetsCount.value = 0;
-        // skippedTweetsCount.value = 0;
-        // skippedTweetsErrors.value = {};
+        // Get the tweet counts
+        const tweetCounts: XMigrateTweetCounts = await window.electron.X.blueskyGetTweetCounts(this.account.id);
 
-        // state.value = State.Migrating;
-        // shouldCancelMigration.value = false;
+        // Loop through tweets and migrate them
+        for (const tweetID of tweetCounts.toMigrateTweetIDs) {
+            const resp = await window.electron.X.blueskyMigrateTweet(this.account.id, tweetID);
+            if (typeof resp === 'string') {
+                this.progress.migrateSkippedTweetsCount++;
+                this.progress.migrateSkippedTweetsErrors[tweetID] = resp;
+                console.error('Failed to migrate tweet', tweetID, resp);
+            } else {
+                this.progress.migrateTweetsCount++;
+            }
 
-        // for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
-        //     const resp = await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
-        //     if (typeof resp === 'string') {
-        //         skippedTweetsCount.value++;
-        //         skippedTweetsErrors.value[tweetID] = resp;
-        //         console.error('Failed to migrate tweet', tweetID, resp);
-        //     } else {
-        //         migratedTweetsCount.value++;
-        //     }
+            this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
 
-        //     emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
+            // // Cancel early
+            // if (shouldCancelMigration.value) {
+            //     await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
+            //     state.value = State.Connected;
+            //     emitter?.emit(`x-submit-progress-${props.model.account.id}`);
+            //     await loadTweetCounts();
+            //     return;
+            // }
 
-        //     // Cancel early
-        //     if (shouldCancelMigration.value) {
-        //         await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
-        //         state.value = State.Connected;
-        //         emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-        //         await loadTweetCounts();
-        //         return;
-        //     }
-        // }
+            // DEBUG
+            this.pause();
 
-        // emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-        // await loadTweetCounts();
-        // await window.electron.X.archiveBuild(props.model.account.id);
-        // state.value = State.Finished;
+            await this.waitForPause();
+        }
+
+        this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
 
         // Submit progress to the API
         this.emitter?.emit(`x-submit-progress-${this.account.id}`);
@@ -2612,28 +2616,29 @@ Hang on while I scroll down to your earliest bookmarks.`;
     async runJobMigrateBlueskyDelete(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY_DELETE, navigator.userAgent);
 
-        // TODO: implement
+        // Start the progress
+        await this.syncProgress();
+        this.progress.migrateDeletePostsCount = 0;
+        this.progress.migrateDeleteSkippedPostsCount = 0;
 
-        // deletedPostsCount.value = 0;
-        // skippedDeletePostsCount.value = 0;
+        // Get the tweet counts
+        const tweetCounts: XMigrateTweetCounts = await window.electron.X.blueskyGetTweetCounts(this.account.id);
 
-        // state.value = State.Deleting;
+        // Loop through migrated posts and delete them
+        for (const tweetID of tweetCounts.alreadyMigratedTweetIDs) {
+            if (await window.electron.X.blueskyDeleteMigratedTweet(this.account.id, tweetID)) {
+                this.progress.migrateDeletePostsCount++;
+            } else {
+                this.progress.migrateDeleteSkippedPostsCount++;
+                console.error('Failed to delete migrated tweet', tweetID);
+            }
+            this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
 
-        // for (const tweetID of tweetCounts.value.alreadyMigratedTweetIDs) {
-        //     if (await window.electron.X.blueskyDeleteMigratedTweet(props.model.account.id, tweetID)) {
-        //         deletedPostsCount.value++;
-        //     } else {
-        //         skippedDeletePostsCount.value++;
-        //         console.error('Failed to delete migrated tweet', tweetID);
-        //     }
-        //     emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
-        // }
+            // DEBUG
+            this.pause();
 
-        // emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-
-        // await loadTweetCounts();
-        // await window.electron.X.archiveBuild(props.model.account.id);
-        // state.value = State.Connected;
+            await this.waitForPause();
+        }
 
         // Submit progress to the API
         this.emitter?.emit(`x-submit-progress-${this.account.id}`);

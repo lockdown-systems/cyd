@@ -89,6 +89,10 @@ export type XProgress = {
     conversationsDeleted: number;
     accountsUnfollowed: number;
 
+    migrateTweetsCount: number;
+    migrateSkippedTweetsCount: number;
+    migrateSkippedTweetsErrors: Record<string, string>;
+
     errorsOccured: number;
 }
 
@@ -141,6 +145,10 @@ export function emptyXProgress(): XProgress {
 
         conversationsDeleted: 0,
         accountsUnfollowed: 0,
+
+        migrateTweetsCount: 0,
+        migrateSkippedTweetsCount: 0,
+        migrateSkippedTweetsErrors: {},
 
         errorsOccured: 0,
     };
