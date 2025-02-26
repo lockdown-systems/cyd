@@ -2592,7 +2592,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             if (typeof resp === 'string') {
                 this.progress.migrateSkippedTweetsCount++;
                 this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
-                console.error('Failed to migrate tweet', tweet.id, resp);
+                console.error('Failed to migrate tweet', tweet.id, resp, tweet);
             } else {
                 this.progress.migrateTweetsCount++;
             }
@@ -2639,17 +2639,11 @@ Hang on while I scroll down to your earliest bookmarks.`;
             if (typeof resp === 'string') {
                 this.progress.migrateDeleteSkippedPostsCount++;
                 this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
-                console.error('Failed to delete migrated tweet', tweet.id);
+                console.error('Failed to delete migrated tweet', tweet.id, resp, tweet);
             } else {
                 this.progress.migrateDeletePostsCount++;
             }
 
-            if (await window.electron.X.blueskyDeleteMigratedTweet(this.account.id, tweet.id)) {
-                this.progress.migrateDeletePostsCount++;
-            } else {
-                this.progress.migrateDeleteSkippedPostsCount++;
-                console.error('Failed to delete migrated tweet', tweet.id);
-            }
             this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
 
             await this.waitForPause();

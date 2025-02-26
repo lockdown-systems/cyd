@@ -44,7 +44,7 @@ const getImageClass = (_index: number) => {
 </script>
 
 <template>
-    <div class="parent d-flex justify-content-center align-items-center">
+    <div class="parent d-flex justify-content-center align-items-start">
         <div v-if="tweetItem" class="tweet p-5">
             <div class="d-flex gap-3 justify-content-center align-items-center">
                 <strong v-if="model.runJobsState == RunJobsState.DeleteTweets">
@@ -60,13 +60,13 @@ const getImageClass = (_index: number) => {
             <div v-else class="mt-4 fs-3">
                 <p>Tweet ID: {{ tweetItem.id }}</p>
             </div>
-            <div v-if="imageDataURIs.length > 0" class="mt-1 row">
+            <div v-if="imageDataURIs.length > 0" class="mt-1 row images-container">
                 <div v-for="(dataURI, index) in imageDataURIs" :key="dataURI" :class="getImageClass(index)">
                     <img :src="dataURI" class="img-fluid tweet-image">
                 </div>
             </div>
             <div v-if="tweetItem.v.length > 0" class="mt-1 row">
-                <div class="col-12">
+                <div class="d-flex justify-content-center align-items-center">
                     <div class="video-placeholder d-flex justify-content-center align-items-center">
                         <span>Video Placeholder</span>
                     </div>
@@ -98,6 +98,10 @@ const getImageClass = (_index: number) => {
 .tweet-text {
     word-wrap: break-word;
     overflow-wrap: break-word;
+}
+
+.images-container {
+    overflow-y: auto;
 }
 
 .tweet-image {
