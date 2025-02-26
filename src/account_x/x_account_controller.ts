@@ -3009,6 +3009,7 @@ export class XAccountController {
 
             return true;
         } catch (e) {
+            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
             return `Error posting to Bluesky: ${e}`;
         }
     }
