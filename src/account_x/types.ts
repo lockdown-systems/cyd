@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { XJob, XTweetItem, XTweetItemArchive } from '../shared_types'
-
 // Models
 
 export interface XJobRow {
@@ -109,48 +107,6 @@ export type XTweetBlueskyMigrationRow = {
     atprotoURI: string;
     atprotoCID: string;
     migratedAt: string;
-}
-
-// Converters
-
-export function convertXJobRowToXJob(row: XJobRow): XJob {
-    return {
-        id: row.id,
-        jobType: row.jobType,
-        status: row.status,
-        scheduledAt: new Date(row.scheduledAt),
-        startedAt: row.startedAt ? new Date(row.startedAt) : null,
-        finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
-        progressJSON: row.progressJSON ? JSON.parse(row.progressJSON) : null,
-        error: row.error,
-    };
-}
-
-export function convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
-    return {
-        id: row.tweetID,
-        t: row.text,
-        l: row.likeCount,
-        r: row.retweetCount,
-        d: row.createdAt,
-    };
-}
-
-function formatDateToYYYYMMDD(dateString: string): string {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-export function convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemArchive {
-    return {
-        url: `https://x.com/${row.path}`,
-        tweetID: row.tweetID,
-        basename: `${formatDateToYYYYMMDD(row.createdAt)}_${row.tweetID}`,
-        username: row.username
-    };
 }
 
 // X API types

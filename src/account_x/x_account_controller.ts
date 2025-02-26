@@ -26,6 +26,7 @@ import {
     XAccount,
     XJob,
     XProgress, emptyXProgress,
+    XTweetItem,
     XTweetItemArchive,
     XArchiveStartResponse, emptyXArchiveStartResponse,
     XRateLimitInfo, emptyXRateLimitInfo,
@@ -61,9 +62,6 @@ import {
     XMessageRow,
     XConversationParticipantRow,
     XTweetBlueskyMigrationRow,
-    convertXJobRowToXJob,
-    convertTweetRowToXTweetItem,
-    convertTweetRowToXTweetItemArchive,
     // X API types
     XAPILegacyUser,
     XAPILegacyTweet,
@@ -453,7 +451,7 @@ export class XAccountController {
 
         // Select pending jobs
         const jobs: XJobRow[] = exec(this.db, "SELECT * FROM job WHERE status = ? ORDER BY id", ["pending"], "all") as XJobRow[];
-        return jobs.map(convertXJobRowToXJob);
+        return jobs.map(this.convertXJobRowToXJob);
     }
 
     async getLastFinishedJob(jobType: string): Promise<XJob | null> {
@@ -472,7 +470,7 @@ export class XAccountController {
             "get"
         ) as XJobRow | null;
         if (job) {
-            return convertXJobRowToXJob(job);
+            return this.convertXJobRowToXJob(job);
         }
         return null;
     }
@@ -487,6 +485,47 @@ export class XAccountController {
             'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
             [job.status, job.startedAt ? job.startedAt : null, job.finishedAt ? job.finishedAt : null, job.progressJSON, job.error, job.id]
         );
+    }
+
+    // Converters
+    convertXJobRowToXJob(row: XJobRow): XJob {
+        return {
+            id: row.id,
+            jobType: row.jobType,
+            status: row.status,
+            scheduledAt: new Date(row.scheduledAt),
+            startedAt: row.startedAt ? new Date(row.startedAt) : null,
+            finishedAt: row.finishedAt ? new Date(row.finishedAt) : null,
+            progressJSON: row.progressJSON ? JSON.parse(row.progressJSON) : null,
+            error: row.error,
+        };
+    }
+
+    convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
+        return {
+            id: row.tweetID,
+            t: row.text,
+            l: row.likeCount,
+            r: row.retweetCount,
+            d: row.createdAt,
+        };
+    }
+
+    formatDateToYYYYMMDD(dateString: string): string {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemArchive {
+        return {
+            url: `https://x.com/${row.path}`,
+            tweetID: row.tweetID,
+            basename: `${this.formatDateToYYYYMMDD(row.createdAt)}_${row.tweetID}`,
+            username: row.username
+        };
     }
 
     async indexStart() {
@@ -1180,7 +1219,7 @@ export class XAccountController {
 
             const items: XTweetItemArchive[] = [];
             for (let i = 0; i < tweetsResp.length; i++) {
-                items.push(convertTweetRowToXTweetItemArchive(tweetsResp[i]))
+                items.push(this.convertTweetRowToXTweetItemArchive(tweetsResp[i]))
             }
 
             return {
@@ -1537,7 +1576,7 @@ export class XAccountController {
 
         // log.debug("XAccountController.deleteTweetsStart", tweets);
         return {
-            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
+            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -1624,7 +1663,7 @@ export class XAccountController {
         ) as XTweetRow[];
 
         return {
-            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
+            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -1647,7 +1686,7 @@ export class XAccountController {
         ) as XTweetRow[];
 
         return {
-            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
+            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -1670,7 +1709,7 @@ export class XAccountController {
         ) as XTweetRow[];
 
         return {
-            tweets: tweets.map((row) => (convertTweetRowToXTweetItem(row))),
+            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
         };
     }
 
@@ -2593,9 +2632,9 @@ export class XAccountController {
         const resp: XMigrateTweetCounts = {
             totalTweetsCount: totalTweets.count,
             totalRetweetsCount: totalRetweets.count,
-            toMigrateTweets: toMigrateTweets.map((row) => (convertTweetRowToXTweetItem(row))),
+            toMigrateTweets: toMigrateTweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
             cannotMigrateCount: cannotMigrate.count,
-            alreadyMigratedTweets: alreadyMigratedTweets.map((row) => (convertTweetRowToXTweetItem(row)))
+            alreadyMigratedTweets: alreadyMigratedTweets.map((row) => (this.convertTweetRowToXTweetItem(row)))
         }
         log.info("XAccountController.blueskyGetTweetCounts: returning", resp);
         return resp;
