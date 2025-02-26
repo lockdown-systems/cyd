@@ -30,14 +30,15 @@ export async function xHasSomeData(accountID: number): Promise<boolean> {
 
 export async function xRequiresPremium(xAccount: XAccount): Promise<boolean> {
     let requiresPremium = false;
+    const jobsType = getJobsType(xAccount.id);
 
     // Migrating to Bluesky is a premium feature
-    if (getJobsType(xAccount.id) == 'migrateBluesky') {
+    if (jobsType == 'migrateBluesky') {
         return true;
     }
 
-    // All premium features are part of deleting
-    if (!xAccount.deleteMyData) {
+    // All other premium features are part of deleting
+    if (jobsType != 'deleete') {
         return requiresPremium;
     }
 
