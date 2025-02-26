@@ -25,20 +25,20 @@ const nextClicked = async () => {
     emit('startJobs');
 };
 
-const reviewType = ref('');
+const jobsType = ref('');
 
 const backClicked = async () => {
-    if (reviewType.value == 'delete') {
+    if (jobsType.value == 'delete') {
         emit('setState', State.WizardDeleteOptions);
-    } else if (reviewType.value == 'save') {
+    } else if (jobsType.value == 'save') {
         emit('setState', State.WizardBuildOptions);
-    } else if (reviewType.value == 'archive') {
+    } else if (jobsType.value == 'archive') {
         emit('setState', State.WizardArchiveOptions);
-    } else if (reviewType.value == 'migrateToBluesky' || reviewType.value == 'deleteFromBluesky') {
+    } else if (jobsType.value == 'migrateToBluesky' || jobsType.value == 'deleteFromBluesky') {
         emit('setState', State.WizardMigrateToBluesky);
     } else {
         // Display error
-        console.error('Unknown review type:', reviewType.value);
+        console.error('Unknown review type:', jobsType.value);
         await window.electron.showError("Oops, this is awkward. You clicked back, but I'm not sure where to go.");
     }
 };
@@ -55,14 +55,14 @@ const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
 const deleteTweetsCountNotArchived = ref(0);
 
 onMounted(async () => {
-    reviewType.value = getJobsType(props.model.account.id) || '';
+    jobsType.value = getJobsType(props.model.account.id) || '';
 
     await props.model.refreshDatabaseStats();
     deleteReviewStats.value = props.model.deleteReviewStats;
     hasSomeData.value = await xHasSomeData(props.model.account.id);
     tweetCounts.value = await window.electron.X.blueskyGetTweetCounts(props.model.account.id) || emptyXMigrateTweetCounts();
 
-    if (reviewType.value == 'delete' && props.model.account?.xAccount?.deleteTweets) {
+    if (jobsType.value == 'delete' && props.model.account?.xAccount?.deleteTweets) {
         deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
     }
 });
@@ -76,7 +76,7 @@ onMounted(async () => {
             </h2>
         </div>
         <form @submit.prevent>
-            <div v-if="reviewType == 'save'">
+            <div v-if="jobsType == 'save'">
                 <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
                     Build a local database
@@ -102,7 +102,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="reviewType == 'archive'">
+            <div v-if="jobsType == 'archive'">
                 <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
                     Archive my data
@@ -120,7 +120,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="reviewType == 'delete'">
+            <div v-if="jobsType == 'delete'">
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
                     Delete my data
@@ -189,7 +189,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="reviewType == 'migrateToBluesky'">
+            <div v-if="jobsType == 'migrateToBluesky'">
                 <h3>
                     <i class="fa-brands fa-bluesky me-1" />
                     Migrate to Bluesky
@@ -203,7 +203,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="reviewType == 'deleteFromBluesky'">
+            <div v-if="jobsType == 'deleteFromBluesky'">
                 <h3>
                     <i class="fa-brands fa-bluesky me-1" />
                     Delete Migrated Bluesky Posts
@@ -220,16 +220,16 @@ onMounted(async () => {
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    <template v-if="reviewType == 'delete'">
+                    <template v-if="jobsType == 'delete'">
                         Back to Delete Options
                     </template>
-                    <template v-else-if="reviewType == 'save'">
+                    <template v-else-if="jobsType == 'save'">
                         Back to Build Options
                     </template>
-                    <template v-else-if="reviewType == 'archive'">
+                    <template v-else-if="jobsType == 'archive'">
                         Back to Archive Options
                     </template>
-                    <template v-else-if="reviewType == 'migrateToBluesky' || reviewType == 'deleteFromBluesky'">
+                    <template v-else-if="jobsType == 'migrateToBluesky' || jobsType == 'deleteFromBluesky'">
                         Back to Migrate to Bluesky Options
                     </template>
                 </button>
@@ -238,16 +238,16 @@ onMounted(async () => {
                     :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    <template v-if="reviewType == 'save'">
+                    <template v-if="jobsType == 'save'">
                         Build Database
                     </template>
-                    <template v-else-if="reviewType == 'archive'">
+                    <template v-else-if="jobsType == 'archive'">
                         Start Archiving
                     </template>
-                    <template v-else-if="reviewType == 'delete' || reviewType == 'deleteFromBluesky'">
+                    <template v-else-if="jobsType == 'delete' || jobsType == 'deleteFromBluesky'">
                         Start Deleting
                     </template>
-                    <template v-else-if="reviewType == 'migrateToBluesky'">
+                    <template v-else-if="jobsType == 'migrateToBluesky'">
                         Start Migrating
                     </template>
                 </button>

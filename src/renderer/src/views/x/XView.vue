@@ -269,10 +269,10 @@ const startJobs = async () => {
         // Otherwise, make sure the user is authenticated
         else {
             // Determine the premium check reason and tasks -- defaults to deleting data
-            const reviewType = getJobsType(model.value.account.id);
+            const jobsType = getJobsType(model.value.account.id);
             let premiumCheckReason = 'deleteData';
             let premiumTasks: string[] = [];
-            if (reviewType == 'migrateToBluesky') {
+            if (jobsType == 'migrateToBluesky') {
                 premiumCheckReason = 'migrateTweetsToBluesky';
                 premiumTasks = ['Migrate tweets to Bluesky'];
             }
