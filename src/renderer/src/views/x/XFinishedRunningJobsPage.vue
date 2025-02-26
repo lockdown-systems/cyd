@@ -32,6 +32,7 @@ const emit = defineEmits<{
 
 // Buttons
 const runAgainClicked = async () => {
+    // Keep the same review type in localStorage
     emit('setState', State.WizardReview);
 };
 

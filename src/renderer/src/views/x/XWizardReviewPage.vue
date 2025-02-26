@@ -4,7 +4,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { openPreventSleepURL } from '../../util';
+import { openPreventSleepURL, getReviewType } from '../../util';
 import { emptyXDeleteReviewStats } from '../../../../shared_types';
 import type { XDeleteReviewStats } from '../../../../shared_types';
 import { xHasSomeData } from '../../util_x';
@@ -26,13 +26,21 @@ const nextClicked = async () => {
     emit('startJobs');
 };
 
+const reviewType = ref('');
+
 const backClicked = async () => {
-    if (props.model.account?.xAccount?.deleteMyData) {
+    if (reviewType.value == 'delete') {
         emit('setState', State.WizardDeleteOptions);
-    } else if (props.model.account?.xAccount?.saveMyData) {
+    } else if (reviewType.value == 'save') {
         emit('setState', State.WizardBuildOptions);
-    } else {
+    } else if (reviewType.value == 'archive') {
         emit('setState', State.WizardArchiveOptions);
+    } else if (reviewType.value == 'migrateToBluesky') {
+        emit('setState', State.WizardMigrateToBluesky);
+    } else {
+        // Display error
+        console.error('Unknown review type:', reviewType.value);
+        await window.electron.showError("Oops, this is awkward. You clicked back, but I'm not sure where to go.");
     }
 };
 
@@ -48,11 +56,13 @@ const hasSomeData = ref(false);
 const deleteTweetsCountNotArchived = ref(0);
 
 onMounted(async () => {
+    reviewType.value = getReviewType(props.model.account.id) || '';
+
     await props.model.refreshDatabaseStats();
     deleteReviewStats.value = props.model.deleteReviewStats;
     hasSomeData.value = await xHasSomeData(props.model.account.id);
 
-    if (props.model.account?.xAccount?.deleteMyData && props.model.account?.xAccount?.deleteTweets) {
+    if (reviewType.value == 'delete' && props.model.account?.xAccount?.deleteTweets) {
         deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
     }
 });
@@ -66,7 +76,7 @@ onMounted(async () => {
             </h2>
         </div>
         <form @submit.prevent>
-            <div v-if="model.account?.xAccount?.saveMyData">
+            <div v-if="reviewType == 'save'">
                 <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
                     Build a local database
@@ -92,7 +102,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="model.account?.xAccount?.archiveMyData">
+            <div v-if="reviewType == 'archive'">
                 <h3>
                     <i class="fa-solid fa-floppy-disk me-1" />
                     Archive my data
@@ -110,7 +120,7 @@ onMounted(async () => {
                 </ul>
             </div>
 
-            <div v-if="model.account?.xAccount?.deleteMyData">
+            <div v-if="reviewType == 'delete'">
                 <h3>
                     <i class="fa-solid fa-fire me-1" />
                     Delete my data
@@ -179,17 +189,32 @@ onMounted(async () => {
                 </ul>
             </div>
 
+            <div v-if="reviewType == 'migrateToBluesky'">
+                <h3>
+                    <i class="fa-solid fa-bluesky me-1" />
+                    Migrate to Bluesky
+                </h3>
+                <ul>
+                    <li>
+                        Migrate your tweets to Bluesky
+                    </li>
+                </ul>
+            </div>
+
             <div class="buttons">
                 <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
-                    <template v-if="model.account?.xAccount?.deleteMyData">
+                    <template v-if="reviewType == 'delete'">
                         Back to Delete Options
                     </template>
-                    <template v-else-if="model.account?.xAccount?.saveMyData">
+                    <template v-else-if="reviewType == 'save'">
                         Back to Build Options
                     </template>
-                    <template v-else>
+                    <template v-else-if="reviewType == 'archive'">
                         Back to Archive Options
+                    </template>
+                    <template v-else-if="reviewType == 'migrateToBluesky'">
+                        Back to Migrate to Bluesky Options
                     </template>
                 </button>
 
@@ -197,14 +222,17 @@ onMounted(async () => {
                     :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    <template v-if="model.account?.xAccount?.saveMyData">
+                    <template v-if="reviewType == 'save'">
                         Build Database
                     </template>
-                    <template v-else-if="model.account?.xAccount?.archiveMyData">
+                    <template v-else-if="reviewType == 'archive'">
                         Start Archiving
                     </template>
-                    <template v-else>
+                    <template v-else-if="reviewType == 'delete'">
                         Start Deleting
+                    </template>
+                    <template v-else-if="reviewType == 'migrateToBluesky'">
+                        Start Migrating
                     </template>
                 </button>
             </div>

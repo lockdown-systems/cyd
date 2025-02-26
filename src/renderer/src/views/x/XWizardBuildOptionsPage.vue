@@ -7,6 +7,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
+import { setReviewType } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
+    setReviewType(props.model.account.id, 'save');
     emit('setState', State.WizardReview);
 };
 
@@ -89,8 +91,7 @@ onMounted(async () => {
             </p>
         </div>
 
-        <XLastImportOrBuildComponent :account-i-d="model.account.id" :button-text="'Go to Delete Options'"
-            :button-text-no-data="'Skip to Delete Options'" :button-state="State.WizardDeleteOptions"
+        <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="false" :show-no-data-warning="false"
             @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>

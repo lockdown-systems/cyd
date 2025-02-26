@@ -133,7 +133,8 @@ export const showQuestionOpenModePremiumFeature = async (): Promise<boolean> => 
     );
 }
 
-// Premium check
+// Premium check helper functions
+// Before switching to a premium check view, we need to store the reason and tasks that the user was trying to perform
 
 export const setPremiumCheckReason = (accountID: number, reason: string): void => {
     localStorage.setItem(`premiumCheckReason-${accountID}`, reason);
@@ -158,4 +159,19 @@ export const getPremiumTasks = (accountID: number): string[] | null => {
 
 export const clearPremiumTasks = (accountID: number): void => {
     localStorage.removeItem(`premiumTasks-${accountID}`);
+}
+
+// Review helper functions
+// Before switching to a review view, we need to store the review type that the user was trying to perform
+
+export const setReviewType = (accountID: number, type: string): void => {
+    localStorage.setItem(`reviewType-${accountID}`, type);
+}
+
+export const getReviewType = (accountID: number): string | null => {
+    return localStorage.getItem(`reviewType-${accountID}`);
+}
+
+export const clearReviewType = (accountID: number): void => {
+    localStorage.removeItem(`reviewType-${accountID}`);
 }
