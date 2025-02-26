@@ -517,14 +517,16 @@ export class XAccountController {
 
         // Update the text
         let text = row.text;
-        for (const url of urls) {
-            text = text.replace(url.url, url.expandedURL);
+        if (text) {
+            for (const url of urls) {
+                text = text.replace(url.url, url.expandedURL);
+            }
+            for (const mediaItem of media) {
+                text = text.replace(mediaItem.url, "");
+            }
+            text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
+            text = text.trim()
         }
-        for (const mediaItem of media) {
-            text = text.replace(mediaItem.url, "");
-        }
-        text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
-        text = text.trim()
 
         // Prepare images and videos objects
         const images: string[] = [];

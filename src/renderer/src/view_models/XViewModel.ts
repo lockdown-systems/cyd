@@ -2599,8 +2599,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
             this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
 
-            await this.sleep(1000);
-
             await this.waitForPause();
         }
 

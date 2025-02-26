@@ -55,7 +55,7 @@ const getImageClass = (_index: number) => {
                 </small>
             </div>
             <div v-if="tweetItem.t" class="mt-4 fs-3">
-                <p v-html="tweetItem.t" />
+                <p class="tweet-text" v-html="tweetItem.t" />
             </div>
             <div v-else class="mt-4 fs-3">
                 <p>Tweet ID: {{ tweetItem.id }}</p>
@@ -95,9 +95,14 @@ const getImageClass = (_index: number) => {
     margin-bottom: 100px;
 }
 
+.tweet-text {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 .tweet-image {
     max-width: 100%;
-    max-height: 200px;
+    max-height: 400px;
     object-fit: cover;
 }
 
