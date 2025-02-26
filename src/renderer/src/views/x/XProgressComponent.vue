@@ -264,6 +264,47 @@ onUnmounted(() => {
                 <p>Building archive website</p>
             </template>
 
+            <!-- Migrate to Bluesky -->
+            <template v-if="progress.currentJob == 'migrateBluesky'">
+                <p>
+                    Migrated
+                    <b>{{ progress.migrateTweetsCount.toLocaleString() }} of
+                        {{ progress.totalTweetsToMigrate.toLocaleString() }} tweets</b>.
+                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.migrateTweetsCount / progress.totalTweetsToMigrate) * 100}%` }"
+                            :aria-valuenow="(progress.migrateTweetsCount / progress.totalTweetsToMigrate) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.migrateTweetsCount / progress.totalTweetsToMigrate) * 100) }}%
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Migrate to Bluesky (delete posts) -->
+            <template v-if="progress.currentJob == 'migrateBlueskyDelete'">
+                <p>
+                    Deleted
+                    <b>{{ progress.migrateDeletePostsCount.toLocaleString() }} of
+                        {{ progress.totalMigratedPostsToDelete.toLocaleString() }} posts</b>.
+                    <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="progress flex-grow-1 me-2">
+                        <div class="progress-bar" role="progressbar"
+                            :style="{ width: `${(progress.migrateDeletePostsCount / progress.totalMigratedPostsToDelete) * 100}%` }"
+                            :aria-valuenow="(progress.migrateDeletePostsCount / progress.totalMigratedPostsToDelete) * 100"
+                            aria-valuemin="0" aria-valuemax="100">
+                            {{ Math.round((progress.migrateDeletePostsCount / progress.totalMigratedPostsToDelete) *
+                            100) }}%
+                        </div>
+                    </div>
+                </div>
+            </template>
+
             <!-- Rate Limit -->
             <p v-if="rateLimitInfo?.isRateLimited" class="rate-limit">
                 You have hit a rate limit! <b>Waiting {{ formatSeconds(rateLimitSecondsLeft) }} to retry.</b>

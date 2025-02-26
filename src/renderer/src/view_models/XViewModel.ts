@@ -2567,14 +2567,20 @@ Hang on while I scroll down to your earliest bookmarks.`;
     async runJobMigrateBluesky(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY, navigator.userAgent);
 
-        // Start the progress
-        await this.syncProgress();
-        this.progress.migrateTweetsCount = 0;
-        this.progress.migrateSkippedTweetsCount = 0;
-        this.progress.migrateSkippedTweetsErrors = {};
+        this.showBrowser = false;
+        this.instructions = `**I'm migrating your tweets to Bluesky.**`;
+        this.showAutomationNotice = true;
 
         // Get the tweet counts
         const tweetCounts: XMigrateTweetCounts = await window.electron.X.blueskyGetTweetCounts(this.account.id);
+
+        // Start the progress
+        await this.syncProgress();
+        this.progress.totalTweetsToMigrate = tweetCounts.toMigrateTweetIDs.length;
+        this.progress.migrateTweetsCount = 0;
+        this.progress.migrateSkippedTweetsCount = 0;
+        this.progress.migrateSkippedTweetsErrors = {};
+        this.progress.errorsOccured = 0;
 
         // Loop through tweets and migrate them
         for (const tweetID of tweetCounts.toMigrateTweetIDs) {
@@ -2582,6 +2588,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             if (typeof resp === 'string') {
                 this.progress.migrateSkippedTweetsCount++;
                 this.progress.migrateSkippedTweetsErrors[tweetID] = resp;
+                this.progress.errorsOccured++;
                 console.error('Failed to migrate tweet', tweetID, resp);
             } else {
                 this.progress.migrateTweetsCount++;
@@ -2616,13 +2623,19 @@ Hang on while I scroll down to your earliest bookmarks.`;
     async runJobMigrateBlueskyDelete(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY_DELETE, navigator.userAgent);
 
-        // Start the progress
-        await this.syncProgress();
-        this.progress.migrateDeletePostsCount = 0;
-        this.progress.migrateDeleteSkippedPostsCount = 0;
+        this.showBrowser = false;
+        this.instructions = `**I'm deleting your posts from Bluesky that you migrated from X.**`;
+        this.showAutomationNotice = true;
 
         // Get the tweet counts
         const tweetCounts: XMigrateTweetCounts = await window.electron.X.blueskyGetTweetCounts(this.account.id);
+
+        // Start the progress
+        await this.syncProgress();
+        this.progress.totalMigratedPostsToDelete = tweetCounts.alreadyMigratedTweetIDs.length;
+        this.progress.migrateDeletePostsCount = 0;
+        this.progress.migrateDeleteSkippedPostsCount = 0;
+        this.progress.errorsOccured = 0;
 
         // Loop through migrated posts and delete them
         for (const tweetID of tweetCounts.alreadyMigratedTweetIDs) {
@@ -2630,6 +2643,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                 this.progress.migrateDeletePostsCount++;
             } else {
                 this.progress.migrateDeleteSkippedPostsCount++;
+                this.progress.errorsOccured++;
                 console.error('Failed to delete migrated tweet', tweetID);
             }
             this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
