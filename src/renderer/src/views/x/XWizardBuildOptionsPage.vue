@@ -7,7 +7,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { setReviewType } from '../../util';
+import { setJobsType } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
-    setReviewType(props.model.account.id, 'save');
+    setJobsType(props.model.account.id, 'save');
     emit('setState', State.WizardReview);
 };
 
