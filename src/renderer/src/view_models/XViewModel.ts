@@ -2754,6 +2754,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         // Temp variables
         let databaseStatsString: string = "";
+        let jobsType: string = "";
 
         this.log("run", `running state: ${this.state}`);
         try {
@@ -2785,14 +2786,26 @@ Hang on while I scroll down to your earliest bookmarks.`;
                 case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
-                    if (
-                        await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_importArchive') ||
-                        await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexTweets') ||
-                        await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexLikes')
-                    ) {
-                        this.state = State.WizardDeleteOptions;
-                    } else {
+
+                    // Make the user start where they last were
+                    jobsType = getJobsType(this.account.id) || "";
+                    if (jobsType == 'save' || jobsType == 'archive') {
                         this.state = State.WizardDatabase;
+                    } else if (jobsType == 'delete') {
+                        this.state = State.WizardDeleteOptions;
+                    } else if (jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete') {
+                        this.state = State.WizardMigrateToBluesky;
+                    } else {
+                        // Otherwise, default to delete options if they have archived, or database if they haven't
+                        if (
+                            await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_importArchive') ||
+                            await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexTweets') ||
+                            await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexLikes')
+                        ) {
+                            this.state = State.WizardDeleteOptions;
+                        } else {
+                            this.state = State.WizardDatabase;
+                        }
                     }
                     break;
 
