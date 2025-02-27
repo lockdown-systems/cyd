@@ -2572,6 +2572,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.showAutomationNotice = true;
 
         this.runJobsState = RunJobsState.MigrateBluesky;
+        await window.electron.X.resetRateLimitInfo(this.account.id);
 
         // Get the tweet counts
         const tweetCounts: XMigrateTweetCounts = await window.electron.X.blueskyGetTweetCounts(this.account.id);
@@ -2587,19 +2588,36 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         // Loop through tweets and migrate them
         for (const tweet of tweetCounts.toMigrateTweets) {
-            this.currentTweetItem = tweet;
-            const resp = await window.electron.X.blueskyMigrateTweet(this.account.id, tweet.id);
-            if (typeof resp === 'string') {
-                this.progress.migrateSkippedTweetsCount++;
-                this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
-                console.error('Failed to migrate tweet', tweet.id, resp, tweet);
-            } else {
-                this.progress.migrateTweetsCount++;
+            let finished = false;
+            // Loop until we're finished (retry on rate limit)
+            while (!finished) {
+                this.currentTweetItem = tweet;
+                const resp = await window.electron.X.blueskyMigrateTweet(this.account.id, tweet.id);
+
+                // There was an error
+                if (typeof resp === 'string') {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                    } else {
+                        // There was some other error
+                        this.progress.migrateSkippedTweetsCount++;
+                        this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
+                        console.error('Failed to migrate tweet', tweet.id, resp, tweet);
+                        finished = true;
+                    }
+                } else {
+                    // Success
+                    this.progress.migrateTweetsCount++;
+                    finished = true;
+                }
+
+                this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
+
+                await this.waitForPause();
             }
-
-            this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
-
-            await this.waitForPause();
         }
 
         this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
@@ -2634,19 +2652,36 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         // Loop through migrated posts and delete them
         for (const tweet of tweetCounts.alreadyMigratedTweets) {
-            this.currentTweetItem = tweet;
-            const resp = await window.electron.X.blueskyDeleteMigratedTweet(this.account.id, tweet.id);
-            if (typeof resp === 'string') {
-                this.progress.migrateDeleteSkippedPostsCount++;
-                this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
-                console.error('Failed to delete migrated tweet', tweet.id, resp, tweet);
-            } else {
-                this.progress.migrateDeletePostsCount++;
+            let finished = false;
+            // Loop until we're finished (retry on rate limit)
+            while (!finished) {
+                this.currentTweetItem = tweet;
+                const resp = await window.electron.X.blueskyDeleteMigratedTweet(this.account.id, tweet.id);
+
+                // There was an error
+                if (typeof resp === 'string') {
+                    // Were we rate limited?
+                    this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    if (this.rateLimitInfo.isRateLimited) {
+                        await this.waitForRateLimit();
+                        await window.electron.X.resetRateLimitInfo(this.account.id);
+                    } else {
+                        // There was some other error
+                        this.progress.migrateDeleteSkippedPostsCount++;
+                        this.progress.migrateSkippedTweetsErrors[tweet.id] = resp;
+                        console.error('Failed to delete migrated tweet', tweet.id, resp, tweet);
+                        finished = true;
+                    }
+                } else {
+                    // Success
+                    this.progress.migrateDeletePostsCount++;
+                    finished = true;
+                }
+
+                this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
+
+                await this.waitForPause();
             }
-
-            this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
-
-            await this.waitForPause();
         }
 
         // Submit progress to the API

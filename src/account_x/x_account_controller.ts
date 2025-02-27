@@ -3081,13 +3081,24 @@ export class XAccountController {
             const { uri, cid } = await agent.post(record)
 
             // Record that we migrated this tweet
-            exec(this.db, `
-                INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
-                VALUES (?, ?, ?, ?)
-            `, [tweetID, uri, cid, new Date()]);
+            try {
+                exec(this.db, `
+                    INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
+                    VALUES (?, ?, ?, ?)
+                `, [tweetID, uri, cid, new Date()]);
+            } catch (e) {
+                return `Error recording migration: ${e}`;
+            }
 
             return true;
         } catch (e) {
+            if (`${e}`.includes("Rate Limit Exceeded")) {
+                // Set rateLimitReset to unix timestamp 3 minutes from now
+                this.rateLimitInfo.isRateLimited = true;
+                this.rateLimitInfo.rateLimitReset = Math.floor(Date.now() / 1000) + 180;
+                return `Rate limit exceeded`;
+            }
+
             log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
             return `Error posting to Bluesky: ${e}`;
         }
@@ -3119,13 +3130,25 @@ export class XAccountController {
             // Delete it from Bluesky
             await agent.deletePost(migration.atprotoURI)
 
-            // Delete the migration record
-            exec(this.db, `
-                DELETE FROM tweet_bsky_migration WHERE tweetID = ?
-            `, [tweetID]);
+            try {
+                // Delete the migration record
+                exec(this.db, `
+                    DELETE FROM tweet_bsky_migration WHERE tweetID = ?
+                `, [tweetID]);
+            } catch (e) {
+                return `Error deleting migration record: ${e}`;
+            }
 
             return true;
         } catch (e) {
+            if (`${e}`.includes("Rate Limit Exceeded")) {
+                // Set rateLimitReset to unix timestamp 3 minutes from now
+                this.rateLimitInfo.isRateLimited = true;
+                this.rateLimitInfo.rateLimitReset = Math.floor(Date.now() / 1000) + 180;
+                return `Rate limit exceeded`;
+            }
+
+            log.error("XAccountController.blueskyDeleteMigratedTweet: Error deleting from Bluesky", e);
             return `Error deleting migrated tweet from Bluesky: ${e}`;
         }
     }
