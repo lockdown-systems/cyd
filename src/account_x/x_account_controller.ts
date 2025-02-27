@@ -13,7 +13,7 @@ import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
 import { NodeOAuthClient, NodeSavedState, NodeSavedSession, OAuthSession } from '@atproto/oauth-client-node'
-import { Agent, BlobRef } from '@atproto/api';
+import { Agent, BlobRef, RichText } from '@atproto/api';
 import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
 import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
 
@@ -2678,7 +2678,7 @@ export class XAccountController {
         return resp;
     }
 
-    async blueskyMigrateTweetBuildRecord(agent: Agent, tweetID: string, makeShorter: boolean): Promise<BskyPostRecord | string> {
+    async blueskyMigrateTweetBuildRecord(agent: Agent, tweetID: string): Promise<BskyPostRecord | string> {
         // Select the tweet
         let tweet: XTweetRow;
         try {
@@ -2713,39 +2713,7 @@ export class XAccountController {
             return `Error selecting tweet URLs: ${e}`;
         }
         for (const tweetURL of tweetURLs) {
-            let replacementLink: string;
-            if (makeShorter) {
-                replacementLink = tweetURL.displayURL;
-                replacementLink = replacementLink.replace(/…/g, "...");
-            } else {
-                replacementLink = tweetURL.expandedURL;
-            }
-
-            // Convert into code point to do this searching, since the string may contain emojis
-
-            // Convert the string to an array of code points
-            const codePoints = Array.from(text);
-
-            // Find the start and end indices in the array of code points
-            const byteStart = codePoints.join('').indexOf(tweetURL.url);
-            const byteEnd = byteStart + Array.from(replacementLink).length;
-
-            // Replace the URL with the replacement link
-            text = codePoints.slice(0, byteStart).join('') + replacementLink + codePoints.slice(byteStart + Array.from(tweetURL.url).length).join('');
-
-            // Add the link facet
-            facets.push({
-                'index': {
-                    'byteStart': byteStart,
-                    'byteEnd': byteEnd,
-                },
-                'features': [
-                    {
-                        '$type': 'app.bsky.richtext.facet#link',
-                        'uri': tweetURL.expandedURL,
-                    }
-                ],
-            });
+            text = text.replace(tweetURL.url, tweetURL.expandedURL);
         }
 
         // Handle replies
@@ -3062,14 +3030,19 @@ export class XAccountController {
             }
         }
 
+        // Start a richtext object
+        const rt = new RichText({
+            text: text,
+            facets: facets,
+        })
+        await rt.detectFacets(agent);
+
         // Build the record
         const record: BskyPostRecord = {
             '$type': 'app.bsky.feed.post',
-            'text': text,
-            'createdAt': tweet.createdAt,
-        }
-        if (facets.length > 0) {
-            record['facets'] = facets;
+            text: rt.text,
+            facets: rt.facets,
+            createdAt: tweet.createdAt,
         }
         if (reply) {
             record['reply'] = reply;
@@ -3097,17 +3070,9 @@ export class XAccountController {
         const agent: Agent = new Agent(session)
 
         // Build the record
-        let resp: BskyPostRecord | string = await this.blueskyMigrateTweetBuildRecord(agent, tweetID, false);
+        const resp: BskyPostRecord | string = await this.blueskyMigrateTweetBuildRecord(agent, tweetID);
         if (typeof resp === 'string') {
             return resp;
-        }
-
-        // If the text is too long, try again, but make it shorter
-        if (resp.text.length > 300) {
-            resp = await this.blueskyMigrateTweetBuildRecord(agent, tweetID, true);
-            if (typeof resp === 'string') {
-                return resp;
-            }
         }
         const record = resp;
 
