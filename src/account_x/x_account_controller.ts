@@ -2680,7 +2680,10 @@ export class XAccountController {
         return resp;
     }
 
-    async blueskyMigrateTweetBuildRecord(agent: Agent, tweetID: string): Promise<BskyPostRecord | string> {
+    async blueskyMigrateTweetBuildRecord(agent: Agent, tweetID: string): Promise<[BskyPostRecord, string] | string> {
+        // In case the tweet needs to be split into multiple posts, this is the text of the second post
+        let nextPostText = '';
+
         // Select the tweet
         let tweet: XTweetRow;
         try {
@@ -3055,6 +3058,44 @@ export class XAccountController {
             await rt.detectFacets(agent);
         }
 
+        // Is it STILL too long?
+        if (rt.graphemeLength > 300) {
+            // Make the links longer again because why not
+            text = tweet.text;
+            for (const tweetURL of tweetURLs) {
+                text = text.replace(tweetURL.url, tweetURL.expandedURL);
+            }
+
+            // Split the text into words
+            const words = text.split(' ');
+
+            // Initialize the new text and nextText
+            let newText = '';
+            const continuationText = ' (...)';
+
+            // Iterate through the words to build the new text
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                if ((newText + ' ' + word + continuationText).length <= 300) {
+                    newText += (newText ? ' ' : '') + word;
+                } else {
+                    nextPostText = words.slice(i).join(' ');
+                    break;
+                }
+            }
+
+            // Append the continuation text
+            newText += continuationText;
+
+            // Update the text and nextText variables
+            text = newText;
+            rt = new RichText({
+                text: text,
+                facets: facets,
+            });
+            await rt.detectFacets(agent);
+        }
+
         // Build the record
         const record: BskyPostRecord = {
             '$type': 'app.bsky.feed.post',
@@ -3068,7 +3109,7 @@ export class XAccountController {
         if (embed) {
             record['embed'] = embed;
         }
-        return record;
+        return [record, nextPostText];
     }
 
     // Return true on success, and a string (error message) on error
@@ -3088,15 +3129,65 @@ export class XAccountController {
         const agent: Agent = new Agent(session)
 
         // Build the record
-        const resp: BskyPostRecord | string = await this.blueskyMigrateTweetBuildRecord(agent, tweetID);
+        const resp: [BskyPostRecord, string] | string = await this.blueskyMigrateTweetBuildRecord(agent, tweetID);
         if (typeof resp === 'string') {
             return resp;
         }
-        const record = resp;
+        const [record, nextPostText] = resp;
 
         try {
             // Post it to Bluesky
             const { uri, cid } = await agent.post(record)
+
+            // Do we need to post a continuation?
+            if (nextPostText != '') {
+                let rootURI;
+                let rootCID;
+                if (record.reply) {
+                    rootURI = record.reply.root.uri;
+                    rootCID = record.reply.root.cid;
+                } else {
+                    rootURI = uri;
+                    rootCID = cid;
+                }
+
+                // Build the rich text
+                const rt = new RichText({
+                    text: nextPostText,
+                })
+                await rt.detectFacets(agent);
+
+                // Build the record
+                const continuationRecord: BskyPostRecord = {
+                    '$type': 'app.bsky.feed.post',
+                    text: rt.text,
+                    facets: rt.facets,
+                    createdAt: record.createdAt,
+                    reply: {
+                        root: {
+                            uri: rootURI,
+                            cid: rootCID,
+                        },
+                        parent: {
+                            uri: uri,
+                            cid: cid,
+                        }
+                    }
+                }
+
+                // Post it to Bluesky
+                const { uri: continuationURI, cid: continuationCID } = await agent.post(continuationRecord);
+
+                // Record that we migrated this tweet
+                try {
+                    exec(this.db, `
+                        INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
+                        VALUES (?, ?, ?, ?)
+                    `, [tweetID, continuationURI, continuationCID, new Date()]);
+                } catch (e) {
+                    return `Error recording migration: ${e}`;
+                }
+            }
 
             // Record that we migrated this tweet
             try {
