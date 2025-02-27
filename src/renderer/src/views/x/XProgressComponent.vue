@@ -143,7 +143,7 @@ onUnmounted(() => {
                         Finished saving tweets as HTML!
                     </template>
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalTweetsToArchive" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${(progress.tweetsArchived / progress.totalTweetsToArchive) * 100}%` }"
@@ -163,7 +163,7 @@ onUnmounted(() => {
                         {{ progress.totalTweetsToDelete.toLocaleString() }} tweets</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalTweetsToDelete" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${(progress.tweetsDeleted / progress.totalTweetsToDelete) * 100}%` }"
@@ -183,7 +183,7 @@ onUnmounted(() => {
                         {{ progress.totalRetweetsToDelete.toLocaleString() }} retweets</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalRetweetsToDelete" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${(progress.retweetsDeleted / progress.totalRetweetsToDelete) * 100}%` }"
@@ -203,7 +203,7 @@ onUnmounted(() => {
                         {{ progress.totalLikesToDelete.toLocaleString() }} likes</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalLikesToDelete" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${(progress.likesDeleted / progress.totalLikesToDelete) * 100}%` }"
@@ -223,7 +223,7 @@ onUnmounted(() => {
                         {{ progress.totalBookmarksToDelete.toLocaleString() }} bookmarks</b>.
                     <XProgressErrorsOccuredComponent :errors-occured="progress.errorsOccured" />
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalBookmarksToDelete" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${(progress.bookmarksDeleted / progress.totalBookmarksToDelete) * 100}%` }"
@@ -273,7 +273,7 @@ onUnmounted(() => {
                     <XProgressErrorsOccuredComponent
                         :errors-occured="Object.keys(progress.migrateSkippedTweetsErrors).length" />
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalTweetsToMigrate" class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${((progress.migrateTweetsCount + Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalTweetsToMigrate) * 100}%` }"
@@ -281,7 +281,7 @@ onUnmounted(() => {
                             aria-valuemin="0" aria-valuemax="100">
                             {{ Math.round(((progress.migrateTweetsCount +
                                 Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalTweetsToMigrate) *
-                            100) }}%
+                                100) }}%
                         </div>
                     </div>
                 </div>
@@ -296,7 +296,8 @@ onUnmounted(() => {
                     <XProgressErrorsOccuredComponent
                         :errors-occured="Object.keys(progress.migrateSkippedTweetsErrors).length" />
                 </p>
-                <div class="d-flex align-items-center justify-content-between">
+                <div v-if="progress.totalMigratedPostsToDelete"
+                    class="d-flex align-items-center justify-content-between">
                     <div class="progress flex-grow-1 me-2">
                         <div class="progress-bar" role="progressbar"
                             :style="{ width: `${((progress.migrateDeletePostsCount + Object.keys(progress.migrateSkippedTweetsErrors).length) / progress.totalMigratedPostsToDelete) * 100}%` }"
@@ -305,7 +306,7 @@ onUnmounted(() => {
                             {{ Math.round(((progress.migrateDeletePostsCount +
                                 Object.keys(progress.migrateSkippedTweetsErrors).length) /
                                 progress.totalMigratedPostsToDelete) *
-                            100) }}%
+                                100) }}%
                         </div>
                     </div>
                 </div>
