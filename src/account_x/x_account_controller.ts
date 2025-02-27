@@ -3033,11 +3033,27 @@ export class XAccountController {
         }
 
         // Start a richtext object
-        const rt = new RichText({
+        let rt = new RichText({
             text: text,
             facets: facets,
         })
         await rt.detectFacets(agent);
+
+        // Is it too long?
+        if (rt.graphemeLength > 300) {
+            // If it's too long, fall back to t.co links because they're shortened
+            text = tweet.text;
+            for (const tweetURL of tweetURLs) {
+                text = text.replace(tweetURL.expandedURL, tweetURL.url);
+            }
+
+            // Update the richtext object
+            rt = new RichText({
+                text: text,
+                facets: facets,
+            })
+            await rt.detectFacets(agent);
+        }
 
         // Build the record
         const record: BskyPostRecord = {
