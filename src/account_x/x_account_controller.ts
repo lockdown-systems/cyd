@@ -2678,22 +2678,7 @@ export class XAccountController {
         return resp;
     }
 
-    // Return true on success, and a string (error message) on error
-    async blueskyMigrateTweet(tweetID: string): Promise<boolean | string> {
-        if (!this.db) { this.initDB(); }
-        if (!this.account) { throw new Error("Account not found"); }
-
-        // Get the Bluesky client
-        if (!this.blueskyClient) {
-            this.blueskyClient = await this.blueskyInitClient();
-        }
-        const did = await this.getConfig("blueskyDID");
-        if (!did) {
-            return 'Bluesky DID not found';
-        }
-        const session = await this.blueskyClient.restore(did);
-        const agent = new Agent(session)
-
+    async blueskyMigrateTweetBuildRecord(agent: Agent, tweetID: string, makeShorter: boolean): Promise<BskyPostRecord | string> {
         // Select the tweet
         let tweet: XTweetRow;
         try {
@@ -2706,6 +2691,16 @@ export class XAccountController {
             return `Error selecting tweet: ${e}`;
         }
 
+        // Start building the tweet text and facets
+        let text = tweet.text;
+        const facets: {
+            index: {
+                byteStart: number,
+                byteEnd: number,
+            },
+            features: BskyRichtextFacetLink[],
+        }[] = [];
+
         // Replace t.co links with actual links
         let tweetURLs: XTweetURLRow[];
         try {
@@ -2717,19 +2712,26 @@ export class XAccountController {
         } catch (e) {
             return `Error selecting tweet URLs: ${e}`;
         }
-        const facets: {
-            index: {
-                byteStart: number,
-                byteEnd: number,
-            },
-            features: BskyRichtextFacetLink[],
-        }[] = [];
-        let text = tweet.text;
         for (const tweetURL of tweetURLs) {
-            // Replace url with expandedURL
-            const byteStart = text.indexOf(tweetURL.url);
-            text = text.substring(0, byteStart) + tweetURL.expandedURL + text.substring(byteStart + tweetURL.url.length);
-            const byteEnd = byteStart + tweetURL.expandedURL.length;
+            let replacementLink: string;
+            if (makeShorter) {
+                replacementLink = tweetURL.displayURL;
+                replacementLink = replacementLink.replace(/…/g, "...");
+            } else {
+                replacementLink = tweetURL.expandedURL;
+            }
+
+            // Convert into code point to do this searching, since the string may contain emojis
+
+            // Convert the string to an array of code points
+            const codePoints = Array.from(text);
+
+            // Find the start and end indices in the array of code points
+            const byteStart = codePoints.join('').indexOf(tweetURL.url);
+            const byteEnd = byteStart + Array.from(replacementLink).length;
+
+            // Replace the URL with the replacement link
+            text = codePoints.slice(0, byteStart).join('') + replacementLink + codePoints.slice(byteStart + Array.from(tweetURL.url).length).join('');
 
             // Add the link facet
             facets.push({
@@ -2747,7 +2749,7 @@ export class XAccountController {
         }
 
         // Handle replies
-        const userID = this.account.userID;
+        const userID = this.account?.userID;
         let reply = null;
         if (tweet.isReply && tweet.replyUserID == userID) {
             // Find the parent tweet migration
@@ -2822,7 +2824,7 @@ export class XAccountController {
             const quotedTweetID = quotedTweetURL.pathname.split('/')[3];
 
             // Self quote
-            if (quotedTweetUsername == this.account.username) {
+            if (quotedTweetUsername == this.account?.username) {
                 // Load the quoted tweet migration
                 let quotedMigration: XTweetBlueskyMigrationRow;
                 try {
@@ -3075,6 +3077,39 @@ export class XAccountController {
         if (embed) {
             record['embed'] = embed;
         }
+        return record;
+    }
+
+    // Return true on success, and a string (error message) on error
+    async blueskyMigrateTweet(tweetID: string): Promise<boolean | string> {
+        if (!this.db) { this.initDB(); }
+        if (!this.account) { throw new Error("Account not found"); }
+
+        // Get the Bluesky client
+        if (!this.blueskyClient) {
+            this.blueskyClient = await this.blueskyInitClient();
+        }
+        const did = await this.getConfig("blueskyDID");
+        if (!did) {
+            return 'Bluesky DID not found';
+        }
+        const session = await this.blueskyClient.restore(did);
+        const agent: Agent = new Agent(session)
+
+        // Build the record
+        let resp: BskyPostRecord | string = await this.blueskyMigrateTweetBuildRecord(agent, tweetID, false);
+        if (typeof resp === 'string') {
+            return resp;
+        }
+
+        // If the text is too long, try again, but make it shorter
+        if (resp.text.length > 300) {
+            resp = await this.blueskyMigrateTweetBuildRecord(agent, tweetID, true);
+            if (typeof resp === 'string') {
+                return resp;
+            }
+        }
+        const record = resp;
 
         try {
             // Post it to Bluesky
@@ -3099,7 +3134,7 @@ export class XAccountController {
                 return `Rate limit exceeded`;
             }
 
-            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e);
+            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e, JSON.stringify(record));
             return `Error posting to Bluesky: ${e}`;
         }
     }
