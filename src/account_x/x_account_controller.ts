@@ -39,6 +39,8 @@ import {
     XImportArchiveResponse,
     XMigrateTweetCounts,
     BlueskyMigrationProfile,
+    BlueskyAPIError,
+    isBlueskyAPIError
 } from '../shared_types'
 import {
     runMigrations,
@@ -3092,15 +3094,21 @@ export class XAccountController {
 
             return true;
         } catch (e) {
-            if (`${e}`.includes("Rate Limit Exceeded")) {
-                // Set rateLimitReset to unix timestamp 3 minutes from now
-                this.rateLimitInfo.isRateLimited = true;
-                this.rateLimitInfo.rateLimitReset = Math.floor(Date.now() / 1000) + 180;
-                return `Rate limit exceeded`;
+            if (isBlueskyAPIError(e)) {
+                const error = e as BlueskyAPIError;
+                if (error.error == "RateLimitExceeded") {
+                    log.error("XAccountController.blueskyDeleteMigratedTweet: Rate limit exceeded", JSON.stringify(e));
+                    this.rateLimitInfo.isRateLimited = true;
+                    this.rateLimitInfo.rateLimitReset = Number(error.headers['ratelimit-reset']);
+                    return `RateLimitExceeded`;
+                } else {
+                    log.error("XAccountController.blueskyDeleteMigratedTweet: Bluesky error", JSON.stringify(e));
+                    return `Error migrating tweet to Bluesky: ${e}`;
+                }
             }
 
-            log.error("XAccountController.blueskyMigrateTweet: Error posting to Bluesky", e, JSON.stringify(record));
-            return `Error posting to Bluesky: ${e}`;
+            log.error("XAccountController.blueskyDeleteMigratedTweet: Error migrating tweet to Bluesky", e);
+            return `Error migrating tweet to Bluesky: ${e}`;
         }
     }
 
@@ -3141,11 +3149,17 @@ export class XAccountController {
 
             return true;
         } catch (e) {
-            if (`${e}`.includes("Rate Limit Exceeded")) {
-                // Set rateLimitReset to unix timestamp 3 minutes from now
-                this.rateLimitInfo.isRateLimited = true;
-                this.rateLimitInfo.rateLimitReset = Math.floor(Date.now() / 1000) + 180;
-                return `Rate limit exceeded`;
+            if (isBlueskyAPIError(e)) {
+                const error = e as BlueskyAPIError;
+                if (error.error == "RateLimitExceeded") {
+                    log.error("XAccountController.blueskyDeleteMigratedTweet: Rate limit exceeded", JSON.stringify(e));
+                    this.rateLimitInfo.isRateLimited = true;
+                    this.rateLimitInfo.rateLimitReset = Number(error.headers['ratelimit-reset']);
+                    return `RateLimitExceeded`;
+                } else {
+                    log.error("XAccountController.blueskyDeleteMigratedTweet: Bluesky error", JSON.stringify(e));
+                    return `Error deleting migrated tweet from Bluesky: ${e}`;
+                }
             }
 
             log.error("XAccountController.blueskyDeleteMigratedTweet: Error deleting from Bluesky", e);
