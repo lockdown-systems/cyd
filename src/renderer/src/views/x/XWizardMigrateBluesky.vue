@@ -17,6 +17,7 @@ import { setJobsType } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import LoadingComponent from '../shared_components/LoadingComponent.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -193,12 +194,7 @@ onUnmounted(async () => {
                 :button-state="XState.WizardDatabase" @set-state="emit('setState', $event)" />
 
             <template v-if="state == State.Loading">
-                <div class="loading text-center">
-                    <img src="/assets/cyd-loading.gif" alt="Loading">
-                    <p class="text-muted">
-                        Loading...
-                    </p>
-                </div>
+                <LoadingComponent />
             </template>
             <template v-if="state == State.NotConnected || state == State.Connecting">
                 <form @submit.prevent="connectClicked">
@@ -349,10 +345,3 @@ onUnmounted(async () => {
         </div>
     </div>
 </template>
-
-<style scoped>
-.loading img {
-    width: 50%;
-    height: 50%;
-}
-</style>

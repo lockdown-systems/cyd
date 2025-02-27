@@ -54,6 +54,7 @@ import {
     getJobsType
 } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
+import LoadingComponent from '../shared_components/LoadingComponent.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -428,9 +429,7 @@ onUnmounted(async () => {
             @on-remove-clicked="emit('onRemoveClicked')" />
 
         <template v-if="model.state == State.WizardStart">
-            <div class="text-center ms-2 mt-5">
-                <img src="/assets/cyd-loading.gif" alt="Loading">
-            </div>
+            <LoadingComponent />
         </template>
 
         <template v-if="model.state != State.WizardStart">
