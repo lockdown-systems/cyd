@@ -4,7 +4,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { openPreventSleepURL, getJobsType } from '../../util';
+import { openURL, openPreventSleepURL, getJobsType } from '../../util';
 import { XDeleteReviewStats, emptyXDeleteReviewStats, XMigrateTweetCounts, emptyXMigrateTweetCounts } from '../../../../shared_types';
 import { xHasSomeData } from '../../util_x';
 import LoadingComponent from '../shared_components/LoadingComponent.vue';
@@ -266,7 +266,8 @@ onMounted(async () => {
                 </div>
             </form>
 
-            <div class="alert alert-info mt-4" role="alert">
+            <div v-if="jobsType == 'save' || jobsType == 'archive' || jobsType == 'delete'"
+                class="alert alert-info mt-4" role="alert">
                 <p class="fw-bold mb-0">
                     X restricts how fast you can access your data using <span class="fst-italic">rate limits</span>.
                 </p>
@@ -276,6 +277,21 @@ onMounted(async () => {
                     continuing.
                 </p>
             </div>
+
+            <div v-if="jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete'" class="alert alert-info mt-4"
+                role="alert">
+                <p class="fw-bold mb-0">
+                    Bluesky restricts how fast you create or delete posts using <span class="fst-italic">rate
+                        limits</span>.
+                </p>
+                <p class="alert-details mb-0">
+                    You might hit rate limits while Cyd works. Cyd will pause and wait for the rate limit to reset
+                    before continuing. <a href="#"
+                        @click="openURL('https://docs.bsky.app/docs/advanced-guides/rate-limits')">Learn
+                        more.</a>
+                </p>
+            </div>
+
             <div class="alert alert-info" role="alert">
                 <p class="fw-bold mb-0">
                     Your computer needs to be awake to use Cyd.
