@@ -87,6 +87,7 @@ import {
     XArchiveLikeContainer,
     isXArchiveLikeContainer,
     isXAPIBookmarksData,
+    isXAPIError,
     isXAPIData,
 } from './types'
 import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
@@ -703,6 +704,10 @@ export class XAccountController {
                 timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
             } else if (isXAPIData(body)) {
                 timeline = (body as XAPIData).data.user.result.timeline_v2;
+            } else if (isXAPIError(body)) {
+                log.error('XAccountController.indexParseTweetsResponseData: XAPIError', body);
+                this.mitmController.responseData[responseIndex].processed = true;
+                return false;
             } else {
                 throw new Error('Invalid response data');
             }
