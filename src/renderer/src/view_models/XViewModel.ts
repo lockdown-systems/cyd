@@ -441,7 +441,6 @@ export class XViewModel extends BaseViewModel {
     async indexTweetsHandleRateLimit(): Promise<boolean> {
         this.log("indexTweetsHandleRateLimit", this.progress);
 
-        this.pause();
         await this.waitForPause();
 
         if (await this.doesSelectorExist('section [data-testid="cellInnerDiv"]')) {
