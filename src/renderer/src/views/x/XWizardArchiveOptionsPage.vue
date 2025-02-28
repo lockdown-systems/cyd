@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { XViewModel, State } from '../../view_models/XViewModel'
 import type { XDatabaseStats } from '../../../../shared_types';
 import { emptyXDatabaseStats } from '../../../../shared_types';
+import { setJobsType } from '../../util';
 
 // Props
 const props = defineProps<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 // Buttons
 const nextClicked = async () => {
     await saveSettings();
+    setJobsType(props.model.account.id, 'archive');
     emit('setState', State.WizardReview);
 };
 

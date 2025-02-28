@@ -89,6 +89,15 @@ export type XProgress = {
     conversationsDeleted: number;
     accountsUnfollowed: number;
 
+    totalTweetsToMigrate: number;
+    migrateTweetsCount: number;
+    migrateSkippedTweetsCount: number;
+    migrateSkippedTweetsErrors: Record<string, string>;
+
+    totalMigratedPostsToDelete: number;
+    migrateDeletePostsCount: number;
+    migrateDeleteSkippedPostsCount: number;
+
     errorsOccured: number;
 }
 
@@ -142,6 +151,15 @@ export function emptyXProgress(): XProgress {
         conversationsDeleted: 0,
         accountsUnfollowed: 0,
 
+        totalTweetsToMigrate: 0,
+        migrateTweetsCount: 0,
+        migrateSkippedTweetsCount: 0,
+        migrateSkippedTweetsErrors: {},
+
+        totalMigratedPostsToDelete: 0,
+        migrateDeletePostsCount: 0,
+        migrateDeleteSkippedPostsCount: 0,
+
         errorsOccured: 0,
     };
 }
@@ -152,6 +170,8 @@ export type XTweetItem = {
     l: number; // likeCount
     r: number; // retweetCount
     d: string; // createdAt
+    i: string[]; // image filenames
+    v: string[]; // video filenames
 }
 
 export type XTweetItemArchive = {
@@ -288,7 +308,17 @@ export interface XImportArchiveResponse {
 export type XMigrateTweetCounts = {
     totalTweetsCount: number;
     totalRetweetsCount: number;
-    toMigrateTweetIDs: string[];
+    toMigrateTweets: XTweetItem[];
     cannotMigrateCount: number;
-    alreadyMigratedTweetIDs: string[];
+    alreadyMigratedTweets: XTweetItem[];
+}
+
+export function emptyXMigrateTweetCounts(): XMigrateTweetCounts {
+    return {
+        totalTweetsCount: 0,
+        totalRetweetsCount: 0,
+        toMigrateTweets: [],
+        cannotMigrateCount: 0,
+        alreadyMigratedTweets: []
+    }
 }

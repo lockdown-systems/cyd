@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, onMounted, onUnmounted, computed, inject, getCurrentInstance } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Pie } from 'vue-chartjs'
@@ -13,16 +13,13 @@ import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
-import { showQuestionOpenModePremiumFeature, openURL } from '../../util'
+import { setJobsType } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import LoadingComponent from '../shared_components/LoadingComponent.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
-
-// Get the global emitter
-const vueInstance = getCurrentInstance();
-const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 enum State {
     Loading,
@@ -30,21 +27,12 @@ enum State {
     Connecting,
     FinishInBrowser,
     Connected,
-    Migrating,
-    Deleting,
-    Finished,
 }
 
 const state = ref<State>(State.Loading);
 
 const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
-const migratedTweetsCount = ref(0);
-const skippedTweetsCount = ref(0);
-const skippedTweetsErrors = ref<Record<string, string>>({});
-const deletedPostsCount = ref(0);
-const skippedDeletePostsCount = ref(0);
-const shouldCancelMigration = ref(false);
 
 const blueskyHandle = ref('');
 const connectButtonText = ref('Connect');
@@ -52,9 +40,6 @@ const connectButtonText = ref('Connect');
 const hasSomeData = ref<boolean>(false);
 const lastImportArchive = ref<Date | null>(null);
 const lastBuildDatabase = ref<Date | null>(null);
-
-const xUpdateUserAuthenticated = inject('xUpdateUserAuthenticated') as () => Promise<void>;
-const xUpdateUserPremium = inject('xUpdateUserPremium') as () => Promise<void>;
 
 // Props
 const props = defineProps<{
@@ -119,67 +104,8 @@ const disconnectClicked = async () => {
 }
 
 const migrateClicked = async () => {
-    if (tweetCounts.value === null) {
-        await window.electron.showMessage("You don't have any tweets to migrate.", '');
-        return;
-    }
-
-    // Premium check
-    if (await window.electron.getMode() == "open") {
-        if (!await showQuestionOpenModePremiumFeature()) {
-            return;
-        }
-    }
-    // Otherwise, make sure the user is authenticated
-    else {
-        await xUpdateUserAuthenticated();
-        await xUpdateUserPremium();
-
-        if (!props.userAuthenticated || !props.userPremium) {
-            localStorage.setItem(`premiumCheckReason-${props.model.account.id}`, 'migrateTweetsToBluesky');
-            localStorage.setItem(`premiumTasks-${props.model.account.id}`, JSON.stringify(['Migrate tweets to Bluesky']));
-            emit('setState', XState.WizardCheckPremium);
-            return;
-        }
-    }
-
-    migratedTweetsCount.value = 0;
-    skippedTweetsCount.value = 0;
-    skippedTweetsErrors.value = {};
-
-    state.value = State.Migrating;
-    shouldCancelMigration.value = false;
-
-    for (const tweetID of tweetCounts.value.toMigrateTweetIDs) {
-        const resp = await window.electron.X.blueskyMigrateTweet(props.model.account.id, tweetID);
-        if (typeof resp === 'string') {
-            skippedTweetsCount.value++;
-            skippedTweetsErrors.value[tweetID] = resp;
-            console.error('Failed to migrate tweet', tweetID, resp);
-        } else {
-            migratedTweetsCount.value++;
-        }
-
-        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
-
-        // Cancel early
-        if (shouldCancelMigration.value) {
-            await window.electron.showMessage('Migration cancelled.', `You have already posted ${migratedTweetsCount.value} tweets into your Blueksy account.`);
-            state.value = State.Connected;
-            emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-            await loadTweetCounts();
-            return;
-        }
-    }
-
-    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-    await loadTweetCounts();
-    await window.electron.X.archiveBuild(props.model.account.id);
-    state.value = State.Finished;
-}
-
-const migrateCancelClicked = async () => {
-    shouldCancelMigration.value = true;
+    setJobsType(props.model.account.id, 'migrateBluesky');
+    emit('setState', XState.WizardReview);
 }
 
 const deleteClicked = async () => {
@@ -192,30 +118,8 @@ const deleteClicked = async () => {
         return;
     }
 
-    deletedPostsCount.value = 0;
-    skippedDeletePostsCount.value = 0;
-
-    state.value = State.Deleting;
-
-    for (const tweetID of tweetCounts.value.alreadyMigratedTweetIDs) {
-        if (await window.electron.X.blueskyDeleteMigratedTweet(props.model.account.id, tweetID)) {
-            deletedPostsCount.value++;
-        } else {
-            skippedDeletePostsCount.value++;
-            console.error('Failed to delete migrated tweet', tweetID);
-        }
-        emitter?.emit(`x-update-database-stats-${props.model.account.id}`);
-    }
-
-    emitter?.emit(`x-submit-progress-${props.model.account.id}`);
-
-    await loadTweetCounts();
-    await window.electron.X.archiveBuild(props.model.account.id);
-    state.value = State.Connected;
-}
-
-const viewBlueskyProfileClicked = async () => {
-    await openURL(`https://bsky.app/profile/${blueskyProfile.value?.handle}`);
+    setJobsType(props.model.account.id, 'migrateBlueskyDelete');
+    emit('setState', XState.WizardReview);
 }
 
 const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
@@ -290,9 +194,7 @@ onUnmounted(async () => {
                 :button-state="XState.WizardDatabase" @set-state="emit('setState', $event)" />
 
             <template v-if="state == State.Loading">
-                <p>
-                    Loading...
-                </p>
+                <LoadingComponent />
             </template>
             <template v-if="state == State.NotConnected || state == State.Connecting">
                 <form @submit.prevent="connectClicked">
@@ -327,8 +229,7 @@ onUnmounted(async () => {
                     </div>
                 </div>
             </template>
-            <template
-                v-else-if="state == State.Connected || state == State.Migrating || state == State.Deleting || state == State.Finished">
+            <template v-else-if="state == State.Connected">
                 <!-- Show the Bluesky account that is connected -->
                 <hr>
                 <p>
@@ -362,9 +263,9 @@ onUnmounted(async () => {
                     <div class="container">
                         <div class="row">
                             <div class="col">
-                                <p v-if="tweetCounts.toMigrateTweetIDs.length > 0">
+                                <p v-if="tweetCounts.toMigrateTweets.length > 0">
                                     <strong>You can migrate
-                                        {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }}
+                                        {{ tweetCounts.toMigrateTweets.length.toLocaleString() }}
                                         tweets into Bluesky.</strong>
                                 </p>
                                 <p v-else>
@@ -392,7 +293,7 @@ onUnmounted(async () => {
                                     </li>
                                     <li>
                                         <strong>
-                                            {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }}
+                                            {{ tweetCounts.alreadyMigratedTweets.length.toLocaleString() }}
                                             tweets
                                         </strong>
                                         have already been migrated.
@@ -404,7 +305,7 @@ onUnmounted(async () => {
                                     labels: ['Ready to Migrate', 'Already Migrated', 'Replies', 'Retweets',],
                                     datasets: [{
                                         backgroundColor: ['#377eb8', '#ff7f00', '#4daf4a', '#984ea3'],
-                                        data: [tweetCounts.toMigrateTweetIDs.length, tweetCounts.alreadyMigratedTweetIDs.length, tweetCounts.cannotMigrateCount, tweetCounts.totalRetweetsCount]
+                                        data: [tweetCounts.toMigrateTweets.length, tweetCounts.alreadyMigratedTweets.length, tweetCounts.cannotMigrateCount, tweetCounts.totalRetweetsCount]
                                     }],
                                 }" :options="{
                                     plugins: {
@@ -426,123 +327,16 @@ onUnmounted(async () => {
                     <div class="buttons mb-4">
                         <p>
                             <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                :disabled="tweetCounts.toMigrateTweetIDs.length == 0" @click="migrateClicked">
-                                <i class="fa-brands fa-bluesky" />
-                                Start Migrating to Bluesky
+                                :disabled="tweetCounts.toMigrateTweets.length == 0" @click="migrateClicked">
+                                <i class="fa-solid fa-forward" />
+                                Continue to Review
                             </button>
                         </p>
                         <p>
-                            <button v-if="tweetCounts.alreadyMigratedTweetIDs.length > 0" type="submit"
+                            <button v-if="tweetCounts.alreadyMigratedTweets.length > 0" type="submit"
                                 class="btn btn-sm btn-danger text-nowrap m-1" @click="deleteClicked">
                                 <i class="fa-solid fa-trash" />
                                 Delete Migrated Tweets from Bluesky
-                            </button>
-                        </p>
-                    </div>
-                </template>
-
-                <!-- Migrating: Migration progress bar, and cancel button -->
-                <template v-if="state == State.Migrating">
-                    <div v-if="tweetCounts !== null">
-                        <p class="text-center">
-                            Posted
-                            <b>
-                                {{ migratedTweetsCount.toLocaleString() }} of
-                                {{ tweetCounts.toMigrateTweetIDs.length.toLocaleString() }} tweets
-                            </b>
-                            to Bluesky.
-                            <small v-if="skippedTweetsCount > 0" class="text-muted">
-                                Skipped
-                                <b>
-                                    {{ skippedTweetsCount.toLocaleString() }} tweets
-                                </b>
-                                because of errors, but you can try again with them.
-                            </small>
-                        </p>
-                        <div class="progress flex-grow-1 me-2">
-                            <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweetIDs.length) * 100}%` }"
-                                :aria-valuenow="((migratedTweetsCount + skippedTweetsCount) / tweetCounts.toMigrateTweetIDs.length) * 100"
-                                aria-valuemin="0" aria-valuemax="100">
-                                {{ Math.round(((migratedTweetsCount + skippedTweetsCount) /
-                                    tweetCounts.toMigrateTweetIDs.length) * 100) }}%
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="buttons mb-4">
-                        <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="shouldCancelMigration"
-                            @click="migrateCancelClicked">
-                            <i class="fa-solid fa-xmark" />
-                            Cancel
-                        </button>
-                    </div>
-                </template>
-
-                <!-- Deleting: Deleting progress bar -->
-                <template v-if="state == State.Deleting">
-                    <div v-if="tweetCounts !== null">
-                        <p class="text-center">
-                            Deleted
-                            <b>
-                                {{ deletedPostsCount.toLocaleString() }} of
-                                {{ tweetCounts.alreadyMigratedTweetIDs.length.toLocaleString() }} migrated tweets
-                            </b>
-                            from Bluesky.
-                            <small v-if="skippedDeletePostsCount > 0" class="text-muted">
-                                Skipped
-                                <b>
-                                    {{ skippedDeletePostsCount.toLocaleString() }} migrated tweets
-                                </b>
-                                because of errors, but you can try again with them.
-                            </small>
-                        </p>
-                        <div class="progress flex-grow-1 me-2">
-                            <div class="progress-bar" role="progressbar"
-                                :style="{ width: `${((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweetIDs.length) * 100}%` }"
-                                :aria-valuenow="((deletedPostsCount + skippedDeletePostsCount) / tweetCounts.alreadyMigratedTweetIDs.length) * 100"
-                                aria-valuemin="0" aria-valuemax="100">
-                                {{ Math.round(((deletedPostsCount + skippedDeletePostsCount) /
-                                    tweetCounts.alreadyMigratedTweetIDs.length) * 100) }}%
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- Finished -->
-                <template v-if="state == State.Finished">
-                    <h2 class="mt-4">
-                        Finished migrating tweets to Bluesky!
-                    </h2>
-                    <p>
-                        You migrated <strong>{{ migratedTweetsCount.toLocaleString() }} tweets</strong> to Bluesky.
-                    </p>
-                    <div v-if="skippedTweetsCount > 0" class="alert alert-warning mt-4">
-                        <p>
-                            <strong>
-                                {{ skippedTweetsCount.toLocaleString() }} tweets
-                            </strong>
-                            were skipped because of errors:
-                        </p>
-                        <ul>
-                            <li v-for="(error, tweetID) in skippedTweetsErrors" :key="tweetID">
-                                <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="buttons mb-4">
-                        <p>
-                            <button type="submit" class="btn btn-success text-nowrap m-1"
-                                @click="viewBlueskyProfileClicked">
-                                <i class="fa-brands fa-bluesky" />
-                                Check out your Bluesky profile!
-                            </button>
-                        </p>
-                        <p>
-                            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                                @click="state = State.Connected;">
-                                <i class="fa-solid fa-forward" />
-                                Continue
                             </button>
                         </p>
                     </div>
@@ -551,5 +345,3 @@ onUnmounted(async () => {
         </div>
     </div>
 </template>
-
-<style scoped></style>

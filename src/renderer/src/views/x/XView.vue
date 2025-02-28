@@ -35,7 +35,7 @@ import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
-import XJobDeleteTweets from './XJobDeleteTweets.vue';
+import XDisplayTweet from './XDisplayTweet.vue';
 
 import type {
     Account,
@@ -46,8 +46,15 @@ import type {
 import type { DeviceInfo } from '../../types';
 import { AutomationErrorType } from '../../automation_errors';
 import { XViewModel, State, RunJobsState, FailureState, XViewModelState } from '../../view_models/XViewModel'
-import { setAccountRunning, showQuestionOpenModePremiumFeature, openURL } from '../../util';
+import {
+    setAccountRunning,
+    showQuestionOpenModePremiumFeature,
+    openURL,
+    setPremiumTasks,
+    getJobsType
+} from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
+import LoadingComponent from '../shared_components/LoadingComponent.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -74,6 +81,8 @@ const isPaused = ref<boolean>(false);
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
+
+const mediaPath = ref("");
 
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
@@ -252,7 +261,7 @@ emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
 
 const startJobs = async () => {
     // Premium check
-    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account?.xAccount)) {
+    if (model.value.account?.xAccount && await xRequiresPremium(model.value.account.id, model.value.account.xAccount)) {
         // In open mode, allow the user to continue
         if (await window.electron.getMode() == "open") {
             if (!await showQuestionOpenModePremiumFeature()) {
@@ -261,19 +270,28 @@ const startJobs = async () => {
         }
         // Otherwise, make sure the user is authenticated
         else {
+            // Determine the premium check reason and tasks -- defaults to deleting data
+            const jobsType = getJobsType(model.value.account.id);
+            let premiumTasks: string[] = [];
+            if (jobsType == 'migrateBluesky') {
+                premiumTasks = ['Migrate tweets to Bluesky'];
+            }
+
+            // If the user is not authenticated, go to premium check
             await updateUserAuthenticated();
             console.log("userAuthenticated", userAuthenticated.value);
             if (!userAuthenticated.value) {
-                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
+                setPremiumTasks(model.value.account.id, premiumTasks);
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
             }
 
+            // If the user is authenticated but does not have a premium plan, go to premium check
             await updateUserPremium();
             console.log("userPremium", userPremium.value);
             if (!userPremium.value) {
-                localStorage.setItem(`premiumCheckReason-${model.value.account.id}`, 'deleteData');
+                setPremiumTasks(model.value.account.id, premiumTasks);
                 model.value.state = State.WizardCheckPremium;
                 await startStateLoop();
                 return;
@@ -348,6 +366,8 @@ const debugModeDisable = async () => {
 // Lifecycle
 
 onMounted(async () => {
+    mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
+
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
 
@@ -409,9 +429,7 @@ onUnmounted(async () => {
             @on-remove-clicked="emit('onRemoveClicked')" />
 
         <template v-if="model.state == State.WizardStart">
-            <div class="text-center ms-2 mt-5">
-                <img src="/assets/cyd-loading.gif" alt="Loading">
-            </div>
+            <LoadingComponent />
         </template>
 
         <template v-if="model.state != State.WizardStart">
@@ -463,9 +481,9 @@ onUnmounted(async () => {
             }">
                 <div class="run-jobs-state-container d-flex">
                     <div class="run-jobs-state-content flex-grow-1">
-                        <XJobDeleteTweets
-                            v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks"
-                            :model="unref(model)" />
+                        <XDisplayTweet
+                            v-if="model.runJobsState == RunJobsState.DeleteTweets || model.runJobsState == RunJobsState.DeleteRetweets || model.runJobsState == RunJobsState.DeleteLikes || model.runJobsState == RunJobsState.DeleteBookmarks || model.runJobsState == RunJobsState.MigrateBluesky || model.runJobsState == RunJobsState.MigrateBlueskyDelete"
+                            :model="unref(model)" :media-path="mediaPath" />
                     </div>
                 </div>
             </div>
@@ -504,8 +522,8 @@ onUnmounted(async () => {
                             @set-state="setState($event)" @update-account="updateAccount"
                             @start-jobs-just-save="startJobsJustSave" @update-user-premium="updateUserPremium" />
 
-                        <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateDisplay" :model="unref(model)"
-                            :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                        <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateToBlueskyDisplay"
+                            :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @set-state="setState($event)" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"

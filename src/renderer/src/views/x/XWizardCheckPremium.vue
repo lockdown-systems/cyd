@@ -4,6 +4,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
+import { getJobsType, getPremiumTasks, clearPremiumTasks } from '../../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -23,7 +24,7 @@ const emit = defineEmits<{
     updateUserPremium: [],
 }>()
 
-const checkReason = ref<string>('');
+const jobsType = ref<string>('');
 const tasks = ref<string[]>([]);
 
 // Buttons
@@ -49,28 +50,22 @@ emitter?.on(`x-premium-check-failed-${props.model.account.id}`, async () => {
 });
 
 const backClicked = async () => {
-    if (checkReason.value == 'deleteData') {
+    if (jobsType.value == 'delete') {
         emit('setState', State.WizardReview);
-    } else if (checkReason.value == 'migrateTweetsToBluesky') {
-        emit('setState', State.WizardMigrate);
+    } else if (jobsType.value == 'migrateBluesky') {
+        emit('setState', State.WizardMigrateToBluesky);
     }
 };
 
 onMounted(async () => {
-    // Load the reason for this check
-    const premiumCheckReason = localStorage.getItem(`premiumCheckReason-${props.model.account.id}`);
-    console.log(`premiumCheckReason-${props.model.account.id}`, premiumCheckReason);
-    if (premiumCheckReason) {
-        checkReason.value = premiumCheckReason;
-        localStorage.removeItem(`premiumCheckReason-${props.model.account.id}`);
-    }
+    // Load the jobs type for this check
+    jobsType.value = getJobsType(props.model.account.id) || '';
 
     // See if there are any premium tasks in localStorage
-    const premiumTasks = localStorage.getItem(`premiumTasks-${props.model.account.id}`);
-    console.log(`premiumTasks-${props.model.account.id}`, premiumTasks);
+    const premiumTasks = getPremiumTasks(props.model.account.id);
     if (premiumTasks) {
-        tasks.value = JSON.parse(premiumTasks);
-        localStorage.removeItem(`premiumTasks-${props.model.account.id}`);
+        tasks.value = premiumTasks;
+        clearPremiumTasks(props.model.account.id);
     }
 });
 </script>
@@ -86,7 +81,7 @@ onMounted(async () => {
         </h2>
         <ul v-if="!userAuthenticated || !userPremium" class="features-list">
             <!-- X tasks -->
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsDaysOldEnabled"
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsDaysOldEnabled"
                 class="mb-1">
                 <div class="card">
                     <small class="card-body">
@@ -95,7 +90,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled"
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsRetweetsThresholdEnabled"
                 class="mb-1">
                 <div class="card">
                     <small class="card-body">
@@ -104,7 +99,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsLikesThresholdEnabled"
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteTweets && model.account.xAccount?.deleteTweetsLikesThresholdEnabled"
                 class="mb-1">
                 <div class="card">
                     <small class="card-body">
@@ -113,7 +108,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteRetweets && model.account.xAccount?.deleteRetweetsDaysOldEnabled"
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteRetweets && model.account.xAccount?.deleteRetweetsDaysOldEnabled"
                 class="mb-1">
                 <div class="card">
                     <small class="card-body">
@@ -122,7 +117,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.unfollowEveryone" class="mb-1">
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.unfollowEveryone" class="mb-1">
                 <div class="card">
                     <small class="card-body">
                         <i class="fa-solid fa-user-minus me-2" />
@@ -130,7 +125,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteLikes" class="mb-1">
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteLikes" class="mb-1">
                 <div class="card">
                     <small class="card-body">
                         <i class="fa-solid fa-heart-broken me-2" />
@@ -138,7 +133,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteBookmarks" class="mb-1">
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteBookmarks" class="mb-1">
                 <div class="card">
                     <small class="card-body">
                         <i class="fa-solid fa-bookmark me-2" />
@@ -146,7 +141,7 @@ onMounted(async () => {
                     </small>
                 </div>
             </li>
-            <li v-if="checkReason == 'deleteData' && model.account.xAccount?.deleteDMs" class="mb-1">
+            <li v-if="jobsType == 'delete' && model.account.xAccount?.deleteDMs" class="mb-1">
                 <div class="card">
                     <small class="card-body">
                         <i class="fa-solid fa-envelope me-2" />
@@ -172,10 +167,10 @@ onMounted(async () => {
             <p>Manage your account to upgrade to Premium.</p>
         </template>
         <template v-else>
-            <p v-if="checkReason == 'deleteData'">
+            <p v-if="jobsType == 'delete'">
                 Ready to delete your data from X? <em>Let's go!</em>
             </p>
-            <p v-if="checkReason == 'migrateTweetsToBluesky'">
+            <p v-if="jobsType == 'migrateBluesky'">
                 Ready to migrate your tweets into Bluesky? <em>Let's go!</em>
             </p>
         </template>
@@ -205,12 +200,12 @@ onMounted(async () => {
                 </div>
 
                 <div v-else>
-                    <button v-if="checkReason == 'deleteData'" type="submit"
-                        class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
+                    <button v-if="jobsType == 'delete'" type="submit" class="btn btn-lg btn-primary text-nowrap m-1"
+                        @click="backClicked">
                         <i class="fa-solid fa-user-ninja" />
                         Review Your Choices
                     </button>
-                    <button v-if="checkReason == 'migrateTweetsToBluesky'" type="submit"
+                    <button v-if="jobsType == 'migrateBluesky'" type="submit"
                         class="btn btn-lg btn-primary text-nowrap m-1" @click="backClicked">
                         <i class="fa-solid fa-user-ninja" />
                         Migrate to Bluesky
@@ -219,12 +214,12 @@ onMounted(async () => {
             </div>
 
             <div v-if="!userPremium" class="buttons">
-                <button v-if="checkReason == 'deleteData'" type="submit"
-                    class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                <button v-if="jobsType == 'delete'" type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                    @click="backClicked">
                     <i class="fa-solid fa-backward" />
                     Back to Review
                 </button>
-                <button v-if="checkReason == 'migrateTweetsToBluesky'" type="submit"
+                <button v-if="jobsType == 'migrateBluesky'" type="submit"
                     class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                     <i class="fa-solid fa-backward" />
                     Back to Migrate to Bluesky

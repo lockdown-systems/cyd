@@ -34,6 +34,8 @@ const getJobTypeText = (jobType: string) => {
         deleteBookmarks: 'Deleting bookmarks',
         deleteDMs: 'Deleting DMs',
         unfollowEveryone: 'Unfollowing everyone',
+        migrateBluesky: 'Migrating to Bluesky',
+        migrateBlueskyDelete: 'Deleting from Bluesky',
     };
     return jobTypeTexts[jobType] || jobType;
 };

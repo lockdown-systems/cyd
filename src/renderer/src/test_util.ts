@@ -19,6 +19,9 @@ export const stubElectron = () => {
         startPowerSaveBlocker: cy.stub().resolves(1),
         stopPowerSaveBlocker: cy.stub(),
         deleteSettingsAndRestart: cy.stub(),
+        onPowerMonitorSuspend: cy.stub(),
+        onPowerMonitorResume: cy.stub(),
+        getImageDataURIFromFile: cy.stub().resolves(''),
         database: {
             getConfig: cy.stub().resolves(null),
             setConfig: cy.stub(),
@@ -83,6 +86,17 @@ export const stubElectron = () => {
             getCookie: cy.stub().resolves(null),
             getConfig: cy.stub().resolves(null),
             setConfig: cy.stub(),
+            deleteConfig: cy.stub(),
+            deleteConfigLike: cy.stub(),
+            getImageDataURI: cy.stub().resolves(''),
+            blueskyGetProfile: cy.stub().resolves({}),
+            blueskyAuthorize: cy.stub().resolves({}),
+            blueskyCallback: cy.stub().resolves({}),
+            blueskyDisconnect: cy.stub().resolves({}),
+            blueskyGetTweetCounts: cy.stub().resolves({}),
+            blueskyMigrateTweet: cy.stub().resolves({}),
+            blueskyDeleteMigratedTweet: cy.stub().resolves({}),
+            getMediaPath: cy.stub().resolves(''),
         },
         Facebook: {
             resetProgress: cy.stub(),
@@ -96,7 +110,5 @@ export const stubElectron = () => {
             getConfig: cy.stub(),
             setConfig: cy.stub(),
         },
-        onPowerMonitorSuspend: cy.stub(),
-        onPowerMonitorResume: cy.stub(),
     };
 };
