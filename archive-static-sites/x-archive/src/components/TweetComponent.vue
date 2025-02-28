@@ -61,7 +61,7 @@ function atUriToBlueskyUrl(atUri: string): string {
             <!-- Media -->
             <div v-if="tweet.media.length > 0">
                 <div v-for="media in tweet.media" v-bind:key="media.filename" class="mt-2">
-                    <template v-if="media.mediaType == 'video'">
+                    <template v-if="media.mediaType === 'video' || media.mediaType === 'animated_gif'">
                         <video controls class="img-fluid">
                             <source :src="`./Tweet Media/${media.filename}`" type="video/mp4" />
                         </video>

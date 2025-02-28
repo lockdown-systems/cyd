@@ -96,7 +96,7 @@ const getMediaURL = (media: XAPILegacyTweetMedia): string => {
     let mediaURL = media["media_url_https"];
 
     // If it's a video, set mediaURL to the video variant with the highest bitrate
-    if (media["type"] == "video") {
+    if (media["type"] === "video") {
         let highestBitrate = 0;
         if (media["video_info"] && media["video_info"]["variants"]) {
             media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
@@ -114,6 +114,20 @@ const getMediaURL = (media: XAPILegacyTweetMedia): string => {
                 }
             });
         };
+    }
+    // If it's a GIF, there is only one video variant with a bitrate of 0, so select the first item
+    else if (media["type"] === "animated_gif") {
+        if (media["video_info"] && media["video_info"]["variants"]) {
+            mediaURL = media["video_info"]["variants"]?.[0]["url"];
+
+            // Stripe query parameters from the URL.
+            // For some reason video variants end with `?tag=12`, and when we try downloading with that
+            // it responds with 404.
+            const queryIndex = mediaURL.indexOf("?");
+            if (queryIndex > -1) {
+                mediaURL = mediaURL.substring(0, queryIndex);
+            }
+        }
     }
     return mediaURL;
 };
@@ -2364,7 +2378,7 @@ export class XAccountController {
         const filename = `${media["id_str"]}.${mediaExtension}`;
 
         let archiveMediaFilename = null;
-        if (media.type === "video" && media.video_info?.variants) {
+        if ((media.type === "video" || media.type === "animated_gif" ) && media.video_info?.variants) {
             // For videos, find the highest quality MP4 variant
             const mp4Variants = media.video_info.variants
                 .filter(v => v.content_type === "video/mp4")
