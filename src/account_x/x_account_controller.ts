@@ -887,6 +887,11 @@ export class XAccountController {
 
         // Loop over all URL items
         tweetLegacy.entities?.urls.forEach((url: XAPILegacyURL) => {
+            // Make sure we have all of the URL information before importing
+            if (!url["url"] || !url["display_url"] || !url["expanded_url"] || !url["indices"]) {
+                return;
+            }
+
             // Have we seen this URL before?
             const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]], "all") as XTweetURLRow[];
             if (existing.length > 0) {
@@ -2378,7 +2383,7 @@ export class XAccountController {
         const filename = `${media["id_str"]}.${mediaExtension}`;
 
         let archiveMediaFilename = null;
-        if ((media.type === "video" || media.type === "animated_gif" ) && media.video_info?.variants) {
+        if ((media.type === "video" || media.type === "animated_gif") && media.video_info?.variants) {
             // For videos, find the highest quality MP4 variant
             const mp4Variants = media.video_info.variants
                 .filter(v => v.content_type === "video/mp4")
