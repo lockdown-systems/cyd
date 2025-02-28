@@ -82,8 +82,6 @@ const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
-const mediaPath = ref("");
-
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
@@ -208,6 +206,14 @@ const onReportBug = async () => {
     });
 }
 
+// Media path
+const mediaPath = ref("");
+
+const reloadMediaPath = async () => {
+    mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
+    console.log('mediaPath', mediaPath.value);
+};
+
 // User variables
 const userAuthenticated = ref(false);
 const userPremium = ref(false);
@@ -257,6 +263,10 @@ emitter?.on('signed-out', async () => {
 
 emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
     await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
+});
+
+emitter?.on(`x-reload-media-path-${props.account.id}`, async () => {
+    await reloadMediaPath();
 });
 
 const startJobs = async () => {
@@ -366,7 +376,7 @@ const debugModeDisable = async () => {
 // Lifecycle
 
 onMounted(async () => {
-    mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
+    await reloadMediaPath();
 
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;

@@ -659,6 +659,9 @@ export class XViewModel extends BaseViewModel {
         await window.electron.database.saveAccount(JSON.stringify(this.account));
         this.log("login", "saved user information");
 
+        // Tell XView to reload mediaPath, now that we have a username
+        this.emitter?.emit(`x-reload-media-path-${this.account.id}`);
+
         await this.waitForPause();
     }
 
