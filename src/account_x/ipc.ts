@@ -482,10 +482,19 @@ export const defineIPCX = () => {
         }
     });
 
-    ipcMain.handle('X:blueskyDeleteMigratedTweet', async (_, accountID: number, tweetID: string): Promise<boolean> => {
+    ipcMain.handle('X:blueskyDeleteMigratedTweet', async (_, accountID: number, tweetID: string): Promise<boolean | string> => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.blueskyDeleteMigratedTweet(tweetID);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:getMediaPath', async (_, accountID: number): Promise<string> => {
+        try {
+            const controller = getXAccountController(accountID);
+            return await controller.getMediaPath();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

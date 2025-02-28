@@ -92,6 +92,15 @@ contextBridge.exposeInMainWorld('electron', {
     deleteSettingsAndRestart: () => {
         ipcRenderer.invoke('deleteSettingsAndRestart')
     },
+    onPowerMonitorSuspend: (callback: () => void) => {
+        ipcRenderer.on('powerMonitor:suspend', callback);
+    },
+    onPowerMonitorResume: (callback: () => void) => {
+        ipcRenderer.on('powerMonitor:resume', callback);
+    },
+    getImageDataURIFromFile: (filename: string): Promise<string> => {
+        return ipcRenderer.invoke('getImageDataURIFromFile', filename)
+    },
 
     // Database functions
     database: {
@@ -319,9 +328,12 @@ contextBridge.exposeInMainWorld('electron', {
         blueskyMigrateTweet: (accountID: number, tweetID: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyMigrateTweet', accountID, tweetID)
         },
-        blueskyDeleteMigratedTweet: (accountID: number, tweetID: string): Promise<boolean> => {
+        blueskyDeleteMigratedTweet: (accountID: number, tweetID: string): Promise<boolean | string> => {
             return ipcRenderer.invoke('X:blueskyDeleteMigratedTweet', accountID, tweetID)
-        }
+        },
+        getMediaPath: (accountID: number): Promise<string> => {
+            return ipcRenderer.invoke('X:getMediaPath', accountID);
+        },
     },
     Facebook: {
         resetProgress: (accountID: number): Promise<FacebookProgress> => {
@@ -354,12 +366,5 @@ contextBridge.exposeInMainWorld('electron', {
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('Facebook:setConfig', accountID, key, value);
         },
-    },
-    // Handle events from the main process
-    onPowerMonitorSuspend: (callback: () => void) => {
-        ipcRenderer.on('powerMonitor:suspend', callback);
-    },
-    onPowerMonitorResume: (callback: () => void) => {
-        ipcRenderer.on('powerMonitor:resume', callback);
     },
 })

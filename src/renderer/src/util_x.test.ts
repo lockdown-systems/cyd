@@ -2,6 +2,28 @@ import { test, expect } from 'vitest';
 import { XAccount } from '../../shared_types';
 
 import * as UtilX from './util_x';
+import { setJobsType } from './util'
+
+const localStorageMock = (() => {
+    let store: { [key: string]: string } = {};
+
+    return {
+        getItem: (key: string) => store[key] || null,
+        setItem: (key: string, value: string) => {
+            store[key] = value;
+        },
+        removeItem: (key: string) => {
+            delete store[key];
+        },
+        clear: () => {
+            store = {};
+        }
+    };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock
+});
 
 function createXAccountFromDefaults(changes: object) {
     return {
@@ -43,12 +65,10 @@ function createXAccountFromDefaults(changes: object) {
     }
 }
 
+const accountID = 1;
+
 test('UtilX.xRequiresPremium() returns false when saving', async () => {
     const xAccount: XAccount = createXAccountFromDefaults({
-        // saveMyData is true, archive and delete are false
-        deleteMyData: false,
-        saveMyData: true,
-        archiveMyData: false,
         // Save everything
         archiveTweets: true,
         archiveTweetsHTML: true,
@@ -56,29 +76,23 @@ test('UtilX.xRequiresPremium() returns false when saving', async () => {
         archiveBookmarks: true,
         archiveDMs: true,
     })
-    expect(await UtilX.xRequiresPremium(xAccount)).toBe(false);
+    setJobsType(accountID, 'save');
+    expect(await UtilX.xRequiresPremium(accountID, xAccount)).toBe(false);
 })
 
 test('UtilX.xRequiresPremium() returns false when archiving', async () => {
     const xAccount: XAccount = createXAccountFromDefaults({
-        // archiveMyData is true, save and delete are false
-        deleteMyData: false,
-        saveMyData: false,
-        archiveMyData: true,
         // Save everything
         archiveTweetsHTML: true,
         archiveBookmarks: true,
         archiveDMs: true,
     })
-    expect(await UtilX.xRequiresPremium(xAccount)).toBe(false);
+    setJobsType(accountID, 'archive');
+    expect(await UtilX.xRequiresPremium(accountID, xAccount)).toBe(false);
 })
 
 test('UtilX.xRequiresPremium() returns false for only deleting tweets and retweets', async () => {
     const xAccount: XAccount = createXAccountFromDefaults({
-        // deleteMyData is true, save and archive are false
-        deleteMyData: true,
-        saveMyData: false,
-        archiveMyData: false,
         // Only delete tweets and retweets, no other settings
         deleteTweets: true,
         deleteRetweets: true,
@@ -91,17 +105,14 @@ test('UtilX.xRequiresPremium() returns false for only deleting tweets and retwee
         deleteDMs: false,
         unfollowEveryone: false
     })
-    expect(await UtilX.xRequiresPremium(xAccount)).toBe(false);
+    setJobsType(accountID, 'delete');
+    expect(await UtilX.xRequiresPremium(accountID, xAccount)).toBe(false);
 })
 
 test('UtilX.xRequiresPremium() returns true when choosing any delete options', async () => {
     const deleteOptions = ['deleteTweetsDaysOldEnabled', 'deleteTweetsLikesThresholdEnabled', 'deleteTweetsRetweetsThresholdEnabled', 'deleteRetweetsDaysOldEnabled', 'deleteLikes', 'deleteBookmarks', 'deleteDMs', 'unfollowEveryone'];
     for (const option of deleteOptions) {
         const xAccount: XAccount = createXAccountFromDefaults({
-            // deleteMyData is true, save and archive are false
-            deleteMyData: true,
-            saveMyData: false,
-            archiveMyData: false,
             // delete tweets and retweets
             deleteTweets: true,
             deleteRetweets: true,
@@ -109,9 +120,17 @@ test('UtilX.xRequiresPremium() returns true when choosing any delete options', a
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (xAccount as any)[option] = true;
 
+        setJobsType(accountID, 'delete');
+
         // Check if the account requires premium
-        const requiresPremium = await UtilX.xRequiresPremium(xAccount);
+        const requiresPremium = await UtilX.xRequiresPremium(accountID, xAccount);
         console.log(`option: ${option}, requiresPremium: ${requiresPremium}`);
         expect(requiresPremium).toBe(true);
     }
+})
+
+test('UtilX.xRequiresPremium() returns true for migrating to Bluesky', async () => {
+    const xAccount: XAccount = createXAccountFromDefaults({})
+    setJobsType(accountID, 'migrateBluesky');
+    expect(await UtilX.xRequiresPremium(accountID, xAccount)).toBe(true);
 })

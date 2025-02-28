@@ -9,7 +9,7 @@ import {
     State,
     FailureState
 } from '../../view_models/XViewModel'
-import { openURL } from '../../util';
+import { openURL, getJobsType } from '../../util';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -32,16 +32,26 @@ const emit = defineEmits<{
 
 // Buttons
 const runAgainClicked = async () => {
+    // Keep the same review type in localStorage
     emit('setState', State.WizardReview);
 };
 
 const nextClicked = async () => {
-    if (props.model.account.xAccount?.saveMyData) {
+    if (jobsType.value == 'save') {
         emit('setState', State.WizardStart);
     } else {
         emit('onRefreshClicked');
     }
 };
+
+const viewBlueskyProfileClicked = async () => {
+    const blueskyProfile = await window.electron.X.blueskyGetProfile(props.model.account.id);
+    if (!blueskyProfile) {
+        await window.electron.showError('Something is wrong. No Bluesky profile found for this account.');
+        return;
+    }
+    await openURL(`https://bsky.app/profile/${blueskyProfile.handle}`);
+}
 
 const submitErrorReportClicked = async () => {
     hideErrors.value = true;
@@ -61,22 +71,26 @@ const updateArchivePath = async () => {
 };
 
 const hideErrors = ref(false);
+const jobsType = ref('');
 
 onMounted(async () => {
+    jobsType.value = getJobsType(props.model.account.id) || '';
+    console.log(jobsType.value);
+
     await props.model.reloadAccount();
     await updateArchivePath();
 
     // See if we need to show any of the failure alerts
-    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && props.failureStateIndexLikes_FailedToRetryAfterRateLimit && props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveTweets && props.model.account.xAccount?.archiveLikes) {
+    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && props.failureStateIndexLikes_FailedToRetryAfterRateLimit && jobsType.value == 'save' && props.model.account.xAccount?.archiveTweets && props.model.account.xAccount?.archiveLikes) {
         showFailureBoth.value = true;
         showFailureTweets.value = false;
         showFailureLikes.value = false;
     }
-    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveTweets)) {
+    if (props.failureStateIndexTweets_FailedToRetryAfterRateLimit && (jobsType.value == 'save' && props.model.account.xAccount?.archiveTweets)) {
         showFailureTweets.value = true;
         showFailureLikes.value = false;
         showFailureBoth.value = false;
-    } if (props.failureStateIndexLikes_FailedToRetryAfterRateLimit && (props.model.account.xAccount?.saveMyData && props.model.account.xAccount?.archiveLikes)) {
+    } if (props.failureStateIndexLikes_FailedToRetryAfterRateLimit && (jobsType.value == 'save' && props.model.account.xAccount?.archiveLikes)) {
         showFailureLikes.value = true;
         showFailureTweets.value = false;
         showFailureBoth.value = false;
@@ -90,8 +104,8 @@ onMounted(async () => {
 
 <template>
     <div class="finished">
-        <div v-if="model.account.xAccount?.saveMyData" class="container mt-3">
-            <div class="finished-save">
+        <div v-if="jobsType == 'save'" class="container mt-3">
+            <div class="finished">
                 <h2>You just saved:</h2>
                 <ul>
                     <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
@@ -139,8 +153,8 @@ onMounted(async () => {
                 </p>
             </div>
         </div>
-        <div v-if="model.account.xAccount?.archiveMyData" class="container mt-3">
-            <div class="finished-archive">
+        <div v-if="jobsType == 'archive'" class="container mt-3">
+            <div class="finished">
                 <h2>You just archived:</h2>
                 <ul>
                     <li v-if="model.account.xAccount?.archiveTweetsHTML">
@@ -164,8 +178,8 @@ onMounted(async () => {
                 </p>
             </div>
         </div>
-        <div v-if="model.account.xAccount?.deleteMyData" class="container mt-3">
-            <div class="finished-delete">
+        <div v-if="jobsType == 'delete'" class="container mt-3">
+            <div class="finished">
                 <h2>You just deleted:</h2>
                 <ul>
                     <li v-if="model.account.xAccount?.deleteTweets || (model.progress.tweetsDeleted ?? 0) > 0">
@@ -194,6 +208,74 @@ onMounted(async () => {
                         Unfollowed <strong>{{ model.progress.accountsUnfollowed.toLocaleString() }}</strong> accounts
                     </li>
                 </ul>
+            </div>
+        </div>
+
+        <div v-if="jobsType == 'migrateBluesky'" class="container mt-3">
+            <div class="finished">
+                <h2>You just migrated:</h2>
+                <ul>
+                    <li>
+                        <i class="fa-brands fa-bluesky bluesky-bullet" />
+                        <strong>{{ model.progress.migrateTweetsCount.toLocaleString() }}</strong> tweets to
+                        Bluesky
+                    </li>
+                </ul>
+
+                <div v-if="model.progress.migrateSkippedTweetsCount > 0" class="alert alert-warning mt-4">
+                    <p>
+                        <strong>
+                            {{ model.progress.migrateSkippedTweetsCount.toLocaleString() }} tweets
+                        </strong>
+                        were skipped because of errors:
+                    </p>
+                    <ul>
+                        <li v-for="(error, tweetID) in model.progress.migrateSkippedTweetsErrors" :key="tweetID">
+                            <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-success" @click="viewBlueskyProfileClicked">
+                        <i class="fa-brands fa-bluesky" />
+                        View Bluesky Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="jobsType == 'migrateBlueskyDelete'" class="container mt-3">
+            <div class="finished">
+                <h2>You just deleted:</h2>
+                <ul>
+                    <li>
+                        <i class="fa-brands fa-bluesky bluesky-bullet" />
+                        <strong>{{ model.progress.migrateDeletePostsCount.toLocaleString() }}</strong> posts that were
+                        migrated to Bluesky
+                    </li>
+                </ul>
+
+                <div v-if="model.progress.migrateDeleteSkippedPostsCount > 0" class="alert alert-warning mt-4">
+                    <p>
+                        <strong>
+                            {{ model.progress.migrateDeleteSkippedPostsCount.toLocaleString() }} tweets
+                        </strong>
+                        were skipped because of errors:
+                    </p>
+                    <ul>
+                        <li v-for="(error, tweetID) in model.progress.migrateSkippedTweetsErrors" :key="tweetID">
+                            <small><strong>{{ tweetID }}</strong>: {{ error }}</small>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-success" @click="viewBlueskyProfileClicked">
+                        <i class="fa-brands fa-bluesky" />
+                        View Bluesky Profile
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -227,11 +309,11 @@ onMounted(async () => {
             <template v-if="(
                 failureStateIndexTweets_FailedToRetryAfterRateLimit &&
                 (
-                    (model.account.xAccount?.saveMyData && model.account.xAccount?.archiveTweets) ||
-                    (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteTweets))
+                    (jobsType == 'save' && model.account.xAccount?.archiveTweets) ||
+                    (jobsType == 'delete' && model.account.xAccount?.deleteTweets))
             ) || (
                     failureStateIndexLikes_FailedToRetryAfterRateLimit &&
-                    ((model.account.xAccount?.saveMyData && model.account.xAccount?.archiveLikes) || (model.account.xAccount?.deleteMyData && model.account.xAccount?.deleteLikes))
+                    ((jobsType == 'save' && model.account.xAccount?.archiveLikes) || (jobsType == 'delete' && model.account.xAccount?.deleteLikes))
                 )">
                 <button type="submit" class="btn btn-primary text-nowrap m-1" @click="runAgainClicked">
                     <i class="fa-solid fa-repeat" />
@@ -239,11 +321,13 @@ onMounted(async () => {
                 </button>
 
                 <button class="btn btn-secondary" @click="nextClicked">
+                    <i class="fa-solid fa-forward" />
                     Continue
                 </button>
             </template>
             <template v-else>
                 <button class="btn btn-primary" @click="nextClicked">
+                    <i class="fa-solid fa-forward" />
                     Continue
                 </button>
             </template>
@@ -262,17 +346,22 @@ onMounted(async () => {
     margin-right: 5px;
 }
 
-.finished-save ul,
-.finished-archive ul,
-.finished-delete ul {
+.bluesky-bullet {
+    color: #0091ff;
+    margin-right: 5px;
+}
+
+.finished ul,
+.finished ul,
+.finished ul {
     list-style-type: none;
     padding-left: 0;
     margin-left: 1.5em;
 }
 
-.finished-save li,
-.finished-archive li,
-.finished-delete li {
+.finished li,
+.finished li,
+.finished li {
     margin-bottom: 0.2rem;
 }
 </style>

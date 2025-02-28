@@ -29,6 +29,8 @@ export const PlausibleEvents = Object.freeze({
     X_JOB_STARTED_DELETE_DMS: 'X Job Started: deleteDMs',
     X_JOB_STARTED_ARCHIVE_BUILD: 'X Job Started: archiveBuild',
     X_JOB_STARTED_UNFOLLOW_EVERYONE: 'X Job Started: unfollowEveryone',
+    X_JOB_STARTED_MIGRATE_BLUESKY: 'X Job Started: migrateBluesky',
+    X_JOB_STARTED_MIGRATE_BLUESKY_DELETE: 'X Job Started: migrateBlueskyDelete',
 
     FACEBOOK_USER_SIGNED_IN: 'Facebook User Signed In',
     FACEBOOK_JOB_STARTED_LOGIN: 'Facebook Job Started: login',

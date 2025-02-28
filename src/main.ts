@@ -18,6 +18,7 @@ import {
     FileFilter
 } from 'electron';
 import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
+import mime from 'mime-types';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
@@ -551,6 +552,17 @@ async function createWindow() {
         ipcMain.handle('stopPowerSaveBlocker', async (_, powerSaveBlockerID: number) => {
             powerSaveBlocker.stop(powerSaveBlockerID)
             log.info('Stopped power save blocker with ID:', powerSaveBlockerID);
+        });
+
+        ipcMain.handle('getImageDataURIFromFile', async (_, filename: string): Promise<string> => {
+            try {
+                const mimeType = mime.lookup(filename);
+                const data = fs.readFileSync(filename);
+                return `data:${mimeType};base64,${data.toString('base64')}`;
+            } catch (error) {
+                console.error('Failed to get image data URI:', error);
+                return "";
+            }
         });
 
         // Other IPC events
