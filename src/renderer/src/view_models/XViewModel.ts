@@ -459,6 +459,19 @@ export class XViewModel extends BaseViewModel {
             //     </div>
             // </section>
 
+            // Check if we get more tweets by scrolling down, even without clicking any buttons
+            let numberOfDivsBefore = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
+            await this.sleep(2000);
+            await this.scrollUp(2000);
+            await this.sleep(2000);
+            await this.scrollToBottom();
+            await this.sleep(2000);
+            let numberOfDivsAfter = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
+            if (numberOfDivsAfter > numberOfDivsBefore) {
+                // More tweets loaded
+                return true;
+            }
+
             // If the retry button does not exist, try scrolling up and down again to trigger it
             // The retry button should be in the last cellInnerDiv, and it should have only 1 button in it
             if (await this.countSelectorsWithinElementLastFound('main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]', 'button') != 1) {
@@ -473,7 +486,7 @@ export class XViewModel extends BaseViewModel {
             }
 
             // Count divs before clicking retry button
-            let numberOfDivsBefore = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
+            numberOfDivsBefore = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
             if (numberOfDivsBefore > 0) {
                 // The last one is the one with the button
                 numberOfDivsBefore--;
@@ -484,7 +497,7 @@ export class XViewModel extends BaseViewModel {
             await this.sleep(2000);
 
             // Count divs after clicking retry button
-            const numberOfDivsAfter = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
+            numberOfDivsAfter = await this.countSelectorsFound('section div[data-testid=cellInnerDiv]');
 
             // If there are more divs after, it means more tweets loaded
             return numberOfDivsAfter > numberOfDivsBefore;
