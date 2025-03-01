@@ -40,44 +40,47 @@ const backClicked = async () => {
             <ul class="fb-archive-steps">
                 <li>
                     <strong>Visit <a href="#" @click="openURL('https://accountscenter.facebook.com/info_and_permissions/dyi')">
-                        https://accountscenter.facebook.com/info_and_permissions/dyi</a>.</strong><br>
+                        https://accountscenter.facebook.com/info_and_permissions/dyi</a></strong>
+                    <br>
                     <small class="text-muted">You might need to sign in to Facebook first.</small>
                 </li>
                 <li>
-                    Click the <strong>"Download or transfer information"</strong> button.
+                    <strong>Click the "Download or transfer information" button.</strong>
+                    <br>
+                    <small class="text-muted">This will take you to the download options screen.</small>
                 </li>
                 <li>
-                    At the <strong>"How much information do you want?"</strong> screen, select <strong>"Available
-                        information"</strong>.
+                    <strong>At the "How much information do you want?" screen, select "Available information".</strong>
+                    <br>
+                    <small class="text-muted">This ensures we get all your posts and media.</small>
                 </li>
                 <li>
-                    At the <strong>"What do you want to do with your information?"</strong> screen, select <strong>"Download
-                        to device"</strong>.
+                    <strong>At the "What do you want to do with your information?" screen, select "Download to device".</strong>
+                    <br>
+                    <small class="text-muted">This will prepare your data for download.</small>
                 </li>
                 <li>
-                    At the <strong>"Create Files"</strong> screen, select:
+                    <strong>At the "Create Files" screen, select these options:</strong>
                     <br>
-                    <br>
-                    <strong>Date range:</strong> All time
-                    <br>
-                    <strong>Notify:</strong> Set an email address where you can check for your archive
-                    <br>
-                        <strong>Format:</strong> JSON
-                        <br>
-                    <strong>Media quality:</strong> High
-                    <br>
-                    <br>
-                    Finally, click <strong>"Create Files"</strong>.
+                    <small class="text-muted">
+                        <b>Date range:</b> All time<br>
+                        <b>Notify:</b> Provide an email address where you can check for your archive<br>
+                        <b>Format:</b> JSON<br>
+                        <b>Media quality:</b> High<br>
+                    </small>
                 </li>
                 <li>
-                    <strong>Be patient.</strong><br>
-                    <small class="text-muted">After requesting your archive, you'll need to wait <strong>at least a
-                            day</strong>, and maybe longer. Sorry!</small>
+                    <strong>Finally, click "Create Files"</strong>
                 </li>
                 <li>
-                    <strong>When it's ready, download the ZIP file from Facebook.</strong><br>
-                    <small class="text-muted">After you've followed these steps and you have your archive ZIP file,
-                        click the button below.</small>
+                    <strong>Be patient.</strong>
+                    <br>
+                    <small class="text-muted">After requesting your archive, you'll need to wait <strong>at least a day</strong>, and maybe longer. Sorry!</small>
+                </li>
+                <li>
+                    <strong>When it's ready, download the ZIP file from Facebook.</strong>
+                    <br>
+                    <small class="text-muted">After you've followed these steps and you have your archive ZIP file, click the button below.</small>
                 </li>
             </ul>
 
