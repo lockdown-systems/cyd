@@ -49,7 +49,7 @@ const backClicked = async () => {
                         a verification code sent to your email, or do other things to verify your identity.</small>
                 </li>
                 <li>
-                    <strong>Click the "Download and transfer information" button.</strong>
+                    <strong>Click the "Download or transfer information" button.</strong>
                 </li>
                 <li>
                     <strong>Be patient.</strong><br>
