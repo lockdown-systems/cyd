@@ -44,12 +44,30 @@ const backClicked = async () => {
                     <small class="text-muted">You might need to sign in to Facebook first.</small>
                 </li>
                 <li>
-                    <strong>Prove your identity.</strong><br>
-                    <small class="text-muted">You'll probably need to type your Facebook password. You might also need to get
-                        a verification code sent to your email, or do other things to verify your identity.</small>
+                    Click the <strong>"Download or transfer information"</strong> button.
                 </li>
                 <li>
-                    <strong>Click the "Download or transfer information" button.</strong>
+                    At the <strong>"How much information do you want?"</strong> screen, select <strong>"Available
+                        information"</strong>.
+                </li>
+                <li>
+                    At the <strong>"What do you want to do with your information?"</strong> screen, select <strong>"Download
+                        to device"</strong>.
+                </li>
+                <li>
+                    At the <strong>"Create Files"</strong> screen, select:
+                    <br>
+                    <br>
+                    <strong>Date range:</strong> All time
+                    <br>
+                    <strong>Notify:</strong> Set an email address where you can check for your archive
+                    <br>
+                        <strong>Format:</strong> JSON
+                        <br>
+                    <strong>Media quality:</strong> High
+                    <br>
+                    <br>
+                    Finally, click <strong>"Create Files"</strong>.
                 </li>
                 <li>
                     <strong>Be patient.</strong><br>
