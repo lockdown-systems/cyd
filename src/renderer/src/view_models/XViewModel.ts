@@ -1204,7 +1204,13 @@ Hang on while I scroll down to your earliest direct message conversations...`;
             // Load the messages page
             await this.loadURLWithRateLimit("https://x.com/messages");
             this.log("runJobIndexConversations", "loaded messages page, waiting for conversations to load");
-            await this.sleep(2000);
+
+            // Just for good measure, scroll down, wait, and scroll back up, to encourage the web page to load conversations
+            await this.sleep(1000);
+            await this.scrollToBottom();
+            await this.sleep(1000);
+            await this.scrollUp(2000);
+            await this.sleep(1000);
 
             // If the conversations list is empty, there is no search text field
             try {
