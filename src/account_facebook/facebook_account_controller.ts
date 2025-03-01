@@ -366,26 +366,23 @@ export class FacebookAccountController {
 
         // Load the username
         let profileId: string;
+
+
         try {
-            const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.html");
-            const html = fs.readFileSync(profileInformationPath, 'utf-8');
-            const dom = new JSDOM(html);
+            const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.json");
+            const profileData = JSON.parse(fs.readFileSync(profileInformationPath, 'utf-8'));
 
-            const profileCell = Array.from(dom.window.document.querySelectorAll('td')).find(
-                td => td.textContent?.includes('facebook.com/profile.php?id=')
-            );
-
-            if (!profileCell) {
+            if (!profileData.profile_v2?.profile_uri) {
                 return {
                     status: "error",
-                    errorMessage: "Could not find profile ID in archive",
+                    errorMessage: "Could not find profile URI in archive",
                     importCount: importCount,
                     skipCount: skipCount,
                 };
             }
 
-            const profileUrl = profileCell.querySelector('a')?.href;
-            profileId = profileUrl?.split('id=')[1] || '';
+            const profileUrl = profileData.profile_v2.profile_uri;
+            profileId = profileUrl.split('id=')[1] || '';
 
             if (!profileId) {
                 return {
@@ -398,7 +395,7 @@ export class FacebookAccountController {
         } catch (e) {
             return {
                 status: "error",
-                errorMessage: "Error parsing profile information HTML",
+                errorMessage: "Error parsing profile information JSON",
                 importCount: importCount,
                 skipCount: skipCount,
             };
@@ -409,7 +406,7 @@ export class FacebookAccountController {
             const postsFilenames = await glob(
                 [
                     // TODO: for really big Facebook archives, are there more files here?
-                    path.join(archivePath, "your_facebook_activity", "posts", "your_posts__check_ins__photos_and_videos_1.html"),
+                    path.join(archivePath, "your_facebook_activity", "posts", "your_posts__check_ins__photos_and_videos_1.json"),
                 ],
                 {
                     windowsPathsNoEscape: os.platform() == 'win32'
@@ -426,48 +423,36 @@ export class FacebookAccountController {
 
             // Go through each file and import the posts
             for (let i = 0; i < postsFilenames.length; i++) {
-                // Load the data from the file
                 const postsData: FacebookArchivePost[] = [];
                 try {
                     const postsFile = fs.readFileSync(postsFilenames[i], 'utf8');
-                    const dom = new JSDOM(postsFile);
+                    const posts = JSON.parse(postsFile);
 
-                    // TODO: better ways to grab the data than using these classes?
-                    // Find all post containers with class "_a6-g"
-                    const postElements = dom.window.document.querySelectorAll('._a6-g');
+                    for (const post of posts) {
+                        // Check if it's a shared post by looking for external_context in attachments
+                        // (since only the shared posts have external_context so that's how we can distinguish them)
+                        const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
 
-                    for (const postElement of postElements) {
-                        // Status updates have exactly one text div inside _2pin
-                        const contentDiv = postElement.querySelector('._2pin');
-                        const directTextDiv = contentDiv?.querySelector(':scope > div');
-                        const hasComplexStructure = directTextDiv?.querySelector('div');
-
-                        if (hasComplexStructure) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping post with complex nested structure");
-                            continue; // Skip posts with complex nested structure (shared posts, groups, etc)
+                        // Skip if it's a group post, shares a group, etc. We will extend the import logic
+                        // to include other data types in the future.
+                        if (post.attachments && !isSharedPost) {
+                            log.info("FacebookAccountController.importFacebookArchive: skipping post");
+                            continue;
                         }
 
-                        const titleElement = postElement.querySelector('._a6-h');
-                        const contentElement = postElement.querySelector('._2pin');
-                        const dateElement = postElement.querySelector('._a72d');
-                        const linkElement = postElement.querySelector('._a6-o a');
+                        const postText = post.data?.find((d: any) => d.post)?.post || '';
 
-                        if (titleElement && contentElement && dateElement && linkElement) {
-                            const href = linkElement.getAttribute('href');
-                            const id = href ? new URL(href).searchParams.get('l') || '' : '';
-
-                            postsData.push({
-                                id_str: id,
-                                title: titleElement.textContent || '',
-                                full_text: contentElement.textContent || '',
-                                created_at: dateElement.textContent || '',
-                            });
-                        }
-                    };
+                        postsData.push({
+                            id_str: post.timestamp.toString(),
+                            title: post.title || '',
+                            full_text: postText,
+                            created_at: new Date(post.timestamp * 1000).toISOString(),
+                        });
+                    }
                 } catch (e) {
                     return {
                         status: "error",
-                        errorMessage: "Error parsing HTML in exported posts",
+                        errorMessage: "Error parsing JSON in exported posts",
                         importCount: importCount,
                         skipCount: skipCount,
                     };
@@ -483,19 +468,8 @@ export class FacebookAccountController {
                             exec(this.db, 'DELETE FROM post WHERE postID = ?', [post.id_str]);
                         }
 
-                        // Check if post has media and call importXArchiveMedia
-                        //let hasMedia: boolean = false;
-                        // TODO: implement for facebook
-                        // if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
-                        //     hasMedia = true;
-                        //     this.importXArchiveMedia(tweet, archivePath);
-                        // }
-
-                        // Check if post has urls and call importXArchiveURLs
-                        // TODO: implement for facebook
-                        // if (tweet.entities?.urls && tweet.entities?.urls?.length) {
-                        //     this.importXArchiveURLs(tweet);
-                        // }
+                        // TODO: implement media import for facebook
+                        // TODO: implement urls import for facebook
 
                         // Import it
                         exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
