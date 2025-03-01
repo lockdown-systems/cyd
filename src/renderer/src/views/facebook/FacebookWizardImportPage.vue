@@ -70,12 +70,12 @@ const backClicked = async () => {
                     </small>
                 </li>
                 <li>
-                    <strong>Finally, click "Create Files"</strong>
+                    <strong>Finally, click "Create Files".</strong>
                 </li>
                 <li>
                     <strong>Be patient.</strong>
                     <br>
-                    <small class="text-muted">After requesting your archive, you'll need to wait <strong>at least a day</strong>, and maybe longer. Sorry!</small>
+                    <small class="text-muted">After requesting your archive, you'll need to wait <strong>several hours</strong>, and maybe a day or longer. Sorry!</small>
                 </li>
                 <li>
                     <strong>When it's ready, download the ZIP file from Facebook.</strong>
