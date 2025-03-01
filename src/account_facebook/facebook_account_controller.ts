@@ -7,7 +7,6 @@ import { session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import unzipper from 'unzipper';
-import { JSDOM } from 'jsdom';
 import { glob } from 'glob';
 
 import {
@@ -430,8 +429,9 @@ export class FacebookAccountController {
 
                     for (const post of posts) {
                         // Skip if no post text
-                        const postText = post.data?.find((d: any) => d.post)?.post;
+                        const postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
                         if (!postText) {
+                            log.info("FacebookAccountController.importFacebookArchive: skipping post with no text");
                             continue;
                         }
 
