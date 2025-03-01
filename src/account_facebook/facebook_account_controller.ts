@@ -247,7 +247,8 @@ export class FacebookAccountController {
         log.info(`FacebookAccountController.archiveBuild: archive has ${posts.length} posts`);
 
         // Save the archive object to a file using streaming
-        const assetsPath = path.join(getAccountDataPath("Facebook", this.account.accountID), "assets");
+        const accountPath = path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`));
+        const assetsPath = path.join(accountPath, "assets");
         if (!fs.existsSync(assetsPath)) {
             fs.mkdirSync(assetsPath);
         }
@@ -281,7 +282,7 @@ export class FacebookAccountController {
         // Unzip facebook-archive.zip to the account data folder using unzipper
         const archiveZipPath = path.join(getResourcesPath(), "facebook-archive.zip");
         const archiveZip = await unzipper.Open.file(archiveZipPath);
-        await archiveZip.extract({ path: getAccountDataPath("Facebook", this.account.accountID) });
+        await archiveZip.extract({ path: accountPath });
     }
 
     async writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
