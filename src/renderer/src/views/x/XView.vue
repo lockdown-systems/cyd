@@ -214,6 +214,9 @@ const reloadMediaPath = async () => {
     console.log('mediaPath', mediaPath.value);
 };
 
+// Enable/disable clicking in the webview
+const clickingEnabled = ref(false);
+
 // User variables
 const userAuthenticated = ref(false);
 const userPremium = ref(false);
@@ -458,9 +461,10 @@ onUnmounted(async () => {
                 <div class="d-flex align-items-center">
                     <!-- Job status -->
                     <XJobStatusComponent v-if="currentJobs.length > 0 && model.state == State.RunJobs"
-                        :jobs="currentJobs" :is-paused="isPaused" class="job-status-component" @on-pause="model.pause()"
-                        @on-resume="model.resume()" @on-cancel="emit('onRefreshClicked')"
-                        @on-report-bug="onReportBug" />
+                        :jobs="currentJobs" :is-paused="isPaused" :clicking-enabled="clickingEnabled"
+                        class="job-status-component" @on-pause="model.pause()" @on-resume="model.resume()"
+                        @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug"
+                        @on-clicking-enabled="clickingEnabled = true" @on-clicking-disabled="clickingEnabled = false" />
                 </div>
             </div>
 
@@ -479,7 +483,8 @@ onUnmounted(async () => {
             :class="{
                 'hidden': !model.showBrowser,
                 'webview-automation-border': model.showAutomationNotice,
-                'webview-input-border': !model.showAutomationNotice
+                'webview-input-border': !model.showAutomationNotice,
+                'webview-clickable': clickingEnabled
             }" />
 
         <template v-if="model.state != State.WizardStart">
