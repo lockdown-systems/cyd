@@ -1560,7 +1560,7 @@ export class XAccountController {
             streamWriter.write(',\n');
             await this.writeJSONArray(streamWriter, formattedBookmarks, "bookmarks");
             streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, Object.values(formattedUsers), "users");
+            await this.writeJSONObject(streamWriter, formattedUsers, "users");
             streamWriter.write(',\n');
             await this.writeJSONArray(streamWriter, formattedConversations, "conversations");
             streamWriter.write(',\n');
@@ -1590,6 +1590,18 @@ export class XAccountController {
             streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
         }
         streamWriter.write('  ]');
+    }
+
+    async writeJSONObject(streamWriter: fs.WriteStream, item: object, propertyName: string) {
+        streamWriter.write(`  "${propertyName}": {\n`);
+        const keys = Object.keys(item);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const suffix = i < keys.length - 1 ? ',\n' : '\n';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            streamWriter.write(`    "${key}": ${JSON.stringify((item as any)[key])}${suffix}`);
+        }
+        streamWriter.write('  }');
     }
 
     // When you start deleting tweets, return a list of tweets to delete
