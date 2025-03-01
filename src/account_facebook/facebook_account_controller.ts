@@ -429,18 +429,25 @@ export class FacebookAccountController {
                     const posts = JSON.parse(postsFile);
 
                     for (const post of posts) {
-                        // Check if it's a shared post by looking for external_context in attachments
-                        // (since only the shared posts have external_context so that's how we can distinguish them)
-                        const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
-
-                        // Skip if it's a group post, shares a group, etc. We will extend the import logic
-                        // to include other data types in the future.
-                        if (post.attachments && !isSharedPost) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping post");
+                        // Skip if no post text
+                        const postText = post.data?.find((d: any) => d.post)?.post;
+                        if (!postText) {
                             continue;
                         }
 
-                        const postText = post.data?.find((d: any) => d.post)?.post || '';
+                        // Check if it's a shared post by looking for external_context in attachments
+                        const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
+
+                        // Skip if it's a shared/repost, group post, shares a group, etc. We will extend the import logic
+                        // to include other data types in the future.
+                        if (isSharedPost) {
+                            log.info("FacebookAccountController.importFacebookArchive: skipping shared post");
+                            continue;
+                        }
+                        else if (post.attachments) {
+                            log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type");
+                            continue;
+                        }
 
                         postsData.push({
                             id_str: post.timestamp.toString(),
