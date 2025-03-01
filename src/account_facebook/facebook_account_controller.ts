@@ -301,8 +301,15 @@ export class FacebookAccountController {
             }
         }
 
-        // Make sure profile_information.html exists and is readable
-        const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.html");
+        // Check if there's a profile_information.html file. This means the person downloaded the archive using HTML, not JSON.
+        const profileHtmlInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.html");
+        if (fs.existsSync(profileHtmlInformationPath)) {
+            log.error(`FacebookAccountController.verifyFacebookArchive: file is in wrong format, expected JSON, not HTML: ${profileHtmlInformationPath}`);
+            return `The file ${profileHtmlInformationPath} file is in the wrong format. Request a JSON archive.`;
+        }
+
+        // Make sure profile_information.json exists and is readable
+        const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.json");
         if (!fs.existsSync(profileInformationPath)) {
             log.error(`FacebookAccountController.verifyFacebookArchive: file does not exist: ${profileInformationPath}`);
             return `The file ${profileInformationPath} doesn't exist.`;
@@ -314,23 +321,17 @@ export class FacebookAccountController {
             return `The file ${profileInformationPath} is not readable.`;
         }
 
-        // Make sure the profile_information.html file belongs to the right account
+        // Make sure the profile_information.json file belongs to the right account
         try {
-            const html = fs.readFileSync(profileInformationPath, 'utf-8');
-            const dom = new JSDOM(html);
+            const profileData = JSON.parse(fs.readFileSync(profileInformationPath, 'utf-8'));
 
-            // Find the profile URL in the table
-            const profileCell = Array.from(dom.window.document.querySelectorAll('td')).find(
-                td => td.textContent?.includes('facebook.com/profile.php?id=')
-            );
-
-            if (!profileCell) {
-                log.error("FacebookAccountController.verifyFacebookArchive: Could not find profile ID in archive");
+            if (!profileData.profile_v2?.profile_uri) {
+                log.error("FacebookAccountController.verifyFacebookArchive: Could not find profile URI in archive");
                 return "Could not find profile ID in archive";
             }
 
-            const profileUrl = profileCell.querySelector('a')?.href;
-            const profileId = profileUrl?.split('id=')[1];
+            const profileUrl = profileData.profile_v2.profile_uri;
+            const profileId = profileUrl.split('id=')[1];
 
             if (!profileId) {
                 log.error("FacebookAccountController.verifyFacebookArchive: Could not extract profile ID from URL");
@@ -338,11 +339,11 @@ export class FacebookAccountController {
             }
 
             if (profileId !== this.account?.accountID) {
-                log.error(`FacebookAccountController.verifyFacebookArchive: profile_information.html does not belong to the right account`);
+                log.error(`FacebookAccountController.verifyFacebookArchive: profile_information.json does not belong to the right account`);
                 return `This archive is for @${profileId}, not @${this.account?.accountID}.`;
             }
         } catch {
-            return "Error parsing JSON in profile_information.html";
+            return "Error parsing JSON in profile_information.json";
         }
 
         return null;
