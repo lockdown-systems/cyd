@@ -1203,13 +1203,16 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
             // Load the messages page
             await this.loadURLWithRateLimit("https://x.com/messages");
+            this.log("runJobIndexConversations", "loaded messages page, waiting for conversations to load");
+            await this.sleep(2000);
 
             // If the conversations list is empty, there is no search text field
             try {
-                // Wait for the search text field to appear with a 2 second timeout
-                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 2000);
+                // Wait for the search text field to appear with a 10 second timeout
+                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 10000);
             } catch (e) {
                 // There are no conversations
+                this.log("runJobIndexConversations", ["no conversations found", e]);
                 await this.waitForLoadingToFinish();
                 this.progress.isIndexConversationsFinished = true;
                 this.progress.conversationsIndexed = 0;
@@ -1292,6 +1295,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
                 break;
             } else {
                 if (!moreToScroll) {
+                    this.log("runJobIndexConversations", "we scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time");
                     // We scrolled to the bottom but we're not finished, so scroll up a bit to trigger infinite scroll next time
                     await this.sleep(500);
                     await this.scrollUp(1000);
