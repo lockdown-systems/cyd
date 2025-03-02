@@ -533,10 +533,11 @@ export class FacebookAccountController {
 
                         // Check if it's a shared post by looking for external_context in attachments
                         const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
+                        log.info("FacebookAccountController.importFacebookArchive: isSharedPost", isSharedPost);
 
                         // Skip if it's a group post, shares a group, etc. We will extend the import logic
                         // to include other data types in the future.
-                        if (post.attachments) {
+                        if (post.attachments && !isSharedPost) {
                             log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type");
                             continue;
                         }
@@ -572,11 +573,12 @@ export class FacebookAccountController {
                         // TODO: implement urls import for facebook
 
                         // Import it
-                        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)', [
+                        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, isReposted, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?)', [
                             post.id_str,
                             new Date(post.created_at),
                             post.title,
                             post.full_text,
+                            post.isReposted ? 1 : 0,
                             new Date(),
                         ]);
                         importCount++;
