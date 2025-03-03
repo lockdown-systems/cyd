@@ -38,7 +38,15 @@ export interface FacebookArchivePost {
     full_text: string;
     title: string;
     isReposted: boolean;
+    media?: FacebookArchiveMedia[];  // Media attachments
     // lang: string;
+}
+
+export interface FacebookArchiveMedia {
+    uri: string;
+    type: 'photo' | 'video';
+    description?: string;  // Some media items have descriptions
+    creationTimestamp?: number;  // From media.creation_timestamp
 }
 
 export interface FacebookPostRow {
