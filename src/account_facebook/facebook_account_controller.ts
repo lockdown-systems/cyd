@@ -184,7 +184,7 @@ export class FacebookAccountController {
             {
                 name: "20250302_add_media_table",
                 sql: [
-                    `CREATE TABLE media (
+                    `CREATE TABLE post_media (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         mediaId TEXT NOT NULL UNIQUE,
                         postId TEXT NOT NULL,
@@ -574,10 +574,11 @@ export class FacebookAccountController {
                                 }
                             }
                         }
+                        log.info("FacebookAccountController.importFacebookArchive: media", media);
 
                         // Skip if it's a group post, shares a group, etc. We will extend the import logic
                         // to include other data types in the future.
-                        if (post.attachments && !isSharedPost) {
+                        if (post.attachments && !isSharedPost && media.length === 0) {
                             log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type");
                             continue;
                         }
@@ -610,10 +611,6 @@ export class FacebookAccountController {
                             exec(this.db, 'DELETE FROM post WHERE postID = ?', [post.id_str]);
                         }
 
-                        if (post.media && post.media.length > 0) {
-                            await this.importFacebookArchiveMedia(post.id_str, post.media, archivePath);
-                        }
-
                         // TODO: implement urls import for facebook
 
                         // Import it
@@ -625,9 +622,15 @@ export class FacebookAccountController {
                             post.isReposted ? 1 : 0,
                             new Date(),
                         ]);
+
+                        if (post.media && post.media.length > 0) {
+                            log.info("FacebookAccountController.importFacebookArchive: importing media for post", post.id_str);
+                            await this.importFacebookArchiveMedia(post.id_str, post.media, archivePath);
+                        }
                         importCount++;
                     });
                 } catch (e) {
+                    log.error("FacebookAccountController.importFacebookArchive: error importing posts", e);
                     return {
                         status: "error",
                         errorMessage: "Error importing posts: " + e,
@@ -665,13 +668,12 @@ export class FacebookAccountController {
             }
 
             const destPath = path.join(mediaDir, path.basename(mediaItem.uri));
-
             try {
                 await fs.promises.copyFile(sourcePath, destPath);
 
                 // Store media info in database
                 exec(this.db,
-                    'INSERT INTO media (mediaId, postId, type, uri, description, createdAt, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO post_media (mediaId, postId, type, uri, description, createdAt, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
                     [
                         mediaId,
                         postId,
