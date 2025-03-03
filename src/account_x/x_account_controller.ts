@@ -3275,7 +3275,7 @@ export class XAccountController {
     }
 
     async getMediaPath(): Promise<string> {
-        if (!this.account) {
+        if (!this.account || !this.account.username) {
             return "";
         }
         const accountDataPath = getAccountDataPath("X", this.account.username);
