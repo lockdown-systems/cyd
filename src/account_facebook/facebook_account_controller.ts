@@ -615,26 +615,3 @@ export class FacebookAccountController {
         };
     }
 }
-
-const getPostType = (element: Element): 'status' | 'shared_post' | 'shared_group' | 'other' => {
-    const pinDivs = element.querySelectorAll('._2pin');
-
-    if (pinDivs.length === 1) {
-        return 'status';
-    }
-
-    if (pinDivs.length === 2) {
-        // Check for group name structure
-        const firstPinContent = pinDivs[0].textContent?.trim();
-        if (firstPinContent && !firstPinContent.includes('div')) {
-            return 'shared_group';
-        }
-        // Shared posts have empty nested divs
-        const emptyDivs = pinDivs[0].querySelectorAll('div div div div');
-        if (emptyDivs.length > 0) {
-            return 'shared_post';
-        }
-    }
-
-    return 'other';
-};
