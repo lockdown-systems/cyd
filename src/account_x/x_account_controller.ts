@@ -2900,7 +2900,7 @@ export class XAccountController {
 
             // Make sure it's not too big
             if (mediaData.length > maxSize) {
-                log.warn(`XAccountController.blueskyMigrateTweet: media file too large: ${tweetMedia[0].filename}`);
+                log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${tweetMedia[0].filename}`);
                 shouldContinue = false;
             }
 
@@ -2908,20 +2908,20 @@ export class XAccountController {
                 // Determine the MIME type
                 const mimeType = mime.lookup(mediaPath);
                 if (!mimeType) {
-                    log.warn(`XAccountController.blueskyMigrateTweet: could not determine MIME type for media file: ${tweetMedia[0].filename}`);
+                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${tweetMedia[0].filename}`);
                     shouldContinue = false;
                 }
                 if (mimeType != 'video/mp4') {
-                    log.warn(`XAccountController.blueskyMigrateTweet: video file is not mp4: ${tweetMedia[0].filename}`);
+                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${tweetMedia[0].filename}`);
                     shouldContinue = false;
                 }
             }
 
             if (shouldContinue) {
                 // Upload the video
-                log.info(`XAccountController.blueskyMigrateTweet: uploading video ${tweetMedia[0].filename}`);
+                log.info(`XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${tweetMedia[0].filename}`);
                 const resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
-                log.info(`XAccountController.blueskyMigrateTweet: uploaded video ${tweetMedia[0].filename} response`, resp);
+                log.info(`XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${tweetMedia[0].filename} response`, resp);
                 const videoBlob: BlobRef = resp.data.blob;
 
                 // Remove the link from the tweet text
@@ -2991,14 +2991,14 @@ export class XAccountController {
 
                 // Make sure it's not too big
                 if (mediaData.length > maxSize) {
-                    log.warn(`XAccountController.blueskyMigrateTweet: media file too large: ${media.filename}`);
+                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${media.filename}`);
                     continue;
                 }
 
                 // Determine the MIME type
                 const mimeType = mime.lookup(mediaPath);
                 if (!mimeType) {
-                    log.warn(`XAccountController.blueskyMigrateTweet: could not determine MIME type for media file: ${media.filename}`);
+                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${media.filename}`);
                     continue;
                 }
 
@@ -3006,9 +3006,9 @@ export class XAccountController {
                 const dimensions = sizeOf(mediaPath);
 
                 // Upload the image
-                log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
+                log.info(`XAccountController.blueskyMigrateTweetBuildRecord: uploading image ${media.filename}`);
                 const resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
-                log.info(`XAccountController.blueskyMigrateTweet: uploaded image ${media.filename} response`, resp);
+                log.info(`XAccountController.blueskyMigrateTweetBuildRecord: uploaded image ${media.filename} response`, resp);
 
                 // Add it to the list
                 images.push({
