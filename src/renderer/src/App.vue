@@ -350,6 +350,11 @@ body {
   opacity: 0.7;
 }
 
+.webview-automation-border.webview-clickable {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .webview-input-border {
   border: 5px solid #c1fac4;
 }

@@ -312,6 +312,23 @@ export interface XAPITimeline {
 }
 
 export interface XAPIData {
+    errors?: [
+        {
+            message: string;
+            locations: {
+                line: number;
+                column: number;
+            }[];
+            path: string[];
+            extensions: any;
+            code: number;
+            kind: string;
+            name: string;
+            source: string;
+            retry_after: number;
+            tracing: any;
+        }
+    ],
     data: {
         user: {
             result: {
@@ -329,11 +346,15 @@ export interface XAPIBookmarksData {
 }
 
 export function isXAPIBookmarksData(body: any): body is XAPIBookmarksData {
-    return body.data && body.data.bookmark_timeline_v2;
+    return !!(body.data && body.data.bookmark_timeline_v2);
+}
+
+export function isXAPIError(body: any): body is XAPIData {
+    return !!(body.errors && body.errors.length > 0);
 }
 
 export function isXAPIData(body: any): body is XAPIData {
-    return body.data && body.data.user && body.data.user.result && body.data.user.result.timeline_v2;
+    return !!(body.data && body.data.user && body.data.user.result && body.data.user.result.timeline_v2);
 }
 
 // Index direct messages

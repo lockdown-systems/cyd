@@ -87,6 +87,7 @@ import {
     XArchiveLikeContainer,
     isXArchiveLikeContainer,
     isXAPIBookmarksData,
+    isXAPIError,
     isXAPIData,
 } from './types'
 import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
@@ -96,7 +97,7 @@ const getMediaURL = (media: XAPILegacyTweetMedia): string => {
     let mediaURL = media["media_url_https"];
 
     // If it's a video, set mediaURL to the video variant with the highest bitrate
-    if (media["type"] == "video") {
+    if (media["type"] === "video") {
         let highestBitrate = 0;
         if (media["video_info"] && media["video_info"]["variants"]) {
             media["video_info"]["variants"].forEach((variant: XAPILegacyTweetMediaVideoVariant) => {
@@ -114,6 +115,20 @@ const getMediaURL = (media: XAPILegacyTweetMedia): string => {
                 }
             });
         };
+    }
+    // If it's a GIF, there is only one video variant with a bitrate of 0, so select the first item
+    else if (media["type"] === "animated_gif") {
+        if (media["video_info"] && media["video_info"]["variants"]) {
+            mediaURL = media["video_info"]["variants"]?.[0]["url"];
+
+            // Stripe query parameters from the URL.
+            // For some reason video variants end with `?tag=12`, and when we try downloading with that
+            // it responds with 404.
+            const queryIndex = mediaURL.indexOf("?");
+            if (queryIndex > -1) {
+                mediaURL = mediaURL.substring(0, queryIndex);
+            }
+        }
     }
     return mediaURL;
 };
@@ -689,6 +704,10 @@ export class XAccountController {
                 timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
             } else if (isXAPIData(body)) {
                 timeline = (body as XAPIData).data.user.result.timeline_v2;
+            } else if (isXAPIError(body)) {
+                log.error('XAccountController.indexParseTweetsResponseData: XAPIError', body);
+                this.mitmController.responseData[responseIndex].processed = true;
+                return false;
             } else {
                 throw new Error('Invalid response data');
             }
@@ -873,6 +892,11 @@ export class XAccountController {
 
         // Loop over all URL items
         tweetLegacy.entities?.urls.forEach((url: XAPILegacyURL) => {
+            // Make sure we have all of the URL information before importing
+            if (!url["url"] || !url["display_url"] || !url["expanded_url"] || !url["indices"]) {
+                return;
+            }
+
             // Have we seen this URL before?
             const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]], "all") as XTweetURLRow[];
             if (existing.length > 0) {
@@ -1536,7 +1560,7 @@ export class XAccountController {
             streamWriter.write(',\n');
             await this.writeJSONArray(streamWriter, formattedBookmarks, "bookmarks");
             streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, Object.values(formattedUsers), "users");
+            await this.writeJSONObject(streamWriter, formattedUsers, "users");
             streamWriter.write(',\n');
             await this.writeJSONArray(streamWriter, formattedConversations, "conversations");
             streamWriter.write(',\n');
@@ -1566,6 +1590,18 @@ export class XAccountController {
             streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
         }
         streamWriter.write('  ]');
+    }
+
+    async writeJSONObject(streamWriter: fs.WriteStream, item: object, propertyName: string) {
+        streamWriter.write(`  "${propertyName}": {\n`);
+        const keys = Object.keys(item);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const suffix = i < keys.length - 1 ? ',\n' : '\n';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            streamWriter.write(`    "${key}": ${JSON.stringify((item as any)[key])}${suffix}`);
+        }
+        streamWriter.write('  }');
     }
 
     // When you start deleting tweets, return a list of tweets to delete
@@ -2364,7 +2400,7 @@ export class XAccountController {
         const filename = `${media["id_str"]}.${mediaExtension}`;
 
         let archiveMediaFilename = null;
-        if (media.type === "video" && media.video_info?.variants) {
+        if ((media.type === "video" || media.type === "animated_gif") && media.video_info?.variants) {
             // For videos, find the highest quality MP4 variant
             const mp4Variants = media.video_info.variants
                 .filter(v => v.content_type === "video/mp4")
@@ -3275,7 +3311,7 @@ export class XAccountController {
     }
 
     async getMediaPath(): Promise<string> {
-        if (!this.account) {
+        if (!this.account || !this.account.username) {
             return "";
         }
         const accountDataPath = getAccountDataPath("X", this.account.username);
