@@ -14,3 +14,15 @@ npm run build
 Set-Location -Path "dist"
 Compress-Archive -Path * -DestinationPath "../../../build/x-archive.zip" -Force
 Set-Location -Path "../.."
+
+# Build the Facebook archive static site
+Write-Output ">> Building Facebook archive static site..."
+Set-Location -Path "facebook-archive"
+Remove-Item -Recurse -Force "dist" -ErrorAction SilentlyContinue
+npm install
+npm run build
+
+# Zip it up
+Set-Location -Path "dist"
+Compress-Archive -Path * -DestinationPath "../../../build/facebook-archive.zip" -Force
+Set-Location -Path "../.."

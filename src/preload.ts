@@ -20,6 +20,7 @@ import {
     // Facebook
     FacebookJob,
     FacebookProgress,
+    FacebookImportArchiveResponse,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -365,6 +366,18 @@ contextBridge.exposeInMainWorld('electron', {
         },
         setConfig: (accountID: number, key: string, value: string): Promise<void> => {
             return ipcRenderer.invoke('Facebook:setConfig', accountID, key, value);
+        },
+        unzipFacebookArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('Facebook:unzipFacebookArchive', accountID, archivePath);
+        },
+        deleteUnzippedFacebookArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('Facebook:deleteUnzippedFacebookArchive', accountID, archivePath);
+        },
+        verifyFacebookArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+            return ipcRenderer.invoke('Facebook:verifyFacebookArchive', accountID, archivePath);
+        },
+        importFacebookArchive: (accountID: number, archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> => {
+            return ipcRenderer.invoke('Facebook:importFacebookArchive', accountID, archivePath, dataType);
         },
     },
 })
