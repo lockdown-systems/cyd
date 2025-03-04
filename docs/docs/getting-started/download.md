@@ -14,7 +14,7 @@ There are currently no plans to make a mobile verson of Cyd for Android or iPhon
 
 If you're using Windows or Mac, download Cyd from the main website:
 
-<a class="button button--primary button--lg" href="https://cyd.social/download/">Download Cyd for Windows and Mac</a>
+<a class="button button--primary button--lg" href="https://cyd.social/download/">Download Cyd</a>
 
 ## Cyd for Linux
 

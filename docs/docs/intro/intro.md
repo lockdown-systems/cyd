@@ -32,8 +32,8 @@ Cyd is a desktop app for Windows, Mac, and Linux. Right now it lets you control 
 
 - Install Cyd and open it on your computer.
 - Login to your X account.
-- Tell Cyd exactly what you want to delete from that account.
-- Sit back and watch as Cyd does exactly what you ask of it. Cyd can delete your tweets, likes, bookmarks, and direct messages, and unfollow everyone.
+- Tell Cyd exactly what you want to delete from that account. Sit back and watch as Cyd does exactly what you ask of it. Cyd can delete your tweets, likes, bookmarks, and direct messages, and unfollow everyone.
+- If you want, tell Cyd to migrate your old tweets to Bluesky. Sit back and watch as Cyd does exactly what you ask of it.
 
 ## We Can't Access Your Accounts or Your Data
 
@@ -64,3 +64,7 @@ Cyd runs directly on your computer and not on our servers. Cyd is designed so th
 [**I deleted thousands of tweets from X with this new tool - for free**](https://www.zdnet.com/article/i-deleted-thousands-of-tweets-from-x-with-this-new-tool-for-free/) by Jason Perlow
 
 > Now you can easily migrate from X with this powerful tool that deletes tweets, likes, and DMs, while backing up your data for a fresh start elsewhere. 
+
+---
+
+Ready to get started? [Download Cyd now](../getting-started/download).

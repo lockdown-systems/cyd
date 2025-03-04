@@ -36,7 +36,7 @@ From here, you can do the following:
 
 ### Advanced settings
 
-The advanced settings dialog will look like this:
+The advanced settings dialog looks like this:
 
 ![Advanced settings dialog](./img/settings.png)
 

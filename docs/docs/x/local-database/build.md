@@ -10,7 +10,7 @@ When you build your database from scratch, Cyd learns your tweet history the sam
 
 Unfortunately, X will only show you about between 2,000 and 3,000 of your most recent tweets and likes in this way. Even if you delete all of those, X simply won't show you any of your tweet or like history on your profile page anymore, even if you have thousands of older tweets.
 
-If your account has a lot of data, you should import data from an X archive instead.
+If your account has a lot of data, you should [import data from an X archive](./import) instead.
 
 :::
 
