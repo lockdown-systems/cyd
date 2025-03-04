@@ -1,0 +1,38 @@
+{
+    "errors": [
+        {
+            "message": "Timeout: Unspecified",
+            "locations": [
+                {
+                    "line": 3,
+                    "column": 5
+                }
+            ],
+            "path": [
+                "user",
+                "result"
+            ],
+            "extensions": {
+                "name": "TimeoutError",
+                "source": "Server",
+                "retry_after": 0,
+                "code": 29,
+                "kind": "ServiceLevel",
+                "tracing": {
+                    "trace_id": "c685ec3405bf1b67"
+                }
+            },
+            "code": 29,
+            "kind": "ServiceLevel",
+            "name": "TimeoutError",
+            "source": "Server",
+            "retry_after": 0,
+            "tracing": {
+                "trace_id": "c685ec3405bf1b67"
+            }
+        }
+    ],
+    "data": {
+        "user": {}
+    }
+}

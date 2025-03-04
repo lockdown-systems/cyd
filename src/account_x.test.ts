@@ -8,9 +8,7 @@ import {
     XAPILegacyUser,
     XAPILegacyTweet,
     XAPIConversation,
-    XAPIUser
-} from './account_x';
-import {
+    XAPIUser,
     XTweetRow,
     XTweetMediaRow,
     XTweetURLRow,
@@ -18,6 +16,9 @@ import {
     XConversationRow,
     XConversationParticipantRow,
     XMessageRow,
+    isXAPIError,
+    isXAPIBookmarksData,
+    isXAPIData,
 } from './account_x';
 
 // Mock the util module
@@ -801,6 +802,31 @@ test("XAccountController.indexParsedTweets() should index and parse links", asyn
     expect(linkRows[1].expandedURL).toBe('https://en.wikipedia.org/wiki/Sun');
     expect(linkRows[2].expandedURL).toBe('https://x.com/nexamind91326/status/1890513848811090236');
 })
+
+test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIBookmarksData(data)).toBe(true);
+    expect(isXAPIError(data)).toBe(false);
+    expect(isXAPIData(data)).toBe(false);
+})
+
+test("types.isXAPIError() should recognize errors", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesError.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIError(data)).toBe(true);
+    expect(isXAPIBookmarksData(data)).toBe(false);
+    expect(isXAPIData(data)).toBe(false);
+})
+
+test("types.isXAPIData() should recognize data", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIData(data)).toBe(true);
+    expect(isXAPIBookmarksData(data)).toBe(false);
+    expect(isXAPIError(data)).toBe(false);
+})
+
 
 // Testing the X migrations
 
