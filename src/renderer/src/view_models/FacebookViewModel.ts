@@ -504,6 +504,12 @@ export class FacebookViewModel extends BaseViewModel {
                 case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
+
+                    if (!this.account.facebookAccount?.accountID || this.account.facebookAccount?.accountID === "0") {
+                        this.state = State.Login;
+                        break;
+                    }
+
                     this.state = State.WizardImportOrBuild;
                     break;
 
