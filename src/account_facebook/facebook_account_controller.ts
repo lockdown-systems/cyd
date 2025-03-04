@@ -230,10 +230,16 @@ export class FacebookAccountController {
         // const accountUserID = accountUser?.userID;
 
         const postRowToArchivePost = (post: FacebookPostRow): FacebookArchiveTypes.Post => {
+            const decodeUnicode = (text: string): string => {
+                return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+                    String.fromCharCode(parseInt(hex, 16))
+                );
+            };
+
             const archivePost: FacebookArchiveTypes.Post = {
                 postID: post.postID,
                 createdAt: post.createdAt,
-                text: post.text,
+                text: decodeUnicode(post.text),
                 archivedAt: post.archivedAt,
             };
             return archivePost
