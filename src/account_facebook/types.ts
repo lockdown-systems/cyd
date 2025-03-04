@@ -63,3 +63,17 @@ export interface FacebookPostRow {
     hasMedia: boolean;
     isReposted: boolean;
 }
+
+export interface FacebookPostMediaRow {
+    mediaId: string;
+    postId: string;  // Foreign key to post.postID
+    type: string;
+    uri: string;
+    description: string | null;
+    createdAt: string | null;
+    addedToDatabaseAt: string;
+}
+
+export interface FacebookPostWithMedia extends FacebookPostRow {
+    media?: FacebookPostMediaRow[];
+}

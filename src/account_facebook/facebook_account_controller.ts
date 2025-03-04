@@ -33,6 +33,7 @@ import {
     convertFacebookJobRowToFacebookJob,
     FacebookArchivePost,
     FacebookArchiveMedia,
+    FacebookPostWithMedia,
     FacebookPostRow
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
@@ -251,14 +252,38 @@ export class FacebookAccountController {
         }
 
         log.info("FacebookAccountController.archiveBuild: building archive");
-
-        // Posts
-        const posts: FacebookPostRow[] = exec(
+        // Posts with optional media
+        const postsFromDb = exec(
             this.db,
-            "SELECT * FROM post ORDER BY createdAt DESC",
+            `SELECT
+                p.*,
+                CASE
+                    WHEN pm.mediaId IS NOT NULL
+                    THEN GROUP_CONCAT(
+                        json_object(
+                            'mediaId', pm.mediaId,
+                            'postId', pm.postId,
+                            'type', pm.type,
+                            'uri', pm.uri,
+                            'description', pm.description,
+                            'createdAt', pm.createdAt,
+                            'addedToDatabaseAt', pm.addedToDatabaseAt
+                        )
+                    )
+                    ELSE NULL
+                END as media
+            FROM post p
+            LEFT JOIN post_media pm ON p.postID = pm.postId
+            GROUP BY p.postID
+            ORDER BY p.createdAt DESC`,
             [],
             "all"
-        ) as FacebookPostRow[];
+        );
+        // Transform into FacebookPostWithMedia
+        const posts: FacebookPostWithMedia[] = (postsFromDb as Array<FacebookPostRow & { media?: string }>).map((post) => ({
+            ...post,
+            media: post.media ? JSON.parse(`[${post.media}]`) : undefined
+        }));
 
         // Get the current account's userID
         // const accountUser = users.find((user) => user.screenName == this.account?.username);
@@ -278,8 +303,15 @@ export class FacebookAccountController {
                 title: post.title,
                 isReposted: post.isReposted,
                 archivedAt: post.archivedAt,
+                media: (post as FacebookPostWithMedia).media?.map(m => ({
+                    mediaId: m.mediaId,
+                    type: m.type,
+                    uri: m.uri,
+                    description: m.description,
+                    createdAt: m.createdAt
+                }))
             };
-            return archivePost
+            return archivePost;
         }
 
         // Build the archive object
