@@ -8,9 +8,7 @@ import {
     XAPILegacyUser,
     XAPILegacyTweet,
     XAPIConversation,
-    XAPIUser
-} from './account_x';
-import {
+    XAPIUser,
     XTweetRow,
     XTweetMediaRow,
     XTweetURLRow,
@@ -18,6 +16,9 @@ import {
     XConversationRow,
     XConversationParticipantRow,
     XMessageRow,
+    isXAPIError,
+    isXAPIBookmarksData,
+    isXAPIData,
 } from './account_x';
 
 // Mock the util module
@@ -759,6 +760,19 @@ test("XAccountController.indexParsedTweets() should index and download media", a
     expect(mediaRows[0].startIndex).toBe(29);
     expect(mediaRows[0].endIndex).toBe(52);
 
+    // Verify the GIF tweet
+    tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1895432678377398407'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1895432678377398407');
+    expect(tweetRows[0].text).toBe("It's Friyay!!! https://t.co/bEGcNKradC");
+
+    mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1895432678377398407'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaType).toBe('animated_gif');
+    expect(mediaRows[0].filename).toBe('16_1895432668990382080.mp4');
+    expect(mediaRows[0].startIndex).toBe(15);
+    expect(mediaRows[0].endIndex).toBe(38);
+
     // Verify the image tweet
     tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1890512076189114426'], "all") as XTweetRow[];
     expect(tweetRows.length).toBe(1);
@@ -788,6 +802,31 @@ test("XAccountController.indexParsedTweets() should index and parse links", asyn
     expect(linkRows[1].expandedURL).toBe('https://en.wikipedia.org/wiki/Sun');
     expect(linkRows[2].expandedURL).toBe('https://x.com/nexamind91326/status/1890513848811090236');
 })
+
+test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIBookmarksData(data)).toBe(true);
+    expect(isXAPIError(data)).toBe(false);
+    expect(isXAPIData(data)).toBe(false);
+})
+
+test("types.isXAPIError() should recognize errors", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesError.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIError(data)).toBe(true);
+    expect(isXAPIBookmarksData(data)).toBe(false);
+    expect(isXAPIData(data)).toBe(false);
+})
+
+test("types.isXAPIData() should recognize data", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIData(data)).toBe(true);
+    expect(isXAPIBookmarksData(data)).toBe(false);
+    expect(isXAPIError(data)).toBe(false);
+})
+
 
 // Testing the X migrations
 

@@ -4,10 +4,11 @@ import RunningIcon from '../shared_components/RunningIcon.vue'
 
 defineProps<{
     jobs: XJob[],
-    isPaused: boolean
+    isPaused: boolean,
+    clickingEnabled: boolean,
 }>();
 
-const emit = defineEmits(['onPause', 'onResume', 'onCancel', 'onReportBug']);
+const emit = defineEmits(['onPause', 'onResume', 'onCancel', 'onReportBug', 'onClickingDisabled', 'onClickingEnabled']);
 
 const getStatusIcon = (status: string) => {
     const statusIcons: { [key: string]: string } = {
@@ -67,6 +68,12 @@ const getJobTypeText = (jobType: string) => {
         <div class="d-flex justify-content-center">
             <button class="btn btn-link btn-sm" @click="emit('onReportBug')">
                 Report a Bug
+            </button>
+        </div>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-link btn-sm"
+                @click="clickingEnabled ? emit('onClickingDisabled') : emit('onClickingEnabled')">
+                {{ clickingEnabled ? 'Disable' : 'Enable' }} Clicking in Browser
             </button>
         </div>
     </div>
