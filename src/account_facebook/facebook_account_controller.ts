@@ -431,7 +431,7 @@ export class FacebookAccountController {
                         // Skip if no post text
                         const postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
                         if (!postText) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping post with no text");
+                            log.info("FacebookAccountController.importFacebookArchive: skipping post with no text", JSON.stringify(post));
                             continue;
                         }
 
@@ -441,11 +441,11 @@ export class FacebookAccountController {
                         // Skip if it's a shared/repost, group post, shares a group, etc. We will extend the import logic
                         // to include other data types in the future.
                         if (isSharedPost) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping shared post");
+                            log.info("FacebookAccountController.importFacebookArchive: skipping shared post", JSON.stringify(post));
                             continue;
                         }
                         else if (post.attachments) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type");
+                            log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type", JSON.stringify(post));
                             continue;
                         }
 
