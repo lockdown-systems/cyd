@@ -37,7 +37,16 @@ export interface FacebookArchivePost {
     created_at: string;
     full_text: string;
     title: string;
+    isReposted: boolean;
+    media?: FacebookArchiveMedia[];  // Media attachments
     // lang: string;
+}
+
+export interface FacebookArchiveMedia {
+    uri: string;
+    type: 'photo' | 'video';
+    description?: string;  // Some media items have descriptions
+    creationTimestamp?: number;  // From media.creation_timestamp
 }
 
 export interface FacebookPostRow {
@@ -45,10 +54,26 @@ export interface FacebookPostRow {
     username: string;
     postID: string;
     createdAt: string;
+    title: string;
     text: string;
     path: string;
     addedToDatabaseAt: string;
     archivedAt: string | null;
     deletedPostAt: string | null;
     hasMedia: boolean;
+    isReposted: boolean;
+}
+
+export interface FacebookPostMediaRow {
+    mediaId: string;
+    postId: string;  // Foreign key to post.postID
+    type: string;
+    uri: string;
+    description: string | null;
+    createdAt: string | null;
+    addedToDatabaseAt: string;
+}
+
+export interface FacebookPostWithMedia extends FacebookPostRow {
+    media?: FacebookPostMediaRow[];
 }

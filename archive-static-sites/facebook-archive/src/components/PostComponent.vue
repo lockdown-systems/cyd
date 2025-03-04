@@ -14,6 +14,14 @@ const formattedText = computed(() => {
     text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
     return text.trim();
 });
+
+const shouldShowText = computed(() => {
+    if (!props.post.text) return false;
+    if (!props.post.media || props.post.media.length === 0) return true;
+
+    // Show text if it's different from all media descriptions
+    return !props.post.media.some(media => media.description === props.post.text);
+});
 </script>
 
 <template>
@@ -28,20 +36,41 @@ const formattedText = computed(() => {
             <small v-else class="text-muted">unknown date</small>
         </div>
         <div class="mt-2">
-            <!-- Text -->
-            <p v-html="formattedText"></p>
+            <!-- Text (only show if it's different from media description) -->
+            <p v-if="shouldShowText" v-html="formattedText"></p>
+
+            <!-- Media -->
+            <div v-if="post.media" class="media-container mt-2">
+                <div v-for="media in post.media" :key="media.mediaId" class="media-item mb-2">
+                    <img v-if="media.type === 'photo'"
+                         :src="`./media/${media.uri}`"
+                         :alt="media.description || ''"
+                         class="img-fluid rounded">
+                    <video v-else-if="media.type === 'video'"
+                           controls
+                           class="w-100 rounded">
+                        <source :src="`./media/${media.uri}`" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p v-if="media.description" class="text-muted small mt-1">{{ media.description }}</p>
+                </div>
+            </div>
         </div>
         <div class="meta d-flex gap-2">
             <span v-if="post.archivedAt" class="date text-muted ms-2">
                 archived {{ formattedDate(post.archivedAt) }}
             </span>
         </div>
-
     </div>
 </template>
 
 <style scoped>
-.meta {
-    font-size: 0.8rem;
+.media-container {
+    max-width: 100%;
+}
+.media-item img,
+.media-item video {
+    max-height: 400px;
+    object-fit: contain;
 }
 </style>

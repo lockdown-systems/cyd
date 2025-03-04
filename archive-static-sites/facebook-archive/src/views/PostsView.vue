@@ -16,7 +16,10 @@ const filteredPosts = computed(() => {
     const lowerCaseFilterText = filterText.value.toLowerCase();
     const postText = post.text ? post.text.toLowerCase() : '';
     const postUsername = archiveData.value.username ? archiveData.value.username.toLowerCase() : '';
-    return postText.includes(lowerCaseFilterText) || postUsername.includes(lowerCaseFilterText);
+    const postTitle = post.title ? post.title.toLowerCase() : '';
+    return postText.includes(lowerCaseFilterText) ||
+           postUsername.includes(lowerCaseFilterText) ||
+           postTitle.includes(lowerCaseFilterText);
   });
 });
 </script>
@@ -25,11 +28,19 @@ const filteredPosts = computed(() => {
   <div class="tweets-container">
     <div class="filter-container">
       <p><input type="text" v-model="filterText" class="form-control" placeholder="Filter your posts"></p>
-      <p class="text-center text-muted small">Showing {{ filteredPosts.length.toLocaleString() }} posts</p>
+      <p class="text-center text-muted small">Showing {{ filteredPosts.length.toLocaleString() }} posts
+        ({{ filteredPosts.filter(p => p.isReposted).length.toLocaleString() }} reposts)
+      </p>
     </div>
 
     <div class="tweets-list">
-      <PostComponent v-for="post in filteredPosts" :key="post.postID" :post="post" />
+      <PostComponent
+        v-for="post in filteredPosts"
+        :key="post.postID"
+        :post="post"
+        :isRepost="post.isReposted"
+        :title="post.title"
+      />
     </div>
   </div>
 </template>
