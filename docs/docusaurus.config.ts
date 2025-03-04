@@ -141,8 +141,8 @@ const config: Config = {
               href: 'https://cyd.social/download/',
             },
             {
-              label: 'Dev Blog',
-              to: '/blog',
+              label: 'Lockdown Systems Collective',
+              href: 'https://lockdown.systems/',
             },
             {
               label: 'Credits',
