@@ -573,16 +573,20 @@ export class FacebookAccountController {
                     const posts = JSON.parse(postsFile);
 
                     for (const post of posts) {
-                        // Skip if no post text
                         const postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
-                        if (!postText) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping post with no text");
-                            continue;
-                        }
 
                         // Check if it's a shared post by looking for external_context in attachments
                         const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
                         log.info("FacebookAccountController.importFacebookArchive: isSharedPost", isSharedPost);
+
+                        // Check if it's a share of a group post
+                        const isGroupPost = post.attachments?.[0]?.data?.[0]?.name !== undefined;
+                        const groupName = isGroupPost ? post.attachments[0].data[0].name : undefined;
+
+                        // For group posts, if there's no explicit post text, use the group name
+                        const finalText = isGroupPost
+                            ? (postText || `Shared the group: ${groupName}`)
+                            : postText;
 
                         // Process media attachments
                         const media: FacebookArchiveMedia[] = [];
@@ -602,19 +606,12 @@ export class FacebookAccountController {
                         }
                         log.info("FacebookAccountController.importFacebookArchive: media", media);
 
-                        // Skip if it's a group post, shares a group, etc. We will extend the import logic
-                        // to include other data types in the future.
-                        if (post.attachments && !isSharedPost && media.length === 0) {
-                            log.info("FacebookAccountController.importFacebookArchive: skipping unknown post type");
-                            continue;
-                        }
-
                         postsData.push({
                             id_str: post.timestamp.toString(),
                             title: post.title || '',
-                            full_text: postText,
+                            full_text: finalText,
                             created_at: new Date(post.timestamp * 1000).toISOString(),
-                            isReposted: isSharedPost,
+                            isReposted: isSharedPost || isGroupPost, // Group shares are reposts too
                             media: media.length > 0 ? media : undefined,
                         });
                     }
@@ -697,7 +694,6 @@ export class FacebookAccountController {
             try {
                 await fs.promises.copyFile(sourcePath, destPath);
 
-                // Store media info in database
                 exec(this.db,
                     'INSERT INTO post_media (mediaId, postId, type, uri, description, createdAt, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
                     [
