@@ -82,8 +82,6 @@ const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
 const canStateLoopRun = ref(true);
 
-const mediaPath = ref("");
-
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
@@ -208,6 +206,17 @@ const onReportBug = async () => {
     });
 }
 
+// Media path
+const mediaPath = ref("");
+
+const reloadMediaPath = async () => {
+    mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
+    console.log('mediaPath', mediaPath.value);
+};
+
+// Enable/disable clicking in the webview
+const clickingEnabled = ref(false);
+
 // User variables
 const userAuthenticated = ref(false);
 const userPremium = ref(false);
@@ -257,6 +266,10 @@ emitter?.on('signed-out', async () => {
 
 emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
     await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
+});
+
+emitter?.on(`x-reload-media-path-${props.account.id}`, async () => {
+    await reloadMediaPath();
 });
 
 const startJobs = async () => {
@@ -366,7 +379,7 @@ const debugModeDisable = async () => {
 // Lifecycle
 
 onMounted(async () => {
-    mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
+    await reloadMediaPath();
 
     if (webviewComponent.value !== null) {
         const webview = webviewComponent.value;
@@ -448,9 +461,10 @@ onUnmounted(async () => {
                 <div class="d-flex align-items-center">
                     <!-- Job status -->
                     <XJobStatusComponent v-if="currentJobs.length > 0 && model.state == State.RunJobs"
-                        :jobs="currentJobs" :is-paused="isPaused" class="job-status-component" @on-pause="model.pause()"
-                        @on-resume="model.resume()" @on-cancel="emit('onRefreshClicked')"
-                        @on-report-bug="onReportBug" />
+                        :jobs="currentJobs" :is-paused="isPaused" :clicking-enabled="clickingEnabled"
+                        class="job-status-component" @on-pause="model.pause()" @on-resume="model.resume()"
+                        @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug"
+                        @on-clicking-enabled="clickingEnabled = true" @on-clicking-disabled="clickingEnabled = false" />
                 </div>
             </div>
 
@@ -469,7 +483,8 @@ onUnmounted(async () => {
             :class="{
                 'hidden': !model.showBrowser,
                 'webview-automation-border': model.showAutomationNotice,
-                'webview-input-border': !model.showAutomationNotice
+                'webview-input-border': !model.showAutomationNotice,
+                'webview-clickable': clickingEnabled
             }" />
 
         <template v-if="model.state != State.WizardStart">
