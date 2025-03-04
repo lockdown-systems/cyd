@@ -102,7 +102,6 @@ You need a Premium plan to:
 
 ## Review
 
-
 When you click **Continue to Review**, you have a chance to review your options before proceeding:
 
 ![Review delete options](./img/delete-review.png)
@@ -113,11 +112,11 @@ When you're ready, click **Start Deleting**.
 
 Cyd is very fast at deleting tweets, retweets, likes, and bookmarks. You can watch your data flash before your eyes as Cyd deletes it from X.
 
-For these types of data, you can't watch Cyd work in the embedded browser because instead of clicking around as you, it relies on a JavaScript trick. Basically, what Cyd is doing is loading your profile in the embedded browser, opening developer tools, and running little bits of JavaScript over and over to delete your data. It turns out that this is hundreds of times faster than scrolling around X's user interface and clicking buttons to delete your data.
+For these types of data, you can't watch Cyd work in the embedded browser because instead of clicking around, it relies on a JavaScript trick. Basically, what Cyd is doing is loading your profile in the embedded browser, opening developer tools, and running little bits of JavaScript over and over to delete your data. This is hundreds of times faster than scrolling around X's user interface and clicking buttons to delete your data.
 
 When you're unfollowing everyone and deleting direct messages, you can watch the embedded browser to see Cyd work.
 
-![Saving tweets, likes, and other data](./img/delete-deleting.png)
+![Deleting data from X](./img/delete-deleting.png)
 
 :::warning Rate limits
 
@@ -127,7 +126,7 @@ Cyd deletes your data as fast as it can, but X imposes limits on how fast this i
 
 ## Finished
 
-When Cyd is done deleting your data, it shows you a summary of what it saved:
+When Cyd is done deleting your data, it shows you a summary of what it deleted:
 
 ![Finished deleting data from X](./img/delete-finished.png)
 

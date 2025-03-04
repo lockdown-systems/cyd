@@ -48,11 +48,19 @@ When you start building your database, you can watch the embedded browser to see
 
 ![Saving tweets, likes, and other data](./img/build-saving.png)
 
+As Cyd works, you can see what step it's currently on. In the screenshot above, it finished the "Logging in" step and it's working on the "Saving tweets" step. At any point you can click **Pause** to pause Cyd's work, or **Cancel** to cancel the work completely.
+
 :::warning Rate limits
 
 Cyd saves your data as fast as it can, but X imposes limits on how fast this is. These are the same limits you would hit if you manually scrolled through your X account really, really fast.
 
 If you hit a rate limit, Cyd will wait for it to expire. Typically, you will need to wait less than 15 minutes before you can proceed. The second that X's rate limit expires, Cyd goes back to work saving your data.
+
+:::
+
+:::info Clicking in the browser
+
+When Cyd is controlling the embedded browser on your behalf, clicking in it is disabled, as you might mess with what Cyd is trying to do. However, if you ever encounter a situation where Cyd is stuck and would continue if only you could click something, you can click the **Enable Clicking in Browser** to allow you to click. You can click **Disable Clicking in Browser** disables this again.
 
 :::
 
@@ -62,10 +70,6 @@ When Cyd is done building your database, it shows you a summary of what it saved
 
 ![Finished saving data from X](./img/build-finished.png)
 
-:::tip What are "other tweets"?
+In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive) for more information about these.
 
-When you build your database from scratch you might save some "other tweets" too. If you're interested, [read more](../tips/other-tweets) about what these are.
-
-:::
-
-In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive) for more information about these. There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, 4 saved retweets, and 6 saved likes.
+There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 317 saved tweets, 53 saved retweets, and 68 saved likes. So far, none of the tweets have been migrated to Bluesky.

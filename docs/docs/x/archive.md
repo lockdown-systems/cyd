@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Browse Your Local Archive
 
-When you build your local database for each X account, Cyd saves your data in your `Documents` folder on your computer. For example, if your X username is `cyd_social`, your Cyd data will be stored in `Documents` ▶ `Cyd` ▶ `X` ▶ `cyd_social`.
+When you build your local database for each X account, Cyd saves your data in your `Documents` folder on your computer. For example, if your X username is `cyd_social`, your Cyd data will be stored in `~/Documents/Cyd/X/cyd_social`.
 
 This folder includes `index.html` which contains an archive website that you can use to browse your data locally. For the nerds out there, it also contains `data.sqlite3` &mdash; the raw database, in SQLite3 format.
 
