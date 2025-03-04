@@ -2920,12 +2920,7 @@ export class XAccountController {
             if (shouldContinue) {
                 // Upload the video
                 log.info(`XAccountController.blueskyMigrateTweet: uploading video ${tweetMedia[0].filename}`);
-                let resp;
-                try {
-                    resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
-                } catch (e) {
-                    return `Error uploading video: ${e}`;
-                }
+                const resp = await agent.uploadBlob(mediaData, { encoding: 'video/mp4' })
                 log.info(`XAccountController.blueskyMigrateTweet: uploaded video ${tweetMedia[0].filename} response`, resp);
                 const videoBlob: BlobRef = resp.data.blob;
 
@@ -3012,12 +3007,7 @@ export class XAccountController {
 
                 // Upload the image
                 log.info(`XAccountController.blueskyMigrateTweet: uploading image ${media.filename}`);
-                let resp;
-                try {
-                    resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
-                } catch (e) {
-                    return `Error uploading image: ${e}`;
-                }
+                const resp = await agent.uploadBlob(mediaData, { encoding: mimeType })
                 log.info(`XAccountController.blueskyMigrateTweet: uploaded image ${media.filename} response`, resp);
 
                 // Add it to the list
@@ -3148,6 +3138,24 @@ export class XAccountController {
         return [record, nextPostText];
     }
 
+    handleBlueskyAPIError(e: unknown, method: string, message: string): string {
+        if (isBlueskyAPIError(e)) {
+            const error = e as BlueskyAPIError;
+            if (error.error == "RateLimitExceeded") {
+                log.error(`XAccountController.${method}: Rate limit exceeded`, JSON.stringify(e));
+                this.rateLimitInfo.isRateLimited = true;
+                this.rateLimitInfo.rateLimitReset = Number(error.headers['ratelimit-reset']);
+                return `RateLimitExceeded`;
+            } else {
+                log.error(`XAccountController.${method}: Bluesky error`, JSON.stringify(e));
+                return `${message}: ${e}`;
+            }
+        }
+
+        log.error(`XAccountController.${method}: ${message}`, e);
+        return `${message}: ${e}`;
+    }
+
     // Return true on success, and a string (error message) on error
     async blueskyMigrateTweet(tweetID: string): Promise<boolean | string> {
         if (!this.db) { this.initDB(); }
@@ -3165,7 +3173,12 @@ export class XAccountController {
         const agent: Agent = new Agent(session)
 
         // Build the record
-        const resp: [BskyPostRecord, string] | string = await this.blueskyMigrateTweetBuildRecord(agent, tweetID);
+        let resp: [BskyPostRecord, string] | string;
+        try {
+            resp = await this.blueskyMigrateTweetBuildRecord(agent, tweetID);
+        } catch (e) {
+            return this.handleBlueskyAPIError(e, "blueskyMigrateTweetBuildRecord", `Error building atproto record`);
+        }
         if (typeof resp === 'string') {
             return resp;
         }
@@ -3212,16 +3225,20 @@ export class XAccountController {
                 }
 
                 // Post it to Bluesky
-                const { uri: continuationURI, cid: continuationCID } = await agent.post(continuationRecord);
-
-                // Record that we migrated this tweet
                 try {
-                    exec(this.db, `
+                    const { uri: continuationURI, cid: continuationCID } = await agent.post(continuationRecord);
+
+                    // Record that we migrated this tweet
+                    try {
+                        exec(this.db, `
                         INSERT INTO tweet_bsky_migration (tweetID, atprotoURI, atprotoCID, migratedAt)
                         VALUES (?, ?, ?, ?)
                     `, [tweetID, continuationURI, continuationCID, new Date()]);
+                    } catch (e) {
+                        return `Error recording migration: ${e}`;
+                    }
                 } catch (e) {
-                    return `Error recording migration: ${e}`;
+                    return this.handleBlueskyAPIError(e, "blueskyMigrateTweet", `Error migrating continuation tweet to Bluesky`);
                 }
             }
 
@@ -3237,21 +3254,7 @@ export class XAccountController {
 
             return true;
         } catch (e) {
-            if (isBlueskyAPIError(e)) {
-                const error = e as BlueskyAPIError;
-                if (error.error == "RateLimitExceeded") {
-                    log.error("XAccountController.blueskyDeleteMigratedTweet: Rate limit exceeded", JSON.stringify(e));
-                    this.rateLimitInfo.isRateLimited = true;
-                    this.rateLimitInfo.rateLimitReset = Number(error.headers['ratelimit-reset']);
-                    return `RateLimitExceeded`;
-                } else {
-                    log.error("XAccountController.blueskyDeleteMigratedTweet: Bluesky error", JSON.stringify(e));
-                    return `Error migrating tweet to Bluesky: ${e}`;
-                }
-            }
-
-            log.error("XAccountController.blueskyDeleteMigratedTweet: Error migrating tweet to Bluesky", e);
-            return `Error migrating tweet to Bluesky: ${e}`;
+            return this.handleBlueskyAPIError(e, "blueskyMigrateTweet", `Error migrating tweet to Bluesky`);
         }
     }
 
@@ -3292,21 +3295,7 @@ export class XAccountController {
 
             return true;
         } catch (e) {
-            if (isBlueskyAPIError(e)) {
-                const error = e as BlueskyAPIError;
-                if (error.error == "RateLimitExceeded") {
-                    log.error("XAccountController.blueskyDeleteMigratedTweet: Rate limit exceeded", JSON.stringify(e));
-                    this.rateLimitInfo.isRateLimited = true;
-                    this.rateLimitInfo.rateLimitReset = Number(error.headers['ratelimit-reset']);
-                    return `RateLimitExceeded`;
-                } else {
-                    log.error("XAccountController.blueskyDeleteMigratedTweet: Bluesky error", JSON.stringify(e));
-                    return `Error deleting migrated tweet from Bluesky: ${e}`;
-                }
-            }
-
-            log.error("XAccountController.blueskyDeleteMigratedTweet: Error deleting from Bluesky", e);
-            return `Error deleting migrated tweet from Bluesky: ${e}`;
+            return this.handleBlueskyAPIError(e, "blueskyDeleteMigratedTweet", `Error deleting from Bluesky`);
         }
     }
 
