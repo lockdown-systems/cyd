@@ -580,7 +580,26 @@ export class FacebookAccountController {
                     const posts = JSON.parse(postsFile);
 
                     for (const post of posts) {
-                        const postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
+                        // Check for Facebook "life events"
+                        const lifeEvent =
+                            post.data?.find((d: { life_event?: { title?: string } }) => d.life_event?.title) ||
+                            post.attachments?.[0]?.data?.[0]?.life_event;
+                        log.info("FacebookAccountController.importFacebookArchive: lifeEvent", lifeEvent);
+
+                        let postText: string = '';
+                        if (lifeEvent) {
+                            postText = lifeEvent.title;
+                            if (lifeEvent.start_date) {
+                                const date = new Date(
+                                    lifeEvent.start_date.year,
+                                    lifeEvent.start_date.month - 1,
+                                    lifeEvent.start_date.day
+                                );
+                                postText += ` (${date.toLocaleDateString()})`;
+                            }
+                        } else {
+                            postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
+                        }
                         log.info("FacebookAccountController.importFacebookArchive: postText", postText);
 
                         // Check if it's a shared post by looking for external_context.url being empty in attachments
@@ -595,8 +614,6 @@ export class FacebookAccountController {
                         log.info("FacebookAccountController.importFacebookArchive: isGroupPost", isGroupPost);
                         const groupName = isGroupPost ? post.attachments[0].data[0].name : undefined;
                         log.info("FacebookAccountController.importFacebookArchive: groupName", groupName);
-
-                        // TODO: "Life events" currently results in empty text
 
                         // For group posts, if there's no explicit post text, use the group name
                         const finalText = isGroupPost
@@ -645,6 +662,9 @@ export class FacebookAccountController {
                         // Is this post already there?
                         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [post.id_str], "get") as FacebookPostRow;
                         if (existingPost) {
+                            // First delete related media
+                            exec(this.db, 'DELETE FROM post_media WHERE postId = ?', [post.id_str]);
+
                             // Delete the existing post to re-import
                             exec(this.db, 'DELETE FROM post WHERE postID = ?', [post.id_str]);
                         }
