@@ -98,13 +98,13 @@ export async function openPreventSleepURL() {
     const platform = await window.electron.getPlatform();
     let url: string;
     if (platform === 'darwin') {
-        url = 'https://cyd.social/docs-disable-sleep-in-macos/';
+        url = 'https://docs.cyd.social/docs/tips/disable-sleep/mac';
     } else if (platform == 'win32') {
-        url = 'https://cyd.social/docs-disable-sleep-in-windows/';
+        url = 'https://docs.cyd.social/docs/tips/disable-sleep/windows';
     } else if (platform == 'linux') {
-        url = 'https://cyd.social/docs-disable-sleep-in-linux/';
+        url = 'https://docs.cyd.social/docs/tips/disable-sleep/linux';
     } else {
-        url = 'https://cyd.social/';
+        url = 'https://docs.cyd.social/docs/tips/disable-sleep/intro';
     }
     await window.electron.openURL(url);
 }

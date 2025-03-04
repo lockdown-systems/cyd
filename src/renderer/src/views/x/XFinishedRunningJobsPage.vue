@@ -133,7 +133,7 @@ onMounted(async () => {
                         <i class="fa-solid fa-floppy-disk archive-bullet" />
                         <strong>{{ model.progress.unknownIndexed.toLocaleString() }}</strong> other tweets
                         <span class="ms-3 small text-muted">
-                            (<a href="#" @click="openURL('https://cyd.social/docs-other-tweets');">what's
+                            (<a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/other-tweets');">what's
                                 this?</a>)
                         </span>
                     </li>

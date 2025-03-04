@@ -114,7 +114,7 @@ onMounted(async () => {
                                 X restricts how much of your data you can access. You likely won't get all of your data
                                 if you have Cyd build it from scratch. Building from scratch is a great way to backup
                                 your direct messages, though.
-                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                <a href="#" @click="openURL('https://docs.cyd.social/docs/x/local-database/build')">
                                     Read more</a>.
                             </small>
                         </div>
@@ -151,7 +151,7 @@ onMounted(async () => {
                                 You don't have a lot of data in your X account, so having Cyd scroll through your
                                 profile will be faster. Building from scratch is also a great way to backup your direct
                                 messages.
-                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                <a href="#" @click="openURL('https://docs.cyd.social/docs/x/local-database/build')">
                                     Read more</a>.
                             </small>
                         </div>
@@ -218,7 +218,7 @@ onMounted(async () => {
                                 Having Cyd scroll through your profile is faster than importing your X archive, but it
                                 only works if you have less than about 2,000 tweets or likes. Building from scratch is a
                                 great way to backup your direct messages, though.
-                                <a href="#" @click="openURL('https://cyd.social/docs-building-database-limits/')">
+                                <a href="#" @click="openURL('https://docs.cyd.social/docs/x/local-database/build')">
                                     Read more</a>.
                             </small>
                         </div>
