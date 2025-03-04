@@ -3,13 +3,14 @@ import fs from 'fs'
 import os from 'os'
 
 import fetch from 'node-fetch';
-import { session } from 'electron'
+import { app, session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import unzipper from 'unzipper';
 import { glob } from 'glob';
 
 import {
+    getResourcesPath,
     getAccountDataPath,
 } from '../util'
 import {
@@ -33,6 +34,7 @@ import {
     FacebookArchivePost,
     FacebookPostRow
 } from './types'
+import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
 export class FacebookAccountController {
     private accountUUID: string = "";
@@ -215,7 +217,87 @@ export class FacebookAccountController {
 
         log.info("FacebookAccountController.archiveBuild: building archive");
 
-        // TODO: implement
+        // Posts
+        const posts: FacebookPostRow[] = exec(
+            this.db,
+            "SELECT * FROM post ORDER BY createdAt DESC",
+            [],
+            "all"
+        ) as FacebookPostRow[];
+
+        // Get the current account's userID
+        // const accountUser = users.find((user) => user.screenName == this.account?.username);
+        // const accountUserID = accountUser?.userID;
+
+        const postRowToArchivePost = (post: FacebookPostRow): FacebookArchiveTypes.Post => {
+            const decodeUnicode = (text: string): string => {
+                return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+                    String.fromCharCode(parseInt(hex, 16))
+                );
+            };
+
+            const archivePost: FacebookArchiveTypes.Post = {
+                postID: post.postID,
+                createdAt: post.createdAt,
+                text: decodeUnicode(post.text),
+                archivedAt: post.archivedAt,
+            };
+            return archivePost
+        }
+
+        // Build the archive object
+        const formattedPosts: FacebookArchiveTypes.Post[] = posts.map((post) => {
+            return postRowToArchivePost(post);
+        });
+
+        log.info(`FacebookAccountController.archiveBuild: archive has ${posts.length} posts`);
+
+        // Save the archive object to a file using streaming
+        const accountPath = path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`));
+        const assetsPath = path.join(accountPath, "assets");
+        if (!fs.existsSync(assetsPath)) {
+            fs.mkdirSync(assetsPath);
+        }
+        const archivePath = path.join(assetsPath, "archive.js");
+
+        const streamWriter = fs.createWriteStream(archivePath);
+        try {
+            // Write the window.archiveData prefix
+            streamWriter.write('window.archiveData=');
+
+            // Write the archive metadata
+            streamWriter.write('{\n');
+            streamWriter.write(`  "appVersion": ${JSON.stringify(app.getVersion())},\n`);
+            streamWriter.write(`  "username": ${JSON.stringify(this.account.name)},\n`);
+            streamWriter.write(`  "createdAt": ${JSON.stringify(new Date().toLocaleString())},\n`);
+
+            // Write each array separately using a streaming approach in case the array(s) are large
+            await this.writeJSONArray(streamWriter, formattedPosts, "posts");
+            streamWriter.write(',\n');
+            // Close the object
+            streamWriter.write('};');
+
+            await new Promise((resolve) => streamWriter.end(resolve));
+        } catch (error) {
+            streamWriter.end();
+            throw error;
+        }
+
+        log.info(`FacebookAccountController.archiveBuild: archive saved to ${archivePath}`);
+
+        // Unzip facebook-archive.zip to the account data folder using unzipper
+        const archiveZipPath = path.join(getResourcesPath(), "facebook-archive.zip");
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        await archiveZip.extract({ path: accountPath });
+    }
+
+    async writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
+        streamWriter.write(`  "${propertyName}": [\n`);
+        for (let i = 0; i < items.length; i++) {
+            const suffix = i < items.length - 1 ? ',\n' : '\n';
+            streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
+        }
+        streamWriter.write('  ]');
     }
 
     async syncProgress(progressJSON: string) {
