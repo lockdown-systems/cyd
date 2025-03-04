@@ -759,6 +759,19 @@ test("XAccountController.indexParsedTweets() should index and download media", a
     expect(mediaRows[0].startIndex).toBe(29);
     expect(mediaRows[0].endIndex).toBe(52);
 
+    // Verify the GIF tweet
+    tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1895432678377398407'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1895432678377398407');
+    expect(tweetRows[0].text).toBe("It's Friyay!!! https://t.co/bEGcNKradC");
+
+    mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1895432678377398407'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaType).toBe('animated_gif');
+    expect(mediaRows[0].filename).toBe('16_1895432668990382080.mp4');
+    expect(mediaRows[0].startIndex).toBe(15);
+    expect(mediaRows[0].endIndex).toBe(38);
+
     // Verify the image tweet
     tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1890512076189114426'], "all") as XTweetRow[];
     expect(tweetRows.length).toBe(1);
