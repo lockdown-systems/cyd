@@ -68,6 +68,11 @@ const config: Config = {
         },
         { to: '/blog', label: 'Development Blog', position: 'left' },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           href: 'https://cyd.social',
           label: 'Cyd Website',
           position: 'right',
