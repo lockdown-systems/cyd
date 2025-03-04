@@ -581,14 +581,22 @@ export class FacebookAccountController {
 
                     for (const post of posts) {
                         const postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
+                        log.info("FacebookAccountController.importFacebookArchive: postText", postText);
 
-                        // Check if it's a shared post by looking for external_context in attachments
-                        const isSharedPost = post.attachments?.[0]?.data?.[0]?.external_context !== undefined;
+                        // Check if it's a shared post by looking for external_context.url being empty in attachments
+                        const isSharedPost = (
+                            (post.attachments?.[0]?.data?.[0]?.external_context?.url !== undefined &&
+                                post.attachments?.[0]?.data?.[0]?.external_context?.url === '')
+                        );
                         log.info("FacebookAccountController.importFacebookArchive: isSharedPost", isSharedPost);
 
                         // Check if it's a share of a group post
                         const isGroupPost = post.attachments?.[0]?.data?.[0]?.name !== undefined;
+                        log.info("FacebookAccountController.importFacebookArchive: isGroupPost", isGroupPost);
                         const groupName = isGroupPost ? post.attachments[0].data[0].name : undefined;
+                        log.info("FacebookAccountController.importFacebookArchive: groupName", groupName);
+
+                        // TODO: "Life events" currently results in empty text
 
                         // For group posts, if there's no explicit post text, use the group name
                         const finalText = isGroupPost
