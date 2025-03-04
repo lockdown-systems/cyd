@@ -1,0 +1,8 @@
+{
+    "label": "Disable Sleep",
+    "position": 1,
+    "link": {
+        "type": "generated-index",
+        "description": "Learn how to disable sleep on your computer while Cyd works in the background."
+    }
+}
