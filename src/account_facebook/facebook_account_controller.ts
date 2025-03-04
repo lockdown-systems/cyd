@@ -291,6 +291,7 @@ export class FacebookAccountController {
 
         const postRowToArchivePost = (post: FacebookPostRow): FacebookArchiveTypes.Post => {
             const decodeUnicode = (text: string): string => {
+                if (!text) return '';  // Return empty string if text is null/undefined
                 return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
                     String.fromCharCode(parseInt(hex, 16))
                 );
