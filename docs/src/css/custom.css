@@ -35,3 +35,14 @@
 video {
   max-width: 100%;
 }
+
+/* Make body text links have underlines, to help color blind users distinguish between links and non link texts */
+
+.theme-doc-markdown a:link,
+.theme-doc-markdown a:visited {
+  text-decoration: underline;
+}
+
+.theme-doc-markdown a:hover {
+  text-decoration: none;
+}
