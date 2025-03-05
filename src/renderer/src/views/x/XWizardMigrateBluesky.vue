@@ -262,7 +262,7 @@ onUnmounted(async () => {
                 <template v-if="state == State.Connected && tweetCounts !== null">
                     <div class="container">
                         <div class="row">
-                            <div class="col">
+                            <div class="col col-60">
                                 <p v-if="tweetCounts.toMigrateTweets.length > 0">
                                     <strong>You can migrate
                                         {{ tweetCounts.toMigrateTweets.length.toLocaleString() }}
@@ -300,7 +300,7 @@ onUnmounted(async () => {
                                     </li>
                                 </ul>
                             </div>
-                            <div class="col">
+                            <div class="col col-40">
                                 <Pie :data="{
                                     labels: ['Ready to Migrate', 'Already Migrated', 'Replies', 'Retweets',],
                                     datasets: [{
@@ -345,3 +345,13 @@ onUnmounted(async () => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.col-60 {
+    width: 60%;
+}
+
+.col-40 {
+    width: 40%;
+}
+</style>
