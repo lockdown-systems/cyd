@@ -5,16 +5,16 @@
  */
 
 :root {
-  --ifm-color-primary: #4986c9;
-  --ifm-color-primary-dark: #3b6ea3;
-  --ifm-color-primary-darker: #315b85;
-  --ifm-color-primary-darkest: #26476a;
-  --ifm-color-primary-light: #5a9bd4;
-  --ifm-color-primary-lighter: #6faedc;
-  --ifm-color-primary-lightest: #a5c3e4;
+  --ifm-color-primary: #3b6ea3;
+  --ifm-color-primary-dark: #315b85;
+  --ifm-color-primary-darker: #26476a;
+  --ifm-color-primary-darkest: #1b324f;
+  --ifm-color-primary-light: #4986c9;
+  --ifm-color-primary-lighter: #5a9bd4;
+  --ifm-color-primary-lightest: #6faedc;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-  --ifm-color-secondary: #ffc663;
+  --ifm-color-secondary: #e6a23c;
   --ifm-footer-link-hover-color: #ffeed1;
 }
 
