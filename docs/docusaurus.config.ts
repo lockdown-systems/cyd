@@ -144,10 +144,6 @@ const config: Config = {
               label: 'Lockdown Systems Collective',
               href: 'https://lockdown.systems/',
             },
-            {
-              label: 'Credits',
-              to: '/credits',
-            },
           ],
         },
       ],
