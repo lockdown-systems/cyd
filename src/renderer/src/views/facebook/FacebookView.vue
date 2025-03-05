@@ -361,7 +361,8 @@ onUnmounted(async () => {
             <p v-if="model.state == State.Login" class="u2f-info text-center text-muted small ms-2">
                 <i class="fa-solid fa-circle-info me-2" />
                 If you use a U2F security key (like a Yubikey) for 2FA, press it during the security key step after
-                clicking Continue. <a href="#" @click="openURL('https://cyd.social/docs-u2f-facebook')">Read more</a>.
+                clicking Continue. <a href="#" @click="openURL('https://docs.cyd.social/docs/facebook/tips/u2f')">
+                    Read more</a>.
             </p>
 
             <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />

@@ -1,0 +1,48 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+:root {
+  --ifm-color-primary: #3b6ea3;
+  --ifm-color-primary-dark: #315b85;
+  --ifm-color-primary-darker: #26476a;
+  --ifm-color-primary-darkest: #1b324f;
+  --ifm-color-primary-light: #4986c9;
+  --ifm-color-primary-lighter: #5a9bd4;
+  --ifm-color-primary-lightest: #6faedc;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-color-secondary: #e6a23c;
+  --ifm-footer-link-hover-color: #ffeed1;
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #a5c3e4;
+  --ifm-color-primary-dark: #8fb0d1;
+  --ifm-color-primary-darker: #7a9cbb;
+  --ifm-color-primary-darkest: #6687a5;
+  --ifm-color-primary-light: #b7d0e9;
+  --ifm-color-primary-lighter: #c8dced;
+  --ifm-color-primary-lightest: #d9e8f1;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-secondary: #ffc663;
+  --ifm-footer-link-hover-color: #ffeed1;
+}
+
+video {
+  max-width: 100%;
+}
+
+/* Make body text links have underlines, to help color blind users distinguish between links and non link texts */
+
+.theme-doc-markdown a:link,
+.theme-doc-markdown a:visited {
+  text-decoration: underline;
+}
+
+.theme-doc-markdown a:hover {
+  text-decoration: none;
+}
