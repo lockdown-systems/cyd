@@ -47,7 +47,7 @@ Browse for the X archive that you downloaded &mdash; either the ZIP file, or an 
 
 ## Finished
 
-Cyd will validate that the archive actually appears to be an X archive and belongs to this X account. Assuming everything went will, Cyd will import the data from it into your local database. If something went wrong, Cyd will display an error message with more details.
+Cyd will validate that the archive actually appears to be an X archive and belongs to this X account. Assuming everything went well, Cyd will import the data from it into your local database. If something went wrong, Cyd will display an error message with more details.
 
 ![Finished importing an X archive](./img/import-finished.png)
 
