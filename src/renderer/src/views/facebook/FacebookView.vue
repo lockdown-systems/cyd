@@ -398,6 +398,9 @@ onUnmounted(async () => {
                         <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
                             @set-state="setState($event)" />
 
+                        <!-- <FacebookWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" /> -->
+
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
                             <p>Debug debug debug!!!</p>

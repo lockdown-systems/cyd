@@ -157,6 +157,7 @@ declare global {
                 deleteUnzippedFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 verifyFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 importFacebookArchive: (accountID: number, archivePath: string, dataType: string) => Promise<FacebookImportArchiveResponse>;
+                saveParseHTMLPostData: (accountID: number, data: object) => Promise<string | null>;
             },
             onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
             onPowerMonitorResume: (callback: () => void) => Promise<void>;

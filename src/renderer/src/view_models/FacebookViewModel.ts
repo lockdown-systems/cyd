@@ -66,12 +66,12 @@ export interface CurrentUserInitialData {
     [key: string]: unknown;
 }
 
-export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
+export function findDataFromFacebookHTML(data: unknown, type: string): object | null {
     // If the current item is an array, iterate through its elements
     if (Array.isArray(data)) {
         for (const item of data) {
             // Check if the first element is "CurrentUserInitialData"
-            if (Array.isArray(item) && item[0] === "CurrentUserInitialData") {
+            if (Array.isArray(item) && item[0] === "CurrentUserInitialData" && type === "user") {
                 // Check if the third element is an object with the required keys
                 if (
                     item[2] &&
@@ -80,11 +80,15 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
                     "USER_ID" in item[2] &&
                     "NAME" in item[2]
                 ) {
-                    return item[2] as CurrentUserInitialData;
+                    return item[2];
+                }
+            } else if (Array.isArray(item) && item[0] === "RelayPrefetchedStreamCache" && type === "firstPost") {
+                if (item[3] && item[3][1]) {
+                    return item[3][1]["__bbox"]?.["result"]?.["data"]?.["user"]?.["timeline_list_feed_units"]?.["edges"];
                 }
             }
             // Recursively search nested arrays
-            const result = findCurrentUserInitialData(item);
+            const result = findDataFromFacebookHTML(item, type);
             if (result) {
                 return result;
             }
@@ -97,7 +101,7 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
         for (const key of Object.keys(obj)) {
             // Safe property check
             if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                const result = findCurrentUserInitialData(obj[key]);
+                const result = findDataFromFacebookHTML(obj[key], type);
                 if (result) {
                     return result;
                 }
@@ -106,6 +110,14 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
     }
     // If nothing is found, return null
     return null;
+}
+
+export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
+    return findDataFromFacebookHTML(data, "user") as CurrentUserInitialData;
+}
+
+export function findFirstPostData(data: unknown) {
+    return findDataFromFacebookHTML(data, "firstPost");
 }
 
 export function findProfilePictureURI(data: unknown): string | null {
@@ -373,6 +385,27 @@ export class FacebookViewModel extends BaseViewModel {
         await this.waitForPause();
     }
 
+    async downloadHTMLPostJSON() {
+        this.showBrowser = true;
+        this.log("Posts", "Loading facebook wall posts");
+
+        // load facebook wall URL and get scripts
+        await this.loadFacebookURL(`https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`);
+        await this.sleep(500);
+        const facebookData = await this.getFacebookDataFromHTML();
+        const latestPostData = findFirstPostData(facebookData)
+        console.log('facebookData', latestPostData);
+
+        return latestPostData;
+    }
+
+    async parseHTMLPostData() {
+        const latestPostData = await this.downloadHTMLPostJSON();
+        if (latestPostData) {
+            window.electron.Facebook.saveParseHTMLPostData(this.account.id, {"data": latestPostData});
+        }
+    }
+
     async runJobLogin(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_LOGIN, navigator.userAgent);
 
@@ -395,7 +428,7 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.showAutomationNotice = false;
 
-        // TODO: implement
+        await this.parseHTMLPostData();
 
         await this.finishJob(jobIndex);
         return true;
@@ -544,6 +577,18 @@ You can either import a Facebook archive, or I can build it from scratch by scro
                     this.instructions = `I'll help you import your Facebook archive into your local database.`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardImportingDisplay;
+                    break;
+
+                case State.WizardBuildOptions:
+                    this.showBrowser = false;
+                    this.instructions = `
+I'll help you build a private local database of your Facebook data to the \`Documents\` folder on your computer.
+You'll be able to access it even after you delete it from Facebook.`;
+                    // await this.loadURL("about:blank");
+
+                    await this.parseHTMLPostData();
+
+                    this.state = State.WizardBuildOptionsDisplay;
                     break;
 
                 case State.Debug:
