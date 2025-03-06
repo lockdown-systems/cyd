@@ -154,6 +154,9 @@ const config: Config = {
       darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
+  scripts: [
+    { src: 'https://plausible.io/js/script.js', defer: true, 'data-domain': 'docs.cyd.social' }
+  ],
 };
 
 export default config;
