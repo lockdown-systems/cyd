@@ -14,6 +14,8 @@ export enum State {
 
     WizardStart = "WizardStart",
 
+    WizardArchiveOptions = "WizardArchiveOptions",
+
     WizardImportOrBuild = "WizardImportOrBuild",
     WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
 
@@ -26,6 +28,8 @@ export enum State {
 
     WizardBuildOptions = "WizardBuildOptions",
     WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
+
+    WizardDeleteOptions = "WizardDeleteOptions",
 
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
@@ -500,6 +504,12 @@ export class FacebookViewModel extends BaseViewModel {
                 case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
+
+                    if (!this.account.facebookAccount?.accountID || this.account.facebookAccount?.accountID === "0") {
+                        this.state = State.Login;
+                        break;
+                    }
+
                     this.state = State.WizardImportOrBuild;
                     break;
 
@@ -511,6 +521,28 @@ export class FacebookViewModel extends BaseViewModel {
 You can either import a Facebook archive, or I can build it from scratch by scrolling through your profile.`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardImportOrBuildDisplay;
+                    break;
+
+                case State.WizardImportStart:
+                    this.showBrowser = false;
+                    this.instructions = `
+**Before you can import your Facebook archive, you need to download it.**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardImportStartDisplay;
+                    break;
+
+                case State.WizardImportDownload:
+                    this.showBrowser = false;
+                    this.instructions = `You have requested your Facebook archive, so now we wait.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardImportDownloadDisplay;
+                    break;
+
+                case State.WizardImporting:
+                    this.showBrowser = false;
+                    this.instructions = `I'll help you import your Facebook archive into your local database.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardImportingDisplay;
                     break;
 
                 case State.Debug:
