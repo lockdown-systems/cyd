@@ -2561,6 +2561,11 @@ export class XAccountController {
         }
 
         try {
+            // Check if the handle starts with @. If so, strip the @ and try authorizing
+            if (handle.startsWith("@")) {
+                handle = handle.substring(1);
+            }
+
             // Authorize the handle
             const url = await this.blueskyClient.authorize(handle);
 
