@@ -110,4 +110,40 @@ export const defineIPCFacebook = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('Facebook:unzipFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.unzipFacebookArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:deleteUnzippedFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            await controller.deleteUnzippedFacebookArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:verifyFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.verifyFacebookArchive(archivePath);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:importFacebookArchive', async (_, accountID: number, archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.importFacebookArchive(archivePath, dataType);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 };

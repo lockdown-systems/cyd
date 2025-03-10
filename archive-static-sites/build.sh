@@ -3,17 +3,23 @@
 # Change to the directory of the script
 cd "$(dirname "$0")"
 
-# Build the archive static site
-echo ">> Building X archive static site..."
-rm -f x-archive/public/assets/archive.js
-cd x-archive
-rm -r dist || true
-npm install
-npm run build
+build_archive_site() {
+    site=$1
+    echo ">> Building ${site} archive static site..."
+    rm -f ${site}-archive/public/assets/archive.js
+    cd ${site}-archive
+    rm -r dist || true
+    npm install
+    npm run build
 
-# Zip it up
-cd dist
-mkdir -p ../../../build/
-rm -f ../../../build/x-archive.zip
-zip -r ../../../build/x-archive.zip .
-cd ../..
+    # Zip it up
+    cd dist
+    mkdir -p ../../../build/
+    rm -f ../../../build/${site}-archive.zip
+    zip -r ../../../build/${site}-archive.zip .
+    cd ../..
+}
+
+# Build each site
+build_archive_site x
+build_archive_site facebook
