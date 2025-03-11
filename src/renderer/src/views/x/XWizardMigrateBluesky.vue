@@ -57,6 +57,10 @@ const connectClicked = async () => {
     connectButtonText.value = 'Connecting...';
     state.value = State.Connecting;
 
+    if (blueskyHandle.value.startsWith('@')) {
+        blueskyHandle.value = blueskyHandle.value.substring(1);
+    }
+
     try {
         const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
         if (ret !== true) {
@@ -127,8 +131,8 @@ const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.accoun
 const isArchiveOld = computed(() => {
     // The date before media was added to the Cyd archive, February 18, 2025
     const oldDate = new Date('2025-02-18T00:00:00Z');
-    return lastImportArchive.value !== null && lastImportArchive.value < oldDate ||
-        lastBuildDatabase.value !== null && lastBuildDatabase.value < oldDate;
+    return (lastImportArchive.value == null || lastImportArchive.value < oldDate) &&
+        (lastBuildDatabase.value == null || lastBuildDatabase.value < oldDate);
 });
 
 onMounted(async () => {
@@ -262,7 +266,7 @@ onUnmounted(async () => {
                 <template v-if="state == State.Connected && tweetCounts !== null">
                     <div class="container">
                         <div class="row">
-                            <div class="col">
+                            <div class="col col-60">
                                 <p v-if="tweetCounts.toMigrateTweets.length > 0">
                                     <strong>You can migrate
                                         {{ tweetCounts.toMigrateTweets.length.toLocaleString() }}
@@ -300,7 +304,7 @@ onUnmounted(async () => {
                                     </li>
                                 </ul>
                             </div>
-                            <div class="col">
+                            <div class="col col-40">
                                 <Pie :data="{
                                     labels: ['Ready to Migrate', 'Already Migrated', 'Replies', 'Retweets',],
                                     datasets: [{
@@ -345,3 +349,13 @@ onUnmounted(async () => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.col-60 {
+    width: 60%;
+}
+
+.col-40 {
+    width: 40%;
+}
+</style>

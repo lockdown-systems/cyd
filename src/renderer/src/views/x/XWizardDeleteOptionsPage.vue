@@ -343,7 +343,7 @@ onMounted(async () => {
                     <small class="form-text text-muted">
                         Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't delete
                         <em>ghost likes</em>.
-                        <a href="#" @click="openURL('https://cyd.social/docs-ghost-likes/')">
+                        <a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/ghost-likes')">
                             Read more</a>.
                     </small>
                 </div>
