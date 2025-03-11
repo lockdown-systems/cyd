@@ -2483,16 +2483,7 @@ export class XAccountController {
         return globalDeleteConfigLike(key, this.db);
     }
 
-    async blueskyInitClient(): Promise<NodeOAuthClient> {
-        // Bluesky client, for migrating
-        let host;
-        if (process.env.CYD_MODE === "prod") {
-            host = "api.cyd.social"
-        } else {
-            host = "dev-api.cyd.social"
-        }
-        const path = "bluesky/client-metadata.json";
-
+    async blueskyClientFromClientID(host: string, path: string): Promise<NodeOAuthClient> {
         return await NodeOAuthClient.fromClientId({
             clientId: `https://${host}/${path}`,
             stateStore: {
@@ -2520,6 +2511,29 @@ export class XAccountController {
                 },
             },
         });
+    }
+
+    async blueskyInitClient(): Promise<NodeOAuthClient> {
+        // Figure out the host and path
+        let host;
+        if (process.env.CYD_MODE === "prod") {
+            host = "api.cyd.social"
+        } else {
+            host = "dev-api.cyd.social"
+        }
+        const path = "bluesky/client-metadata.json";
+
+        // Create the client
+        try {
+            // Try creating a client
+            return await this.blueskyClientFromClientID(host, path);
+        } catch (e) {
+            // On error, disconnect and delete old state and session data
+            await this.blueskyDisconnect();
+
+            // And try again
+            return await this.blueskyClientFromClientID(host, path);
+        }
     }
 
     async blueskyGetProfile(): Promise<BlueskyMigrationProfile | null> {
