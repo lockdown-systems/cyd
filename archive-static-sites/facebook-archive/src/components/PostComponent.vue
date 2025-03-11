@@ -29,6 +29,9 @@ const shouldShowText = computed(() => {
         <div class="d-flex justify-content-between">
             <strong v-if="archiveData.username">{{ archiveData.username }}</strong>
             <small v-else class="text-muted">unknown user</small>
+            <small v-if="post.isReposted" class="text-muted ms-2">
+                <i class="bi bi-share"></i> repost
+            </small>
             <a v-if="post.archivedAt"
                 :href="`./Archived Posts/${formatDateToYYYYMMDD(post.createdAt)}_${post.postID}.html`"
                 target="_blank">archived</a>
