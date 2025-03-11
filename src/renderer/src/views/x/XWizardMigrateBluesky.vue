@@ -57,6 +57,10 @@ const connectClicked = async () => {
     connectButtonText.value = 'Connecting...';
     state.value = State.Connecting;
 
+    if (blueskyHandle.value.startsWith('@')) {
+        blueskyHandle.value = blueskyHandle.value.substring(1);
+    }
+
     try {
         const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
         if (ret !== true) {
