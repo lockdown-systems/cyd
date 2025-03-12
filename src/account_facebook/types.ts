@@ -78,10 +78,3 @@ export interface FacebookPostMediaRow {
 export interface FacebookPostWithMedia extends FacebookPostRow {
     media?: FacebookPostMediaRow[];
 }
-
-export interface FacebookPostUrlRow {
-    id: number;
-    postId: string;
-    url: string;
-    addedToDatabaseAt: string;
-}
