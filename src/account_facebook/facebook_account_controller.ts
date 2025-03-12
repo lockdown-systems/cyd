@@ -34,7 +34,8 @@ import {
     FacebookArchivePost,
     FacebookArchiveMedia,
     FacebookPostWithMedia,
-    FacebookPostRow
+    FacebookPostRow,
+    FacebookPostUrlRow,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
@@ -198,6 +199,18 @@ export class FacebookAccountController {
                     );`
                 ]
             },
+            {
+                name: "20250312_add_urls_to_posts",
+                sql: [
+                    `CREATE TABLE post_url (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        postId TEXT NOT NULL,
+                        url TEXT NOT NULL,
+                        addedToDatabaseAt DATETIME NOT NULL,
+                        FOREIGN KEY(postId) REFERENCES post(postID)
+                    );`
+                ]
+            }
         ])
         log.info("FacebookAccountController.initDB: database initialized");
     }
@@ -638,6 +651,31 @@ export class FacebookAccountController {
                         }
                         log.info("FacebookAccountController.importFacebookArchive: media", media);
 
+                        // Process URLs
+                        const urls: string[] = [];
+
+                        // Check attachments for URLs
+                        post.attachments?.forEach((attachment: any) => {
+                            attachment.data?.forEach((data: any) => {
+                                if (data.external_context?.url && data.external_context.url !== '') {
+                                    urls.push(data.external_context.url);
+                                }
+                            });
+                        });
+
+                        // Check data array for URLs
+                        post.data?.forEach((data: any) => {
+                            if (data.external_context?.url && data.external_context.url !== '') {
+                                urls.push(data.external_context.url);
+                            }
+                        });
+
+                        log.info("FacebookAccountController.importFacebookArchive: found URLs", {
+                            postTimestamp: post.timestamp,
+                            urlCount: urls.length,
+                            urls
+                        });
+
                         postsData.push({
                             id_str: post.timestamp.toString(),
                             title: post.title || '',
@@ -645,6 +683,7 @@ export class FacebookAccountController {
                             created_at: new Date(post.timestamp * 1000).toISOString(),
                             isReposted: isSharedPost || isGroupPost, // Group shares are reposts too
                             media: media.length > 0 ? media : undefined,
+                            urls: urls,
                         });
                     }
                 } catch (e) {
@@ -662,14 +701,13 @@ export class FacebookAccountController {
                         // Is this post already there?
                         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [post.id_str], "get") as FacebookPostRow;
                         if (existingPost) {
-                            // First delete related media
+                            // First delete related media and URLs
                             exec(this.db, 'DELETE FROM post_media WHERE postId = ?', [post.id_str]);
+                            exec(this.db, 'DELETE FROM post_url WHERE postId = ?', [post.id_str]);
 
                             // Delete the existing post to re-import
                             exec(this.db, 'DELETE FROM post WHERE postID = ?', [post.id_str]);
                         }
-
-                        // TODO: implement urls import for facebook
 
                         // Import it
                         exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, isReposted, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?)', [
@@ -685,6 +723,12 @@ export class FacebookAccountController {
                             log.info("FacebookAccountController.importFacebookArchive: importing media for post", post.id_str);
                             await this.importFacebookArchiveMedia(post.id_str, post.media, archivePath);
                         }
+
+                        if (post.urls && post.urls.length > 0) {
+                            log.info("FacebookAccountController.importFacebookArchive: importing urls for post", post.id_str);
+                            await this.importFacebookArchiveUrl(post.id_str, post.urls);
+                        }
+
                         importCount++;
                     });
                 } catch (e) {
@@ -744,6 +788,16 @@ export class FacebookAccountController {
             } catch (error) {
                 log.error(`FacebookAccountController.importFacebookArchiveMedia: Error importing media: ${error}`);
             }
+        }
+    }
+
+    async importFacebookArchiveUrl(postId: string, urls: string[]) {
+        try {
+            for (const url of urls) {
+                exec(this.db, 'INSERT INTO post_url (postId, url, addedToDatabaseAt) VALUES (?, ?, ?)', [postId, url, new Date()]);
+            }
+        } catch (error) {
+            log.error(`FacebookAccountController.importFacebookArchiveUrl: Error importing urls: ${error}`);
         }
     }
 }
