@@ -655,6 +655,7 @@ export class FacebookAccountController {
                         const urls: string[] = [];
 
                         // Check attachments for URLs
+                        /* eslint-disable @typescript-eslint/no-explicit-any */
                         post.attachments?.forEach((attachment: any) => {
                             attachment.data?.forEach((data: any) => {
                                 if (data.external_context?.url && data.external_context.url !== '') {
@@ -664,6 +665,7 @@ export class FacebookAccountController {
                         });
 
                         // Check data array for URLs
+                        /* eslint-disable @typescript-eslint/no-explicit-any */
                         post.data?.forEach((data: any) => {
                             if (data.external_context?.url && data.external_context.url !== '') {
                                 urls.push(data.external_context.url);

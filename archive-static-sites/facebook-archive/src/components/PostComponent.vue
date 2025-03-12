@@ -58,7 +58,18 @@ const shouldShowText = computed(() => {
                     <p v-if="media.description" class="text-muted small mt-1">{{ media.description }}</p>
                 </div>
             </div>
+
+            <!-- URLs -->
+            <div v-if="post.urls?.length" class="urls-container mt-2">
+                    <div v-for="urlData in post.urls" :key="urlData.url" class="url-item">
+                        <a :href="urlData.url" target="_blank" rel="noopener noreferrer">
+                            <i class="bi bi-link-45deg"></i>
+                        {{ urlData.url }}
+                    </a>
+                </div>
+            </div>
         </div>
+
         <div class="meta d-flex gap-2">
             <span v-if="post.archivedAt" class="date text-muted ms-2">
                 archived {{ formattedDate(post.archivedAt) }}
@@ -75,5 +86,23 @@ const shouldShowText = computed(() => {
 .media-item video {
     max-height: 400px;
     object-fit: contain;
+}
+
+.url-item {
+    margin: 0.5rem 0;
+    word-break: break-all;
+}
+
+.url-item a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.url-item a:hover {
+    text-decoration: underline;
+}
+
+.bi-link-45deg {
+    margin-right: 0.3em;
 }
 </style>
