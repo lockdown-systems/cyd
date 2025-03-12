@@ -63,6 +63,7 @@ export interface FacebookPostRow {
     deletedPostAt: string | null;
     hasMedia: boolean;
     isReposted: boolean;
+    urls?: string[];
 }
 
 export interface FacebookPostMediaRow {

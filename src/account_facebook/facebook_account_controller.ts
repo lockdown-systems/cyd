@@ -271,30 +271,41 @@ export class FacebookAccountController {
                 p.*,
                 CASE
                     WHEN pm.mediaId IS NOT NULL
-                    THEN GROUP_CONCAT(
-                        json_object(
-                            'mediaId', pm.mediaId,
-                            'postId', pm.postId,
-                            'type', pm.type,
-                            'uri', pm.uri,
-                            'description', pm.description,
-                            'createdAt', pm.createdAt,
-                            'addedToDatabaseAt', pm.addedToDatabaseAt
+                        THEN GROUP_CONCAT(
+                            json_object(
+                                'mediaId', pm.mediaId,
+                                'postId', pm.postId,
+                                'type', pm.type,
+                                'uri', pm.uri,
+                                'description', pm.description,
+                                'createdAt', pm.createdAt,
+                                'addedToDatabaseAt', pm.addedToDatabaseAt
+                            )
                         )
-                    )
-                    ELSE NULL
-                END as media
-            FROM post p
-            LEFT JOIN post_media pm ON p.postID = pm.postId
-            GROUP BY p.postID
-            ORDER BY p.createdAt DESC`,
+                        ELSE NULL
+                    END as media,
+                CASE
+                    WHEN pu.url IS NOT NULL
+                        THEN GROUP_CONCAT(
+                            json_object(
+                                'url', pu.url
+                            )
+                        )
+                        ELSE NULL
+                    END as urls
+                FROM post p
+                LEFT JOIN post_media pm ON p.postID = pm.postId
+                LEFT JOIN post_url pu ON p.postID = pu.postId
+                GROUP BY p.postID
+                ORDER BY p.createdAt DESC`,
             [],
             "all"
         );
         // Transform into FacebookPostWithMedia
         const posts: FacebookPostWithMedia[] = (postsFromDb as Array<FacebookPostRow & { media?: string }>).map((post) => ({
             ...post,
-            media: post.media ? JSON.parse(`[${post.media}]`) : undefined
+            media: post.media ? JSON.parse(`[${post.media}]`) : undefined,
+            urls: post.urls ? JSON.parse(`[${post.urls}]`) : undefined
         }));
 
         // Get the current account's userID
@@ -322,7 +333,8 @@ export class FacebookAccountController {
                     uri: m.uri,
                     description: m.description,
                     createdAt: m.createdAt
-                }))
+                })),
+                urls: (post as FacebookPostWithMedia).urls?.map(u => ({ url: u }))
             };
             return archivePost;
         }
