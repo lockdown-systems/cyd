@@ -64,6 +64,7 @@ const connectClicked = async () => {
     try {
         const ret: boolean | string = await window.electron.X.blueskyAuthorize(props.model.account.id, blueskyHandle.value);
         if (ret !== true) {
+            await window.electron.X.blueskyDisconnect(props.model.account.id);
             await window.electron.showMessage('Failed to connect to Bluesky.', `${ret}`);
             connectButtonText.value = 'Connect';
             state.value = State.NotConnected;
@@ -72,6 +73,7 @@ const connectClicked = async () => {
             state.value = State.FinishInBrowser;
         }
     } catch (e) {
+        await window.electron.X.blueskyDisconnect(props.model.account.id);
         await window.electron.showMessage('Failed to connect to Bluesky', `${e}`);
         connectButtonText.value = 'Connect';
         state.value = State.NotConnected;
@@ -88,6 +90,7 @@ const oauthCallback = async (queryString: string) => {
     try {
         const ret: boolean | string = await window.electron.X.blueskyCallback(props.model.account.id, queryString);
         if (ret !== true) {
+            await window.electron.X.blueskyDisconnect(props.model.account.id);
             await window.electron.showMessage('Failed to connect to Bluesky.', `${ret}`);
             state.value = State.NotConnected;
         } else {
@@ -97,6 +100,7 @@ const oauthCallback = async (queryString: string) => {
             await loadTweetCounts();
         }
     } catch (e) {
+        await window.electron.X.blueskyDisconnect(props.model.account.id);
         await window.electron.showMessage('Failed to connect to Bluesky', `${e}`);
         state.value = State.NotConnected;
     }
