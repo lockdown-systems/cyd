@@ -12,9 +12,7 @@ export interface Post {
         description: string | null;
         createdAt: string | null;
     }[];
-    urls?: {
-        url: string;
-    }[];
+    urls?: string[];
 }
 
 export type FacebookArchive = {

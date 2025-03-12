@@ -61,10 +61,11 @@ const shouldShowText = computed(() => {
 
             <!-- URLs -->
             <div v-if="post.urls?.length" class="urls-container mt-2">
-                <div v-for="urlData in post.urls" :key="urlData.url" class="url-item">
-                    <a :href="urlData.url" target="_blank" rel="noopener noreferrer">
+                <h6 class="text-muted mb-2">Link Previews</h6>
+                <div v-for="url in (Array.isArray(post.urls) ? post.urls : [post.urls])" :key="url" class="url-item">
+                    <a :href="url" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-link-45deg"></i>
-                        {{ urlData.url }}
+                        {{ url }}
                     </a>
                 </div>
             </div>

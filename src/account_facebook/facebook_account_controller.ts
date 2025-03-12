@@ -286,11 +286,7 @@ export class FacebookAccountController {
                     END as media,
                 CASE
                     WHEN pu.url IS NOT NULL
-                        THEN GROUP_CONCAT(
-                            json_object(
-                                'url', pu.url
-                            )
-                        )
+                        THEN GROUP_CONCAT(pu.url)
                         ELSE NULL
                     END as urls
                 FROM post p
@@ -302,10 +298,9 @@ export class FacebookAccountController {
             "all"
         );
         // Transform into FacebookPostWithMedia
-        const posts: FacebookPostWithMedia[] = (postsFromDb as Array<FacebookPostRow & { media?: string }>).map((post) => ({
+        const posts: FacebookPostWithMedia[] = (postsFromDb as Array<FacebookPostRow & { media?: string, urls?: string[] }>).map((post) => ({
             ...post,
             media: post.media ? JSON.parse(`[${post.media}]`) : undefined,
-            urls: post.urls ? JSON.parse(`[${post.urls}]`) : undefined
         }));
 
         // Get the current account's userID
@@ -334,7 +329,7 @@ export class FacebookAccountController {
                     description: m.description,
                     createdAt: m.createdAt
                 })),
-                urls: (post as FacebookPostWithMedia).urls?.map(u => ({ url: u }))
+                urls: post.urls,
             };
             return archivePost;
         }
@@ -666,22 +661,20 @@ export class FacebookAccountController {
                         const urls: string[] = [];
 
                         // Check attachments for URLs
-                        /* eslint-disable @typescript-eslint/no-explicit-any */
-                        post.attachments?.forEach((attachment: any) => {
-                            attachment.data?.forEach((data: any) => {
-                                if (data.external_context?.url && data.external_context.url !== '') {
+                        for (const attachment of post.attachments ?? []) {
+                            for (const data of attachment.data ?? []) {
+                                if (data.external_context?.url) {
                                     urls.push(data.external_context.url);
                                 }
-                            });
-                        });
+                            }
+                        }
 
                         // Check data array for URLs
-                        /* eslint-disable @typescript-eslint/no-explicit-any */
-                        post.data?.forEach((data: any) => {
+                        for (const data of post.data ?? []) {
                             if (data.external_context?.url && data.external_context.url !== '') {
                                 urls.push(data.external_context.url);
                             }
-                        });
+                        }
 
                         log.info("FacebookAccountController.importFacebookArchive: found URLs", {
                             postTimestamp: post.timestamp,
