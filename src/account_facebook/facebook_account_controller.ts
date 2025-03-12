@@ -35,7 +35,6 @@ import {
     FacebookArchiveMedia,
     FacebookPostWithMedia,
     FacebookPostRow,
-    FacebookPostUrlRow,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
