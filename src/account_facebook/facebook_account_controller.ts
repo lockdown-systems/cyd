@@ -1,11 +1,16 @@
 import path from 'path'
+import fs from 'fs'
+import os from 'os'
 
 import fetch from 'node-fetch';
-import { session } from 'electron'
+import { app, session } from 'electron'
 import log from 'electron-log/main';
 import Database from 'better-sqlite3'
+import unzipper from 'unzipper';
+import { glob } from 'glob';
 
 import {
+    getResourcesPath,
     getAccountDataPath,
 } from '../util'
 import {
@@ -13,6 +18,7 @@ import {
     FacebookJob,
     FacebookProgress,
     emptyFacebookProgress,
+    FacebookImportArchiveResponse,
 } from '../shared_types'
 import {
     runMigrations,
@@ -25,7 +31,12 @@ import { IMITMController } from '../mitm';
 import {
     FacebookJobRow,
     convertFacebookJobRowToFacebookJob,
+    FacebookArchivePost,
+    FacebookArchiveMedia,
+    FacebookPostWithMedia,
+    FacebookPostRow,
 } from './types'
+import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
 export class FacebookAccountController {
     private accountUUID: string = "";
@@ -113,7 +124,7 @@ export class FacebookAccountController {
         }
 
         // Make sure the account data folder exists
-        this.accountDataPath = getAccountDataPath('X', this.account.name);
+        this.accountDataPath = getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`);
         log.info(`FacebookAccountController.initDB: accountDataPath=${this.accountDataPath}`);
 
         // Open the database
@@ -138,9 +149,67 @@ export class FacebookAccountController {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL UNIQUE,
     value TEXT NOT NULL
-);`
+);`]
+            },
+            {
+                name: "20250220_add_post_table",
+                sql: [
+                    `CREATE TABLE post (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    postID TEXT NOT NULL UNIQUE,
+    createdAt DATETIME NOT NULL,
+    title TEXT,
+    text TEXT,
+    addedToDatabaseAt DATETIME NOT NULL
+                    );`
                 ]
             },
+            {
+                name: "20250220_add_isReposted_to_post",
+                sql: [
+                    `CREATE TABLE post_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        postID TEXT NOT NULL UNIQUE,
+                        createdAt DATETIME NOT NULL,
+                        title TEXT,
+                        text TEXT,
+                        isReposted BOOLEAN NOT NULL DEFAULT 0,
+                        addedToDatabaseAt DATETIME NOT NULL
+                    );`,
+                    `INSERT INTO post_new (id, postID, createdAt, title, text, addedToDatabaseAt)
+                     SELECT id, postID, createdAt, title, text, addedToDatabaseAt FROM post;`,
+                    `DROP TABLE post;`,
+                    `ALTER TABLE post_new RENAME TO post;`
+                ]
+            },
+            {
+                name: "20250302_add_media_table",
+                sql: [
+                    `CREATE TABLE post_media (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        mediaId TEXT NOT NULL UNIQUE,
+                        postId TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        uri TEXT NOT NULL,
+                        description TEXT,
+                        createdAt DATETIME,
+                        addedToDatabaseAt DATETIME NOT NULL,
+                        FOREIGN KEY(postId) REFERENCES post(postID)
+                    );`
+                ]
+            },
+            {
+                name: "20250312_add_urls_to_posts",
+                sql: [
+                    `CREATE TABLE post_url (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        postId TEXT NOT NULL,
+                        url TEXT NOT NULL,
+                        addedToDatabaseAt DATETIME NOT NULL,
+                        FOREIGN KEY(postId) REFERENCES post(postID)
+                    );`
+                ]
+            }
         ])
         log.info("FacebookAccountController.initDB: database initialized");
     }
@@ -195,8 +264,129 @@ export class FacebookAccountController {
         }
 
         log.info("FacebookAccountController.archiveBuild: building archive");
+        // Posts with optional media
+        const postsFromDb = exec(
+            this.db,
+            `SELECT
+                p.*,
+                CASE
+                    WHEN pm.mediaId IS NOT NULL
+                        THEN GROUP_CONCAT(
+                            json_object(
+                                'mediaId', pm.mediaId,
+                                'postId', pm.postId,
+                                'type', pm.type,
+                                'uri', pm.uri,
+                                'description', pm.description,
+                                'createdAt', pm.createdAt,
+                                'addedToDatabaseAt', pm.addedToDatabaseAt
+                            )
+                        )
+                        ELSE NULL
+                    END as media,
+                CASE
+                    WHEN pu.url IS NOT NULL
+                        THEN GROUP_CONCAT(pu.url)
+                        ELSE NULL
+                    END as urls
+                FROM post p
+                LEFT JOIN post_media pm ON p.postID = pm.postId
+                LEFT JOIN post_url pu ON p.postID = pu.postId
+                GROUP BY p.postID
+                ORDER BY p.createdAt DESC`,
+            [],
+            "all"
+        );
+        // Transform into FacebookPostWithMedia
+        const posts: FacebookPostWithMedia[] = (postsFromDb as Array<FacebookPostRow & { media?: string, urls?: string[] }>).map((post) => ({
+            ...post,
+            media: post.media ? JSON.parse(`[${post.media}]`) : undefined,
+        }));
 
-        // TODO: implement
+        // Get the current account's userID
+        // const accountUser = users.find((user) => user.screenName == this.account?.username);
+        // const accountUserID = accountUser?.userID;
+
+        const postRowToArchivePost = (post: FacebookPostRow): FacebookArchiveTypes.Post => {
+            const decodeUnicode = (text: string): string => {
+                if (!text) return '';  // Return empty string if text is null/undefined
+                return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+                    String.fromCharCode(parseInt(hex, 16))
+                );
+            };
+
+            const archivePost: FacebookArchiveTypes.Post = {
+                postID: post.postID,
+                createdAt: post.createdAt,
+                text: decodeUnicode(post.text),
+                title: post.title,
+                isReposted: post.isReposted,
+                archivedAt: post.archivedAt,
+                media: (post as FacebookPostWithMedia).media?.map(m => ({
+                    mediaId: m.mediaId,
+                    type: m.type,
+                    uri: m.uri,
+                    description: m.description,
+                    createdAt: m.createdAt
+                })),
+                urls: post.urls,
+            };
+            return archivePost;
+        }
+
+        // Build the archive object
+        const formattedPosts: FacebookArchiveTypes.Post[] = posts.map((post) => {
+            return postRowToArchivePost(post);
+        });
+
+        log.info(`FacebookAccountController.archiveBuild: archive has ${posts.length} posts`);
+
+        // Save the archive object to a file using streaming
+        const accountPath = path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`));
+        const assetsPath = path.join(accountPath, "assets");
+        if (!fs.existsSync(assetsPath)) {
+            fs.mkdirSync(assetsPath);
+        }
+        const archivePath = path.join(assetsPath, "archive.js");
+
+        const streamWriter = fs.createWriteStream(archivePath);
+        try {
+            // Write the window.archiveData prefix
+            streamWriter.write('window.archiveData=');
+
+            // Write the archive metadata
+            streamWriter.write('{\n');
+            streamWriter.write(`  "appVersion": ${JSON.stringify(app.getVersion())},\n`);
+            streamWriter.write(`  "username": ${JSON.stringify(this.account.name)},\n`);
+            streamWriter.write(`  "createdAt": ${JSON.stringify(new Date().toLocaleString())},\n`);
+
+            // Write each array separately using a streaming approach in case the array(s) are large
+            await this.writeJSONArray(streamWriter, formattedPosts, "posts");
+            streamWriter.write(',\n');
+            // Close the object
+            streamWriter.write('};');
+
+            await new Promise((resolve) => streamWriter.end(resolve));
+        } catch (error) {
+            streamWriter.end();
+            throw error;
+        }
+
+        log.info(`FacebookAccountController.archiveBuild: archive saved to ${archivePath}`);
+
+        // Unzip facebook-archive.zip to the account data folder using unzipper
+        const archiveZipPath = path.join(getResourcesPath(), "facebook-archive.zip");
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        await archiveZip.extract({ path: accountPath });
+    }
+
+    async writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
+        streamWriter.write(`  "${propertyName}": [\n`);
+        for (let i = 0; i < items.length; i++) {
+            const suffix = i < items.length - 1 ? ',\n' : '\n';
+            streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
+        }
+        streamWriter.write('  ]');
     }
 
     async syncProgress(progressJSON: string) {
@@ -220,7 +410,7 @@ export class FacebookAccountController {
             }
             const buffer = await response.buffer();
             log.info("FacebookAccountController.getProfileImageDataURI: buffer", buffer);
-            return `data:${response.headers.get('content-type')};base64,${buffer.toString('base64')}`;
+            return `data: ${response.headers.get('content-type')}; base64, ${buffer.toString('base64')}`;
         } catch (e) {
             log.error("FacebookAccountController.getProfileImageDataURI: error", e);
             return "";
@@ -233,5 +423,387 @@ export class FacebookAccountController {
 
     async setConfig(key: string, value: string) {
         return setConfig(key, value, this.db);
+    }
+
+    // Unzip facebook archive to the account data folder using unzipper
+    // Return null if error, else return the unzipped path
+    async unzipFacebookArchive(archiveZipPath: string): Promise<string | null> {
+        if (!this.account) {
+            return null;
+        }
+        const unzippedPath = path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`), "tmp");
+
+        const archiveZip = await unzipper.Open.file(archiveZipPath);
+        await archiveZip.extract({ path: unzippedPath });
+
+        log.info(`FacebookAccountController.unzipFacebookArchive: unzipped to ${unzippedPath}`);
+
+        return unzippedPath;
+    }
+
+    // Delete the unzipped facebook archive once the build is completed
+    async deleteUnzippedFacebookArchive(archivePath: string): Promise<void> {
+        fs.rm(archivePath, { recursive: true, force: true }, err => {
+            if (err) {
+                log.error(`FacebookAccountController.deleteUnzippedFacebookArchive: Error occured while deleting unzipped folder: ${err} `);
+            }
+        });
+    }
+
+    // Return null on success, and a string (error message) on error
+    async verifyFacebookArchive(archivePath: string): Promise<string | null> {
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
+
+        const foldersToCheck = [
+            archivePath,
+            path.join(archivePath, "personal_information", "profile_information"),
+        ];
+
+        // Make sure folders exist
+        for (let i = 0; i < foldersToCheck.length; i++) {
+            if (!fs.existsSync(foldersToCheck[i])) {
+                log.error(`XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]} `);
+                return `The folder ${foldersToCheck[i]} doesn't exist.`;
+            }
+        }
+
+        // Check if there's a profile_information.html file. This means the person downloaded the archive using HTML, not JSON.
+        const profileHtmlInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.html");
+        if (fs.existsSync(profileHtmlInformationPath)) {
+            log.error(`FacebookAccountController.verifyFacebookArchive: file is in wrong format, expected JSON, not HTML: ${profileHtmlInformationPath}`);
+            return `The file ${profileHtmlInformationPath} file is in the wrong format. Request a JSON archive.`;
+        }
+
+        // Make sure profile_information.json exists and is readable
+        const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.json");
+        if (!fs.existsSync(profileInformationPath)) {
+            log.error(`FacebookAccountController.verifyFacebookArchive: file does not exist: ${profileInformationPath}`);
+            return `The file ${profileInformationPath} doesn't exist.`;
+        }
+        try {
+            fs.accessSync(profileInformationPath, fs.constants.R_OK);
+        } catch {
+            log.error(`FacebookAccountController.verifyFacebookArchive: file is not readable: ${profileInformationPath}`);
+            return `The file ${profileInformationPath} is not readable.`;
+        }
+
+        // Make sure the profile_information.json file belongs to the right account
+        try {
+            const profileData = JSON.parse(fs.readFileSync(profileInformationPath, 'utf-8'));
+
+            if (!profileData.profile_v2?.profile_uri) {
+                log.error("FacebookAccountController.verifyFacebookArchive: Could not find profile URI in archive");
+                return "Could not find profile ID in archive";
+            }
+
+            const profileUrl = profileData.profile_v2.profile_uri;
+            const profileId = profileUrl.split('id=')[1];
+
+            if (!profileId) {
+                log.error("FacebookAccountController.verifyFacebookArchive: Could not extract profile ID from URL");
+                return "Could not extract profile ID from URL";
+            }
+
+            if (profileId !== this.account?.accountID) {
+                log.error(`FacebookAccountController.verifyFacebookArchive: profile_information.json does not belong to the right account`);
+                return `This archive is for @${profileId}, not @${this.account?.accountID}.`;
+            }
+        } catch {
+            return "Error parsing JSON in profile_information.json";
+        }
+
+        return null;
+    }
+
+    // Return null on success, and a string (error message) on error
+    async importFacebookArchive(archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        let importCount = 0;
+        const skipCount = 0;
+
+        // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
+        const archiveContents = fs.readdirSync(archivePath);
+        if (archiveContents.length === 1 && fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()) {
+            archivePath = path.join(archivePath, archiveContents[0]);
+        }
+
+        // Load the username
+        let profileId: string;
+
+
+        try {
+            const profileInformationPath = path.join(archivePath, "personal_information/profile_information/profile_information.json");
+            const profileData = JSON.parse(fs.readFileSync(profileInformationPath, 'utf-8'));
+
+            if (!profileData.profile_v2?.profile_uri) {
+                return {
+                    status: "error",
+                    errorMessage: "Could not find profile URI in archive",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            const profileUrl = profileData.profile_v2.profile_uri;
+            profileId = profileUrl.split('id=')[1] || '';
+
+            if (!profileId) {
+                return {
+                    status: "error",
+                    errorMessage: "Could not extract profile ID from URL",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+        } catch (e) {
+            return {
+                status: "error",
+                errorMessage: "Error parsing profile information JSON",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        // Import posts
+        if (dataType == "posts") {
+            const postsFilenames = await glob(
+                [
+                    // TODO: for really big Facebook archives, are there more files here?
+                    path.join(archivePath, "your_facebook_activity", "posts", "your_posts__check_ins__photos_and_videos_1.json"),
+                ],
+                {
+                    windowsPathsNoEscape: os.platform() == 'win32'
+                }
+            );
+            if (postsFilenames.length === 0) {
+                return {
+                    status: "error",
+                    errorMessage: "No posts files found",
+                    importCount: importCount,
+                    skipCount: skipCount,
+                };
+            }
+
+            // Go through each file and import the posts
+            for (let i = 0; i < postsFilenames.length; i++) {
+                const postsData: FacebookArchivePost[] = [];
+                try {
+                    const postsFile = fs.readFileSync(postsFilenames[i], 'utf8');
+                    const posts = JSON.parse(postsFile);
+
+                    for (const post of posts) {
+                        // Check for Facebook "life events"
+                        const lifeEvent =
+                            post.data?.find((d: { life_event?: { title?: string } }) => d.life_event?.title) ||
+                            post.attachments?.[0]?.data?.[0]?.life_event;
+                        log.info("FacebookAccountController.importFacebookArchive: lifeEvent", lifeEvent);
+
+                        let postText: string = '';
+                        if (lifeEvent) {
+                            postText = lifeEvent.title;
+                            if (lifeEvent.start_date) {
+                                const date = new Date(
+                                    lifeEvent.start_date.year,
+                                    lifeEvent.start_date.month - 1,
+                                    lifeEvent.start_date.day
+                                );
+                                postText += ` (${date.toLocaleDateString()})`;
+                            }
+                        } else {
+                            postText = post.data?.find((d: { post?: string }) => 'post' in d && typeof d.post === 'string')?.post;
+                        }
+                        log.info("FacebookAccountController.importFacebookArchive: postText", postText);
+
+                        // Check if it's a shared post by looking for external_context.url being empty in attachments
+                        const isSharedPost = (
+                            (post.attachments?.[0]?.data?.[0]?.external_context?.url !== undefined &&
+                                post.attachments?.[0]?.data?.[0]?.external_context?.url === '')
+                        );
+                        log.info("FacebookAccountController.importFacebookArchive: isSharedPost", isSharedPost);
+
+                        // Check if it's a share of a group post
+                        const isGroupPost = post.attachments?.[0]?.data?.[0]?.name !== undefined;
+                        log.info("FacebookAccountController.importFacebookArchive: isGroupPost", isGroupPost);
+                        const groupName = isGroupPost ? post.attachments[0].data[0].name : undefined;
+                        log.info("FacebookAccountController.importFacebookArchive: groupName", groupName);
+
+                        // For group posts, if there's no explicit post text, use the group name
+                        const finalText = isGroupPost
+                            ? (postText || `Shared the group: ${groupName}`)
+                            : postText;
+
+                        // Process media attachments
+                        const media: FacebookArchiveMedia[] = [];
+                        if (post.attachments) {
+                            for (const attachment of post.attachments) {
+                                for (const data of attachment.data) {
+                                    if (data.media) {
+                                        media.push({
+                                            uri: data.media.uri,
+                                            type: data.media.uri.endsWith('.mp4') ? 'video' : 'photo',
+                                            description: data.media.description,
+                                            creationTimestamp: data.media.creation_timestamp
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        log.info("FacebookAccountController.importFacebookArchive: media", media);
+
+                        // Process URLs
+                        const urls: string[] = [];
+
+                        // Check attachments for URLs
+                        for (const attachment of post.attachments ?? []) {
+                            for (const data of attachment.data ?? []) {
+                                if (data.external_context?.url) {
+                                    urls.push(data.external_context.url);
+                                }
+                            }
+                        }
+
+                        // Check data array for URLs
+                        for (const data of post.data ?? []) {
+                            if (data.external_context?.url && data.external_context.url !== '') {
+                                urls.push(data.external_context.url);
+                            }
+                        }
+
+                        log.info("FacebookAccountController.importFacebookArchive: found URLs", {
+                            postTimestamp: post.timestamp,
+                            urlCount: urls.length,
+                            urls
+                        });
+
+                        postsData.push({
+                            id_str: post.timestamp.toString(),
+                            title: post.title || '',
+                            full_text: finalText,
+                            created_at: new Date(post.timestamp * 1000).toISOString(),
+                            isReposted: isSharedPost || isGroupPost, // Group shares are reposts too
+                            media: media.length > 0 ? media : undefined,
+                            urls: urls,
+                        });
+                    }
+                } catch (e) {
+                    return {
+                        status: "error",
+                        errorMessage: "Error parsing JSON in exported posts",
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
+
+                // Loop through the posts and add them to the database
+                try {
+                    postsData.forEach(async (post) => {
+                        // Is this post already there?
+                        const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [post.id_str], "get") as FacebookPostRow;
+                        if (existingPost) {
+                            // First delete related media and URLs
+                            exec(this.db, 'DELETE FROM post_media WHERE postId = ?', [post.id_str]);
+                            exec(this.db, 'DELETE FROM post_url WHERE postId = ?', [post.id_str]);
+
+                            // Delete the existing post to re-import
+                            exec(this.db, 'DELETE FROM post WHERE postID = ?', [post.id_str]);
+                        }
+
+                        // Import it
+                        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, isReposted, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?)', [
+                            post.id_str,
+                            new Date(post.created_at),
+                            post.title,
+                            post.full_text,
+                            post.isReposted ? 1 : 0,
+                            new Date(),
+                        ]);
+
+                        if (post.media && post.media.length > 0) {
+                            log.info("FacebookAccountController.importFacebookArchive: importing media for post", post.id_str);
+                            await this.importFacebookArchiveMedia(post.id_str, post.media, archivePath);
+                        }
+
+                        if (post.urls && post.urls.length > 0) {
+                            log.info("FacebookAccountController.importFacebookArchive: importing urls for post", post.id_str);
+                            await this.importFacebookArchiveUrl(post.id_str, post.urls);
+                        }
+
+                        importCount++;
+                    });
+                } catch (e) {
+                    log.error("FacebookAccountController.importFacebookArchive: error importing posts", e);
+                    return {
+                        status: "error",
+                        errorMessage: "Error importing posts: " + e,
+                        importCount: importCount,
+                        skipCount: skipCount,
+                    };
+                }
+            }
+
+            return {
+                status: "success",
+                errorMessage: "",
+                importCount: importCount,
+                skipCount: skipCount,
+            };
+        }
+
+        return {
+            status: "error",
+            errorMessage: "Invalid data type.",
+            importCount: importCount,
+            skipCount: skipCount,
+        };
+    }
+
+    async importFacebookArchiveMedia(postId: string, media: FacebookArchiveMedia[], archivePath: string): Promise<void> {
+        for (const mediaItem of media) {
+            const sourcePath = path.join(archivePath, mediaItem.uri);
+            const mediaId = `${postId}_${path.basename(mediaItem.uri)}`;
+
+            // Create destination directory if it doesn't exist
+            const mediaDir = path.join(this.accountDataPath, 'media');
+            if (!fs.existsSync(mediaDir)) {
+                fs.mkdirSync(mediaDir, { recursive: true });
+            }
+
+            const destPath = path.join(mediaDir, path.basename(mediaItem.uri));
+            try {
+                await fs.promises.copyFile(sourcePath, destPath);
+
+                exec(this.db,
+                    'INSERT INTO post_media (mediaId, postId, type, uri, description, createdAt, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [
+                        mediaId,
+                        postId,
+                        mediaItem.type,
+                        path.basename(mediaItem.uri),
+                        mediaItem.description || null,
+                        mediaItem.creationTimestamp ? new Date(mediaItem.creationTimestamp * 1000) : null,
+                        new Date()
+                    ]
+                );
+            } catch (error) {
+                log.error(`FacebookAccountController.importFacebookArchiveMedia: Error importing media: ${error}`);
+            }
+        }
+    }
+
+    async importFacebookArchiveUrl(postId: string, urls: string[]) {
+        try {
+            for (const url of urls) {
+                exec(this.db, 'INSERT INTO post_url (postId, url, addedToDatabaseAt) VALUES (?, ?, ?)', [postId, url, new Date()]);
+            }
+        } catch (error) {
+            log.error(`FacebookAccountController.importFacebookArchiveUrl: Error importing urls: ${error}`);
+        }
     }
 }

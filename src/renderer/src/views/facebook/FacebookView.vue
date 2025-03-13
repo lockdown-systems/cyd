@@ -20,6 +20,9 @@ import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
 import FacebookWizardImportOrBuildPage from './FacebookWizardImportOrBuildPage.vue';
 import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
+import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
+import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage.vue';
+import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
 
 import type {
     Account,
@@ -141,7 +144,8 @@ const onCancelAutomation = () => {
     console.log('Cancelling automation');
 
     // Submit progress to the API
-    emitter.value.emit(`x-submit-progress-${props.account.id}`);
+    // TODO: impl?
+    emitter.value.emit(`facebook-submit-progress-${props.account.id}`);
 
     emit('onRefreshClicked');
 };
@@ -187,7 +191,8 @@ const updateUserPremium = async () => {
 
     if (!userPremium.value) {
         console.log('User does not have Premium access');
-        emitter?.emit(`x-premium-check-failed-${props.account.id}`);
+        // TODO: `facebook-premium-check-failed` emit
+        emitter?.emit(`facebook-premium-check-failed-${props.account.id}`);
     }
 };
 
@@ -383,6 +388,15 @@ onUnmounted(async () => {
                     <div class="wizard-content flex-grow-1">
                         <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
                             :model="unref(model)" @set-state="setState($event)" />
+
+                        <FacebookWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
+                        <FacebookWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
+                        <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
