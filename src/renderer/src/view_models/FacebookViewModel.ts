@@ -7,6 +7,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
+import { formatError } from '../util';
 import { facebookHasSomeData } from '../util_facebook';
 
 export enum State {
@@ -197,7 +198,7 @@ export class FacebookViewModel extends BaseViewModel {
             this.log("defineJobs", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.facebook_unknownError, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             }, {
                 currentURL: this.webview?.getURL()
             });
@@ -253,7 +254,7 @@ export class FacebookViewModel extends BaseViewModel {
                 } else {
                     await this.error(AutomationErrorType.facebook_loadURLError, {
                         url: url,
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         currentURL: this.webview?.getURL()
                     });
@@ -557,7 +558,7 @@ You can either import a Facebook archive, or I can build it from scratch by scro
             }
         } catch (e) {
             await this.error(AutomationErrorType.x_runError, {
-                exception: (e as Error).toString(),
+                error: formatError(e as Error),
                 state: this.state,
                 jobs: this.jobs,
                 currentJobIndex: this.currentJobIndex,

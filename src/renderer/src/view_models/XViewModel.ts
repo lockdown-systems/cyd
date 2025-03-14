@@ -18,7 +18,7 @@ import {
 import { XViewerResults, XUserInfo } from "../types_x"
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { getJobsType } from '../util';
+import { getJobsType, formatError } from '../util';
 import { xHasSomeData } from '../util_x';
 
 // This is the Bearer token used by X's public web client, it's not a secret
@@ -225,7 +225,7 @@ export class XViewModel extends BaseViewModel {
             this.log("defineJobs", JSON.parse(JSON.stringify(this.jobs)));
         } catch (e) {
             await this.error(AutomationErrorType.x_unknownError, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             }, {
                 currentURL: this.webview?.getURL()
             });
@@ -383,7 +383,7 @@ export class XViewModel extends BaseViewModel {
                 } else {
                     await this.error(AutomationErrorType.x_loadURLError, {
                         url: url,
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         currentURL: this.webview?.getURL()
                     });
@@ -611,13 +611,13 @@ export class XViewModel extends BaseViewModel {
         } catch (e) {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
-                    exception: (e as Error).toString()
+                    error: formatError(e as Error)
                 }, {
                     currentURL: this.webview?.getURL()
                 });
             } else {
                 await this.error(AutomationErrorType.X_login_WaitingForURLFailed, {
-                    exception: (e as Error).toString()
+                    error: formatError(e as Error)
                 }, {
                     currentURL: this.webview?.getURL()
                 });
@@ -654,7 +654,7 @@ export class XViewModel extends BaseViewModel {
         const userInfo: XUserInfo | null = await this.graphqlGetViewerUser();
         if (userInfo === null) {
             await this.error(AutomationErrorType.X_login_GetViewerUserFailed, {
-                exception: "userInfo is null"
+                error: "userInfo is null"
             });
             return;
         }
@@ -776,7 +776,7 @@ export class XViewModel extends BaseViewModel {
 
         if (!success) {
             await this.error(errorType, {
-                exception: (error as Error).toString(),
+                error: formatError(error as Error),
                 currentURL: this.webview?.getURL(),
                 newURL: newURL,
             })
@@ -837,7 +837,7 @@ export class XViewModel extends BaseViewModel {
 
         if (!success) {
             await this.error(errorType, {
-                exception: (error as Error).toString(),
+                error: formatError(error as Error),
                 currentURL: this.webview?.getURL(),
                 newURL: newURL,
             })
@@ -897,7 +897,7 @@ export class XViewModel extends BaseViewModel {
             await window.electron.X.archiveTweet(this.account.id, tweetItem.tweetID);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToArchive, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             }, {
                 tweetItem: tweetItem,
                 currentURL: this.webview?.getURL()
@@ -1012,14 +1012,14 @@ Hang on while I scroll down to your earliest tweets.`;
                     const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexTweets_URLChanged, {
                         newURL: newURL,
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
                 } else {
                     await this.error(AutomationErrorType.x_runJob_indexTweets_OtherError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         currentURL: this.webview?.getURL()
                     })
@@ -1072,7 +1072,7 @@ Hang on while I scroll down to your earliest tweets.`;
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexTweets_ParseTweetsError, {
-                    exception: (e as Error).toString()
+                    error: formatError(e as Error)
                 }, {
                     latestResponseData: latestResponseData,
                     currentURL: this.webview?.getURL()
@@ -1093,7 +1093,7 @@ Hang on while I scroll down to your earliest tweets.`;
                 } catch (e) {
                     const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                     await this.error(AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         latestResponseData: latestResponseData,
                         currentURL: this.webview?.getURL()
@@ -1155,7 +1155,7 @@ This may take a while...`;
             archiveStartResponse = await window.electron.X.archiveTweetsStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_archiveTweets_FailedToStart, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -1249,13 +1249,13 @@ Hang on while I scroll down to your earliest direct message conversations...`;
                     const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexConversations_URLChanged, {
                         newURL: newURL,
-                        exception: (e as Error).toString(),
+                        error: formatError(e as Error),
                         currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
                 } else {
                     await this.error(AutomationErrorType.x_runJob_indexConversations_OtherError, {
-                        exception: (e as Error).toString(),
+                        error: formatError(e as Error),
                         currentURL: this.webview?.getURL()
                     })
                     errorTriggered = true;
@@ -1284,7 +1284,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexConversations_ParseConversationsError, {
-                    exception: (e as Error).toString()
+                    error: formatError(e as Error)
                 }, {
                     latestResponseData: latestResponseData
                 });
@@ -1344,7 +1344,7 @@ Please wait while I index all the messages from each conversation...`;
             indexMessagesStartResponse = await window.electron.X.indexMessagesStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_indexMessages_FailedToStart, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -1404,7 +1404,7 @@ Please wait while I index all the messages from each conversation...`;
 
             if (!success) {
                 await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-                    exception: (error as Error).toString(),
+                    error: formatError(error as Error),
                 });
             }
 
@@ -1433,7 +1433,7 @@ Please wait while I index all the messages from each conversation...`;
                 } catch (e) {
                     const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                     await this.error(AutomationErrorType.x_runJob_indexMessages_ParseMessagesError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         latestResponseData: latestResponseData,
                         currentURL: this.webview?.getURL()
@@ -1474,7 +1474,7 @@ Please wait while I index all the messages from each conversation...`;
             this.emitter?.emit(`x-update-archive-info-${this.account.id}`);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -1544,12 +1544,12 @@ Hang on while I scroll down to your earliest likes.`;
                     const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexLikes_URLChanged, {
                         newURL: newURL,
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     })
                     errorTriggered = true;
                 } else {
                     await this.error(AutomationErrorType.x_runJob_indexLikes_OtherError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     })
                     errorTriggered = true;
                 }
@@ -1587,7 +1587,7 @@ Hang on while I scroll down to your earliest likes.`;
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexLikes_ParseTweetsError, {
-                    exception: (e as Error).toString()
+                    error: formatError(e as Error)
                 }, {
                     latestResponseData: latestResponseData
                 });
@@ -1607,7 +1607,7 @@ Hang on while I scroll down to your earliest likes.`;
                 } catch (e) {
                     const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                     await this.error(AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         latestResponseData: latestResponseData,
                         currentURL: this.webview?.getURL()
@@ -1711,12 +1711,12 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     const newURL = this.webview?.getURL();
                     await this.error(AutomationErrorType.x_runJob_indexBookmarks_URLChanged, {
                         newURL: newURL,
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     })
                     errorTriggered = true;
                 } else {
                     await this.error(AutomationErrorType.x_runJob_indexBookmarks_OtherError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     })
                     errorTriggered = true;
                 }
@@ -1754,7 +1754,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             } catch (e) {
                 const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                 await this.error(AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError, {
-                    exception: (e as Error).toString()
+                    error: formatError(e as Error)
                 }, {
                     latestResponseData: latestResponseData
                 });
@@ -1774,7 +1774,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                 } catch (e) {
                     const latestResponseData = await window.electron.X.getLatestResponseData(this.account.id);
                     await this.error(AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError, {
-                        exception: (e as Error).toString()
+                        error: formatError(e as Error)
                     }, {
                         latestResponseData: latestResponseData,
                         currentURL: this.webview?.getURL()
@@ -1835,7 +1835,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             tweetsToDelete = await window.electron.X.deleteTweetsStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -1892,7 +1892,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                         await this.syncProgress();
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp, {
-                            exception: (e as Error).toString()
+                            error: formatError(e as Error)
                         }, {
                             tweet: tweetsToDelete.tweets[i],
                             index: i
@@ -1944,7 +1944,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             tweetsToDelete = await window.electron.X.deleteRetweetsStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToStart, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -2001,7 +2001,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                         await this.syncProgress();
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp, {
-                            exception: (e as Error).toString()
+                            error: formatError(e as Error)
                         }, {
                             tweet: tweetsToDelete.tweets[i],
                             index: i
@@ -2053,7 +2053,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             tweetsToDelete = await window.electron.X.deleteLikesStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -2107,7 +2107,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                         await this.syncProgress();
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp, {
-                            exception: (e as Error).toString()
+                            error: formatError(e as Error)
                         }, {
                             tweet: tweetsToDelete.tweets[i],
                             index: i
@@ -2159,7 +2159,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
             tweetsToDelete = await window.electron.X.deleteBookmarksStart(this.account.id);
         } catch (e) {
             await this.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
-                exception: (e as Error).toString()
+                error: formatError(e as Error)
             })
             return false;
         }
@@ -2213,7 +2213,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                         await this.syncProgress();
                     } catch (e) {
                         await this.error(AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp, {
-                            exception: (e as Error).toString()
+                            error: formatError(e as Error)
                         }, {
                             tweet: tweetsToDelete.tweets[i],
                             index: i
@@ -2433,7 +2433,9 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
             if (errorTriggered) {
                 if (error) {
-                    await this.error(errorType, { exception: (error as Error).toString() });
+                    await this.error(errorType, {
+                        error: formatError(error as Error)
+                    });
                 } else {
                     await this.error(errorType, {});
                 }
@@ -2571,7 +2573,9 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
             if (errorTriggered) {
                 if (error) {
-                    await this.error(errorType, { exception: (error as Error).toString() });
+                    await this.error(errorType, {
+                        error: formatError(error as Error)
+                    });
                 } else {
                     await this.error(errorType, {});
                 }
@@ -2994,7 +2998,7 @@ You can save all your data for free, but you need a Premium plan to delete your 
                             }
                         } catch (e) {
                             await this.error(AutomationErrorType.x_runJob_UnknownError, {
-                                exception: (e as Error).toString()
+                                error: formatError(e as Error)
                             });
                             break;
                         }
@@ -3022,7 +3026,7 @@ You can save all your data for free, but you need a Premium plan to delete your 
             }
         } catch (e) {
             await this.error(AutomationErrorType.x_runError, {
-                exception: (e as Error).toString(),
+                error: formatError(e as Error),
                 state: this.state,
                 jobs: this.jobs,
                 currentJobIndex: this.currentJobIndex,
