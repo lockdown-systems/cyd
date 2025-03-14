@@ -163,3 +163,8 @@ export const getJobsType = (accountID: number): string | null => {
 export const clearJobsType = (accountID: number): void => {
     localStorage.removeItem(`jobsType-${accountID}`);
 }
+
+// Format an error to include the message and stack trace
+export const formatError = (error: Error): string => {
+    return `${error.message}\n\n${error.stack}`;
+}

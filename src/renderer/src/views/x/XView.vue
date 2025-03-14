@@ -51,7 +51,8 @@ import {
     showQuestionOpenModePremiumFeature,
     openURL,
     setPremiumTasks,
-    getJobsType
+    getJobsType,
+    formatError
 } from '../../util';
 import { xRequiresPremium, xPostProgress } from '../../util_x';
 import LoadingComponent from '../shared_components/LoadingComponent.vue';
@@ -355,11 +356,15 @@ const debugAutopauseEndOfStepChanged = async (value: boolean) => {
 const debugModeTriggerError = async (count: number = 1) => {
     console.log('Debug mode error triggered', count);
     if (count == 1) {
-        await model.value.error(AutomationErrorType.x_unknownError, {
-            message: "Debug mode error triggered",
-        }, {
-            currentURL: model.value.webview?.getURL()
-        });
+        try {
+            throw new Error('Debug mode error triggered');
+        } catch (e) {
+            await model.value.error(AutomationErrorType.x_unknownError, {
+                error: formatError(e as Error)
+            }, {
+                currentURL: model.value.webview?.getURL()
+            });
+        }
     } else {
         for (let i = 0; i < count; i++) {
             await model.value.error(AutomationErrorType.x_unknownError, {
