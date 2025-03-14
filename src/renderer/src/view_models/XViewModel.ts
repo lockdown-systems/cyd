@@ -1405,7 +1405,7 @@ Please wait while I index all the messages from each conversation...`;
             if (!success) {
                 await this.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
                     error: formatError(error as Error),
-                }, true);
+                });
             }
 
             if (shouldSkip) {
