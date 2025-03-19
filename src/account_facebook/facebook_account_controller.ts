@@ -259,7 +259,8 @@ export class FacebookAccountController {
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         await ses.clearCache();
         await this.mitmController.startMonitoring();
-        await this.mitmController.startMITM(ses, ["x.com/i/api/graphql", "x.com/i/api/1.1/dm", "x.com/i/api/2/notifications/all.json"]);
+        log.info(ses);
+        await this.mitmController.startMITM(ses, ["www.facebook.com/api/graphql/"]);
         this.thereIsMore = true;
     }
 
@@ -269,7 +270,7 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async saveParseHTMLPostData(data: {"data": []}) {
+    async saveParseHTMLPostData(data: object) {
         log.info("FacebookAccountController.saveParseHTMLPostData: parsing data");
         log.info(data["data"]);
 
@@ -279,6 +280,16 @@ export class FacebookAccountController {
             const URL = post["wwwURL"];
             const id = post["id"];
             const post_id = post["post_id"];
+        }
+    }
+
+    async saveGraphQLPostData() {
+        log.error("Are we getting GraphQL request??")
+        await this.mitmController.clearProcessed();
+        log.info(`FacebookAccountController.indexsaveGraphQLPostDataParseTweets: parsing ${this.mitmController.responseData.length} responses`);
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            log.info(this.mitmController.responseData[i]);
         }
     }
 

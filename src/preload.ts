@@ -379,8 +379,17 @@ contextBridge.exposeInMainWorld('electron', {
         importFacebookArchive: (accountID: number, archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> => {
             return ipcRenderer.invoke('Facebook:importFacebookArchive', accountID, archivePath, dataType);
         },
+        indexStart: (accountID: number) => {
+            ipcRenderer.invoke('Facebook:indexStart', accountID)
+        },
+        indexStop: (accountID: number) => {
+            ipcRenderer.invoke('Facebook:indexStop', accountID)
+        },
         saveParseHTMLPostData: (accountID: number, data: object): Promise<string> => {
             return ipcRenderer.invoke('Facebook:saveParseHTMLPostData', accountID, data);
+        },
+        saveGraphQLPostData: (accountID: number): Promise<string> => {
+            return ipcRenderer.invoke('Facebook:saveGraphQLPostData', accountID);
         },
     },
 })

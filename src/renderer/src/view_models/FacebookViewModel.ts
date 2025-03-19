@@ -399,11 +399,25 @@ export class FacebookViewModel extends BaseViewModel {
         return latestPostData;
     }
 
-    async parseHTMLPostData() {
+    async parseFacebookPostData() {
+        console.log("Is it here?");
+
+        // Parse JSON in HTML
         const latestPostData = await this.downloadHTMLPostJSON();
         if (latestPostData) {
-            window.electron.Facebook.saveParseHTMLPostData(this.account.id, {"data": latestPostData});
+            await window.electron.Facebook.saveParseHTMLPostData(this.account.id, {"data": latestPostData});
         }
+
+        // Start MITM to get the GraphQL data
+        await this.loadBlank();
+        await window.electron.Facebook.indexStart(this.account.id);
+        await this.sleep(2000);
+
+        await this.loadFacebookURL(`https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`);
+        await this.sleep(500);
+
+        await window.electron.Facebook.saveGraphQLPostData(this.account.id);
+        await window.electron.Facebook.indexStop(this.account.id);
     }
 
     async runJobLogin(jobIndex: number): Promise<boolean> {
@@ -428,7 +442,7 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.showAutomationNotice = false;
 
-        await this.parseHTMLPostData();
+        await this.parseFacebookPostData();
 
         await this.finishJob(jobIndex);
         return true;
@@ -586,7 +600,7 @@ I'll help you build a private local database of your Facebook data to the \`Docu
 You'll be able to access it even after you delete it from Facebook.`;
                     // await this.loadURL("about:blank");
 
-                    await this.parseHTMLPostData();
+                    await this.parseFacebookPostData();
 
                     this.state = State.WizardBuildOptionsDisplay;
                     break;

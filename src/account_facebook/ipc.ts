@@ -155,4 +155,31 @@ export const defineIPCFacebook = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.saveGraphQLPostData();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:indexStart', async (_, accountID: number) => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            await controller.indexStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:indexStop', async (_, accountID: number) => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            await controller.indexStop();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 };
