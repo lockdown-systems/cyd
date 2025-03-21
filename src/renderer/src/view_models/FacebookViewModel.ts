@@ -609,6 +609,15 @@ You'll be able to access it even after you delete it from Facebook.`;
                     this.state = State.WizardBuildOptionsDisplay;
                     break;
 
+                case State.WizardReview:
+                    this.showBrowser = false;
+                    this.instructions = `I'm almost ready to start helping you claw back your data from Facebook!
+
+**Here's what I'm planning on doing.**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardReviewDisplay;
+                    break;
+
                 case State.Debug:
                     // Stay in this state until the user cancels it
                     this.showBrowser = false

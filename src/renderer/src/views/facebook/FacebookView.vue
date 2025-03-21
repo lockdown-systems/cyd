@@ -35,6 +35,7 @@ import { AutomationErrorType } from '../../automation_errors';
 import { FacebookViewModel, State, FacebookViewModelState } from '../../view_models/FacebookViewModel'
 import { setAccountRunning, openURL } from '../../util';
 import { facebookPostProgress } from '../../util_facebook';
+import FacebookWizardReviewPage from './FacebookWizardReviewPage.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -213,41 +214,41 @@ emitter?.on(`facebook-submit-progress-${props.account.id}`, async () => {
     await facebookPostProgress(apiClient.value, deviceInfo.value, props.account.id);
 });
 
-// const startJobs = async () => {
-//     // Premium check
-//     if (model.value.account?.xAccount && await facebookRequiresPremium(model.value.account?.facebookAccount)) {
-//         // In open mode, allow the user to continue
-//         if (await window.electron.getMode() == "open") {
-//             if (!await showQuestionOpenModePremiumFeature()) {
-//                 return;
-//             }
-//         }
-//         // Otherwise, make sure the user is authenticated
-//         else {
-//             await updateUserAuthenticated();
-//             console.log("userAuthenticated", userAuthenticated.value);
-//             if (!userAuthenticated.value) {
-//                 model.value.state = State.WizardCheckPremium;
-//                 await startStateLoop();
-//                 return;
-//             }
+const startJobs = async () => {
+    // Premium check
+    // if (model.value.account?.facebookAccount && await facebookRequiresPremium(model.value.account?.facebookAccount)) {
+    //     // In open mode, allow the user to continue
+    //     if (await window.electron.getMode() == "open") {
+    //         if (!await showQuestionOpenModePremiumFeature()) {
+    //             return;
+    //         }
+    //     }
+    //     // Otherwise, make sure the user is authenticated
+    //     else {
+    //         await updateUserAuthenticated();
+    //         console.log("userAuthenticated", userAuthenticated.value);
+    //         if (!userAuthenticated.value) {
+    //             model.value.state = State.WizardCheckPremium;
+    //             await startStateLoop();
+    //             return;
+    //         }
 
-//             await updateUserPremium();
-//             console.log("userPremium", userPremium.value);
-//             if (!userPremium.value) {
-//                 model.value.state = State.WizardCheckPremium;
-//                 await startStateLoop();
-//                 return;
-//             }
-//         }
-//     }
+    //         await updateUserPremium();
+    //         console.log("userPremium", userPremium.value);
+    //         if (!userPremium.value) {
+    //             model.value.state = State.WizardCheckPremium;
+    //             await startStateLoop();
+    //             return;
+    //         }
+    //     }
+    // }
 
-//     // All good, start the jobs
-//     console.log('Starting jobs');
-//     await model.value.defineJobs();
-//     model.value.state = State.RunJobs;
-//     await startStateLoop();
-// };
+    // All good, start the jobs
+    console.log('Starting jobs');
+    await model.value.defineJobs();
+    model.value.state = State.RunJobs;
+    await startStateLoop();
+};
 
 // Debug functions
 
@@ -401,6 +402,9 @@ onUnmounted(async () => {
 
                         <FacebookWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay"
                             :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
+
+                        <FacebookWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
+                            @set-state="setState($event)" @start-jobs="startJobs" @update-account="updateAccount" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
