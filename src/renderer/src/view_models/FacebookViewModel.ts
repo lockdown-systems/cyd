@@ -7,8 +7,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { formatError } from '../util';
-import { facebookHasSomeData } from '../util_facebook';
+import { formatError, getJobsType } from '../util';
 
 export enum State {
     Login = "Login",
@@ -185,25 +184,19 @@ export class FacebookViewModel extends BaseViewModel {
 
     async defineJobs() {
         let shouldBuildArchive = false;
-        const hasSomeData = await facebookHasSomeData(this.account?.id);
+
+        const jobsType = getJobsType(this.account.id);
 
         const jobTypes = [];
         jobTypes.push("login");
 
-        if (this.account?.facebookAccount?.saveMyData) {
+        if (jobsType === "save") {
             shouldBuildArchive = true;
             if (this.account?.facebookAccount?.savePosts) {
                 jobTypes.push("savePosts");
                 if (this.account?.facebookAccount?.savePostsHTML) {
                     jobTypes.push("savePostsHTML");
                 }
-            }
-        }
-
-        if (this.account?.facebookAccount?.deleteMyData) {
-            if (hasSomeData && this.account?.facebookAccount?.deletePosts) {
-                jobTypes.push("deletePosts");
-                shouldBuildArchive = true;
             }
         }
 
@@ -444,9 +437,12 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_SAVE_POSTS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `Instructions here...`;
+        this.instructions = `This is saving posts...`;
 
         this.showAutomationNotice = false;
+
+        this.pause();
+        await this.waitForPause();
 
         await this.parseFacebookPostData();
 
@@ -616,6 +612,37 @@ You'll be able to access it even after you delete it from Facebook.`;
 **Here's what I'm planning on doing.**`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardReviewDisplay;
+                    break;
+
+                case State.RunJobs:
+                    this.progress = await window.electron.Facebook.resetProgress(this.account.id);
+
+                    // Dismiss old error reports
+                    await window.electron.database.dismissNewErrorReports(this.account.id);
+
+                    // i is starting at currentJobIndex instead of 0, in case we restored state
+                    for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
+                        this.currentJobIndex = i;
+                        try {
+                            await this.runJob(i);
+                            if (this.debugAutopauseEndOfStep) {
+                                this.pause();
+                                await this.waitForPause();
+                            }
+                        } catch (e) {
+                            await this.error(AutomationErrorType.facebook_runJob_UnknownError, {
+                                error: formatError(e as Error)
+                            });
+                            break;
+                        }
+                    }
+                    this.currentJobIndex = 0;
+
+                    // Determine the next state
+                    this.state = State.FinishedRunningJobs;
+
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
                     break;
 
                 case State.Debug:
