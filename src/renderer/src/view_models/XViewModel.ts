@@ -728,8 +728,8 @@ export class XViewModel extends BaseViewModel {
 
             // If the conversations list is empty, there is no search text field
             try {
-                // Wait for the search text field to appear with a 10 second timeout
-                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 10000);
+                // Wait for the search text field to appear with a 30 second timeout
+                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 30000);
             } catch (e) {
                 // There are no conversations
                 await this.waitForLoadingToFinish();
@@ -1214,8 +1214,8 @@ Hang on while I scroll down to your earliest direct message conversations...`;
 
             // If the conversations list is empty, there is no search text field
             try {
-                // Wait for the search text field to appear with a 10 second timeout
-                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 10000);
+                // Wait for the search text field to appear with a 30 second timeout
+                await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 30000);
             } catch (e) {
                 // There are no conversations
                 this.log("runJobIndexConversations", ["no conversations found", e]);
