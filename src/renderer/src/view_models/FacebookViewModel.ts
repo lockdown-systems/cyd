@@ -17,8 +17,8 @@ export enum State {
 
     WizardArchiveOptions = "WizardArchiveOptions",
 
-    WizardImportOrBuild = "WizardImportOrBuild",
-    WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
+    WizardDatabase = "WizardDatabase",
+    WizardDatabaseDisplay = "WizardDatabaseDisplay",
 
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
@@ -34,6 +34,12 @@ export enum State {
 
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
+
+    WizardReview = "WizardReview",
+    WizardReviewDisplay = "WizardReviewDisplay",
+
+    WizardDeleteReview = "WizardDeleteReview",
+    WizardDeleteReviewDisplay = "WizardDeleteReviewDisplay",
 
     RunJobs = "RunJobs",
 
@@ -405,7 +411,7 @@ export class FacebookViewModel extends BaseViewModel {
         // Parse JSON in HTML
         const latestPostData = await this.downloadHTMLPostJSON();
         if (latestPostData) {
-            await window.electron.Facebook.saveParseHTMLPostData(this.account.id, {"data": latestPostData});
+            await window.electron.Facebook.saveParseHTMLPostData(this.account.id, { "data": latestPostData });
         }
 
         // Start MITM to get the GraphQL data
@@ -558,17 +564,17 @@ export class FacebookViewModel extends BaseViewModel {
                         break;
                     }
 
-                    this.state = State.WizardImportOrBuild;
+                    this.state = State.WizardDatabase;
                     break;
 
-                case State.WizardImportOrBuild:
+                case State.WizardDatabase:
                     this.showBrowser = false;
                     this.instructions = `
 **I need a local database of the data in your Facebook account before I can delete it.**
 
 You can either import a Facebook archive, or I can build it from scratch by scrolling through your profile.`;
                     await this.loadURL("about:blank");
-                    this.state = State.WizardImportOrBuildDisplay;
+                    this.state = State.WizardDatabaseDisplay;
                     break;
 
                 case State.WizardImportStart:
@@ -598,9 +604,7 @@ You can either import a Facebook archive, or I can build it from scratch by scro
                     this.instructions = `
 I'll help you build a private local database of your Facebook data to the \`Documents\` folder on your computer.
 You'll be able to access it even after you delete it from Facebook.`;
-                    // await this.loadURL("about:blank");
-
-                    await this.parseFacebookPostData();
+                    await this.loadURL("about:blank");
 
                     this.state = State.WizardBuildOptionsDisplay;
                     break;

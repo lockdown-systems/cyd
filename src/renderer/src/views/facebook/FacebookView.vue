@@ -18,11 +18,12 @@ import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
 import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
-import FacebookWizardImportOrBuildPage from './FacebookWizardImportOrBuildPage.vue';
+import FacebookWizardDatabasePage from './FacebookWizardDatabasePage.vue';
 import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
 import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
 import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage.vue';
 import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
+import FacebookWizardBuildOptionsPage from './FacebookWizardBuildOptionsPage.vue';
 
 import type {
     Account,
@@ -93,10 +94,10 @@ watch(
     { deep: true, }
 );
 
-// const updateAccount = async () => {
-//     await model.value.reloadAccount();
-//     emitter?.emit('account-updated');
-// };
+const updateAccount = async () => {
+    await model.value.reloadAccount();
+    emitter?.emit('account-updated');
+};
 
 const setState = async (state: State) => {
     console.log('Setting state', state);
@@ -386,20 +387,20 @@ onUnmounted(async () => {
             <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
                 <div class="wizard-container d-flex">
                     <div class="wizard-content flex-grow-1">
-                        <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
+                        <FacebookWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay"
                             :model="unref(model)" @set-state="setState($event)" />
 
-                        <FacebookWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
+                        <FacebookWizardImportPage v-if="model.state == State.WizardImportStartDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
-                        <FacebookWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
+                        <FacebookWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
-                        <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
+                        <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
-                        <!-- <FacebookWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay"
-                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" /> -->
+                        <FacebookWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
