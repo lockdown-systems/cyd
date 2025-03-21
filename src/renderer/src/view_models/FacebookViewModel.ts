@@ -439,7 +439,7 @@ export class FacebookViewModel extends BaseViewModel {
         this.showBrowser = true;
         this.instructions = `This is saving posts...`;
 
-        this.showAutomationNotice = false;
+        this.showAutomationNotice = true;
 
         this.pause();
         await this.waitForPause();
