@@ -44,6 +44,7 @@ export class FacebookAccountController {
     public account: FacebookAccount | null = null;
     private accountID: number = 0;
     private accountDataPath: string = "";
+    private thereIsMore: boolean = false;
 
     // Making this public so it can be accessed in tests
     public db: Database.Database | null = null;
@@ -252,6 +253,44 @@ export class FacebookAccountController {
             'UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?',
             [job.status, job.startedAt ? job.startedAt : null, job.finishedAt ? job.finishedAt : null, job.progressJSON, job.error, job.id]
         );
+    }
+
+    async indexStart() {
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
+        await ses.clearCache();
+        await this.mitmController.startMonitoring();
+        log.info(ses);
+        await this.mitmController.startMITM(ses, ["www.facebook.com/api/graphql/"]);
+        this.thereIsMore = true;
+    }
+
+    async indexStop() {
+        await this.mitmController.stopMonitoring();
+        const ses = session.fromPartition(`persist:account-${this.accountID}`);
+        await this.mitmController.stopMITM(ses);
+    }
+
+    async saveParseHTMLPostData(data: object) {
+        log.info("FacebookAccountController.saveParseHTMLPostData: parsing data");
+        log.info(data["data"]);
+
+        for (const edge of data["data"]) {
+            const post = edge["node"]?.["comet_sections"]?.["content"]?.["story"];
+            const text = post["message"]["text"];
+            const URL = post["wwwURL"];
+            const id = post["id"];
+            const post_id = post["post_id"];
+        }
+    }
+
+    async saveGraphQLPostData() {
+        log.error("Are we getting GraphQL request??")
+        await this.mitmController.clearProcessed();
+        log.info(`FacebookAccountController.indexsaveGraphQLPostDataParseTweets: parsing ${this.mitmController.responseData.length} responses`);
+
+        for (let i = 0; i < this.mitmController.responseData.length; i++) {
+            log.info(this.mitmController.responseData[i]);
+        }
     }
 
     async archiveBuild() {

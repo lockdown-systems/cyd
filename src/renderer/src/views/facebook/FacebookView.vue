@@ -18,11 +18,12 @@ import AccountHeader from '../shared_components/AccountHeader.vue';
 import SpeechBubble from '../shared_components/SpeechBubble.vue';
 import AutomationNotice from '../shared_components/AutomationNotice.vue';
 
-import FacebookWizardImportOrBuildPage from './FacebookWizardImportOrBuildPage.vue';
+import FacebookWizardDatabasePage from './FacebookWizardDatabasePage.vue';
 import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
 import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
 import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage.vue';
 import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
+import FacebookWizardBuildOptionsPage from './FacebookWizardBuildOptionsPage.vue';
 
 import type {
     Account,
@@ -34,6 +35,7 @@ import { AutomationErrorType } from '../../automation_errors';
 import { FacebookViewModel, State, FacebookViewModelState } from '../../view_models/FacebookViewModel'
 import { setAccountRunning, openURL } from '../../util';
 import { facebookPostProgress } from '../../util_facebook';
+import FacebookWizardReviewPage from './FacebookWizardReviewPage.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -93,10 +95,10 @@ watch(
     { deep: true, }
 );
 
-// const updateAccount = async () => {
-//     await model.value.reloadAccount();
-//     emitter?.emit('account-updated');
-// };
+const updateAccount = async () => {
+    await model.value.reloadAccount();
+    emitter?.emit('account-updated');
+};
 
 const setState = async (state: State) => {
     console.log('Setting state', state);
@@ -212,41 +214,41 @@ emitter?.on(`facebook-submit-progress-${props.account.id}`, async () => {
     await facebookPostProgress(apiClient.value, deviceInfo.value, props.account.id);
 });
 
-// const startJobs = async () => {
-//     // Premium check
-//     if (model.value.account?.xAccount && await facebookRequiresPremium(model.value.account?.facebookAccount)) {
-//         // In open mode, allow the user to continue
-//         if (await window.electron.getMode() == "open") {
-//             if (!await showQuestionOpenModePremiumFeature()) {
-//                 return;
-//             }
-//         }
-//         // Otherwise, make sure the user is authenticated
-//         else {
-//             await updateUserAuthenticated();
-//             console.log("userAuthenticated", userAuthenticated.value);
-//             if (!userAuthenticated.value) {
-//                 model.value.state = State.WizardCheckPremium;
-//                 await startStateLoop();
-//                 return;
-//             }
+const startJobs = async () => {
+    // Premium check
+    // if (model.value.account?.facebookAccount && await facebookRequiresPremium(model.value.account?.facebookAccount)) {
+    //     // In open mode, allow the user to continue
+    //     if (await window.electron.getMode() == "open") {
+    //         if (!await showQuestionOpenModePremiumFeature()) {
+    //             return;
+    //         }
+    //     }
+    //     // Otherwise, make sure the user is authenticated
+    //     else {
+    //         await updateUserAuthenticated();
+    //         console.log("userAuthenticated", userAuthenticated.value);
+    //         if (!userAuthenticated.value) {
+    //             model.value.state = State.WizardCheckPremium;
+    //             await startStateLoop();
+    //             return;
+    //         }
 
-//             await updateUserPremium();
-//             console.log("userPremium", userPremium.value);
-//             if (!userPremium.value) {
-//                 model.value.state = State.WizardCheckPremium;
-//                 await startStateLoop();
-//                 return;
-//             }
-//         }
-//     }
+    //         await updateUserPremium();
+    //         console.log("userPremium", userPremium.value);
+    //         if (!userPremium.value) {
+    //             model.value.state = State.WizardCheckPremium;
+    //             await startStateLoop();
+    //             return;
+    //         }
+    //     }
+    // }
 
-//     // All good, start the jobs
-//     console.log('Starting jobs');
-//     await model.value.defineJobs();
-//     model.value.state = State.RunJobs;
-//     await startStateLoop();
-// };
+    // All good, start the jobs
+    console.log('Starting jobs');
+    await model.value.defineJobs();
+    model.value.state = State.RunJobs;
+    await startStateLoop();
+};
 
 // Debug functions
 
@@ -386,17 +388,23 @@ onUnmounted(async () => {
             <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
                 <div class="wizard-container d-flex">
                     <div class="wizard-content flex-grow-1">
-                        <FacebookWizardImportOrBuildPage v-if="model.state == State.WizardImportOrBuildDisplay"
+                        <FacebookWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay"
                             :model="unref(model)" @set-state="setState($event)" />
 
-                        <FacebookWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
+                        <FacebookWizardImportPage v-if="model.state == State.WizardImportStartDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
-                        <FacebookWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
+                        <FacebookWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
-                        <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
+                        <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
+
+                        <FacebookWizardBuildOptionsPage v-if="model.state == State.WizardBuildOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
+
+                        <FacebookWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
+                            @set-state="setState($event)" @start-jobs="startJobs" @update-account="updateAccount" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">

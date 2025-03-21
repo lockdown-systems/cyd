@@ -51,12 +51,12 @@ onMounted(() => {
                             class="form-check-input">
                         <label class="form-check-label" for="importArchive">
                             Import Meta archive
-                            <span class="ms-2 text-muted">(recommended)</span>
                         </label>
                     </div>
                     <div class="indent">
                         <small>
-                            Importing your Meta archive will give you the most complete backup of your data, but you'll need to wait for Meta to send it to you.
+                            Importing your Meta archive will give you the most complete backup of your data, but you'll
+                            need to wait for Meta to send it to you.
                         </small>
                     </div>
                 </div>
@@ -66,7 +66,7 @@ onMounted(() => {
                         <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
                             value="buildFromScratch" class="form-check-input">
                         <label class="form-check-label" for="buildFromScratch">
-                            Build database from scratch - NOT IMPLEMENTED YET!
+                            Build database from scratch
                         </label>
                     </div>
                     <div class="indent">

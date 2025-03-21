@@ -7,8 +7,7 @@ import {
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
-import { formatError } from '../util';
-import { facebookHasSomeData } from '../util_facebook';
+import { formatError, getJobsType } from '../util';
 
 export enum State {
     Login = "Login",
@@ -17,8 +16,8 @@ export enum State {
 
     WizardArchiveOptions = "WizardArchiveOptions",
 
-    WizardImportOrBuild = "WizardImportOrBuild",
-    WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
+    WizardDatabase = "WizardDatabase",
+    WizardDatabaseDisplay = "WizardDatabaseDisplay",
 
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
@@ -34,6 +33,12 @@ export enum State {
 
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
+
+    WizardReview = "WizardReview",
+    WizardReviewDisplay = "WizardReviewDisplay",
+
+    WizardDeleteReview = "WizardDeleteReview",
+    WizardDeleteReviewDisplay = "WizardDeleteReviewDisplay",
 
     RunJobs = "RunJobs",
 
@@ -66,12 +71,12 @@ export interface CurrentUserInitialData {
     [key: string]: unknown;
 }
 
-export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
+export function findDataFromFacebookHTML(data: unknown, type: string): object | null {
     // If the current item is an array, iterate through its elements
     if (Array.isArray(data)) {
         for (const item of data) {
             // Check if the first element is "CurrentUserInitialData"
-            if (Array.isArray(item) && item[0] === "CurrentUserInitialData") {
+            if (Array.isArray(item) && item[0] === "CurrentUserInitialData" && type === "user") {
                 // Check if the third element is an object with the required keys
                 if (
                     item[2] &&
@@ -80,11 +85,15 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
                     "USER_ID" in item[2] &&
                     "NAME" in item[2]
                 ) {
-                    return item[2] as CurrentUserInitialData;
+                    return item[2];
+                }
+            } else if (Array.isArray(item) && item[0] === "RelayPrefetchedStreamCache" && type === "firstPost") {
+                if (item[3] && item[3][1]) {
+                    return item[3][1]["__bbox"]?.["result"]?.["data"]?.["user"]?.["timeline_list_feed_units"]?.["edges"];
                 }
             }
             // Recursively search nested arrays
-            const result = findCurrentUserInitialData(item);
+            const result = findDataFromFacebookHTML(item, type);
             if (result) {
                 return result;
             }
@@ -97,7 +106,7 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
         for (const key of Object.keys(obj)) {
             // Safe property check
             if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                const result = findCurrentUserInitialData(obj[key]);
+                const result = findDataFromFacebookHTML(obj[key], type);
                 if (result) {
                     return result;
                 }
@@ -106,6 +115,14 @@ export function findCurrentUserInitialData(data: unknown): CurrentUserInitialDat
     }
     // If nothing is found, return null
     return null;
+}
+
+export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
+    return findDataFromFacebookHTML(data, "user") as CurrentUserInitialData;
+}
+
+export function findFirstPostData(data: unknown) {
+    return findDataFromFacebookHTML(data, "firstPost");
 }
 
 export function findProfilePictureURI(data: unknown): string | null {
@@ -167,25 +184,19 @@ export class FacebookViewModel extends BaseViewModel {
 
     async defineJobs() {
         let shouldBuildArchive = false;
-        const hasSomeData = await facebookHasSomeData(this.account?.id);
+
+        const jobsType = getJobsType(this.account.id);
 
         const jobTypes = [];
         jobTypes.push("login");
 
-        if (this.account?.facebookAccount?.saveMyData) {
+        if (jobsType === "save") {
             shouldBuildArchive = true;
             if (this.account?.facebookAccount?.savePosts) {
                 jobTypes.push("savePosts");
                 if (this.account?.facebookAccount?.savePostsHTML) {
                     jobTypes.push("savePostsHTML");
                 }
-            }
-        }
-
-        if (this.account?.facebookAccount?.deleteMyData) {
-            if (hasSomeData && this.account?.facebookAccount?.deletePosts) {
-                jobTypes.push("deletePosts");
-                shouldBuildArchive = true;
             }
         }
 
@@ -373,6 +384,41 @@ export class FacebookViewModel extends BaseViewModel {
         await this.waitForPause();
     }
 
+    async downloadHTMLPostJSON() {
+        this.showBrowser = true;
+        this.log("Posts", "Loading facebook wall posts");
+
+        // load facebook wall URL and get scripts
+        await this.loadFacebookURL(`https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`);
+        await this.sleep(500);
+        const facebookData = await this.getFacebookDataFromHTML();
+        const latestPostData = findFirstPostData(facebookData)
+        console.log('facebookData', latestPostData);
+
+        return latestPostData;
+    }
+
+    async parseFacebookPostData() {
+        console.log("Is it here?");
+
+        // Parse JSON in HTML
+        const latestPostData = await this.downloadHTMLPostJSON();
+        if (latestPostData) {
+            await window.electron.Facebook.saveParseHTMLPostData(this.account.id, { "data": latestPostData });
+        }
+
+        // Start MITM to get the GraphQL data
+        await this.loadBlank();
+        await window.electron.Facebook.indexStart(this.account.id);
+        await this.sleep(2000);
+
+        await this.loadFacebookURL(`https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`);
+        await this.sleep(500);
+
+        await window.electron.Facebook.saveGraphQLPostData(this.account.id);
+        await window.electron.Facebook.indexStop(this.account.id);
+    }
+
     async runJobLogin(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_LOGIN, navigator.userAgent);
 
@@ -391,11 +437,14 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_SAVE_POSTS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `Instructions here...`;
+        this.instructions = `This is saving posts...`;
 
-        this.showAutomationNotice = false;
+        this.showAutomationNotice = true;
 
-        // TODO: implement
+        this.pause();
+        await this.waitForPause();
+
+        await this.parseFacebookPostData();
 
         await this.finishJob(jobIndex);
         return true;
@@ -511,17 +560,17 @@ export class FacebookViewModel extends BaseViewModel {
                         break;
                     }
 
-                    this.state = State.WizardImportOrBuild;
+                    this.state = State.WizardDatabase;
                     break;
 
-                case State.WizardImportOrBuild:
+                case State.WizardDatabase:
                     this.showBrowser = false;
                     this.instructions = `
 **I need a local database of the data in your Facebook account before I can delete it.**
 
 You can either import a Facebook archive, or I can build it from scratch by scrolling through your profile.`;
                     await this.loadURL("about:blank");
-                    this.state = State.WizardImportOrBuildDisplay;
+                    this.state = State.WizardDatabaseDisplay;
                     break;
 
                 case State.WizardImportStart:
@@ -544,6 +593,56 @@ You can either import a Facebook archive, or I can build it from scratch by scro
                     this.instructions = `I'll help you import your Facebook archive into your local database.`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardImportingDisplay;
+                    break;
+
+                case State.WizardBuildOptions:
+                    this.showBrowser = false;
+                    this.instructions = `
+I'll help you build a private local database of your Facebook data to the \`Documents\` folder on your computer.
+You'll be able to access it even after you delete it from Facebook.`;
+                    await this.loadURL("about:blank");
+
+                    this.state = State.WizardBuildOptionsDisplay;
+                    break;
+
+                case State.WizardReview:
+                    this.showBrowser = false;
+                    this.instructions = `I'm almost ready to start helping you claw back your data from Facebook!
+
+**Here's what I'm planning on doing.**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardReviewDisplay;
+                    break;
+
+                case State.RunJobs:
+                    this.progress = await window.electron.Facebook.resetProgress(this.account.id);
+
+                    // Dismiss old error reports
+                    await window.electron.database.dismissNewErrorReports(this.account.id);
+
+                    // i is starting at currentJobIndex instead of 0, in case we restored state
+                    for (let i = this.currentJobIndex; i < this.jobs.length; i++) {
+                        this.currentJobIndex = i;
+                        try {
+                            await this.runJob(i);
+                            if (this.debugAutopauseEndOfStep) {
+                                this.pause();
+                                await this.waitForPause();
+                            }
+                        } catch (e) {
+                            await this.error(AutomationErrorType.facebook_runJob_UnknownError, {
+                                error: formatError(e as Error)
+                            });
+                            break;
+                        }
+                    }
+                    this.currentJobIndex = 0;
+
+                    // Determine the next state
+                    this.state = State.FinishedRunningJobs;
+
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
                     break;
 
                 case State.Debug:

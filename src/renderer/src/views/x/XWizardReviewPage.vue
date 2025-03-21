@@ -4,10 +4,11 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { openURL, openPreventSleepURL, getJobsType } from '../../util';
+import { openURL, getJobsType } from '../../util';
 import { XDeleteReviewStats, emptyXDeleteReviewStats, XMigrateTweetCounts, emptyXMigrateTweetCounts } from '../../../../shared_types';
 import { xHasSomeData } from '../../util_x';
 import LoadingComponent from '../shared_components/LoadingComponent.vue';
+import AlertStayAwake from '../shared_components/AlertStayAwake.vue';
 
 // Props
 const props = defineProps<{
@@ -292,15 +293,7 @@ onMounted(async () => {
                 </p>
             </div>
 
-            <div class="alert alert-info" role="alert">
-                <p class="fw-bold mb-0">
-                    Your computer needs to be awake to use Cyd.
-                </p>
-                <p class="alert-details mb-0">
-                    Don't close the lid, keep it plugged in, and disable sleep while plugged in.
-                    <a href="#" @click="openPreventSleepURL">Learn more.</a>
-                </p>
-            </div>
+            <AlertStayAwake />
         </template>
     </div>
 </template>

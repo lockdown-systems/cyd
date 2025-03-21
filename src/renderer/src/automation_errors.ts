@@ -81,6 +81,7 @@ export enum AutomationErrorType {
     facebook_manualBugReport = "facebook_manualBugReport",
     facebook_unknownError = "facebook_unknown",
     facebook_loadURLError = "facebook_loadURLError",
+    facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -166,4 +167,5 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.facebook_manualBugReport]: "You're manually reporting a bug",
     [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
     [AutomationErrorType.facebook_loadURLError]: "Error while loading URL",
+    [AutomationErrorType.facebook_runJob_UnknownError]: "An unknown error occurred",
 }
