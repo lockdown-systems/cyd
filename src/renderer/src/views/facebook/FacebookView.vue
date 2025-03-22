@@ -23,6 +23,8 @@ import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
 import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
 import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage.vue';
 import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
+import FacebookWizardArchiveOptionsPage from './FacebookWizardArchiveOptionsPage.vue';
+import FacebookWizardDeleteOptionsPage from './FacebookWizardDeleteOptionsPage.vue';
 
 import type {
     Account,
@@ -93,10 +95,10 @@ watch(
     { deep: true, }
 );
 
-// const updateAccount = async () => {
-//     await model.value.reloadAccount();
-//     emitter?.emit('account-updated');
-// };
+const updateAccount = async () => {
+    await model.value.reloadAccount();
+    emitter?.emit('account-updated');
+};
 
 const setState = async (state: State) => {
     console.log('Setting state', state);
@@ -397,6 +399,13 @@ onUnmounted(async () => {
 
                         <FacebookWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
                             @set-state="setState($event)" />
+
+                        <FacebookWizardArchiveOptionsPage v-if="model.state == State.WizardArchiveOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
+
+                        <FacebookWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
+                            :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                            @update-account="updateAccount" @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
