@@ -15,8 +15,6 @@ export enum State {
 
     WizardStart = "WizardStart",
 
-    WizardArchiveOptions = "WizardArchiveOptions",
-
     WizardImportOrBuild = "WizardImportOrBuild",
     WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
 
@@ -30,7 +28,11 @@ export enum State {
     WizardBuildOptions = "WizardBuildOptions",
     WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
 
+    WizardArchiveOptions = "WizardArchiveOptions",
+    WizardArchiveOptionsDisplay = "WizardArchiveOptionsDisplay",
+
     WizardDeleteOptions = "WizardDeleteOptions",
+    WizardDeleteOptionsDisplay = "WizardDeleteOptionsDisplay",
 
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
@@ -544,6 +546,21 @@ You can either import a Facebook archive, or I can build it from scratch by scro
                     this.instructions = `I'll help you import your Facebook archive into your local database.`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardImportingDisplay;
+                    break;
+
+                case State.WizardArchiveOptions:
+                    this.showBrowser = false;
+                    this.instructions = `I'll help you archive your Facebook account.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardArchiveOptionsDisplay;
+                    break;
+
+                case State.WizardDeleteOptions:
+                    this.showBrowser = false;
+                    this.instructions = `
+**Which data do you want to delete?**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardDeleteOptionsDisplay;
                     break;
 
                 case State.Debug:
