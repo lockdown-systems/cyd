@@ -108,7 +108,7 @@ onMounted(async () => {
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
                     :disabled="!archivePosts" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    Continue to Review
+                    Continue to Review (NOT IMPL YET)
                 </button>
             </div>
         </form>

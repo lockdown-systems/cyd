@@ -242,7 +242,7 @@ onMounted(async () => {
                     :disabled="(hasSomeData && !(deletePosts || deleteReposts))"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />
-                    Continue to Review
+                    Continue to Review (NOT IMPL YET)
                 </button>
             </div>
         </form>
