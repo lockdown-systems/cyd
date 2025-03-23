@@ -85,8 +85,7 @@ const backClicked = async () => {
             </ul>
 
             <div class="buttons mb-4">
-                <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                    model.account?.facebookAccount?.saveMyData)" @click="importClicked">
+                <button type="submit" class="btn btn-primary text-nowrap m-1" @click="importClicked">
                     <i class="fa-solid fa-file-import" />
                     I've Downloaded My Archive from Facebook
                 </button>

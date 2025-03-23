@@ -16,28 +16,15 @@ const emit = defineEmits<{
     setState: [value: State]
 }>()
 
-// Buttons
-const nextClicked = async () => {
-    await saveSettings();
-    setJobsType(props.model.account.id, 'archive');
-    emit('setState', State.WizardReview);
-};
-
-const backClicked = async () => {
-    await saveSettings();
-    emit('setState', State.WizardDatabase);
-};
-
 // Settings
-const archivePosts = ref(false);
-
+const archivePosts = ref(true);  // Default to true since this is the main action
 const databaseStats = ref<FacebookDatabaseStats>(emptyFacebookDatabaseStats());
 
 const loadSettings = async () => {
     console.log('FacebookWizardArchiveOptionsPage', 'loadSettings');
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.facebookAccount) {
-        archivePosts.value = account.facebookAccount.savePosts;
+        archivePosts.value = account.facebookAccount.savePosts ?? true;
     }
 };
 
@@ -49,14 +36,24 @@ const saveSettings = async () => {
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.facebookAccount) {
-        account.facebookAccount.saveMyData = false;
-        account.facebookAccount.deleteMyData = false;
-
-        // account.facebookAccount.archiveMyData = true;
-        // account.facebookAccount.archivePosts = archivePosts.value;
+        account.facebookAccount.saveMyData = true;
+        account.facebookAccount.savePosts = true;
+        account.facebookAccount.archiveMyData = true;
         await window.electron.database.saveAccount(JSON.stringify(account));
         emit('updateAccount');
     }
+};
+
+// Buttons
+const nextClicked = async () => {
+    await saveSettings();
+    setJobsType(props.model.account.id, 'archive');
+    emit('setState', State.WizardReview);
+};
+
+const backClicked = async () => {
+    await saveSettings();
+    emit('setState', State.WizardDatabase);
 };
 
 onMounted(async () => {
@@ -81,7 +78,24 @@ onMounted(async () => {
                         Your local database doesn't have any posts yet. You need to import your Facebook archive or
                         build your database from scratch.
                     </small>
+                    <div v-else>
+                        <p>Current database stats:</p>
+                        <ul class="list-unstyled">
+                            <li><i class="fa-solid fa-file-lines me-2"></i>Posts saved: {{ databaseStats.postsSaved }}</li>
+                            <li><i class="fa-solid fa-share me-2"></i>Shared posts: {{ databaseStats.repostsSaved }}</li>
+                        </ul>
+                    </div>
                 </div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" v-model="archivePosts" id="archivePosts">
+                <label class="form-check-label" for="archivePosts">
+                    Archive posts and media
+                </label>
+                <small class="form-text text-muted d-block">
+                    Create a static archive of your Facebook posts, including text, photos, and videos.
+                </small>
             </div>
 
             <div class="buttons">

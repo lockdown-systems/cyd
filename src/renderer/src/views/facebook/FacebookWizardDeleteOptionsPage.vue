@@ -91,9 +91,9 @@ const saveSettings = async () => {
     }
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.facebookAccount) {
-        account.facebookAccount.saveMyData = false;
-        account.facebookAccount.deleteMyData = true;
-        account.facebookAccount.archiveMyData = false;
+        // account.facebookAccount.saveMyData = false;
+        // account.facebookAccount.deleteMyData = true;
+        // account.facebookAccount.archiveMyData = false;
 
         account.facebookAccount.deletePosts = deletePosts.value;
         account.facebookAccount.deletePostsDaysOldEnabled = deletePostsDaysOldEnabled.value;
