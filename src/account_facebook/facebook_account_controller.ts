@@ -833,6 +833,8 @@ export class FacebookAccountController {
 
         // TODO: When we start deleting posts, we need to count them up here.
 
+        log.info('FacebookAccountController.getDatabaseStats: postsSaved', postsSaved.count);
+        log.info('FacebookAccountController.getDatabaseStats: repostsSaved', repostsSaved.count);
         databaseStats.postsSaved = postsSaved.count;
         databaseStats.repostsSaved = repostsSaved.count;
         return databaseStats;

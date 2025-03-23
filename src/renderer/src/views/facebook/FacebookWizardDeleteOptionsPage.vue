@@ -25,6 +25,11 @@ const emit = defineEmits<{
 }>()
 
 // Buttons
+const backClicked = async () => {
+    await saveSettings();
+    emit('setState', State.WizardImporting);
+};
+
 const nextClicked = async () => {
     await saveSettings();
     setJobsType(props.model.account.id, 'delete');
@@ -131,7 +136,7 @@ onMounted(async () => {
             </p>
         </div>
 
-        <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true" :show-no-data-warning="true"
+        <FacebookLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true" :show-no-data-warning="true"
             :button-text="'Build Your Local Database'" :button-state="State.WizardDatabase"
             @set-state="emit('setState', $event)" />
 
@@ -228,6 +233,11 @@ onMounted(async () => {
             </div>
 
             <div class="buttons">
+                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                    <i class="fa-solid fa-backward" />
+                    Back to Import or Build Database
+                </button>
+
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
                     :disabled="(hasSomeData && !(deletePosts || deleteReposts))"
                     @click="nextClicked">

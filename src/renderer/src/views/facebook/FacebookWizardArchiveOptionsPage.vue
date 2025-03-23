@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 // Settings
-const archivePosts = ref(true);  // Default to true since this is the main action
+const archivePosts = ref(true);
 const databaseStats = ref<FacebookDatabaseStats>(emptyFacebookDatabaseStats());
 
 const loadSettings = async () => {
@@ -26,6 +26,8 @@ const loadSettings = async () => {
     if (account && account.facebookAccount) {
         archivePosts.value = account.facebookAccount.savePosts ?? true;
     }
+    // Load database stats
+    databaseStats.value = await window.electron.Facebook.getDatabaseStats(props.model.account.id);
 };
 
 const saveSettings = async () => {
@@ -53,12 +55,11 @@ const nextClicked = async () => {
 
 const backClicked = async () => {
     await saveSettings();
-    emit('setState', State.WizardDatabase);
+    emit('setState', State.WizardImporting);
 };
 
 onMounted(async () => {
     await loadSettings();
-    databaseStats.value = await window.electron.Facebook.getDatabaseStats(props.model.account.id);
 });
 </script>
 
