@@ -15,8 +15,14 @@ export enum State {
 
     WizardStart = "WizardStart",
 
+    WizardDatabase = "WizardDatabase",
+    WizardDatabaseDisplay = "WizardDatabaseDisplay",
+
     WizardImportOrBuild = "WizardImportOrBuild",
     WizardImportOrBuildDisplay = "WizardImportOrBuildDisplay",
+
+    WizardReview = "WizardReview",
+    WizardReviewDisplay = "WizardReviewDisplay",
 
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",

@@ -19,9 +19,12 @@ import {
     FacebookProgress,
     emptyFacebookProgress,
     FacebookImportArchiveResponse,
+    FacebookDatabaseStats,
+    emptyFacebookDatabaseStats,
 } from '../shared_types'
 import {
     runMigrations,
+    Sqlite3Count,
     getAccount,
     exec,
     getConfig,
@@ -806,4 +809,33 @@ export class FacebookAccountController {
             log.error(`FacebookAccountController.importFacebookArchiveUrl: Error importing urls: ${error}`);
         }
     }
+
+    async getDatabaseStats(): Promise<FacebookDatabaseStats> {
+        const databaseStats = emptyFacebookDatabaseStats();
+        if (!this.account?.accountID) {
+            log.info('FacebookAccountController.getDatabaseStats: no account');
+            return databaseStats;
+        }
+
+        if (!this.db) {
+            this.initDB();
+        }
+
+        // Count total posts
+        const postsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM post", [], "get") as Sqlite3Count;
+
+        // Count shared posts (reposts)
+        const repostsSaved: Sqlite3Count = exec(this.db,
+            "SELECT COUNT(*) AS count FROM post WHERE isReposted = 1",
+            [],
+            "get"
+        ) as Sqlite3Count;
+
+        // TODO: When we start deleting posts, we need to count them up here.
+
+        databaseStats.postsSaved = postsSaved.count;
+        databaseStats.repostsSaved = repostsSaved.count;
+        return databaseStats;
+    }
+
 }
