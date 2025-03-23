@@ -5,6 +5,8 @@ import { FacebookAccountController } from './facebook_account_controller';
 import {
     FacebookJob,
     FacebookProgress,
+    FacebookDatabaseStats,
+    FacebookImportArchiveResponse,
 } from '../shared_types'
 import { getMITMController } from '../mitm';
 import { packageExceptionForReport } from '../util'
@@ -123,7 +125,7 @@ export const defineIPCFacebook = () => {
     ipcMain.handle('Facebook:deleteUnzippedFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
         try {
             const controller = getFacebookAccountController(accountID);
-            await controller.deleteUnzippedFacebookArchive(archivePath);
+            return await controller.deleteUnzippedFacebookArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -142,6 +144,15 @@ export const defineIPCFacebook = () => {
         try {
             const controller = getFacebookAccountController(accountID);
             return await controller.importFacebookArchive(archivePath, dataType);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:getDatabaseStats', async (_, accountID: number): Promise<FacebookDatabaseStats> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.getDatabaseStats();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

@@ -26,8 +26,6 @@ const loadSettings = async () => {
     if (account && account.facebookAccount) {
         archivePosts.value = account.facebookAccount.savePosts ?? true;
     }
-    // Load database stats
-    databaseStats.value = await window.electron.Facebook.getDatabaseStats(props.model.account.id);
 };
 
 const saveSettings = async () => {
@@ -60,6 +58,8 @@ const backClicked = async () => {
 
 onMounted(async () => {
     await loadSettings();
+    const stats = await window.electron.Facebook.getDatabaseStats(props.model.account.id);
+    databaseStats.value = stats;
 });
 </script>
 
@@ -74,18 +74,18 @@ onMounted(async () => {
         <form @submit.prevent>
             <div class="mb-3">
                 <div class="indent">
-                    <small v-if="databaseStats.postsSaved == 0" class="form-text text-muted">
-                        <i class="fa-solid fa-triangle-exclamation" />
-                        Your local database doesn't have any posts yet. You need to import your Facebook archive or
-                        build your database from scratch.
-                    </small>
-                    <div v-else>
+                    <div v-if="databaseStats.postsSaved > 0">
                         <p>Current database stats:</p>
                         <ul class="list-unstyled">
                             <li><i class="fa-solid fa-file-lines me-2"></i>Posts saved: {{ databaseStats.postsSaved }}</li>
                             <li><i class="fa-solid fa-share me-2"></i>Shared posts: {{ databaseStats.repostsSaved }}</li>
                         </ul>
                     </div>
+                    <small v-else class="form-text text-muted">
+                        <i class="fa-solid fa-triangle-exclamation" />
+                        Your local database doesn't have any posts yet. You need to import your Facebook archive or
+                        build your database from scratch.
+                    </small>
                 </div>
             </div>
 

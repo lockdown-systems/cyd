@@ -823,6 +823,7 @@ export class FacebookAccountController {
 
         // Count total posts
         const postsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM post", [], "get") as Sqlite3Count;
+        log.info('FacebookAccountController.getDatabaseStats: posts count:', postsSaved);
 
         // Count shared posts (reposts)
         const repostsSaved: Sqlite3Count = exec(this.db,
@@ -830,11 +831,8 @@ export class FacebookAccountController {
             [],
             "get"
         ) as Sqlite3Count;
+        log.info('FacebookAccountController.getDatabaseStats: reposts count:', repostsSaved);
 
-        // TODO: When we start deleting posts, we need to count them up here.
-
-        log.info('FacebookAccountController.getDatabaseStats: postsSaved', postsSaved.count);
-        log.info('FacebookAccountController.getDatabaseStats: repostsSaved', repostsSaved.count);
         databaseStats.postsSaved = postsSaved.count;
         databaseStats.repostsSaved = repostsSaved.count;
         return databaseStats;
