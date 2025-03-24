@@ -283,13 +283,23 @@ export class FacebookAccountController {
         }
     }
 
+    async parseGraphQLPostData(responseIndex: number) {
+        const responseData = this.mitmController.responseData[responseIndex];
+
+        if (responseData.status == 429) {
+            log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
+            this.mitmController.responseData[responseIndex].processed = true;
+            return false;
+        }
+    }
+
     async saveGraphQLPostData() {
         log.error("Are we getting GraphQL request??")
         await this.mitmController.clearProcessed();
-        log.info(`FacebookAccountController.indexsaveGraphQLPostDataParseTweets: parsing ${this.mitmController.responseData.length} responses`);
+        log.info(`FacebookAccountController.saveGraphQLPostData: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            log.info(this.mitmController.responseData[i]);
+            this.parseGraphQLPostData(i);
         }
     }
 

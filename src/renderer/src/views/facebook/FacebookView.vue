@@ -24,6 +24,7 @@ import FacebookWizardImportPage from './FacebookWizardImportPage.vue';
 import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage.vue';
 import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
 import FacebookWizardBuildOptionsPage from './FacebookWizardBuildOptionsPage.vue';
+import FacebookJobStatusComponent from './FacebookJobStatusComponent.vue';
 
 import type {
     Account,
@@ -361,6 +362,11 @@ onUnmounted(async () => {
 
                 <div class="d-flex align-items-center">
                     <!-- Job status -->
+                    <FacebookJobStatusComponent v-if="currentJobs.length > 0 && model.state == State.RunJobs"
+                        :jobs="currentJobs" :is-paused="isPaused" :clicking-enabled="clickingEnabled"
+                        class="job-status-component" @on-pause="model.pause()" @on-resume="model.resume()"
+                        @on-cancel="emit('onRefreshClicked')" @on-report-bug="onReportBug"
+                        @on-clicking-enabled="clickingEnabled = true" @on-clicking-disabled="clickingEnabled = false" />
                 </div>
             </div>
 
