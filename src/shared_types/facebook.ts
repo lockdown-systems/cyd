@@ -29,3 +29,21 @@ export type FacebookImportArchiveResponse = {
     importCount: number;
     skipCount: number;
 }
+
+
+// TODO: Add additional fields here
+export type FacebookDatabaseStats = {
+    postsSaved: number;
+    postsDeleted: number;
+    repostsSaved: number;
+    repostsDeleted: number;
+}
+
+export function emptyFacebookDatabaseStats(): FacebookDatabaseStats {
+    return {
+        postsSaved: 0,
+        postsDeleted: 0,
+        repostsSaved: 0,
+        repostsDeleted: 0,
+    }
+}

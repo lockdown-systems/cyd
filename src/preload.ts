@@ -21,6 +21,7 @@ import {
     FacebookJob,
     FacebookProgress,
     FacebookImportArchiveResponse,
+    FacebookDatabaseStats,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -378,6 +379,9 @@ contextBridge.exposeInMainWorld('electron', {
         },
         importFacebookArchive: (accountID: number, archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> => {
             return ipcRenderer.invoke('Facebook:importFacebookArchive', accountID, archivePath, dataType);
+        },
+        getDatabaseStats: (accountID: number): Promise<FacebookDatabaseStats> => {
+            return ipcRenderer.invoke('Facebook:getDatabaseStats', accountID);
         },
     },
 })

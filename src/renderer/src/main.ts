@@ -27,6 +27,7 @@ import type {
     FacebookProgress,
     FacebookJob,
     FacebookImportArchiveResponse,
+    FacebookDatabaseStats,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -157,6 +158,7 @@ declare global {
                 deleteUnzippedFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 verifyFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 importFacebookArchive: (accountID: number, archivePath: string, dataType: string) => Promise<FacebookImportArchiveResponse>;
+                getDatabaseStats: (accountID: number) => Promise<FacebookDatabaseStats>;
             },
             onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
             onPowerMonitorResume: (callback: () => void) => Promise<void>;
