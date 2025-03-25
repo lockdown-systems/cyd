@@ -249,17 +249,4 @@ onMounted(async () => {
     </div>
 </template>
 
-<style scoped>
-ul.wizard-nav {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    margin-bottom: 1em;
-    text-align: center;
-}
-
-ul.wizard-nav button {
-    width: 200px;
-    text-align: left;
-}
-</style>
+<style scoped></style>

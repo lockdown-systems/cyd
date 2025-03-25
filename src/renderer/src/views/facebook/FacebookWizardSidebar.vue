@@ -40,6 +40,21 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-sidebar">
+        <ul class="wizard-nav">
+            <li>
+                <button class="btn btn-light" @click="emit('setState', State.WizardDatabase)">
+                    <i class="fa-solid fa-database" />
+                    Local Database
+                </button>
+            </li>
+            <li>
+                <button class="btn btn-light" @click="emit('setState', State.WizardDeleteOptions)">
+                    <i class="fa-solid fa-fire" />
+                    Delete from FB
+                </button>
+            </li>
+        </ul>
+
         <SidebarArchive :account-i-d="model.account.id" :account-type="model.account.type" />
 
         <!-- Debug mode -->
