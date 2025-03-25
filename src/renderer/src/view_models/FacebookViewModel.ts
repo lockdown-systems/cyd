@@ -14,8 +14,6 @@ export enum State {
 
     WizardStart = "WizardStart",
 
-    WizardArchiveOptions = "WizardArchiveOptions",
-
     WizardDatabase = "WizardDatabase",
     WizardDatabaseDisplay = "WizardDatabaseDisplay",
 
@@ -29,7 +27,11 @@ export enum State {
     WizardBuildOptions = "WizardBuildOptions",
     WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
 
+    WizardArchiveOptions = "WizardArchiveOptions",
+    WizardArchiveOptionsDisplay = "WizardArchiveOptionsDisplay",
+
     WizardDeleteOptions = "WizardDeleteOptions",
+    WizardDeleteOptionsDisplay = "WizardDeleteOptionsDisplay",
 
     WizardCheckPremium = "WizardCheckPremium",
     WizardCheckPremiumDisplay = "WizardCheckPremiumDisplay",
@@ -612,6 +614,21 @@ You'll be able to access it even after you delete it from Facebook.`;
 **Here's what I'm planning on doing.**`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardReviewDisplay;
+                    break;
+
+                case State.WizardArchiveOptions:
+                    this.showBrowser = false;
+                    this.instructions = `I'll help you archive your Facebook account.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardArchiveOptionsDisplay;
+                    break;
+
+                case State.WizardDeleteOptions:
+                    this.showBrowser = false;
+                    this.instructions = `
+**Which data do you want to delete?**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardDeleteOptionsDisplay;
                     break;
 
                 case State.RunJobs:

@@ -25,6 +25,8 @@ import FacebookWizardImportDownloadPage from './FacebookWizardImportDownloadPage
 import FacebookWizardImportingPage from './FacebookWizardImportingPage.vue';
 import FacebookWizardBuildOptionsPage from './FacebookWizardBuildOptionsPage.vue';
 import FacebookJobStatusComponent from './FacebookJobStatusComponent.vue';
+import FacebookWizardArchiveOptionsPage from './FacebookWizardArchiveOptionsPage.vue';
+import FacebookWizardDeleteOptionsPage from './FacebookWizardDeleteOptionsPage.vue';
 
 import type {
     Account,
@@ -411,6 +413,13 @@ onUnmounted(async () => {
 
                         <FacebookWizardReviewPage v-if="model.state == State.WizardReviewDisplay" :model="unref(model)"
                             @set-state="setState($event)" @start-jobs="startJobs" @update-account="updateAccount" />
+
+                        <FacebookWizardArchiveOptionsPage v-if="model.state == State.WizardArchiveOptionsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
+
+                        <FacebookWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
+                            :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
+                            @update-account="updateAccount" @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">

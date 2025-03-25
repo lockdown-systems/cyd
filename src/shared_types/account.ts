@@ -86,6 +86,7 @@ export type FacebookAccount = {
     profileImageDataURI: string;
     saveMyData: boolean;
     deleteMyData: boolean;
+    archiveMyData: boolean;
     savePosts: boolean;
     savePostsHTML: boolean;
     deletePosts: boolean;
@@ -93,4 +94,7 @@ export type FacebookAccount = {
     deletePostsDaysOld: number;
     deletePostsReactsThresholdEnabled: boolean;
     deletePostsReactsThreshold: number;
+    deleteReposts: boolean;
+    deleteRepostsDaysOldEnabled: boolean;
+    deleteRepostsDaysOld: number;
 }
