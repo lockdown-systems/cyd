@@ -384,6 +384,20 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.database.saveAccount(JSON.stringify(this.account));
 
         await this.waitForPause();
+
+        // See if we're being asked to trust this device
+        await this.sleep(1000);
+        const url = this.webview?.getURL() || '';
+        if (url.startsWith('https://www.facebook.com/two_factor/remember_browser/')) {
+            // Click "Trust this device" button
+            console.log('Clicking "Trust this device"');
+            await this.webview?.executeJavaScript(`document.querySelectorAll('div[role="button"]')[2].click()`);
+            await this.sleep(1000);
+            await this.waitForLoadingToFinish();
+        }
+
+        console.log("Logged into Facebook");
+        this.showBrowser = false;
     }
 
     async downloadHTMLPostJSON() {
