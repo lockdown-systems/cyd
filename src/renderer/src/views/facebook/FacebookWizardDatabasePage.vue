@@ -28,7 +28,7 @@ const nextClicked = async () => {
 };
 
 // Settings
-const buildDatabaseStrategy = ref('importArchive');
+const buildDatabaseStrategy = ref('buildFromScratch');
 
 onMounted(() => {
 });

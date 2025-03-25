@@ -155,20 +155,20 @@ const onCancelAutomation = () => {
     emit('onRefreshClicked');
 };
 
-// const onReportBug = async () => {
-//     console.log('Report bug clicked');
+const onReportBug = async () => {
+    console.log('Report bug clicked');
 
-//     // Pause
-//     model.value.pause();
+    // Pause
+    model.value.pause();
 
-//     // Submit error report
-//     await model.value.error(AutomationErrorType.facebook_manualBugReport, {
-//         message: 'User is manually reporting a bug',
-//         state: model.value.saveState()
-//     }, {
-//         currentURL: model.value.webview?.getURL()
-//     });
-// }
+    // Submit error report
+    await model.value.error(AutomationErrorType.facebook_manualBugReport, {
+        message: 'User is manually reporting a bug',
+        state: model.value.saveState()
+    }, {
+        currentURL: model.value.webview?.getURL()
+    });
+}
 
 // User variables
 const userAuthenticated = ref(false);
@@ -200,6 +200,9 @@ const updateUserPremium = async () => {
         emitter?.emit(`facebook-premium-check-failed-${props.account.id}`);
     }
 };
+
+// Enable/disable clicking in the webview
+const clickingEnabled = ref(false);
 
 emitter?.on('signed-in', async () => {
     console.log('FacebookView: User signed in');
@@ -388,7 +391,8 @@ onUnmounted(async () => {
             :class="{
                 'hidden': !model.showBrowser,
                 'webview-automation-border': model.showAutomationNotice,
-                'webview-input-border': !model.showAutomationNotice
+                'webview-input-border': !model.showAutomationNotice,
+                'webview-clickable': clickingEnabled
             }" />
 
         <template v-if="model.state != State.WizardStart">

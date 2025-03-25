@@ -23,7 +23,8 @@ const getJobTypeText = (jobType: string) => {
     const jobTypeTexts: { [key: string]: string } = {
         login: 'Logging in',
         savePosts: 'Saving tweets',
-        savePostsHTML: 'Saving posts HTML'
+        savePostsHTML: 'Saving posts HTML',
+        archiveBuild: 'Building archive',
     };
     return jobTypeTexts[jobType] || jobType;
 };
