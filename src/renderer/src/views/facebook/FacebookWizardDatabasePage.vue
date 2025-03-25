@@ -47,6 +47,21 @@ onMounted(() => {
             <form @submit.prevent>
                 <div class="mb-3">
                     <div class="form-check">
+                        <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
+                            value="buildFromScratch" class="form-check-input">
+                        <label class="form-check-label" for="buildFromScratch">
+                            Build database from scratch
+                        </label>
+                    </div>
+                    <div class="indent">
+                        <small>
+                            Cyd will scroll through all of your posts and save a local copy of your data.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
                         <input id="importArchive" v-model="buildDatabaseStrategy" type="radio" value="importArchive"
                             class="form-check-input">
                         <label class="form-check-label" for="importArchive">
@@ -57,21 +72,6 @@ onMounted(() => {
                         <small>
                             Importing your Meta archive will give you the most complete backup of your data, but you'll
                             need to wait for Meta to send it to you.
-                        </small>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input id="buildFromScratch" v-model="buildDatabaseStrategy" type="radio"
-                            value="buildFromScratch" class="form-check-input">
-                        <label class="form-check-label" for="buildFromScratch">
-                            Build database from scratch
-                        </label>
-                    </div>
-                    <div class="indent">
-                        <small>
-                            Cyd will scroll through all of your posts and save a local copy of your data.
                         </small>
                     </div>
                 </div>
