@@ -122,10 +122,10 @@ export const defineIPCFacebook = () => {
         }
     });
 
-    ipcMain.handle('Facebook:deleteUnzippedFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+    ipcMain.handle('Facebook:deleteUnzippedFacebookArchive', async (_, accountID: number, archivePath: string): Promise<void> => {
         try {
             const controller = getFacebookAccountController(accountID);
-            return await controller.deleteUnzippedFacebookArchive(archivePath);
+            await controller.deleteUnzippedFacebookArchive(archivePath);
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }
@@ -144,6 +144,42 @@ export const defineIPCFacebook = () => {
         try {
             const controller = getFacebookAccountController(accountID);
             return await controller.importFacebookArchive(archivePath, dataType);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:saveParseHTMLPostData', async (_, accountID: number, data: object): Promise<void> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.saveParseHTMLPostData(data);
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.saveGraphQLPostData();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:indexStart', async (_, accountID: number) => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            await controller.indexStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:indexStop', async (_, accountID: number) => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            await controller.indexStop();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

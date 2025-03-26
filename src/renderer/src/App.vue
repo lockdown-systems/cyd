@@ -425,6 +425,19 @@ body {
   background-color: #f0f0f0;
 }
 
+ul.wizard-nav {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+ul.wizard-nav button {
+  width: 200px;
+  text-align: left;
+}
+
 /* Run Jobs styles */
 
 .run-jobs-state {

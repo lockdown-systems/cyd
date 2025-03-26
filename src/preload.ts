@@ -371,7 +371,7 @@ contextBridge.exposeInMainWorld('electron', {
         unzipFacebookArchive: (accountID: number, archivePath: string): Promise<string | null> => {
             return ipcRenderer.invoke('Facebook:unzipFacebookArchive', accountID, archivePath);
         },
-        deleteUnzippedFacebookArchive: (accountID: number, archivePath: string): Promise<string | null> => {
+        deleteUnzippedFacebookArchive: (accountID: number, archivePath: string): Promise<void> => {
             return ipcRenderer.invoke('Facebook:deleteUnzippedFacebookArchive', accountID, archivePath);
         },
         verifyFacebookArchive: (accountID: number, archivePath: string): Promise<string | null> => {
@@ -379,6 +379,18 @@ contextBridge.exposeInMainWorld('electron', {
         },
         importFacebookArchive: (accountID: number, archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> => {
             return ipcRenderer.invoke('Facebook:importFacebookArchive', accountID, archivePath, dataType);
+        },
+        indexStart: (accountID: number) => {
+            ipcRenderer.invoke('Facebook:indexStart', accountID)
+        },
+        indexStop: (accountID: number) => {
+            ipcRenderer.invoke('Facebook:indexStop', accountID)
+        },
+        saveParseHTMLPostData: (accountID: number, data: object): Promise<string> => {
+            return ipcRenderer.invoke('Facebook:saveParseHTMLPostData', accountID, data);
+        },
+        saveGraphQLPostData: (accountID: number): Promise<string> => {
+            return ipcRenderer.invoke('Facebook:saveGraphQLPostData', accountID);
         },
         getDatabaseStats: (accountID: number): Promise<FacebookDatabaseStats> => {
             return ipcRenderer.invoke('Facebook:getDatabaseStats', accountID);

@@ -155,9 +155,13 @@ declare global {
                 getConfig: (accountID: number, key: string) => Promise<string | null>;
                 setConfig: (accountID: number, key: string, value: string) => Promise<void>;
                 unzipFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
-                deleteUnzippedFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
+                deleteUnzippedFacebookArchive: (accountID: number, archivePath: string) => Promise<void>;
                 verifyFacebookArchive: (accountID: number, archivePath: string) => Promise<string | null>;
                 importFacebookArchive: (accountID: number, archivePath: string, dataType: string) => Promise<FacebookImportArchiveResponse>;
+                indexStart: (accountID: number) => Promise<void>;
+                indexStop: (accountID: number) => Promise<void>;
+                saveParseHTMLPostData: (accountID: number, data: object) => Promise<string | null>;
+                saveGraphQLPostData: (accountID: number) => Promise<string | null>;
                 getDatabaseStats: (accountID: number) => Promise<FacebookDatabaseStats>;
             },
             onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
