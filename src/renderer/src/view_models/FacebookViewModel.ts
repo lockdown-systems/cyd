@@ -73,12 +73,12 @@ export interface CurrentUserInitialData {
     [key: string]: unknown;
 }
 
-export function findDataFromFacebookHTML(data: unknown, type: string): object | null {
+export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
     // If the current item is an array, iterate through its elements
     if (Array.isArray(data)) {
         for (const item of data) {
             // Check if the first element is "CurrentUserInitialData"
-            if (Array.isArray(item) && item[0] === "CurrentUserInitialData" && type === "user") {
+            if (Array.isArray(item) && item[0] === "CurrentUserInitialData") {
                 // Check if the third element is an object with the required keys
                 if (
                     item[2] &&
@@ -87,15 +87,11 @@ export function findDataFromFacebookHTML(data: unknown, type: string): object | 
                     "USER_ID" in item[2] &&
                     "NAME" in item[2]
                 ) {
-                    return item[2];
-                }
-            } else if (Array.isArray(item) && item[0] === "RelayPrefetchedStreamCache" && type === "firstPost") {
-                if (item[3] && item[3][1]) {
-                    return item[3][1]["__bbox"]?.["result"]?.["data"]?.["user"]?.["timeline_list_feed_units"]?.["edges"];
+                    return item[2] as CurrentUserInitialData;
                 }
             }
             // Recursively search nested arrays
-            const result = findDataFromFacebookHTML(item, type);
+            const result = findCurrentUserInitialData(item);
             if (result) {
                 return result;
             }
@@ -108,7 +104,7 @@ export function findDataFromFacebookHTML(data: unknown, type: string): object | 
         for (const key of Object.keys(obj)) {
             // Safe property check
             if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                const result = findDataFromFacebookHTML(obj[key], type);
+                const result = findCurrentUserInitialData(obj[key]);
                 if (result) {
                     return result;
                 }
@@ -117,14 +113,6 @@ export function findDataFromFacebookHTML(data: unknown, type: string): object | 
     }
     // If nothing is found, return null
     return null;
-}
-
-export function findCurrentUserInitialData(data: unknown): CurrentUserInitialData | null {
-    return findDataFromFacebookHTML(data, "user") as CurrentUserInitialData;
-}
-
-export function findFirstPostData(data: unknown) {
-    return findDataFromFacebookHTML(data, "firstPost");
 }
 
 export function findProfilePictureURI(data: unknown): string | null {
@@ -400,29 +388,9 @@ export class FacebookViewModel extends BaseViewModel {
         this.showBrowser = false;
     }
 
-    async downloadHTMLPostJSON() {
-        this.showBrowser = true;
-        this.log("Posts", "Loading facebook wall posts");
-
-        // load facebook wall URL and get scripts
-        await this.loadFacebookURL(`https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`);
-        await this.sleep(500);
-        const facebookData = await this.getFacebookDataFromHTML();
-        const latestPostData = findFirstPostData(facebookData)
-        console.log('facebookData', latestPostData);
-
-        return latestPostData;
-    }
-
     async parseFacebookPostData() {
         console.log("Scraping FB posts");
         const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
-
-        // Parse JSON in HTML
-        const latestPostData = await this.downloadHTMLPostJSON();
-        if (latestPostData) {
-            await window.electron.Facebook.saveParseHTMLPostData(this.account.id, { "data": latestPostData });
-        }
 
         // Start MITM to get the GraphQL data
         await this.loadBlank();

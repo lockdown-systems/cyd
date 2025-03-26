@@ -160,7 +160,6 @@ declare global {
                 importFacebookArchive: (accountID: number, archivePath: string, dataType: string) => Promise<FacebookImportArchiveResponse>;
                 indexStart: (accountID: number) => Promise<void>;
                 indexStop: (accountID: number) => Promise<void>;
-                saveParseHTMLPostData: (accountID: number, data: object) => Promise<string | null>;
                 saveGraphQLPostData: (accountID: number) => Promise<string | null>;
                 getDatabaseStats: (accountID: number) => Promise<FacebookDatabaseStats>;
             },

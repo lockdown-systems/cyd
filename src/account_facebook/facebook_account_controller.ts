@@ -276,21 +276,8 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async saveParseHTMLPostData(data: object) {
-        log.info("FacebookAccountController.saveParseHTMLPostData: parsing data", data);
-        // log.info(data["data"]);
-
-        // for (const edge of data["data"]) {
-        //     const post = edge["node"]?.["comet_sections"]?.["content"]?.["story"];
-        //     const text = post["message"]["text"];
-        //     const URL = post["wwwURL"];
-        //     const id = post["id"];
-        //     const post_id = post["post_id"];
-        // }
-    }
-
     async saveParseWallPostData(postData: FBAPINode) {
-        log.info("FacebookAccountController.saveParseHTMLPostData: parsing post data", postData);
+        log.info("FacebookAccountController.saveParseWallPostData: parsing post data", postData);
     }
 
     async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
