@@ -1,5 +1,5 @@
 import { WebviewTag } from 'electron';
-import { BaseViewModel, InternetDownError, URLChangedError } from './BaseViewModel';
+import { BaseViewModel, TimeoutError, InternetDownError, URLChangedError } from './BaseViewModel';
 import {
     FacebookJob,
     FacebookProgress,
@@ -415,7 +415,8 @@ export class FacebookViewModel extends BaseViewModel {
     }
 
     async parseFacebookPostData() {
-        console.log("Is it here?");
+        console.log("Scraping FB posts");
+        const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
 
         // Parse JSON in HTML
         const latestPostData = await this.downloadHTMLPostJSON();
@@ -428,8 +429,45 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.Facebook.indexStart(this.account.id);
         await this.sleep(2000);
 
-        await this.loadFacebookURL(`https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`);
-        await this.sleep(500);
+        await this.loadFacebookURL(facebookProfileURL);
+        await this.sleep(2000);
+
+        // Try to click "Manage posts" button to get the graphQL request containing the posts
+        try {
+            // wait for the "Manage posts" button to appear
+            await this.waitForSelector(
+                '[aria-label="Manage posts"][role="button"]',
+                facebookProfileURL
+            );
+
+            // Click the "Manage posts" button
+            await this.scriptClickElement('[aria-label="Manage posts"][role="button"]');
+            await this.sleep(2000);
+        } catch (e) {
+            this.log("runJobIndexTweets", ["selector never appeared", e]);
+            if (e instanceof TimeoutError) {
+                // Were we rate limited?
+                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_RateLimited, {
+                    error: formatError(e as Error)
+                }, {
+                    currentURL: this.webview?.getURL()
+                })
+            } else if (e instanceof URLChangedError) {
+                const newURL = this.webview?.getURL();
+                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_URLChanged, {
+                    newURL: newURL,
+                    error: formatError(e as Error)
+                }, {
+                    currentURL: this.webview?.getURL()
+                });
+            } else {
+                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_OtherError, {
+                    error: formatError(e as Error)
+                }, {
+                    currentURL: this.webview?.getURL()
+                });
+            }
+        }
 
         await window.electron.Facebook.saveGraphQLPostData(this.account.id);
         await window.electron.Facebook.indexStop(this.account.id);
@@ -461,6 +499,8 @@ export class FacebookViewModel extends BaseViewModel {
         await this.waitForPause();
 
         await this.parseFacebookPostData();
+        this.pause();
+        await this.waitForPause();
 
         await this.finishJob(jobIndex);
         return true;

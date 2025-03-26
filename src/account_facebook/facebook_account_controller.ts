@@ -21,6 +21,7 @@ import {
     FacebookImportArchiveResponse,
     FacebookDatabaseStats,
     emptyFacebookDatabaseStats,
+    ResponseData,
 } from '../shared_types'
 import {
     runMigrations,
@@ -38,6 +39,8 @@ import {
     FacebookArchiveMedia,
     FacebookPostWithMedia,
     FacebookPostRow,
+    FBAPIResponse,
+    FBAPINode,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
@@ -286,13 +289,55 @@ export class FacebookAccountController {
         // }
     }
 
+    async saveParseWallPostData(postData: FBAPINode) {
+        log.info("FacebookAccountController.saveParseHTMLPostData: parsing post data", postData);
+    }
+
+    async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
+        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON", responseDataBody);
+
+        // fs.writeFileSync(`/home/saptaks/codebases/cyd/response-data`, responseDataBody, 'utf-8');
+
+        const postArray = responseDataBody.split('\r\n');
+        const responseDataBodyJSON = [];
+        for (const post of postArray) {
+            responseDataBodyJSON.push(JSON.parse(post) as FBAPIResponse);
+        }
+
+        // fs.writeFileSync(`/home/saptaks/codebases/cyd/response-data.json`, JSON.stringify(responseDataBodyJSON), 'utf-8');
+
+        return responseDataBodyJSON;
+    }
+
     async parseGraphQLPostData(responseIndex: number) {
         const responseData = this.mitmController.responseData[responseIndex];
 
+        // Already processed?
+        if (responseData.processed) {
+            return true;
+        }
+
+        // Is it rate limited?
         if (responseData.status == 429) {
             log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
             this.mitmController.responseData[responseIndex].processed = true;
             return false;
+        }
+
+        // Get structured data from the stringified object it's a timeline feed request
+        log.info(responseData.body)
+        if (responseData.status === 200 && responseData.body.includes("timeline_manage_feed_units")) {
+            const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
+
+            for (const postResponse of responseDataBodyJSON) {
+                if (postResponse?.data?.node) {
+                    this.saveParseWallPostData(postResponse?.data?.node);
+                } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
+                    for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
+                        this.saveParseWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
+                    }
+                }
+            }
         }
     }
 

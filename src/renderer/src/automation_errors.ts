@@ -82,6 +82,9 @@ export enum AutomationErrorType {
     facebook_unknownError = "facebook_unknown",
     facebook_loadURLError = "facebook_loadURLError",
     facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
+    facebook_runJob_clickManagePosts_RateLimited = "facebook_runJob_clickManagePosts_RateLimited",
+    facebook_runJob_clickManagePosts_URLChanged = "facebook_runJob_clickManagePosts_URLChanged",
+    facebook_runJob_clickManagePosts_OtherError = "facebook_runJob_clickManagePosts_OtherError",
 }
 
 export const AutomationErrorTypeToMessage = {
