@@ -63,6 +63,7 @@ export interface FacebookPostRow {
     deletedPostAt: string | null;
     hasMedia: boolean;
     isReposted: boolean;
+    repostID: string | null;
     urls?: string[];
 }
 
@@ -235,7 +236,16 @@ export interface FBAPINode {
             __module_component_ProfileCometTimelineGridStoryAttachment_story: any;
         };
     }[];
-    attached_story: any;
+    attached_story?: null | {
+        attachments: [],
+        comet_sections: {
+            aggregated_stories: any,
+            message: null | {
+                text: string;
+            }
+        },
+        id: string
+    };
     creation_time: number;
     backdated_time: null | number;
     can_viewer_delete: boolean;

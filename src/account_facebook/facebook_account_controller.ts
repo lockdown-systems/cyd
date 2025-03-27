@@ -216,6 +216,15 @@ export class FacebookAccountController {
                         FOREIGN KEY(postId) REFERENCES post(postID)
                     );`
                 ]
+            },
+            {
+                name: "20250327_add_path_repostID_to_post",
+                sql: [
+                    `ALTER TABLE post ADD COLUMN path TEXT;`,
+                    `ALTER TABLE post ADD COLUMN hasMedia BOOLEAN;`,
+                    `ALTER TABLE post ADD COLUMN repostID TEXT;`,
+                    `UPDATE post SET hasMedia = 0;`
+                ]
             }
         ])
         log.info("FacebookAccountController.initDB: database initialized");
@@ -276,8 +285,40 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async saveParseWallPostData(postData: FBAPINode) {
+    async indexFacebookWallPostData(postData: FBAPINode) {
         log.info("FacebookAccountController.saveParseWallPostData: parsing post data", postData);
+
+        // Is this post already there?
+        const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
+        if (existingPost) {
+            // First delete related media and URLs
+            exec(this.db, 'DELETE FROM post_media WHERE postId = ?', [postData.id]);
+            exec(this.db, 'DELETE FROM post_url WHERE postId = ?', [postData.id]);
+
+            // Delete the existing post to re-import
+            exec(this.db, 'DELETE FROM post WHERE postID = ?', [postData.id]);
+        }
+
+        // Save post
+        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
+            postData.id,
+            new Date(postData.creation_time),
+            postData.title,
+            postData.message?.text,
+            postData.url,
+            postData.attached_story !== null ? 1 : 0,
+            postData.attached_story?.id,
+            new Date(),
+        ]);
+
+        if (postData.attachments && postData.attachments.length > 0) {
+            log.info("FacebookAccountController.importFacebookArchive: importing media for post", postData.id);
+            await this.indexFacebookWallPostMedia(postData.id, postData.attachments);
+        }
+    }
+
+    async indexFacebookWallPostMedia(postID: string, postMedia: object) {
+
     }
 
     async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
@@ -318,10 +359,10 @@ export class FacebookAccountController {
 
             for (const postResponse of responseDataBodyJSON) {
                 if (postResponse?.data?.node) {
-                    this.saveParseWallPostData(postResponse?.data?.node);
+                    this.indexFacebookWallPostData(postResponse?.data?.node);
                 } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
                     for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
-                        this.saveParseWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
+                        this.indexFacebookWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
                     }
                 }
             }
@@ -329,7 +370,6 @@ export class FacebookAccountController {
     }
 
     async saveGraphQLPostData() {
-        log.error("Are we getting GraphQL request??")
         await this.mitmController.clearProcessed();
         log.info(`FacebookAccountController.saveGraphQLPostData: parsing ${this.mitmController.responseData.length} responses`);
 
