@@ -463,12 +463,7 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.showAutomationNotice = true;
 
-        this.pause();
-        await this.waitForPause();
-
         await this.parseFacebookPostData();
-        this.pause();
-        await this.waitForPause();
 
         await this.finishJob(jobIndex);
         return true;

@@ -21,7 +21,6 @@ import {
     FacebookImportArchiveResponse,
     FacebookDatabaseStats,
     emptyFacebookDatabaseStats,
-    ResponseData,
 } from '../shared_types'
 import {
     runMigrations,
@@ -287,7 +286,7 @@ export class FacebookAccountController {
     }
 
     async indexFacebookWallPostData(postData: FBAPINode) {
-        log.info("FacebookAccountController.saveParseWallPostData: parsing post data", postData);
+        log.info("FacebookAccountController.indexFacebookWallPostData: parsing post data", postData);
 
         // Is this post already there?
         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
@@ -301,14 +300,15 @@ export class FacebookAccountController {
         }
 
         // Save post
-        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             postData.id,
-            new Date(postData.creation_time),
+            new Date(postData.creation_time * 1000),
             postData.title,
             postData.message?.text,
             postData.url,
             postData.attached_story !== null ? 1 : 0,
             postData.attached_story?.id,
+            postData.attachments && postData.attachments.length > 0 ? 1 : 0,
             new Date(),
         ]);
 
@@ -321,8 +321,16 @@ export class FacebookAccountController {
     async indexFacebookWallPostMedia(postId: string, postMedia: FBAttachment[]) {
         for (const mediaItem of postMedia) {
             const mediaData = mediaItem.style_type_renderer.attachment.media;
-            const sourceURI = mediaData.image.uri;
-            const mediaId = `${postId}_${path.basename(sourceURI)}`;
+            let sourceURI: string;
+            if (mediaData.__typename === 'GenericAttachmentMedia') {
+                const searchParams = new URL(mediaData.image.uri).searchParams
+                sourceURI = searchParams.get('url') || '';
+            } else {
+                sourceURI = mediaData.image.uri;
+            }
+
+            const filename = path.basename(sourceURI.substring(0, sourceURI.indexOf('?')));
+            const mediaId = `${postId}_${path.basename(filename)}`;
 
             // Create destination directory if it doesn't exist
             const mediaDir = path.join(this.accountDataPath, 'media');
@@ -330,12 +338,12 @@ export class FacebookAccountController {
                 fs.mkdirSync(mediaDir, { recursive: true });
             }
 
-            const destPath = path.join(mediaDir, path.basename(sourceURI));
+            const destPath = path.join(mediaDir, filename);
             try {
                 const isMediaSaved = await this.savePostMedia(sourceURI, destPath);
                 if (isMediaSaved) {
                     exec(this.db,
-                        'INSERT INTO post_media (mediaId, postId, type, uri, description, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        'INSERT INTO post_media (mediaId, postId, type, uri, description, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?)',
                         [
                             mediaId,
                             postId,
@@ -370,7 +378,8 @@ export class FacebookAccountController {
             const buffer = Buffer.from(arrayBuffer);
             fs.createWriteStream(destPath).write(buffer);
             return true;
-        } catch {
+        } catch (error) {
+            log.error(`FacebookAccountController.savePostMedia: Error downloading media: ${error}`)
             return false;
         }
     }
@@ -378,15 +387,11 @@ export class FacebookAccountController {
     async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
         log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON", responseDataBody);
 
-        // fs.writeFileSync(`/home/saptaks/codebases/cyd/response-data`, responseDataBody, 'utf-8');
-
         const postArray = responseDataBody.split('\r\n');
         const responseDataBodyJSON = [];
         for (const post of postArray) {
             responseDataBodyJSON.push(JSON.parse(post) as FBAPIResponse);
         }
-
-        // fs.writeFileSync(`/home/saptaks/codebases/cyd/response-data.json`, JSON.stringify(responseDataBodyJSON), 'utf-8');
 
         return responseDataBodyJSON;
     }
@@ -413,8 +418,10 @@ export class FacebookAccountController {
 
             for (const postResponse of responseDataBodyJSON) {
                 if (postResponse?.data?.node) {
+                    log.error("Normal Data")
                     this.indexFacebookWallPostData(postResponse?.data?.node);
                 } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
+                    log.error("Edge Data")
                     for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
                         this.indexFacebookWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
                     }
