@@ -115,6 +115,32 @@ export interface FBAPIActor {
     delegate_page: any;
 }
 
+export interface FBAttachment {
+    style_type_renderer: {
+        __typename: string;
+        attachment: {
+            media: {
+                __typename: string;
+                image: {
+                    uri: string;
+                    height: number;
+                    width: number;
+                };
+                is_playable: boolean;
+                id: string;
+                accessibility_caption: string;
+                focus: {
+                    x: number;
+                    y: number;
+                };
+                __isNode: string;
+            };
+        };
+        __module_operation_ProfileCometTimelineGridStoryAttachment_story: any;
+        __module_component_ProfileCometTimelineGridStoryAttachment_story: any;
+    };
+}
+
 export interface FBAPINode {
     __typename: string;
     id: string;
@@ -206,45 +232,16 @@ export interface FBAPINode {
     summary: any;
     url: string;
     title: any;
-    attachments: {
-        style_type_renderer: {
-            __typename: string;
-            attachment: {
-                all_subattachments: {
-                    count: number;
-                    nodes: {
-                        media: {
-                            __typename: string;
-                            image: {
-                                uri: string;
-                                height: number;
-                                width: number;
-                            };
-                            is_playable: boolean;
-                            id: string;
-                            accessibility_caption: string;
-                            focus: {
-                                x: number;
-                                y: number;
-                            };
-                            __isNode: string;
-                        };
-                    }[];
-                };
-            };
-            __module_operation_ProfileCometTimelineGridStoryAttachment_story: any;
-            __module_component_ProfileCometTimelineGridStoryAttachment_story: any;
-        };
-    }[];
+    attachments: FBAttachment[];
     attached_story?: null | {
-        attachments: [],
+        attachments: FBAttachment[];
         comet_sections: {
-            aggregated_stories: any,
+            aggregated_stories: any;
             message: null | {
                 text: string;
-            }
-        },
-        id: string
+            };
+        };
+        id: string;
     };
     creation_time: number;
     backdated_time: null | number;

@@ -41,6 +41,7 @@ import {
     FacebookPostRow,
     FBAPIResponse,
     FBAPINode,
+    FBAttachment,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
@@ -317,8 +318,61 @@ export class FacebookAccountController {
         }
     }
 
-    async indexFacebookWallPostMedia(postID: string, postMedia: object) {
+    async indexFacebookWallPostMedia(postId: string, postMedia: FBAttachment[]) {
+        for (const mediaItem of postMedia) {
+            const mediaData = mediaItem.style_type_renderer.attachment.media;
+            const sourceURI = mediaData.image.uri;
+            const mediaId = `${postId}_${path.basename(sourceURI)}`;
 
+            // Create destination directory if it doesn't exist
+            const mediaDir = path.join(this.accountDataPath, 'media');
+            if (!fs.existsSync(mediaDir)) {
+                fs.mkdirSync(mediaDir, { recursive: true });
+            }
+
+            const destPath = path.join(mediaDir, path.basename(sourceURI));
+            try {
+                const isMediaSaved = await this.savePostMedia(sourceURI, destPath);
+                if (isMediaSaved) {
+                    exec(this.db,
+                        'INSERT INTO post_media (mediaId, postId, type, uri, description, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        [
+                            mediaId,
+                            postId,
+                            mediaData.__typename,
+                            sourceURI,
+                            mediaData.accessibility_caption || null,
+                            new Date()
+                        ]
+                    );
+                } else {
+                    log.error('FacebookAccountController.indexFacebookWallPostMedia: Media could not be saved.')
+                }
+            } catch (error) {
+                log.error(`FacebookAccountController.indexFacebookWallPostMedia: Error saving media: ${error}`);
+            }
+        }
+    }
+
+    async savePostMedia(sourceURI: string, destPath: string) {
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Download and save media from the mediaPath
+        try {
+            const response = await fetch(sourceURI, {});
+            if (!response.ok) {
+                return false;
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            fs.createWriteStream(destPath).write(buffer);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
