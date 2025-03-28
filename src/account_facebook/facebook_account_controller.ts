@@ -417,9 +417,9 @@ export class FacebookAccountController {
         //     return false;
         // }
 
-        // Get structured data from the stringified object it's a timeline feed request
+        // Get structured data from the stringified object
         log.info(responseData.body)
-        if (responseData.status === 200 && responseData.body.includes("timeline_manage_feed_units")) {
+        if (responseData.status === 200) {
             const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
 
             for (const postResponse of responseDataBodyJSON) {
