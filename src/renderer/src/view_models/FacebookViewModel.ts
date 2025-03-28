@@ -360,7 +360,28 @@ export class FacebookViewModel extends BaseViewModel {
         this.showBrowser = false;
     }
 
-    async parseFacebookPostData() {
+    async runJobLogin(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_LOGIN, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `Checking to see if you're still logged in to your Facebook account...`;
+
+        this.showAutomationNotice = false;
+
+        await this.login();
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
+    async runJobSavePosts(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_SAVE_POSTS, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `This is saving posts...`;
+
+        this.showAutomationNotice = true;
+
         console.log("Scraping FB posts");
         const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
 
@@ -411,31 +432,6 @@ export class FacebookViewModel extends BaseViewModel {
 
         await window.electron.Facebook.saveGraphQLPostData(this.account.id);
         await window.electron.Facebook.indexStop(this.account.id);
-    }
-
-    async runJobLogin(jobIndex: number): Promise<boolean> {
-        await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_LOGIN, navigator.userAgent);
-
-        this.showBrowser = true;
-        this.instructions = `Checking to see if you're still logged in to your Facebook account...`;
-
-        this.showAutomationNotice = false;
-
-        await this.login();
-
-        await this.finishJob(jobIndex);
-        return true;
-    }
-
-    async runJobSavePosts(jobIndex: number): Promise<boolean> {
-        await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_SAVE_POSTS, navigator.userAgent);
-
-        this.showBrowser = true;
-        this.instructions = `This is saving posts...`;
-
-        this.showAutomationNotice = true;
-
-        await this.parseFacebookPostData();
 
         await this.finishJob(jobIndex);
         return true;
