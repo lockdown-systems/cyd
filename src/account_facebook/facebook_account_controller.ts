@@ -285,8 +285,8 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async indexFacebookWallPostData(postData: FBAPINode) {
-        log.info("FacebookAccountController.indexFacebookWallPostData: parsing post data", postData);
+    async parseNode(postData: FBAPINode) {
+        log.info("FacebookAccountController.parseNode: parsing post data", postData);
 
         // Is this post already there?
         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
@@ -313,7 +313,7 @@ export class FacebookAccountController {
         ]);
 
         if (postData.attachments && postData.attachments.length > 0) {
-            log.info("FacebookAccountController.importFacebookArchive: importing media for post", postData.id);
+            log.info("FacebookAccountController.parseNode: importing media for post", postData.id);
             await this.indexFacebookWallPostMedia(postData.id, postData.attachments);
         }
 
@@ -418,18 +418,17 @@ export class FacebookAccountController {
         // }
 
         // Get structured data from the stringified object
-        log.info(responseData.body)
         if (responseData.status === 200) {
             const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
 
             for (const postResponse of responseDataBodyJSON) {
                 if (postResponse?.data?.node) {
                     log.error("Normal Data")
-                    this.indexFacebookWallPostData(postResponse?.data?.node);
+                    this.parseNode(postResponse?.data?.node);
                 } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
                     log.error("Edge Data")
                     for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
-                        this.indexFacebookWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
+                        this.parseNode(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
                     }
                 }
             }
