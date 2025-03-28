@@ -239,8 +239,8 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.Facebook.syncProgress(this.account?.id, JSON.stringify(this.progress));
     }
 
-    async loadFacebookURL(url: string, expectedURLs: (string | RegExp)[] = [], redirectOk: boolean = false) {
-        this.log("loadFacebookURL", [url, expectedURLs, redirectOk]);
+    async loadFacebookURL(url: string) {
+        this.log("loadFacebookURL", url);
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -263,35 +263,7 @@ export class FacebookViewModel extends BaseViewModel {
                 break;
             }
 
-            // Did the URL change?
-            if (!redirectOk) {
-                this.log("loadFacebookURL", "checking if URL changed");
-                const newURL = new URL(this.webview?.getURL() || '');
-                const originalURL = new URL(url);
-                // Check if the URL has changed, ignoring query strings
-                // e.g. a change from https://www.facebook.com/ to https://www.facebook.com/?mx=2 is ok
-                if (newURL.origin + newURL.pathname !== originalURL.origin + originalURL.pathname) {
-                    let changedToUnexpected = true;
-                    for (const expectedURL of expectedURLs) {
-                        if (typeof expectedURL === 'string' && newURL.toString().startsWith(expectedURL)) {
-                            changedToUnexpected = false;
-                            break;
-                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL.toString())) {
-                            changedToUnexpected = false;
-                            break;
-                        }
-                    }
-
-                    if (changedToUnexpected) {
-                        this.log("loadFacebookURL", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
-                        throw new URLChangedError(url, this.webview?.getURL() || '');
-                    } else {
-                        this.log("loadFacebookURL", `expected, URL change to ${this.webview?.getURL()}`);
-                    }
-                }
-            }
-
-            // TODO: handle Facebook rate limits
+            // TODO: handle redirects, Facebook rate limits
 
             // Finished successfully so break out of the loop
             this.log("loadFacebookURL", "finished loading URL");
