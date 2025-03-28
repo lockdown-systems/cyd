@@ -149,15 +149,6 @@ export const defineIPCFacebook = () => {
         }
     });
 
-    ipcMain.handle('Facebook:saveParseHTMLPostData', async (_, accountID: number, data: object): Promise<void> => {
-        try {
-            const controller = getFacebookAccountController(accountID);
-            return await controller.saveParseHTMLPostData(data);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
     ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<void> => {
         try {
             const controller = getFacebookAccountController(accountID);

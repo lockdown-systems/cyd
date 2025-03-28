@@ -38,6 +38,9 @@ import {
     FacebookArchiveMedia,
     FacebookPostWithMedia,
     FacebookPostRow,
+    FBAPIResponse,
+    FBAPINode,
+    FBAttachment,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
@@ -213,6 +216,15 @@ export class FacebookAccountController {
                         FOREIGN KEY(postId) REFERENCES post(postID)
                     );`
                 ]
+            },
+            {
+                name: "20250327_add_path_repostID_to_post",
+                sql: [
+                    `ALTER TABLE post ADD COLUMN path TEXT;`,
+                    `ALTER TABLE post ADD COLUMN hasMedia BOOLEAN;`,
+                    `ALTER TABLE post ADD COLUMN repostID TEXT;`,
+                    `UPDATE post SET hasMedia = 0;`
+                ]
             }
         ])
         log.info("FacebookAccountController.initDB: database initialized");
@@ -273,31 +285,152 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async saveParseHTMLPostData(data: object) {
-        log.info("FacebookAccountController.saveParseHTMLPostData: parsing data", data);
-        // log.info(data["data"]);
+    async indexFacebookWallPostData(postData: FBAPINode) {
+        log.info("FacebookAccountController.indexFacebookWallPostData: parsing post data", postData);
 
-        // for (const edge of data["data"]) {
-        //     const post = edge["node"]?.["comet_sections"]?.["content"]?.["story"];
-        //     const text = post["message"]["text"];
-        //     const URL = post["wwwURL"];
-        //     const id = post["id"];
-        //     const post_id = post["post_id"];
-        // }
+        // Is this post already there?
+        const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
+        if (existingPost) {
+            // First delete related media and URLs
+            exec(this.db, 'DELETE FROM post_media WHERE postId = ?', [postData.id]);
+            exec(this.db, 'DELETE FROM post_url WHERE postId = ?', [postData.id]);
+
+            // Delete the existing post to re-import
+            exec(this.db, 'DELETE FROM post WHERE postID = ?', [postData.id]);
+        }
+
+        // Save post
+        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            postData.id,
+            new Date(postData.creation_time * 1000),
+            postData.title,
+            postData.message?.text,
+            postData.url,
+            postData.attached_story !== null ? 1 : 0,
+            postData.attached_story?.id,
+            postData.attachments && postData.attachments.length > 0 ? 1 : 0,
+            new Date(),
+        ]);
+
+        if (postData.attachments && postData.attachments.length > 0) {
+            log.info("FacebookAccountController.importFacebookArchive: importing media for post", postData.id);
+            await this.indexFacebookWallPostMedia(postData.id, postData.attachments);
+        }
+    }
+
+    async indexFacebookWallPostMedia(postId: string, postMedia: FBAttachment[]) {
+        for (const mediaItem of postMedia) {
+            const mediaData = mediaItem.style_type_renderer.attachment.media;
+            let sourceURI: string;
+            if (mediaData.__typename === 'GenericAttachmentMedia') {
+                const searchParams = new URL(mediaData.image.uri).searchParams
+                sourceURI = searchParams.get('url') || '';
+            } else {
+                sourceURI = mediaData.image.uri;
+            }
+
+            const filename = path.basename(sourceURI.substring(0, sourceURI.indexOf('?')));
+            const mediaId = `${postId}_${path.basename(filename)}`;
+
+            // Create destination directory if it doesn't exist
+            const mediaDir = path.join(this.accountDataPath, 'media');
+            if (!fs.existsSync(mediaDir)) {
+                fs.mkdirSync(mediaDir, { recursive: true });
+            }
+
+            const destPath = path.join(mediaDir, filename);
+            try {
+                const isMediaSaved = await this.savePostMedia(sourceURI, destPath);
+                if (isMediaSaved) {
+                    exec(this.db,
+                        'INSERT INTO post_media (mediaId, postId, type, uri, description, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?)',
+                        [
+                            mediaId,
+                            postId,
+                            mediaData.__typename,
+                            sourceURI,
+                            mediaData.accessibility_caption || null,
+                            new Date()
+                        ]
+                    );
+                } else {
+                    log.error('FacebookAccountController.indexFacebookWallPostMedia: Media could not be saved.')
+                }
+            } catch (error) {
+                log.error(`FacebookAccountController.indexFacebookWallPostMedia: Error saving media: ${error}`);
+            }
+        }
+    }
+
+    async savePostMedia(sourceURI: string, destPath: string) {
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Download and save media from the mediaPath
+        try {
+            const response = await fetch(sourceURI, {});
+            if (!response.ok) {
+                return false;
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            fs.createWriteStream(destPath).write(buffer);
+            return true;
+        } catch (error) {
+            log.error(`FacebookAccountController.savePostMedia: Error downloading media: ${error}`)
+            return false;
+        }
+    }
+
+    async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
+        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON", responseDataBody);
+
+        const postArray = responseDataBody.split('\r\n');
+        const responseDataBodyJSON = [];
+        for (const post of postArray) {
+            responseDataBodyJSON.push(JSON.parse(post) as FBAPIResponse);
+        }
+
+        return responseDataBodyJSON;
     }
 
     async parseGraphQLPostData(responseIndex: number) {
         const responseData = this.mitmController.responseData[responseIndex];
 
+        // Already processed?
+        if (responseData.processed) {
+            return true;
+        }
+
+        // Is it rate limited?
         if (responseData.status == 429) {
             log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
             this.mitmController.responseData[responseIndex].processed = true;
             return false;
         }
+
+        // Get structured data from the stringified object it's a timeline feed request
+        log.info(responseData.body)
+        if (responseData.status === 200 && responseData.body.includes("timeline_manage_feed_units")) {
+            const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
+
+            for (const postResponse of responseDataBodyJSON) {
+                if (postResponse?.data?.node) {
+                    log.error("Normal Data")
+                    this.indexFacebookWallPostData(postResponse?.data?.node);
+                } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
+                    log.error("Edge Data")
+                    for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
+                        this.indexFacebookWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
+                    }
+                }
+            }
+        }
     }
 
     async saveGraphQLPostData() {
-        log.error("Are we getting GraphQL request??")
         await this.mitmController.clearProcessed();
         log.info(`FacebookAccountController.saveGraphQLPostData: parsing ${this.mitmController.responseData.length} responses`);
 

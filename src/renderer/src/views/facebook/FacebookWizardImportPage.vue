@@ -24,7 +24,7 @@ const importClicked = async () => {
 };
 
 const backClicked = async () => {
-    emit('setState', State.WizardImportOrBuild);
+    emit('setState', State.WizardDatabase);
 };
 </script>
 
@@ -85,14 +85,14 @@ const backClicked = async () => {
             </ul>
 
             <div class="buttons mb-4">
+                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                    <i class="fa-solid fa-backward" />
+                    Back to Local Database
+                </button>
+
                 <button type="submit" class="btn btn-primary text-nowrap m-1" @click="importClicked">
                     <i class="fa-solid fa-file-import" />
                     I've Downloaded My Archive from Facebook
-                </button>
-
-                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
-                    <i class="fa-solid fa-backward" />
-                    Back to Import or Build Database
                 </button>
             </div>
 
