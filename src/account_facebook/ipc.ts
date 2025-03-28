@@ -149,7 +149,7 @@ export const defineIPCFacebook = () => {
         }
     });
 
-    ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<void> => {
+    ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<FacebookProgress> => {
         try {
             const controller = getFacebookAccountController(accountID);
             return await controller.saveGraphQLPostData();

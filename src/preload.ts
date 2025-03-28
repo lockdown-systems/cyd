@@ -386,7 +386,7 @@ contextBridge.exposeInMainWorld('electron', {
         indexStop: (accountID: number) => {
             ipcRenderer.invoke('Facebook:indexStop', accountID)
         },
-        saveGraphQLPostData: (accountID: number): Promise<string> => {
+        saveGraphQLPostData: (accountID: number): Promise<FacebookProgress> => {
             return ipcRenderer.invoke('Facebook:saveGraphQLPostData', accountID);
         },
         getDatabaseStats: (accountID: number): Promise<FacebookDatabaseStats> => {

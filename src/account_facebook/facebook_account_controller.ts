@@ -316,6 +316,9 @@ export class FacebookAccountController {
             log.info("FacebookAccountController.importFacebookArchive: importing media for post", postData.id);
             await this.indexFacebookWallPostMedia(postData.id, postData.attachments);
         }
+
+        // Update progress
+        this.progress.postsSaved++;
     }
 
     async indexFacebookWallPostMedia(postId: string, postMedia: FBAttachment[]) {
@@ -404,12 +407,15 @@ export class FacebookAccountController {
             return true;
         }
 
-        // Is it rate limited?
-        if (responseData.status == 429) {
-            log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
-            this.mitmController.responseData[responseIndex].processed = true;
-            return false;
-        }
+        // Note: I'm commenting this out because we should wait until we receive actual rate limits from FB
+        // and then we can decide how to deal with them, instead of assuming how they work
+
+        // // Is it rate limited?
+        // if (responseData.status == 429) {
+        //     log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
+        //     this.mitmController.responseData[responseIndex].processed = true;
+        //     return false;
+        // }
 
         // Get structured data from the stringified object it's a timeline feed request
         log.info(responseData.body)
@@ -430,13 +436,15 @@ export class FacebookAccountController {
         }
     }
 
-    async saveGraphQLPostData() {
+    async saveGraphQLPostData(): Promise<FacebookProgress> {
         await this.mitmController.clearProcessed();
         log.info(`FacebookAccountController.saveGraphQLPostData: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             this.parseGraphQLPostData(i);
         }
+
+        return this.progress;
     }
 
     async archiveBuild() {
