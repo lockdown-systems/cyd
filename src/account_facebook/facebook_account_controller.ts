@@ -286,7 +286,12 @@ export class FacebookAccountController {
     }
 
     async parseNode(postData: FBAPINode) {
-        log.info("FacebookAccountController.parseNode: parsing post data", postData);
+        log.info("FacebookAccountController.parseNode: parsing post data", JSON.stringify(postData));
+
+        if (postData.__typename !== 'Story') {
+            log.info("FacebookAccountController.parseNode: not a story, skipping");
+            return;
+        }
 
         // Is this post already there?
         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
@@ -314,14 +319,14 @@ export class FacebookAccountController {
 
         if (postData.attachments && postData.attachments.length > 0) {
             log.info("FacebookAccountController.parseNode: importing media for post", postData.id);
-            await this.indexFacebookWallPostMedia(postData.id, postData.attachments);
+            await this.parseAttachment(postData.id, postData.attachments);
         }
 
         // Update progress
         this.progress.postsSaved++;
     }
 
-    async indexFacebookWallPostMedia(postId: string, postMedia: FBAttachment[]) {
+    async parseAttachment(postId: string, postMedia: FBAttachment[]) {
         for (const mediaItem of postMedia) {
             const mediaData = mediaItem.style_type_renderer.attachment.media;
             let sourceURI: string;
@@ -357,10 +362,10 @@ export class FacebookAccountController {
                         ]
                     );
                 } else {
-                    log.error('FacebookAccountController.indexFacebookWallPostMedia: Media could not be saved.')
+                    log.error('FacebookAccountController.parseAttachment: Media could not be saved.')
                 }
             } catch (error) {
-                log.error(`FacebookAccountController.indexFacebookWallPostMedia: Error saving media: ${error}`);
+                log.error(`FacebookAccountController.parseAttachment: Error saving media: ${error}`);
             }
         }
     }
