@@ -239,8 +239,8 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.Facebook.syncProgress(this.account?.id, JSON.stringify(this.progress));
     }
 
-    async loadFacebookURL(url: string, expectedURLs: (string | RegExp)[] = [], redirectOk: boolean = false) {
-        this.log("loadFacebookURL", [url, expectedURLs, redirectOk]);
+    async loadFacebookURL(url: string) {
+        this.log("loadFacebookURL", url);
 
         // eslint-disable-next-line no-constant-condition
         while (true) {
@@ -263,35 +263,7 @@ export class FacebookViewModel extends BaseViewModel {
                 break;
             }
 
-            // Did the URL change?
-            if (!redirectOk) {
-                this.log("loadFacebookURL", "checking if URL changed");
-                const newURL = new URL(this.webview?.getURL() || '');
-                const originalURL = new URL(url);
-                // Check if the URL has changed, ignoring query strings
-                // e.g. a change from https://www.facebook.com/ to https://www.facebook.com/?mx=2 is ok
-                if (newURL.origin + newURL.pathname !== originalURL.origin + originalURL.pathname) {
-                    let changedToUnexpected = true;
-                    for (const expectedURL of expectedURLs) {
-                        if (typeof expectedURL === 'string' && newURL.toString().startsWith(expectedURL)) {
-                            changedToUnexpected = false;
-                            break;
-                        } else if (expectedURL instanceof RegExp && expectedURL.test(newURL.toString())) {
-                            changedToUnexpected = false;
-                            break;
-                        }
-                    }
-
-                    if (changedToUnexpected) {
-                        this.log("loadFacebookURL", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
-                        throw new URLChangedError(url, this.webview?.getURL() || '');
-                    } else {
-                        this.log("loadFacebookURL", `expected, URL change to ${this.webview?.getURL()}`);
-                    }
-                }
-            }
-
-            // TODO: handle Facebook rate limits
+            // TODO: handle redirects, Facebook rate limits
 
             // Finished successfully so break out of the loop
             this.log("loadFacebookURL", "finished loading URL");
@@ -388,59 +360,6 @@ export class FacebookViewModel extends BaseViewModel {
         this.showBrowser = false;
     }
 
-    async parseFacebookPostData() {
-        console.log("Scraping FB posts");
-        const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
-
-        // Start MITM to get the GraphQL data
-        await this.loadBlank();
-        await window.electron.Facebook.indexStart(this.account.id);
-        await this.sleep(2000);
-
-        await this.loadFacebookURL(facebookProfileURL);
-        await this.sleep(2000);
-
-        // Try to click "Manage posts" button to get the graphQL request containing the posts
-        try {
-            // wait for the "Manage posts" button to appear
-            await this.waitForSelector(
-                '[aria-label="Manage posts"][role="button"]',
-                facebookProfileURL
-            );
-
-            // Click the "Manage posts" button
-            await this.scriptClickElement('[aria-label="Manage posts"][role="button"]');
-            await this.sleep(2000);
-        } catch (e) {
-            this.log("runJobIndexTweets", ["selector never appeared", e]);
-            if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_RateLimited, {
-                    error: formatError(e as Error)
-                }, {
-                    currentURL: this.webview?.getURL()
-                })
-            } else if (e instanceof URLChangedError) {
-                const newURL = this.webview?.getURL();
-                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_URLChanged, {
-                    newURL: newURL,
-                    error: formatError(e as Error)
-                }, {
-                    currentURL: this.webview?.getURL()
-                });
-            } else {
-                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_OtherError, {
-                    error: formatError(e as Error)
-                }, {
-                    currentURL: this.webview?.getURL()
-                });
-            }
-        }
-
-        await window.electron.Facebook.saveGraphQLPostData(this.account.id);
-        await window.electron.Facebook.indexStop(this.account.id);
-    }
-
     async runJobLogin(jobIndex: number): Promise<boolean> {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_LOGIN, navigator.userAgent);
 
@@ -463,7 +382,62 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.showAutomationNotice = true;
 
-        await this.parseFacebookPostData();
+        // Start MITM to get the GraphQL data
+        await this.loadBlank();
+        await window.electron.Facebook.indexStart(this.account.id);
+        await this.sleep(2000);
+
+        // Start the progress
+        this.progress.isSavePostsFinished = false;
+        this.progress.postsSaved = 0;
+        await this.syncProgress();
+
+        // Load the Facebook profile page
+        const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
+        await this.loadFacebookURL(facebookProfileURL);
+        await this.sleep(2000);
+
+        // Try to click "Manage posts" button to get the graphQL request containing the posts
+        const managedPostsButtonSelector = 'div[role="main"] > div:last-child > div:last-child > div > div:last-child > div:nth-child(2) > div > div > div:first-child > div:last-child > div > div:last-child > div[role="button"]';
+        try {
+            // wait for the "Manage posts" button to appear
+            await this.waitForSelector(managedPostsButtonSelector, facebookProfileURL);
+
+            // Click the "Manage posts" button
+            await this.scriptClickElement(managedPostsButtonSelector);
+            await this.sleep(2000);
+        } catch (e) {
+            this.log("runJobIndexTweets", ["selector never appeared", e]);
+            if (e instanceof TimeoutError) {
+                await this.error(AutomationErrorType.facebook_runJob_savePosts_Timeout, {
+                    error: formatError(e as Error)
+                }, {
+                    currentURL: this.webview?.getURL()
+                });
+            } else if (e instanceof URLChangedError) {
+                const newURL = this.webview?.getURL();
+                await this.error(AutomationErrorType.facebook_runJob_savePosts_URLChanged, {
+                    newURL: newURL,
+                    error: formatError(e as Error)
+                }, {
+                    currentURL: this.webview?.getURL()
+                });
+            } else {
+                await this.error(AutomationErrorType.facebook_runJob_savePosts_OtherError, {
+                    error: formatError(e as Error)
+                }, {
+                    currentURL: this.webview?.getURL()
+                });
+            }
+        }
+
+        // Save the first batch of posts
+        this.progress = await window.electron.Facebook.saveGraphQLPostData(this.account.id);
+
+        // TODO: click Next over and over in a loop until we get all posts
+
+        // Stop MITM
+        await window.electron.Facebook.indexStop(this.account.id);
 
         await this.finishJob(jobIndex);
         return true;
