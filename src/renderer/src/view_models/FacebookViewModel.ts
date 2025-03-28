@@ -409,22 +409,21 @@ export class FacebookViewModel extends BaseViewModel {
         } catch (e) {
             this.log("runJobIndexTweets", ["selector never appeared", e]);
             if (e instanceof TimeoutError) {
-                // Were we rate limited?
-                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_RateLimited, {
+                await this.error(AutomationErrorType.facebook_runJob_savePosts_Timeout, {
                     error: formatError(e as Error)
                 }, {
                     currentURL: this.webview?.getURL()
-                })
+                });
             } else if (e instanceof URLChangedError) {
                 const newURL = this.webview?.getURL();
-                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_URLChanged, {
+                await this.error(AutomationErrorType.facebook_runJob_savePosts_URLChanged, {
                     newURL: newURL,
                     error: formatError(e as Error)
                 }, {
                     currentURL: this.webview?.getURL()
                 });
             } else {
-                await this.error(AutomationErrorType.facebook_runJob_clickManagePosts_OtherError, {
+                await this.error(AutomationErrorType.facebook_runJob_savePosts_OtherError, {
                     error: formatError(e as Error)
                 }, {
                     currentURL: this.webview?.getURL()

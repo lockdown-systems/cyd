@@ -82,9 +82,9 @@ export enum AutomationErrorType {
     facebook_unknownError = "facebook_unknown",
     facebook_loadURLError = "facebook_loadURLError",
     facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
-    facebook_runJob_clickManagePosts_RateLimited = "facebook_runJob_clickManagePosts_RateLimited",
-    facebook_runJob_clickManagePosts_URLChanged = "facebook_runJob_clickManagePosts_URLChanged",
-    facebook_runJob_clickManagePosts_OtherError = "facebook_runJob_clickManagePosts_OtherError",
+    facebook_runJob_savePosts_Timeout = "facebook_runJob_savePosts_Timeout",
+    facebook_runJob_savePosts_URLChanged = "facebook_runJob_savePosts_URLChanged",
+    facebook_runJob_savePosts_OtherError = "facebook_runJob_savePosts_OtherError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -171,4 +171,7 @@ export const AutomationErrorTypeToMessage = {
     [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
     [AutomationErrorType.facebook_loadURLError]: "Error while loading URL",
     [AutomationErrorType.facebook_runJob_UnknownError]: "An unknown error occurred",
+    [AutomationErrorType.facebook_runJob_savePosts_Timeout]: "Timeout while saving posts",
+    [AutomationErrorType.facebook_runJob_savePosts_URLChanged]: "URL changed while saving posts",
+    [AutomationErrorType.facebook_runJob_savePosts_OtherError]: "Error while saving posts",
 }
