@@ -382,27 +382,29 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.showAutomationNotice = true;
 
-        console.log("Scraping FB posts");
-        const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
-
         // Start MITM to get the GraphQL data
         await this.loadBlank();
         await window.electron.Facebook.indexStart(this.account.id);
         await this.sleep(2000);
 
+        // Start the progress
+        this.progress.isSavePostsFinished = false;
+        this.progress.postsSaved = 0;
+        await this.syncProgress();
+
+        // Load the Facebook profile page
+        const facebookProfileURL = `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`;
         await this.loadFacebookURL(facebookProfileURL);
         await this.sleep(2000);
 
         // Try to click "Manage posts" button to get the graphQL request containing the posts
+        const managedPostsButtonSelector = 'div[role="main"] > div:last-child > div:last-child > div > div:last-child > div:nth-child(2) > div > div > div:first-child > div:last-child > div > div:last-child > div[role="button"]';
         try {
             // wait for the "Manage posts" button to appear
-            await this.waitForSelector(
-                '[aria-label="Manage posts"][role="button"]',
-                facebookProfileURL
-            );
+            await this.waitForSelector(managedPostsButtonSelector, facebookProfileURL);
 
             // Click the "Manage posts" button
-            await this.scriptClickElement('[aria-label="Manage posts"][role="button"]');
+            await this.scriptClickElement(managedPostsButtonSelector);
             await this.sleep(2000);
         } catch (e) {
             this.log("runJobIndexTweets", ["selector never appeared", e]);
