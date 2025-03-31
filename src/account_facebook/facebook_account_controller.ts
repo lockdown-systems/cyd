@@ -422,19 +422,22 @@ export class FacebookAccountController {
         //     return false;
         // }
 
-        // Get structured data from the stringified object
-        if (responseData.status === 200) {
-            const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
+        if (responseData.status !== 200) {
+            log.warn("FacebookAccountController.parseGraphQLPostData: response data status code", responseData.status)
+            return;
+        }
 
-            for (const postResponse of responseDataBodyJSON) {
-                if (postResponse?.data?.node) {
-                    log.error("Normal Data")
-                    this.parseNode(postResponse?.data?.node);
-                } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
-                    log.error("Edge Data")
-                    for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
-                        this.parseNode(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
-                    }
+        // Get structured data from the stringified object
+        const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
+
+        for (const postResponse of responseDataBodyJSON) {
+            if (postResponse?.data?.node) {
+                log.error("Normal Data")
+                this.parseNode(postResponse?.data?.node);
+            } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
+                log.error("Edge Data")
+                for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
+                    this.parseNode(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
                 }
             }
         }
