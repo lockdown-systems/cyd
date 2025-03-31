@@ -393,15 +393,26 @@ export class FacebookAccountController {
     }
 
     async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
-        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON", responseDataBody);
+        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON");
 
-        const postArray = responseDataBody.split('\r\n');
-        const responseDataBodyJSON = [];
+        const postArray = responseDataBody.split('\n');
+        const resps = [];
         for (const post of postArray) {
-            responseDataBodyJSON.push(JSON.parse(post) as FBAPIResponse);
+            // Handle an empty newline at the end of the file
+            if(post.trim() === "") {
+                continue;
+            }
+
+            // Skip individual JSON errors
+            try {
+               const resp = JSON.parse(post) as FBAPIResponse;
+               resps.push(resp);
+            } catch (e) {
+                log.error("FacebookAccountController.getStructuredGraphQLData: error parsing JSON", e, post)
+            }
         }
 
-        return responseDataBodyJSON;
+        return resps;
     }
 
     async parseGraphQLPostData(responseIndex: number) {
@@ -428,9 +439,9 @@ export class FacebookAccountController {
         }
 
         // Get structured data from the stringified object
-        const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
+        const resps = await this.getStructuredGraphQLData(responseData.body);
 
-        for (const postResponse of responseDataBodyJSON) {
+        for (const postResponse of resps) {
             if (postResponse?.data?.node) {
                 log.error("Normal Data")
                 this.parseNode(postResponse?.data?.node);
