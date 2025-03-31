@@ -158,3 +158,27 @@ test('FacebookAccountController.constructor() creates a database for the user', 
     const files = fs.readdirSync(getAccountDataPath("Facebook", "123456 Test Account"));
     expect(files).toContain('data.sqlite3');
 })
+
+test('FacebookAccountController.getStructuredGraphQLData() handles multiple objects', async () => {
+    mitmController.setTestdata("FBAPIManagePosts1.json")
+
+    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
+    expect(resps.length).toBe(9);
+    expect(resps[0].data?.node?.__typename).toBe("User");
+    expect(resps[1].label).toBe("VideoPlayerRelay_video$defer$InstreamVideoAdBreaksPlayer_video");
+    expect(resps[2].label).toBe("CometFeedStoryFBReelsAttachment_story$defer$FBReelsFeedbackBar_feedback");
+    expect(resps[3].label).toBe("ProfileCometTimelineFeed_user$stream$ProfileCometTimelineFeed_user_timeline_list_feed_units");
+    expect(resps[4].label).toBe("ProfileCometTimelineFeed_user$stream$ProfileCometTimelineFeed_user_timeline_list_feed_units");
+    expect(resps[5].label).toBe("CometFeedStoryVideoAttachmentVideoPlayer_video$defer$VideoPlayerWithVideoCardsOverlay_video");
+    expect(resps[6].label).toBe("CometFeedStoryVideoAttachmentVideoPlayer_video$defer$VideoPlayerWithLiveVideoEndscreenAndChaining_video");
+    expect(resps[7].label).toBe("VideoPlayerRelay_video$defer$InstreamVideoAdBreaksPlayer_video");
+    expect(resps[8].label).toBe("ProfileCometTimelineFeed_user$defer$ProfileCometTimelineFeed_user_timeline_list_feed_units$page_info");
+})
+
+test('FacebookAccountController.getStructuredGraphQLData() handles one object', async () => {
+    mitmController.setTestdata("FBAPIManagePosts2.json")
+
+    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
+    expect(resps.length).toBe(1);
+    expect(resps[0].data?.node?.__typename).toBe("User");
+})
