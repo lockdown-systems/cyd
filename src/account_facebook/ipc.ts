@@ -149,10 +149,10 @@ export const defineIPCFacebook = () => {
         }
     });
 
-    ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<FacebookProgress> => {
+    ipcMain.handle('Facebook:savePosts', async (_, accountID: number): Promise<FacebookProgress> => {
         try {
             const controller = getFacebookAccountController(accountID);
-            return await controller.saveGraphQLPostData();
+            return await controller.savePosts();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

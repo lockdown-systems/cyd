@@ -440,9 +440,9 @@ export class FacebookAccountController {
         }
     }
 
-    async saveGraphQLPostData(): Promise<FacebookProgress> {
+    async savePosts(): Promise<FacebookProgress> {
         await this.mitmController.clearProcessed();
-        log.info(`FacebookAccountController.saveGraphQLPostData: parsing ${this.mitmController.responseData.length} responses`);
+        log.info(`FacebookAccountController.savePosts: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             this.parseGraphQLPostData(i);
