@@ -286,12 +286,14 @@ export class FacebookAccountController {
     }
 
     async parseNode(postData: FBAPINode) {
-        log.info("FacebookAccountController.parseNode: parsing post data", JSON.stringify(postData));
+        log.debug("FacebookAccountController.parseNode: parsing node");
 
         if (postData.__typename !== 'Story') {
             log.info("FacebookAccountController.parseNode: not a story, skipping");
             return;
         }
+
+        // TODO: parse users too
 
         // Is this post already there?
         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
@@ -305,7 +307,8 @@ export class FacebookAccountController {
         }
 
         // Save post
-        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        const sql = 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const params = [
             postData.id,
             new Date(postData.creation_time * 1000),
             postData.title,
@@ -315,7 +318,9 @@ export class FacebookAccountController {
             postData.attached_story?.id,
             postData.attachments && postData.attachments.length > 0 ? 1 : 0,
             new Date(),
-        ]);
+        ];
+        log.debug("FacebookAccountController.parseNode: executing", sql, params);
+        exec(this.db, sql, params);
 
         if (postData.attachments && postData.attachments.length > 0) {
             log.info("FacebookAccountController.parseNode: importing media for post", postData.id);
@@ -399,14 +404,14 @@ export class FacebookAccountController {
         const resps = [];
         for (const post of postArray) {
             // Handle an empty newline at the end of the file
-            if(post.trim() === "") {
+            if (post.trim() === "") {
                 continue;
             }
 
             // Skip individual JSON errors
             try {
-               const resp = JSON.parse(post) as FBAPIResponse;
-               resps.push(resp);
+                const resp = JSON.parse(post) as FBAPIResponse;
+                resps.push(resp);
             } catch (e) {
                 log.error("FacebookAccountController.getStructuredGraphQLData: error parsing JSON", e, post)
             }
@@ -442,14 +447,17 @@ export class FacebookAccountController {
         const resps = await this.getStructuredGraphQLData(responseData.body);
 
         for (const postResponse of resps) {
+            log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
             if (postResponse?.data?.node) {
-                log.error("Normal Data")
+                log.debug("FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.node")
                 this.parseNode(postResponse?.data?.node);
             } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
-                log.error("Edge Data")
                 for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
+                    log.debug(`FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.user?.timeline_manage_feed_units?.edges[${i}].node`)
                     this.parseNode(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
                 }
+            } else {
+                log.debug("FacebookAccountController.parseGraphQLPostData: no nodes found, so skipping")
             }
         }
     }

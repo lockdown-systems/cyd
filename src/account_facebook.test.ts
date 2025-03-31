@@ -15,7 +15,6 @@ vi.mock('./util', () => ({
         if (!fs.existsSync(settingsPath)) {
             fs.mkdirSync(settingsPath, { recursive: true });
         }
-        console.log('getSettingsPath', settingsPath)
         return settingsPath
     }),
     getAccountSettingsPath: vi.fn((accountID: number) => {
@@ -24,7 +23,6 @@ vi.mock('./util', () => ({
         if (!fs.existsSync(accountSettingsPath)) {
             fs.mkdirSync(accountSettingsPath, { recursive: true });
         }
-        console.log('getAccountSettingsPath', accountSettingsPath)
         return accountSettingsPath
     }),
     getDataPath: vi.fn(() => {
@@ -32,7 +30,6 @@ vi.mock('./util', () => ({
         if (!fs.existsSync(dataPath)) {
             fs.mkdirSync(dataPath, { recursive: true });
         }
-        console.log('getDataPath', dataPath)
         return dataPath
     }),
     getAccountDataPath: vi.fn((accountType: string, accountUsername: string) => {
@@ -41,7 +38,6 @@ vi.mock('./util', () => ({
         if (!fs.existsSync(accountDataPath)) {
             fs.mkdirSync(accountDataPath, { recursive: true });
         }
-        console.log('getAccountDataPath', accountDataPath)
         return accountDataPath
     }),
 }));
@@ -181,4 +177,12 @@ test('FacebookAccountController.getStructuredGraphQLData() handles one object', 
     const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
     expect(resps.length).toBe(1);
     expect(resps[0].data?.node?.__typename).toBe("User");
+})
+
+
+test('FacebookAccountController.savePosts() test data 1', async () => {
+    mitmController.setTestdata("FBAPIManagePosts1.json")
+
+    const progress = await controller.savePosts();
+    expect(progress.postsSaved).toBe(1);
 })
