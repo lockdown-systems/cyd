@@ -432,7 +432,7 @@ export class FacebookViewModel extends BaseViewModel {
         }
 
         // Save the first batch of posts
-        this.progress = await window.electron.Facebook.saveGraphQLPostData(this.account.id);
+        this.progress = await window.electron.Facebook.savePosts(this.account.id);
 
         // TODO: click Next over and over in a loop until we get all posts
 

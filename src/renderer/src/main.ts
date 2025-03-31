@@ -160,7 +160,7 @@ declare global {
                 importFacebookArchive: (accountID: number, archivePath: string, dataType: string) => Promise<FacebookImportArchiveResponse>;
                 indexStart: (accountID: number) => Promise<void>;
                 indexStop: (accountID: number) => Promise<void>;
-                saveGraphQLPostData: (accountID: number) => Promise<FacebookProgress>;
+                savePosts: (accountID: number) => Promise<FacebookProgress>;
                 getDatabaseStats: (accountID: number) => Promise<FacebookDatabaseStats>;
             },
             onPowerMonitorSuspend: (callback: () => void) => Promise<void>;
