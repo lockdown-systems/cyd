@@ -483,6 +483,9 @@ export class BaseViewModel {
                                 this.sleep(1000);
                             }
                         }
+                    } else {
+                        // Wait 1 second before retrying
+                        this.sleep(1000);
                     }
                 }
             }
