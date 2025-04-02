@@ -14,7 +14,7 @@
     "make-prod": "node ./scripts/make.js make prod",
     "publish-dev": "node ./scripts/make.js publish dev",
     "publish-prod": "node ./scripts/make.js publish prod",
-    "test": "npm rebuild && vitest run . && ./scripts/clean.sh",
+    "test": "npm rebuild && vitest run . && node ./scripts/clean.js",
     "test:components": "cd src/renderer && cypress run --component",
     "open-cypress": "cd src/renderer && cypress open",
     "lint": "eslint ./src",
