@@ -19,6 +19,7 @@ import {
     isXAPIError,
     isXAPIBookmarksData,
     isXAPIData,
+    isXAPIData_v2,
 } from './account_x';
 
 // Mock the util module
@@ -194,6 +195,18 @@ class MockMITMController implements IMITMController {
         }
 
     }
+    setTestdataFromFile(filename: string, url: string) {
+        this.responseData = [
+            {
+                host: 'x.com',
+                url: url,
+                status: 200,
+                headers: {},
+                body: fs.readFileSync(path.join(__dirname, '..', 'testdata', filename), 'utf8'),
+                processed: false
+            }
+        ];
+    }
     setAutomationErrorReportTestdata(filename: string) {
         const testData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'testdata', 'automation-errors', filename), 'utf8'));
         this.responseData = [testData.latestResponseData];
@@ -217,6 +230,10 @@ beforeEach(() => {
     // Create an XAccountController
     mitmController = new MockMITMController();
     controller = new XAccountController(account.id, mitmController);
+
+    // Stub controller.saveTweetMedia, to avoid saving tweet media during the tests
+    controller.saveTweetMedia = vi.fn();
+
     controller.initDB();
 });
 
@@ -820,13 +837,34 @@ test("types.isXAPIError() should recognize errors", async () => {
 })
 
 test("types.isXAPIData() should recognize data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XUserTweetsAndReplies_20250404.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIData(data)).toBe(true);
+    expect(isXAPIData_v2(data)).toBe(false);
     expect(isXAPIBookmarksData(data)).toBe(false);
     expect(isXAPIError(data)).toBe(false);
 })
 
+test("types.isXAPIData_v2() should recognize data", async () => {
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
+    const data = JSON.parse(body);
+    expect(isXAPIData_v2(data)).toBe(true);
+    expect(isXAPIData(data)).toBe(false);
+    expect(isXAPIBookmarksData(data)).toBe(false);
+    expect(isXAPIError(data)).toBe(false);
+})
+
+test("XAccountController.indexParseTweets() should succeed with XUserTweetsAndReplies_20250404.json", async () => {
+    // https://github.com/lockdown-systems/cyd/issues/487
+    mitmController.setTestdataFromFile("XUserTweetsAndReplies_20250404.json", "/i/api/graphql/pz0IHaV_t7T4HJavqqqcIA/UserTweetsAndReplies?variables=")
+    if (controller.account) {
+        controller.account.username = 'aurorabyte79324';
+    }
+    const progress: XProgress = await controller.indexParseTweets()
+    expect(progress.tweetsIndexed).toBe(13)
+    expect(progress.retweetsIndexed).toBe(7)
+    controller.cleanup();
+})
 
 // Testing the X migrations
 
