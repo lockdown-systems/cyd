@@ -333,7 +333,8 @@ export interface XAPIData {
         user: {
             result: {
                 __typename: string; // "User"
-                timeline_v2: XAPITimeline;
+                timeline_v2?: XAPITimeline;
+                timeline?: XAPITimeline;
             }
         }
     }
@@ -354,6 +355,10 @@ export function isXAPIError(body: any): body is XAPIData {
 }
 
 export function isXAPIData(body: any): body is XAPIData {
+    return !!(body.data && body.data.user && body.data.user.result && body.data.user.result.timeline);
+}
+
+export function isXAPIData_v2(body: any): body is XAPIData {
     return !!(body.data && body.data.user && body.data.user.result && body.data.user.result.timeline_v2);
 }
 

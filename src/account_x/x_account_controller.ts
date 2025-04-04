@@ -89,6 +89,7 @@ import {
     isXAPIBookmarksData,
     isXAPIError,
     isXAPIData,
+    isXAPIData_v2,
 } from './types'
 import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
 
@@ -647,6 +648,8 @@ export class XAccountController {
             new Date(),
         ]);
 
+        log.debug("XAccountController.indexTweet: indexed tweet", this.account?.username, userLegacy, tweetLegacy);
+
         // Update progress
         if (tweetLegacy["favorited"]) {
             // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
@@ -703,12 +706,15 @@ export class XAccountController {
             if (isXAPIBookmarksData(body)) {
                 timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
             } else if (isXAPIData(body)) {
-                timeline = (body as XAPIData).data.user.result.timeline_v2;
+                timeline = (body as XAPIData).data.user.result.timeline as XAPITimeline;
+            } else if (isXAPIData_v2(body)) {
+                timeline = (body as XAPIData).data.user.result.timeline_v2 as XAPITimeline;
             } else if (isXAPIError(body)) {
                 log.error('XAccountController.indexParseTweetsResponseData: XAPIError', body);
                 this.mitmController.responseData[responseIndex].processed = true;
                 return false;
             } else {
+                log.error('XAccountController.indexParseTweetsResponseData: Invalid response data', responseData.body);
                 throw new Error('Invalid response data');
             }
 
