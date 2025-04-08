@@ -478,7 +478,7 @@ export class XAccountController {
             if (!tweetMap[row.tweetID]) {
                 tweetMap[row.tweetID] = {
                     id: row.tweetID,
-                    t: row.text.replace(/(?:\r\n|\r|\n)/g, '<br>').trim(),
+                    t: (row.text ? row.text.replace(/(?:\r\n|\r|\n)/g, '<br>').trim() : ""),
                     l: row.likeCount,
                     r: row.retweetCount,
                     d: row.createdAt,
