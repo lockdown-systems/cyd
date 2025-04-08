@@ -444,6 +444,65 @@ export class XAccountController {
         log.info("XAccountController.initDB: database initialized");
     }
 
+    // Helper function to fetch tweets with media and URLs
+    private fetchTweetsWithMediaAndURLs(
+        whereClause: string,
+        params: (string | number)[]
+    ): XTweetItem[] {
+        const query = `
+            SELECT
+                t.tweetID, t.text, t.likeCount, t.retweetCount, t.createdAt,
+                tm.mediaType, tm.filename AS mediaFilename,
+                tu.expandedURL AS urlExpanded
+            FROM tweet t
+            LEFT JOIN tweet_media tm ON t.tweetID = tm.tweetID
+            LEFT JOIN tweet_url tu ON t.tweetID = tu.tweetID
+            WHERE ${whereClause}
+            ORDER BY t.createdAt ASC
+        `;
+
+        const rows = exec(this.db, query, params, "all") as {
+            tweetID: string;
+            text: string;
+            likeCount: number;
+            retweetCount: number;
+            createdAt: string;
+            mediaType: string | null;
+            mediaFilename: string | null;
+            urlExpanded: string | null;
+        }[];
+
+        // Group the results by tweetID
+        const tweetMap: Record<string, XTweetItem> = {};
+        for (const row of rows) {
+            if (!tweetMap[row.tweetID]) {
+                tweetMap[row.tweetID] = {
+                    id: row.tweetID,
+                    t: row.text.replace(/(?:\r\n|\r|\n)/g, '<br>').trim(),
+                    l: row.likeCount,
+                    r: row.retweetCount,
+                    d: row.createdAt,
+                    i: [],
+                    v: [],
+                };
+            }
+
+            // Add media files
+            if (row.mediaType === "photo") {
+                tweetMap[row.tweetID].i.push(row.mediaFilename!);
+            } else if (row.mediaType === "video") {
+                tweetMap[row.tweetID].v.push(row.mediaFilename!);
+            }
+
+            // Replace URLs in the text
+            if (row.urlExpanded) {
+                tweetMap[row.tweetID].t = tweetMap[row.tweetID].t.replace(row.urlExpanded, row.urlExpanded);
+            }
+        }
+
+        return Object.values(tweetMap);
+    }
+
     resetProgress(): XProgress {
         log.debug("XAccountController.resetProgress");
         this.progress = emptyXProgress();
@@ -1612,6 +1671,8 @@ export class XAccountController {
 
     // When you start deleting tweets, return a list of tweets to delete
     async deleteTweetsStart(): Promise<XDeleteTweetsStartResponse> {
+        log.info("XAccountController.deleteTweetsStart");
+
         if (!this.db) {
             this.initDB();
         }
@@ -1620,53 +1681,41 @@ export class XAccountController {
             throw new Error("Account not found");
         }
 
-        // Select just the tweets that need to be deleted based on the settings
-        let tweets: XTweetRow[];
-        const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld) : getTimestampDaysAgo(0);
-        if (this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
-            // Both likes and retweets thresholds
-            tweets = exec(
-                this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
-                ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold, this.account.deleteTweetsRetweetsThreshold],
-                "all"
-            ) as XTweetRow[];
-        } else if (this.account.deleteTweetsLikesThresholdEnabled && !this.account.deleteTweetsRetweetsThresholdEnabled) {
-            // Just likes threshold
-            tweets = exec(
-                this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? ORDER BY createdAt ASC',
-                ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsLikesThreshold],
-                "all"
-            ) as XTweetRow[];
-        } else if (!this.account.deleteTweetsLikesThresholdEnabled && this.account.deleteTweetsRetweetsThresholdEnabled) {
-            // Just retweets threshold
-            tweets = exec(
-                this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ? ORDER BY createdAt ASC',
-                ["RT @%", this.account.username, daysOldTimestamp, this.account.deleteTweetsRetweetsThreshold],
-                "all"
-            ) as XTweetRow[];
-        } else {
-            // Neither likes nor retweets threshold
-            tweets = exec(
-                this.db,
-                'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? ORDER BY createdAt ASC',
-                ["RT @%", this.account.username, daysOldTimestamp],
-                "all"
-            ) as XTweetRow[];
+        // Determine the timestamp for filtering tweets
+        const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled
+            ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld)
+            : getTimestampDaysAgo(0);
+
+        // Build the WHERE clause and parameters dynamically
+        let whereClause = `
+            t.deletedTweetAt IS NULL
+            AND t.text NOT LIKE ?
+            AND t.username = ?
+            AND t.createdAt <= ?
+        `;
+        const params: (string | number)[] = ["RT @%", this.account.username, daysOldTimestamp];
+
+        if (this.account.deleteTweetsLikesThresholdEnabled) {
+            whereClause += " AND t.likeCount <= ?";
+            params.push(this.account.deleteTweetsLikesThreshold);
+        }
+        if (this.account.deleteTweetsRetweetsThresholdEnabled) {
+            whereClause += " AND t.retweetCount <= ?";
+            params.push(this.account.deleteTweetsRetweetsThreshold);
         }
 
-        // log.debug("XAccountController.deleteTweetsStart", tweets);
-        return {
-            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
-        };
+        // Fetch tweets using the helper function
+        const tweets = this.fetchTweetsWithMediaAndURLs(whereClause, params);
+
+        return { tweets };
     }
 
     // Returns the count of tweets that are not archived
     // If total is true, return the total count of tweets not archived
     // Otherwise, return the count of tweets not archived that will be deleted
     async deleteTweetsCountNotArchived(total: boolean): Promise<number> {
+        log.info("XAccountController.deleteTweetsCountNotArchived");
+
         if (!this.db) {
             this.initDB();
         }
@@ -1728,6 +1777,8 @@ export class XAccountController {
 
     // When you start deleting retweets, return a list of tweets to delete
     async deleteRetweetsStart(): Promise<XDeleteTweetsStartResponse> {
+        log.info("XAccountController.deleteRetweetsStart");
+
         if (!this.db) {
             this.initDB();
         }
@@ -1736,22 +1787,22 @@ export class XAccountController {
             throw new Error("Account not found");
         }
 
-        // Select just the retweets that need to be deleted based on the settings
-        const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld) : getTimestampDaysAgo(0);
-        const tweets: XTweetRow[] = exec(
-            this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedRetweetAt IS NULL AND text LIKE ? AND createdAt <= ? ORDER BY createdAt ASC',
-            ["RT @%", daysOldTimestamp],
-            "all"
-        ) as XTweetRow[];
+        const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled
+            ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld)
+            : getTimestampDaysAgo(0);
 
-        return {
-            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
-        };
+        const tweets = this.fetchTweetsWithMediaAndURLs(
+            "t.deletedRetweetAt IS NULL AND t.text LIKE ? AND t.createdAt <= ?",
+            ["RT @%", daysOldTimestamp]
+        );
+
+        return { tweets };
     }
 
     // When you start deleting likes, return a list of tweets to unlike
     async deleteLikesStart(): Promise<XDeleteTweetsStartResponse> {
+        log.info("XAccountController.deleteLikesStart");
+
         if (!this.db) {
             this.initDB();
         }
@@ -1760,21 +1811,18 @@ export class XAccountController {
             throw new Error("Account not found");
         }
 
-        // Select just the tweets that need to be unliked based on the settings
-        const tweets: XTweetRow[] = exec(
-            this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedLikeAt IS NULL AND isLiked = ? ORDER BY createdAt ASC',
-            [1],
-            "all"
-        ) as XTweetRow[];
+        const tweets = this.fetchTweetsWithMediaAndURLs(
+            "t.deletedLikeAt IS NULL AND t.isLiked = ?",
+            [1]
+        );
 
-        return {
-            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
-        };
+        return { tweets };
     }
 
     // When you start deleting bookmarks, return a list of tweets to unbookmark
     async deleteBookmarksStart(): Promise<XDeleteTweetsStartResponse> {
+        log.info("XAccountController.deleteBookmarksStart");
+
         if (!this.db) {
             this.initDB();
         }
@@ -1783,17 +1831,12 @@ export class XAccountController {
             throw new Error("Account not found");
         }
 
-        // Select just the tweets that need to be unliked based on the settings
-        const tweets: XTweetRow[] = exec(
-            this.db,
-            'SELECT tweetID, text, likeCount, retweetCount, createdAt FROM tweet WHERE deletedBookmarkAt IS NULL AND isBookmarked = ? ORDER BY createdAt ASC',
-            [1],
-            "all"
-        ) as XTweetRow[];
+        const tweets = this.fetchTweetsWithMediaAndURLs(
+            "t.deletedBookmarkAt IS NULL AND t.isBookmarked = ?",
+            [1]
+        );
 
-        return {
-            tweets: tweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
-        };
+        return { tweets };
     }
 
     // Save the tweet's deleted*At timestamp
