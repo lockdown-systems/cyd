@@ -578,56 +578,6 @@ export class XAccountController {
         };
     }
 
-    convertTweetRowToXTweetItem(row: XTweetRow): XTweetItem {
-        const media: XTweetMediaRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet_media WHERE tweetID = ?",
-            [row.tweetID],
-            "all"
-        ) as XTweetMediaRow[];
-        const urls: XTweetURLRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet_url WHERE tweetID = ?",
-            [row.tweetID],
-            "all"
-        ) as XTweetURLRow[];
-
-        // Update the text
-        let text = row.text;
-        if (text) {
-            for (const url of urls) {
-                text = text.replace(url.url, url.expandedURL);
-            }
-            for (const mediaItem of media) {
-                text = text.replace(mediaItem.url, "");
-            }
-            text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
-            text = text.trim()
-        }
-
-        // Prepare images and videos objects
-        const images: string[] = [];
-        const videos: string[] = [];
-        for (const mediaItem of media) {
-            if (mediaItem.mediaType === "photo") {
-                images.push(mediaItem.filename);
-            }
-            if (mediaItem.mediaType === "video") {
-                videos.push(mediaItem.filename);
-            }
-        }
-
-        return {
-            id: row.tweetID,
-            t: text,
-            l: row.likeCount,
-            r: row.retweetCount,
-            d: row.createdAt,
-            i: images,
-            v: videos
-        };
-    }
-
     formatDateToYYYYMMDD(dateString: string): string {
         const date = new Date(dateString);
         const year = date.getFullYear();
@@ -2713,14 +2663,18 @@ export class XAccountController {
         await this.deleteConfigLike("blueskySessionStore-%");
     }
 
-    // When you start deleting tweets, return a list of tweets to delete
     async blueskyGetTweetCounts(): Promise<XMigrateTweetCounts> {
-        if (!this.db) { this.initDB(); }
-        if (!this.account) { throw new Error("Account not found"); }
+        if (!this.db) {
+            this.initDB();
+        }
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
 
         const username = this.account.username;
         const userID = this.account.userID;
 
+        // Total tweets count
         const totalTweets: Sqlite3Count = exec(this.db, `
             SELECT COUNT(*) AS count
             FROM tweet
@@ -2729,6 +2683,7 @@ export class XAccountController {
             AND tweet.deletedTweetAt IS NULL
         `, [0, username], "get") as Sqlite3Count;
 
+        // Total retweets count
         const totalRetweets: Sqlite3Count = exec(this.db, `
             SELECT COUNT(*) AS count
             FROM tweet
@@ -2738,19 +2693,17 @@ export class XAccountController {
             AND tweet.deletedTweetAt IS NULL
         `, ["RT @%", 0, username], "get") as Sqlite3Count;
 
-        const toMigrateTweets: XTweetRow[] = exec(this.db, `
-            SELECT tweet.*
-            FROM tweet
-            LEFT JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
-            WHERE tweet_bsky_migration.tweetID IS NULL
-            AND tweet.text NOT LIKE ?
-            AND tweet.isLiked = ?
-            AND tweet.username = ?
-            AND tweet.deletedTweetAt IS NULL
-            AND (tweet.isReply = ? OR (tweet.isReply = ? AND tweet.replyUserID = ?))
-            ORDER BY tweet.createdAt ASC
-        `, ["RT @%", 0, username, 0, 1, userID], "all") as XTweetRow[];
+        // Tweets to migrate
+        const toMigrateTweets = this.fetchTweetsWithMediaAndURLs(`
+            t.deletedTweetAt IS NULL
+            AND t.text NOT LIKE ?
+            AND t.isLiked = ?
+            AND t.username = ?
+            AND t.tweetID NOT IN (SELECT tweetID FROM tweet_bsky_migration)
+            AND (t.isReply = ? OR (t.isReply = ? AND t.replyUserID = ?))
+        `, ["RT @%", 0, username, 0, 1, userID]);
 
+        // Tweets that cannot be migrated
         const cannotMigrate: Sqlite3Count = exec(this.db, `
             SELECT COUNT(*) AS count
             FROM tweet
@@ -2763,23 +2716,23 @@ export class XAccountController {
             AND (tweet.isReply = ? AND tweet.replyUserID != ?)
         `, ["RT @%", 0, username, 1, userID], "get") as Sqlite3Count;
 
-        const alreadyMigratedTweets: XTweetRow[] = exec(this.db, `
-            SELECT tweet.*
-            FROM tweet
-            INNER JOIN tweet_bsky_migration ON tweet.tweetID = tweet_bsky_migration.tweetID
-            WHERE tweet.text NOT LIKE ?
-            AND tweet.isLiked = ?
-            AND tweet.username = ?
-        `, ["RT @%", 0, username], "all") as XTweetRow[];
+        // Already migrated tweets
+        const alreadyMigratedTweets = this.fetchTweetsWithMediaAndURLs(`
+            t.text NOT LIKE ?
+            AND t.isLiked = ?
+            AND t.username = ?
+            AND t.tweetID IN (SELECT tweetID FROM tweet_bsky_migration)
+        `, ["RT @%", 0, username]);
 
         // Return the counts
         const resp: XMigrateTweetCounts = {
             totalTweetsCount: totalTweets.count,
             totalRetweetsCount: totalRetweets.count,
-            toMigrateTweets: toMigrateTweets.map((row) => (this.convertTweetRowToXTweetItem(row))),
+            toMigrateTweets,
             cannotMigrateCount: cannotMigrate.count,
-            alreadyMigratedTweets: alreadyMigratedTweets.map((row) => (this.convertTweetRowToXTweetItem(row)))
-        }
+            alreadyMigratedTweets
+        };
+
         log.info("XAccountController.blueskyGetTweetCounts: returning", resp);
         return resp;
     }
