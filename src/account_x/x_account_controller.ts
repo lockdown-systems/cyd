@@ -614,13 +614,6 @@ export class XAccountController {
             this.initDB();
         }
 
-        // Have we seen this tweet before?
-        const existing: XTweetRow[] = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]], "all") as XTweetRow[];
-        if (existing.length > 0) {
-            // Delete it, so we can re-add it
-            exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweetLegacy["id_str"]]);
-        }
-
         // Check if tweet has media and call indexTweetMedia
         let hasMedia: boolean = false;
         if (tweetLegacy.extended_entities?.media && tweetLegacy.extended_entities?.media.length) {
@@ -634,7 +627,7 @@ export class XAccountController {
         }
 
         // Add the tweet
-        exec(this.db, 'INSERT INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        exec(this.db, 'INSERT OR REPLACE INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
             userLegacy["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
@@ -882,15 +875,8 @@ export class XAccountController {
             const filename = `${media["media_key"]}.${mediaExtension}`;
             this.saveTweetMedia(mediaURL, filename);
 
-            // Have we seen this media before?
-            const existing: XTweetMediaRow[] = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media["media_key"]], "all") as XTweetMediaRow[];
-            if (existing.length > 0) {
-                // Delete it, so we can re-add it
-                exec(this.db, 'DELETE FROM tweet_media WHERE mediaID = ?', [media["media_key"]]);
-            }
-
             // Index media information in tweet_media table
-            exec(this.db, 'INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT OR REPLACE INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)', [
                 media["media_key"],
                 media["type"],
                 media["url"],
@@ -912,15 +898,8 @@ export class XAccountController {
                 return;
             }
 
-            // Have we seen this URL before?
-            const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]], "all") as XTweetURLRow[];
-            if (existing.length > 0) {
-                // Delete it, so we can re-add it
-                exec(this.db, 'DELETE FROM tweet_url WHERE url = ? AND tweetID = ?', [url["url"], tweetLegacy["id_str"]]);
-            }
-
             // Index url information in tweet_url table
-            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT OR REPLACE INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url["url"],
                 url["display_url"],
                 url["expanded_url"],
@@ -1167,10 +1146,6 @@ export class XAccountController {
             // skip
             return;
         }
-
-        // Have we seen this message before?
-        const existingCount: Sqlite3Count = exec(this.db, 'SELECT COUNT(*) AS count FROM message WHERE messageID = ?', [message.message.id], "get") as Sqlite3Count;
-        log.debug("XAccountController.indexMessage: existingCount", existingCount);
 
         // Insert of replace message
         exec(this.db, 'INSERT OR REPLACE INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)', [
@@ -2206,13 +2181,6 @@ export class XAccountController {
                             tweet = tweetContainer;
                         }
 
-                        // Is this tweet already there?
-                        const existingTweet = exec(this.db, 'SELECT * FROM tweet WHERE tweetID = ?', [tweet.id_str], "get") as XTweetRow;
-                        if (existingTweet) {
-                            // Delete the existing tweet to re-import
-                            exec(this.db, 'DELETE FROM tweet WHERE tweetID = ?', [tweet.id_str]);
-                        }
-
                         // Check if tweet has media and call importXArchiveMedia
                         let hasMedia: boolean = false;
                         if (tweet.extended_entities?.media && tweet.extended_entities?.media?.length) {
@@ -2226,7 +2194,7 @@ export class XAccountController {
                         }
 
                         // Import it
-                        exec(this.db, 'INSERT INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                        exec(this.db, 'INSERT OR REPLACE INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                             username,
                             tweet.id_str,
                             new Date(tweet.created_at),
@@ -2439,15 +2407,8 @@ export class XAccountController {
 
         // Loop over all URL items
         tweet?.entities?.urls.forEach((url: XAPILegacyURL) => {
-            // Have we seen this URL before?
-            const existing: XTweetURLRow[] = exec(this.db, 'SELECT * FROM tweet_url WHERE url = ? AND tweetID = ?', [url.url, tweet.id_str], "all") as XTweetURLRow[];
-            if (existing.length > 0) {
-                // Delete it, so we can re-add it
-                exec(this.db, 'DELETE FROM tweet_url WHERE url = ? AND tweetID = ?', [url.url, tweet.id_str]);
-            }
-
             // Index url information in tweet_url table
-            exec(this.db, 'INSERT INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
+            exec(this.db, 'INSERT OR REPLACE INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)', [
                 url.url,
                 url.display_url,
                 url.expanded_url,
