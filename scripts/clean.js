@@ -3,15 +3,28 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
 
-const directoriesToRemove = ['./out', './build', './node_modules'];
+const directoriesToRemove = ['./out', './node_modules'];
 
 directoriesToRemove.forEach((dir) => {
     const fullPath = path.resolve(dir);
     if (fs.existsSync(fullPath)) {
-        console.log(`Removing: ${fullPath}`);
+        console.log(`Deleting: ${fullPath}`);
         fs.rmSync(fullPath, { recursive: true, force: true });
     }
 });
+
+// Delete all files in the build directory except config.json
+const buildDir = path.resolve('./build');
+if (fs.existsSync(buildDir)) {
+    console.log(`Cleaning: ${buildDir}`);
+    fs.readdirSync(buildDir).forEach((file) => {
+        const filePath = path.join(buildDir, file);
+        if (file !== 'config.json') {
+            console.log(`Deleting: ${filePath}`);
+            fs.rmSync(filePath, { recursive: true, force: true });
+        }
+    });
+}
 
 console.log('Running npm install...');
 execSync('npm install', { stdio: 'inherit' });

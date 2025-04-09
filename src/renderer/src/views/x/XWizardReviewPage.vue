@@ -62,8 +62,7 @@ onMounted(async () => {
 
     jobsType.value = getJobsType(props.model.account.id) || '';
 
-    await props.model.refreshDatabaseStats();
-    deleteReviewStats.value = props.model.deleteReviewStats;
+    deleteReviewStats.value = await window.electron.X.getDeleteReviewStats(props.model.account.id);
     hasSomeData.value = await xHasSomeData(props.model.account.id);
     tweetCounts.value = await window.electron.X.blueskyGetTweetCounts(props.model.account.id) || emptyXMigrateTweetCounts();
 
