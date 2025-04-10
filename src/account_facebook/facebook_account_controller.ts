@@ -41,6 +41,7 @@ import {
     FBAPIResponse,
     FBAPINode,
     FBAttachment,
+    FBMedia,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
@@ -332,14 +333,36 @@ export class FacebookAccountController {
     }
 
     async parseAttachment(postId: string, postMedia: FBAttachment[]) {
+        console.log("\n\n=============\n\n")
+        console.log(postMedia)
         for (const mediaItem of postMedia) {
-            const mediaData = mediaItem.style_type_renderer.attachment.media;
+
+            console.log(mediaItem.style_type_renderer.attachment)
             let sourceURI: string;
-            if (mediaData.__typename === 'GenericAttachmentMedia') {
-                const searchParams = new URL(mediaData.image.uri).searchParams
-                sourceURI = searchParams.get('url') || '';
+            let mediaData: FBMedia;
+
+            if (mediaItem.style_type_renderer.attachment.all_subattachments) {
+                // TODO: Implement multiple attachment/images
+                log.info("FacebookAccountController.parseAttachment: multiple attachments, not implemented yet");
+                return;
+            } else if (mediaItem.style_type_renderer.attachment.media) {
+                mediaData = mediaItem.style_type_renderer.attachment.media;
+
+                if (!mediaData.image?.uri) {
+                    // TODO: Implement attachments like Video, ExternalShareAttachment, FBShortsShareAttachment, etc.
+                    log.info("FacebookAccountController.parseAttachment: multiple attachments, not implemented yet");
+                    return;
+                }
+
+                if (mediaData.__typename === 'GenericAttachmentMedia') {
+                    const searchParams = new URL(mediaData.image.uri).searchParams
+                    sourceURI = searchParams.get('url') || '';
+                } else {
+                    sourceURI = mediaData.image.uri;
+                }
             } else {
-                sourceURI = mediaData.image.uri;
+                log.info("FacebookAccountController.parseAttachment: not a known attachment structure, skipping");
+                return;
             }
 
             const filename = path.basename(sourceURI.substring(0, sourceURI.indexOf('?')));
