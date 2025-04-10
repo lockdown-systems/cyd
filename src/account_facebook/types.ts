@@ -115,25 +115,40 @@ export interface FBAPIActor {
     delegate_page: any;
 }
 
+export interface FBMedia {
+    __typename: string;
+    image: {
+        uri: string;
+        height: number;
+        width: number;
+    };
+    fallback_image?: {
+        uri: string;
+    };
+    is_playable: boolean;
+    id: string;
+    accessibility_caption: string;
+    focus: {
+        x: number;
+        y: number;
+    };
+    __isNode: string;
+}
+
 export interface FBAttachment {
     style_type_renderer: {
         __typename: string;
+        attachment_type: string;
         attachment: {
-            media: {
-                __typename: string;
-                image: {
-                    uri: string;
-                    height: number;
-                    width: number;
-                };
-                is_playable: boolean;
-                id: string;
-                accessibility_caption: string;
-                focus: {
-                    x: number;
-                    y: number;
-                };
-                __isNode: string;
+            title?: string;
+            url?: string;
+            media?: FBMedia;
+            description?: {
+                text: string;
+            };
+            all_subattachments?: {
+                count: number;
+                nodes: {media: FBMedia;}[];
             };
         };
         __module_operation_ProfileCometTimelineGridStoryAttachment_story: any;
