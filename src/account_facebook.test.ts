@@ -155,7 +155,7 @@ test('FacebookAccountController.constructor() creates a database for the user', 
     expect(files).toContain('data.sqlite3');
 })
 
-test('FacebookAccountController.getStructuredGraphQLData() handles multiple objects', async () => {
+test('FacebookAccountController.getStructuredGraphQLData() handles multiple objects is list post response', async () => {
     mitmController.setTestdata("FBAPIManagePosts1.json")
 
     const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
@@ -171,6 +171,18 @@ test('FacebookAccountController.getStructuredGraphQLData() handles multiple obje
     expect(resps[8].label).toBe("ProfileCometTimelineFeed_user$defer$ProfileCometTimelineFeed_user_timeline_list_feed_units$page_info");
 })
 
+test('FacebookAccountController.getStructuredGraphQLData() handles manage post objects', async () => {
+    mitmController.setTestdata("FBAPIManagePosts4.json")
+
+    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
+    expect(resps.length).toBe(5);
+    expect(resps[0].data?.user?.timeline_manage_feed_units?.edges?.[0].node.__typename).toBe("Story");
+    expect(resps[1].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
+    expect(resps[2].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
+    expect(resps[3].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
+    expect(resps[4].label).toBe("ProfileCometManagePostsTimelineFeed_user$defer$CometManagePostsFeed_user_timeline_manage_feed_units$page_info");
+})
+
 test('FacebookAccountController.getStructuredGraphQLData() handles one object', async () => {
     mitmController.setTestdata("FBAPIManagePosts2.json")
 
@@ -179,10 +191,19 @@ test('FacebookAccountController.getStructuredGraphQLData() handles one object', 
     expect(resps[0].data?.node?.__typename).toBe("User");
 })
 
+test('FacebookAccountController.savePosts() test data 4', async () => {
+    mitmController.setTestdata("FBAPIManagePosts4.json")
+
+    // Save all posts in manage posts feed
+    const progress = await controller.savePosts();
+    expect(progress.postsSaved).toBe(4);
+})
+
 
 test('FacebookAccountController.savePosts() test data 1', async () => {
     mitmController.setTestdata("FBAPIManagePosts1.json")
 
+    // Ignore list feed posts
     const progress = await controller.savePosts();
-    expect(progress.postsSaved).toBe(1);
+    expect(progress.postsSaved).toBe(0);
 })

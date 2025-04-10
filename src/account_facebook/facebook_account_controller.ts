@@ -448,8 +448,9 @@ export class FacebookAccountController {
 
         for (const postResponse of resps) {
             log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
-            if (postResponse?.data?.node) {
-                log.debug("FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.node")
+            // Only parse manage feed posts, and not list feed
+            if (postResponse?.data?.node && postResponse.path?.includes("timeline_manage_feed_units")) {
+                log.debug("FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.node from manage posts")
                 this.parseNode(postResponse?.data?.node);
             } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
                 for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
