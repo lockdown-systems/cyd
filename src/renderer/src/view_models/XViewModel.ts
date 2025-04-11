@@ -12,7 +12,6 @@ import {
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
-    XDeleteReviewStats, emptyXDeleteReviewStats,
     XMigrateTweetCounts
 } from '../../../shared_types';
 import { XViewerResults, XUserInfo } from "../types_x"
@@ -104,7 +103,6 @@ export class XViewModel extends BaseViewModel {
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
     public progressInfo: XProgressInfo = emptyXProgressInfo();
     public databaseStats: XDatabaseStats = emptyXDatabaseStats();
-    public deleteReviewStats: XDeleteReviewStats = emptyXDeleteReviewStats();
     public archiveInfo: ArchiveInfo = emptyArchiveInfo();
     public jobs: XJob[] = [];
     public currentJobIndex: number = 0;
@@ -133,7 +131,6 @@ export class XViewModel extends BaseViewModel {
 
     async refreshDatabaseStats() {
         this.databaseStats = await window.electron.X.getDatabaseStats(this.account.id);
-        this.deleteReviewStats = await window.electron.X.getDeleteReviewStats(this.account.id);
         this.archiveInfo = await window.electron.archive.getInfo(this.account.id);
         this.emitter?.emit(`x-update-database-stats-${this.account.id}`);
         this.emitter?.emit(`x-update-archive-info-${this.account.id}`);
