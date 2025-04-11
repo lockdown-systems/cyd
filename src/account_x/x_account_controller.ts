@@ -1561,8 +1561,10 @@ export class XAccountController {
 
             await new Promise((resolve) => streamWriter.end(resolve));
         } catch (error) {
-            streamWriter.end();
+            streamWriter.close();
             throw error;
+        } finally {
+            streamWriter.close();
         }
 
         log.info(`XAccountController.archiveBuild: archive saved to ${archivePath}`);
