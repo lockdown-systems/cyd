@@ -15,6 +15,7 @@ const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 // User variables
 const userAuthenticated = ref(false);
 const userPremium = ref(false);
+const userHasBusinessSubscription = ref(false);
 
 const signInClicked = async () => {
     emitter?.emit('show-sign-in');
@@ -51,6 +52,7 @@ const refreshPremium = async () => {
         if (resp && 'error' in resp === false) {
             userPremiumResp = resp;
             userPremium.value = userPremiumResp.premium_access;
+            userHasBusinessSubscription.value = userPremiumResp.has_business_subscription;
         } else {
             console.error(`Error getting user premium status: ${resp}`);
             userPremium.value = false;
@@ -90,7 +92,7 @@ onMounted(async () => {
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-md-5 upsell-col">
-                        <div class="card text-center" @click="premiumClicked">
+                        <div class="card premium-card text-center" @click="premiumClicked">
                             <div class="card-header">
                                 Premium
                             </div>
@@ -201,5 +203,17 @@ onMounted(async () => {
     color: #ffffff;
     text-decoration: underline;
     cursor: pointer;
+}
+
+.upsell .card.premium-card {
+    background-color: rgb(54, 151, 62);
+}
+
+.upsell .card.premium-card:hover {
+    background-color: rgb(63, 177, 65);
+}
+
+.upsell .card.premium-card .card-body {
+    color: rgb(216, 240, 215);
 }
 </style>
