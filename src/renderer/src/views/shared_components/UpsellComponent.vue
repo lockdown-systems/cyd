@@ -25,7 +25,7 @@ const premiumClicked = async () => {
         emitter?.emit('show-sign-in');
         return;
     }
-    openURL('https://docs.cyd.social/docs/premium/intro')
+    emitter?.emit('show-manage-account')
 }
 
 const teamsClicked = async () => {
@@ -33,7 +33,7 @@ const teamsClicked = async () => {
         emitter?.emit('show-sign-in');
         return;
     }
-    openURL('https://docs.cyd.social/docs/cyd-for-teams/intro')
+    emitter?.emit('show-manage-account-teams')
 }
 
 const donateClicked = () => {
@@ -95,7 +95,15 @@ onMounted(async () => {
                                 Premium
                             </div>
                             <div class="card-body small">
-                                Unlock features like deleting DMs and migrating to Bluesky
+                                <p>Unlock features like deleting DMs and migrating to Bluesky</p>
+                                <p class="fw-bold text-center mb-0">
+                                    <template v-if="!userAuthenticated">
+                                        Sign in to start
+                                    </template>
+                                    <template v-else>
+                                        Upgrade to Premium
+                                    </template>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -105,7 +113,15 @@ onMounted(async () => {
                                 Cyd for Teams
                             </div>
                             <div class="card-body small">
-                                Get Cyd Premium for everyone at your organization or company.
+                                <p>Get Cyd Premium for everyone at your organization or company</p>
+                                <p class="fw-bold text-center mb-0">
+                                    <template v-if="!userAuthenticated">
+                                        Sign in to start
+                                    </template>
+                                    <template v-else>
+                                        Start a Team
+                                    </template>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -115,7 +131,9 @@ onMounted(async () => {
                                 Donate
                             </div>
                             <div class="card-body small">
-                                We're an open source project! Show your support by donating.
+                                <p class="mb-0">
+                                    We're an open source project! Show your support by donating
+                                </p>
                             </div>
                         </div>
                     </div>
