@@ -10,6 +10,7 @@ import {
     FailureState
 } from '../../view_models/XViewModel'
 import { openURL, getJobsType } from '../../util';
+import UpsellComponent from '../shared_components/UpsellComponent.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -304,6 +305,8 @@ onMounted(async () => {
                 Run Cyd again with the same settings to try again from the beginning.
             </p>
         </div>
+
+        <UpsellComponent />
 
         <div class="buttons">
             <template v-if="(

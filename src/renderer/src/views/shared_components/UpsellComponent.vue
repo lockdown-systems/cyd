@@ -1,0 +1,187 @@
+<script setup lang="ts">
+import { ref, Ref, inject, onMounted, getCurrentInstance } from 'vue';
+import { openURL } from '../../util';
+import type { DeviceInfo } from '../../types';
+import CydAPIClient from '../../../../cyd-api-client';
+import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
+
+const apiClient = inject('apiClient') as Ref<CydAPIClient>;
+const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
+
+// User variables
+const userAuthenticated = ref(false);
+const userPremium = ref(false);
+
+const signInClicked = async () => {
+    emitter?.emit('show-sign-in');
+};
+
+const premiumClicked = async () => {
+    if (!userAuthenticated.value) {
+        emitter?.emit('show-sign-in');
+        return;
+    }
+    openURL('https://docs.cyd.social/docs/premium/intro')
+}
+
+const teamsClicked = async () => {
+    if (!userAuthenticated.value) {
+        emitter?.emit('show-sign-in');
+        return;
+    }
+    openURL('https://docs.cyd.social/docs/cyd-for-teams/intro')
+}
+
+const donateClicked = () => {
+    openURL('https://opencollective.com/lockdown-systems');
+}
+
+const refreshPremium = async () => {
+    // Check if the user is authenticated
+    userAuthenticated.value = await apiClient.value.ping() && deviceInfo.value?.valid ? true : false;
+
+    // Check if the user has premium access
+    if (userAuthenticated.value) {
+        let userPremiumResp: UserPremiumAPIResponse;
+        const resp = await apiClient.value.getUserPremium();
+        if (resp && 'error' in resp === false) {
+            userPremiumResp = resp;
+            userPremium.value = userPremiumResp.premium_access;
+        } else {
+            console.error(`Error getting user premium status: ${resp}`);
+            userPremium.value = false;
+        }
+    } else {
+        userPremium.value = false;
+    }
+}
+
+onMounted(async () => {
+    await refreshPremium();
+
+    emitter?.on('signed-in', refreshPremium);
+    emitter?.on('signed-out', refreshPremium);
+});
+</script>
+
+<template>
+    <div class="upsell">
+        <div v-if="userPremium">
+            <h1 class="text-center">
+                Thanks for supporting <img src="/assets/wordmark-white.svg" class="cyd-wordmark" alt="Cyd">!
+            </h1>
+            <p class="text-center text-muted mb-0">
+                Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan. If you'd
+                like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
+            </p>
+        </div>
+        <div v-else>
+            <h1 class="text-center">
+                Support <img src="/assets/wordmark-white.svg" class="cyd-wordmark" alt="Cyd">!
+            </h1>
+            <p class="text-center text-muted">
+                Cyd is an open source app made by a worker-owned collective.
+            </p>
+
+            <div class="container mt-4">
+                <div class="row">
+                    <div class="col-md-5 upsell-col">
+                        <div class="card text-center" @click="premiumClicked">
+                            <div class="card-header">
+                                Premium
+                            </div>
+                            <div class="card-body small">
+                                Unlock features like deleting DMs and migrating to Bluesky
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5 upsell-col">
+                        <div class="card text-center" @click="teamsClicked">
+                            <div class="card-header">
+                                Cyd for Teams
+                            </div>
+                            <div class="card-body small">
+                                Get Cyd Premium for everyone at your organization or company.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5 upsell-col">
+                        <div class="card text-center" @click="donateClicked">
+                            <div class="card-header">
+                                Donate
+                            </div>
+                            <div class="card-body small">
+                                We're an open source project! Show your support by donating.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p v-if="!userAuthenticated" class="text-muted small text-end me-3 mt-2 mb-0">
+                Already a Premium user? <a href="#" @click="signInClicked">Sign in</a>.
+            </p>
+        </div>
+    </div>
+</template>
+
+<style scoped>
+.upsell {
+    margin: 0.2em;
+    padding: 1em;
+    border: 1px solid var(--bs-gray-300);
+    border-radius: 0.5em;
+    background-color: #5885c4;
+    color: #ffffff;
+}
+
+.upsell .text-muted {
+    color: #d7e2f0ff !important;
+}
+
+.upsell-col {
+    flex: 1;
+    flex-direction: column;
+    padding-left: calc(var(--bs-gutter-x)* .1);
+    padding-right: calc(var(--bs-gutter-x)* .1);
+}
+
+.upsell .cyd-wordmark {
+    height: 1em;
+}
+
+.upsell .card {
+    background-color: #365e97ff;
+    color: #ffffff;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.upsell .card:hover {
+    background-color: rgb(63, 111, 177);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.upsell .card-header {
+    padding: 0.2em;
+    font-weight: bold;
+    ;
+}
+
+.upsell .card-body {
+    padding: 0.5em 0.7em;
+    color: #d7e2f0ff;
+    text-align: left;
+}
+
+.upsell a {
+    color: #ffffff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+</style>
