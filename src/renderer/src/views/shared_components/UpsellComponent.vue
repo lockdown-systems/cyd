@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, Ref, inject, onMounted, getCurrentInstance } from 'vue';
+import { IpcRendererEvent } from 'electron';
+import { ref, Ref, inject, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { openURL } from '../../util';
 import type { DeviceInfo } from '../../types';
 import CydAPIClient from '../../../../cyd-api-client';
@@ -62,11 +63,22 @@ const refreshPremium = async () => {
     }
 }
 
+const cydOpenEventName = 'cydOpen';
+
 onMounted(async () => {
     await refreshPremium();
 
     emitter?.on('signed-in', refreshPremium);
     emitter?.on('signed-out', refreshPremium);
+
+    // If the user clicks "Open Cyd" from the Cyd dashboard website, it should open Cyd and refresh premium here
+    window.electron.ipcRenderer.on(cydOpenEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+        await refreshPremium();
+    });
+});
+
+onUnmounted(async () => {
+    window.electron.ipcRenderer.removeAllListeners(cydOpenEventName);
 });
 </script>
 
