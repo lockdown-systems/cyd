@@ -89,8 +89,16 @@ onUnmounted(async () => {
                 Thanks for supporting <img src="/assets/wordmark-white.svg" class="cyd-wordmark" alt="Cyd">!
             </h1>
             <p class="text-center text-muted mb-0">
-                Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan. If you'd
-                like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
+                <template v-if="userHasBusinessSubscription">
+                    Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan. If
+                    you'd like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
+                </template>
+                <template v-else>
+                    Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan! Would
+                    Cyd would be useful for your team? Check out <a href="#"
+                        @click="openURL('https://docs.cyd.social/docs/cyd-for-teams/intro')">Cyd for Teams</a>. And if
+                    you'd like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
+                </template>
             </p>
         </div>
         <div v-else>
