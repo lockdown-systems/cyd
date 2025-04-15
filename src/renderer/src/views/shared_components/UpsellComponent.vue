@@ -64,9 +64,12 @@ const refreshPremium = async () => {
 }
 
 const cydOpenEventName = 'cydOpen';
+const isLoading = ref(false);
 
 onMounted(async () => {
+    isLoading.value = true;
     await refreshPremium();
+    isLoading.value = false;
 
     emitter?.on('signed-in', refreshPremium);
     emitter?.on('signed-out', refreshPremium);
@@ -83,7 +86,7 @@ onUnmounted(async () => {
 </script>
 
 <template>
-    <div class="upsell">
+    <div v-if="!isLoading" class="upsell">
         <div v-if="userPremium">
             <h1 class="text-center">
                 Thanks for supporting <img src="/assets/wordmark-white.svg" class="cyd-wordmark" alt="Cyd">!
