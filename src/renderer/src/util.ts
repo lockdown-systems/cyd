@@ -38,7 +38,7 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
             }
 
             apiClient.setUserEmail(userEmail);
-            apiClient.setDeviceToken(deviceToken);
+            await apiClient.setDeviceToken(deviceToken);
             const pingResp = await apiClient.ping();
             if (pingResp) {
                 deviceInfo["valid"] = true;
