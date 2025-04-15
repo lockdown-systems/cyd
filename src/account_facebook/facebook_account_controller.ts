@@ -41,6 +41,7 @@ import {
     FBAPIResponse,
     FBAPINode,
     FBAttachment,
+    FBMedia,
 } from './types'
 import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
 
@@ -285,8 +286,15 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async indexFacebookWallPostData(postData: FBAPINode) {
-        log.info("FacebookAccountController.indexFacebookWallPostData: parsing post data", postData);
+    async parseNode(postData: FBAPINode) {
+        log.debug("FacebookAccountController.parseNode: parsing node");
+
+        if (postData.__typename !== 'Story') {
+            log.info("FacebookAccountController.parseNode: not a story, skipping");
+            return;
+        }
+
+        // TODO: parse users too
 
         // Is this post already there?
         const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
@@ -300,7 +308,8 @@ export class FacebookAccountController {
         }
 
         // Save post
-        exec(this.db, 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        const sql = 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const params = [
             postData.id,
             new Date(postData.creation_time * 1000),
             postData.title,
@@ -310,23 +319,50 @@ export class FacebookAccountController {
             postData.attached_story?.id,
             postData.attachments && postData.attachments.length > 0 ? 1 : 0,
             new Date(),
-        ]);
+        ];
+        log.debug("FacebookAccountController.parseNode: executing", sql, params);
+        exec(this.db, sql, params);
 
         if (postData.attachments && postData.attachments.length > 0) {
-            log.info("FacebookAccountController.importFacebookArchive: importing media for post", postData.id);
-            await this.indexFacebookWallPostMedia(postData.id, postData.attachments);
+            log.info("FacebookAccountController.parseNode: importing media for post", postData.id);
+            await this.parseAttachment(postData.id, postData.attachments);
         }
+
+        // Update progress
+        this.progress.postsSaved++;
     }
 
-    async indexFacebookWallPostMedia(postId: string, postMedia: FBAttachment[]) {
+    async parseAttachment(postId: string, postMedia: FBAttachment[]) {
+        console.log("\n\n=============\n\n")
+        console.log(postMedia)
         for (const mediaItem of postMedia) {
-            const mediaData = mediaItem.style_type_renderer.attachment.media;
+
+            console.log(mediaItem.style_type_renderer.attachment)
             let sourceURI: string;
-            if (mediaData.__typename === 'GenericAttachmentMedia') {
-                const searchParams = new URL(mediaData.image.uri).searchParams
-                sourceURI = searchParams.get('url') || '';
+            let mediaData: FBMedia;
+
+            if (mediaItem.style_type_renderer.attachment.all_subattachments) {
+                // TODO: Implement multiple attachment/images
+                log.info("FacebookAccountController.parseAttachment: multiple attachments, not implemented yet");
+                return;
+            } else if (mediaItem.style_type_renderer.attachment.media) {
+                mediaData = mediaItem.style_type_renderer.attachment.media;
+
+                if (!mediaData.image?.uri) {
+                    // TODO: Implement attachments like Video, ExternalShareAttachment, FBShortsShareAttachment, etc.
+                    log.info("FacebookAccountController.parseAttachment: multiple attachments, not implemented yet");
+                    return;
+                }
+
+                if (mediaData.__typename === 'GenericAttachmentMedia') {
+                    const searchParams = new URL(mediaData.image.uri).searchParams
+                    sourceURI = searchParams.get('url') || '';
+                } else {
+                    sourceURI = mediaData.image.uri;
+                }
             } else {
-                sourceURI = mediaData.image.uri;
+                log.info("FacebookAccountController.parseAttachment: not a known attachment structure, skipping");
+                return;
             }
 
             const filename = path.basename(sourceURI.substring(0, sourceURI.indexOf('?')));
@@ -354,10 +390,10 @@ export class FacebookAccountController {
                         ]
                     );
                 } else {
-                    log.error('FacebookAccountController.indexFacebookWallPostMedia: Media could not be saved.')
+                    log.error('FacebookAccountController.parseAttachment: Media could not be saved.')
                 }
             } catch (error) {
-                log.error(`FacebookAccountController.indexFacebookWallPostMedia: Error saving media: ${error}`);
+                log.error(`FacebookAccountController.parseAttachment: Error saving media: ${error}`);
             }
         }
     }
@@ -385,15 +421,26 @@ export class FacebookAccountController {
     }
 
     async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
-        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON", responseDataBody);
+        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON");
 
-        const postArray = responseDataBody.split('\r\n');
-        const responseDataBodyJSON = [];
+        const postArray = responseDataBody.split('\n');
+        const resps = [];
         for (const post of postArray) {
-            responseDataBodyJSON.push(JSON.parse(post) as FBAPIResponse);
+            // Handle an empty newline at the end of the file
+            if (post.trim() === "") {
+                continue;
+            }
+
+            // Skip individual JSON errors
+            try {
+                const resp = JSON.parse(post) as FBAPIResponse;
+                resps.push(resp);
+            } catch (e) {
+                log.error("FacebookAccountController.getStructuredGraphQLData: error parsing JSON", e, post)
+            }
         }
 
-        return responseDataBodyJSON;
+        return resps;
     }
 
     async parseGraphQLPostData(responseIndex: number) {
@@ -404,39 +451,50 @@ export class FacebookAccountController {
             return true;
         }
 
-        // Is it rate limited?
-        if (responseData.status == 429) {
-            log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
-            this.mitmController.responseData[responseIndex].processed = true;
-            return false;
+        // Note: I'm commenting this out because we should wait until we receive actual rate limits from FB
+        // and then we can decide how to deal with them, instead of assuming how they work
+
+        // // Is it rate limited?
+        // if (responseData.status == 429) {
+        //     log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
+        //     this.mitmController.responseData[responseIndex].processed = true;
+        //     return false;
+        // }
+
+        if (responseData.status !== 200) {
+            log.warn("FacebookAccountController.parseGraphQLPostData: response data status code", responseData.status)
+            return;
         }
 
-        // Get structured data from the stringified object it's a timeline feed request
-        log.info(responseData.body)
-        if (responseData.status === 200 && responseData.body.includes("timeline_manage_feed_units")) {
-            const responseDataBodyJSON = await this.getStructuredGraphQLData(responseData.body);
+        // Get structured data from the stringified object
+        const resps = await this.getStructuredGraphQLData(responseData.body);
 
-            for (const postResponse of responseDataBodyJSON) {
-                if (postResponse?.data?.node) {
-                    log.error("Normal Data")
-                    this.indexFacebookWallPostData(postResponse?.data?.node);
-                } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
-                    log.error("Edge Data")
-                    for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
-                        this.indexFacebookWallPostData(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
-                    }
+        for (const postResponse of resps) {
+            log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
+            // Only parse manage feed posts, and not list feed
+            if (postResponse?.data?.node && postResponse.path?.includes("timeline_manage_feed_units")) {
+                log.debug("FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.node from manage posts")
+                this.parseNode(postResponse?.data?.node);
+            } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
+                for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
+                    log.debug(`FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.user?.timeline_manage_feed_units?.edges[${i}].node`)
+                    this.parseNode(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
                 }
+            } else {
+                log.debug("FacebookAccountController.parseGraphQLPostData: no nodes found, so skipping")
             }
         }
     }
 
-    async saveGraphQLPostData() {
+    async savePosts(): Promise<FacebookProgress> {
         await this.mitmController.clearProcessed();
-        log.info(`FacebookAccountController.saveGraphQLPostData: parsing ${this.mitmController.responseData.length} responses`);
+        log.info(`FacebookAccountController.savePosts: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
             this.parseGraphQLPostData(i);
         }
+
+        return this.progress;
     }
 
     async archiveBuild() {
