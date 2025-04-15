@@ -18,10 +18,6 @@ const userAuthenticated = ref(false);
 const userPremium = ref(false);
 const userHasBusinessSubscription = ref(false);
 
-const signInClicked = async () => {
-    emitter?.emit('show-sign-in');
-};
-
 const premiumClicked = async () => {
     if (!userAuthenticated.value) {
         emitter?.emit('show-sign-in');
@@ -52,6 +48,7 @@ const refreshPremium = async () => {
         const resp = await apiClient.value.getUserPremium();
         if (resp && 'error' in resp === false) {
             userPremiumResp = resp;
+            console.log('User premium response:', userPremiumResp);
             userPremium.value = userPremiumResp.premium_access;
             userHasBusinessSubscription.value = userPremiumResp.has_business_subscription;
         } else {
@@ -167,7 +164,8 @@ onUnmounted(async () => {
 
 <style scoped>
 .upsell {
-    margin: 0.2em;
+    max-width: 600px;
+    margin: 0.2em auto;
     padding: 1em;
     border: 1px solid #e6e6e6;
     border-radius: 0.5em;
