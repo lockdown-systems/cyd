@@ -306,8 +306,6 @@ onMounted(async () => {
             </p>
         </div>
 
-        <UpsellComponent />
-
         <div class="buttons">
             <template v-if="(
                 failureStateIndexTweets_FailedToRetryAfterRateLimit &&
@@ -335,6 +333,8 @@ onMounted(async () => {
                 </button>
             </template>
         </div>
+
+        <UpsellComponent class="mt-4" />
     </div>
 </template>
 

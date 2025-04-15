@@ -403,7 +403,7 @@ body {
 }
 
 .wizard .buttons {
-  margin-top: 3rem;
+  margin-top: 2rem;
   text-align: center;
 }
 

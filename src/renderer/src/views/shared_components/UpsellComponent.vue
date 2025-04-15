@@ -89,7 +89,7 @@ onUnmounted(async () => {
     <div v-if="!isLoading" class="upsell">
         <div v-if="userPremium">
             <h1 class="text-center">
-                Thanks for supporting <img src="/assets/wordmark-white.svg" class="cyd-wordmark" alt="Cyd">!
+                Thanks for supporting <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd">!
             </h1>
             <p class="text-center text-muted mb-0">
                 <template v-if="userHasBusinessSubscription">
@@ -105,19 +105,28 @@ onUnmounted(async () => {
             </p>
         </div>
         <div v-else>
-            <h1 class="text-center">
-                Support <img src="/assets/wordmark-white.svg" class="cyd-wordmark" alt="Cyd">!
-            </h1>
-            <p class="text-center text-muted">
-                Cyd is an open source app made by a worker-owned collective.
-            </p>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-4 flex justify-between items-center">
+                        <h1 class="text-center text-nowrap">
+                            Support <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd">!
+                        </h1>
+                    </div>
+                    <div class="col-md-8 flex align-items-start">
+                        <p class="text-center text-muted small">
+                            Cyd is an open source app made by a worker-owned collective. You can support us by upgrading
+                            to Premium or <a href="#" @click="donateClicked">donating</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-            <div class="container mt-4">
+            <div class="container">
                 <div class="row">
                     <div class="col-md-5 upsell-col">
                         <div class="card premium-card text-center" @click="premiumClicked">
                             <div class="card-header">
-                                Premium
+                                Upgrade to Premium
                             </div>
                             <div class="card-body small">
                                 <p>Unlock features like deleting DMs and migrating to Bluesky</p>
@@ -150,24 +159,8 @@ onUnmounted(async () => {
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-5 upsell-col">
-                        <div class="card text-center" @click="donateClicked">
-                            <div class="card-header">
-                                Donate
-                            </div>
-                            <div class="card-body small">
-                                <p class="mb-0">
-                                    We're an open source project! Show your support by donating
-                                </p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
-
-            <p v-if="!userAuthenticated" class="text-muted small text-end me-3 mt-2 mb-0">
-                Already a Premium user? <a href="#" @click="signInClicked">Sign in</a>.
-            </p>
         </div>
     </div>
 </template>
@@ -176,14 +169,8 @@ onUnmounted(async () => {
 .upsell {
     margin: 0.2em;
     padding: 1em;
-    border: 1px solid var(--bs-gray-300);
+    border: 1px solid #e6e6e6;
     border-radius: 0.5em;
-    background-color: #5885c4;
-    color: #ffffff;
-}
-
-.upsell .text-muted {
-    color: #d7e2f0ff !important;
 }
 
 .upsell-col {
@@ -198,14 +185,11 @@ onUnmounted(async () => {
 }
 
 .upsell .card {
-    background-color: #365e97ff;
-    color: #ffffff;
     border-radius: 0.5rem;
     cursor: pointer;
 }
 
 .upsell .card:hover {
-    background-color: rgb(63, 111, 177);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
 }
@@ -213,30 +197,15 @@ onUnmounted(async () => {
 .upsell .card-header {
     padding: 0.2em;
     font-weight: bold;
-    ;
 }
 
 .upsell .card-body {
     padding: 0.5em 0.7em;
-    color: #d7e2f0ff;
     text-align: left;
 }
 
 .upsell a {
-    color: #ffffff;
+    color: #000000;
     text-decoration: underline;
-    cursor: pointer;
-}
-
-.upsell .card.premium-card {
-    background-color: rgb(54, 151, 62);
-}
-
-.upsell .card.premium-card:hover {
-    background-color: rgb(63, 177, 65);
-}
-
-.upsell .card.premium-card .card-body {
-    color: rgb(216, 240, 215);
 }
 </style>
