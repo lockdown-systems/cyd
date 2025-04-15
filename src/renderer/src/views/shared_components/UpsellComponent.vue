@@ -91,7 +91,7 @@ onUnmounted(async () => {
             <h1 class="text-center">
                 Thanks for supporting <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd">!
             </h1>
-            <p class="text-center text-muted mb-0">
+            <p class="text-center text-muted small mb-0">
                 <template v-if="userHasBusinessSubscription">
                     Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan. If
                     you'd like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
