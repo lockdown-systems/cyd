@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Ref, inject, ref, computed } from 'vue'
+
 import { XArchive } from '../types'
 import ConversationComponent from '../components/ConversationComponent.vue'
 import MessageComponent from '../components/MessageComponent.vue'
@@ -84,10 +85,6 @@ const selectConversation = (conversationID: string) => {
   flex-direction: column;
   height: calc(100vh - 150px);
   margin: 0 auto;
-}
-
-.filter-container {
-  flex-shrink: 0;
 }
 
 .items-list {

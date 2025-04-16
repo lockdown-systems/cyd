@@ -6,7 +6,7 @@ module.exports = defineConfig({
         output: {
             filename: 'assets/js/[name].[fullhash:8].js',
             chunkFilename: 'assets/js/[name].[fullhash:8].js',
-        },
+        }
     },
     chainWebpack: config => {
         if (config.plugins.has('extract-css')) {

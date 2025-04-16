@@ -4,6 +4,7 @@ import { formattedDate } from './helpers'
 import { XArchive } from './types'
 
 const archiveDataFound = ref(false);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const archiveData = ref<XArchive>((window as any).archiveData);
 provide('archiveData', archiveData);
@@ -45,11 +46,11 @@ onMounted(() => {
               <li v-if="archiveData.likes.length > 0" class="nav-item">
                 <router-link to="/likes" class="nav-link">Likes</router-link>
               </li>
-              <li v-if="archiveData.conversations.length > 0" class="nav-item">
-                <router-link to="/messages" class="nav-link">Messages</router-link>
-              </li>
               <li v-if="archiveData.bookmarks.length > 0" class="nav-item">
                 <router-link to="/bookmarks" class="nav-link">Bookmarks</router-link>
+              </li>
+              <li v-if="archiveData.conversations.length > 0" class="nav-item">
+                <router-link to="/messages" class="nav-link">Messages</router-link>
               </li>
             </ul>
           </div>
@@ -60,9 +61,11 @@ onMounted(() => {
       </div>
       <footer class="mt-auto bg-light py-3">
         <div class="container">
-          <p class="text-center mb-0">Archive created with <a href="https://cyd.social/">Cyd</a> v{{
-            archiveData.appVersion }} | Exported {{
-              formattedDate(archiveData.createdAt) }}</p>
+          <p class="text-center mb-0">
+            Archive created with <a href="https://cyd.social/">Cyd</a>
+            v{{ archiveData.appVersion }} |
+            Exported {{ formattedDate(archiveData.createdAt) }}
+          </p>
         </div>
       </footer>
     </div>
@@ -119,5 +122,23 @@ footer p {
 
 .error-image {
   height: 300px;
+}
+
+.tweets-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.filter-container {
+  flex-shrink: 0;
+}
+
+.tweets-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 20px;
 }
 </style>

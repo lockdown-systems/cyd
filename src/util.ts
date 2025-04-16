@@ -157,3 +157,24 @@ export function isFeatureEnabled(feature: string): boolean {
     const envVar = `CYD_FEATURE_${feature.toUpperCase()}`;
     return process.env[envVar] === "1";
 };
+
+export function writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
+    streamWriter.write(`  "${propertyName}": [\n`);
+    for (let i = 0; i < items.length; i++) {
+        const suffix = i < items.length - 1 ? ',\n' : '\n';
+        streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
+    }
+    streamWriter.write('  ]');
+}
+
+export function writeJSONObject(streamWriter: fs.WriteStream, item: object, propertyName: string) {
+    streamWriter.write(`  "${propertyName}": {\n`);
+    const keys = Object.keys(item);
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        const suffix = i < keys.length - 1 ? ',\n' : '\n';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        streamWriter.write(`    "${key}": ${JSON.stringify((item as any)[key])}${suffix}`);
+    }
+    streamWriter.write('  }');
+}
