@@ -38,6 +38,14 @@ const donateClicked = () => {
     openURL('https://opencollective.com/lockdown-systems');
 }
 
+const collectiveClicked = () => {
+    openURL('https://lockdown.systems/');
+}
+
+const openSourceClicked = () => {
+    openURL('https://github.com/lockdown-systems/cyd');
+}
+
 const refreshPremium = async () => {
     // Check if the user is authenticated
     userAuthenticated.value = await apiClient.value.ping() && deviceInfo.value?.valid ? true : false;
@@ -90,11 +98,13 @@ onUnmounted(async () => {
             </h1>
             <p class="text-center text-muted small mb-0">
                 <template v-if="userHasBusinessSubscription">
-                    Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan. If
+                    Cyd is <a href="#" @click="openSourceClicked">open source</a> and made by a <a href="#"
+                        @click="collectiveClicked">worker-owned collective</a>. Thanks for using a Premium plan. If
                     you'd like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
                 </template>
                 <template v-else>
-                    Cyd is an open source app made by a worker-owned collective. Thanks for using a Premium plan! Would
+                    Cyd is <a href="#" @click="openSourceClicked">open source</a> and made by a <a href="#"
+                        @click="collectiveClicked">worker-owned collective</a>. Thanks for using a Premium plan! Would
                     Cyd would be useful for your team? Check out <a href="#"
                         @click="openURL('https://docs.cyd.social/docs/cyd-for-teams/intro')">Cyd for Teams</a>. And if
                     you'd like to support us even more, <a href="#" @click="donateClicked">we accept donations</a>.
@@ -110,9 +120,9 @@ onUnmounted(async () => {
                         </h1>
                     </div>
                     <div class="col-md-8 flex align-items-start">
-                        <p class="text-center text-muted small">
-                            Cyd is an open source app made by a worker-owned collective. You can support us by upgrading
-                            to Premium or <a href="#" @click="donateClicked">donating</a>.
+                        <p class="text-start text-muted small">
+                            Cyd is <a href="#" @click="openSourceClicked">open source</a> and made by a <a href="#"
+                                @click="collectiveClicked">worker-owned collective</a>. Here are ways to support us:
                         </p>
                     </div>
                 </div>
@@ -126,8 +136,8 @@ onUnmounted(async () => {
                                 Upgrade to Premium
                             </div>
                             <div class="card-body small">
-                                <p>Unlock features like deleting DMs and migrating to Bluesky</p>
-                                <p class="fw-bold text-center mb-0">
+                                <p>Unlock features like deleting DMs and migrating tweets to Bluesky</p>
+                                <p class="fw-bold text-center mb-0 action-text">
                                     <template v-if="!userAuthenticated">
                                         Sign in to start
                                     </template>
@@ -145,13 +155,26 @@ onUnmounted(async () => {
                             </div>
                             <div class="card-body small">
                                 <p>Get Cyd Premium for everyone at your organization or company</p>
-                                <p class="fw-bold text-center mb-0">
+                                <p class="fw-bold text-center mb-0 action-text">
                                     <template v-if="!userAuthenticated">
                                         Sign in to start
                                     </template>
                                     <template v-else>
                                         Start a Team
                                     </template>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5 upsell-col">
+                        <div class="card text-center" @click="donateClicked">
+                            <div class="card-header">
+                                Donate
+                            </div>
+                            <div class="card-body small">
+                                <p>Show your support by making a donation!</p>
+                                <p class="fw-bold text-center mb-0 action-text">
+                                    Click to donate
                                 </p>
                             </div>
                         </div>
@@ -167,12 +190,19 @@ onUnmounted(async () => {
     max-width: 600px;
     margin: 0.2em auto;
     padding: 1em;
-    border: 1px solid #e6e6e6;
+    border: 1px solid #198754;
     border-radius: 0.5em;
+    background-color: #f5fffa;
 }
 
-.upsell-col {
+.upsell .row {
+    display: flex;
+    align-items: stretch;
+}
+
+.upsell .upsell-col {
     flex: 1;
+    display: flex;
     flex-direction: column;
     padding-left: calc(var(--bs-gutter-x)* .1);
     padding-right: calc(var(--bs-gutter-x)* .1);
@@ -185,6 +215,7 @@ onUnmounted(async () => {
 .upsell .card {
     border-radius: 0.5rem;
     cursor: pointer;
+    flex: 1;
 }
 
 .upsell .card:hover {
@@ -200,10 +231,23 @@ onUnmounted(async () => {
 .upsell .card-body {
     padding: 0.5em 0.7em;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.upsell .card-body .action-text {
+    margin-top: auto;
 }
 
 .upsell a {
-    color: #000000;
+    color: var(--bs-secondary-color);
     text-decoration: underline;
+}
+
+.upsell .premium-card {
+    border-color: #198754;
+    color: #12603b;
 }
 </style>
