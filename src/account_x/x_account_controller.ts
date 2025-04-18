@@ -2266,7 +2266,7 @@ export class XAccountController {
         try {
             session = await this.blueskyClient.restore(did);
         } catch (e) {
-            log.error("XAccountController.blueskyGetProfile: Error restoring session", e);
+            log.warn("XAccountController.blueskyGetProfile: Failed to restore session");
             return null;
         }
         const agent = new Agent(session)

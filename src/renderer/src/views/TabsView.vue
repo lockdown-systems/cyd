@@ -137,6 +137,16 @@ const openDashboard = async () => {
 
 emitter?.on('show-manage-account', openDashboard);
 
+const openCydForTeams = async () => {
+  userBtnShowMenu.value = false;
+
+  const dashURL = await window.electron.getDashURL();
+  const nativeLoginURL = `${dashURL}/#/native-login/${deviceInfo.value?.userEmail}/${deviceInfo.value?.deviceToken}/teams`;
+  openURL(nativeLoginURL);
+};
+
+emitter?.on('show-manage-account-teams', openCydForTeams);
+
 const manageAccountClicked = async () => {
   openDashboard();
 };

@@ -10,6 +10,7 @@ import {
     FailureState
 } from '../../view_models/XViewModel'
 import { openURL, getJobsType } from '../../util';
+import UpsellComponent from '../shared_components/UpsellComponent.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -332,6 +333,8 @@ onMounted(async () => {
                 </button>
             </template>
         </div>
+
+        <UpsellComponent class="mt-4" />
     </div>
 </template>
 

@@ -34,7 +34,7 @@ const refreshDeviceInfo = async () => {
     if (deviceInfo.value) {
       userEmail.value = deviceInfo.value.userEmail;
       apiClient.value.setUserEmail(deviceInfo.value.userEmail);
-      apiClient.value.setDeviceToken(deviceInfo.value.deviceToken);
+      await apiClient.value.setDeviceToken(deviceInfo.value.deviceToken);
     }
   } catch {
     window.electron.showError("Failed to get saved device info.");
@@ -403,7 +403,7 @@ body {
 }
 
 .wizard .buttons {
-  margin-top: 3rem;
+  margin-top: 2rem;
   text-align: center;
 }
 
