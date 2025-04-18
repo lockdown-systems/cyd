@@ -216,6 +216,7 @@ onUnmounted(async () => {
     border-radius: 0.5rem;
     cursor: pointer;
     flex: 1;
+    padding: 0;
 }
 
 .upsell .card:hover {
@@ -226,6 +227,7 @@ onUnmounted(async () => {
 .upsell .card-header {
     padding: 0.2em;
     font-weight: bold;
+    width: 100%;
 }
 
 .upsell .card-body {
