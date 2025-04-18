@@ -131,7 +131,7 @@ onUnmounted(async () => {
             <div class="container">
                 <div class="row">
                     <div class="col-md-5 upsell-col">
-                        <div class="card premium-card text-center" @click="premiumClicked">
+                        <button class="card premium-card text-center" @click="premiumClicked">
                             <div class="card-header">
                                 Upgrade to Premium
                             </div>
@@ -146,10 +146,10 @@ onUnmounted(async () => {
                                     </template>
                                 </p>
                             </div>
-                        </div>
+                        </button>
                     </div>
                     <div class="col-md-5 upsell-col">
-                        <div class="card text-center" @click="teamsClicked">
+                        <button class="card text-center" @click="teamsClicked">
                             <div class="card-header">
                                 Cyd for Teams
                             </div>
@@ -164,10 +164,10 @@ onUnmounted(async () => {
                                     </template>
                                 </p>
                             </div>
-                        </div>
+                        </button>
                     </div>
                     <div class="col-md-5 upsell-col">
-                        <div class="card text-center" @click="donateClicked">
+                        <button class="card text-center" @click="donateClicked">
                             <div class="card-header">
                                 Donate
                             </div>
@@ -177,7 +177,7 @@ onUnmounted(async () => {
                                     Click to donate
                                 </p>
                             </div>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </div>
