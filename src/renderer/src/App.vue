@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { IpcRendererEvent } from 'electron';
 import { ref, provide, onMounted, getCurrentInstance } from "vue"
 import semver from "semver"
 
 import { DeviceInfo, PlausibleEvents } from './types';
-import { getDeviceInfo } from './util';
+import { getDeviceInfo, openURL } from './util';
 import CydAPIClient, { APIErrorResponse, GetVersionAPIResponse } from '../../cyd-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
@@ -116,7 +117,18 @@ emitter?.on('signed-out', () => {
 });
 
 // Check for updates
+enum UpdateStatus {
+  Unknown,
+  Error,
+  Checking,
+  Available,
+  NotAvailable,
+  Downloaded,
+}
+
 const updatesAvailable = ref(false);
+const updateStatus = ref(UpdateStatus.Unknown);
+
 const checkForUpdates = async (shouldAlert: boolean = false) => {
   console.log("checkForUpdates", "checking for updates")
   const currentVersion = await window.electron.getVersion();
@@ -126,6 +138,9 @@ const checkForUpdates = async (shouldAlert: boolean = false) => {
     if (semver.gt(latestVersion, currentVersion)) {
       console.log("checkForUpdates", `updates available, currentVersion=${currentVersion}, latestVersion=${latestVersion}`);
       updatesAvailable.value = true;
+
+      // Tell the main process to check for updates
+      await window.electron.checkForUpdates();
 
       if (shouldAlert) {
         await window.electron.showMessage("An update is available", `You are running Cyd ${currentVersion}. Cyd ${latestVersion} is the latest version, and you should upgrade.`);
@@ -144,6 +159,10 @@ const checkForUpdates = async (shouldAlert: boolean = false) => {
       await window.electron.showError("Failed to check for updates");
     }
   }
+}
+
+const restartToUpdateClicked = async () => {
+  await window.electron.quitAndInstallUpdate();
 }
 
 const platform = ref('');
@@ -182,6 +201,30 @@ onMounted(async () => {
   // Check for updates
   await checkForUpdates();
   setInterval(checkForUpdates, 1000 * 60 * 60) // every 60 minutes
+
+  // Update status events
+  const cydAutoUpdaterErrorEventName = 'cydAutoUpdaterError';
+  const cydAutoUpdaterCheckingForUpdatesEventName = 'cydAutoUpdaterCheckingForUpdates';
+  const cydAutoUpdaterUpdateAvailableEventName = 'cydAutoUpdaterUpdateAvailable';
+  const cydAutoUpdaterUpdateNotAvailableEventName = 'cydAutoUpdaterUpdateNotAvailable';
+  const cydAutoUpdaterUpdateDownloadedEventName = 'cydAutoUpdaterUpdateDownloaded';
+
+  // If the user clicks "Open Cyd" from the Cyd dashboard website, it should open Cyd and refresh premium here
+  window.electron.ipcRenderer.on(cydAutoUpdaterErrorEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Error;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterCheckingForUpdatesEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Checking;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateAvailableEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Available;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateNotAvailableEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.NotAvailable;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateDownloadedEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Downloaded;
+  });
 });
 </script>
 
@@ -211,8 +254,27 @@ onMounted(async () => {
         <p>
           <strong>Cyd update available.</strong> You should always use the latest version of Cyd.
         </p>
-        <p v-if="platform === 'linux'" class="text-muted">
-          Install updates using your operating system's package manager.
+        <p class="text-muted">
+          <template v-if="platform === 'linux'">
+            Install updates using your operating system's package manager.
+          </template>
+          <template v-else>
+            <template v-if="updateStatus == UpdateStatus.Checking">
+              Loading update status...
+            </template>
+            <template v-else-if="updateStatus == UpdateStatus.Available">
+              Downloading update...
+            </template>
+            <template v-else-if="updateStatus == UpdateStatus.Downloaded">
+              <button class="btn btn-primary" @click="restartToUpdateClicked">
+                Restart to Update
+              </button>
+            </template>
+            <template v-else-if="updateStatus == UpdateStatus.Error || updateStatus == UpdateStatus.NotAvailable">
+              Error with automatic update. Install the latest version of Cyd <a href="#"
+                @click="openURL('https://cyd.social/download/')">from the website</a>.
+            </template>
+          </template>
         </p>
       </div>
     </template>
