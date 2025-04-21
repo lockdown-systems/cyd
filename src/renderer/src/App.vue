@@ -117,7 +117,8 @@ emitter?.on('signed-out', () => {
 
 // Check for updates
 const updatesAvailable = ref(false);
-const checkForUpdates = async () => {
+const checkForUpdates = async (shouldAlert: boolean = false) => {
+  console.log("checkForUpdates", "checking for updates")
   const currentVersion = await window.electron.getVersion();
   const resp = await apiClient.value.getVersion();
   if (resp && 'error' in (resp as APIErrorResponse) === false) {
@@ -125,12 +126,23 @@ const checkForUpdates = async () => {
     if (semver.gt(latestVersion, currentVersion)) {
       console.log("checkForUpdates", `updates available, currentVersion=${currentVersion}, latestVersion=${latestVersion}`);
       updatesAvailable.value = true;
+
+      if (shouldAlert) {
+        await window.electron.showMessage("An update is available", `You are running Cyd ${currentVersion}. Cyd ${latestVersion} is the latest version, and you should upgrade.`);
+      }
     } else {
-      console.log("checkForUpdates", "no updates available")
+      console.log("checkForUpdates", "no updates available", currentVersion);
       updatesAvailable.value = false;
+
+      if (shouldAlert) {
+        await window.electron.showMessage("No updates are available", `You are running Cyd ${currentVersion}, which is the latest version.`)
+      }
     }
   } else {
     console.log("checkForUpdates", "error checking for updates", resp)
+    if (shouldAlert) {
+      await window.electron.showError("Failed to check for updates");
+    }
   }
 }
 
@@ -165,7 +177,7 @@ onMounted(async () => {
 
   // Check for updates
   await checkForUpdates();
-  setInterval(checkForUpdates, 1000 * 60 * 1) // every 15 minutes
+  setInterval(checkForUpdates, 1000 * 60 * 60) // every 60 minutes
 });
 </script>
 
@@ -187,7 +199,8 @@ onMounted(async () => {
         </div>
       </template>
       <template v-else>
-        <TabsView v-if="!shouldHideTabsView" />
+        <TabsView v-if="!shouldHideTabsView" :updates-available="updatesAvailable"
+          @check-for-updates-clicked="checkForUpdates(true)" />
       </template>
     </div>
 

@@ -8,6 +8,14 @@ import type { Account } from '../../../shared_types';
 import AboutView from './AboutView.vue';
 import { openURL } from '../util';
 
+defineProps<{
+  updatesAvailable: boolean;
+}>();
+
+const emit = defineEmits<{
+  checkForUpdatesClicked: []
+}>()
+
 // Get the global emitter
 const vueInstance = getCurrentInstance();
 const emitter = vueInstance?.appContext.config.globalProperties.emitter;
@@ -201,8 +209,7 @@ const signOutClicked = async () => {
 };
 
 const checkForUpdatesClicked = async () => {
-  console.log('Checking for updates');
-  await window.electron.checkForUpdates();
+  emit('checkForUpdatesClicked');
   userBtnShowMenu.value = false;
 };
 
