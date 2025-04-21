@@ -146,10 +146,14 @@ const checkForUpdates = async (shouldAlert: boolean = false) => {
   }
 }
 
+const platform = ref('');
+
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
   apiClient.value.initialize(await window.electron.getAPIURL());
+
+  platform.value = await window.electron.getPlatform();
 
   await refreshDeviceInfo();
   isFirstLoad.value = false;
@@ -183,8 +187,8 @@ onMounted(async () => {
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <div class="flex-grow-1">
-      <template v-if="!isReady">
+    <template v-if="!isReady">
+      <div class="flex-grow-1">
         <div class="container p-2 h-100">
           <div class="d-flex align-items-center h-100">
             <div class="w-100">
@@ -197,12 +201,21 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-      </template>
-      <template v-else>
-        <TabsView v-if="!shouldHideTabsView" :updates-available="updatesAvailable"
-          @check-for-updates-clicked="checkForUpdates(true)" />
-      </template>
-    </div>
+      </div>
+    </template>
+    <template v-else>
+      <TabsView v-if="!shouldHideTabsView" :updates-available="updatesAvailable"
+        @check-for-updates-clicked="checkForUpdates(true)" />
+
+      <div v-if="updatesAvailable" class="updates-bar">
+        <p>
+          <strong>Cyd update available.</strong> You should always use the latest version of Cyd.
+        </p>
+        <p v-if="platform === 'linux'" class="text-muted">
+          Install updates using your operating system's package manager.
+        </p>
+      </div>
+    </template>
 
     <!-- Sign in modal -->
     <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
@@ -289,6 +302,26 @@ body {
   border-radius: 4px;
   white-space: nowrap;
   z-index: 1000;
+}
+
+/* Updates style */
+
+.updates-bar {
+  z-index: 100;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 10px 20px;
+  border: 1px solid #ffc56e;
+  border-radius: 1em;
+  background-color: #ffe289;
+  color: #000;
+  font-size: 0.9em;
+  text-align: right;
+}
+
+.updates-bar p {
+  margin: 0;
 }
 
 /* Modal styles */

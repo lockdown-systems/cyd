@@ -325,7 +325,7 @@ onUnmounted(async () => {
         </div>
       </div>
 
-      <div class="main-content col flex-grow-1">
+      <div class="flex-grow-1">
         <!-- Accounts -->
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
           :class="{ 'hide': hideAllAccounts || activeAccountID !== account.id }" @account-selected="accountSelected"
