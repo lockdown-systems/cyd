@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, provide, onMounted, getCurrentInstance } from "vue"
+import semver from "semver"
 
 import { DeviceInfo, PlausibleEvents } from './types';
 import { getDeviceInfo } from './util';
-import CydAPIClient from '../../cyd-api-client';
+import CydAPIClient, { APIErrorResponse, GetVersionAPIResponse } from '../../cyd-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
@@ -114,6 +115,25 @@ emitter?.on('signed-out', () => {
   }
 });
 
+// Check for updates
+const updatesAvailable = ref(false);
+const checkForUpdates = async () => {
+  const currentVersion = await window.electron.getVersion();
+  const resp = await apiClient.value.getVersion();
+  if (resp && 'error' in (resp as APIErrorResponse) === false) {
+    const latestVersion = (resp as GetVersionAPIResponse).version;
+    if (semver.gt(latestVersion, currentVersion)) {
+      console.log("checkForUpdates", `updates available, currentVersion=${currentVersion}, latestVersion=${latestVersion}`);
+      updatesAvailable.value = true;
+    } else {
+      console.log("checkForUpdates", "no updates available")
+      updatesAvailable.value = false;
+    }
+  } else {
+    console.log("checkForUpdates", "error checking for updates", resp)
+  }
+}
+
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
@@ -142,6 +162,10 @@ onMounted(async () => {
   } else {
     document.title = `Cyd (${mode})`;
   }
+
+  // Check for updates
+  await checkForUpdates();
+  setInterval(checkForUpdates, 1000 * 60 * 1) // every 15 minutes
 });
 </script>
 
