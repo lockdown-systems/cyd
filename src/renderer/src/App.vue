@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from 'electron';
-import { ref, provide, onMounted, getCurrentInstance } from "vue"
+import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue"
 import semver from "semver"
 
 import { DeviceInfo, PlausibleEvents } from './types';
@@ -128,6 +128,7 @@ enum UpdateStatus {
 
 const updatesAvailable = ref(false);
 const updateStatus = ref(UpdateStatus.Unknown);
+let checkForUpdatesInterval: ReturnType<typeof setTimeout> | null = null;
 
 const checkForUpdates = async (shouldAlert: boolean = false) => {
   console.log("checkForUpdates", "checking for updates")
@@ -165,6 +166,13 @@ const restartToUpdateClicked = async () => {
   await window.electron.quitAndInstallUpdate();
 }
 
+// Update status events
+const cydAutoUpdaterErrorEventName = 'cydAutoUpdaterError';
+const cydAutoUpdaterCheckingForUpdatesEventName = 'cydAutoUpdaterCheckingForUpdates';
+const cydAutoUpdaterUpdateAvailableEventName = 'cydAutoUpdaterUpdateAvailable';
+const cydAutoUpdaterUpdateNotAvailableEventName = 'cydAutoUpdaterUpdateNotAvailable';
+const cydAutoUpdaterUpdateDownloadedEventName = 'cydAutoUpdaterUpdateDownloaded';
+
 const platform = ref('');
 
 onMounted(async () => {
@@ -200,14 +208,7 @@ onMounted(async () => {
 
   // Check for updates
   await checkForUpdates();
-  setInterval(checkForUpdates, 1000 * 60 * 60) // every 60 minutes
-
-  // Update status events
-  const cydAutoUpdaterErrorEventName = 'cydAutoUpdaterError';
-  const cydAutoUpdaterCheckingForUpdatesEventName = 'cydAutoUpdaterCheckingForUpdates';
-  const cydAutoUpdaterUpdateAvailableEventName = 'cydAutoUpdaterUpdateAvailable';
-  const cydAutoUpdaterUpdateNotAvailableEventName = 'cydAutoUpdaterUpdateNotAvailable';
-  const cydAutoUpdaterUpdateDownloadedEventName = 'cydAutoUpdaterUpdateDownloaded';
+  checkForUpdatesInterval = setInterval(checkForUpdates, 1000 * 60 * 60) // every 60 minutes
 
   // If the user clicks "Open Cyd" from the Cyd dashboard website, it should open Cyd and refresh premium here
   window.electron.ipcRenderer.on(cydAutoUpdaterErrorEventName, async (_event: IpcRendererEvent, _queryString: string) => {
@@ -225,6 +226,20 @@ onMounted(async () => {
   window.electron.ipcRenderer.on(cydAutoUpdaterUpdateDownloadedEventName, async (_event: IpcRendererEvent, _queryString: string) => {
     updateStatus.value = UpdateStatus.Downloaded;
   });
+});
+
+onUnmounted(() => {
+  // Cleanup the update status events
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterErrorEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterCheckingForUpdatesEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateAvailableEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateNotAvailableEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateDownloadedEventName);
+
+  // Cleanup check for updates interval
+  if (checkForUpdatesInterval) {
+    clearInterval(checkForUpdatesInterval);
+  }
 });
 </script>
 
