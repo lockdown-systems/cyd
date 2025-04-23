@@ -470,7 +470,7 @@ export class FacebookAccountController {
         const resps = await this.getStructuredGraphQLData(responseData.body);
 
         for (const postResponse of resps) {
-            log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
+            // log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
             // Only parse manage feed posts, and not list feed
             if (postResponse?.data?.node && postResponse.path?.includes("timeline_manage_feed_units")) {
                 log.debug("FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.node from manage posts")
