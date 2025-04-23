@@ -101,7 +101,11 @@ const openCydURL = async (cydURL: string) => {
 
     // If hostname is "open", this just means open Cyd
     if (url.hostname == "open") {
-        log.info('Opening Cyd');
+        const cydOpenEventName = 'cydOpen';
+        if (win) {
+            log.info('Sending Cyd Open callback event to renderer:', cydOpenEventName);
+            win.webContents.send(cydOpenEventName, url.search);
+        }
         return;
     }
 

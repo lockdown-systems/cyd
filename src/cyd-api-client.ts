@@ -164,8 +164,9 @@ export default class CydAPIClient {
         this.userEmail = userEmail;
     }
 
-    setDeviceToken(deviceToken: string) {
+    async setDeviceToken(deviceToken: string) {
         this.deviceToken = deviceToken;
+        await this.getNewAPIToken();
     }
 
     getDeviceUUID(): string | null {

@@ -61,8 +61,6 @@ import {
     XTweetURLRow,
     XUserRow,
     XConversationRow,
-    XMessageRow,
-    XConversationParticipantRow,
     XTweetBlueskyMigrationRow,
     // X API types
     XAPILegacyUser,
@@ -91,7 +89,9 @@ import {
     isXAPIData,
     isXAPIData_v2,
 } from './types'
-import * as XArchiveTypes from '../../archive-static-sites/x-archive/src/types';
+
+// for building the static archive site
+import { saveArchive } from './archive';
 
 const getMediaURL = (media: XAPILegacyTweetMedia): string => {
     // Get the HTTPS URL of the media -- this works for photos
@@ -212,6 +212,7 @@ export class XAccountController {
 
     cleanup() {
         if (this.db) {
+            this.db.pragma('wal_checkpoint(FULL)');
             this.db.close();
             this.db = null;
         }
@@ -1320,278 +1321,33 @@ export class XAccountController {
     }
 
     async archiveBuild() {
-        if (!this.db) {
-            this.initDB();
+        if (!this.account) {
+            console.error("XAccountController.archiveBuild: account not found");
+            return false;
         }
 
-        if (!this.account) {
-            return false;
+        if (!this.db) {
+            this.initDB();
+            if (!this.db) {
+                console.error("XAccountController.archiveBuild: database not initialized");
+                return;
+            }
         }
 
         log.info("XAccountController.archiveBuild: building archive");
 
-        // Tweets
-        const tweets: XTweetRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet WHERE text NOT LIKE ? AND username = ? ORDER BY createdAt DESC",
-            ["RT @%", this.account.username],
-            "all"
-        ) as XTweetRow[];
-
-        // Retweets
-        const retweets: XTweetRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet WHERE text LIKE ? ORDER BY createdAt DESC",
-            ["RT @%"],
-            "all"
-        ) as XTweetRow[];
-
-        // Likes
-        const likes: XTweetRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet WHERE isLiked = ? ORDER BY createdAt DESC",
-            [1],
-            "all"
-        ) as XTweetRow[];
-
-        // Bookmarks
-        const bookmarks: XTweetRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet WHERE isBookmarked = ? ORDER BY createdAt DESC",
-            [1],
-            "all"
-        ) as XTweetRow[];
-
-        // Load all media, URLs, and Bluesky migrations, to process later
-        const media: XTweetMediaRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet_media",
-            [],
-            "all"
-        ) as XTweetMediaRow[];
-        const urls: XTweetURLRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet_url",
-            [],
-            "all"
-        ) as XTweetURLRow[];
-        const blueskyMigration: XTweetBlueskyMigrationRow[] = exec(
-            this.db,
-            "SELECT * FROM tweet_bsky_migration",
-            [],
-            "all"
-        ) as XTweetBlueskyMigrationRow[];
-
-        // Users
-        const users: XUserRow[] = exec(
-            this.db,
-            'SELECT * FROM user',
-            [],
-            "all"
-        ) as XUserRow[];
-
-        // Conversations and messages
-        const conversations: XConversationRow[] = exec(
-            this.db,
-            'SELECT * FROM conversation ORDER BY sortTimestamp DESC',
-            [],
-            "all"
-        ) as XConversationRow[];
-        const conversationParticipants: XConversationParticipantRow[] = exec(
-            this.db,
-            'SELECT * FROM conversation_participant',
-            [],
-            "all"
-        ) as XConversationParticipantRow[];
-        const messages: XMessageRow[] = exec(
-            this.db,
-            'SELECT * FROM message ORDER BY createdAt',
-            [],
-            "all"
-        ) as XMessageRow[];
-
-        // Get the current account's userID
-        const accountUser = users.find((user) => user.screenName == this.account?.username);
-        const accountUserID = accountUser?.userID;
-
-        const tweetRowToArchiveTweet = (tweet: XTweetRow): XArchiveTypes.Tweet => {
-            const archiveTweet: XArchiveTypes.Tweet = {
-                tweetID: tweet.tweetID,
-                username: tweet.username,
-                createdAt: tweet.createdAt,
-                likeCount: tweet.likeCount,
-                quoteCount: tweet.quoteCount,
-                replyCount: tweet.replyCount,
-                retweetCount: tweet.retweetCount,
-                isLiked: tweet.isLiked,
-                isRetweeted: tweet.isRetweeted,
-                text: tweet.text,
-                path: tweet.path,
-                quotedTweet: tweet.quotedTweet,
-                archivedAt: tweet.archivedAt,
-                deletedTweetAt: tweet.deletedTweetAt,
-                deletedRetweetAt: tweet.deletedRetweetAt,
-                deletedLikeAt: tweet.deletedLikeAt,
-                deletedBookmarkAt: tweet.deletedBookmarkAt,
-                media: [],
-                urls: [],
-                blueskyMigrationURIs: [],
-            };
-            // Loop through media and URLs
-            media.forEach((media) => {
-                if (media.tweetID == tweet.tweetID) {
-                    archiveTweet.media.push({
-                        mediaType: media.mediaType,
-                        url: media.url,
-                        filename: media.filename,
-                    });
-                }
-            });
-            urls.forEach((url) => {
-                if (url.tweetID == tweet.tweetID) {
-                    archiveTweet.urls.push({
-                        url: url.url,
-                        displayURL: url.displayURL,
-                        expandedURL: url.expandedURL,
-                    });
-                }
-            });
-            blueskyMigration.forEach((migration) => {
-                if (migration.tweetID == tweet.tweetID) {
-                    archiveTweet.blueskyMigrationURIs.push(migration.atprotoURI);
-                }
-            });
-
-            return archiveTweet
-        }
-
-        // Build the archive object
-        const formattedTweets: XArchiveTypes.Tweet[] = tweets.map((tweet) => {
-            return tweetRowToArchiveTweet(tweet);
-        });
-        const formattedRetweets: XArchiveTypes.Tweet[] = retweets.map((tweet) => {
-            return tweetRowToArchiveTweet(tweet);
-        });
-        const formattedLikes: XArchiveTypes.Tweet[] = likes.map((tweet) => {
-            return tweetRowToArchiveTweet(tweet);
-        });
-        const formattedBookmarks: XArchiveTypes.Tweet[] = bookmarks.map((tweet) => {
-            return tweetRowToArchiveTweet(tweet);
-        });
-        const formattedUsers: Record<string, XArchiveTypes.User> = users.reduce((acc, user) => {
-            acc[user.userID] = {
-                userID: user.userID,
-                name: user.name ? user.name : "",
-                username: user.screenName,
-                profileImageDataURI: user.profileImageDataURI ? user.profileImageDataURI : "",
-            };
-            return acc;
-        }, {} as Record<string, XArchiveTypes.User>);
-        const formattedConversations: XArchiveTypes.Conversation[] = conversations.map((conversation) => {
-            let participants = conversationParticipants.filter(
-                (participant) => participant.conversationID == conversation.conversationID
-            ).map((participant) => participant.userID);
-            // Delete accountUserID from participants
-            participants = participants.filter((participant) => participant != accountUserID);
-            let participantSearchString = "";
-            for (let i = 0; i < participants.length; i++) {
-                const user = formattedUsers[participants[i]];
-                if (user) {
-                    participantSearchString += user.name + " ";
-                    participantSearchString += user.username + " ";
-                }
-            }
-            return {
-                conversationID: conversation.conversationID,
-                type: conversation.type,
-                sortTimestamp: conversation.sortTimestamp,
-                participants: participants,
-                participantSearchString: participantSearchString,
-                deletedAt: conversation.deletedAt,
-            }
-        });
-        const formattedMessages: XArchiveTypes.Message[] = messages.map((message) => {
-            return {
-                messageID: message.messageID,
-                conversationID: message.conversationID,
-                createdAt: message.createdAt,
-                senderID: message.senderID,
-                text: message.text,
-                deletedAt: message.deletedAt,
-            }
-        });
-
-        log.info(`XAccountController.archiveBuild: archive has ${tweets.length} tweets, ${retweets.length} retweets, ${likes.length} likes, ${bookmarks.length} bookmarks, ${users.length} users, ${conversations.length} conversations, and ${messages.length} messages`);
-
-        // Save the archive object to a file using streaming
+        // Build the archive
         const assetsPath = path.join(getAccountDataPath("X", this.account.username), "assets");
         if (!fs.existsSync(assetsPath)) {
             fs.mkdirSync(assetsPath);
         }
         const archivePath = path.join(assetsPath, "archive.js");
-
-        const streamWriter = fs.createWriteStream(archivePath);
-        try {
-            // Write the window.archiveData prefix
-            streamWriter.write('window.archiveData=');
-
-            // Write the archive metadata
-            streamWriter.write('{\n');
-            streamWriter.write(`  "appVersion": ${JSON.stringify(app.getVersion())},\n`);
-            streamWriter.write(`  "username": ${JSON.stringify(this.account.username)},\n`);
-            streamWriter.write(`  "createdAt": ${JSON.stringify(new Date().toLocaleString())},\n`);
-
-            // Write each array separately using a streaming approach in case the arrays are large
-            await this.writeJSONArray(streamWriter, formattedTweets, "tweets");
-            streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, formattedRetweets, "retweets");
-            streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, formattedLikes, "likes");
-            streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, formattedBookmarks, "bookmarks");
-            streamWriter.write(',\n');
-            await this.writeJSONObject(streamWriter, formattedUsers, "users");
-            streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, formattedConversations, "conversations");
-            streamWriter.write(',\n');
-            await this.writeJSONArray(streamWriter, formattedMessages, "messages");
-
-            // Close the object
-            streamWriter.write('};');
-
-            await new Promise((resolve) => streamWriter.end(resolve));
-        } catch (error) {
-            streamWriter.end();
-            throw error;
-        }
-
-        log.info(`XAccountController.archiveBuild: archive saved to ${archivePath}`);
+        saveArchive(this.db, app.getVersion(), this.account.username, archivePath);
 
         // Unzip x-archive.zip to the account data folder using unzipper
         const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: getAccountDataPath("X", this.account.username) });
-    }
-
-    async writeJSONArray<T>(streamWriter: fs.WriteStream, items: T[], propertyName: string) {
-        streamWriter.write(`  "${propertyName}": [\n`);
-        for (let i = 0; i < items.length; i++) {
-            const suffix = i < items.length - 1 ? ',\n' : '\n';
-            streamWriter.write('    ' + JSON.stringify(items[i]) + suffix);
-        }
-        streamWriter.write('  ]');
-    }
-
-    async writeJSONObject(streamWriter: fs.WriteStream, item: object, propertyName: string) {
-        streamWriter.write(`  "${propertyName}": {\n`);
-        const keys = Object.keys(item);
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i];
-            const suffix = i < keys.length - 1 ? ',\n' : '\n';
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            streamWriter.write(`    "${key}": ${JSON.stringify((item as any)[key])}${suffix}`);
-        }
-        streamWriter.write('  }');
     }
 
     // When you start deleting tweets, return a list of tweets to delete
@@ -2510,7 +2266,7 @@ export class XAccountController {
         try {
             session = await this.blueskyClient.restore(did);
         } catch (e) {
-            log.error("XAccountController.blueskyGetProfile: Error restoring session", e);
+            log.warn("XAccountController.blueskyGetProfile: Failed to restore session");
             return null;
         }
         const agent = new Agent(session)

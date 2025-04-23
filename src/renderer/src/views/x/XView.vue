@@ -249,7 +249,7 @@ const updateUserPremium = async () => {
         emitter?.emit(`x-premium-check-failed-${props.account.id}`);
     }
 
-    console.log('updateUserPremium', 'User premium', userPremium.value);
+    console.log('updateUserPremium', 'User premium', userPremiumResp);
 };
 provide('xUpdateUserPremium', updateUserPremium);
 
