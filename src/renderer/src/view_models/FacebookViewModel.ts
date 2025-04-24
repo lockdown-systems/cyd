@@ -465,13 +465,22 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_ARCHIVE_BUILD, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `Instructions here...`;
+        this.instructions = `**I'm building a searchable archive web page in HTML.**`;
+        this.showAutomationNotice = true;
 
-        this.showAutomationNotice = false;
+        // Build the archive
+        try {
+            await window.electron.Facebook.archiveBuild(this.account.id);
+            this.emitter?.emit(`facebook-update-archive-info-${this.account.id}`);
+        } catch (e) {
+            await this.error(AutomationErrorType.facebook_runJob_archiveBuild_ArchiveBuildError, {
+                error: formatError(e as Error)
+            })
+            return false;
+        }
 
-        // TODO: implement
-
-        this.emitter?.emit(`facebook-update-archive-info-${this.account?.id}`);
+        // Submit progress to the API
+        this.emitter?.emit(`x-submit-progress-${this.account.id}`)
 
         await this.finishJob(jobIndex);
         return true;
