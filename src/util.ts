@@ -178,3 +178,21 @@ export function writeJSONObject(streamWriter: fs.WriteStream, item: object, prop
     }
     streamWriter.write('  }');
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function deepEqual(obj1: any, obj2: any): boolean {
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function removeItems(arr: Array<any>, value: any) {
+    let i = 0;
+    while (i < arr.length) {
+        if (deepEqual(arr[i], value)) {
+            arr.splice(i, 1);
+        } else {
+            ++i;
+        }
+    }
+    return arr;
+}

@@ -64,7 +64,6 @@ export interface FacebookPostRow {
     hasMedia: boolean;
     isReposted: boolean;
     repostID: string | null;
-    urls?: string[];
 }
 
 export interface FacebookPostMediaRow {
@@ -148,7 +147,7 @@ export interface FBAttachment {
             };
             all_subattachments?: {
                 count: number;
-                nodes: {media: FBMedia;}[];
+                nodes: { media: FBMedia; }[];
             };
         };
         __module_operation_ProfileCometTimelineGridStoryAttachment_story: any;

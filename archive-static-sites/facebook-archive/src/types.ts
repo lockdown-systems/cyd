@@ -15,16 +15,16 @@ export interface Post {
     urls?: string[];
 }
 
-export type FacebookArchive = {
-    posts: Post[];
-    username: string;
-    appVersion: string;
-    createdAt: string;
-};
-
 export type User = {
     userID: string;
     name: string;
     username: string;
     profileImageDataURI: string;
+};
+
+export type FacebookArchive = {
+    appVersion: string;
+    username: string;
+    createdAt: string;
+    posts: Post[];
 };

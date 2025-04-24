@@ -480,6 +480,7 @@ export class FacebookViewModel extends BaseViewModel {
         this.showAutomationNotice = false;
 
         // TODO: implement
+
         this.emitter?.emit(`facebook-update-archive-info-${this.account?.id}`);
 
         await this.finishJob(jobIndex);

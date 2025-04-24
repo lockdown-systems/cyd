@@ -36,14 +36,15 @@ import {
     convertFacebookJobRowToFacebookJob,
     FacebookArchivePost,
     FacebookArchiveMedia,
-    FacebookPostWithMedia,
     FacebookPostRow,
     FBAPIResponse,
     FBAPINode,
     FBAttachment,
     FBMedia,
 } from './types'
-import * as FacebookArchiveTypes from '../../archive-static-sites/facebook-archive/src/types';
+
+// for building the static archive site
+import { saveArchive } from './archive';
 
 export class FacebookAccountController {
     private accountUUID: string = "";
@@ -498,124 +499,29 @@ export class FacebookAccountController {
     }
 
     async archiveBuild() {
-        if (!this.db) {
-            this.initDB();
-        }
-
         if (!this.account) {
+            console.error("FacebookAccountController.archiveBuild: account not found");
             return false;
         }
 
-        log.info("FacebookAccountController.archiveBuild: building archive");
-        // Posts with optional media
-        const postsFromDb = exec(
-            this.db,
-            `SELECT
-                p.*,
-                CASE
-                    WHEN pm.mediaId IS NOT NULL
-                        THEN GROUP_CONCAT(
-                            json_object(
-                                'mediaId', pm.mediaId,
-                                'postId', pm.postId,
-                                'type', pm.type,
-                                'uri', pm.uri,
-                                'description', pm.description,
-                                'createdAt', pm.createdAt,
-                                'addedToDatabaseAt', pm.addedToDatabaseAt
-                            )
-                        )
-                        ELSE NULL
-                    END as media,
-                CASE
-                    WHEN pu.url IS NOT NULL
-                        THEN GROUP_CONCAT(pu.url)
-                        ELSE NULL
-                    END as urls
-                FROM post p
-                LEFT JOIN post_media pm ON p.postID = pm.postId
-                LEFT JOIN post_url pu ON p.postID = pu.postId
-                GROUP BY p.postID
-                ORDER BY p.createdAt DESC`,
-            [],
-            "all"
-        );
-        // Transform into FacebookPostWithMedia
-        const posts: FacebookPostWithMedia[] = (postsFromDb as Array<FacebookPostRow & { media?: string, urls?: string[] }>).map((post) => ({
-            ...post,
-            media: post.media ? JSON.parse(`[${post.media}]`) : undefined,
-        }));
-
-        // Get the current account's userID
-        // const accountUser = users.find((user) => user.screenName == this.account?.username);
-        // const accountUserID = accountUser?.userID;
-
-        const postRowToArchivePost = (post: FacebookPostRow): FacebookArchiveTypes.Post => {
-            const decodeUnicode = (text: string): string => {
-                if (!text) return '';  // Return empty string if text is null/undefined
-                return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
-                    String.fromCharCode(parseInt(hex, 16))
-                );
-            };
-
-            const archivePost: FacebookArchiveTypes.Post = {
-                postID: post.postID,
-                createdAt: post.createdAt,
-                text: decodeUnicode(post.text),
-                title: post.title,
-                isReposted: post.isReposted,
-                archivedAt: post.archivedAt,
-                media: (post as FacebookPostWithMedia).media?.map(m => ({
-                    mediaId: m.mediaId,
-                    type: m.type,
-                    uri: m.uri,
-                    description: m.description,
-                    createdAt: m.createdAt
-                })),
-                urls: post.urls,
-            };
-            return archivePost;
+        if (!this.db) {
+            this.initDB();
+            if (!this.db) {
+                console.error("FacebookAccountController.archiveBuild: database not initialized");
+                return;
+            }
         }
 
-        // Build the archive object
-        const formattedPosts: FacebookArchiveTypes.Post[] = posts.map((post) => {
-            return postRowToArchivePost(post);
-        });
+        log.info("FacebookAccountController.archiveBuild: building archive");
 
-        log.info(`FacebookAccountController.archiveBuild: archive has ${posts.length} posts`);
-
-        // Save the archive object to a file using streaming
+        // Build the archive
         const accountPath = path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`));
         const assetsPath = path.join(accountPath, "assets");
         if (!fs.existsSync(assetsPath)) {
             fs.mkdirSync(assetsPath);
         }
         const archivePath = path.join(assetsPath, "archive.js");
-
-        const streamWriter = fs.createWriteStream(archivePath);
-        try {
-            // Write the window.archiveData prefix
-            streamWriter.write('window.archiveData=');
-
-            // Write the archive metadata
-            streamWriter.write('{\n');
-            streamWriter.write(`  "appVersion": ${JSON.stringify(app.getVersion())},\n`);
-            streamWriter.write(`  "username": ${JSON.stringify(this.account.name)},\n`);
-            streamWriter.write(`  "createdAt": ${JSON.stringify(new Date().toLocaleString())},\n`);
-
-            // Write each array separately using a streaming approach in case the array(s) are large
-            await this.writeJSONArray(streamWriter, formattedPosts, "posts");
-            streamWriter.write(',\n');
-            // Close the object
-            streamWriter.write('};');
-
-            await new Promise((resolve) => streamWriter.end(resolve));
-        } catch (error) {
-            streamWriter.end();
-            throw error;
-        }
-
-        log.info(`FacebookAccountController.archiveBuild: archive saved to ${archivePath}`);
+        saveArchive(this.db, app.getVersion(), this.account.name, archivePath);
 
         // Unzip facebook-archive.zip to the account data folder using unzipper
         const archiveZipPath = path.join(getResourcesPath(), "facebook-archive.zip");
