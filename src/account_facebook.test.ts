@@ -91,8 +91,9 @@ class MockMITMController implements IMITMController {
                 host: 'www.facebook.com',
                 url: '/api/graphql/',
                 status: 200,
-                headers: {},
-                body: fs.readFileSync(path.join(__dirname, '..', 'testdata', filename), 'utf8'),
+                requestBody: '',
+                responseHeaders: {},
+                responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', filename), 'utf8'),
                 processed: false
             }
         ];
@@ -158,7 +159,7 @@ test('FacebookAccountController.constructor() creates a database for the user', 
 test('FacebookAccountController.getStructuredGraphQLData() handles multiple objects is list post response', async () => {
     mitmController.setTestdata("FBAPIManagePosts1.json")
 
-    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
+    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].responseBody);
     expect(resps.length).toBe(9);
     expect(resps[0].data?.node?.__typename).toBe("User");
     expect(resps[1].label).toBe("VideoPlayerRelay_video$defer$InstreamVideoAdBreaksPlayer_video");
@@ -174,7 +175,7 @@ test('FacebookAccountController.getStructuredGraphQLData() handles multiple obje
 test('FacebookAccountController.getStructuredGraphQLData() handles manage post objects', async () => {
     mitmController.setTestdata("FBAPIManagePosts4.json")
 
-    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
+    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].responseBody);
     expect(resps.length).toBe(5);
     expect(resps[0].data?.user?.timeline_manage_feed_units?.edges?.[0].node.__typename).toBe("Story");
     expect(resps[1].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
@@ -186,7 +187,7 @@ test('FacebookAccountController.getStructuredGraphQLData() handles manage post o
 test('FacebookAccountController.getStructuredGraphQLData() handles one object', async () => {
     mitmController.setTestdata("FBAPIManagePosts2.json")
 
-    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].body);
+    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].responseBody);
     expect(resps.length).toBe(1);
     expect(resps[0].data?.node?.__typename).toBe("User");
 })

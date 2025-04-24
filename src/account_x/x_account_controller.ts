@@ -704,7 +704,7 @@ export class XAccountController {
         ) {
             // For likes and tweets, body is XAPIData
             // For bookmarks, body is XAPIBookmarksData
-            const body: XAPIData | XAPIBookmarksData = JSON.parse(responseData.body);
+            const body: XAPIData | XAPIBookmarksData = JSON.parse(responseData.responseBody);
             let timeline: XAPITimeline;
             if (isXAPIBookmarksData(body)) {
                 timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
@@ -717,7 +717,7 @@ export class XAccountController {
                 this.mitmController.responseData[responseIndex].processed = true;
                 return false;
             } else {
-                log.error('XAccountController.indexParseTweetsResponseData: Invalid response data', responseData.body);
+                log.error('XAccountController.indexParseTweetsResponseData: Invalid response data', responseData.responseBody);
                 throw new Error('Invalid response data');
             }
 
@@ -1052,7 +1052,7 @@ export class XAccountController {
                 responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
                 responseData.url.includes("/i/api/1.1/dm/user_updates.json")
             ) {
-                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.responseBody);
                 if (!inbox_initial_state.inbox_initial_state) {
                     // Skip this response
                     return true;
@@ -1061,7 +1061,7 @@ export class XAccountController {
                 conversations = inbox_initial_state.inbox_initial_state.conversations;
                 this.thereIsMore = inbox_initial_state.inbox_initial_state.inbox_timelines.trusted?.status == "HAS_MORE";
             } else {
-                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.body);
+                const inbox_timeline: XAPIInboxTimeline = JSON.parse(responseData.responseBody);
                 users = inbox_timeline.inbox_timeline.users;
                 conversations = inbox_timeline.inbox_timeline.conversations;
                 this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
@@ -1198,7 +1198,7 @@ export class XAccountController {
 
             if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
                 // XAPIConversationTimeline
-                const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.body);
+                const conversationTimeline: XAPIConversationTimeline = JSON.parse(responseData.responseBody);
                 if (!conversationTimeline.conversation_timeline.entries) {
                     // Skip this response
                     return true;
@@ -1206,7 +1206,7 @@ export class XAccountController {
                 entries = conversationTimeline.conversation_timeline.entries;
             } else {
                 // XAPIInboxInitialState
-                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.body);
+                const inbox_initial_state: XAPIInboxInitialState = JSON.parse(responseData.responseBody);
                 if (!inbox_initial_state.inbox_initial_state) {
                     // Skip this response
                     return true;

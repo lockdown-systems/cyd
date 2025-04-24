@@ -463,7 +463,7 @@ export class FacebookAccountController {
         }
 
         // Get structured data from the stringified object
-        const resps = await this.getStructuredGraphQLData(responseData.body);
+        const resps = await this.getStructuredGraphQLData(responseData.responseBody);
 
         for (const postResponse of resps) {
             // log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
