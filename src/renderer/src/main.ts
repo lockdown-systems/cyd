@@ -46,6 +46,7 @@ declare global {
                 removeAllListeners: (channel: string) => void;
             },
             checkForUpdates: () => Promise<void>;
+            quitAndInstallUpdate: () => Promise<void>;
             getVersion: () => Promise<string>;
             getMode: () => Promise<string>;
             getPlatform: () => Promise<string>;

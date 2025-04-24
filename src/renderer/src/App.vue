@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, provide, onMounted, getCurrentInstance } from "vue"
+import { IpcRendererEvent } from 'electron';
+import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue"
+import semver from "semver"
 
 import { DeviceInfo, PlausibleEvents } from './types';
-import { getDeviceInfo } from './util';
-import CydAPIClient from '../../cyd-api-client';
+import { getDeviceInfo, openURL } from './util';
+import CydAPIClient, { APIErrorResponse, GetVersionAPIResponse } from '../../cyd-api-client';
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
@@ -114,10 +116,71 @@ emitter?.on('signed-out', () => {
   }
 });
 
+// Check for updates
+enum UpdateStatus {
+  Unknown,
+  Error,
+  Checking,
+  Available,
+  NotAvailable,
+  Downloaded,
+}
+
+const updatesAvailable = ref(false);
+const updateStatus = ref(UpdateStatus.Unknown);
+let checkForUpdatesInterval: ReturnType<typeof setTimeout> | null = null;
+
+const checkForUpdates = async (shouldAlert: boolean = false) => {
+  console.log("checkForUpdates", "checking for updates")
+  const currentVersion = await window.electron.getVersion();
+  const resp = await apiClient.value.getVersion();
+  if (resp && 'error' in (resp as APIErrorResponse) === false) {
+    const latestVersion = (resp as GetVersionAPIResponse).version;
+    if (semver.gt(latestVersion, currentVersion)) {
+      console.log("checkForUpdates", `updates available, currentVersion=${currentVersion}, latestVersion=${latestVersion}`);
+      updatesAvailable.value = true;
+
+      // Tell the main process to check for updates
+      await window.electron.checkForUpdates();
+
+      if (shouldAlert) {
+        await window.electron.showMessage("An update is available", `You are running Cyd ${currentVersion}. Cyd ${latestVersion} is the latest version, and you should upgrade.`);
+      }
+    } else {
+      console.log("checkForUpdates", "no updates available", currentVersion);
+      updatesAvailable.value = false;
+
+      if (shouldAlert) {
+        await window.electron.showMessage("No updates are available", `You are running Cyd ${currentVersion}, which is the latest version.`)
+      }
+    }
+  } else {
+    console.log("checkForUpdates", "error checking for updates", resp)
+    if (shouldAlert) {
+      await window.electron.showError("Failed to check for updates");
+    }
+  }
+}
+
+const restartToUpdateClicked = async () => {
+  await window.electron.quitAndInstallUpdate();
+}
+
+// Update status events
+const cydAutoUpdaterErrorEventName = 'cydAutoUpdaterError';
+const cydAutoUpdaterCheckingForUpdatesEventName = 'cydAutoUpdaterCheckingForUpdates';
+const cydAutoUpdaterUpdateAvailableEventName = 'cydAutoUpdaterUpdateAvailable';
+const cydAutoUpdaterUpdateNotAvailableEventName = 'cydAutoUpdaterUpdateNotAvailable';
+const cydAutoUpdaterUpdateDownloadedEventName = 'cydAutoUpdaterUpdateDownloaded';
+
+const platform = ref('');
+
 onMounted(async () => {
   await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
 
   apiClient.value.initialize(await window.electron.getAPIURL());
+
+  platform.value = await window.electron.getPlatform();
 
   await refreshDeviceInfo();
   isFirstLoad.value = false;
@@ -142,13 +205,48 @@ onMounted(async () => {
   } else {
     document.title = `Cyd (${mode})`;
   }
+
+  // Check for updates
+  await checkForUpdates();
+  checkForUpdatesInterval = setInterval(checkForUpdates, 1000 * 60 * 60) // every 60 minutes
+
+  // If the user clicks "Open Cyd" from the Cyd dashboard website, it should open Cyd and refresh premium here
+  window.electron.ipcRenderer.on(cydAutoUpdaterErrorEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Error;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterCheckingForUpdatesEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Checking;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateAvailableEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Available;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateNotAvailableEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.NotAvailable;
+  });
+  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateDownloadedEventName, async (_event: IpcRendererEvent, _queryString: string) => {
+    updateStatus.value = UpdateStatus.Downloaded;
+  });
+});
+
+onUnmounted(() => {
+  // Cleanup the update status events
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterErrorEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterCheckingForUpdatesEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateAvailableEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateNotAvailableEventName);
+  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateDownloadedEventName);
+
+  // Cleanup check for updates interval
+  if (checkForUpdatesInterval) {
+    clearInterval(checkForUpdatesInterval);
+  }
 });
 </script>
 
 <template>
   <div class="d-flex flex-column vh-100">
-    <div class="flex-grow-1">
-      <template v-if="!isReady">
+    <template v-if="!isReady">
+      <div class="flex-grow-1">
         <div class="container p-2 h-100">
           <div class="d-flex align-items-center h-100">
             <div class="w-100">
@@ -161,11 +259,40 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-      </template>
-      <template v-else>
-        <TabsView v-if="!shouldHideTabsView" />
-      </template>
-    </div>
+      </div>
+    </template>
+    <template v-else>
+      <TabsView v-if="!shouldHideTabsView" :updates-available="updatesAvailable"
+        @check-for-updates-clicked="checkForUpdates(true)" />
+
+      <div v-if="updatesAvailable" class="updates-bar">
+        <p>
+          <strong>Cyd update available.</strong> You should always use the latest version of Cyd.
+        </p>
+        <p class="text-muted">
+          <template v-if="platform === 'linux'">
+            Install updates using your operating system's package manager.
+          </template>
+          <template v-else>
+            <template v-if="updateStatus == UpdateStatus.Checking">
+              Loading update status...
+            </template>
+            <template v-else-if="updateStatus == UpdateStatus.Available">
+              Downloading update...
+            </template>
+            <template v-else-if="updateStatus == UpdateStatus.Downloaded">
+              <button class="btn btn-primary" @click="restartToUpdateClicked">
+                Restart to Update
+              </button>
+            </template>
+            <template v-else-if="updateStatus == UpdateStatus.Error || updateStatus == UpdateStatus.NotAvailable">
+              Error with automatic update. Install the latest version of Cyd <a href="#"
+                @click="openURL('https://cyd.social/download/')">from the website</a>.
+            </template>
+          </template>
+        </p>
+      </div>
+    </template>
 
     <!-- Sign in modal -->
     <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
@@ -252,6 +379,26 @@ body {
   border-radius: 4px;
   white-space: nowrap;
   z-index: 1000;
+}
+
+/* Updates style */
+
+.updates-bar {
+  z-index: 100;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 10px 20px;
+  border: 1px solid #ffc56e;
+  border-radius: 1em;
+  background-color: #ffe289;
+  color: #000;
+  font-size: 0.9em;
+  text-align: right;
+}
+
+.updates-bar p {
+  margin: 0;
 }
 
 /* Modal styles */

@@ -140,6 +140,11 @@ export type PostNewsletterAPIRequest = {
     email: string;
 };
 
+// API models for GET /version
+export type GetVersionAPIResponse = {
+    version: string;
+};
+
 // The API client
 export default class CydAPIClient {
     public apiURL: string | null = null;
@@ -585,6 +590,22 @@ export default class CydAPIClient {
             return true;
         } catch {
             return this.returnError("Failed to update user activity. Maybe the server is down?")
+        }
+    }
+
+    // Current app version
+
+    async getVersion(): Promise<GetVersionAPIResponse | APIErrorResponse> {
+        console.log("GET /version");
+        try {
+            const response = await this.fetch("GET", `${this.apiURL}/version`, null);
+            if (response.status != 200) {
+                return this.returnError("Failed to get current version.", response.status)
+            }
+            const data: GetVersionAPIResponse = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to get current version. Maybe the server is down?")
         }
     }
 }

@@ -17,7 +17,6 @@ import {
     powerMonitor,
     FileFilter
 } from 'electron';
-import { updateElectronApp, UpdateSourceType } from 'update-electron-app';
 import mime from 'mime-types';
 
 import * as database from './database';
@@ -225,10 +224,56 @@ async function initializeApp() {
 
     // Set up auto-updates for Windows and macOS
     if (os.platform() == 'win32' || os.platform() == 'darwin') {
-        updateElectronApp({
-            updateSource: {
-                type: UpdateSourceType.StaticStorage,
-                baseUrl: getUpdatesBaseURL(config.mode)
+        const cydAutoUpdaterErrorEventName = 'cydAutoUpdaterError';
+        const cydAutoUpdaterCheckingForUpdatesEventName = 'cydAutoUpdaterCheckingForUpdates';
+        const cydAutoUpdaterUpdateAvailableEventName = 'cydAutoUpdaterUpdateAvailable';
+        const cydAutoUpdaterUpdateNotAvailableEventName = 'cydAutoUpdaterUpdateNotAvailable';
+        const cydAutoUpdaterUpdateDownloadedEventName = 'cydAutoUpdaterUpdateDownloaded';
+
+        let feedURL = getUpdatesBaseURL(config.mode);
+        let serverType: 'default' | 'json' = 'default';
+        if (process.platform === 'darwin') {
+            feedURL += '/RELEASES.json';
+            serverType = 'json';
+        }
+
+        autoUpdater.setFeedURL({
+            url: feedURL,
+            serverType
+        });
+
+        autoUpdater.on('error', (err) => {
+            log.error('updater error', err);
+            if (win) {
+                win.webContents.send(cydAutoUpdaterErrorEventName);
+            }
+        });
+
+        autoUpdater.on('checking-for-update', () => {
+            log.info('checking-for-update');
+            if (win) {
+                win.webContents.send(cydAutoUpdaterCheckingForUpdatesEventName);
+            }
+        });
+
+        autoUpdater.on('update-available', () => {
+            log.info('update-available; downloading...');
+            if (win) {
+                win.webContents.send(cydAutoUpdaterUpdateAvailableEventName);
+            }
+        });
+
+        autoUpdater.on('update-not-available', () => {
+            log.info('update-not-available');
+            if (win) {
+                win.webContents.send(cydAutoUpdaterUpdateNotAvailableEventName);
+            }
+        });
+
+        autoUpdater.on('update-downloaded', () => {
+            log.info('update-downloaded');
+            if (win) {
+                win.webContents.send(cydAutoUpdaterUpdateDownloadedEventName);
             }
         });
     }
@@ -293,56 +338,17 @@ async function createWindow() {
         ipcMain.handle('checkForUpdates', async () => {
             try {
                 if (os.platform() == 'darwin' || os.platform() == 'win32') {
-                    const updateAvailable = () => {
-                        dialog.showMessageBoxSync({
-                            title: "Cyd",
-                            message: 'An update is available and is downloading in the background.',
-                            detail: "You will be prompted to install it once it's ready.",
-                            type: 'info',
-                        });
-                        autoUpdater.off('update-available', updateAvailable);
-                        autoUpdater.off('update-not-available', updateNotAvailable);
-                        autoUpdater.off('error', updateError);
-                    };
-                    const updateNotAvailable = () => {
-                        dialog.showMessageBoxSync({
-                            title: "Cyd",
-                            message: `You are using the latest version, Cyd ${app.getVersion()}.`,
-                            type: 'info',
-                        });
-                        autoUpdater.off('update-available', updateAvailable);
-                        autoUpdater.off('update-not-available', updateNotAvailable);
-                        autoUpdater.off('error', updateError);
-                    };
-                    const updateError = (error: Error) => {
-                        dialog.showMessageBoxSync({
-                            title: "Cyd",
-                            message: `Error checking for updates: ${error.toString()}`,
-                            type: 'info',
-                        });
-                        autoUpdater.off('update-available', updateAvailable);
-                        autoUpdater.off('update-not-available', updateNotAvailable);
-                        autoUpdater.off('error', updateError);
-                    }
-
-                    autoUpdater.on('update-available', updateAvailable);
-                    autoUpdater.on('update-not-available', updateNotAvailable);
-                    autoUpdater.on('error', updateError);
-
                     autoUpdater.checkForUpdates();
+                }
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
 
-                    setTimeout(() => {
-                        autoUpdater.off('update-available', updateAvailable);
-                        autoUpdater.off('update-not-available', updateNotAvailable);
-                    }, 10000);
-                } else {
-                    // Linux updates are done through the package manager
-                    dialog.showMessageBoxSync({
-                        title: "Cyd",
-                        message: `You are running Cyd ${app.getVersion()}.`,
-                        detail: "Install updates with your Linux package manager to make sure you're on the latest version.",
-                        type: 'info',
-                    });
+        ipcMain.handle('quitAndInstallUpdate', async () => {
+            try {
+                if (os.platform() == 'darwin' || os.platform() == 'win32') {
+                    autoUpdater.quitAndInstall();
                 }
             } catch (error) {
                 throw new Error(packageExceptionForReport(error as Error));

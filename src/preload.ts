@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld('electron', {
     checkForUpdates: () => {
         ipcRenderer.invoke('checkForUpdates')
     },
+    quitAndInstallUpdate: () => {
+        ipcRenderer.invoke('quitAndInstallUpdate')
+    },
     getVersion: (): Promise<string> => {
         return ipcRenderer.invoke('getVersion')
     },
