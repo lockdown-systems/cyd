@@ -144,8 +144,14 @@ export interface FBAttachment {
     };
 }
 
+export interface FBAPIExtensions {
+    is_final: boolean;
+    prefetch_uris_v2?: any;
+    sr_payload?: any;
+}
+
 export interface FBAPINode {
-    __typename: string;
+    __typename: string; // "Story"
     id: string;
     comet_sections?: {
         actor_photo: {
@@ -274,4 +280,65 @@ export interface FBAPIResponse {
         }
     };
     extensions?: any;
+}
+
+// =====================================
+// Manage Posts types that we care about
+// =====================================
+
+// ProfileCometManagePostsTimelineRootQuery types:
+// - FBAPIResponseProfileCometManagePostsTimelineRootQuery1
+// - FBAPIResponseProfileCometManagePostsTimelineRootQuery2
+// - FBAPIResponseProfileCometManagePostsTimelinePageInfo
+
+// CometManagePostsFeedRefetchQuery types:
+// - FBAPIResponseCometManagePostsFeedRefetchQuery
+// - FBAPIResponseProfileCometManagePostsTimelinePageInfo
+
+// ProfileCometManagePostsTimelineRootQuery (1st json object in the response)
+export interface FBAPIResponseProfileCometManagePostsTimelineRootQuery1 {
+    data: {
+        user: {
+            timeline_manage_feed_units: {
+                edges: {
+                    node: FBAPINode,
+                    cursor: string;
+                }[];
+            };
+            id: string;
+            profile_pinned_post: any;
+        }
+    },
+    extensions: FBAPIExtensions;
+}
+
+// ProfileCometManagePostsTimelineRootQuery (2nd json object in the response)
+export interface FBAPIResponseProfileCometManagePostsTimelineRootQuery2 {
+    label: string; // 'ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units'
+    path: (string | number)[];
+    data: {
+        node: FBAPINode;
+        cursor: string;
+    };
+    extensions: FBAPIExtensions;
+}
+
+// CometManagePostsFeedRefetchQuery (1st json object in the response)
+export interface FBAPIResponseCometManagePostsFeedRefetchQuery {
+    data: {
+        node: FBAPINode;
+    };
+    extensions: FBAPIExtensions;
+}
+
+// ProfileCometManagePostsTimelineRootQuery, CometManagePostsFeedRefetchQuery
+// (last json object in the response, includes extensions.is_final == true)
+// this can be ignored
+export interface FBAPIResponseProfileCometManagePostsTimelinePageInfo {
+    label: string; // 'ProfileCometManagePostsTimelineFeed_user$defer$CometManagePostsFeed_user_timeline_manage_feed_units$page_info'
+    path: (string | number)[];
+    data: {
+        page_info: any;
+    };
+    extensions: FBAPIExtensions;
 }
