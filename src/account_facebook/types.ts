@@ -30,14 +30,21 @@ export function convertFacebookJobRowToFacebookJob(row: FacebookJobRow): Faceboo
     };
 }
 
+export interface FacebookUserRow {
+    id: number;
+    userID: string;
+    name: string;
+    profileURL: string;
+}
+
 export interface FacebookPostRow {
     id: number;
-    username: string;
+    userID: string;
     postID: string;
+    postURL: string;
     createdAt: string;
     title: string;
     text: string;
-    path: string;
     addedToDatabaseAt: string;
     archivedAt: string | null;
     deletedPostAt: string | null;
