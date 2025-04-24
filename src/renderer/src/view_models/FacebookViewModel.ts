@@ -14,16 +14,6 @@ export enum State {
 
     WizardStart = "WizardStart",
 
-    WizardDatabase = "WizardDatabase",
-    WizardDatabaseDisplay = "WizardDatabaseDisplay",
-
-    WizardImportStart = "WizardImportStart",
-    WizardImportStartDisplay = "WizardImportStartDisplay",
-    WizardImportDownload = "WizardImportDownload",
-    WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
-    WizardImporting = "WizardImporting",
-    WizardImportingDisplay = "WizardImportingDisplay",
-
     WizardBuildOptions = "WizardBuildOptions",
     WizardBuildOptionsDisplay = "WizardBuildOptionsDisplay",
 
@@ -554,44 +544,14 @@ export class FacebookViewModel extends BaseViewModel {
                         break;
                     }
 
-                    this.state = State.WizardDatabase;
-                    break;
-
-                case State.WizardDatabase:
-                    this.showBrowser = false;
-                    this.instructions = `
-**I need a local database of the data in your Facebook account before I can delete it.**
-
-You can either import a Facebook archive, or I can build it from scratch by scrolling through your profile.`;
-                    await this.loadURL("about:blank");
-                    this.state = State.WizardDatabaseDisplay;
-                    break;
-
-                case State.WizardImportStart:
-                    this.showBrowser = false;
-                    this.instructions = `
-**Before you can import your Facebook archive, you need to download it.**`;
-                    await this.loadURL("about:blank");
-                    this.state = State.WizardImportStartDisplay;
-                    break;
-
-                case State.WizardImportDownload:
-                    this.showBrowser = false;
-                    this.instructions = `You have requested your Facebook archive, so now we wait.`;
-                    await this.loadURL("about:blank");
-                    this.state = State.WizardImportDownloadDisplay;
-                    break;
-
-                case State.WizardImporting:
-                    this.showBrowser = false;
-                    this.instructions = `I'll help you import your Facebook archive into your local database.`;
-                    await this.loadURL("about:blank");
-                    this.state = State.WizardImportingDisplay;
+                    this.state = State.WizardBuildOptions;
                     break;
 
                 case State.WizardBuildOptions:
                     this.showBrowser = false;
                     this.instructions = `
+**I need a local database of the data in your Facebook account before I can delete it.**
+
 I'll help you build a private local database of your Facebook data to the \`Documents\` folder on your computer.
 You'll be able to access it even after you delete it from Facebook.`;
                     await this.loadURL("about:blank");

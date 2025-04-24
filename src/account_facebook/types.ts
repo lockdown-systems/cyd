@@ -30,26 +30,6 @@ export function convertFacebookJobRowToFacebookJob(row: FacebookJobRow): Faceboo
     };
 }
 
-// TODO: I think we can also get the post_type ("shared a group", "updated status", etc),
-// link_url, and group_name from the content.
-export interface FacebookArchivePost {
-    id_str: string;
-    created_at: string;
-    full_text: string;
-    title: string;
-    isReposted: boolean;
-    media?: FacebookArchiveMedia[];  // Media attachments
-    urls?: string[];  // URLs in the post
-    // lang: string;
-}
-
-export interface FacebookArchiveMedia {
-    uri: string;
-    type: 'photo' | 'video';
-    description?: string;  // Some media items have descriptions
-    creationTimestamp?: number;  // From media.creation_timestamp
-}
-
 export interface FacebookPostRow {
     id: number;
     username: string;
@@ -76,10 +56,12 @@ export interface FacebookPostMediaRow {
     addedToDatabaseAt: string;
 }
 
-export interface FacebookPostWithMedia extends FacebookPostRow {
-    media?: FacebookPostMediaRow[];
+export interface FacebookPostURLRow {
+    urlId: string;
+    postId: string;  // Foreign key to post.postID
+    url: string;
+    addedToDatabaseAt: string;
 }
-
 
 // Facebook API types
 

@@ -27,7 +27,7 @@ const emit = defineEmits<{
 // Buttons
 const backClicked = async () => {
     await saveSettings();
-    emit('setState', State.WizardImporting);
+    emit('setState', State.WizardBuildOptions);
 };
 
 const nextClicked = async () => {
@@ -136,9 +136,9 @@ onMounted(async () => {
             </p>
         </div>
 
-        <FacebookLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true" :show-no-data-warning="true"
-            :button-text="'Build Your Local Database'" :button-state="State.WizardDatabase"
-            @set-state="emit('setState', $event)" />
+        <FacebookLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true"
+            :show-no-data-warning="true" :button-text="'Build Your Local Database'"
+            :button-state="State.WizardBuildOptions" @set-state="emit('setState', $event)" />
 
         <form @submit.prevent>
             <!-- deletePosts -->
@@ -206,8 +206,7 @@ onMounted(async () => {
                         <div class="d-flex align-items-center flex-nowrap">
                             <div class="form-check">
                                 <input id="deleteRepostsDaysOldEnabled" v-model="deleteRepostsDaysOldEnabled"
-                                    type="checkbox" class="form-check-input"
-                                    :disabled="!deleteReposts || !hasSomeData">
+                                    type="checkbox" class="form-check-input" :disabled="!deleteReposts || !hasSomeData">
                                 <label class="form-check-label mr-1 text-nowrap" for="deleteRepostsDaysOldEnabled">
                                     older than
                                 </label>
@@ -239,8 +238,7 @@ onMounted(async () => {
                 </button>
 
                 <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="(hasSomeData && !(deletePosts || deleteReposts))"
-                    @click="nextClicked">
+                    :disabled="(hasSomeData && !(deletePosts || deleteReposts))" @click="nextClicked">
                     <i class="fa-solid fa-forward" />
                     Continue to Review (NOT IMPL YET)
                 </button>

@@ -27,14 +27,6 @@ export function emptyFacebookProgress(): FacebookProgress {
     };
 }
 
-export type FacebookImportArchiveResponse = {
-    status: string; // "success", "error"
-    errorMessage: string;
-    importCount: number;
-    skipCount: number;
-}
-
-
 // TODO: Add additional fields here
 export type FacebookDatabaseStats = {
     postsSaved: number;
