@@ -109,7 +109,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
                     processed: false
                 },
                 {
@@ -118,7 +118,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies2.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndReplies2.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -131,7 +131,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMInboxTimeline1.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMInboxTimeline1.json'), 'utf8'),
                     processed: false
                 },
                 {
@@ -140,7 +140,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMInitialInboxState.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMInitialInboxState.json'), 'utf8'),
                     processed: false
                 },
                 {
@@ -149,7 +149,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMConversation1.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMConversation1.json'), 'utf8'),
                     processed: false
                 },
                 {
@@ -158,7 +158,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMConversation2.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMConversation2.json'), 'utf8'),
                     processed: false
                 },
             ];
@@ -171,7 +171,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIBookmarks.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -184,7 +184,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesMedia.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndRepliesMedia.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -197,7 +197,7 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesLinks.json'), 'utf8'),
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndRepliesLinks.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -212,7 +212,7 @@ class MockMITMController implements IMITMController {
                 status: 200,
                 requestBody: '',
                 responseHeaders: {},
-                responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', filename), 'utf8'),
+                responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', filename), 'utf8'),
                 processed: false
             }
         ];
@@ -832,7 +832,7 @@ test("XAccountController.indexParsedTweets() should index and parse links", asyn
 })
 
 test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIBookmarks.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIBookmarksData(data)).toBe(true);
     expect(isXAPIError(data)).toBe(false);
@@ -840,7 +840,7 @@ test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => 
 })
 
 test("types.isXAPIError() should recognize errors", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesError.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndRepliesError.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIError(data)).toBe(true);
     expect(isXAPIBookmarksData(data)).toBe(false);
@@ -848,7 +848,7 @@ test("types.isXAPIError() should recognize errors", async () => {
 })
 
 test("types.isXAPIData() should recognize data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XUserTweetsAndReplies_20250404.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies_20250404.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIData(data)).toBe(true);
     expect(isXAPIData_v2(data)).toBe(false);
@@ -857,7 +857,7 @@ test("types.isXAPIData() should recognize data", async () => {
 })
 
 test("types.isXAPIData_v2() should recognize data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIData_v2(data)).toBe(true);
     expect(isXAPIData(data)).toBe(false);
@@ -886,7 +886,7 @@ test("test migration: 20241016_add_config", async () => {
     // Replace it with test data
     const accountDataPath = getAccountDataPath("X", "test");
     fs.mkdirSync(accountDataPath, { recursive: true });
-    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', 'initial.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
+    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'x', 'migrations', 'initial.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
 
     // Run the migrations
     controller.initDB()
@@ -903,7 +903,7 @@ test("test migration: 20241127_add_deletedAt_fields", async () => {
     // Replace it with test data
     const accountDataPath = getAccountDataPath("X", "test");
     fs.mkdirSync(accountDataPath, { recursive: true });
-    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', '20241127_add_deletedAt_fields.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
+    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'x', 'migrations', '20241127_add_deletedAt_fields.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
 
     // Before the migration, there is only deletedAt fields
     // Run the migrations
