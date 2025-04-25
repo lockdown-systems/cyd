@@ -9,9 +9,7 @@ import {
     FacebookStoryRow,
     FacebookAttachedStoryRow,
     FacebookMediaRow,
-    // FacebookMediaStoryRow,
-    // FacebookMediaAttachedStoryRow,
-    // FacebookShareRow,
+    FacebookShareRow,
 } from './account_facebook';
 
 // Mock the util module
@@ -246,4 +244,16 @@ test('FacebookAccountController.parseAPIResponse() for http1', async () => {
     mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
     expect(mediaRows.length).toBe(1);
     expect(mediaRows[0].mediaID).toBe("122106329366759940");
+
+    // there should be 3 shares
+    const shareRows: FacebookShareRow[] = database.exec(controller.db, "SELECT * FROM share", [], "all") as FacebookShareRow[];
+    expect(shareRows.length).toBe(3);
+    expect(shareRows[0].mediaID).toBe("3300235805004000402");
+    expect(shareRows[0].url).toBe("https://www.facebook.com/reel/1381478619505412/");
+    expect(shareRows[1].mediaID).toBe("122112836426759940");
+    expect(shareRows[1].title).toBe("JojaMart - Stardew Valley Wiki");
+    expect(shareRows[1].url).toBe("https://stardewvalleywiki.com/JojaMart");
+    expect(shareRows[2].mediaID).toBe("122106329366759940");
+    // TODO: share URLs are not extracted yet
+    //expect(shareRows[2].url).toBe("https://www.themarysue.com/new-television-shows-streaming-february-2025/");
 })
