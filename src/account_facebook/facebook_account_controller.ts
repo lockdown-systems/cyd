@@ -45,6 +45,7 @@ import {
 
 // for building the static archive site
 import { saveArchive } from './archive';
+import { l } from 'vite/dist/node/types.d-aGj9QkWt';
 
 function getURLFileExtension(urlString: string) {
     const url = new URL(urlString);
@@ -724,6 +725,8 @@ export class FacebookAccountController {
             return;
         }
 
+        log.info("FacebookAccountController.parseAPIResponse: parsing response for", friendlyName)
+
         // Get structured data from the stringified object
         const jsonStrings = responseData.responseBody.split('\n');
         for (const jsonString of jsonStrings) {
@@ -738,13 +741,14 @@ export class FacebookAccountController {
 
                 // Handle different response structures
                 if (isFBAPIResponseProfileCometManagePosts(resp)) {
+                    log.debug("FacebookAccountController.parseAPIResponse: parsing ProfileCometManagePosts response");
                     let edges;
                     if(resp.data?.user?.timeline_manage_feed_units?.edges) {
                         edges = resp.data.user.timeline_manage_feed_units.edges;
-                    } else if (resp.data?.user?.timeline_manage_feed_units?.page_info) {
-                        edges = resp.data.user.timeline_manage_feed_units.page_info;
+                    } else if (resp.data?.node?.timeline_manage_feed_units?.edges) {
+                        edges = resp.data.node.timeline_manage_feed_units.edges;
                     } else {
-                        log.error("FacebookAccountController.parseAPIResponse: no edges found in response");
+                        log.error("FacebookAccountController.parseAPIResponse: no edges found in response", resp);
                         continue;
                     }
                     
@@ -755,11 +759,13 @@ export class FacebookAccountController {
                         }
                     }
                 } else if (isFBAPIResponseProfileCometManagePosts2(resp)) {
+                    log.debug("FacebookAccountController.parseAPIResponse: parsing ProfileCometManagePosts2 response");
                     if(resp?.data?.node) {
                         await this.parseNode(resp.data.node);
                     }
                 } else if (isFBAPIResponseProfileCometManagePostsPageInfo(resp)) {
                     // ignore this response
+                    log.debug("FacebookAccountController.parseAPIResponse: parsing ProfileCometManagePostsPageInfo response (ignoring)");
                 }
 
             } catch (e) {

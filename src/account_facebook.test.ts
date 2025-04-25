@@ -90,10 +90,10 @@ class MockMITMController implements IMITMController {
     async clearProcessed(): Promise<void> { }
 
     // Just used in the tests
-    setTestdata(folder: string, requestFilename: string, responseFilename: string) {
+    addTestData(folder: string, requestFilename: string, responseFilename: string) {
         const requestBody = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'facebook', folder, requestFilename), 'utf8');
         const responseBody = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'facebook', folder, responseFilename), 'utf8');
-        this.responseData = [
+        this.responseData.push(
             {
                 host: 'www.facebook.com',
                 url: '/api/graphql/',
@@ -103,7 +103,7 @@ class MockMITMController implements IMITMController {
                 responseBody: responseBody,
                 processed: false
             }
-        ];
+        );
     }
 }
 
@@ -155,6 +155,11 @@ afterEach(() => {
 
 // Fixtures
 
+interface ExtendedFacebookMediaRow extends FacebookMediaRow {
+    story_id: string;
+}
+const storySQL = "SELECT media.*, media_story.storyID AS storyID FROM media LEFT JOIN media_story ON media.mediaID = media_story.mediaID WHERE media_story.storyID = ?";
+const attachedStorySQL = "SELECT media.*, media_attached_story.storyID AS storyID FROM media LEFT JOIN media_attached_story ON media.mediaID = media_attached_story.mediaID WHERE media_attached_story.storyID = ?";
 
 // FacebookAccountController tests
 
@@ -167,9 +172,10 @@ test('FacebookAccountController.constructor() creates a database for the user', 
 })
 
 test('FacebookAccountController.parseAPIResponse() for http1', async () => {
-    mitmController.setTestdata("managePosts", "http1-request.txt", "http1-response.json");
+    mitmController.addTestData("managePosts", "http1-request.txt", "http1-response.json");
+    
+    expect(mitmController.responseData[0].processed).toBe(false);
     await controller.parseAPIResponse(0);
-
     expect(mitmController.responseData[0].processed).toBe(true);
     
     // there should be 1 user
@@ -197,13 +203,6 @@ test('FacebookAccountController.parseAPIResponse() for http1', async () => {
     expect(attachedStoryRows.length).toBe(2);
     expect(attachedStoryRows[0].storyID).toBe("UzpfSTEwMDA0NDE3Nzg3MjM0MzoxMjI0NTgyMzQ5MDI0MzQ5OjEyMjQ1ODIzNDkwMjQzNDk=");
     expect(attachedStoryRows[1].storyID).toBe("UzpfSTEwMDAxNTY0MDgzOTU5MjpWSzoxNjgyMTUwNTc2MDM0Nzkw");
-
-    // count media for each story
-    interface ExtendedFacebookMediaRow extends FacebookMediaRow {
-        story_id: string;
-    }
-    const storySQL = "SELECT media.*, media_story.storyID AS storyID FROM media LEFT JOIN media_story ON media.mediaID = media_story.mediaID WHERE media_story.storyID = ?";
-    const attachedStorySQL = "SELECT media.*, media_attached_story.storyID AS storyID FROM media LEFT JOIN media_attached_story ON media.mediaID = media_attached_story.mediaID WHERE media_attached_story.storyID = ?";
 
     // this story should have 3 media
     let storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMzg5NTU1ODc1OTk0MDoxMjIxMTM4OTU1NTg3NTk5NDA=";
@@ -257,3 +256,47 @@ test('FacebookAccountController.parseAPIResponse() for http1', async () => {
     // TODO: share URLs are not extracted yet
     //expect(shareRows[2].url).toBe("https://www.themarysue.com/new-television-shows-streaming-february-2025/");
 })
+
+test('FacebookAccountController.parseAPIResponse() for http2', async () => {
+    mitmController.addTestData("managePosts", "http2-request.txt", "http2-response.json");
+    
+    expect(mitmController.responseData[0].processed).toBe(false);
+    await controller.parseAPIResponse(0);
+    expect(mitmController.responseData[0].processed).toBe(true);
+
+    // there should be 1 user
+    const userRows: FacebookUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as FacebookUserRow[];
+    expect(userRows.length).toBe(1);
+    expect(userRows[0].name).toBe("Chase Westbrook");
+
+    // there should be 3 stories
+    const storyRows: FacebookStoryRow[] = database.exec(controller.db, "SELECT * FROM story", [], "all") as FacebookStoryRow[];
+    expect(storyRows.length).toBe(4);
+    expect(storyRows[0].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMxOTIwODc1OTk0MDoxMjIxMDYzMTkyMDg3NTk5NDA=");
+    expect(storyRows[1].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjE2NjA4NzYwOTE0NzMxMTA6MTY2MDg3NjA5MTQ3MzExMA==");
+    expect(storyRows[1].title).toBe("Chase Westbrook updated his cover photo.");
+    expect(storyRows[2].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMxODg5MDc1OTk0MDo0NTI2NjQ1NTExNDU0MzY=");
+    expect(storyRows[2].title).toBe("Chase Westbrook updated his profile picture.");
+    expect(storyRows[3].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMxNzI0MDc1OTk0MDoxMjIxMDYzMTcyNDA3NTk5NDA=");
+    expect(storyRows[3].lifeEventTitle).toBe("Born on February 12, 1983");
+
+    // this attached story should have 1 media
+    let storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjE2NjA4NzYwOTE0NzMxMTA6MTY2MDg3NjA5MTQ3MzExMA==";
+    let mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaID).toBe("122106319022759940");
+
+    // this attached story should have 1 media
+    storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjE2NjA4NzYwOTE0NzMxMTA6MTY2MDg3NjA5MTQ3MzExMA==";
+    mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaID).toBe("122106319022759940");
+    expect(mediaRows[0].accessibilityCaption).toBe("May be an illustration of 2 people");
+
+    // this attached story should have 1 media
+    storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMxODg5MDc1OTk0MDo0NTI2NjQ1NTExNDU0MzY=";
+    mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaID).toBe("122106318890759940");
+    expect(mediaRows[0].accessibilityCaption).toBe("May be an image of eclipse");
+});
