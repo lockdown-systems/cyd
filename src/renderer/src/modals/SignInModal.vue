@@ -146,7 +146,14 @@ async function registerDevice() {
 
     // Subscribe to newsletter
     if (userSubscribe.value) {
-        const subscribeResp: boolean | APIErrorResponse = await apiClient.value.postNewsletter({ email: userEmail.value });
+        // Check premium status first
+        const premiumStatus = await apiClient.value.getUserPremium();
+        const isPaying = !("error" in premiumStatus) && premiumStatus.premium_access;
+
+        const subscribeResp: boolean | APIErrorResponse = await apiClient.value.postNewsletter({
+            email: userEmail.value,
+            is_paying: isPaying
+        });
         if (subscribeResp !== true && subscribeResp !== false && subscribeResp.error) {
             // Silently log the error and continue
             console.log("Error subscribing to newsletter:", subscribeResp.message);
