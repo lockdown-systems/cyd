@@ -58,13 +58,12 @@ export interface FacebookStoryRow {
 export interface FacebookAttachedStoryRow {
     id: number;
     storyID: string;
-    text: string;
+    text?: string;
 }
 
 // Facebook media
 export interface FacebookMediaRow {
     id: number;
-    storyID: string;  // Foreign key to story.storyID, or to attachedStory.storyID
     mediaType: string; // "Photo", "Video", "GenericAttachmentMedia" (for an attached reel)
     mediaID: string;
     // We download the media and save it to the filesystem, and save the path to the file here
@@ -76,6 +75,9 @@ export interface FacebookMediaRow {
     // If it's a GenericAttachmentMedia
     title?: string;
     url?: string;
+    // If it's a video or reel, we don't have the URL yet. This is to let Cyd know we need to load
+    // the video page in another step to extract the video URL
+    needsVideoDownload: boolean;
 }
 
 // Join table for Facebook stories and media
@@ -99,9 +101,9 @@ export interface FacebookMediaAttachedStoryRow {
 export interface FacebookShareRow {
     id: number;
     storyID: string;  // Foreign key to story.storyID
-    description: string; // node.attachments[0].style_type_renderer.attachment.description.text
-    title: string; // node.attachments[0].style_type_renderer.attachment.title
-    url: string; // node.attachments[0].style_type_renderer.attachment.url
+    description?: string; // node.attachments[0].style_type_renderer.attachment.description.text
+    title?: string; // node.attachments[0].style_type_renderer.attachment.title
+    url?: string; // node.attachments[0].style_type_renderer.attachment.url
     mediaID: string; // Foreign key to media.mediaID
 }
 

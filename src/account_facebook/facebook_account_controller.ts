@@ -46,11 +46,6 @@ import {
 // for building the static archive site
 import { saveArchive } from './archive';
 
-function cleanFacebookURL(url: string) {
-    // Facebook URLs for some reason escape slashes, so we need to unescape them
-    return url.replace(/\//g, '/');
-}
-
 function getURLFileExtension(urlString: string) {
     const url = new URL(urlString);
     return url.pathname.split('.').pop();
@@ -189,15 +184,14 @@ export class FacebookAccountController {
     archivedAt DATETIME,
     deletedStoryAt DATETIME,
     FOREIGN KEY(userID) REFERENCES user(userID),
-    FOREIGN KEY(attachedStoryID) REFERENCES attached_story(id)
+    FOREIGN KEY(attachedStoryID) REFERENCES attached_story(storyID)
 );`,                `CREATE TABLE attached_story (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     storyID TEXT NOT NULL UNIQUE,
-    text TEXT NOT NULL
+    text TEXT
 );`,
                     `CREATE TABLE media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    storyID TEXT NOT NULL, -- Foreign key to story.storyID or attached_story.storyID
     mediaType TEXT NOT NULL, -- "Photo", "Video", "GenericAttachmentMedia"
     mediaID TEXT NOT NULL UNIQUE,
     filename TEXT,
@@ -205,9 +199,7 @@ export class FacebookAccountController {
     accessibilityCaption TEXT,
     title TEXT,
     url TEXT,
-    FOREIGN KEY(storyID) REFERENCES story(storyID)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    needsVideoDownload BOOLEAN DEFAULT 0
 );`,
                     `CREATE TABLE media_story (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -226,9 +218,9 @@ export class FacebookAccountController {
                     `CREATE TABLE share (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     storyID TEXT NOT NULL, -- Foreign key to story.storyID
-    description TEXT NOT NULL,
-    title TEXT NOT NULL,
-    url TEXT NOT NULL,
+    description TEXT,
+    title TEXT,
+    url TEXT,
     mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
     FOREIGN KEY(storyID) REFERENCES story(storyID),
     FOREIGN KEY(mediaID) REFERENCES media(mediaID)
@@ -381,12 +373,12 @@ export class FacebookAccountController {
 
     async saveUser(actor: FBActor): Promise<string> {
         const userID = actor.id;
-        const url = cleanFacebookURL(actor.url);
+        const url = actor.url;
         const name = actor.name;
-        const profilePictureURL = cleanFacebookURL(actor.profile_picture.uri);
+        const profilePictureURL = actor.profile_picture.uri;
 
         // Find the profile picture filename
-        const profilePicturesDir = path.join(this.accountDataPath, 'profile_pictures');
+        const profilePicturesDir = path.join(this.accountDataPath, 'media', 'profile_pictures');
         if (!fs.existsSync(profilePicturesDir)) {
             fs.mkdirSync(profilePicturesDir, { recursive: true });
         }
@@ -438,8 +430,8 @@ export class FacebookAccountController {
             // Update existing attached story
             exec(
                 this.db, 
-                'UPDATE attached_story SET text = ? WHERE userID = ?', 
-                [text]
+                'UPDATE attached_story SET text = ? WHERE storyID = ?', 
+                [text, storyID]
             );
         } else {
             // Save the attached story
@@ -461,9 +453,12 @@ export class FacebookAccountController {
         return storyID;
     }
 
-    async saveMedia(storyID: string, media: FBMedia, title: string | null): Promise<string | null> {
+    async saveMedia(media: FBMedia, title: string | null): Promise<string | null> {
+        console.log("FacebookAccountController.saveMedia: saving media", media);
         const mediaType = media.__typename;
         const mediaID = media.id;
+
+        let needsVideoDownload = mediaType == "Video" ? 1 : 0;
 
         let url: string | null = null;
         if(media.image) {
@@ -476,29 +471,45 @@ export class FacebookAccountController {
 
         let filename: string | null = null;
         if(url) {
-            url = cleanFacebookURL(url);
+            if(mediaType == "Video") {
+                // Make sure the video directory exists
+                const videosDir = path.join(this.accountDataPath, 'media', 'videos');
+                if (!fs.existsSync(videosDir)) {
+                    fs.mkdirSync(videosDir, { recursive: true });
+                }
 
-            // Find the media filename
-            const imagesDir = path.join(this.accountDataPath, 'images');
-            if (!fs.existsSync(imagesDir)) {
-                fs.mkdirSync(imagesDir, { recursive: true });
-            }
+                // Hardcode the extension to .mp4 for now
+                filename = `${mediaID}.mp4`;
+                const destPath = path.join(videosDir, filename);
 
-            // Hardcoding the file extension to .jpg for now. I think it's always a JPG, but I'm not certain.
-            // Sometimes the URL looks like this:
-            // https://external.fsac1-2.fna.fbcdn.net/emg1/v/t13/10657298466976369403?url=https\u00253A\u00252F\u00252Fstardewvalleywiki.com\u00252Fmediawiki\u00252Fimages\u00252Ff\u00252Ff9\u00252FJojamart.png&fb_obo=1&utld=stardewvalleywiki.com&stp=c0.5000x0.5000f_dst-jpg_flffffff_p384x200_q75_tt6&_nc_gid=0je8BtTeEj96z97hRXTD6Q&_nc_oc=AdnmhjTDz-wu6Fq3zC2Wvn39vFOGzSk3uNbhs6_mzu0l5QK4XKStMUQJBhPh1hhtrx0&ccb=13-1&oh=06_Q3-yAY_xNhpdFLFxRDa4hcqW_5t67wYtfQHJzqOiqzuQQEd7&oe=680B7364&_nc_sid=c527b2
-            // The querystring shows the original URL is a PNG, but this URL downloads a JPG
-            filename = `${mediaID}.jpg`;
-            const destPath = path.join(imagesDir, filename);
-
-            // Check if the file already exists
-            if (fs.existsSync(destPath)) {
-                log.info("FacebookAccountController.saveMedia: image already exists, skipping download");
+                // Check if the file already exists
+                if (fs.existsSync(destPath)) {
+                    // Video already exists, so we don't need to download it again
+                    needsVideoDownload = 0;
+                }
             } else {
-                // Download the image
-                const isMediaSaved = await this.downloadFile(url, destPath);
-                if (!isMediaSaved) {
-                    log.error("FacebookAccountController.saveMedia: image could not be saved");
+                // Make sure the image directory exists
+                const imagesDir = path.join(this.accountDataPath, 'media', 'images');
+                if (!fs.existsSync(imagesDir)) {
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                }
+
+                // Hardcoding the file extension to .jpg for now. I think it's always a JPG, but I'm not certain.
+                // Sometimes the URL looks like this:
+                // https://external.fsac1-2.fna.fbcdn.net/emg1/v/t13/10657298466976369403?url=https\u00253A\u00252F\u00252Fstardewvalleywiki.com\u00252Fmediawiki\u00252Fimages\u00252Ff\u00252Ff9\u00252FJojamart.png&fb_obo=1&utld=stardewvalleywiki.com&stp=c0.5000x0.5000f_dst-jpg_flffffff_p384x200_q75_tt6&_nc_gid=0je8BtTeEj96z97hRXTD6Q&_nc_oc=AdnmhjTDz-wu6Fq3zC2Wvn39vFOGzSk3uNbhs6_mzu0l5QK4XKStMUQJBhPh1hhtrx0&ccb=13-1&oh=06_Q3-yAY_xNhpdFLFxRDa4hcqW_5t67wYtfQHJzqOiqzuQQEd7&oe=680B7364&_nc_sid=c527b2
+                // The querystring shows the original URL is a PNG, but this URL downloads a JPG
+                filename = `${mediaID}.jpg`;
+                const destPath = path.join(imagesDir, filename);
+
+                // Check if the file already exists
+                if (fs.existsSync(destPath)) {
+                    log.info("FacebookAccountController.saveMedia: image already exists, skipping download");
+                } else {
+                    // Download the image
+                    const isMediaSaved = await this.downloadFile(url, destPath);
+                    if (!isMediaSaved) {
+                        log.error("FacebookAccountController.saveMedia: image could not be saved");
+                    }
                 }
             }
         }
@@ -509,9 +520,8 @@ export class FacebookAccountController {
             // Update existing media
             exec(
                 this.db,
-                'UPDATE media SET storyID = ?, mediaType = ?, filename = ?, isPlayable = ?, accessibilityCaption = ?, title = ?, url = ? WHERE mediaID = ?',
+                'UPDATE media SET mediaType = ?, filename = ?, isPlayable = ?, accessibilityCaption = ?, title = ?, url = ? WHERE mediaID = ?',
                 [
-                    storyID, // storyID
                     mediaType, // mediaType
                     filename, // filename
                     media.is_playable ? 1 : 0, // isPlayable
@@ -525,21 +535,21 @@ export class FacebookAccountController {
             // Save the media
             exec(
                 this.db,
-                'INSERT INTO media (storyID, mediaType, mediaID, filename, isPlayable, accessibilityCaption, title, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO media (mediaType, mediaID, filename, isPlayable, accessibilityCaption, title, url, needsVideoDownload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [
-                    storyID, // storyID
                     mediaType, // mediaType
                     mediaID, // mediaID
                     filename, // filename
                     media.is_playable ? 1 : 0, // isPlayable
                     media.accessibility_caption || null, // accessibilityCaption
                     title, // title
-                    url // url
+                    url, // url
+                    needsVideoDownload // needsVideoDownload
                 ]
             );
         }
 
-        log.info("FacebookAccountController.saveMedia: media saved", mediaID, storyID, mediaType);
+        log.info("FacebookAccountController.saveMedia: media saved", mediaID, mediaType);
         return mediaID;
     }
 
@@ -574,7 +584,7 @@ export class FacebookAccountController {
                 log.info("FacebookAccountController.parseAttachment: no media found, skipping");
                 return;
             }
-            const mediaID = await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, null);
+            const mediaID = await this.saveMedia(attachment.style_type_renderer.attachment.media, null);
             if(mediaID) {
                 await saveJoin(mediaID, storyType);
             }
@@ -587,20 +597,32 @@ export class FacebookAccountController {
             }
 
             for (const mediaItem of attachment.style_type_renderer.attachment.all_subattachments.nodes) {
-                const mediaID = await this.saveMedia(storyID, mediaItem.media, null);
+                const mediaID = await this.saveMedia(mediaItem.media, null);
                 if(mediaID) {
                     await saveJoin(mediaID, storyType);
                 }
             }
 
-        } else if (type == "StoryAttachmentFallbackStyleRenderer") {
-            // Attached story
+        } else if (type == "StoryAttachmentVideoStyleRenderer") {
+            // Video
+            if(!attachment.style_type_renderer.attachment.media) {
+                log.info("FacebookAccountController.parseAttachment: no media found, skipping");
+                return;
+            }
+            const mediaID = await this.saveMedia(attachment.style_type_renderer.attachment.media, null);
+            if(mediaID) {
+                await saveJoin(mediaID, storyType);
+            }
+
+        } else if (["StoryAttachmentFallbackStyleRenderer", "StoryAttachmentShareStyleRenderer"].includes(type)) {
+            // Attached link or share
+            console.log("FacebookAccountController.parseAttachment: parsing attached link or share", attachment);
 
             // If there's attached media, save it
             let mediaID: string | null = null;
             if(attachment.style_type_renderer.attachment.media) {
                 const title = attachment.style_type_renderer.attachment.title || null;
-                mediaID = await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, title);
+                mediaID = await this.saveMedia(attachment.style_type_renderer.attachment.media, title);
                 if(mediaID) {
                     await saveJoin(mediaID, storyType);
                 }
@@ -613,13 +635,13 @@ export class FacebookAccountController {
             // Get the URL
             let url: string | null = null;
             if(attachment.style_type_renderer.attachment.url) {
-                const fbURL = new URL(cleanFacebookURL(attachment.style_type_renderer.attachment.url));
+                const fbURL = new URL(attachment.style_type_renderer.attachment.url);
                 if(fbURL.host == "l.facebook.com") {
                     // This is a Facebook URL, so we need to extract the 'u' parameter
                     // Example: 'https://l.facebook.com/l.php?u=https%3A%2F%2Fstardewvalleywiki.com%2FJojaMart&h=AT09n5aPSKTkHBJlfSlRhgZqwXiTLr6ZBUzspjCefK6zPM9dnj4pLnVfCGyGj9_jBeeC1FJhttz4Kq--j3Es_G3zy92hMrLaruAtm8pr7RSzU-q9V10OaZBZnQyqfuaLV4kJW2oh8VYSVY3ZVP0MSaQ&s=1'
                     url = fbURL.searchParams.get('u') || null;
                 } else {
-                    url = cleanFacebookURL(attachment.style_type_renderer.attachment.url);
+                    url = attachment.style_type_renderer.attachment.url;
                 }
             }
 
@@ -745,6 +767,9 @@ export class FacebookAccountController {
                 log.error("FacebookAccountController.parseAPIResponse: error parsing JSON", e, jsonString)
             }
         }
+
+        // Mark the response as processed
+        responseData.processed = true;
     }
 
     async savePosts(): Promise<FacebookProgress> {
