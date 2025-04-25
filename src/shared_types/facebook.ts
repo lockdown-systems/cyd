@@ -16,14 +16,14 @@ export type FacebookJob = {
 export type FacebookProgress = {
     currentJob: string;
     isSavePostsFinished: boolean;
-    postsSaved: number;
+    storiesSaved: number;
 }
 
 export function emptyFacebookProgress(): FacebookProgress {
     return {
         currentJob: "",
         isSavePostsFinished: false,
-        postsSaved: 0,
+        storiesSaved: 0,
     };
 }
 

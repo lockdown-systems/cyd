@@ -369,14 +369,14 @@ export class FacebookAccountController {
         if (data.attachments && data.attachments.length > 0) {
             log.info("FacebookAccountController.parseNode: parsing attachments", data.id);
             for(const attachment of data.attachments) {
-                await this.parseAttachment(data.id, attachment);
+                await this.parseAttachment(data.id, attachment, 'story');
             }
         }
 
         log.info("FacebookAccountController.parseNode: story saved", data.id);
 
         // Update progress
-        this.progress.postsSaved++;
+        this.progress.storiesSaved++;
     }
 
     async saveUser(actor: FBActor): Promise<string> {
@@ -453,7 +453,7 @@ export class FacebookAccountController {
         if (attachedStory.attachments && attachedStory.attachments.length > 0) {
             log.info("FacebookAccountController.saveAttachedStory: parsing attachments", storyID);
             for(const attachment of attachedStory.attachments) {
-                await this.parseAttachment(attachedStory.id, attachment);
+                await this.parseAttachment(attachedStory.id, attachment, 'attached_story');
             }
         }
 
@@ -484,9 +484,11 @@ export class FacebookAccountController {
                 fs.mkdirSync(imagesDir, { recursive: true });
             }
 
-            const fileExtension = getURLFileExtension(url);
-            filename = `${mediaID}.${fileExtension}`;
-
+            // Hardcoding the file extension to .jpg for now. I think it's always a JPG, but I'm not certain.
+            // Sometimes the URL looks like this:
+            // https://external.fsac1-2.fna.fbcdn.net/emg1/v/t13/10657298466976369403?url=https\u00253A\u00252F\u00252Fstardewvalleywiki.com\u00252Fmediawiki\u00252Fimages\u00252Ff\u00252Ff9\u00252FJojamart.png&fb_obo=1&utld=stardewvalleywiki.com&stp=c0.5000x0.5000f_dst-jpg_flffffff_p384x200_q75_tt6&_nc_gid=0je8BtTeEj96z97hRXTD6Q&_nc_oc=AdnmhjTDz-wu6Fq3zC2Wvn39vFOGzSk3uNbhs6_mzu0l5QK4XKStMUQJBhPh1hhtrx0&ccb=13-1&oh=06_Q3-yAY_xNhpdFLFxRDa4hcqW_5t67wYtfQHJzqOiqzuQQEd7&oe=680B7364&_nc_sid=c527b2
+            // The querystring shows the original URL is a PNG, but this URL downloads a JPG
+            filename = `${mediaID}.jpg`;
             const destPath = path.join(imagesDir, filename);
 
             // Check if the file already exists
@@ -541,8 +543,30 @@ export class FacebookAccountController {
         return mediaID;
     }
 
-    async parseAttachment(storyID: string, attachment: FBAttachment) {
+    async parseAttachment(storyID: string, attachment: FBAttachment, storyType: 'story' | 'attached_story') {
         const type = attachment.style_type_renderer.__typename
+
+        const saveJoin = async (mediaID: string, storyType: 'story' | 'attached_story') => {
+            if (storyType == 'story') {
+                const existingJoin = exec(this.db, 'SELECT * FROM media_story WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
+                if(!existingJoin) {
+                    exec(
+                        this.db,
+                        'INSERT INTO media_story (storyID, mediaID) VALUES (?, ?)',
+                        [storyID, mediaID]
+                    );
+                }
+            } else {
+                const existingJoin = exec(this.db, 'SELECT * FROM media_attached_story WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
+                if(!existingJoin) {
+                    exec(
+                        this.db,
+                        'INSERT INTO media_attached_story (storyID, mediaID) VALUES (?, ?)',
+                        [storyID, mediaID]
+                    );
+                }
+            }
+        }
 
         if (type == "StoryAttachmentPhotoStyleRenderer") {
             // Single photo
@@ -550,7 +574,10 @@ export class FacebookAccountController {
                 log.info("FacebookAccountController.parseAttachment: no media found, skipping");
                 return;
             }
-            await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, null);
+            const mediaID = await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, null);
+            if(mediaID) {
+                await saveJoin(mediaID, storyType);
+            }
 
         } else if (type == "StoryAttachmentAlbumStyleRenderer") {
             // Multiple photos
@@ -560,7 +587,10 @@ export class FacebookAccountController {
             }
 
             for (const mediaItem of attachment.style_type_renderer.attachment.all_subattachments.nodes) {
-                await this.saveMedia(storyID, mediaItem.media, null);
+                const mediaID = await this.saveMedia(storyID, mediaItem.media, null);
+                if(mediaID) {
+                    await saveJoin(mediaID, storyType);
+                }
             }
 
         } else if (type == "StoryAttachmentFallbackStyleRenderer") {
@@ -571,6 +601,9 @@ export class FacebookAccountController {
             if(attachment.style_type_renderer.attachment.media) {
                 const title = attachment.style_type_renderer.attachment.title || null;
                 mediaID = await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, title);
+                if(mediaID) {
+                    await saveJoin(mediaID, storyType);
+                }
             }
 
             // Get the description and title
@@ -613,6 +646,7 @@ export class FacebookAccountController {
     }
 
     async downloadFile(sourceURI: string, destPath: string) {
+        log.info("FacebookAccountController.downloadFile: downloading file", sourceURI, destPath);
         try {
             const response = await fetch(sourceURI, {});
             if (!response.ok) {
