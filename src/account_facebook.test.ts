@@ -300,3 +300,53 @@ test('FacebookAccountController.parseAPIResponse() for http2', async () => {
     expect(mediaRows[0].mediaID).toBe("122106318890759940");
     expect(mediaRows[0].accessibilityCaption).toBe("May be an image of eclipse");
 });
+
+test('FacebookAccountController.savePosts() for http3, http4, and http5', async () => {
+    mitmController.addTestData("managePosts", "http3-request.txt", "http3-response.json");
+    mitmController.addTestData("managePosts", "http4-request.txt", "http4-response.json");
+    mitmController.addTestData("managePosts", "http5-request.txt", "http5-response.json");
+    
+    for (let i = 0; i < mitmController.responseData.length; i++) {
+        expect(mitmController.responseData[i].processed).toBe(false);
+    }
+    
+    const progress = await controller.savePosts();
+    expect(progress.storiesSaved).toBe(0);
+
+    for (let i = 0; i < mitmController.responseData.length; i++) {
+        expect(mitmController.responseData[i].processed).toBe(true);
+    }
+
+    // there should be no new data
+    const userRows: FacebookUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as FacebookUserRow[];
+    expect(userRows.length).toBe(0);
+    const storyRows: FacebookStoryRow[] = database.exec(controller.db, "SELECT * FROM story", [], "all") as FacebookStoryRow[];
+    expect(storyRows.length).toBe(0);
+});
+
+test('FacebookAccountController.savePosts() for http1, http2, http3, http4, and http5', async () => {
+    mitmController.addTestData("managePosts", "http1-request.txt", "http1-response.json");
+    mitmController.addTestData("managePosts", "http2-request.txt", "http2-response.json");
+    mitmController.addTestData("managePosts", "http3-request.txt", "http3-response.json");
+    mitmController.addTestData("managePosts", "http4-request.txt", "http4-response.json");
+    mitmController.addTestData("managePosts", "http5-request.txt", "http5-response.json");
+
+    for (let i = 0; i < mitmController.responseData.length; i++) {
+        expect(mitmController.responseData[i].processed).toBe(false);
+    }
+    
+    const progress = await controller.savePosts();
+    expect(progress.storiesSaved).toBe(13);
+
+    for (let i = 0; i < mitmController.responseData.length; i++) {
+        expect(mitmController.responseData[i].processed).toBe(true);
+    }
+
+    // there should be 1 user
+    const userRows: FacebookUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as FacebookUserRow[];
+    expect(userRows.length).toBe(1);
+
+    // from http1 and http2, there should be 12 stories + 1 attached story
+    const storyRows: FacebookStoryRow[] = database.exec(controller.db, "SELECT * FROM story", [], "all") as FacebookStoryRow[];
+    expect(storyRows.length).toBe(13);
+});

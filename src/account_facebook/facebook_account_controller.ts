@@ -45,7 +45,6 @@ import {
 
 // for building the static archive site
 import { saveArchive } from './archive';
-import { l } from 'vite/dist/node/types.d-aGj9QkWt';
 
 function getURLFileExtension(urlString: string) {
     const url = new URL(urlString);
@@ -783,7 +782,7 @@ export class FacebookAccountController {
         log.info(`FacebookAccountController.savePosts: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            this.parseAPIResponse(i);
+            await this.parseAPIResponse(i);
         }
 
         return this.progress;
