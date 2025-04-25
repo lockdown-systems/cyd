@@ -8,6 +8,14 @@ import type { Account } from '../../../shared_types';
 import AboutView from './AboutView.vue';
 import { openURL } from '../util';
 
+defineProps<{
+  updatesAvailable: boolean;
+}>();
+
+const emit = defineEmits<{
+  checkForUpdatesClicked: []
+}>()
+
 // Get the global emitter
 const vueInstance = getCurrentInstance();
 const emitter = vueInstance?.appContext.config.globalProperties.emitter;
@@ -201,8 +209,7 @@ const signOutClicked = async () => {
 };
 
 const checkForUpdatesClicked = async () => {
-  console.log('Checking for updates');
-  await window.electron.checkForUpdates();
+  emit('checkForUpdatesClicked');
   userBtnShowMenu.value = false;
 };
 
@@ -318,7 +325,7 @@ onUnmounted(async () => {
         </div>
       </div>
 
-      <div class="main-content col flex-grow-1">
+      <div class="flex-grow-1">
         <!-- Accounts -->
         <AccountView v-for="account in accounts" :key="account.id" :account="account"
           :class="{ 'hide': hideAllAccounts || activeAccountID !== account.id }" @account-selected="accountSelected"
