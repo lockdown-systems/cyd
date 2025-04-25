@@ -27,19 +27,14 @@ export function emptyFacebookProgress(): FacebookProgress {
     };
 }
 
-// TODO: Add additional fields here
 export type FacebookDatabaseStats = {
-    postsSaved: number;
-    postsDeleted: number;
-    repostsSaved: number;
-    repostsDeleted: number;
+    storiesSaved: number;
+    storiesDeleted: number;
 }
 
 export function emptyFacebookDatabaseStats(): FacebookDatabaseStats {
     return {
-        postsSaved: 0,
-        postsDeleted: 0,
-        repostsSaved: 0,
-        repostsDeleted: 0,
+        storiesSaved: 0,
+        storiesDeleted: 0,
     }
 }

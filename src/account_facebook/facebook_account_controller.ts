@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs'
+import { URL } from 'url';
 
 import fetch from 'node-fetch';
 import { app, session } from 'electron'
@@ -30,20 +31,30 @@ import {
 import { IMITMController } from '../mitm';
 import {
     FacebookJobRow,
+    FacebookStoryRow,
     convertFacebookJobRowToFacebookJob,
-    FBAPIResponseProfileCometManagePosts,
-    FBAPIResponseProfileCometManagePosts2,
-    FBAPIResponseProfileCometManagePostsPageInfo,
     isFBAPIResponseProfileCometManagePosts,
     isFBAPIResponseProfileCometManagePosts2,
     isFBAPIResponseProfileCometManagePostsPageInfo,
-    FBAPINode,
+    FBNode,
+    FBActor,
     FBAttachment,
+    FBAttachedStory,
     FBMedia,
 } from './types'
 
 // for building the static archive site
 import { saveArchive } from './archive';
+
+function cleanFacebookURL(url: string) {
+    // Facebook URLs for some reason escape slashes, so we need to unescape them
+    return url.replace(/\//g, '/');
+}
+
+function getURLFileExtension(urlString: string) {
+    const url = new URL(urlString);
+    return url.pathname.split('.').pop();
+}
 
 export class FacebookAccountController {
     private accountUUID: string = "";
@@ -176,7 +187,7 @@ export class FacebookAccountController {
     attachedStoryID INTEGER, -- Foreign key to attached_story.id
     addedToDatabaseAt DATETIME NOT NULL,
     archivedAt DATETIME,
-    deletedPostAt DATETIME,
+    deletedStoryAt DATETIME,
     FOREIGN KEY(userID) REFERENCES user(userID),
     FOREIGN KEY(attachedStoryID) REFERENCES attached_story(id)
 );`,                `CREATE TABLE attached_story (
@@ -189,7 +200,7 @@ export class FacebookAccountController {
     storyID TEXT NOT NULL, -- Foreign key to story.storyID or attached_story.storyID
     mediaType TEXT NOT NULL, -- "Photo", "Video", "GenericAttachmentMedia"
     mediaID TEXT NOT NULL UNIQUE,
-    filename TEXT NOT NULL,
+    filename TEXT,
     isPlayable BOOLEAN,
     accessibilityCaption TEXT,
     title TEXT,
@@ -282,124 +293,326 @@ export class FacebookAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    async parseNode(postData: FBAPINode) {
+    async parseNode(data: FBNode) {
         log.debug("FacebookAccountController.parseNode: parsing node");
 
-        if (postData.__typename !== 'Story') {
+        if (data.__typename !== 'Story') {
             log.info("FacebookAccountController.parseNode: not a story, skipping");
             return;
         }
 
-        // TODO: parse users too
-
-        // Is this post already there?
-        const existingPost = exec(this.db, 'SELECT * FROM post WHERE postID = ?', [postData.id], "get") as FacebookPostRow;
-        if (existingPost) {
-            // First delete related media and URLs
-            exec(this.db, 'DELETE FROM post_media WHERE postId = ?', [postData.id]);
-            exec(this.db, 'DELETE FROM post_url WHERE postId = ?', [postData.id]);
-
-            // Delete the existing post to re-import
-            exec(this.db, 'DELETE FROM post WHERE postID = ?', [postData.id]);
+        // Save the user
+        let userID = null;
+        if (data.comet_sections && data.comet_sections.actor_photo.story.actors.length) {
+            userID = await this.saveUser(data.comet_sections.actor_photo.story.actors[0]);
         }
 
-        // Save post
-        const sql = 'INSERT INTO post (postID, createdAt, title, text, path, isReposted, repostID, hasMedia, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-        const params = [
-            postData.id,
-            new Date(postData.creation_time * 1000),
-            postData.title,
-            postData.message?.text,
-            postData.url,
-            postData.attached_story !== null ? 1 : 0,
-            postData.attached_story?.id,
-            postData.attachments && postData.attachments.length > 0 ? 1 : 0,
-            new Date(),
-        ];
-        log.debug("FacebookAccountController.parseNode: executing", sql, params);
-        exec(this.db, sql, params);
-
-        if (postData.attachments && postData.attachments.length > 0) {
-            log.info("FacebookAccountController.parseNode: importing media for post", postData.id);
-            await this.parseAttachment(postData.id, postData.attachments);
+        // Find lifeEventTitle, for life events (like birthdays)
+        let lifeEventTitle = null;
+        if(
+            data.attachments && 
+            data.attachments.length > 0 && 
+            data.attachments[0].style_type_renderer.__typename == "StoryAttachmentLifeEventStyleRenderer" &&
+            data.attachments[0].style_type_renderer.attachment.style_infos &&
+            data.attachments[0].style_type_renderer.attachment.style_infos.length > 0 &&
+            data.attachments[0].style_type_renderer.attachment.style_infos[0].life_event_title
+        ) {
+            lifeEventTitle = data.attachments[0].style_type_renderer.attachment.style_infos[0].life_event_title;
         }
+
+        // See if there's an attached story
+        let attachedStoryID = null;
+        if (data.attached_story) {
+            attachedStoryID = await this.saveAttachedStory(data.attached_story);
+        }
+
+        // Check if the story is already in the database
+        const existingStory = exec(this.db, 'SELECT * FROM story WHERE storyID = ?', [data.id], "get") as FacebookStoryRow;
+        if (existingStory) {
+            // Update existing story
+            exec(
+                this.db, 
+                'UPDATE story SET url = ?, createdAt = ?, text = ?, title = ?, lifeEventTitle = ?, userID = ?, attachedStoryID = ?, addedToDatabaseAt = ? WHERE storyID = ?', 
+                [
+                    data.url, // url
+                    new Date(data.creation_time * 1000), // createdAt
+                    data.message ? data.message.text : null, // text
+                    data.title ? data.title.text : null, // title
+                    lifeEventTitle, // lifeEventTitle
+                    userID, // userID
+                    attachedStoryID, // attachedStoryID
+                    new Date(), // addedToDatabaseAt
+                    data.id, // storyID
+                ]
+            );
+        } else {
+            // Save the story
+            exec(
+                this.db, 
+                'INSERT INTO story (storyID, url, createdAt, text, title, lifeEventTitle, userID, attachedStoryID, addedToDatabaseAt, archivedAt, deletedStoryAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                [
+                    data.id, // storyID
+                    data.url, // url
+                    new Date(data.creation_time * 1000), // createdAt
+                    data.message ? data.message.text : null, // text
+                    data.title ? data.title.text : null, // title
+                    lifeEventTitle, // lifeEventTitle
+                    userID, // userID
+                    attachedStoryID, // attachedStoryID
+                    new Date(), // addedToDatabaseAt
+                    null, // archivedAt
+                    null, // deletedStoryAt
+                ]
+            );
+        }
+
+        if (data.attachments && data.attachments.length > 0) {
+            log.info("FacebookAccountController.parseNode: parsing attachments", data.id);
+            for(const attachment of data.attachments) {
+                await this.parseAttachment(data.id, attachment);
+            }
+        }
+
+        log.info("FacebookAccountController.parseNode: story saved", data.id);
 
         // Update progress
         this.progress.postsSaved++;
     }
 
-    async parseAttachment(postId: string, postMedia: FBAttachment[]) {
-        console.log("\n\n=============\n\n")
-        console.log(postMedia)
-        for (const mediaItem of postMedia) {
+    async saveUser(actor: FBActor): Promise<string> {
+        const userID = actor.id;
+        const url = cleanFacebookURL(actor.url);
+        const name = actor.name;
+        const profilePictureURL = cleanFacebookURL(actor.profile_picture.uri);
 
-            console.log(mediaItem.style_type_renderer.attachment)
-            let sourceURI: string;
-            let mediaData: FBMedia;
+        // Find the profile picture filename
+        const profilePicturesDir = path.join(this.accountDataPath, 'profile_pictures');
+        if (!fs.existsSync(profilePicturesDir)) {
+            fs.mkdirSync(profilePicturesDir, { recursive: true });
+        }
 
-            if (mediaItem.style_type_renderer.attachment.all_subattachments) {
-                // TODO: Implement multiple attachment/images
-                log.info("FacebookAccountController.parseAttachment: multiple attachments, not implemented yet");
-                return;
-            } else if (mediaItem.style_type_renderer.attachment.media) {
-                mediaData = mediaItem.style_type_renderer.attachment.media;
+        const fileExtension = getURLFileExtension(profilePictureURL);
+        const profilePictureFilename = `${userID}.${fileExtension}`;
 
-                if (!mediaData.image?.uri) {
-                    // TODO: Implement attachments like Video, ExternalShareAttachment, FBShortsShareAttachment, etc.
-                    log.info("FacebookAccountController.parseAttachment: multiple attachments, not implemented yet");
-                    return;
-                }
+        const destPath = path.join(profilePicturesDir, profilePictureFilename);
 
-                if (mediaData.__typename === 'GenericAttachmentMedia') {
-                    const searchParams = new URL(mediaData.image.uri).searchParams
-                    sourceURI = searchParams.get('url') || '';
-                } else {
-                    sourceURI = mediaData.image.uri;
-                }
+        // Check if the profile picture already exists
+        if (fs.existsSync(destPath)) {
+            log.info("FacebookAccountController.saveUser: profile picture already exists, skipping download");
+        } else {
+            // Download the profile picture
+            const isMediaSaved = await this.downloadFile(profilePictureURL, destPath);
+            if (!isMediaSaved) {
+                log.error("FacebookAccountController.saveUser: profile picture could not be saved");
+            }
+        }
+
+        // Is the user already in the database?
+        const existingUser = exec(this.db, 'SELECT * FROM user WHERE userID = ?', [userID], "get");
+        if (existingUser) {
+            // Update existing user
+            exec(
+                this.db, 
+                'UPDATE user SET url = ?, name = ?, profilePictureFilename = ? WHERE userID = ?', 
+                [url, name, profilePictureFilename, userID]
+            );
+        } else {
+            // Save the user
+            exec(
+                this.db, 
+                'INSERT INTO user (userID, url, name, profilePictureFilename) VALUES (?, ?, ?, ?)', 
+                [userID, url, name, profilePictureFilename]
+            );
+        }
+        log.info("FacebookAccountController.saveUser: user saved", userID, url, name, profilePictureFilename);
+        return userID;
+    }
+
+    async saveAttachedStory(attachedStory: FBAttachedStory): Promise<string> {
+        const storyID = attachedStory.id;
+        const text = attachedStory.comet_sections.message ? attachedStory.comet_sections.message.text : null;
+
+        // Is the attached story already in the database?
+        const existingAttachedStory = exec(this.db, 'SELECT * FROM attached_story WHERE storyID = ?', [storyID], "get");
+        if (existingAttachedStory) {
+            // Update existing attached story
+            exec(
+                this.db, 
+                'UPDATE attached_story SET text = ? WHERE userID = ?', 
+                [text]
+            );
+        } else {
+            // Save the attached story
+            exec(
+                this.db, 
+                'INSERT INTO attached_story (storyID, text) VALUES (?, ?)',
+                [storyID, text]
+            );
+        }
+
+        if (attachedStory.attachments && attachedStory.attachments.length > 0) {
+            log.info("FacebookAccountController.saveAttachedStory: parsing attachments", storyID);
+            for(const attachment of attachedStory.attachments) {
+                await this.parseAttachment(attachedStory.id, attachment);
+            }
+        }
+
+        log.info("FacebookAccountController.saveAttachedStory: attached story saved", storyID);
+        return storyID;
+    }
+
+    async saveMedia(storyID: string, media: FBMedia, title: string | null): Promise<string | null> {
+        const mediaType = media.__typename;
+        const mediaID = media.id;
+
+        let url: string | null = null;
+        if(media.image) {
+            url = media.image.uri;
+        } else if(media.fallback_image) {
+            url = media.fallback_image.uri;
+        } else {
+            log.info("FacebookAccountController.parseAttachment: no image found, skipping download");
+        }
+
+        let filename: string | null = null;
+        if(url) {
+            url = cleanFacebookURL(url);
+
+            // Find the media filename
+            const imagesDir = path.join(this.accountDataPath, 'images');
+            if (!fs.existsSync(imagesDir)) {
+                fs.mkdirSync(imagesDir, { recursive: true });
+            }
+
+            const fileExtension = getURLFileExtension(url);
+            filename = `${mediaID}.${fileExtension}`;
+
+            const destPath = path.join(imagesDir, filename);
+
+            // Check if the file already exists
+            if (fs.existsSync(destPath)) {
+                log.info("FacebookAccountController.saveMedia: image already exists, skipping download");
             } else {
-                log.info("FacebookAccountController.parseAttachment: not a known attachment structure, skipping");
+                // Download the image
+                const isMediaSaved = await this.downloadFile(url, destPath);
+                if (!isMediaSaved) {
+                    log.error("FacebookAccountController.saveMedia: image could not be saved");
+                }
+            }
+        }
+
+        // Is the media already in the database?
+        const existingMedia = exec(this.db, 'SELECT * FROM media WHERE mediaID = ?', [mediaID], "get");
+        if (existingMedia) {
+            // Update existing media
+            exec(
+                this.db,
+                'UPDATE media SET storyID = ?, mediaType = ?, filename = ?, isPlayable = ?, accessibilityCaption = ?, title = ?, url = ? WHERE mediaID = ?',
+                [
+                    storyID, // storyID
+                    mediaType, // mediaType
+                    filename, // filename
+                    media.is_playable ? 1 : 0, // isPlayable
+                    media.accessibility_caption || null, // accessibilityCaption
+                    title, // title
+                    url, // url
+                    mediaID // mediaID
+                ]
+            );
+        } else {
+            // Save the media
+            exec(
+                this.db,
+                'INSERT INTO media (storyID, mediaType, mediaID, filename, isPlayable, accessibilityCaption, title, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    storyID, // storyID
+                    mediaType, // mediaType
+                    mediaID, // mediaID
+                    filename, // filename
+                    media.is_playable ? 1 : 0, // isPlayable
+                    media.accessibility_caption || null, // accessibilityCaption
+                    title, // title
+                    url // url
+                ]
+            );
+        }
+
+        log.info("FacebookAccountController.saveMedia: media saved", mediaID, storyID, mediaType);
+        return mediaID;
+    }
+
+    async parseAttachment(storyID: string, attachment: FBAttachment) {
+        const type = attachment.style_type_renderer.__typename
+
+        if (type == "StoryAttachmentPhotoStyleRenderer") {
+            // Single photo
+            if(!attachment.style_type_renderer.attachment.media) {
+                log.info("FacebookAccountController.parseAttachment: no media found, skipping");
+                return;
+            }
+            await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, null);
+
+        } else if (type == "StoryAttachmentAlbumStyleRenderer") {
+            // Multiple photos
+            if(!attachment.style_type_renderer.attachment.all_subattachments || !attachment.style_type_renderer.attachment.all_subattachments.nodes.length) {
+                log.info("FacebookAccountController.parseAttachment: no media found, skipping");
                 return;
             }
 
-            const filename = path.basename(sourceURI.substring(0, sourceURI.indexOf('?')));
-            const mediaId = `${postId}_${path.basename(filename)}`;
-
-            // Create destination directory if it doesn't exist
-            const mediaDir = path.join(this.accountDataPath, 'media');
-            if (!fs.existsSync(mediaDir)) {
-                fs.mkdirSync(mediaDir, { recursive: true });
+            for (const mediaItem of attachment.style_type_renderer.attachment.all_subattachments.nodes) {
+                await this.saveMedia(storyID, mediaItem.media, null);
             }
 
-            const destPath = path.join(mediaDir, filename);
-            try {
-                const isMediaSaved = await this.savePostMedia(sourceURI, destPath);
-                if (isMediaSaved) {
-                    exec(this.db,
-                        'INSERT INTO post_media (mediaId, postId, type, uri, description, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?)',
-                        [
-                            mediaId,
-                            postId,
-                            mediaData.__typename,
-                            sourceURI,
-                            mediaData.accessibility_caption || null,
-                            new Date()
-                        ]
-                    );
+        } else if (type == "StoryAttachmentFallbackStyleRenderer") {
+            // Attached story
+
+            // If there's attached media, save it
+            let mediaID: string | null = null;
+            if(attachment.style_type_renderer.attachment.media) {
+                const title = attachment.style_type_renderer.attachment.title || null;
+                mediaID = await this.saveMedia(storyID, attachment.style_type_renderer.attachment.media, title);
+            }
+
+            // Get the description and title
+            const description = attachment.style_type_renderer.attachment.description?.text || null;
+            const title = attachment.style_type_renderer.attachment.title || null;
+
+            // Get the URL
+            let url: string | null = null;
+            if(attachment.style_type_renderer.attachment.url) {
+                const fbURL = new URL(cleanFacebookURL(attachment.style_type_renderer.attachment.url));
+                if(fbURL.host == "l.facebook.com") {
+                    // This is a Facebook URL, so we need to extract the 'u' parameter
+                    // Example: 'https://l.facebook.com/l.php?u=https%3A%2F%2Fstardewvalleywiki.com%2FJojaMart&h=AT09n5aPSKTkHBJlfSlRhgZqwXiTLr6ZBUzspjCefK6zPM9dnj4pLnVfCGyGj9_jBeeC1FJhttz4Kq--j3Es_G3zy92hMrLaruAtm8pr7RSzU-q9V10OaZBZnQyqfuaLV4kJW2oh8VYSVY3ZVP0MSaQ&s=1'
+                    url = fbURL.searchParams.get('u') || null;
                 } else {
-                    log.error('FacebookAccountController.parseAttachment: Media could not be saved.')
+                    url = cleanFacebookURL(attachment.style_type_renderer.attachment.url);
                 }
-            } catch (error) {
-                log.error(`FacebookAccountController.parseAttachment: Error saving media: ${error}`);
             }
+
+            // Save the share
+            const existingShare = exec(this.db, 'SELECT * FROM share WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
+            if (!existingShare) {
+                // Save the share
+                exec(
+                    this.db,
+                    'INSERT INTO share (storyID, description, title, url, mediaID) VALUES (?, ?, ?, ?, ?)',
+                    [
+                        storyID,
+                        description,
+                        title,
+                        url,
+                        mediaID
+                    ]
+                );
+            }
+
+        } else {
+            log.info("FacebookAccountController.parseAttachment: not a valid attachment type, skipping", attachment.style_type_renderer.__typename);
         }
     }
 
-    async savePostMedia(sourceURI: string, destPath: string) {
-        if (!this.account) {
-            throw new Error("Account not found");
-        }
-
-        // Download and save media from the mediaPath
+    async downloadFile(sourceURI: string, destPath: string) {
         try {
             const response = await fetch(sourceURI, {});
             if (!response.ok) {
@@ -411,35 +624,12 @@ export class FacebookAccountController {
             fs.createWriteStream(destPath).write(buffer);
             return true;
         } catch (error) {
-            log.error(`FacebookAccountController.savePostMedia: Error downloading media: ${error}`)
+            log.error(`FacebookAccountController.downloadFile: Error downloading file: ${error}`)
             return false;
         }
     }
 
-    async getStructuredGraphQLData(responseDataBody: string): Promise<FBAPIResponse[]> {
-        log.info("FacebookAccountController.getStructuredGraphQLData: converting string to structured JSON");
-
-        const postArray = responseDataBody.split('\n');
-        const resps = [];
-        for (const post of postArray) {
-            // Handle an empty newline at the end of the file
-            if (post.trim() === "") {
-                continue;
-            }
-
-            // Skip individual JSON errors
-            try {
-                const resp = JSON.parse(post) as FBAPIResponse;
-                resps.push(resp);
-            } catch (e) {
-                log.error("FacebookAccountController.getStructuredGraphQLData: error parsing JSON", e, post)
-            }
-        }
-
-        return resps;
-    }
-
-    async parseGraphQLPostData(responseIndex: number) {
+    async parseAPIResponse(responseIndex: number) {
         const responseData = this.mitmController.responseData[responseIndex];
 
         // Already processed?
@@ -454,7 +644,7 @@ export class FacebookAccountController {
             queryObject[key] = decodeURIComponent(value);
         }
         if(!queryObject['fb_api_req_friendly_name']) {
-            log.error("FacebookAccountController.parseGraphQLPostData: fb_api_req_friendly_name not found in query string");
+            log.error("FacebookAccountController.parseAPIResponse: fb_api_req_friendly_name not found in query string");
             responseData.processed = true;
             return;
         }
@@ -466,14 +656,14 @@ export class FacebookAccountController {
             'CometManagePostsFeedRefetchQuery',
         ];
         if (!validFriendlyNames.includes(friendlyName)) {
-            log.debug("FacebookAccountController.parseGraphQLPostData: fb_api_req_friendly_name not in valid list", friendlyName);
+            log.debug("FacebookAccountController.parseAPIResponse: fb_api_req_friendly_name not in valid list", friendlyName);
             responseData.processed = true;
             return;
         }
 
         // Check if the response status is ok
         if (responseData.status !== 200) {
-            log.error("FacebookAccountController.parseGraphQLPostData: response data status code", responseData.status)
+            log.error("FacebookAccountController.parseAPIResponse: response data status code", responseData.status)
             responseData.processed = true;
             return;
         }
@@ -498,7 +688,7 @@ export class FacebookAccountController {
                     } else if (resp.data?.user?.timeline_manage_feed_units?.page_info) {
                         edges = resp.data.user.timeline_manage_feed_units.page_info;
                     } else {
-                        log.error("FacebookAccountController.parseGraphQLPostData: no edges found in response");
+                        log.error("FacebookAccountController.parseAPIResponse: no edges found in response");
                         continue;
                     }
                     
@@ -518,7 +708,7 @@ export class FacebookAccountController {
 
             } catch (e) {
                 // Skip individual JSON errors
-                log.error("FacebookAccountController.parseGraphQLPostData: error parsing JSON", e, jsonString)
+                log.error("FacebookAccountController.parseAPIResponse: error parsing JSON", e, jsonString)
             }
         }
     }
@@ -528,7 +718,7 @@ export class FacebookAccountController {
         log.info(`FacebookAccountController.savePosts: parsing ${this.mitmController.responseData.length} responses`);
 
         for (let i = 0; i < this.mitmController.responseData.length; i++) {
-            this.parseGraphQLPostData(i);
+            this.parseAPIResponse(i);
         }
 
         return this.progress;
@@ -612,20 +802,16 @@ export class FacebookAccountController {
             this.initDB();
         }
 
-        // Count total posts
-        const postsSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM post", [], "get") as Sqlite3Count;
-        log.info('FacebookAccountController.getDatabaseStats: posts count:', postsSaved);
+        // Count total stories
+        const storiesSaved: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM story", [], "get") as Sqlite3Count;
+        log.info('FacebookAccountController.getDatabaseStats: stories saved:', storiesSaved);
 
-        // Count shared posts (reposts)
-        const repostsSaved: Sqlite3Count = exec(this.db,
-            "SELECT COUNT(*) AS count FROM post WHERE isReposted = 1",
-            [],
-            "get"
-        ) as Sqlite3Count;
-        log.info('FacebookAccountController.getDatabaseStats: reposts count:', repostsSaved);
+        // Count deleted stories
+        const storiesDeleted: Sqlite3Count = exec(this.db, "SELECT COUNT(*) AS count FROM story WHERE deletedStoryAt IS NOT NULL", [], "get") as Sqlite3Count;
+        log.info('FacebookAccountController.getDatabaseStats: stories deleted:', storiesDeleted);
 
-        databaseStats.postsSaved = postsSaved.count;
-        databaseStats.repostsSaved = repostsSaved.count;
+        databaseStats.storiesSaved = storiesSaved.count;
+        databaseStats.storiesDeleted = storiesDeleted.count;
         return databaseStats;
     }
 

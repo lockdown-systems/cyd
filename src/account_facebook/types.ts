@@ -51,7 +51,7 @@ export interface FacebookStoryRow {
     // Cyd metadata
     addedToDatabaseAt: string;
     archivedAt: string | null;
-    deletedPostAt: string | null;
+    deletedStoryAt: string | null;
 }
 
 // Facebook attached story
@@ -69,7 +69,7 @@ export interface FacebookMediaRow {
     mediaID: string;
     // We download the media and save it to the filesystem, and save the path to the file here
     // To make unique filenames, this will be the mediaID + the file extension
-    filename: string;
+    filename?: string;
     // If it's Photo
     isPlayable?: boolean;
     accessibilityCaption?: string;
@@ -129,7 +129,7 @@ export function convertFacebookJobRowToFacebookJob(row: FacebookJobRow): Faceboo
 // Facebook API types
 // ==================
 
-export interface FBAPIPrivacyRowInput {
+export interface FBPrivacyRowInput {
     allow: any[];
     base_state: string; // `FRIENDS`
     deny: any[];
@@ -137,7 +137,7 @@ export interface FBAPIPrivacyRowInput {
     tag_expansion_state: string; // `UNSPECIFIED`
 };
 
-export interface FBAPIActor {
+export interface FBActor {
     __typename: string;
     __isActor: string;
     id: string;
@@ -235,13 +235,24 @@ export interface FBAttachment {
     };
 }
 
-export interface FBAPIExtensions {
+export interface FBAttachedStory {
+    attachments: FBAttachment[];
+    comet_sections: {
+        aggregated_stories: any;
+        message?: {
+            text: string;
+        };
+    };
+    id: string;
+};
+
+export interface FBExtensions {
     is_final: boolean;
     prefetch_uris_v2?: any;
     sr_payload?: any;
 }
 
-export interface FBAPINode {
+export interface FBNode {
     __typename: string; // "Story", "User"
     id: string;
     comet_sections?: {
@@ -250,7 +261,7 @@ export interface FBAPINode {
             __isICometStorySection: string;
             is_prod_eligible: boolean;
             story: {
-                actors: FBAPIActor[];
+                actors: FBActor[];
                 comet_sections: any;
                 attachments: any[];
                 ads_data: any;
@@ -269,11 +280,11 @@ export interface FBAPINode {
                     privacy_scope_renderer: {
                         __typename: string;
                         __isPrivacySelectorRenderer: string;
-                        privacy_row_input: FBAPIPrivacyRowInput;
+                        privacy_row_input: FBPrivacyRowInput;
                         scope: {
                             selected_row_override: any;
                             selected_option: {
-                                privacy_row_input: FBAPIPrivacyRowInput;
+                                privacy_row_input: FBPrivacyRowInput;
                                 id: string;
                             };
                             can_viewer_edit: boolean;
@@ -331,18 +342,11 @@ export interface FBAPINode {
     };
     summary: any;
     url: string;
-    title: any;
-    attachments: FBAttachment[];
-    attached_story?: null | {
-        attachments: FBAttachment[];
-        comet_sections: {
-            aggregated_stories: any;
-            message: null | {
-                text: string;
-            };
-        };
-        id: string;
+    title?: {
+        text: string;
     };
+    attachments: FBAttachment[];
+    attached_story?: FBAttachedStory;
     creation_time: number;
     backdated_time: null | number;
     can_viewer_delete: boolean;
@@ -368,7 +372,7 @@ export interface FBAPIResponseProfileCometManagePosts {
         user?: {
             timeline_manage_feed_units: {
                 edges: {
-                    node: FBAPINode,
+                    node: FBNode,
                     cursor: string;
                 }[];
             };
@@ -378,7 +382,7 @@ export interface FBAPIResponseProfileCometManagePosts {
         node?: {
             timeline_manage_feed_units: {
                 edges: {
-                    node: FBAPINode,
+                    node: FBNode,
                     cursor: string;
                 }[];
             };
@@ -386,7 +390,7 @@ export interface FBAPIResponseProfileCometManagePosts {
             profile_pinned_post?: any;
         }
     },
-    extensions: FBAPIExtensions;
+    extensions: FBExtensions;
 }
 
 // ProfileCometManagePostsTimelineRootQuery (2nd json object in the response)
@@ -394,10 +398,10 @@ export interface FBAPIResponseProfileCometManagePosts2 {
     label: string; // 'ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units'
     path: (string | number)[];
     data: {
-        node: FBAPINode;
+        node: FBNode;
         cursor: string;
     };
-    extensions: FBAPIExtensions;
+    extensions: FBExtensions;
 }
 
 // ProfileCometManagePostsTimelineRootQuery, CometManagePostsFeedRefetchQuery
@@ -409,7 +413,7 @@ export interface FBAPIResponseProfileCometManagePostsPageInfo {
     data: {
         page_info: any;
     };
-    extensions: FBAPIExtensions;
+    extensions: FBExtensions;
 }
 
 export function isFBAPIResponseProfileCometManagePosts(item: any): boolean {
