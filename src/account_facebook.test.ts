@@ -5,6 +5,13 @@ import { beforeEach, afterEach, test, expect, vi } from 'vitest';
 import { Proxy } from "http-mitm-proxy"
 
 import {
+    FacebookUserRow,
+    FacebookStoryRow,
+    // FacebookAttachedStoryRow,
+    // FacebookMediaRow,
+    // FacebookMediaStoryRow,
+    // FacebookMediaAttachedStoryRow,
+    // FacebookShareRow,
 } from './account_facebook';
 
 // Mock the util module
@@ -85,15 +92,17 @@ class MockMITMController implements IMITMController {
     async clearProcessed(): Promise<void> { }
 
     // Just used in the tests
-    setTestdata(filename: string) {
+    setTestdata(folder: string, requestFilename: string, responseFilename: string) {
+        const requestBody = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'facebook', folder, requestFilename), 'utf8');
+        const responseBody = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'facebook', folder, responseFilename), 'utf8');
         this.responseData = [
             {
                 host: 'www.facebook.com',
                 url: '/api/graphql/',
                 status: 200,
-                requestBody: '',
+                requestBody: requestBody,
                 responseHeaders: {},
-                responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', filename), 'utf8'),
+                responseBody: responseBody,
                 processed: false
             }
         ];
@@ -119,6 +128,9 @@ beforeEach(() => {
     mitmController = new MockMITMController();
     controller = new FacebookAccountController(account.id, mitmController);
     controller.initDB();
+
+    // Mock downloadFile for tests
+    controller.downloadFile = vi.fn().mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -156,55 +168,27 @@ test('FacebookAccountController.constructor() creates a database for the user', 
     expect(files).toContain('data.sqlite3');
 })
 
-test('FacebookAccountController.getStructuredGraphQLData() handles multiple objects is list post response', async () => {
-    mitmController.setTestdata("FBAPIManagePosts1.json")
+test('FacebookAccountController.parseAPIResponse() for http1', async () => {
+    mitmController.setTestdata("managePosts", "http1-request.txt", "http1-response.json");
+    await controller.parseAPIResponse(0);
+    
+    // there should be 1 user
+    const userRows: FacebookUserRow[] = database.exec(controller.db, "SELECT * FROM user", [], "all") as FacebookUserRow[];
+    expect(userRows.length).toBe(1);
+    expect(userRows[0].name).toBe("Chase Westbrook");
 
-    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].responseBody);
-    expect(resps.length).toBe(9);
-    expect(resps[0].data?.node?.__typename).toBe("User");
-    expect(resps[1].label).toBe("VideoPlayerRelay_video$defer$InstreamVideoAdBreaksPlayer_video");
-    expect(resps[2].label).toBe("CometFeedStoryFBReelsAttachment_story$defer$FBReelsFeedbackBar_feedback");
-    expect(resps[3].label).toBe("ProfileCometTimelineFeed_user$stream$ProfileCometTimelineFeed_user_timeline_list_feed_units");
-    expect(resps[4].label).toBe("ProfileCometTimelineFeed_user$stream$ProfileCometTimelineFeed_user_timeline_list_feed_units");
-    expect(resps[5].label).toBe("CometFeedStoryVideoAttachmentVideoPlayer_video$defer$VideoPlayerWithVideoCardsOverlay_video");
-    expect(resps[6].label).toBe("CometFeedStoryVideoAttachmentVideoPlayer_video$defer$VideoPlayerWithLiveVideoEndscreenAndChaining_video");
-    expect(resps[7].label).toBe("VideoPlayerRelay_video$defer$InstreamVideoAdBreaksPlayer_video");
-    expect(resps[8].label).toBe("ProfileCometTimelineFeed_user$defer$ProfileCometTimelineFeed_user_timeline_list_feed_units$page_info");
+    // there should be 9 stories
+    const storyRows: FacebookStoryRow[] = database.exec(controller.db, "SELECT * FROM story", [], "all") as FacebookStoryRow[];
+    expect(storyRows.length).toBe(9);
+    expect(storyRows[0].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEyODIyOTYxODc1OTk0MDoxMjIxMjgyMjk2MTg3NTk5NDA=");
+    expect(storyRows[1].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMzg5NTU1ODc1OTk0MDoxMjIxMTM4OTU1NTg3NTk5NDA=");
+    expect(storyRows[2].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMzg5NTE3NDc1OTk0MDoxMjIxMTM4OTUxNzQ3NTk5NDA=");
+    expect(storyRows[3].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMzg5NDgzMjc1OTk0MDoxMjIxMTM4OTQ4MzI3NTk5NDA=");
+    expect(storyRows[4].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMjgzNjY3Mjc1OTk0MDoxMjIxMTI4MzY2NzI3NTk5NDA=");
+    expect(storyRows[5].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMjgzNjQzMjc1OTk0MDoxMjIxMTI4MzY0MzI3NTk5NDA=");
+    expect(storyRows[6].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMyOTM3Mjc1OTk0MDoxMjIxMDYzMjkzNzI3NTk5NDA=");
+    expect(storyRows[7].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMxOTk2NDc1OTk0MDoxMjIxMDYzMTk5NjQ3NTk5NDA=");
+    expect(storyRows[8].storyID).toBe("UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMxOTgyNjc1OTk0MDoxMjIxMDYzMTk4MjY3NTk5NDA=");
+
 })
 
-test('FacebookAccountController.getStructuredGraphQLData() handles manage post objects', async () => {
-    mitmController.setTestdata("FBAPIManagePosts4.json")
-
-    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].responseBody);
-    expect(resps.length).toBe(5);
-    expect(resps[0].data?.user?.timeline_manage_feed_units?.edges?.[0].node.__typename).toBe("Story");
-    expect(resps[1].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
-    expect(resps[2].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
-    expect(resps[3].label).toBe("ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units");
-    expect(resps[4].label).toBe("ProfileCometManagePostsTimelineFeed_user$defer$CometManagePostsFeed_user_timeline_manage_feed_units$page_info");
-})
-
-test('FacebookAccountController.getStructuredGraphQLData() handles one object', async () => {
-    mitmController.setTestdata("FBAPIManagePosts2.json")
-
-    const resps = await controller.getStructuredGraphQLData(mitmController.responseData[0].responseBody);
-    expect(resps.length).toBe(1);
-    expect(resps[0].data?.node?.__typename).toBe("User");
-})
-
-test('FacebookAccountController.savePosts() test data 4', async () => {
-    mitmController.setTestdata("FBAPIManagePosts4.json")
-
-    // Save all posts in manage posts feed
-    const progress = await controller.savePosts();
-    expect(progress.postsSaved).toBe(4);
-})
-
-
-test('FacebookAccountController.savePosts() test data 1', async () => {
-    mitmController.setTestdata("FBAPIManagePosts1.json")
-
-    // Ignore list feed posts
-    const progress = await controller.savePosts();
-    expect(progress.postsSaved).toBe(0);
-})

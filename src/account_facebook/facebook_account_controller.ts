@@ -645,7 +645,7 @@ export class FacebookAccountController {
         }
     }
 
-    async downloadFile(sourceURI: string, destPath: string) {
+    async downloadFile(sourceURI: string, destPath: string): Promise<boolean> {
         log.info("FacebookAccountController.downloadFile: downloading file", sourceURI, destPath);
         try {
             const response = await fetch(sourceURI, {});
@@ -729,12 +729,12 @@ export class FacebookAccountController {
                     for (let i = 0; i < edges.length; i++) {
                         const edge = edges[i];
                         if (edge.node) {
-                            this.parseNode(edge.node);
+                            await this.parseNode(edge.node);
                         }
                     }
                 } else if (isFBAPIResponseProfileCometManagePosts2(resp)) {
                     if(resp?.data?.node) {
-                        this.parseNode(resp.data.node);
+                        await this.parseNode(resp.data.node);
                     }
                 } else if (isFBAPIResponseProfileCometManagePostsPageInfo(resp)) {
                     // ignore this response
