@@ -47,7 +47,7 @@ export interface FacebookStoryRow {
     userID: string;
     // If there's an attached_story
     attachedStoryID?: number; // Foreign key to attachedStory.id
-    
+
     // Cyd metadata
     addedToDatabaseAt: string;
     archivedAt: string | null;
@@ -95,7 +95,7 @@ export interface FacebookMediaAttachedStoryRow {
 // Facebook shares (links, both internal and external)
 // attachment_type: FBShortsShareAttachment
 // attachment_type: ExternalShareAttachment
-// attachment_type: StoryAttachmentShareStyleRenderer -- a link, but the URL is not in the API response
+// attachment_type: StoryAttachmentShareStyleRenderer -- a link, but to extract the URL, we need to parse the media URL
 export interface FacebookShareRow {
     id: number;
     storyID: string;  // Foreign key to story.storyID
@@ -105,9 +105,8 @@ export interface FacebookShareRow {
     mediaID: string; // Foreign key to media.mediaID
 }
 
-// TODO: For attachments, when mediaType is "Video", the download URL is not displayed in the API response,
-// so we need to figure out how to get it. Same is true when mediaType is "GenericAttachmentMedia" (for an attached reel)
-// When __typename is "StoryAttachmentShareStyleRenderer", the attachment is a link, but the URL is not in the API response.
+// TODO: To download videos, we need to load the video page and extract the video URL from the HTML script tags.
+// TODO: To download reels, we we need to load the reel page and extract the video URL from the 'FBReelsContainerQuery' API response.
 
 // ==========
 // Converters
@@ -243,7 +242,7 @@ export interface FBAPIExtensions {
 }
 
 export interface FBAPINode {
-    __typename: string; // "Story"
+    __typename: string; // "Story", "User"
     id: string;
     comet_sections?: {
         actor_photo: {
@@ -354,18 +353,19 @@ export interface FBAPINode {
 // Manage Posts types that we care about
 
 // ProfileCometManagePostsTimelineRootQuery types:
-// - FBAPIResponseProfileCometManagePostsTimelineRootQuery1
-// - FBAPIResponseProfileCometManagePostsTimelineRootQuery2
-// - FBAPIResponseProfileCometManagePostsTimelinePageInfo
+// - FBAPIResponseProfileCometManagePosts
+// - FBAPIResponseProfileCometManagePosts2
+// - FBAPIResponseProfileCometManagePostsPageInfo
 
 // CometManagePostsFeedRefetchQuery types:
-// - FBAPIResponseCometManagePostsFeedRefetchQuery
-// - FBAPIResponseProfileCometManagePostsTimelinePageInfo
+// - FBAPIResponseProfileCometManagePosts
+// - FBAPIResponseProfileCometManagePostsPageInfo
 
 // ProfileCometManagePostsTimelineRootQuery (1st json object in the response)
-export interface FBAPIResponseProfileCometManagePostsTimelineRootQuery1 {
+// CometManagePostsFeedRefetchQuery (1st json object in the response)
+export interface FBAPIResponseProfileCometManagePosts {
     data: {
-        user: {
+        user?: {
             timeline_manage_feed_units: {
                 edges: {
                     node: FBAPINode,
@@ -373,14 +373,24 @@ export interface FBAPIResponseProfileCometManagePostsTimelineRootQuery1 {
                 }[];
             };
             id: string;
-            profile_pinned_post: any;
+            profile_pinned_post?: any;
+        },
+        node?: {
+            timeline_manage_feed_units: {
+                edges: {
+                    node: FBAPINode,
+                    cursor: string;
+                }[];
+            };
+            id: string;
+            profile_pinned_post?: any;
         }
     },
     extensions: FBAPIExtensions;
 }
 
 // ProfileCometManagePostsTimelineRootQuery (2nd json object in the response)
-export interface FBAPIResponseProfileCometManagePostsTimelineRootQuery2 {
+export interface FBAPIResponseProfileCometManagePosts2 {
     label: string; // 'ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units'
     path: (string | number)[];
     data: {
@@ -390,22 +400,52 @@ export interface FBAPIResponseProfileCometManagePostsTimelineRootQuery2 {
     extensions: FBAPIExtensions;
 }
 
-// CometManagePostsFeedRefetchQuery (1st json object in the response)
-export interface FBAPIResponseCometManagePostsFeedRefetchQuery {
-    data: {
-        node: FBAPINode;
-    };
-    extensions: FBAPIExtensions;
-}
-
 // ProfileCometManagePostsTimelineRootQuery, CometManagePostsFeedRefetchQuery
 // (last json object in the response, includes extensions.is_final == true)
 // this can be ignored
-export interface FBAPIResponseProfileCometManagePostsTimelinePageInfo {
+export interface FBAPIResponseProfileCometManagePostsPageInfo {
     label: string; // 'ProfileCometManagePostsTimelineFeed_user$defer$CometManagePostsFeed_user_timeline_manage_feed_units$page_info'
     path: (string | number)[];
     data: {
         page_info: any;
     };
     extensions: FBAPIExtensions;
+}
+
+export function isFBAPIResponseProfileCometManagePosts(item: any): boolean {
+    return item && 
+        item.data && 
+        (
+            // ProfileCometManagePostsTimelineRootQuery seems to return item.user
+            (
+                item.data.user && 
+                item.data.user.timeline_manage_feed_units &&
+                Array.isArray(item.data.user.timeline_manage_feed_units.edges)
+            ) ||
+            // CometManagePostsFeedRefetchQuery seems to return item.node
+            (
+                item.data.node && 
+                item.data.node.timeline_manage_feed_units &&
+                Array.isArray(item.data.node.timeline_manage_feed_units.edges)
+            )
+        ) &&
+        item.extensions && item.extensions.is_final !== undefined;
+}
+
+export function isFBAPIResponseProfileCometManagePosts2(item: any): boolean {
+    return item && 
+        item.label === 'ProfileCometManagePostsTimelineFeed_user$stream$CometManagePostsFeed_user_timeline_manage_feed_units' &&
+        Array.isArray(item.path) &&
+        item.data && 
+        item.data.node && 
+        item.extensions && item.extensions.is_final !== undefined;
+}
+
+export function isFBAPIResponseProfileCometManagePostsPageInfo(item: any): boolean {
+    return item && 
+        item.label === 'ProfileCometManagePostsTimelineFeed_user$defer$CometManagePostsFeed_user_timeline_manage_feed_units$page_info' &&
+        Array.isArray(item.path) &&
+        item.data && 
+        item.data.page_info && 
+        item.extensions && item.extensions.is_final === true;
 }

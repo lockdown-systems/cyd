@@ -31,8 +31,12 @@ import { IMITMController } from '../mitm';
 import {
     FacebookJobRow,
     convertFacebookJobRowToFacebookJob,
-    FacebookPostRow,
-    FBAPIResponse,
+    FBAPIResponseProfileCometManagePosts,
+    FBAPIResponseProfileCometManagePosts2,
+    FBAPIResponseProfileCometManagePostsPageInfo,
+    isFBAPIResponseProfileCometManagePosts,
+    isFBAPIResponseProfileCometManagePosts2,
+    isFBAPIResponseProfileCometManagePostsPageInfo,
     FBAPINode,
     FBAttachment,
     FBMedia,
@@ -153,76 +157,72 @@ export class FacebookAccountController {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL UNIQUE,
     value TEXT NOT NULL
+);`,
+                    `CREATE TABLE user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userID TEXT NOT NULL UNIQUE,
+    url TEXT NOT NULL,
+    name TEXT NOT NULL,
+    profilePictureFilename TEXT NOT NULL
+);`,                `CREATE TABLE story (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    storyID TEXT NOT NULL UNIQUE,
+    url TEXT NOT NULL,
+    createdAt DATETIME NOT NULL,
+    text TEXT,
+    title TEXT,
+    lifeEventTitle TEXT,
+    userID TEXT NOT NULL, -- Foreign key to user.userID
+    attachedStoryID INTEGER, -- Foreign key to attached_story.id
+    addedToDatabaseAt DATETIME NOT NULL,
+    archivedAt DATETIME,
+    deletedPostAt DATETIME,
+    FOREIGN KEY(userID) REFERENCES user(userID),
+    FOREIGN KEY(attachedStoryID) REFERENCES attached_story(id)
+);`,                `CREATE TABLE attached_story (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    storyID TEXT NOT NULL UNIQUE,
+    text TEXT NOT NULL
+);`,
+                    `CREATE TABLE media (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    storyID TEXT NOT NULL, -- Foreign key to story.storyID or attached_story.storyID
+    mediaType TEXT NOT NULL, -- "Photo", "Video", "GenericAttachmentMedia"
+    mediaID TEXT NOT NULL UNIQUE,
+    filename TEXT NOT NULL,
+    isPlayable BOOLEAN,
+    accessibilityCaption TEXT,
+    title TEXT,
+    url TEXT,
+    FOREIGN KEY(storyID) REFERENCES story(storyID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);`,
+                    `CREATE TABLE media_story (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    storyID TEXT NOT NULL, -- Foreign key to story.storyID
+    mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
+    FOREIGN KEY(storyID) REFERENCES story(storyID),
+    FOREIGN KEY(mediaID) REFERENCES media(mediaID)
+);`,
+                    `CREATE TABLE media_attached_story (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    storyID TEXT NOT NULL, -- Foreign key to attached_story.storyID
+    mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
+    FOREIGN KEY(storyID) REFERENCES attached_story(storyID),
+    FOREIGN KEY(mediaID) REFERENCES media(mediaID)
+);`,
+                    `CREATE TABLE share (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    storyID TEXT NOT NULL, -- Foreign key to story.storyID
+    description TEXT NOT NULL,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL,
+    mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
+    FOREIGN KEY(storyID) REFERENCES story(storyID),
+    FOREIGN KEY(mediaID) REFERENCES media(mediaID)
 );`]
             },
-            {
-                name: "20250220_add_post_table",
-                sql: [
-                    `CREATE TABLE post (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    postID TEXT NOT NULL UNIQUE,
-    createdAt DATETIME NOT NULL,
-    title TEXT,
-    text TEXT,
-    addedToDatabaseAt DATETIME NOT NULL
-                    );`
-                ]
-            },
-            {
-                name: "20250220_add_isReposted_to_post",
-                sql: [
-                    `CREATE TABLE post_new (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        postID TEXT NOT NULL UNIQUE,
-                        createdAt DATETIME NOT NULL,
-                        title TEXT,
-                        text TEXT,
-                        isReposted BOOLEAN NOT NULL DEFAULT 0,
-                        addedToDatabaseAt DATETIME NOT NULL
-                    );`,
-                    `INSERT INTO post_new (id, postID, createdAt, title, text, addedToDatabaseAt)
-                     SELECT id, postID, createdAt, title, text, addedToDatabaseAt FROM post;`,
-                    `DROP TABLE post;`,
-                    `ALTER TABLE post_new RENAME TO post;`
-                ]
-            },
-            {
-                name: "20250302_add_media_table",
-                sql: [
-                    `CREATE TABLE post_media (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        mediaId TEXT NOT NULL UNIQUE,
-                        postId TEXT NOT NULL,
-                        type TEXT NOT NULL,
-                        uri TEXT NOT NULL,
-                        description TEXT,
-                        createdAt DATETIME,
-                        addedToDatabaseAt DATETIME NOT NULL,
-                        FOREIGN KEY(postId) REFERENCES post(postID)
-                    );`
-                ]
-            },
-            {
-                name: "20250312_add_urls_to_posts",
-                sql: [
-                    `CREATE TABLE post_url (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        postId TEXT NOT NULL,
-                        url TEXT NOT NULL,
-                        addedToDatabaseAt DATETIME NOT NULL,
-                        FOREIGN KEY(postId) REFERENCES post(postID)
-                    );`
-                ]
-            },
-            {
-                name: "20250327_add_path_repostID_to_post",
-                sql: [
-                    `ALTER TABLE post ADD COLUMN path TEXT;`,
-                    `ALTER TABLE post ADD COLUMN hasMedia BOOLEAN;`,
-                    `ALTER TABLE post ADD COLUMN repostID TEXT;`,
-                    `UPDATE post SET hasMedia = 0;`
-                ]
-            }
         ])
         log.info("FacebookAccountController.initDB: database initialized");
     }
@@ -444,40 +444,81 @@ export class FacebookAccountController {
 
         // Already processed?
         if (responseData.processed) {
-            return true;
+            return;
         }
 
-        // Note: I'm commenting this out because we should wait until we receive actual rate limits from FB
-        // and then we can decide how to deal with them, instead of assuming how they work
+        // Try parsing the response body query string to get the `fb_api_req_friendly_name`
+        const params = new URLSearchParams(responseData.requestBody);
+        const queryObject: Record<string, string> = {};
+        for (const [key, value] of params.entries()) {
+            queryObject[key] = decodeURIComponent(value);
+        }
+        if(!queryObject['fb_api_req_friendly_name']) {
+            log.error("FacebookAccountController.parseGraphQLPostData: fb_api_req_friendly_name not found in query string");
+            responseData.processed = true;
+            return;
+        }
 
-        // // Is it rate limited?
-        // if (responseData.status == 429) {
-        //     log.warn('FacebookAccountController.parseGraphQLPostData: RATE LIMITED');
-        //     this.mitmController.responseData[responseIndex].processed = true;
-        //     return false;
-        // }
+        // Throw out requests we don't care about
+        const friendlyName = queryObject['fb_api_req_friendly_name'];
+        const validFriendlyNames = [
+            'ProfileCometManagePostsTimelineRootQuery',
+            'CometManagePostsFeedRefetchQuery',
+        ];
+        if (!validFriendlyNames.includes(friendlyName)) {
+            log.debug("FacebookAccountController.parseGraphQLPostData: fb_api_req_friendly_name not in valid list", friendlyName);
+            responseData.processed = true;
+            return;
+        }
 
+        // Check if the response status is ok
         if (responseData.status !== 200) {
-            log.warn("FacebookAccountController.parseGraphQLPostData: response data status code", responseData.status)
+            log.error("FacebookAccountController.parseGraphQLPostData: response data status code", responseData.status)
+            responseData.processed = true;
             return;
         }
 
         // Get structured data from the stringified object
-        const resps = await this.getStructuredGraphQLData(responseData.responseBody);
+        const jsonStrings = responseData.responseBody.split('\n');
+        for (const jsonString of jsonStrings) {
+            // Handle an empty newline at the end of the file
+            if (jsonString.trim() === "") {
+                continue;
+            }
 
-        for (const postResponse of resps) {
-            // log.debug("FacebookAccountController.parseGraphQLPostData: resp", JSON.stringify(postResponse))
-            // Only parse manage feed posts, and not list feed
-            if (postResponse?.data?.node && postResponse.path?.includes("timeline_manage_feed_units")) {
-                log.debug("FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.node from manage posts")
-                this.parseNode(postResponse?.data?.node);
-            } else if (postResponse?.data?.user?.timeline_manage_feed_units?.edges) {
-                for (let i = 0; i < postResponse?.data?.user?.timeline_manage_feed_units?.edges.length; i++) {
-                    log.debug(`FacebookAccountController.parseGraphQLPostData: parsing postResponse?.data?.user?.timeline_manage_feed_units?.edges[${i}].node`)
-                    this.parseNode(postResponse?.data?.user?.timeline_manage_feed_units?.edges[i].node);
+            // Parse the JSON string
+            try {
+                const resp = JSON.parse(jsonString);
+
+                // Handle different response structures
+                if (isFBAPIResponseProfileCometManagePosts(resp)) {
+                    let edges;
+                    if(resp.data?.user?.timeline_manage_feed_units?.edges) {
+                        edges = resp.data.user.timeline_manage_feed_units.edges;
+                    } else if (resp.data?.user?.timeline_manage_feed_units?.page_info) {
+                        edges = resp.data.user.timeline_manage_feed_units.page_info;
+                    } else {
+                        log.error("FacebookAccountController.parseGraphQLPostData: no edges found in response");
+                        continue;
+                    }
+                    
+                    for (let i = 0; i < edges.length; i++) {
+                        const edge = edges[i];
+                        if (edge.node) {
+                            this.parseNode(edge.node);
+                        }
+                    }
+                } else if (isFBAPIResponseProfileCometManagePosts2(resp)) {
+                    if(resp?.data?.node) {
+                        this.parseNode(resp.data.node);
+                    }
+                } else if (isFBAPIResponseProfileCometManagePostsPageInfo(resp)) {
+                    // ignore this response
                 }
-            } else {
-                log.debug("FacebookAccountController.parseGraphQLPostData: no nodes found, so skipping")
+
+            } catch (e) {
+                // Skip individual JSON errors
+                log.error("FacebookAccountController.parseGraphQLPostData: error parsing JSON", e, jsonString)
             }
         }
     }
