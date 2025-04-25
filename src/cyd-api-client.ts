@@ -138,6 +138,7 @@ export type PostAutomationErrorReportAPIRequest = {
 // API models for POST /newsletter
 export type PostNewsletterAPIRequest = {
     email: string;
+    is_paying: boolean;
 };
 
 // API models for GET /version
@@ -561,7 +562,6 @@ export default class CydAPIClient {
     }
 
     // Subscribe to newsletter
-
     async postNewsletter(request: PostNewsletterAPIRequest): Promise<boolean | APIErrorResponse> {
         console.log("POST /newsletter");
         try {
@@ -572,6 +572,23 @@ export default class CydAPIClient {
             return true;
         } catch {
             return this.returnError("Failed to subscribe to newsletter. Maybe the server is down?")
+        }
+    }
+
+    // Update newsletter subscription
+    async updateNewsletter(request: { email: string, is_paying: boolean }): Promise<boolean | APIErrorResponse> {
+        console.log("PUT /newsletter");
+        try {
+            const response = await this.fetch("PUT", `${this.apiURL}/newsletter`, request);
+            if (response.status === 404) {
+                return this.returnError("Newsletter subscriber not found.", response.status);
+            }
+            if (response.status != 200) {
+                return this.returnError("Failed to update newsletter subscription.", response.status);
+            }
+            return true;
+        } catch {
+            return this.returnError("Failed to update newsletter subscription. Maybe the server is down?");
         }
     }
 
