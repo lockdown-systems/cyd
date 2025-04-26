@@ -603,6 +603,36 @@ ul.wizard-nav button {
   min-width: 0;
 }
 
+/* Finished wizard page */
+
+.finished .delete-bullet {
+    color: rgb(218, 82, 41);
+    margin-right: 5px;
+}
+
+.finished .archive-bullet {
+    color: rgb(50, 164, 164);
+    margin-right: 5px;
+}
+
+.finished .bluesky-bullet {
+    color: #0091ff;
+    margin-right: 5px;
+}
+
+.finished .finished ul,
+.finished .finished ul,
+.finished .finished ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-left: 1.5em;
+}
+
+.finished .finished li,
+.finished .finished li,
+.finished .finished li {
+    margin-bottom: 0.2rem;
+}
 
 /* Misc */
 

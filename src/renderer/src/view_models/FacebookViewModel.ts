@@ -379,7 +379,7 @@ export class FacebookViewModel extends BaseViewModel {
 
         // Start the progress
         this.progress.isSavePostsFinished = false;
-        this.progress.postsSaved = 0;
+        this.progress.storiesSaved = 0;
         await this.syncProgress();
 
         // Load the Facebook profile page
@@ -621,6 +621,16 @@ You'll be able to access it even after you delete it from Facebook.`;
 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
+                    break;
+                
+                case State.FinishedRunningJobs:
+                    this.showBrowser = false;
+                    this.instructions = `
+All done!
+
+**Here's what I did.**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.FinishedRunningJobsDisplay;
                     break;
 
                 case State.Debug:

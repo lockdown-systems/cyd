@@ -22,6 +22,7 @@ import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
 import FacebookWizardBuildOptionsPage from './FacebookWizardBuildOptionsPage.vue';
 import FacebookJobStatusComponent from './FacebookJobStatusComponent.vue';
 import FacebookWizardDeleteOptionsPage from './FacebookWizardDeleteOptionsPage.vue';
+import FacebookFinishedRunningJobsPage from './FacebookFinishedRunningJobsPage.vue';
 
 import type {
     Account,
@@ -404,6 +405,9 @@ onUnmounted(async () => {
                         <FacebookWizardDeleteOptionsPage v-if="model.state == State.WizardDeleteOptionsDisplay"
                             :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @update-account="updateAccount" @set-state="setState($event)" />
+
+                        <FacebookFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
