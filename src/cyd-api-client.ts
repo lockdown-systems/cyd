@@ -146,6 +146,15 @@ export type GetVersionAPIResponse = {
     version: string;
 };
 
+// API models for GET /newsletter
+export type GetNewsletterStatusAPIResponse = {
+    email: string;
+    newsletters: {
+        id: string;
+        name: string;
+    }[];
+};
+
 // The API client
 export default class CydAPIClient {
     public apiURL: string | null = null;
@@ -561,11 +570,32 @@ export default class CydAPIClient {
         return true;
     }
 
+    // Get newsletter subscription status
+    async getNewsletterStatus(): Promise<GetNewsletterStatusAPIResponse | APIErrorResponse> {
+        console.log("GET /newsletter");
+        try {
+            const response = await this.fetchAuthenticated("GET", `${this.apiURL}/newsletter`, null);
+            if (response.status === 404) {
+                return this.returnError("Member not found.", response.status);
+            }
+            if (response.status === 400) {
+                return this.returnError("Email is required.", response.status);
+            }
+            if (response.status !== 200) {
+                return this.returnError("Failed to get newsletter subscription status.", response.status);
+            }
+            const data: GetNewsletterStatusAPIResponse = await response.json();
+            return data;
+        } catch {
+            return this.returnError("Failed to get newsletter subscription status. Maybe the server is down?");
+        }
+    }
+
     // Subscribe to newsletter
-    async postNewsletter(request: PostNewsletterAPIRequest): Promise<boolean | APIErrorResponse> {
+    async postNewsletter(is_paying: boolean): Promise<boolean | APIErrorResponse> {
         console.log("POST /newsletter");
         try {
-            const response = await this.fetch("POST", `${this.apiURL}/newsletter`, request);
+            const response = await this.fetchAuthenticated("POST", `${this.apiURL}/newsletter`, { is_paying });
             if (response.status != 200) {
                 return this.returnError("Failed to subscribe to newsletter.", response.status)
             }
@@ -576,10 +606,10 @@ export default class CydAPIClient {
     }
 
     // Update newsletter subscription
-    async updateNewsletter(request: { email: string, is_paying: boolean }): Promise<boolean | APIErrorResponse> {
+    async updateNewsletter(is_paying: boolean): Promise<boolean | APIErrorResponse> {
         console.log("PUT /newsletter");
         try {
-            const response = await this.fetch("PUT", `${this.apiURL}/newsletter`, request);
+            const response = await this.fetchAuthenticated("PUT", `${this.apiURL}/newsletter`, { is_paying });
             if (response.status === 404) {
                 return this.returnError("Newsletter subscriber not found.", response.status);
             }

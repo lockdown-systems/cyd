@@ -66,6 +66,20 @@ const refreshPremium = async () => {
     } else {
         userPremium.value = false;
     }
+
+    // Check newsletter subscription status
+    const resp = await apiClient.value.getNewsletterStatus();
+    // If the user is subscribed, i.e. a 200 and not a 404, then we need to hit the PUT endpoint
+    // to update the newsletter subscription status. IF the user is not subscribed, they don't want
+    // to be on the newsletter, so we don't update their status.
+    console.log('User newsletter status:', resp);
+    if (resp && 'error' in resp === false) {
+        // Given a 200 response, we know that the user is subscribed. Let's update their status.
+        const updateNewsletterResp = await apiClient.value.updateNewsletter(userPremium.value);
+        console.log('User updated newsletter status:', updateNewsletterResp);
+    } else {
+        console.error(`Error getting user newsletter status: ${resp}`);
+    }
 }
 
 const cydOpenEventName = 'cydOpen';
