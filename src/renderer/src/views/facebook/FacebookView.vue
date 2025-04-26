@@ -198,6 +198,18 @@ const updateUserPremium = async () => {
         console.log('User does not have Premium access');
         // TODO: `facebook-premium-check-failed` emit
         emitter?.emit(`facebook-premium-check-failed-${props.account.id}`);
+    } else {
+        const resp = await apiClient.value.getNewsletterStatus();
+        if (resp && 'error' in resp === false) {
+            // Given a 200 response, we know that the user is subscribed. Let's update their status.
+            const updateNewsletterResp = await apiClient.value.updateNewsletter(userPremium.value);
+            console.log('User updated newsletter status:', updateNewsletterResp);
+        } else if (resp && 'error' in resp && resp.status === 404) {
+            // Given a 404, the user was not subscribed, so let's not add them to any newsletters.
+            console.log('User is not subscribed to the newsletter');
+        } else {
+            console.error(`Error getting user newsletter status: ${resp}`);
+        }
     }
 };
 
