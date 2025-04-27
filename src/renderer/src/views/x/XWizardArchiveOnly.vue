@@ -13,7 +13,7 @@
                         <li>Migrate your data to Bluesky (if you have a Premium plan)</li>
                     </ul>
                     <p>
-                        Note: Some features like deleting DMs or managing your X account will not be available in this mode.
+                        <b>Note:</b> Some features like deleting DMs or managing your X account will not be available in this mode.
                     </p>
 
                     <div class="mt-4">
@@ -48,7 +48,7 @@ const importArchive = async () => {
     }
 
     // Move to the import page
-    emit('set-state', 'WizardImportDisplay');
+    emit('set-state', 'WizardImportStartDisplay');
 };
 
 const goBack = () => {
