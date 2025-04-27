@@ -2984,9 +2984,9 @@ After you build a local database of your tweets, I can help you migrate them int
                 case State.WizardArchiveOnlyDisplay:
                     this.showBrowser = false;
                     this.instructions = `
-**You've chosen to save only your tweets and bookmarks.**
+**You've chosen to use a pre-existing X archive.**
 
-**I'll help you save them to your local database.**`;
+I'll help you save them so you can view them locally or migrate them to Bluesky.`;
                     await this.loadURL("about:blank");
                     this.state = State.WizardArchiveOnlyDisplay;
                     break;

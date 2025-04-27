@@ -599,8 +599,10 @@ onUnmounted(async () => {
                         </div>
                     </div>
 
-                    <!-- wizard side bar -->
-                    <XWizardSidebar :model="unref(model)" @set-state="setState($event)"
+                    <!-- wizard side bar, hide if archive only -->
+                    <XWizardSidebar v-if="model.state != State.WizardArchiveOnlyDisplay"
+                        :model="unref(model)"
+                        @set-state="setState($event)"
                         @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
                 </div>
             </div>
