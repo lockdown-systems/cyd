@@ -71,7 +71,7 @@ onMounted(async () => {
         <p v-if="model.account && model.account.xAccount" class="p-1 small text-muted">
             <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
                 Cyd could not detect how many likes and tweets you have.
-                <a href="#" @click="reloadUserStats">
+                <a v-if="!model.account?.xAccount?.archiveOnly" href="#" @click="reloadUserStats">
                     Try again.
                 </a>
             </template>

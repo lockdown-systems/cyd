@@ -24,8 +24,10 @@ const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
     if (!controllers[accountID]) {
+        console.log("Creating new XAccountController for accountID", accountID);
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
+    console.log("Returning existing XAccountController for accountID", accountID);
     controllers[accountID].refreshAccount();
     return controllers[accountID];
 }
