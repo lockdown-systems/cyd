@@ -34,6 +34,7 @@ import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
+import XWizardArchiveOnly from './XWizardArchiveOnly.vue';
 
 import XDisplayTweet from './XDisplayTweet.vue';
 
@@ -274,6 +275,19 @@ emitter?.on(`x-reload-media-path-${props.account.id}`, async () => {
 });
 
 const startJobs = async () => {
+    if (model.value.account.xAccount == null) {
+        console.error('startJobs', 'Account is null');
+        return;
+    }
+
+    // If in archive-only mode, skip authentication checks
+    if (model.value.account.xAccount.archiveOnly) {
+        await model.value.defineJobs();
+        model.value.state = State.RunJobs;
+        await startStateLoop();
+        return;
+    }
+
     // Premium check
     if (model.value.account?.xAccount && await xRequiresPremium(model.value.account.id, model.value.account.xAccount)) {
         // In open mode, allow the user to continue
@@ -480,6 +494,13 @@ onUnmounted(async () => {
                 screen. <a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/u2f')">Read more</a>.
             </p>
 
+            <!-- Archive only option -->
+            <div v-if="model.state == State.Login" class="text-center ms-2 mt-2 mb-4">
+                <button class="btn btn-secondary" @click="setState(State.WizardArchiveOnlyDisplay)">
+                    Import Archive Only
+                </button>
+            </div>
+
             <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
         </template>
 
@@ -552,6 +573,10 @@ onUnmounted(async () => {
                             :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                             @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"
                             @on-refresh-clicked="emit('onRefreshClicked')" />
+
+                        <XWizardArchiveOnly v-if="model.state == State.WizardArchiveOnlyDisplay"
+                            :model="unref(model)"
+                            @set-state="setState($event)" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
