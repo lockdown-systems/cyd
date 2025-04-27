@@ -63,6 +63,8 @@ export enum State {
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+    WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
+
     RunJobs = "RunJobs",
 
     FinishedRunningJobs = "FinishedRunningJobs",
@@ -2837,7 +2839,9 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
                     this.instructions = `${this.actionString}
 
-**To get started, log in to your X account below.**`;
+**To get started, you can either:**
+- Log in to your X account below to access all features
+- Or click "Import Archive Only" to import your existing X archive without logging in`;
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
@@ -2975,6 +2979,16 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
+                    break;
+
+                case State.WizardArchiveOnlyDisplay:
+                    this.showBrowser = false;
+                    this.instructions = `
+**You've chosen to save only your tweets and bookmarks.**
+
+**I'll help you save them to your local database.**`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardArchiveOnlyDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
