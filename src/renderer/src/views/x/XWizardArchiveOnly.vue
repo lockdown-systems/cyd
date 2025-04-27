@@ -31,7 +31,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import { XViewModel } from '../../view_models/XViewModel';
 
 const props = defineProps<{
@@ -43,8 +42,14 @@ const emit = defineEmits(['set-state']);
 const importArchive = async () => {
     // Set the account to archive-only mode
     if (props.model.account.xAccount) {
-        props.model.account.xAccount.archiveOnly = true;
-        await window.electron.database.saveAccount(JSON.stringify(props.model.account));
+        const updatedAccount = {
+            ...props.model.account,
+            xAccount: {
+                ...props.model.account.xAccount,
+                archiveOnly: true
+            }
+        };
+        await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
     }
 
     // Move to the import page
