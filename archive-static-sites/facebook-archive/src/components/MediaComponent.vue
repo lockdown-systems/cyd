@@ -18,6 +18,7 @@ const filename = computed(() => {
 </script>
 
 <template>
+    <span class="badge bg-secondary text-light">Media</span>
     <div class="media-item p-1 border rounded text-center">
         <template v-if="media.mediaType == 'Photo' || media.mediaType == 'GenericAttachmentMedia'">
             <!-- image -->
@@ -45,8 +46,11 @@ const filename = computed(() => {
 .media-item {
     max-width: 100%;
 }
-img {
+
+.media-item img,
+.media-item video {
     max-width: 100%;
-    height: auto;
+    max-height: 400px;
+    object-fit: contain;
 }
 </style>

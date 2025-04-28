@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineProps, computed } from 'vue'
-import { formattedDatetime, formattedDate, formatDateToYYYYMMDD } from '../helpers'
+import { formattedDatetime, formattedDate, formatDateToYYYYMMDD, newslinesToBrs } from '../helpers'
 import { Story } from '../types'
 import MediaComponent from './MediaComponent.vue';
 
@@ -9,9 +9,13 @@ const props = defineProps<{
 }>();
 
 const formattedText = computed(() => {
-    let text = props.story.text ? props.story.text : '';
-    text = text.replace(/(?:\r\n|\r|\n)/g, '<br>');
-    return text.trim();
+    const text = props.story.text ? props.story.text : '';
+    return newslinesToBrs(text);
+});
+
+const formattedAttachedStoryText = computed(() => {
+    const text = props.story.attachedStory?.text ? props.story.attachedStory.text : '';
+    return newslinesToBrs(text);
 });
 </script>
 
@@ -36,11 +40,22 @@ const formattedText = computed(() => {
             <!-- Text -->
             <p v-if="story.text" v-html="formattedText"></p>
 
-            <!-- TODO: Attached story -->
+            <!-- Attached story -->
+            <div v-if="story.attachedStory" class="attached-story">
+                <span class="badge bg-secondary text-light">Attached Story</span>
+                <div class="attached-story-item p-1 border rounded">
+                    <p v-if="story.attachedStory.text" :html="formattedAttachedStoryText"></p>
+                    <div v-if="story.attachedStory.media" class="media-container mt-2">
+                        <div v-for="media in story.attachedStory.media" :key="media.mediaID" class="mb-2">
+                            <MediaComponent :media="media" />
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Media -->
             <div v-if="story.media" class="media-container mt-2">
-                <div v-for="media in story.media" :key="media.mediaID" class="media-item mb-2">
+                <div v-for="media in story.media" :key="media.mediaID" class="mb-2">
                     <MediaComponent :media="media" />
                 </div>
             </div>
@@ -59,28 +74,5 @@ const formattedText = computed(() => {
 <style scoped>
 .media-container {
     max-width: 100%;
-}
-.media-item img,
-.media-item video {
-    max-height: 400px;
-    object-fit: contain;
-}
-
-.url-item {
-    margin: 0.5rem 0;
-    word-break: break-all;
-}
-
-.url-item a {
-    color: #0d6efd;
-    text-decoration: none;
-}
-
-.url-item a:hover {
-    text-decoration: underline;
-}
-
-.bi-link-45deg {
-    margin-right: 0.3em;
 }
 </style>
