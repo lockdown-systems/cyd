@@ -458,6 +458,12 @@ export class FacebookAccountController {
         const mediaType = media.__typename;
         const mediaID = media.id;
 
+        // It seems that GenericAttachmentMedia media does not have a steady mediaID, so we're skipping it to avoid duplicates
+        if(mediaType == "GenericAttachmentMedia") {
+            log.info("FacebookAccountController.saveMedia: GenericAttachmentMedia mediaID is not steady, skipping download");
+            return null;
+        }
+
         let needsVideoDownload = mediaType == "Video" ? 1 : 0;
 
         let url: string | null = null;
