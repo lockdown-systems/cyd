@@ -10,6 +10,7 @@ export interface Media {
     mediaID: string;
     filename?: string;
     isPlayable?: boolean;
+    accessibilityCaption?: string;
     title?: string;
     url?: string;
     needsVideoDownload?: boolean;

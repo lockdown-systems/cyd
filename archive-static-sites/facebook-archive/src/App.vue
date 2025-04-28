@@ -36,7 +36,7 @@ onMounted(() => {
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-              <li v-if="archiveData?.posts?.length && archiveData.posts.length > 0" class="nav-item">
+              <li v-if="archiveData?.stories?.length && archiveData.stories.length > 0" class="nav-item">
                 <router-link to="/" class="nav-link">Posts</router-link>
               </li>
             </ul>
