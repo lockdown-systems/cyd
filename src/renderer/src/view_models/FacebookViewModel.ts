@@ -421,8 +421,38 @@ export class FacebookViewModel extends BaseViewModel {
             }
         }
 
+        await this.waitForLoadingToFinish();
+        await this.sleep(500);
+
+        // Scroll to the bottom of the manage posts dialog
+        await this.webview?.executeJavaScript(`
+            (function() {
+                async function scrollToBottom(scrollDiv) {
+                    while (scrollDiv.scrollTop + scrollDiv.clientHeight < scrollDiv.scrollHeight) {
+                        scrollDiv.scrollTop += 100;
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    console.log("Reached the bottom of the div");
+                }
+
+                const dialogEls = document.querySelectorAll('div[role="dialog"]');
+                const scrollDiv = dialogEls[1]?.querySelector('div > div:nth-of-type(4) > div');
+                if (scrollDiv) {
+                    scrollToBottom(scrollDiv);
+                } else {
+                    console.error("Scroll div not found");
+                }
+            })();
+        `);
+
+        await this.waitForLoadingToFinish();
+        await this.sleep(500);
+
         // Save the first batch of posts
         this.progress = await window.electron.Facebook.savePosts(this.account.id);
+
+        this.pause();
+        await this.waitForPause();
 
         // TODO: click Next over and over in a loop until we get all posts
 
