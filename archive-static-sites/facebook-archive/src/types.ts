@@ -1,30 +1,53 @@
-export interface Post {
-    postID: string;
-    createdAt: string;
-    text: string;
-    title: string;
-    isReposted: boolean;
-    archivedAt: string | null;
-    media?: {
-        mediaId: string;
-        type: string;
-        uri: string;
-        description: string | null;
-        createdAt: string | null;
-    }[];
-    urls?: string[];
+export interface User {
+    userID: string;
+    url: string;
+    name: string;
+    profilePictureFilename: string;
 }
 
-export type User = {
-    userID: string;
-    name: string;
-    username: string;
-    profileImageDataURI: string;
-};
+export interface Media {
+    mediaType: string;
+    mediaID: string;
+    filename?: string;
+    isPlayable?: boolean;
+    title?: string;
+    url?: string;
+    needsVideoDownload?: boolean;
+}
 
-export type FacebookArchive = {
+export interface AttachedStory {
+    storyID: string;
+    text: string;
+    media: Media[];
+}
+
+export interface Share {
+    description?: string;
+    title?: string;
+    url?: string;
+    media: Media;
+}
+
+export interface Story {
+    storyID: string;
+    url: string;
+    createdAt: string;
+    text?: string;
+    title?: string;
+    lifeEventTitle?: string;
+    user: User;
+    attachedStory?: AttachedStory;
+    media: Media[];
+    shares: Share[];
+
+    addedToDatabaseAt: string;
+    archivedAt: string | null;
+    deletedStoryAt: string | null;
+}
+
+export interface FacebookArchive {
     appVersion: string;
     username: string;
     createdAt: string;
-    posts: Post[];
-};
+    stories: Story[];
+}

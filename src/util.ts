@@ -180,6 +180,24 @@ export function writeJSONObject(streamWriter: fs.WriteStream, item: object, prop
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function deepConvertNullToUndefined(obj: any): any {
+    if (obj === null) {
+        return undefined;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(deepConvertNullToUndefined);
+    }
+    if (typeof obj === 'object') {
+        for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                obj[key] = deepConvertNullToUndefined(obj[key]);
+            }
+        }
+    }
+    return obj;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function deepEqual(obj1: any, obj2: any): boolean {
     return JSON.stringify(obj1) === JSON.stringify(obj2);
 }
