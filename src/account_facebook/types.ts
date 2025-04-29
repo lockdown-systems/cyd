@@ -94,19 +94,6 @@ export interface FacebookMediaAttachedStoryRow {
     mediaID: string;  // Foreign key to media.mediaID
 }
 
-// Facebook shares (links, both internal and external)
-// attachment_type: FBShortsShareAttachment
-// attachment_type: ExternalShareAttachment
-// attachment_type: StoryAttachmentShareStyleRenderer -- a link, but to extract the URL, we need to parse the media URL
-export interface FacebookShareRow {
-    id: number;
-    storyID: string;  // Foreign key to story.storyID
-    description?: string; // node.attachments[0].style_type_renderer.attachment.description.text
-    title?: string; // node.attachments[0].style_type_renderer.attachment.title
-    url?: string; // node.attachments[0].style_type_renderer.attachment.url
-    mediaID: string; // Foreign key to media.mediaID
-}
-
 // TODO: To download videos, we need to load the video page and extract the video URL from the HTML script tags.
 // TODO: To download reels, we we need to load the reel page and extract the video URL from the 'FBReelsContainerQuery' API response.
 

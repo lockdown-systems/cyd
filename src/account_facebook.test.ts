@@ -9,7 +9,6 @@ import {
     FacebookStoryRow,
     FacebookAttachedStoryRow,
     FacebookMediaRow,
-    FacebookShareRow,
 } from './account_facebook';
 
 // Mock the util module
@@ -212,12 +211,6 @@ test('FacebookAccountController.parseAPIResponse() for http1', async () => {
     expect(mediaRows[1].mediaID).toBe("122113895486759940");
     expect(mediaRows[2].mediaID).toBe("122113895450759940");
 
-    // this story should have 1 media
-    storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMzg5NTE3NDc1OTk0MDoxMjIxMTM4OTUxNzQ3NTk5NDA=";
-    mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
-    expect(mediaRows.length).toBe(1);
-    expect(mediaRows[0].mediaID).toBe("3300235805004000402");
-
     // this attached story should have 1 media
     storyID = "UzpfSTEwMDAxNTY0MDgzOTU5MjpWSzoxNjgyMTUwNTc2MDM0Nzkw";
     mediaRows = database.exec(controller.db, attachedStorySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
@@ -230,31 +223,6 @@ test('FacebookAccountController.parseAPIResponse() for http1', async () => {
     expect(mediaRows.length).toBe(1);
     expect(mediaRows[0].mediaType).toBe("Video");
     expect(mediaRows[0].mediaID).toBe("971815314581705");
-
-    // this story should have 1 media (a shared link)
-    storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjExMjgzNjQzMjc1OTk0MDoxMjIxMTI4MzY0MzI3NTk5NDA=";
-    mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
-    expect(mediaRows.length).toBe(1);
-    expect(mediaRows[0].mediaID).toBe("122112836426759940");
-    expect(mediaRows[0].title).toBe("JojaMart - Stardew Valley Wiki");
-
-    // this attached story should have 1 media (a shared link)
-    storyID = "UzpfSTYxNTcyNzk4MjI3MDE4OjEyMjEwNjMyOTM3Mjc1OTk0MDoxMjIxMDYzMjkzNzI3NTk5NDA=";
-    mediaRows = database.exec(controller.db, storySQL, [storyID], "all") as ExtendedFacebookMediaRow[];
-    expect(mediaRows.length).toBe(1);
-    expect(mediaRows[0].mediaID).toBe("122106329366759940");
-
-    // there should be 3 shares
-    const shareRows: FacebookShareRow[] = database.exec(controller.db, "SELECT * FROM share", [], "all") as FacebookShareRow[];
-    expect(shareRows.length).toBe(3);
-    expect(shareRows[0].mediaID).toBe("3300235805004000402");
-    expect(shareRows[0].url).toBe("https://www.facebook.com/reel/1381478619505412/");
-    expect(shareRows[1].mediaID).toBe("122112836426759940");
-    expect(shareRows[1].title).toBe("JojaMart - Stardew Valley Wiki");
-    expect(shareRows[1].url).toBe("https://stardewvalleywiki.com/JojaMart");
-    expect(shareRows[2].mediaID).toBe("122106329366759940");
-    // TODO: share URLs are not extracted yet
-    //expect(shareRows[2].url).toBe("https://www.themarysue.com/new-television-shows-streaming-february-2025/");
 })
 
 test('FacebookAccountController.parseAPIResponse() for http2', async () => {

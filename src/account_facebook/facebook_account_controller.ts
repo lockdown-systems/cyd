@@ -214,16 +214,6 @@ export class FacebookAccountController {
     mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
     FOREIGN KEY(storyID) REFERENCES attached_story(storyID),
     FOREIGN KEY(mediaID) REFERENCES media(mediaID)
-);`,
-                    `CREATE TABLE share (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    storyID TEXT NOT NULL, -- Foreign key to story.storyID
-    description TEXT,
-    title TEXT,
-    url TEXT,
-    mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
-    FOREIGN KEY(storyID) REFERENCES story(storyID),
-    FOREIGN KEY(mediaID) REFERENCES media(mediaID)
 );`]
             },
         ])
@@ -634,39 +624,41 @@ export class FacebookAccountController {
                 }
             }
 
-            // Get the description and title
-            const description = attachment.style_type_renderer.attachment.description?.text || null;
-            const title = attachment.style_type_renderer.attachment.title || null;
+            // TODO: we need to figure out how to store shared links better
 
-            // Get the URL
-            let url: string | null = null;
-            if(attachment.style_type_renderer.attachment.url) {
-                const fbURL = new URL(attachment.style_type_renderer.attachment.url);
-                if(fbURL.host == "l.facebook.com") {
-                    // This is a Facebook URL, so we need to extract the 'u' parameter
-                    // Example: 'https://l.facebook.com/l.php?u=https%3A%2F%2Fstardewvalleywiki.com%2FJojaMart&h=AT09n5aPSKTkHBJlfSlRhgZqwXiTLr6ZBUzspjCefK6zPM9dnj4pLnVfCGyGj9_jBeeC1FJhttz4Kq--j3Es_G3zy92hMrLaruAtm8pr7RSzU-q9V10OaZBZnQyqfuaLV4kJW2oh8VYSVY3ZVP0MSaQ&s=1'
-                    url = fbURL.searchParams.get('u') || null;
-                } else {
-                    url = attachment.style_type_renderer.attachment.url;
-                }
-            }
+            // // Get the description and title
+            // const description = attachment.style_type_renderer.attachment.description?.text || null;
+            // const title = attachment.style_type_renderer.attachment.title || null;
 
-            // Save the share
-            const existingShare = exec(this.db, 'SELECT * FROM share WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
-            if (!existingShare) {
-                // Save the share
-                exec(
-                    this.db,
-                    'INSERT INTO share (storyID, description, title, url, mediaID) VALUES (?, ?, ?, ?, ?)',
-                    [
-                        storyID,
-                        description,
-                        title,
-                        url,
-                        mediaID
-                    ]
-                );
-            }
+            // // Get the URL
+            // let url: string | null = null;
+            // if(attachment.style_type_renderer.attachment.url) {
+            //     const fbURL = new URL(attachment.style_type_renderer.attachment.url);
+            //     if(fbURL.host == "l.facebook.com") {
+            //         // This is a Facebook URL, so we need to extract the 'u' parameter
+            //         // Example: 'https://l.facebook.com/l.php?u=https%3A%2F%2Fstardewvalleywiki.com%2FJojaMart&h=AT09n5aPSKTkHBJlfSlRhgZqwXiTLr6ZBUzspjCefK6zPM9dnj4pLnVfCGyGj9_jBeeC1FJhttz4Kq--j3Es_G3zy92hMrLaruAtm8pr7RSzU-q9V10OaZBZnQyqfuaLV4kJW2oh8VYSVY3ZVP0MSaQ&s=1'
+            //         url = fbURL.searchParams.get('u') || null;
+            //     } else {
+            //         url = attachment.style_type_renderer.attachment.url;
+            //     }
+            // }
+
+            // // Save the share
+            // const existingShare = exec(this.db, 'SELECT * FROM share WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
+            // if (!existingShare) {
+            //     // Save the share
+            //     exec(
+            //         this.db,
+            //         'INSERT INTO share (storyID, description, title, url, mediaID) VALUES (?, ?, ?, ?, ?)',
+            //         [
+            //             storyID,
+            //             description,
+            //             title,
+            //             url,
+            //             mediaID
+            //         ]
+            //     );
+            // }
 
         } else {
             log.info("FacebookAccountController.parseAttachment: not a valid attachment type, skipping", attachment.style_type_renderer.__typename);
