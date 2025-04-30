@@ -22,7 +22,7 @@ const getStatusIcon = (status: string) => {
 const getJobTypeText = (jobType: string) => {
     const jobTypeTexts: { [key: string]: string } = {
         login: 'Logging in',
-        savePosts: 'Saving tweets',
+        savePosts: 'Saving posts',
         savePostsHTML: 'Saving posts HTML',
         archiveBuild: 'Building archive',
     };

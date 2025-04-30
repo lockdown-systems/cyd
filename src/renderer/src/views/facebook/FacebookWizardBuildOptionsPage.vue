@@ -27,11 +27,6 @@ const nextClicked = async () => {
     emit('setState', State.WizardReview);
 };
 
-const backClicked = async () => {
-    await saveSettings();
-    emit('setState', State.WizardDatabase);
-};
-
 // Settings
 const savePosts = ref(false);
 const savePostsHTML = ref(false);
@@ -69,7 +64,7 @@ onMounted(async () => {
     <div class="wizard-content container mb-4 mt-3 mx-auto">
         <div class="mb-4">
             <h2>
-                Build options
+                Build your local database
             </h2>
             <p class="text-muted">
                 You can save posts.
@@ -103,11 +98,6 @@ onMounted(async () => {
             </div>
 
             <div class="buttons">
-                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
-                    <i class="fa-solid fa-backward" />
-                    Back to Local Database
-                </button>
-
                 <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(savePosts)"
                     @click="nextClicked">
                     <i class="fa-solid fa-forward" />

@@ -338,33 +338,4 @@ onMounted(async () => {
     </div>
 </template>
 
-<style scoped>
-.delete-bullet {
-    color: rgb(218, 82, 41);
-    margin-right: 5px;
-}
-
-.archive-bullet {
-    color: rgb(50, 164, 164);
-    margin-right: 5px;
-}
-
-.bluesky-bullet {
-    color: #0091ff;
-    margin-right: 5px;
-}
-
-.finished ul,
-.finished ul,
-.finished ul {
-    list-style-type: none;
-    padding-left: 0;
-    margin-left: 1.5em;
-}
-
-.finished li,
-.finished li,
-.finished li {
-    margin-bottom: 0.2rem;
-}
-</style>
+<style scoped></style>

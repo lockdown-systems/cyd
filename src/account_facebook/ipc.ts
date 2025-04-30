@@ -6,7 +6,6 @@ import {
     FacebookJob,
     FacebookProgress,
     FacebookDatabaseStats,
-    FacebookImportArchiveResponse,
 } from '../shared_types'
 import { getMITMController } from '../mitm';
 import { packageExceptionForReport } from '../util'
@@ -113,46 +112,10 @@ export const defineIPCFacebook = () => {
         }
     });
 
-    ipcMain.handle('Facebook:unzipFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
+    ipcMain.handle('Facebook:savePosts', async (_, accountID: number): Promise<FacebookProgress> => {
         try {
             const controller = getFacebookAccountController(accountID);
-            return await controller.unzipFacebookArchive(archivePath);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('Facebook:deleteUnzippedFacebookArchive', async (_, accountID: number, archivePath: string): Promise<void> => {
-        try {
-            const controller = getFacebookAccountController(accountID);
-            await controller.deleteUnzippedFacebookArchive(archivePath);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('Facebook:verifyFacebookArchive', async (_, accountID: number, archivePath: string): Promise<string | null> => {
-        try {
-            const controller = getFacebookAccountController(accountID);
-            return await controller.verifyFacebookArchive(archivePath);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('Facebook:importFacebookArchive', async (_, accountID: number, archivePath: string, dataType: string): Promise<FacebookImportArchiveResponse> => {
-        try {
-            const controller = getFacebookAccountController(accountID);
-            return await controller.importFacebookArchive(archivePath, dataType);
-        } catch (error) {
-            throw new Error(packageExceptionForReport(error as Error));
-        }
-    });
-
-    ipcMain.handle('Facebook:saveGraphQLPostData', async (_, accountID: number): Promise<void> => {
-        try {
-            const controller = getFacebookAccountController(accountID);
-            return await controller.saveGraphQLPostData();
+            return await controller.savePosts();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

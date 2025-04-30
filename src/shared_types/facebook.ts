@@ -16,38 +16,25 @@ export type FacebookJob = {
 export type FacebookProgress = {
     currentJob: string;
     isSavePostsFinished: boolean;
-    postsSaved: number;
+    storiesSaved: number;
 }
 
 export function emptyFacebookProgress(): FacebookProgress {
     return {
         currentJob: "",
         isSavePostsFinished: false,
-        postsSaved: 0,
+        storiesSaved: 0,
     };
 }
 
-export type FacebookImportArchiveResponse = {
-    status: string; // "success", "error"
-    errorMessage: string;
-    importCount: number;
-    skipCount: number;
-}
-
-
-// TODO: Add additional fields here
 export type FacebookDatabaseStats = {
-    postsSaved: number;
-    postsDeleted: number;
-    repostsSaved: number;
-    repostsDeleted: number;
+    storiesSaved: number;
+    storiesDeleted: number;
 }
 
 export function emptyFacebookDatabaseStats(): FacebookDatabaseStats {
     return {
-        postsSaved: 0,
-        postsDeleted: 0,
-        repostsSaved: 0,
-        repostsDeleted: 0,
+        storiesSaved: 0,
+        storiesDeleted: 0,
     }
 }

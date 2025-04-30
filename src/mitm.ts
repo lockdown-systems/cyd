@@ -89,36 +89,49 @@ export class MITMController implements IMITMController {
                             host: ctx.clientToProxyRequest.headers.host ?? '',
                             url: ctx.clientToProxyRequest.url ?? '',
                             status: 0,
-                            headers: {},
-                            body: '',
+                            requestBody: '',
+                            responseHeaders: {},
+                            responseBody: '',
                             processed: false,
                         }
 
-                        const chunks: Buffer[] = [];
+                        const requestChunks: Buffer[] = [];
+                        const responseChunks: Buffer[] = [];
+
+                        ctx.onRequestData((ctx, chunk, callback) => {
+                            requestChunks.push(chunk);
+                            return callback(null, chunk);
+                        });
+
+                        ctx.onRequestEnd(async (ctx, callback) => {
+                            const buffer = Buffer.concat(requestChunks);
+                            responseData.requestBody = buffer.toString();
+                            return callback();
+                        });
 
                         ctx.onResponseData((ctx, chunk, callback) => {
-                            chunks.push(chunk);
+                            responseChunks.push(chunk);
                             return callback(null, chunk);
                         });
 
                         ctx.onResponseEnd(async (ctx, callback) => {
                             responseData.status = ctx.serverToProxyResponse?.statusCode ?? 0;
-                            responseData.headers = ctx.serverToProxyResponse?.headers ?? {};
+                            responseData.responseHeaders = ctx.serverToProxyResponse?.headers ?? {};
 
-                            const buffer = Buffer.concat(chunks);
+                            const buffer = Buffer.concat(responseChunks);
 
                             try {
-                                responseData.body = (await HttpEncoding.decodeBuffer(buffer, ctx.serverToProxyResponse?.headers['content-encoding'])).toString();
+                                responseData.responseBody = (await HttpEncoding.decodeBuffer(buffer, ctx.serverToProxyResponse?.headers['content-encoding'])).toString();
                             } catch (e) {
                                 log.error("Error decoding response body:", e);
-                                responseData.body = buffer.toString();
+                                responseData.responseBody = buffer.toString();
                             }
 
                             log.debug(`MITMController: got response`, {
                                 host: ctx.clientToProxyRequest.headers.host,
                                 url: ctx.clientToProxyRequest.url,
                                 status: responseData.status,
-                                bodyLength: responseData.body.length,
+                                bodyLength: responseData.responseBody.length,
                             });
                             this.responseData.push(responseData);
                             return callback();

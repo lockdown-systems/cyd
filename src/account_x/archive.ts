@@ -2,7 +2,7 @@ import fs from 'fs'
 import Database from 'better-sqlite3'
 
 import { XTweetRow, XUserRow, XConversationRow, XMessageRow } from './types'
-import { writeJSONArray, writeJSONObject } from '../util';
+import { writeJSONArray, writeJSONObject, removeItems } from '../util';
 import { exec } from '../database'
 
 import { XArchive, Tweet, User, Conversation, Message } from "../../archive-static-sites/x-archive/src/types";
@@ -71,24 +71,6 @@ export const selectTweets = (db: Database.Database, whereClause: string, params?
 
         // Because of how SQLite handles JSON, we need to check if the media and urls are null
         // and set them to empty arrays if they are
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        function deepEqual(obj1: any, obj2: any): boolean {
-            return JSON.stringify(obj1) === JSON.stringify(obj2);
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        function removeItems(arr: Array<any>, value: any) {
-            let i = 0;
-            while (i < arr.length) {
-                if (deepEqual(arr[i], value)) {
-                    arr.splice(i, 1);
-                } else {
-                    ++i;
-                }
-            }
-            return arr;
-        }
 
         tweet.media = removeItems(tweet.media, {
             mediaType: null,

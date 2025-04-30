@@ -107,16 +107,18 @@ class MockMITMController implements IMITMController {
                     host: 'x.com',
                     url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22cursor%22%3A%22DAABCgABGS0y9T___-0KAAIYtaJOPpth7ggAAwAAAAIAAA%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndReplies1.json'), 'utf8'),
                     processed: false
                 },
                 {
                     host: 'x.com',
                     url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22cursor%22%3A%22DAABCgABGS0y9T___-0KAAIYtaJOPpth7ggAAwAAAAIAAA%22%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies2.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndReplies2.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -127,32 +129,36 @@ class MockMITMController implements IMITMController {
                     host: 'x.com',
                     url: '/i/api/1.1/dm/inbox_timeline/trusted.json?filter_low_quality=false&include_quality=all&max_id=1737890608109486086&nsfw_filtering_enabled=false&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_ext_edit_control=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMInboxTimeline1.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMInboxTimeline1.json'), 'utf8'),
                     processed: false
                 },
                 {
                     host: 'x.com',
                     url: '/i/api/1.1/dm/inbox_initial_state.json?nsfw_filtering_enabled=false&filter_low_quality=false&include_quality=all&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=true&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMInitialInboxState.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMInitialInboxState.json'), 'utf8'),
                     processed: false
                 },
                 {
                     host: 'x.com',
                     url: '/i/api/1.1/dm/conversation/96752784-1209344563589992448.json?context=FETCH_DM_CONVERSATION&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_conversation_info=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMConversation1.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMConversation1.json'), 'utf8'),
                     processed: false
                 },
                 {
                     host: 'x.com',
                     url: '/i/api/1.1/dm/conversation/96752784-1209344563589992448.json?context=FETCH_DM_CONVERSATION&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_conversation_info=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIDMConversation2.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIDMConversation2.json'), 'utf8'),
                     processed: false
                 },
             ];
@@ -163,8 +169,9 @@ class MockMITMController implements IMITMController {
                     host: 'x.com',
                     url: '/i/api/graphql/Ds7FCVYEIivOKHsGcE84xQ/Bookmarks?variables=%7B%22count%22%3A20%2C%22includePromotedContent%22%3Atrue%7D&features=%7B%22graphql_timeline_v2_bookmark_timeline%22%3Atrue%2C%22profile_label_improvements_pcf_label_in_post_enabled%22%3Afalse%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22premium_content_api_read_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22responsive_web_grok_analyze_button_fetch_trends_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIBookmarks.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -175,8 +182,9 @@ class MockMITMController implements IMITMController {
                     host: 'x.com',
                     url: '/i/api/graphql/pZXwh96YGRqmBbbxu7Vk2Q/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22premium_content_api_read_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22responsive_web_grok_analyze_button_fetch_trends_enabled%22%3Afalse%2C%22responsive_web_grok_analyze_post_followups_enabled%22%3Atrue%2C%22responsive_web_jetfuel_frame%22%3Afalse%2C%22responsive_web_grok_share_attachment_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22responsive_web_grok_analysis_button_from_backend%22%3Atrue%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_grok_image_annotation_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesMedia.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndRepliesMedia.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -187,8 +195,9 @@ class MockMITMController implements IMITMController {
                     host: 'x.com',
                     url: '/i/api/graphql/pZXwh96YGRqmBbbxu7Vk2Q/UserTweetsAndReplies?variables=%7B%22userId%22%3A%221769426369526771712%22%2C%22count%22%3A20%2C%22includePromotedContent%22%3Atrue%2C%22withCommunity%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22premium_content_api_read_enabled%22%3Afalse%2C%22communities_web_enable_tweet_community_results_fetch%22%3Atrue%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22responsive_web_grok_analyze_button_fetch_trends_enabled%22%3Afalse%2C%22responsive_web_grok_analyze_post_followups_enabled%22%3Atrue%2C%22responsive_web_jetfuel_frame%22%3Afalse%2C%22responsive_web_grok_share_attachment_enabled%22%3Atrue%2C%22articles_preview_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22responsive_web_grok_analysis_button_from_backend%22%3Atrue%2C%22creator_subscriptions_quote_tweet_preview_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_grok_image_annotation_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D&fieldToggles=%7B%22withArticlePlainText%22%3Afalse%7D',
                     status: 200,
-                    headers: {},
-                    body: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesLinks.json'), 'utf8'),
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndRepliesLinks.json'), 'utf8'),
                     processed: false
                 }
             ];
@@ -201,8 +210,9 @@ class MockMITMController implements IMITMController {
                 host: 'x.com',
                 url: url,
                 status: 200,
-                headers: {},
-                body: fs.readFileSync(path.join(__dirname, '..', 'testdata', filename), 'utf8'),
+                requestBody: '',
+                responseHeaders: {},
+                responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', filename), 'utf8'),
                 processed: false
             }
         ];
@@ -617,10 +627,11 @@ test(
         mitmController.setTestdata("indexDMs");
         // https://dev-admin.cyd.social/#/error/4
         controller.mitmController.responseData = [{
-            "host": "x.com",
-            "url": "/i/api/1.1/dm/user_updates.json?nsfw_filtering_enabled=false&cursor=GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&supports_edit=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-            "status": 200,
-            "headers": {
+            host: "x.com",
+            url: "/i/api/1.1/dm/user_updates.json?nsfw_filtering_enabled=false&cursor=GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&supports_edit=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
+            status: 200,
+            requestBody: "",
+            responseHeaders: {
                 "date": "Fri, 04 Oct 2024 22:48:40 GMT",
                 "perf": "7402827104",
                 "pragma": "no-cache",
@@ -649,8 +660,8 @@ test(
                 "transfer-encoding": "chunked",
                 "connection": "close"
             },
-            "body": "{\"user_events\":{\"cursor\":\"GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA\",\"last_seen_event_id\":\"1813903699145637988\",\"trusted_last_seen_event_id\":\"1813903699145637988\",\"untrusted_last_seen_event_id\":\"1653160237711384581\"}}",
-            "processed": false
+            responseBody: "{\"user_events\":{\"cursor\":\"GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA\",\"last_seen_event_id\":\"1813903699145637988\",\"trusted_last_seen_event_id\":\"1813903699145637988\",\"untrusted_last_seen_event_id\":\"1653160237711384581\"}}",
+            processed: false
         }];
 
         const progress: XProgress = await controller.indexParseConversations();
@@ -821,7 +832,7 @@ test("XAccountController.indexParsedTweets() should index and parse links", asyn
 })
 
 test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIBookmarks.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIBookmarks.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIBookmarksData(data)).toBe(true);
     expect(isXAPIError(data)).toBe(false);
@@ -829,7 +840,7 @@ test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => 
 })
 
 test("types.isXAPIError() should recognize errors", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndRepliesError.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndRepliesError.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIError(data)).toBe(true);
     expect(isXAPIBookmarksData(data)).toBe(false);
@@ -837,7 +848,7 @@ test("types.isXAPIError() should recognize errors", async () => {
 })
 
 test("types.isXAPIData() should recognize data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XUserTweetsAndReplies_20250404.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies_20250404.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIData(data)).toBe(true);
     expect(isXAPIData_v2(data)).toBe(false);
@@ -846,7 +857,7 @@ test("types.isXAPIData() should recognize data", async () => {
 })
 
 test("types.isXAPIData_v2() should recognize data", async () => {
-    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
+    const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XAPIUserTweetsAndReplies1.json'), 'utf8');
     const data = JSON.parse(body);
     expect(isXAPIData_v2(data)).toBe(true);
     expect(isXAPIData(data)).toBe(false);
@@ -875,7 +886,7 @@ test("test migration: 20241016_add_config", async () => {
     // Replace it with test data
     const accountDataPath = getAccountDataPath("X", "test");
     fs.mkdirSync(accountDataPath, { recursive: true });
-    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', 'initial.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
+    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'x', 'migrations', 'initial.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
 
     // Run the migrations
     controller.initDB()
@@ -892,7 +903,7 @@ test("test migration: 20241127_add_deletedAt_fields", async () => {
     // Replace it with test data
     const accountDataPath = getAccountDataPath("X", "test");
     fs.mkdirSync(accountDataPath, { recursive: true });
-    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'migrations-x', '20241127_add_deletedAt_fields.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
+    fs.copyFileSync(path.join(__dirname, '..', 'testdata', 'x', 'migrations', '20241127_add_deletedAt_fields.sqlite3'), path.join(accountDataPath, 'data.sqlite3'));
 
     // Before the migration, there is only deletedAt fields
     // Run the migrations
