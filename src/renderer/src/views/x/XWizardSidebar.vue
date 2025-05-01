@@ -87,6 +87,12 @@ onMounted(async () => {
                     Migrate to Bluesky
                 </button>
             </li>
+            <li>
+                <button class="btn btn-light" @click="emit('setState', State.WizardTombstone)">
+                    <i class="fa-solid fa-skull" />
+                    Tombstone
+                </button>
+            </li>
         </ul>
 
         <p v-if="model.account && model.account.xAccount" class="p-3 small text-muted">

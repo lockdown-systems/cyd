@@ -32,6 +32,7 @@ import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
+import XWizardTombstone from './XWizardTombstone.vue';
 import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
@@ -545,6 +546,9 @@ onUnmounted(async () => {
                         <XWizardMigrateBluesky v-if="model.state == State.WizardMigrateToBlueskyDisplay"
                             :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @set-state="setState($event)" />
+                        
+                        <XWizardTombstone v-if="model.state == State.WizardTombstoneDisplay"
+                            :model="unref(model)" @set-state="setState($event)" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                             :model="unref(model)"

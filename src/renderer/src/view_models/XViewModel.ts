@@ -63,6 +63,9 @@ export enum State {
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+    WizardTombstone = "WizardTombstone",
+    WizardTombstoneDisplay = "WizardTombstoneDisplay",
+
     RunJobs = "RunJobs",
 
     FinishedRunningJobs = "FinishedRunningJobs",
@@ -2978,6 +2981,16 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
+                    break;
+                
+                case State.WizardTombstone:
+                    this.showBrowser = false;
+                    await this.loadURL("about:blank");
+                    this.instructions = `
+**Quitting X? Good riddance.**
+
+Using my Tombstone feature, I can help you update your profile to tell your followers where to find you next. I can also help you lock your account.`;
+                    this.state = State.WizardTombstoneDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
