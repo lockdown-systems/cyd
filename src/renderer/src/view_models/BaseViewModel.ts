@@ -287,6 +287,8 @@ export class BaseViewModel {
             await new Promise(resolve => setTimeout(resolve, 200));
             if (Date.now() - startTime >= timeout) {
                 this.log("waitForLoadingToFinish", "timeout reached while waiting for loading to finish");
+                // Force stop any navigation before returning
+                this.getWebview()?.stop();
                 return;
             }
         } while (this.getWebview()?.isLoading());
@@ -446,8 +448,7 @@ export class BaseViewModel {
         this.log("loadBlank");
         const webview = this.getWebview();
         if (webview) {
-            // Note: We need to wait for the page to finish loading before and after this to prevent
-            // Error: Error invoking remote method 'ELECTRON_GUEST_VIEW_MANAGER_CALL'
+            // Note: We need to wait for the page to finish loading before and after to prevent GUEST_VIEW_MANAGER_CALL
             // https://github.com/electron/electron/issues/24171#issuecomment-953053293
             await this.waitForLoadingToFinish();
             await webview.loadURL("about:blank")
@@ -458,6 +459,10 @@ export class BaseViewModel {
     async loadURL(url: string) {
         const webview = this.getWebview();
         if (webview) {
+            // Note: We need to wait for the page to finish loading before and after to prevent GUEST_VIEW_MANAGER_CALL
+            // https://github.com/electron/electron/issues/24171#issuecomment-953053293
+            await this.waitForLoadingToFinish();
+
             let tries = 0;
             // eslint-disable-next-line no-constant-condition
             while (true) {
@@ -492,6 +497,7 @@ export class BaseViewModel {
         } else {
             this.log("loadURL", "webview is null");
         }
+
         await this.waitForLoadingToFinish();
     }
 
