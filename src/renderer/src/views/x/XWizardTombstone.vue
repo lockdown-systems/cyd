@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { XViewModel, State } from '../../view_models/XViewModel'
 
 // Props
-defineProps<{
+const props = defineProps<{
     model: XViewModel;
 }>();
 
@@ -33,8 +33,30 @@ const updateBannerBackground = ref<BannerBackground>(BannerBackground.Night);
 const updateBannerSocialIcons = ref<BannerSocialIcons>(BannerSocialIcons.None);
 const updateBannerShowText = ref(true);
 const updateBio = ref(true);
-// const updateBioCreditCyd = ref(true);
+const updateBioText = ref('');
+const updateBioCreditCyd = ref(true);
 const lockAccount = ref(true);
+
+const bioCharacters = computed(() => {
+    if (updateBioCreditCyd.value) {
+        return 39 + updateBioText.value.length;
+    } else {
+        return updateBioText.value.length;
+    }
+});
+
+const bioCharactersLeft = computed(() => {
+    if (updateBioCreditCyd.value) {
+        return 160 - 39 - updateBioText.value.length;
+    } else {
+        return 160 - updateBioText.value.length;
+    }
+});
+
+onMounted(() => {
+    console.log('XWizardTombstone', 'onMounted');
+    updateBioText.value = props.model.account.xAccount?.bio ? props.model.account.xAccount.bio : '';
+});
 </script>
 
 <template>
@@ -132,11 +154,48 @@ const lockAccount = ref(true);
                         <input id="updateBio" v-model="updateBio" type="checkbox" class="form-check-input">
                         <label class="form-check-label" for="updateBio">Update bio text</label>
                     </div>
+                    <div class="indent">
+                        <small class="form-text text-muted">
+                            Make sure your new bio text tells your followers that you are leaving X, and where to find
+                            you now.
+                        </small>
+                    </div>
+                </div>
+                <div class="indent">
+                    <div class="mb-1">
+                        <label for="updateBioText" class="form-label visually-hidden">Bio text</label>
+                        <textarea id="updateBioText" v-model="updateBioText" class="form-control"
+                            :class="{ 'form-error': bioCharactersLeft < 0 }" rows="2" :disabled="!updateBio" />
+                    </div>
+                    <div class="mb-3 text-end form-text small"
+                        :class="{ 'text-danger': bioCharactersLeft < 0, 'text-muted': bioCharactersLeft >= 0 }">
+                        {{ bioCharacters }} of 160 characters
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input id="updateBioCreditCyd" v-model="updateBioCreditCyd" type="checkbox"
+                                class="form-check-input" :disabled="!updateBio">
+                            <label class="form-check-label" for="updateBioCreditCyd">
+                                Link to Cyd's website in bio
+                            </label>
+                        </div>
+                        <div class="indent">
+                            <small class="form-text text-muted">
+                                Add "(I escaped X using https://cyd.social)" to the end of your bio. This uses 39
+                                characters, but is appreciated!
+                            </small>
+                        </div>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <div class="form-check">
                         <input id="lockAccount" v-model="lockAccount" type="checkbox" class="form-check-input">
                         <label class="form-check-label" for="lockAccount">Lock account</label>
+                    </div>
+                    <div class="indent">
+                        <small class="form-text text-muted">
+                            Enable the "Protect your posts" feature, so only your followers can see your posts.
+                        </small>
                     </div>
                 </div>
             </form>
@@ -200,5 +259,9 @@ const lockAccount = ref(true);
 
 .banner-preview .banner-social-mastodon-bluesky {
     background-image: url('/assets/tombstone-social-mastodon-bluesky.png');
+}
+
+textarea.form-error {
+    border-color: #dc3545;
 }
 </style>
