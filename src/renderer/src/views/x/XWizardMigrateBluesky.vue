@@ -135,8 +135,8 @@ const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.accoun
 const isArchiveOld = computed(() => {
     // The date before media was added to the Cyd archive, February 18, 2025
     const oldDate = new Date('2025-02-18T00:00:00Z');
-    return (lastImportArchive.value == null || lastImportArchive.value < oldDate) &&
-        (lastBuildDatabase.value == null || lastBuildDatabase.value < oldDate);
+    return (lastImportArchive.value === null || lastImportArchive.value < oldDate) &&
+        (lastBuildDatabase.value === null || lastBuildDatabase.value < oldDate);
 });
 
 onMounted(async () => {
@@ -184,7 +184,7 @@ onUnmounted(async () => {
                 old tweets.
             </p>
 
-            <div v-if="isArchiveOld" class="alert alert-warning">
+            <div v-if="isArchiveOld && hasSomeData" class="alert alert-warning">
                 <p>
                     <strong>
                         We recommend that you reimport your local database of tweets, or rebuild it from scratch,

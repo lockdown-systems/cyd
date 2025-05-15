@@ -2865,7 +2865,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
                 case State.WizardStart:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
 
                     // Make the user start where they last were
                     jobsType = getJobsType(this.account.id) || "";
@@ -2896,21 +2896,21 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
 You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
                     this.state = State.WizardDatabaseDisplay;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     break;
 
                 case State.WizardImportStart:
                     this.showBrowser = false;
                     this.instructions = `
 **Before you can import your X archive, you need to download it from X. Here's how.**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardImportStartDisplay;
                     break;
 
                 case State.WizardImportDownload:
                     this.showBrowser = false;
                     this.instructions = `You have requested your X archive, so now we wait.`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardImportDownloadDisplay;
                     break;
 
@@ -2918,7 +2918,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                     this.showBrowser = false;
                     this.instructions = `
 **I'll help you import your X archive into your local database.**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardImportingDisplay;
                     break;
 
@@ -2929,7 +2929,7 @@ I'll help you build a private local database of your X data to the \`Documents\`
 You'll be able to access it even after you delete it from X.
 
 **Which data do you want to save?**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardBuildOptionsDisplay;
                     break;
 
@@ -2941,7 +2941,7 @@ You'll be able to access it even after you delete it from X.
 - And I can also save a more detailed backup of your direct messages than is available in the official X archive.
 
 **Which data do you want to save?**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardArchiveOptionsDisplay;
                     break;
 
@@ -2949,7 +2949,7 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     this.instructions = `
 **Which data do you want to delete?**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardDeleteOptionsDisplay;
                     break;
 
@@ -2958,7 +2958,7 @@ You'll be able to access it even after you delete it from X.
                     this.instructions = `I'm almost ready to start helping you claw back your data from X!
 
 **Here's what I'm planning on doing.**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardReviewDisplay;
                     break;
 
@@ -2969,13 +2969,13 @@ You'll be able to access it even after you delete it from X.
                     if (databaseStatsString != "") {
                         this.instructions += `\n\nI've saved: **${await this.getDatabaseStatsString()}**.`
                     }
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardDeleteReviewDisplay;
                     break;
 
                 case State.WizardMigrateToBluesky:
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.instructions = `
 **Just because you're quitting X doesn't mean your posts need to disappear.**
 
@@ -2999,7 +2999,7 @@ Using my Tombstone feature, I can help you update your profile to tell your foll
 All done!
 
 **Here's what I did.**`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.FinishedRunningJobsDisplay;
                     break;
 
@@ -3008,7 +3008,7 @@ All done!
                     this.instructions = `**I'm almost ready to delete your data from X!**
 
 You can save all your data for free, but you need a Premium plan to delete your data.`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardCheckPremiumDisplay;
                     break;
 
@@ -3042,13 +3042,13 @@ You can save all your data for free, but you need a Premium plan to delete your 
                     this.state = State.FinishedRunningJobs;
 
                     this.showBrowser = false;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     break;
 
                 case State.Debug:
                     // Stay in this state until the user cancels it
                     this.showBrowser = false
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.instructions = `I'm in my debug state.`;
                     while (this.state === State.Debug) {
                         await this.sleep(1000);
