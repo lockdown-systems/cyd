@@ -73,6 +73,7 @@ export interface XViewerResults {
 export interface XUserInfo {
     username: string;
     userID: string;
+    bio: string;
     profileImageDataURI: string;
     followingCount: number;
     followersCount: number;

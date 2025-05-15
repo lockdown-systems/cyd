@@ -15,6 +15,7 @@ export type XAccount = {
     accessedAt: Date;
     username: string;
     userID: string;
+    bio: string;
     profileImageDataURI: string;
     importFromArchive: boolean;
     saveMyData: boolean;

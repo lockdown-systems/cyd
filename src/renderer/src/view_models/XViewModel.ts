@@ -345,6 +345,7 @@ export class XViewModel extends BaseViewModel {
                     const userInfo: XUserInfo = {
                         username: viewerResults.data.viewer.user_results.result.legacy.screen_name,
                         userID: viewerResults.data.viewer.user_results.result.rest_id,
+                        bio: viewerResults.data.viewer.user_results.result.legacy.description,
                         profileImageDataURI: await window.electron.X.getImageDataURI(this.account.id, viewerResults.data.viewer.user_results.result.legacy.profile_image_url_https),
                         followingCount: viewerResults.data.viewer.user_results.result.legacy.friends_count,
                         followersCount: viewerResults.data.viewer.user_results.result.legacy.followers_count,
@@ -684,6 +685,7 @@ export class XViewModel extends BaseViewModel {
         if (this.account && this.account.xAccount) {
             this.account.xAccount.username = userInfo.username;
             this.account.xAccount.userID = userInfo.userID;
+            this.account.xAccount.bio = userInfo.bio;
             this.account.xAccount.profileImageDataURI = userInfo.profileImageDataURI;
             this.account.xAccount.followersCount = userInfo.followersCount;
             this.account.xAccount.followingCount = userInfo.followingCount;
@@ -691,7 +693,7 @@ export class XViewModel extends BaseViewModel {
             this.account.xAccount.likesCount = userInfo.likesCount;
         }
         await window.electron.database.saveAccount(JSON.stringify(this.account));
-        this.log("login", "saved user information");
+        this.log("login", ['saved user information', userInfo]);
 
         // Tell XView to reload mediaPath, now that we have a username
         this.emitter?.emit(`x-reload-media-path-${this.account.id}`);
@@ -2982,7 +2984,7 @@ You'll be able to access it even after you delete it from X.
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
                     break;
-                
+
                 case State.WizardTombstone:
                     this.showBrowser = false;
                     await this.loadURL("about:blank");

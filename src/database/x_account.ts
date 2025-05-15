@@ -10,6 +10,7 @@ interface XAccountRow {
     accessedAt: string;
     username: string;
     userID: string;
+    bio: string;
     profileImageDataURI: string;
     importFromArchive: boolean;
     saveMyData: boolean;
@@ -48,6 +49,7 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
         accessedAt: new Date(row.accessedAt),
         username: row.username,
         userID: row.userID,
+        bio: row.bio,
         profileImageDataURI: row.profileImageDataURI,
         importFromArchive: !!row.importFromArchive,
         saveMyData: !!row.saveMyData,
@@ -117,6 +119,7 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             userID = ?,
+            bio = ?,
             profileImageDataURI = ?,
             importFromArchive = ?,
             saveMyData = ?,
@@ -149,6 +152,7 @@ export const saveXAccount = (account: XAccount) => {
     `, [
         account.username,
         account.userID,
+        account.bio,
         account.profileImageDataURI,
         account.importFromArchive ? 1 : 0,
         account.saveMyData ? 1 : 0,
