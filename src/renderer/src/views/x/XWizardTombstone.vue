@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
 import { XViewModel, State } from '../../view_models/XViewModel'
+import { setJobsType } from '../../util'
 
 // Props
 const props = defineProps<{
@@ -8,11 +9,15 @@ const props = defineProps<{
 }>();
 
 // Emits
-defineEmits<{
+const emit = defineEmits<{
     setState: [value: State]
 }>()
 
 // Buttons
+const nextClicked = async () => {
+    setJobsType(props.model.account.id, 'tombstone');
+    emit('setState', State.WizardReview);
+};
 
 // Settings
 enum BannerBackground {
@@ -201,7 +206,39 @@ onMounted(() => {
             </form>
 
             <div class="buttons mb-4">
-                <p>todo: add buttons</p>
+                <button type="submit" class="btn btn-primary text-nowrap m-1"
+                    :disabled="!(updateBanner || updateBio || lockAccount) || (updateBio && bioCharactersLeft < 0)"
+                    @click="nextClicked">
+                    <i class="fa-solid fa-forward" />
+                    <template v-if="updateBanner && updateBio && lockAccount">
+                        Update My Banner and Bio, and Lock My Account
+                    </template>
+                    <template v-else-if="updateBanner && updateBio">
+                        Update My Banner and Bio
+                    </template>
+                    <template v-else-if="updateBanner && lockAccount">
+                        Update My Banner and Lock My Account
+                    </template>
+                    <template v-else-if="updateBio && lockAccount">
+                        Update My Bio and Lock My Account
+                    </template>
+                    <template v-else-if="updateBanner">
+                        Update My Banner
+                    </template>
+                    <template v-else-if="updateBio">
+                        Update My Bio
+                    </template>
+                    <template v-else-if="lockAccount">
+                        Lock My Account
+                    </template>
+                    <template v-else>
+                        Select a Checkbox Above to Continue
+                    </template>
+                </button>
+
+                <p v-if="updateBio && bioCharactersLeft < 0" class="text-danger small">
+                    Your bio is {{ bioCharactersLeft * -1 }} characters too long
+                </p>
             </div>
         </div>
     </div>
