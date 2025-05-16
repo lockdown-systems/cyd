@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
-import { XViewModel, State } from '../../view_models/XViewModel'
+import { XViewModel, State, tombstoneUpdateBioCreditCydText } from '../../view_models/XViewModel'
 import { setJobsType } from '../../util'
+import { TombstoneBannerBackground, TombstoneBannerSocialIcons } from '../../types_x';
+
+import XTombstoneBannerComponent from './XTombstoneBannerComponent.vue';
 
 // Props
 const props = defineProps<{
@@ -22,22 +25,9 @@ const nextClicked = async () => {
 };
 
 // Settings
-enum BannerBackground {
-    Night = 'night',
-    Morning = 'morning',
-}
-
-enum BannerSocialIcons {
-    None = 'none',
-    Bluesky = 'bluesky',
-    Mastodon = 'mastodon',
-    BlueskyMastodon = 'bluesky-mastodon',
-    MastodonBluesky = 'mastodon-bluesky',
-}
-
 const updateBanner = ref(true);
-const updateBannerBackground = ref<BannerBackground>(BannerBackground.Night);
-const updateBannerSocialIcons = ref<BannerSocialIcons>(BannerSocialIcons.None);
+const updateBannerBackground = ref<TombstoneBannerBackground>(TombstoneBannerBackground.Night);
+const updateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(TombstoneBannerSocialIcons.None);
 const updateBannerShowText = ref(true);
 const updateBio = ref(true);
 const updateBioText = ref('');
@@ -49,23 +39,23 @@ const loadSettings = async () => {
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
         updateBanner.value = account.xAccount.tombstoneUpdateBanner;
-        if(account.xAccount.tombstoneUpdateBannerBackground == 'morning') {
-            updateBannerBackground.value = BannerBackground.Morning;
+        if (account.xAccount.tombstoneUpdateBannerBackground == 'morning') {
+            updateBannerBackground.value = TombstoneBannerBackground.Morning;
         } else {
             // default to night
-            updateBannerBackground.value = BannerBackground.Night;
+            updateBannerBackground.value = TombstoneBannerBackground.Night;
         }
-        if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'bluesky') {
-            updateBannerSocialIcons.value = BannerSocialIcons.Bluesky;
-        } else if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'mastodon') {
-            updateBannerSocialIcons.value = BannerSocialIcons.Mastodon;
-        } else if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'bluesky-mastodon') {
-            updateBannerSocialIcons.value = BannerSocialIcons.BlueskyMastodon;
-        } else if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'mastodon-bluesky') {
-            updateBannerSocialIcons.value = BannerSocialIcons.MastodonBluesky;
+        if (account.xAccount.tombstoneUpdateBannerSocialIcons == 'bluesky') {
+            updateBannerSocialIcons.value = TombstoneBannerSocialIcons.Bluesky;
+        } else if (account.xAccount.tombstoneUpdateBannerSocialIcons == 'mastodon') {
+            updateBannerSocialIcons.value = TombstoneBannerSocialIcons.Mastodon;
+        } else if (account.xAccount.tombstoneUpdateBannerSocialIcons == 'bluesky-mastodon') {
+            updateBannerSocialIcons.value = TombstoneBannerSocialIcons.BlueskyMastodon;
+        } else if (account.xAccount.tombstoneUpdateBannerSocialIcons == 'mastodon-bluesky') {
+            updateBannerSocialIcons.value = TombstoneBannerSocialIcons.MastodonBluesky;
         } else {
             // default to none
-            updateBannerSocialIcons.value = BannerSocialIcons.None;
+            updateBannerSocialIcons.value = TombstoneBannerSocialIcons.None;
         }
         updateBannerShowText.value = account.xAccount.tombstoneUpdateBannerShowText;
         updateBio.value = account.xAccount.tombstoneUpdateBio;
@@ -90,6 +80,7 @@ const saveSettings = async () => {
         account.xAccount.tombstoneUpdateBannerSocialIcons = updateBannerSocialIcons.value;
         account.xAccount.tombstoneUpdateBannerShowText = updateBannerShowText.value;
         account.xAccount.tombstoneUpdateBio = updateBio.value;
+        account.xAccount.tombstoneUpdateBioText = updateBioText.value;
         account.xAccount.tombstoneUpdateBioCreditCyd = updateBioCreditCyd.value;
         account.xAccount.tombstoneLockAccount = lockAccount.value;
 
@@ -100,7 +91,7 @@ const saveSettings = async () => {
 
 const bioCharacters = computed(() => {
     if (updateBioCreditCyd.value) {
-        return 39 + updateBioText.value.length;
+        return tombstoneUpdateBioCreditCydText.length + updateBioText.value.length;
     } else {
         return updateBioText.value.length;
     }
@@ -108,7 +99,7 @@ const bioCharacters = computed(() => {
 
 const bioCharactersLeft = computed(() => {
     if (updateBioCreditCyd.value) {
-        return 160 - 39 - updateBioText.value.length;
+        return 160 - tombstoneUpdateBioCreditCydText.length - updateBioText.value.length;
     } else {
         return 160 - updateBioText.value.length;
     }
@@ -189,27 +180,10 @@ onMounted(async () => {
                         </label>
                     </div>
                 </div>
-                <div v-if="updateBanner" class="banner-preview-wrapper mb-3">
-                    <p class="text-center text-muted small mb-1">
-                        Banner Preview
-                    </p>
-                    <div class="banner-preview">
-                        <!-- background -->
-                        <div v-if="updateBannerBackground == 'night'" class="banner-layer banner-bg-night" />
-                        <div v-if="updateBannerBackground == 'morning'" class="banner-layer banner-bg-morning" />
-                        <!-- foreground -->
-                        <div class="banner-layer banner-foreground" />
-                        <!-- text -->
-                        <div v-if="updateBannerShowText" class="banner-layer banner-text" />
-                        <!-- social icons -->
-                        <div v-if="updateBannerSocialIcons == 'bluesky'" class="banner-layer banner-social-bluesky" />
-                        <div v-if="updateBannerSocialIcons == 'mastodon'" class="banner-layer banner-social-mastodon" />
-                        <div v-if="updateBannerSocialIcons == 'bluesky-mastodon'"
-                            class="banner-layer banner-social-bluesky-mastodon" />
-                        <div v-if="updateBannerSocialIcons == 'mastodon-bluesky'"
-                            class="banner-layer banner-social-mastodon-bluesky" />
-                    </div>
-                </div>
+                <XTombstoneBannerComponent :update-banner="updateBanner"
+                    :update-banner-background="updateBannerBackground"
+                    :update-banner-social-icons="updateBannerSocialIcons"
+                    :update-banner-show-text="updateBannerShowText" />
                 <div class="mb-3">
                     <div class="form-check">
                         <input id="updateBio" v-model="updateBio" type="checkbox" class="form-check-input">
@@ -242,7 +216,8 @@ onMounted(async () => {
                         </div>
                         <div class="indent">
                             <small class="form-text text-muted">
-                                Add "(I escaped X using https://cyd.social)" to the end of your bio. This uses 39
+                                Add "(I escaped X using https://cyd.social)" to the end of your bio. This uses {{
+                                    tombstoneUpdateBioCreditCydText.length }}
                                 characters, but is appreciated!
                             </small>
                         </div>
@@ -301,59 +276,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.banner-preview {
-    width: 100%;
-    aspect-ratio: 3 / 1;
-    position: relative;
-}
-
-.banner-preview>div {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.banner-preview .banner-layer {
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-}
-
-.banner-preview .banner-bg-night {
-    background-image: url('/assets/tombstone-bg-night.png');
-}
-
-.banner-preview .banner-bg-morning {
-    background-image: url('/assets/tombstone-bg-morning.png');
-}
-
-.banner-preview .banner-foreground {
-    background-image: url('/assets/tombstone-foreground.png');
-}
-
-.banner-preview .banner-text {
-    background-image: url('/assets/tombstone-text.png');
-}
-
-.banner-preview .banner-social-bluesky {
-    background-image: url('/assets/tombstone-social-bluesky.png');
-}
-
-.banner-preview .banner-social-mastodon {
-    background-image: url('/assets/tombstone-social-mastodon.png');
-}
-
-.banner-preview .banner-social-bluesky-mastodon {
-    background-image: url('/assets/tombstone-social-bluesky-mastodon.png');
-}
-
-.banner-preview .banner-social-mastodon-bluesky {
-    background-image: url('/assets/tombstone-social-mastodon-bluesky.png');
-}
-
 textarea.form-error {
     border-color: #dc3545;
 }

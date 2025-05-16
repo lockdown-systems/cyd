@@ -101,6 +101,8 @@ export type XViewModelState = {
     currentJobIndex: number;
 }
 
+export const tombstoneUpdateBioCreditCydText = " (I escaped X using https://cyd.social)";
+
 export class XViewModel extends BaseViewModel {
     public progress: XProgress = emptyXProgress();
     public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();

@@ -80,3 +80,16 @@ export interface XUserInfo {
     tweetsCount: number;
     likesCount: number;
 }
+
+export enum TombstoneBannerBackground {
+    Night = 'night',
+    Morning = 'morning',
+}
+
+export enum TombstoneBannerSocialIcons {
+    None = 'none',
+    Bluesky = 'bluesky',
+    Mastodon = 'mastodon',
+    BlueskyMastodon = 'bluesky-mastodon',
+    MastodonBluesky = 'mastodon-bluesky',
+}

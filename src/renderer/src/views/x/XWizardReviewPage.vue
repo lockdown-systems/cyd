@@ -2,13 +2,16 @@
 import { ref, onMounted } from 'vue';
 import {
     XViewModel,
-    State
+    State,
+    tombstoneUpdateBioCreditCydText
 } from '../../view_models/XViewModel'
 import { openURL, getJobsType } from '../../util';
 import { XDeleteReviewStats, emptyXDeleteReviewStats, XMigrateTweetCounts, emptyXMigrateTweetCounts } from '../../../../shared_types';
 import { xHasSomeData } from '../../util_x';
 import LoadingComponent from '../shared_components/LoadingComponent.vue';
 import AlertStayAwake from '../shared_components/AlertStayAwake.vue';
+import XTombstoneBannerComponent from './XTombstoneBannerComponent.vue';
+import { TombstoneBannerBackground, TombstoneBannerSocialIcons } from '../../types_x';
 
 // Props
 const props = defineProps<{
@@ -39,6 +42,8 @@ const backClicked = async () => {
         emit('setState', State.WizardArchiveOptions);
     } else if (jobsType.value == 'migrateBluesky' || jobsType.value == 'migrateBlueskyDelete') {
         emit('setState', State.WizardMigrateToBluesky);
+    } else if (jobsType.value == 'tombstone') {
+        emit('setState', State.WizardTombstone);
     } else {
         // Display error
         console.error('Unknown review type:', jobsType.value);
@@ -55,6 +60,9 @@ const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 const hasSomeData = ref(false);
 const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
 
+const tombstoneUpdateBannerBackground = ref<TombstoneBannerBackground>(TombstoneBannerBackground.Night);
+const tombstoneUpdateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(TombstoneBannerSocialIcons.None);
+
 const deleteTweetsCountNotArchived = ref(0);
 
 onMounted(async () => {
@@ -68,6 +76,26 @@ onMounted(async () => {
 
     if (jobsType.value == 'delete' && props.model.account?.xAccount?.deleteTweets) {
         deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
+    }
+
+    if (jobsType.value == 'tombstone') {
+        if (props.model.account?.xAccount?.tombstoneUpdateBannerBackground == 'morning') {
+            tombstoneUpdateBannerBackground.value = TombstoneBannerBackground.Morning;
+        } else {
+            tombstoneUpdateBannerBackground.value = TombstoneBannerBackground.Night;
+        }
+
+        if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == 'bluesky') {
+            tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.Bluesky;
+        } else if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == 'mastodon') {
+            tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.Mastodon;
+        } else if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == 'bluesky-mastodon') {
+            tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.BlueskyMastodon;
+        } else if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == 'mastodon-bluesky') {
+            tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.MastodonBluesky;
+        } else {
+            tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.None;
+        }
     }
 
     loading.value = false;
@@ -229,6 +257,37 @@ onMounted(async () => {
                     </ul>
                 </div>
 
+                <div v-if="jobsType == 'tombstone'">
+                    <h3>
+                        <i class="fa-solid fa-skull me-1" />
+                        Tombstone
+                    </h3>
+                    <ul>
+                        <li v-if="model.account?.xAccount?.tombstoneUpdateBanner">
+                            <div>Update your banner</div>
+                            <XTombstoneBannerComponent :update-banner="model.account?.xAccount?.tombstoneUpdateBanner"
+                                :update-banner-background="tombstoneUpdateBannerBackground"
+                                :update-banner-social-icons="tombstoneUpdateBannerSocialIcons"
+                                :update-banner-show-text="model.account?.xAccount?.tombstoneUpdateBannerShowText" />
+                        </li>
+                        <li v-if="model.account?.xAccount?.tombstoneUpdateBio">
+                            <div>Update your bio</div>
+                            <p class="text-center text-muted small mb-1">
+                                Bio Preview
+                            </p>
+                            <p class="small">
+                                {{ model.account?.xAccount?.tombstoneUpdateBioText }}
+                                <span v-if="model.account?.xAccount?.tombstoneUpdateBioCreditCyd">
+                                    {{ tombstoneUpdateBioCreditCydText }}
+                                </span>
+                            </p>
+                        </li>
+                        <li v-if="model.account?.xAccount?.tombstoneLockAccount">
+                            Lock your account
+                        </li>
+                    </ul>
+                </div>
+
                 <div class="buttons">
                     <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                         <i class="fa-solid fa-backward" />
@@ -243,6 +302,9 @@ onMounted(async () => {
                         </template>
                         <template v-else-if="jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete'">
                             Back to Migrate to Bluesky Options
+                        </template>
+                        <template v-else-if="jobsType == 'tombstone'">
+                            Back to Tombstone Options
                         </template>
                     </button>
 
@@ -261,6 +323,9 @@ onMounted(async () => {
                         </template>
                         <template v-else-if="jobsType == 'migrateBluesky'">
                             Start Migrating
+                        </template>
+                        <template v-else-if="jobsType == 'tombstone'">
+                            Update Profile
                         </template>
                     </button>
                 </div>
