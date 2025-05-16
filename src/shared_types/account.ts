@@ -44,6 +44,14 @@ export type XAccount = {
     followersCount: number;
     tweetsCount: number;
     likesCount: number;
+    tombstoneUpdateBanner: boolean;
+    tombstoneUpdateBannerBackground: string;
+    tombstoneUpdateBannerSocialIcons: string;
+    tombstoneUpdateBannerShowText: boolean;
+    tombstoneUpdateBio: boolean;
+    tombstoneUpdateBioText: string;
+    tombstoneUpdateBioCreditCyd: boolean;
+    tombstoneLockAccount: boolean;
 };
 
 export type BlueskyAccount = {

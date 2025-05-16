@@ -39,6 +39,14 @@ interface XAccountRow {
     followersCount: number;
     tweetsCount: number;
     likesCount: number;
+    tombstoneUpdateBanner: boolean;
+    tombstoneUpdateBannerBackground: string;
+    tombstoneUpdateBannerSocialIcons: string;
+    tombstoneUpdateBannerShowText: boolean;
+    tombstoneUpdateBio: boolean;
+    tombstoneUpdateBioText: string;
+    tombstoneUpdateBioCreditCyd: boolean;
+    tombstoneLockAccount: boolean;
 }
 
 function xAccountRowtoXAccount(row: XAccountRow): XAccount {
@@ -77,7 +85,15 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
         followingCount: row.followingCount,
         followersCount: row.followersCount,
         tweetsCount: row.tweetsCount,
-        likesCount: row.likesCount
+        likesCount: row.likesCount,
+        tombstoneUpdateBanner: !!row.tombstoneUpdateBanner,
+        tombstoneUpdateBannerBackground: row.tombstoneUpdateBannerBackground,
+        tombstoneUpdateBannerSocialIcons: row.tombstoneUpdateBannerSocialIcons,
+        tombstoneUpdateBannerShowText: !!row.tombstoneUpdateBannerShowText,
+        tombstoneUpdateBio: !!row.tombstoneUpdateBio,
+        tombstoneUpdateBioText: row.tombstoneUpdateBioText,
+        tombstoneUpdateBioCreditCyd: !!row.tombstoneUpdateBioCreditCyd,
+        tombstoneLockAccount: !!row.tombstoneLockAccount,
     }
 }
 
@@ -147,7 +163,15 @@ export const saveXAccount = (account: XAccount) => {
             followingCount = ?,
             followersCount = ?,
             tweetsCount = ?,
-            likesCount = ?
+            likesCount = ?,
+            tombstoneUpdateBanner = ?,
+            tombstoneUpdateBannerBackground = ?,
+            tombstoneUpdateBannerSocialIcons = ?,
+            tombstoneUpdateBannerShowText = ?,
+            tombstoneUpdateBio = ?,
+            tombstoneUpdateBioText = ?,
+            tombstoneUpdateBioCreditCyd = ?,
+            tombstoneLockAccount = ?
         WHERE id = ?
     `, [
         account.username,
@@ -181,6 +205,14 @@ export const saveXAccount = (account: XAccount) => {
         account.followersCount,
         account.tweetsCount,
         account.likesCount,
+        account.tombstoneUpdateBanner ? 1 : 0,
+        account.tombstoneUpdateBannerBackground,
+        account.tombstoneUpdateBannerSocialIcons,
+        account.tombstoneUpdateBannerShowText ? 1 : 0,
+        account.tombstoneUpdateBio ? 1 : 0,
+        account.tombstoneUpdateBioText,
+        account.tombstoneUpdateBioCreditCyd ? 1 : 0,
+        account.tombstoneLockAccount ? 1 : 0,
         account.id
     ]);
 }

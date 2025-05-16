@@ -182,5 +182,19 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN bio TEXT;`,
             ]
         },
+        // Add tombstone settings to xAccount table
+        {
+            name: "add tombstone settings to xAccount table",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBanner BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerBackground TEXT DEFAULT 'night';`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerSocialIcons TEXT DEFAULT 'none';`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerShowText BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBio BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioText TEXT DEFAULT '';`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioCreditCyd BOOLEAN DEFAULT 1;`,
+                `ALTER TABLE xAccount ADD COLUMN tombstoneLockAccount BOOLEAN DEFAULT 1;`,
+            ]
+        },
     ]);
 }

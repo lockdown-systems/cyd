@@ -548,7 +548,7 @@ onUnmounted(async () => {
                             @set-state="setState($event)" />
                         
                         <XWizardTombstone v-if="model.state == State.WizardTombstoneDisplay"
-                            :model="unref(model)" @set-state="setState($event)" />
+                            :model="unref(model)" @set-state="setState($event)" @update-account="updateAccount" />
 
                         <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
                             :model="unref(model)"

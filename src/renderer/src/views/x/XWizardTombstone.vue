@@ -10,11 +10,13 @@ const props = defineProps<{
 
 // Emits
 const emit = defineEmits<{
+    updateAccount: []
     setState: [value: State]
 }>()
 
 // Buttons
 const nextClicked = async () => {
+    await saveSettings();
     setJobsType(props.model.account.id, 'tombstone');
     emit('setState', State.WizardReview);
 };
@@ -42,6 +44,60 @@ const updateBioText = ref('');
 const updateBioCreditCyd = ref(true);
 const lockAccount = ref(true);
 
+const loadSettings = async () => {
+    console.log('XWizardTombstone', 'loadSettings');
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        updateBanner.value = account.xAccount.tombstoneUpdateBanner;
+        if(account.xAccount.tombstoneUpdateBannerBackground == 'morning') {
+            updateBannerBackground.value = BannerBackground.Morning;
+        } else {
+            // default to night
+            updateBannerBackground.value = BannerBackground.Night;
+        }
+        if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'bluesky') {
+            updateBannerSocialIcons.value = BannerSocialIcons.Bluesky;
+        } else if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'mastodon') {
+            updateBannerSocialIcons.value = BannerSocialIcons.Mastodon;
+        } else if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'bluesky-mastodon') {
+            updateBannerSocialIcons.value = BannerSocialIcons.BlueskyMastodon;
+        } else if(account.xAccount.tombstoneUpdateBannerSocialIcons == 'mastodon-bluesky') {
+            updateBannerSocialIcons.value = BannerSocialIcons.MastodonBluesky;
+        } else {
+            // default to none
+            updateBannerSocialIcons.value = BannerSocialIcons.None;
+        }
+        updateBannerShowText.value = account.xAccount.tombstoneUpdateBannerShowText;
+        updateBio.value = account.xAccount.tombstoneUpdateBio;
+        updateBioCreditCyd.value = account.xAccount.tombstoneUpdateBioCreditCyd;
+        lockAccount.value = account.xAccount.tombstoneLockAccount;
+
+        // Pull bio text what's in their X profile, not their tombstone bio text
+        updateBioText.value = account.xAccount.bio ? account.xAccount.bio : '';
+    }
+};
+
+const saveSettings = async () => {
+    console.log('XWizardTombstone', 'saveSettings');
+    if (!props.model.account) {
+        console.error('XWizardTombstone', 'saveSettings', 'account is null');
+        return;
+    }
+    const account = await window.electron.database.getAccount(props.model.account?.id);
+    if (account && account.xAccount) {
+        account.xAccount.tombstoneUpdateBanner = updateBanner.value;
+        account.xAccount.tombstoneUpdateBannerBackground = updateBannerBackground.value;
+        account.xAccount.tombstoneUpdateBannerSocialIcons = updateBannerSocialIcons.value;
+        account.xAccount.tombstoneUpdateBannerShowText = updateBannerShowText.value;
+        account.xAccount.tombstoneUpdateBio = updateBio.value;
+        account.xAccount.tombstoneUpdateBioCreditCyd = updateBioCreditCyd.value;
+        account.xAccount.tombstoneLockAccount = lockAccount.value;
+
+        await window.electron.database.saveAccount(JSON.stringify(account));
+        emit('updateAccount');
+    }
+};
+
 const bioCharacters = computed(() => {
     if (updateBioCreditCyd.value) {
         return 39 + updateBioText.value.length;
@@ -58,9 +114,9 @@ const bioCharactersLeft = computed(() => {
     }
 });
 
-onMounted(() => {
+onMounted(async () => {
     console.log('XWizardTombstone', 'onMounted');
-    updateBioText.value = props.model.account.xAccount?.bio ? props.model.account.xAccount.bio : '';
+    await loadSettings();
 });
 </script>
 
