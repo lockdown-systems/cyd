@@ -78,7 +78,7 @@ onMounted(() => {
                 <div class="mb-3">
                     <div class="form-check">
                         <input id="updateBanner" v-model="updateBanner" type="checkbox" class="form-check-input">
-                        <label class="form-check-label" for="updateBanner">Update the banner on my X profile</label>
+                        <label class="form-check-label" for="updateBanner">Update profile banner</label>
                     </div>
                     <div class="indent">
                         <small class="form-text text-muted">
