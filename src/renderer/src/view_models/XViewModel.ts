@@ -148,14 +148,30 @@ export class XViewModel extends BaseViewModel {
         const jobTypes = [];
 
         const jobsType = getJobsType(this.account.id);
+        // Migrate to Bluesky
         if (jobsType == 'migrateBluesky') {
             jobTypes.push("migrateBluesky");
             shouldBuildArchive = true;
-        }
-        else if (jobsType == 'migrateBlueskyDelete') {
+        } else if (jobsType == 'migrateBlueskyDelete') {
             jobTypes.push("migrateBlueskyDelete");
             shouldBuildArchive = true;
-        } else {
+        }
+        // Tombstone
+        else if (jobsType == 'tombstone') {
+            jobTypes.push("login");
+
+            if (this.account.xAccount?.tombstoneUpdateBanner) {
+                jobTypes.push("tombstoneUpdateBanner");
+            }
+            if (this.account.xAccount?.tombstoneUpdateBio) {
+                jobTypes.push("tombstoneUpdateBio");
+            }
+            if (this.account.xAccount?.tombstoneLockAccount) {
+                jobTypes.push("tombstoneLockAccount");
+            }
+        }
+        // Save, archive, or delete
+        else {
             jobTypes.push("login");
 
             if (this.account.xAccount?.saveMyData) {
@@ -2746,6 +2762,48 @@ Hang on while I scroll down to your earliest bookmarks.`;
         return true;
     }
 
+    async runJobTombstoneUpdateBanner(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BANNER, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `**I'm updating your banner.**`;
+        this.showAutomationNotice = true;
+
+        // TODO: implement
+        await this.sleep(2000);
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
+    async runJobTombstoneUpdateBio(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BIO, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `**I'm updating your bio.**`;
+        this.showAutomationNotice = true;
+
+        // TODO: implement
+        await this.sleep(2000);
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
+    async runJobTombstoneLockAccount(jobIndex: number): Promise<boolean> {
+        await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_TOMBSTONE_LOCK_ACCOUNT, navigator.userAgent);
+
+        this.showBrowser = true;
+        this.instructions = `**I'm locking your account.**`;
+        this.showAutomationNotice = true;
+
+        // TODO: implement
+        await this.sleep(2000);
+
+        await this.finishJob(jobIndex);
+        return true;
+    }
+
     async runJob(jobIndex: number) {
         this.runJobsState = RunJobsState.Default;
 
@@ -2828,6 +2886,18 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
             case "migrateBlueskyDelete":
                 await this.runJobMigrateBlueskyDelete(jobIndex);
+                break;
+
+            case "tombstoneUpdateBanner":
+                await this.runJobTombstoneUpdateBanner(jobIndex);
+                break;
+
+            case "tombstoneUpdateBio":
+                await this.runJobTombstoneUpdateBio(jobIndex);
+                break;
+
+            case "tombstoneLockAccount":
+                await this.runJobTombstoneLockAccount(jobIndex);
                 break;
         }
     }

@@ -280,6 +280,26 @@ onMounted(async () => {
             </div>
         </div>
 
+        <div v-if="jobsType == 'tombstone'" class="container mt-3">
+            <div class="finished">
+                <h2>You just said goodbye to X:</h2>
+                <ul>
+                    <li>
+                        <i class="fa-solid fa-skull" />
+                        Updated your banner
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-skull" />
+                        Updated your bio
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-skull" />
+                        Locked your account
+                    </li>
+                </ul>
+            </div>
+        </div>
+
         <div v-if="!hideErrors && model.progress.errorsOccured > 0" class="alert alert-danger mt-4" role="alert">
             <p>
                 <strong>Uh oh, Cyd encountered {{ model.progress.errorsOccured.toLocaleString() }} errors.</strong>
