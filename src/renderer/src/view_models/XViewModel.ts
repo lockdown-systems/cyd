@@ -2850,8 +2850,25 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.instructions = `**I'm locking your account.**`;
         this.showAutomationNotice = true;
 
-        // TODO: implement
-        await this.sleep(2000);
+        // Load the audience, media and tagging settings page
+        await this.loadURLWithRateLimit("https://x.com/settings/audience_and_tagging");
+
+        // Is the "Protect your tweets" box already checked?
+        if (await this.getWebview()?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].checked
+`)) {
+            console.log("runJobTombstoneLockAccount", "account is already locked");
+        }
+        // Check the "Protect your tweets" box
+        else {
+            console.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
+            await this.getWebview()?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].click()`);
+            await this.sleep(200);
+            await this.waitForSelector('button[data-testid="confirmationSheetConfirm"]', "https://x.com/settings/audience_and_tagging");
+            await this.sleep(200);
+            await this.scriptClickElement('button[data-testid="confirmationSheetConfirm"]');
+            await this.sleep(200);
+            await this.waitForLoadingToFinish();
+        }
 
         await this.finishJob(jobIndex);
         return true;
