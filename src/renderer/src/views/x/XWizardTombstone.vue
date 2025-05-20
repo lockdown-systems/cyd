@@ -67,18 +67,108 @@ const loadSettings = async () => {
     }
 };
 
+const loadImage = async (url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+    });
+}
+
+const imageToCanvas = async (img: HTMLImageElement): Promise<HTMLCanvasElement> => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    return canvas;
+}
+
+const mergeCanvases = async (bgCanvas: HTMLCanvasElement, fgCanvas: HTMLCanvasElement): Promise<HTMLCanvasElement> => {
+    const width = Math.max(bgCanvas.width, fgCanvas.width);
+    const height = Math.max(bgCanvas.height, fgCanvas.height);
+    const mergedCanvas = document.createElement('canvas');
+    mergedCanvas.width = width;
+    mergedCanvas.height = height;
+    const ctx = mergedCanvas.getContext('2d')!;
+    ctx.drawImage(bgCanvas, 0, 0);
+    ctx.drawImage(fgCanvas, 0, 0);
+    return mergedCanvas;
+}
+
+const buildBannerImage = async (): Promise<string> => {
+    if(!updateBanner.value) {
+        return "";
+    }
+
+    // Background
+    let bgUrl: string;
+    if(updateBannerBackground.value == TombstoneBannerBackground.Night) {
+        bgUrl = '/assets/tombstone-bg-night.png';
+    } else {
+        bgUrl = '/assets/tombstone-bg-morning.png';
+    }
+    const bgImg = await loadImage(bgUrl);
+    const bgCanvas = await imageToCanvas(bgImg);
+
+    // Foreground
+    const fgImg = await loadImage('/assets/tombstone-foreground.png');
+    const fgCanvas = await imageToCanvas(fgImg);
+
+    // Merged background and foreground
+    let bannerCanvas = await mergeCanvases(bgCanvas, fgCanvas);
+
+    // Is there a text layer?
+    if (updateBannerShowText.value) {
+        const textImg = await loadImage('/assets/tombstone-text.png');
+        const textCanvas = await imageToCanvas(textImg);
+
+        bannerCanvas = await mergeCanvases(bannerCanvas, textCanvas);
+    }
+
+    // Is there a social icon layer?
+    if(updateBannerSocialIcons.value != TombstoneBannerSocialIcons.None) {
+        let socialUrl: string;
+        switch(updateBannerSocialIcons.value) {
+            case TombstoneBannerSocialIcons.Bluesky:
+                socialUrl = '/assets/tombstone-social-bluesky.png';
+                break;
+            case TombstoneBannerSocialIcons.Mastodon:
+                socialUrl = '/assets/tombstone-social-mastodon.png';
+                break;
+            case TombstoneBannerSocialIcons.BlueskyMastodon:
+                socialUrl = '/assets/tombstone-social-bluesky-mastodon.png';
+                break;
+            case TombstoneBannerSocialIcons.MastodonBluesky:
+                socialUrl = '/assets/tombstone-social-mastodon-bluesky.png';
+                break;
+        }
+        const socialImg = await loadImage(socialUrl);
+        const socialCanvas = await imageToCanvas(socialImg);
+
+        bannerCanvas = await mergeCanvases(bannerCanvas, socialCanvas);
+    }
+
+    return bannerCanvas.toDataURL('image/png');
+}
+
 const saveSettings = async () => {
     console.log('XWizardTombstone', 'saveSettings');
     if (!props.model.account) {
         console.error('XWizardTombstone', 'saveSettings', 'account is null');
         return;
     }
+
+    const bannerDataURL = await buildBannerImage();
+
     const account = await window.electron.database.getAccount(props.model.account?.id);
     if (account && account.xAccount) {
         account.xAccount.tombstoneUpdateBanner = updateBanner.value;
         account.xAccount.tombstoneUpdateBannerBackground = updateBannerBackground.value;
         account.xAccount.tombstoneUpdateBannerSocialIcons = updateBannerSocialIcons.value;
         account.xAccount.tombstoneUpdateBannerShowText = updateBannerShowText.value;
+        account.xAccount.tombstoneBannerDataURL = bannerDataURL;
         account.xAccount.tombstoneUpdateBio = updateBio.value;
         account.xAccount.tombstoneUpdateBioText = updateBioText.value;
         account.xAccount.tombstoneUpdateBioCreditCyd = updateBioCreditCyd.value;

@@ -48,6 +48,7 @@ export type XAccount = {
     tombstoneUpdateBannerBackground: string;
     tombstoneUpdateBannerSocialIcons: string;
     tombstoneUpdateBannerShowText: boolean;
+    tombstoneBannerDataURL: string;
     tombstoneUpdateBio: boolean;
     tombstoneUpdateBioText: string;
     tombstoneUpdateBioCreditCyd: boolean;

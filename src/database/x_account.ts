@@ -43,6 +43,7 @@ interface XAccountRow {
     tombstoneUpdateBannerBackground: string;
     tombstoneUpdateBannerSocialIcons: string;
     tombstoneUpdateBannerShowText: boolean;
+    tombstoneBannerDataURL: string;
     tombstoneUpdateBio: boolean;
     tombstoneUpdateBioText: string;
     tombstoneUpdateBioCreditCyd: boolean;
@@ -90,6 +91,7 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
         tombstoneUpdateBannerBackground: row.tombstoneUpdateBannerBackground,
         tombstoneUpdateBannerSocialIcons: row.tombstoneUpdateBannerSocialIcons,
         tombstoneUpdateBannerShowText: !!row.tombstoneUpdateBannerShowText,
+        tombstoneBannerDataURL: row.tombstoneBannerDataURL,
         tombstoneUpdateBio: !!row.tombstoneUpdateBio,
         tombstoneUpdateBioText: row.tombstoneUpdateBioText,
         tombstoneUpdateBioCreditCyd: !!row.tombstoneUpdateBioCreditCyd,
@@ -168,6 +170,7 @@ export const saveXAccount = (account: XAccount) => {
             tombstoneUpdateBannerBackground = ?,
             tombstoneUpdateBannerSocialIcons = ?,
             tombstoneUpdateBannerShowText = ?,
+            tombstoneBannerDataURL = ?,
             tombstoneUpdateBio = ?,
             tombstoneUpdateBioText = ?,
             tombstoneUpdateBioCreditCyd = ?,
@@ -209,6 +212,7 @@ export const saveXAccount = (account: XAccount) => {
         account.tombstoneUpdateBannerBackground,
         account.tombstoneUpdateBannerSocialIcons,
         account.tombstoneUpdateBannerShowText ? 1 : 0,
+        account.tombstoneBannerDataURL,
         account.tombstoneUpdateBio ? 1 : 0,
         account.tombstoneUpdateBioText,
         account.tombstoneUpdateBioCreditCyd ? 1 : 0,

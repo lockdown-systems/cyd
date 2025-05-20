@@ -2769,6 +2769,9 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.instructions = `**I'm updating your banner.**`;
         this.showAutomationNotice = true;
 
+        // Load the profile page
+        await this.loadURLWithRateLimit("https://x.com/settings/profile");
+
         // TODO: implement
         await this.sleep(2000);
 
