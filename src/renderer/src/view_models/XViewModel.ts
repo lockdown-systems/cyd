@@ -2786,8 +2786,58 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.instructions = `**I'm updating your bio.**`;
         this.showAutomationNotice = true;
 
-        // TODO: implement
-        await this.sleep(2000);
+        // TODO: this currently does not work, because X is implemented
+        // in React and does really weird stuff. When submitting the
+        // profile form, it doesn't seem to get the bio text value from
+        // the <textarea>, and I'm not sure where it finds it.
+
+        // Load the profile page
+        await this.loadURLWithRateLimit("https://x.com/settings/profile");
+
+        // Wait for bio field to appear
+        await this.waitForSelector('div[role="dialog"] textarea', "https://x.com/settings/profile");
+        await this.sleep(200);
+
+        // Update the bio field
+        let bioText = this.account.xAccount?.tombstoneUpdateBioText ?? "";
+        if (this.account.xAccount?.tombstoneUpdateBioCreditCyd) {
+            bioText = bioText + tombstoneUpdateBioCreditCydText;
+        }
+        if (bioText.length > 160) {
+            bioText = bioText.substring(0, 160);
+        }
+        await this.getWebview()?.executeJavaScript(`
+            (async () => {
+                const el = document.querySelector('div[role="dialog"] textarea');
+                if (!el) { console.log("Textarea not found"); return; }
+
+                // Simulate a user click to focus
+                el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                el.focus();
+
+                // Clear the textarea by setting value and firing input event
+                el.value = '';
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+
+                // Type the new bio character by character
+                for (const char of ${JSON.stringify(bioText)}) {
+                    el.value += char;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    await new Promise(r => setTimeout(r, 20));
+                }
+            })();
+        `);
+        await this.sleep(200);
+
+        // Click save
+        await this.scriptClickElement('button[data-testid="Profile_Save_Button"]');
+        await this.sleep(200);
+        await this.waitForLoadingToFinish();
+
+        this.pause();
+        await this.waitForPause();
 
         await this.finishJob(jobIndex);
         return true;

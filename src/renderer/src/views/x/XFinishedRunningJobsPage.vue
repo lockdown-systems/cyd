@@ -284,15 +284,15 @@ onMounted(async () => {
             <div class="finished">
                 <h2>You just said goodbye to X:</h2>
                 <ul>
-                    <li>
+                    <li v-if="model.account.xAccount?.tombstoneUpdateBanner">
                         <i class="fa-solid fa-skull" />
                         Updated your banner
                     </li>
-                    <li>
+                    <li v-if="model.account.xAccount?.tombstoneUpdateBio">
                         <i class="fa-solid fa-skull" />
                         Updated your bio
                     </li>
-                    <li>
+                    <li v-if="model.account.xAccount?.tombstoneLockAccount">
                         <i class="fa-solid fa-skull" />
                         Locked your account
                     </li>
