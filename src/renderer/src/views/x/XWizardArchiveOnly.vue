@@ -53,7 +53,7 @@ const importArchive = async () => {
     }
 
     // Move to the import page
-    emit('set-state', 'WizardImportStartDisplay');
+    emit('set-state', 'WizardImporting');
 };
 
 const goBack = () => {
