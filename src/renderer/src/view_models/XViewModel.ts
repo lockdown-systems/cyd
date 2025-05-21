@@ -282,9 +282,9 @@ export class XViewModel extends BaseViewModel {
                         "credentials": "include",
                         "signal": AbortSignal.timeout(5000)
                     })
-                    console.log(response.status);
+                    this.log(response.status);
                     if (response.status == 200) {
-                        console.log(await response.text());
+                        this.log(await response.text());
                     }
                     return response.status;
                 } catch (e) {
@@ -2786,10 +2786,8 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.instructions = `**I'm updating your bio.**`;
         this.showAutomationNotice = true;
 
-        // TODO: this currently does not work, because X is implemented
-        // in React and does really weird stuff. When submitting the
-        // profile form, it doesn't seem to get the bio text value from
-        // the <textarea>, and I'm not sure where it finds it.
+        // When submitting the profile form, it doesn't seem to get the bio text value from
+        // the <textarea>, so we need to instead inject input events into the webview.
 
         // Load the profile page
         await this.loadURLWithRateLimit("https://x.com/settings/profile");
@@ -2798,7 +2796,48 @@ Hang on while I scroll down to your earliest bookmarks.`;
         await this.waitForSelector('div[role="dialog"] textarea', "https://x.com/settings/profile");
         await this.sleep(200);
 
-        // Update the bio field
+        // Click in the modal
+        await this.scriptClickElement('div[role="group"][tabindex="0"]');
+
+        // Press until the bio field is selected
+        this.log("runJobTombstoneUpdateBio", "pressing tab to select bio field");
+        let selected = false;
+        for (let i = 0; i < 50; i++) {
+            // Press tab
+            await this.getWebview()?.sendInputEvent({ type: 'keyDown', keyCode: 'Tab' });
+            await this.sleep(10);
+            await this.getWebview()?.sendInputEvent({ type: 'keyUp', keyCode: 'Tab' });
+            await this.sleep(10);
+
+            // Check if the textarea is selected
+            const tagName = await this.getWebview()?.executeJavaScript(`document.activeElement.tagName`);
+            if (tagName == 'TEXTAREA') {
+                this.log("runJobTombstoneUpdateBio", "bio textarea selected");
+                selected = true;
+                break;
+            }
+        }
+        if (!selected) {
+            // TODO: error
+            console.error("runJobTombstoneUpdateBio", "bio textarea not found");
+        }
+
+        // Select and delete the existing bio
+        this.log("runJobTombstoneUpdateBio", "select and delete the existing bio");
+        await this.getWebview()?.executeJavaScript(`document.activeElement.click()`);
+        await this.getWebview()?.sendInputEvent({ type: 'keyDown', keyCode: 'CommandOrControl+A' });
+        await this.sleep(10);
+        await this.getWebview()?.sendInputEvent({ type: 'keyUp', keyCode: 'CommandOrControl+A' });
+        await this.sleep(10);
+        await this.getWebview()?.sendInputEvent({ type: 'keyDown', keyCode: 'Backspace' });
+        await this.sleep(10);
+        await this.getWebview()?.sendInputEvent({ type: 'keyUp', keyCode: 'Backspace' });
+        await this.sleep(10);
+
+        this.pause();
+        await this.waitForPause();
+
+        // Type the new bio character by character
         let bioText = this.account.xAccount?.tombstoneUpdateBioText ?? "";
         if (this.account.xAccount?.tombstoneUpdateBioCreditCyd) {
             bioText = bioText + tombstoneUpdateBioCreditCydText;
@@ -2806,30 +2845,58 @@ Hang on while I scroll down to your earliest bookmarks.`;
         if (bioText.length > 160) {
             bioText = bioText.substring(0, 160);
         }
-        await this.getWebview()?.executeJavaScript(`
-            (async () => {
-                const el = document.querySelector('div[role="dialog"] textarea');
-                if (!el) { console.log("Textarea not found"); return; }
 
-                // Simulate a user click to focus
-                el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                el.focus();
+        function getKeyEventForChar(char: string): { keyCode: string } {
+            // Lowercase letters
+            if (char >= 'a' && char <= 'z') {
+                return { keyCode: char.toUpperCase() }; // 'A' for 'a'
+            }
+            // Uppercase letters
+            if (char >= 'A' && char <= 'Z') {
+                return { keyCode: `Shift+${char}` }; // 'Shift+A' for 'A'
+            }
+            // Numbers
+            if (char >= '0' && char <= '9') {
+                return { keyCode: char };
+            }
+            // Space
+            if (char === ' ') return { keyCode: 'Space' };
 
-                // Clear the textarea by setting value and firing input event
-                el.value = '';
-                el.dispatchEvent(new Event('input', { bubbles: true }));
+            // Shifted symbols
+            const shiftSymbols: Record<string, string> = {
+                '!': 'Shift+1', '@': 'Shift+2', '#': 'Shift+3', '$': 'Shift+4', '%': 'Shift+5',
+                '^': 'Shift+6', '&': 'Shift+7', '*': 'Shift+8', '(': 'Shift+9', ')': 'Shift+0',
+                '_': 'Shift+-', '+': 'Shift+=', ':': 'Shift+;', '"': 'Shift+\'', '<': 'Shift+,',
+                '>': 'Shift+.', '?': 'Shift+/', '|': 'Shift+\\', '~': 'Shift+`', '{': 'Shift+[', '}': 'Shift+]',
+            };
+            if (char in shiftSymbols) {
+                return { keyCode: shiftSymbols[char] };
+            }
 
-                // Type the new bio character by character
-                for (const char of ${JSON.stringify(bioText)}) {
-                    el.value += char;
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                    await new Promise(r => setTimeout(r, 20));
-                }
-            })();
-        `);
-        await this.sleep(200);
+            // Direct mapping for some symbols (no shift)
+            const directMap: Record<string, string> = {
+                '-': '-', '=': '=', '[': '[', ']': ']', '\\': '\\', ';': ';', "'": "'", ',': ',', '.': '.', '/': '/', '`': '`'
+            };
+            if (char in directMap) {
+                return { keyCode: directMap[char] };
+            }
+
+            // Fallback
+            return { keyCode: char };
+        }
+
+        for (const char of bioText) {
+            this.log("runJobTombstoneUpdateBio", ["typing char", char]);
+            const { keyCode } = getKeyEventForChar(char);
+            const webview = this.getWebview();
+            await webview?.sendInputEvent({ type: 'keyDown', keyCode });
+            await this.sleep(10);
+            await webview?.sendInputEvent({ type: 'keyUp', keyCode });
+            await this.sleep(10);
+        }
+
+        this.pause();
+        await this.waitForPause();
 
         // Click save
         await this.scriptClickElement('button[data-testid="Profile_Save_Button"]');
@@ -2856,11 +2923,11 @@ Hang on while I scroll down to your earliest bookmarks.`;
         // Is the "Protect your tweets" box already checked?
         if (await this.getWebview()?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].checked
 `)) {
-            console.log("runJobTombstoneLockAccount", "account is already locked");
+            this.log("runJobTombstoneLockAccount", "account is already locked");
         }
         // Check the "Protect your tweets" box
         else {
-            console.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
+            this.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
             await this.getWebview()?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].click()`);
             await this.sleep(200);
             await this.waitForSelector('button[data-testid="confirmationSheetConfirm"]', "https://x.com/settings/audience_and_tagging");
