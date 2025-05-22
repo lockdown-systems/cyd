@@ -248,20 +248,20 @@ export class XAccountController {
 
     initDB() {
         if (!this.account) {
+            log.error("XAccountController.initDB: account does not exist");
+            return;
+        }
+
+        if (!this.account.username) {
             // We're in archive only mode. Let's create a new account
-            log.info("XAccountController.initDB: creating a new account");
-            const new_account = createAccount();
+            log.info("XAccountController.initDB: setting a temporary username");
             const uuid = crypto.randomUUID();
             const uniqueUsername = `deleted_account_${uuid.slice(0, 8)}`;
-            if (new_account.xAccount) {
-                log.info("XAccountController.initDB: new archive only account: ", uniqueUsername);
-                new_account.xAccount.username = uniqueUsername;
-                new_account.xAccount.archiveOnly = true;
-            }
-            this.account = new_account.xAccount;
-            if (!this.account) {
-                log.error("XAccountController.initDB: failed to create a new account");
-                return;
+            if (this.account) {
+                log.info("XAccountController.initDB: now setting archive only account: ", uniqueUsername);
+                this.account.username = uniqueUsername;
+                this.account.archiveOnly = true;
+                saveXAccount(this.account);
             }
         }
 
@@ -1809,10 +1809,12 @@ export class XAccountController {
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
         if (!this.db) {
+            log.info(`XAccountController.unzipXArchive: db does not exist, creating`)
             this.initDB();
         }
 
         if (!this.account) {
+            log.info(`XAccountController.unzipXArchive: account does not exist, bailing`)
             return null;
         }
         const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "tmp");
