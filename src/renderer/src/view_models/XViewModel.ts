@@ -63,6 +63,8 @@ export enum State {
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+    WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
+
     RunJobs = "RunJobs",
 
     FinishedRunningJobs = "FinishedRunningJobs",
@@ -2840,7 +2842,9 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
                     this.instructions = `${this.actionString}
 
-**To get started, log in to your X account below.**`;
+**To get started, you can either:**
+- Log in to your X account below to access all features
+- Or click "Import Archive Only" to import your existing X archive without logging in`;
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
@@ -2852,7 +2856,8 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     if (
                         this.account.xAccount?.tweetsCount === -1 ||
                         this.account.xAccount?.likesCount === -1 ||
-                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true"
+                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true" ||
+                        !this.account.xAccount?.archiveOnly
                     ) {
                         await this.loadUserStats();
                     }
@@ -2978,6 +2983,16 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
+                    break;
+
+                case State.WizardArchiveOnlyDisplay:
+                    this.showBrowser = false;
+                    this.instructions = `
+**You've chosen to use a pre-existing X archive.**
+
+I'll help you save them so you can view them locally or migrate them to Bluesky.`;
+                    await this.loadURL("about:blank");
+                    this.state = State.WizardArchiveOnlyDisplay;
                     break;
 
                 case State.FinishedRunningJobs:

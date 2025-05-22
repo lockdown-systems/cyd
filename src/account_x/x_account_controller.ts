@@ -92,6 +92,8 @@ import {
 
 // for building the static archive site
 import { saveArchive } from './archive';
+import { createAccount, selectAccountType, saveAccount } from '../database/account';
+import { getMITMController } from '../mitm';
 
 const getMediaURL = (media: XAPILegacyTweetMedia): string => {
     // Get the HTTPS URL of the media -- this works for photos
@@ -245,9 +247,22 @@ export class XAccountController {
     }
 
     initDB() {
-        if (!this.account || !this.account.username) {
-            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found", this.account, this.account?.username);
+        if (!this.account) {
+            log.error("XAccountController.initDB: account does not exist");
             return;
+        }
+
+        if (!this.account.username) {
+            // We're in archive only mode. Let's create a new account
+            log.info("XAccountController.initDB: setting a temporary username");
+            const uuid = crypto.randomUUID();
+            const uniqueUsername = `deleted_account_${uuid.slice(0, 8)}`;
+            if (this.account) {
+                log.info("XAccountController.initDB: now setting archive only account: ", uniqueUsername);
+                this.account.username = uniqueUsername;
+                this.account.archiveOnly = true;
+                saveXAccount(this.account);
+            }
         }
 
         // Make sure the account data folder exists
@@ -1788,7 +1803,13 @@ export class XAccountController {
     // Unzip twitter archive to the account data folder using unzipper
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
+        if (!this.db) {
+            log.info(`XAccountController.unzipXArchive: db does not exist, creating`)
+            this.initDB();
+        }
+
         if (!this.account) {
+            log.info(`XAccountController.unzipXArchive: account does not exist, bailing`)
             return null;
         }
         const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "tmp");
@@ -1852,7 +1873,8 @@ export class XAccountController {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
                 return `The account.js file has more than one account.`;
             }
-            if (accountData[0].account.username !== this.account?.username) {
+            // We run this check only if we're not in archive only mode
+            if (accountData[0].account.username !== this.account?.username && !this.account?.archiveOnly) {
                 log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
                 return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
             }
