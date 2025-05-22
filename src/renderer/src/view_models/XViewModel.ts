@@ -2856,7 +2856,8 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     if (
                         this.account.xAccount?.tweetsCount === -1 ||
                         this.account.xAccount?.likesCount === -1 ||
-                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true"
+                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true" ||
+                        !this.account.xAccount?.archiveOnly
                     ) {
                         await this.loadUserStats();
                     }
