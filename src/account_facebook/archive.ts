@@ -16,7 +16,7 @@ export interface StoryRow {
     user: string; // json object
     attachedStory: string; // json object
     media: string; // json array
-    shares: string; // json array
+    // shares: string; // json array
 
     addedToDatabaseAt: string;
     archivedAt: string | null;
@@ -71,22 +71,6 @@ SELECT
             'needsVideoDownload', media.needsVideoDownload
         )
     ) AS media,
-    json_group_array(
-        json_object(
-            'description', share.description,
-            'title', share.title,
-            'url', share.url,
-            'media', json_object(
-                'mediaType', media.mediaType,
-                'mediaID', media.mediaID,
-                'filename', media.filename,
-                'isPlayable', media.isPlayable,
-                'title', media.title,
-                'url', media.url,
-                'needsVideoDownload', media.needsVideoDownload
-            )
-        )
-    ) AS shares,
     story.addedToDatabaseAt,
     story.archivedAt,
     story.deletedStoryAt
@@ -95,7 +79,6 @@ JOIN user ON story.userID = user.userID
 LEFT JOIN attached_story ON story.attachedStoryID = attached_story.storyID
 LEFT JOIN media_story ON story.storyID = media_story.storyID
 LEFT JOIN media ON media_story.mediaID = media.mediaID
-LEFT JOIN share ON story.storyID = share.storyID
 GROUP BY story.storyID
 ORDER BY story.createdAt DESC;
     `;
@@ -114,7 +97,7 @@ ORDER BY story.createdAt DESC;
             user: JSON.parse(row.user),
             attachedStory: JSON.parse(row.attachedStory),
             media: JSON.parse(row.media),
-            shares: JSON.parse(row.shares),
+            // shares: JSON.parse(row.shares),
 
             addedToDatabaseAt: row.addedToDatabaseAt,
             archivedAt: row.archivedAt,
@@ -142,20 +125,20 @@ ORDER BY story.createdAt DESC;
             "url": null,
             "needsVideoDownload": null
         });
-        story.shares = removeItems(story.shares, {
-            "description": null,
-            "title": null,
-            "url": null,
-            "media": {
-                "mediaType": null,
-                "mediaID": null,
-                "filename": null,
-                "isPlayable": null,
-                "title": null,
-                "url": null,
-                "needsVideoDownload": null
-            }
-        });
+        // story.shares = removeItems(story.shares, {
+        //     "description": null,
+        //     "title": null,
+        //     "url": null,
+        //     "media": {
+        //         "mediaType": null,
+        //         "mediaID": null,
+        //         "filename": null,
+        //         "isPlayable": null,
+        //         "title": null,
+        //         "url": null,
+        //         "needsVideoDownload": null
+        //     }
+        // });
 
         // Remove all the null values to reduce the size of the archive
         story = deepConvertNullToUndefined(story);
