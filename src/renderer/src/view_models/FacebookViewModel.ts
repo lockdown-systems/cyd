@@ -8,6 +8,8 @@ import {
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
 import { formatError, getJobsType } from '../util';
+import { facebookHasSomeData } from '../util_facebook';
+
 
 export enum State {
     Login = "Login",
@@ -164,6 +166,7 @@ export class FacebookViewModel extends BaseViewModel {
 
     async defineJobs() {
         let shouldBuildArchive = false;
+        const hasSomeData = await facebookHasSomeData(this.account.id);
 
         const jobsType = getJobsType(this.account.id);
 
@@ -177,6 +180,13 @@ export class FacebookViewModel extends BaseViewModel {
                 if (this.account?.facebookAccount?.savePostsHTML) {
                     jobTypes.push("savePostsHTML");
                 }
+            }
+        }
+
+        if (jobsType === "delete") {
+            if (hasSomeData && this.account.facebookAccount?.deletePosts) {
+                jobTypes.push("deletePosts");
+                shouldBuildArchive = true;
             }
         }
 
@@ -478,11 +488,14 @@ export class FacebookViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_DELETE_POSTS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `Instructions here...`;
+        this.instructions = `**I'm deleting your posts based on your criteria, starting with the earliest.**`;
 
         this.showAutomationNotice = false;
 
         // TODO: implement
+
+        this.pause();
+        await this.waitForPause();
 
         await this.finishJob(jobIndex);
         return true;
@@ -649,7 +662,7 @@ You'll be able to access it even after you delete it from Facebook.`;
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     break;
-                
+
                 case State.FinishedRunningJobs:
                     this.showBrowser = false;
                     this.instructions = `
