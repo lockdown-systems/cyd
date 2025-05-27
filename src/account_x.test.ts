@@ -10,8 +10,8 @@ import {
     XAPIConversation,
     XAPIUser,
     XTweetRow,
-    // XTweetMediaRow,
-    // XTweetURLRow,
+    XTweetMediaRow,
+    XTweetURLRow,
     XUserRow,
     XConversationRow,
     XConversationParticipantRow,
@@ -137,6 +137,19 @@ class MockMITMController implements IMITMController {
                     requestBody: '',
                     responseHeaders: {},
                     responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies18.json'), 'utf8'),
+                    processed: false
+                },
+            ];
+        }
+        if (testdata == "indexTweetsMedia") {
+            this.responseData = [
+                {
+                    host: 'x.com',
+                    url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?',
+                    status: 200,
+                    requestBody: '',
+                    responseHeaders: {},
+                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndRepliesMedia.json'), 'utf8'),
                     processed: false
                 },
             ];
@@ -714,69 +727,63 @@ test("XAccountController.indexParsedTweets() should index bookmarks", async () =
     expect(rows.length).toBe(5);
 })
 
-// test("XAccountController.indexParsedTweets() should index and download media", async () => {
-//     mitmController.setTestdata("indexTweetsMedia");
-//     if (controller.account) {
-//         controller.account.username = 'nexamind91326';
-//     }
+test("XAccountController.indexParsedTweets() should index and download media", async () => {
+    mitmController.setTestdata("indexTweetsMedia");
+    if (controller.account) {
+        controller.account.username = 'nexamind91326';
+    }
 
-//     await controller.indexParseTweets()
+    await controller.indexParseTweets()
 
-//     // Verify the video tweet
-//     let tweetRows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1890513848811090236'], "all") as XTweetRow[];
-//     expect(tweetRows.length).toBe(1);
-//     expect(tweetRows[0].tweetID).toBe('1890513848811090236');
-//     expect(tweetRows[0].text).toBe('check out this video i found https://t.co/MMfXeoZEdi');
+    // Verify the video tweet
+    let tweetRows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1927508185377546524'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1927508185377546524');
+    expect(tweetRows[0].text).toBe('video of crunching some data https://t.co/lug3fnodCw');
 
-//     let mediaRows: XTweetMediaRow[] = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1890513848811090236'], "all") as XTweetMediaRow[];
-//     expect(mediaRows.length).toBe(1);
-//     expect(mediaRows[0].mediaType).toBe('video');
-//     expect(mediaRows[0].filename).toBe('7_1890513743144185859.mp4');
-//     expect(mediaRows[0].startIndex).toBe(29);
-//     expect(mediaRows[0].endIndex).toBe(52);
+    let mediaRows: XTweetMediaRow[] = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1927508185377546524'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaType).toBe('video');
+    expect(mediaRows[0].filename).toBe('13_1927508143073820673.mp4');
+    expect(mediaRows[0].startIndex).toBe(29);
+    expect(mediaRows[0].endIndex).toBe(52);
 
-//     // Verify the GIF tweet
-//     tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1895432678377398407'], "all") as XTweetRow[];
-//     expect(tweetRows.length).toBe(1);
-//     expect(tweetRows[0].tweetID).toBe('1895432678377398407');
-//     expect(tweetRows[0].text).toBe("It's Friyay!!! https://t.co/bEGcNKradC");
+    // Verify the GIF tweet
+    tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1927508627398746291'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1927508627398746291');
+    expect(tweetRows[0].text).toBe("do you miss the 1900s? https://t.co/xSBWvvEIc5");
 
-//     mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1895432678377398407'], "all") as XTweetMediaRow[];
-//     expect(mediaRows.length).toBe(1);
-//     expect(mediaRows[0].mediaType).toBe('animated_gif');
-//     expect(mediaRows[0].filename).toBe('16_1895432668990382080.mp4');
-//     expect(mediaRows[0].startIndex).toBe(15);
-//     expect(mediaRows[0].endIndex).toBe(38);
+    mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1927508627398746291'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(1);
+    expect(mediaRows[0].mediaType).toBe('animated_gif');
+    expect(mediaRows[0].filename).toBe('16_1927508602601836544.mp4');
+    expect(mediaRows[0].startIndex).toBe(23);
+    expect(mediaRows[0].endIndex).toBe(46);
 
-//     // Verify the image tweet
-//     tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1890512076189114426'], "all") as XTweetRow[];
-//     expect(tweetRows.length).toBe(1);
-//     expect(tweetRows[0].tweetID).toBe('1890512076189114426');
-//     expect(tweetRows[0].text).toBe('what a pretty photo https://t.co/eBFfDPOPz6');
+    // Verify the image tweet
+    tweetRows = database.exec(controller.db, "SELECT * FROM tweet WHERE tweetID=?", ['1927508367775318207'], "all") as XTweetRow[];
+    expect(tweetRows.length).toBe(1);
+    expect(tweetRows[0].tweetID).toBe('1927508367775318207');
+    expect(tweetRows[0].text).toBe('a true explorer https://t.co/lAJ1gfmsXC');
 
-//     mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=?", ['1890512076189114426'], "all") as XTweetMediaRow[];
-//     expect(mediaRows.length).toBe(1);
-//     expect(mediaRows[0].mediaType).toBe('photo');
-//     expect(mediaRows[0].filename).toBe('3_1890512052424466432.jpg');
-//     expect(mediaRows[0].startIndex).toBe(20);
-//     expect(mediaRows[0].endIndex).toBe(43);
-// })
+    mediaRows = database.exec(controller.db, "SELECT * FROM tweet_media WHERE tweetID=? ORDER BY id", ['1927508367775318207'], "all") as XTweetMediaRow[];
+    expect(mediaRows.length).toBe(2);
+    expect(mediaRows[0].mediaType).toBe('photo');
+    expect(mediaRows[0].filename).toBe('3_1927508352059281410.jpg');
+    expect(mediaRows[0].startIndex).toBe(16);
+    expect(mediaRows[0].endIndex).toBe(39);
+    expect(mediaRows[1].mediaType).toBe('photo');
+    expect(mediaRows[1].filename).toBe('3_1927508352730296320.png');
+    expect(mediaRows[1].startIndex).toBe(16);
+    expect(mediaRows[1].endIndex).toBe(39);
 
-// test("XAccountController.indexParsedTweets() should index and parse links", async () => {
-//     mitmController.setTestdata("indexTweetsLinks");
-//     if (controller.account) {
-//         controller.account.username = 'nexamind91326';
-//     }
-
-//     await controller.indexParseTweets()
-
-//     // Verify the link tweet
-//     const linkRows: XTweetURLRow[] = database.exec(controller.db, "SELECT * FROM tweet_url WHERE tweetID=?", ['1891186072995946783'], "all") as XTweetURLRow[];
-//     expect(linkRows.length).toBe(3);
-//     expect(linkRows[0].expandedURL).toBe('https://en.wikipedia.org/wiki/Moon');
-//     expect(linkRows[1].expandedURL).toBe('https://en.wikipedia.org/wiki/Sun');
-//     expect(linkRows[2].expandedURL).toBe('https://x.com/nexamind91326/status/1890513848811090236');
-// })
+    // Verify the link tweet
+    const linkRows: XTweetURLRow[] = database.exec(controller.db, "SELECT * FROM tweet_url WHERE tweetID=? ORDER BY id", ['1927508892461973515'], "all") as XTweetURLRow[];
+    expect(linkRows.length).toBe(2);
+    expect(linkRows[0].expandedURL).toBe('https://en.wikipedia.org/wiki/Moon');
+    expect(linkRows[1].expandedURL).toBe('https://en.wikipedia.org/wiki/Sun');
+})
 
 test("types.isXAPIBookmarksData() should recognize bookmarks data", async () => {
     const body = fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XBookmarks.json'), 'utf8');
