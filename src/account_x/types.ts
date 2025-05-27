@@ -154,7 +154,7 @@ export interface XAPILegacyEntities {
     symbols: any[];
     timestamps: any[];
     urls: XAPILegacyURL[];
-    media: XAPILegacyTweetMedia[];
+    media?: XAPILegacyTweetMedia[];
     user_mentions: any[];
 }
 
@@ -164,12 +164,13 @@ export interface XAPILegacyTweet {
     created_at: string;
     conversation_id_str: string;
     display_text_range: number[];
+    entities?: XAPILegacyEntities;
     favorite_count: number;
     favorited: boolean;
     full_text: string;
-    in_reply_to_screen_name: string;
-    in_reply_to_status_id_str: string;
-    in_reply_to_user_id_str: string;
+    in_reply_to_screen_name?: string;
+    in_reply_to_status_id_str?: string;
+    in_reply_to_user_id_str?: string;
     is_quote_status: boolean;
     lang: string;
     quote_count: number;
@@ -178,18 +179,21 @@ export interface XAPILegacyTweet {
     retweeted: boolean;
     user_id_str: string;
     id_str: string;
-    entities?: XAPILegacyEntities;
     extended_entities?: XAPILegacyEntities;
     quoted_status_permalink?: any;
 }
 
-export interface XAPILegacyUser {
-    can_dm: boolean;
-    can_media_tag: boolean;
+export interface XAPIUserCore {
     created_at: string;
+    name: string;
+    screen_name: string;
+}
+
+export interface XAPILegacyUser {
     default_profile: boolean;
     default_profile_image: boolean;
     description: string;
+    entities: any;
     fast_followers_count: number;
     favourites_count: number;
     followers_count: number;
@@ -197,22 +201,17 @@ export interface XAPILegacyUser {
     has_custom_timelines: boolean;
     is_translator: boolean;
     listed_count: number;
-    location: string;
     media_count: number;
-    name: string;
     needs_phone_verification: boolean;
     normal_followers_count: number;
+    pinned_tweet_ids_str: any;
     possibly_sensitive: boolean;
     profile_banner_url: string;
-    profile_image_url_https: string;
     profile_interstitial_type: string;
-    screen_name: string;
     statuses_count: number;
     translator_type: string;
-    verified: boolean;
+    verified?: boolean;
     want_retweets: boolean;
-    entities: any;
-    pinned_tweet_ids_str: any;
     withheld_in_countries: any;
 }
 
@@ -232,6 +231,9 @@ export interface XAPITweetResults {
                     rest_id?: string;
                     tipjar_settings?: any;
                     affiliates_highlighted_label?: any;
+                    avatar?: any;
+                    core: XAPIUserCore;
+                    dm_permissions?: any;
                 }
             }
         };
@@ -250,6 +252,9 @@ export interface XAPITweetResults {
                         rest_id?: string;
                         tipjar_settings?: any;
                         affiliates_highlighted_label?: any;
+                        avatar?: any;
+                        core: XAPIUserCore;
+                        dm_permissions?: any;
                     }
                 }
             },

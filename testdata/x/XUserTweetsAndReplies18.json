@@ -1,0 +1,45 @@
+{
+    "data": {
+        "user": {
+            "result": {
+                "__typename": "User",
+                "timeline": {
+                    "timeline": {
+                        "instructions": [
+                            {
+                                "type": "TimelineAddEntries",
+                                "entries": [
+                                    {
+                                        "entryId": "cursor-top-1927474396612525834",
+                                        "sortIndex": "1927474396612525834",
+                                        "content": {
+                                            "entryType": "TimelineTimelineCursor",
+                                            "__typename": "TimelineTimelineCursor",
+                                            "value": "DAAHCgABGr_DwGPAJhoLAAIAAAATMTc2OTg0OTYxODMxMjE0MzMwNwgAAwAAAAEAAA",
+                                            "cursorType": "Top"
+                                        }
+                                    },
+                                    {
+                                        "entryId": "cursor-bottom-1927474396612525833",
+                                        "sortIndex": "1927474396612525833",
+                                        "content": {
+                                            "entryType": "TimelineTimelineCursor",
+                                            "__typename": "TimelineTimelineCursor",
+                                            "value": "DAAHCgABGr_DwGO__wkLAAIAAAATMTc2OTg0OTYxODMxMjE0MzMwNwgAAwAAAAIAAA",
+                                            "cursorType": "Bottom"
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        "metadata": {
+                            "scribeConfig": {
+                                "page": "profileAll"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
