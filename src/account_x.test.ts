@@ -136,33 +136,6 @@ class MockMITMController implements IMITMController {
                     status: 200,
                     requestBody: '',
                     responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies4.json'), 'utf8'),
-                    processed: false
-                },
-                {
-                    host: 'x.com',
-                    url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?',
-                    status: 200,
-                    requestBody: '',
-                    responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies5.json'), 'utf8'),
-                    processed: false
-                },
-                {
-                    host: 'x.com',
-                    url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?',
-                    status: 200,
-                    requestBody: '',
-                    responseHeaders: {},
-                    responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies6.json'), 'utf8'),
-                    processed: false
-                },
-                {
-                    host: 'x.com',
-                    url: '/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?',
-                    status: 200,
-                    requestBody: '',
-                    responseHeaders: {},
                     responseBody: fs.readFileSync(path.join(__dirname, '..', 'testdata', 'x', 'XUserTweetsAndReplies18.json'), 'utf8'),
                     processed: false
                 },
@@ -508,21 +481,21 @@ test("XAccountController.indexTweet() should not add a tweet if it's already the
     expect(rows2.length).toBe(1);
 })
 
-// test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
-//     mitmController.setTestdata("indexTweets");
-//     if (controller.account) {
-//         controller.account.username = 'nexamind91325';
-//     }
+test("XAccountController.indexParsedTweets() should add all the test tweets", async () => {
+    mitmController.setTestdata("indexTweets");
+    if (controller.account) {
+        controller.account.username = 'aurorabyte79324';
+    }
 
-//     const progress: XProgress = await controller.indexParseTweets()
-//     expect(progress.likesIndexed).toBe(2);
-//     expect(progress.retweetsIndexed).toBe(3);
-//     expect(progress.tweetsIndexed).toBe(24);
-//     expect(progress.unknownIndexed).toBe(16);
+    const progress: XProgress = await controller.indexParseTweets()
+    expect(progress.likesIndexed).toBe(0);
+    expect(progress.retweetsIndexed).toBe(19);
+    expect(progress.tweetsIndexed).toBe(41);
+    expect(progress.unknownIndexed).toBe(0);
 
-//     const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
-//     expect(rows.length).toBe(44);
-// })
+    const rows: XTweetRow[] = database.exec(controller.db, "SELECT * FROM tweet", [], "all") as XTweetRow[];
+    expect(rows.length).toBe(60);
+})
 
 test('XAccountController.indexUser() should add a user', async () => {
     mitmController.setTestdata("indexDMs");
