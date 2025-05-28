@@ -175,5 +175,12 @@ export const runMainMigrations = () => {
                 `ALTER TABLE xAccount ADD COLUMN userID TEXT;`,
             ]
         },
+        // Add archiveOnly to xAccount table
+        {
+            name: "add archiveOnly to xAccount table",
+            sql: [
+                `ALTER TABLE xAccount ADD COLUMN archiveOnly BOOLEAN DEFAULT 0;`,
+            ]
+        },
     ]);
 }

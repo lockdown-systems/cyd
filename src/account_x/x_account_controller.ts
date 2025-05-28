@@ -455,7 +455,7 @@ export class XAccountController {
                     `ALTER TABLE tweet_media ADD COLUMN startIndex INTEGER;`,
                     `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`
                 ]
-            },
+            }
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -1878,8 +1878,10 @@ export class XAccountController {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
                 return `The account.js file has more than one account.`;
             }
+
             // We run this check only if we're not in archive only mode
             if (accountData[0].account.username !== this.account?.username && !this.account?.archiveOnly) {
+                log.info(`XAccountController.verifyXArchive: archiveOnly: ${this.account?.archiveOnly}`);
                 log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
                 return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
             }
