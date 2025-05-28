@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "node16",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
@@ -10,6 +10,12 @@
     "outDir": "./dist",
     "rootDir": "./"
   },
-  "include": ["src", "forge.config.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src",
+    "forge.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "eslint__js"
+  ]
 }
