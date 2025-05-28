@@ -2598,7 +2598,8 @@ export class XAccountController {
                             uri: quotedMigration.atprotoURI,
                             cid: quotedMigration.atprotoCID,
                         }
-                    }
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any;
                 }
             }
 
@@ -2689,14 +2690,14 @@ export class XAccountController {
                     if (embed && embed['$type'] == 'app.bsky.embed.external' && embed.external?.uri) {
                         text += ` ${embed.external.uri}`;
                         facets.push({
-                            'index': {
-                                'byteStart': text.length - embed.external.uri.length,
-                                'byteEnd': text.length,
+                            index: {
+                                byteStart: text.length - embed.external.uri.length,
+                                byteEnd: text.length,
                             },
-                            'features': [
+                            features: [
                                 {
                                     '$type': 'app.bsky.richtext.facet#link',
-                                    'uri': embed.external.uri,
+                                    uri: embed.external.uri,
                                 }
                             ],
                         });
@@ -2793,14 +2794,14 @@ export class XAccountController {
                 if (embed && embed['$type'] == 'app.bsky.embed.external' && embed.external?.uri) {
                     text += ` ${embed.external.uri}`;
                     facets.push({
-                        'index': {
-                            'byteStart': text.length - embed.external.uri.length,
-                            'byteEnd': text.length,
+                        index: {
+                            byteStart: text.length - embed.external.uri.length,
+                            byteEnd: text.length,
                         },
-                        'features': [
+                        features: [
                             {
                                 '$type': 'app.bsky.richtext.facet#link',
-                                'uri': embed.external.uri,
+                                uri: embed.external.uri,
                             }
                         ],
                     });
@@ -2817,7 +2818,8 @@ export class XAccountController {
         // Start a richtext object
         let rt = new RichText({
             text: text,
-            facets: facets,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            facets: facets as any,
         })
         await rt.detectFacets(agent);
 
@@ -2832,7 +2834,8 @@ export class XAccountController {
             // Update the richtext object
             rt = new RichText({
                 text: text,
-                facets: facets,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                facets: facets as any,
             })
             await rt.detectFacets(agent);
         }
@@ -2870,7 +2873,8 @@ export class XAccountController {
             text = newText;
             rt = new RichText({
                 text: text,
-                facets: facets,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                facets: facets as any,
             });
             await rt.detectFacets(agent);
         }
