@@ -2627,7 +2627,7 @@ export class XAccountController {
             return `Error selecting tweet media: ${e}`;
         }
 
-        if (tweetMedia.length == 1 && tweetMedia[0].mediaType == "video") {
+        if (tweetMedia.length == 1 && (tweetMedia[0].mediaType == "video" || tweetMedia[0].mediaType == "animated_gif")) {
             // Video media
             // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
             const maxSize = 50000000;
@@ -2658,7 +2658,7 @@ export class XAccountController {
                     shouldContinue = false;
                 }
                 if (mimeType != 'video/mp4') {
-                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${tweetMedia[0].filename}`);
+                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${tweetMedia[0].filename} (mime type is ${mimeType})`);
                     shouldContinue = false;
                 }
             }
