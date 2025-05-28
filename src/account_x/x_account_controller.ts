@@ -4,8 +4,7 @@ import os from 'os'
 
 import fetch from 'node-fetch';
 import unzipper from 'unzipper';
-import mime from 'mime-types';
-import sizeOf from 'image-size';
+import { imageSizeFromFile } from 'image-size/fromFile'
 
 import { app, session, shell } from 'electron'
 import log from 'electron-log/main';
@@ -20,7 +19,8 @@ import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/ap
 import {
     getResourcesPath,
     getAccountDataPath,
-    getTimestampDaysAgo
+    getTimestampDaysAgo,
+    getMimeType
 } from '../util'
 import {
     XAccount,
@@ -2652,7 +2652,7 @@ export class XAccountController {
 
             if (shouldContinue) {
                 // Determine the MIME type
-                const mimeType = mime.lookup(mediaPath);
+                const mimeType = getMimeType(mediaPath);
                 if (!mimeType) {
                     log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${tweetMedia[0].filename}`);
                     shouldContinue = false;
@@ -2742,14 +2742,19 @@ export class XAccountController {
                 }
 
                 // Determine the MIME type
-                const mimeType = mime.lookup(mediaPath);
+                const mimeType = getMimeType(mediaPath);
                 if (!mimeType) {
                     log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${media.filename}`);
                     continue;
                 }
 
                 // Determine the aspect ratio
-                const dimensions = sizeOf(mediaPath);
+                let dimensions: { width: number; height: number } | null = null;
+                try {
+                    dimensions = await imageSizeFromFile(mediaPath);
+                } catch (e) {
+                    log.warn(`XAccountController.blueskyMigrateTweetBuildRecord: could not determine dimensions for media file: ${media.filename}`, e);
+                }
 
                 // Upload the image
                 log.info(`XAccountController.blueskyMigrateTweetBuildRecord: uploading image ${media.filename}`);
@@ -2760,10 +2765,12 @@ export class XAccountController {
                 images.push({
                     alt: "",
                     image: resp.data.blob,
-                    aspectRatio: {
-                        width: dimensions.width ? dimensions.width : 1,
-                        height: dimensions.height ? dimensions.height : 1,
-                    }
+                    ...(dimensions && {
+                        aspectRatio: {
+                            width: dimensions.width ? dimensions.width : 1,
+                            height: dimensions.height ? dimensions.height : 1,
+                        }
+                    })
                 });
 
                 // Remove the link from the tweet text

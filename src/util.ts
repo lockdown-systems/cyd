@@ -5,6 +5,7 @@ import os from 'os'
 
 import { app } from 'electron';
 import { getConfig, setConfig } from './database';
+import { mimeDb } from './util-mime-db';
 
 export const getUpdatesBaseURL = (mode: string): string => {
     let updateArch = process.arch.toString();
@@ -214,4 +215,19 @@ export function removeItems(arr: Array<any>, value: any) {
         }
     }
     return arr;
+}
+
+export function getMimeType(filename: string): string | undefined {
+    const extMatch = filename.match(/\.([a-zA-Z0-9]+)$/);
+    if (!extMatch) return undefined;
+    const ext = extMatch[1].toLowerCase();
+
+    for (const [mimeType, exts] of Object.entries(mimeDb)) {
+        if (Array.isArray(exts)) {
+            if (exts.includes(ext)) {
+                return mimeType;
+            }
+        }
+    }
+    return undefined;
 }

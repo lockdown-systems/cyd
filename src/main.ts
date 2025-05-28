@@ -17,7 +17,6 @@ import {
     powerMonitor,
     FileFilter
 } from 'electron';
-import mime from 'mime-types';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 
 import * as database from './database';
@@ -32,7 +31,8 @@ import {
     getDataPath,
     trackEvent,
     packageExceptionForReport,
-    isFeatureEnabled
+    isFeatureEnabled,
+    getMimeType
 } from './util';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -566,7 +566,8 @@ async function createWindow() {
 
         ipcMain.handle('getImageDataURIFromFile', async (_, filename: string): Promise<string> => {
             try {
-                const mimeType = mime.lookup(filename);
+                // Get file extension from filename
+                const mimeType = getMimeType(filename);
                 const data = fs.readFileSync(filename);
                 return `data:${mimeType};base64,${data.toString('base64')}`;
             } catch (error) {
