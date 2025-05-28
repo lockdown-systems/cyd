@@ -14,10 +14,8 @@ import {
     nativeImage,
     autoUpdater,
     powerSaveBlocker,
-    powerMonitor,
-    FileFilter
+    powerMonitor
 } from 'electron';
-import electronSquirrelStartup from 'electron-squirrel-startup';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
@@ -69,7 +67,9 @@ if (config.mode == "prod") {
     app.setName('Cyd Dev');
 }
 
-if (electronSquirrelStartup) {
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+if (require('electron-squirrel-startup')) {
     app.quit();
 }
 
@@ -80,7 +80,7 @@ log.info('Cyd version:', app.getVersion());
 log.info('User data folder is at:', app.getPath('userData'));
 
 // The main window
-let win: BrowserWindow | null = null;
+let win: InstanceType<typeof BrowserWindow> | null = null;
 
 // Handle cyd:// URLs (or cyd-dev:// in dev mode)
 const openCydURL = async (cydURL: string) => {
@@ -296,7 +296,8 @@ async function createWindow() {
         webPreferences: {
             webviewTag: true,
             preload: path.join(__dirname, './preload.js')
-        },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         icon: icon,
     });
 
@@ -417,7 +418,7 @@ async function createWindow() {
 
         ipcMain.handle('showMessage', async (_, message: string, detail: string) => {
             try {
-                const opts: Electron.MessageBoxSyncOptions = {
+                const opts: Electron.MessageBoxOptions = {
                     title: "Cyd",
                     message: message,
                     type: 'info',
@@ -454,10 +455,10 @@ async function createWindow() {
             }
         });
 
-        ipcMain.handle('showOpenDialog', async (_, selectFolders: boolean, selectFiles: boolean, fileFilters: FileFilter[] | undefined = undefined): Promise<string | null> => {
+        ipcMain.handle('showOpenDialog', async (_, selectFolders: boolean, selectFiles: boolean, fileFilters: Electron.FileFilter[] | undefined = undefined): Promise<string | null> => {
             const dataPath = database.getConfig('dataPath');
 
-            const properties: ("openFile" | "openDirectory" | "multiSelections" | "showHiddenFiles" | "createDirectory" | "promptToCreate" | "noResolveAliases" | "treatPackageAsDirectory" | "dontAddToRecent")[] = [];
+            const properties: ("openFile" | "openDirectory" | "multiSelections" | "showHiddenFiles" | "createDirectory" | "promptToCreate" | "noResolveAliases")[] = [];
             if (selectFolders) {
                 properties.push('openDirectory');
                 properties.push('createDirectory');
@@ -467,7 +468,7 @@ async function createWindow() {
                 properties.push('openFile');
             }
 
-            const options: Electron.OpenDialogSyncOptions = {
+            const options: Electron.OpenDialogOptions = {
                 properties: properties,
                 filters: fileFilters,
             };
