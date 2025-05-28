@@ -350,7 +350,7 @@ export class XViewModel extends BaseViewModel {
                     };
                     return userInfo;
                 } catch (e) {
-                    this.log("graphqlGetViewerUser", `error parsing response: ${resp}`);
+                    this.log("graphqlGetViewerUser", ['error parsing response:', resp, e]);
                     tries += 1;
                     continue;
                 }
@@ -749,6 +749,7 @@ export class XViewModel extends BaseViewModel {
                 // Wait for the search text field to appear with a 30 second timeout
                 await this.waitForSelector('section input[type="text"]', "https://x.com/messages", 30000);
             } catch (e) {
+                this.log("deleteDMsLoadDMsPage", ["selector never appeared", e]);
                 // There are no conversations
                 await this.waitForLoadingToFinish();
                 this.progress.isDeleteDMsFinished = true;

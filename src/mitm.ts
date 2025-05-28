@@ -202,8 +202,8 @@ export class MITMController implements IMITMController {
                 const resp = await ses.fetch(testURL, { method: 'GET' });
                 log.debug(`MITMController: Account ${this.account?.id}, got response: ${resp.status}`);
                 success = true;
-            } catch (_e) {
-                log.debug(`MITMController: Account ${this.account?.id}, proxy not ready yet, waiting 500ms`);
+            } catch (e) {
+                log.debug(`MITMController: Account ${this.account?.id}, proxy not ready yet, waiting 500ms`, e);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         }

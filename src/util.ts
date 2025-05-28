@@ -135,6 +135,7 @@ export const trackEvent = (eventName: string, userAgent: string, plausibleDomain
             });
         } catch (error) {
             // Fail silently
+            console.warn('trackEvent error:', error);
         }
     }, 0);
 };

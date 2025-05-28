@@ -18,6 +18,7 @@ import {
     FileFilter
 } from 'electron';
 import mime from 'mime-types';
+import electronSquirrelStartup from 'electron-squirrel-startup';
 
 import * as database from './database';
 import { defineIPCX } from './account_x';
@@ -68,8 +69,7 @@ if (config.mode == "prod") {
     app.setName('Cyd Dev');
 }
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (electronSquirrelStartup) {
     app.quit();
 }
 
