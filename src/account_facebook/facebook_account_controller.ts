@@ -170,7 +170,7 @@ export class FacebookAccountController {
     url TEXT NOT NULL,
     name TEXT NOT NULL,
     profilePictureFilename TEXT NOT NULL
-);`,                `CREATE TABLE story (
+);`, `CREATE TABLE story (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     storyID TEXT NOT NULL UNIQUE,
     url TEXT NOT NULL,
@@ -185,19 +185,19 @@ export class FacebookAccountController {
     deletedStoryAt DATETIME,
     FOREIGN KEY(userID) REFERENCES user(userID),
     FOREIGN KEY(attachedStoryID) REFERENCES attached_story(storyID)
-);`,                `CREATE TABLE attached_story (
+);`, `CREATE TABLE attached_story (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     storyID TEXT NOT NULL UNIQUE,
     text TEXT
 );`,
                     `CREATE TABLE media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
     mediaType TEXT NOT NULL, -- "Photo", "Video", "GenericAttachmentMedia"
     mediaID TEXT NOT NULL UNIQUE,
     filename TEXT,
     isPlayable BOOLEAN,
     accessibilityCaption TEXT,
-    title TEXT,
+                        title TEXT,
     url TEXT,
     needsVideoDownload BOOLEAN DEFAULT 0
 );`,
@@ -209,7 +209,7 @@ export class FacebookAccountController {
     FOREIGN KEY(mediaID) REFERENCES media(mediaID)
 );`,
                     `CREATE TABLE media_attached_story (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
     storyID TEXT NOT NULL, -- Foreign key to attached_story.storyID
     mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
     FOREIGN KEY(storyID) REFERENCES attached_story(storyID),
@@ -291,9 +291,9 @@ export class FacebookAccountController {
 
         // Find lifeEventTitle, for life events (like birthdays)
         let lifeEventTitle = null;
-        if(
-            data.attachments && 
-            data.attachments.length > 0 && 
+        if (
+            data.attachments &&
+            data.attachments.length > 0 &&
             data.attachments[0].style_type_renderer.__typename == "StoryAttachmentLifeEventStyleRenderer" &&
             data.attachments[0].style_type_renderer.attachment.style_infos &&
             data.attachments[0].style_type_renderer.attachment.style_infos.length > 0 &&
@@ -313,8 +313,8 @@ export class FacebookAccountController {
         if (existingStory) {
             // Update existing story
             exec(
-                this.db, 
-                'UPDATE story SET url = ?, createdAt = ?, text = ?, title = ?, lifeEventTitle = ?, userID = ?, attachedStoryID = ?, addedToDatabaseAt = ? WHERE storyID = ?', 
+                this.db,
+                'UPDATE story SET url = ?, createdAt = ?, text = ?, title = ?, lifeEventTitle = ?, userID = ?, attachedStoryID = ?, addedToDatabaseAt = ? WHERE storyID = ?',
                 [
                     data.url, // url
                     new Date(data.creation_time * 1000), // createdAt
@@ -330,8 +330,8 @@ export class FacebookAccountController {
         } else {
             // Save the story
             exec(
-                this.db, 
-                'INSERT INTO story (storyID, url, createdAt, text, title, lifeEventTitle, userID, attachedStoryID, addedToDatabaseAt, archivedAt, deletedStoryAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                this.db,
+                'INSERT INTO story (storyID, url, createdAt, text, title, lifeEventTitle, userID, attachedStoryID, addedToDatabaseAt, archivedAt, deletedStoryAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     data.id, // storyID
                     data.url, // url
@@ -350,7 +350,7 @@ export class FacebookAccountController {
 
         if (data.attachments && data.attachments.length > 0) {
             log.info("FacebookAccountController.parseNode: parsing attachments", data.id);
-            for(const attachment of data.attachments) {
+            for (const attachment of data.attachments) {
                 await this.parseAttachment(data.id, attachment, 'story');
             }
         }
@@ -394,15 +394,15 @@ export class FacebookAccountController {
         if (existingUser) {
             // Update existing user
             exec(
-                this.db, 
-                'UPDATE user SET url = ?, name = ?, profilePictureFilename = ? WHERE userID = ?', 
+                this.db,
+                'UPDATE user SET url = ?, name = ?, profilePictureFilename = ? WHERE userID = ?',
                 [url, name, profilePictureFilename, userID]
             );
         } else {
             // Save the user
             exec(
-                this.db, 
-                'INSERT INTO user (userID, url, name, profilePictureFilename) VALUES (?, ?, ?, ?)', 
+                this.db,
+                'INSERT INTO user (userID, url, name, profilePictureFilename) VALUES (?, ?, ?, ?)',
                 [userID, url, name, profilePictureFilename]
             );
         }
@@ -419,14 +419,14 @@ export class FacebookAccountController {
         if (existingAttachedStory) {
             // Update existing attached story
             exec(
-                this.db, 
-                'UPDATE attached_story SET text = ? WHERE storyID = ?', 
+                this.db,
+                'UPDATE attached_story SET text = ? WHERE storyID = ?',
                 [text, storyID]
             );
         } else {
             // Save the attached story
             exec(
-                this.db, 
+                this.db,
                 'INSERT INTO attached_story (storyID, text) VALUES (?, ?)',
                 [storyID, text]
             );
@@ -434,7 +434,7 @@ export class FacebookAccountController {
 
         if (attachedStory.attachments && attachedStory.attachments.length > 0) {
             log.info("FacebookAccountController.saveAttachedStory: parsing attachments", storyID);
-            for(const attachment of attachedStory.attachments) {
+            for (const attachment of attachedStory.attachments) {
                 await this.parseAttachment(attachedStory.id, attachment, 'attached_story');
             }
         }
@@ -449,7 +449,7 @@ export class FacebookAccountController {
         const mediaID = media.id;
 
         // It seems that GenericAttachmentMedia media does not have a steady mediaID, so we're skipping it to avoid duplicates
-        if(mediaType == "GenericAttachmentMedia") {
+        if (mediaType == "GenericAttachmentMedia") {
             log.info("FacebookAccountController.saveMedia: GenericAttachmentMedia mediaID is not steady, skipping download");
             return null;
         }
@@ -457,17 +457,17 @@ export class FacebookAccountController {
         let needsVideoDownload = mediaType == "Video" ? 1 : 0;
 
         let url: string | null = null;
-        if(media.image) {
+        if (media.image) {
             url = media.image.uri;
-        } else if(media.fallback_image) {
+        } else if (media.fallback_image) {
             url = media.fallback_image.uri;
         } else {
             log.info("FacebookAccountController.parseAttachment: no image found, skipping download");
         }
 
         let filename: string | null = null;
-        if(url) {
-            if(mediaType == "Video") {
+        if (url) {
+            if (mediaType == "Video") {
                 // Make sure the video directory exists
                 const videosDir = path.join(this.accountDataPath, 'media', 'videos');
                 if (!fs.existsSync(videosDir)) {
@@ -555,7 +555,7 @@ export class FacebookAccountController {
         const saveJoin = async (mediaID: string, storyType: 'story' | 'attached_story') => {
             if (storyType == 'story') {
                 const existingJoin = exec(this.db, 'SELECT * FROM media_story WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
-                if(!existingJoin) {
+                if (!existingJoin) {
                     exec(
                         this.db,
                         'INSERT INTO media_story (storyID, mediaID) VALUES (?, ?)',
@@ -564,7 +564,7 @@ export class FacebookAccountController {
                 }
             } else {
                 const existingJoin = exec(this.db, 'SELECT * FROM media_attached_story WHERE storyID = ? AND mediaID = ?', [storyID, mediaID], "get");
-                if(!existingJoin) {
+                if (!existingJoin) {
                     exec(
                         this.db,
                         'INSERT INTO media_attached_story (storyID, mediaID) VALUES (?, ?)',
@@ -576,37 +576,37 @@ export class FacebookAccountController {
 
         if (type == "StoryAttachmentPhotoStyleRenderer") {
             // Single photo
-            if(!attachment.style_type_renderer.attachment.media) {
+            if (!attachment.style_type_renderer.attachment.media) {
                 log.info("FacebookAccountController.parseAttachment: no media found, skipping");
                 return;
             }
             const mediaID = await this.saveMedia(attachment.style_type_renderer.attachment.media, null);
-            if(mediaID) {
+            if (mediaID) {
                 await saveJoin(mediaID, storyType);
             }
 
         } else if (type == "StoryAttachmentAlbumStyleRenderer") {
             // Multiple photos
-            if(!attachment.style_type_renderer.attachment.all_subattachments || !attachment.style_type_renderer.attachment.all_subattachments.nodes.length) {
+            if (!attachment.style_type_renderer.attachment.all_subattachments || !attachment.style_type_renderer.attachment.all_subattachments.nodes.length) {
                 log.info("FacebookAccountController.parseAttachment: no media found, skipping");
                 return;
             }
 
             for (const mediaItem of attachment.style_type_renderer.attachment.all_subattachments.nodes) {
                 const mediaID = await this.saveMedia(mediaItem.media, null);
-                if(mediaID) {
+                if (mediaID) {
                     await saveJoin(mediaID, storyType);
                 }
             }
 
         } else if (type == "StoryAttachmentVideoStyleRenderer") {
             // Video
-            if(!attachment.style_type_renderer.attachment.media) {
+            if (!attachment.style_type_renderer.attachment.media) {
                 log.info("FacebookAccountController.parseAttachment: no media found, skipping");
                 return;
             }
             const mediaID = await this.saveMedia(attachment.style_type_renderer.attachment.media, null);
-            if(mediaID) {
+            if (mediaID) {
                 await saveJoin(mediaID, storyType);
             }
 
@@ -616,10 +616,10 @@ export class FacebookAccountController {
 
             // If there's attached media, save it
             let mediaID: string | null = null;
-            if(attachment.style_type_renderer.attachment.media) {
+            if (attachment.style_type_renderer.attachment.media) {
                 const title = attachment.style_type_renderer.attachment.title || null;
                 mediaID = await this.saveMedia(attachment.style_type_renderer.attachment.media, title);
-                if(mediaID) {
+                if (mediaID) {
                     await saveJoin(mediaID, storyType);
                 }
             }
@@ -697,7 +697,7 @@ export class FacebookAccountController {
         for (const [key, value] of params.entries()) {
             queryObject[key] = decodeURIComponent(value);
         }
-        if(!queryObject['fb_api_req_friendly_name']) {
+        if (!queryObject['fb_api_req_friendly_name']) {
             log.error("FacebookAccountController.parseAPIResponse: fb_api_req_friendly_name not found in query string");
             responseData.processed = true;
             return;
@@ -740,7 +740,7 @@ export class FacebookAccountController {
                 if (isFBAPIResponseProfileCometManagePosts(resp)) {
                     log.debug("FacebookAccountController.parseAPIResponse: parsing ProfileCometManagePosts response");
                     let edges;
-                    if(resp.data?.user?.timeline_manage_feed_units?.edges) {
+                    if (resp.data?.user?.timeline_manage_feed_units?.edges) {
                         edges = resp.data.user.timeline_manage_feed_units.edges;
                     } else if (resp.data?.node?.timeline_manage_feed_units?.edges) {
                         edges = resp.data.node.timeline_manage_feed_units.edges;
@@ -748,7 +748,7 @@ export class FacebookAccountController {
                         log.error("FacebookAccountController.parseAPIResponse: no edges found in response", resp);
                         continue;
                     }
-                    
+
                     for (let i = 0; i < edges.length; i++) {
                         const edge = edges[i];
                         if (edge.node) {
@@ -757,7 +757,7 @@ export class FacebookAccountController {
                     }
                 } else if (isFBAPIResponseProfileCometManagePosts2(resp)) {
                     log.debug("FacebookAccountController.parseAPIResponse: parsing ProfileCometManagePosts2 response");
-                    if(resp?.data?.node) {
+                    if (resp?.data?.node) {
                         await this.parseNode(resp.data.node);
                     }
                 } else if (isFBAPIResponseProfileCometManagePostsPageInfo(resp)) {

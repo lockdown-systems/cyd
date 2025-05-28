@@ -144,7 +144,8 @@ export const saveXAccount = (account: XAccount) => {
             followingCount = ?,
             followersCount = ?,
             tweetsCount = ?,
-            likesCount = ?
+            likesCount = ?,
+            archiveOnly = ?
         WHERE id = ?
     `, [
         account.username,
@@ -177,6 +178,7 @@ export const saveXAccount = (account: XAccount) => {
         account.followersCount,
         account.tweetsCount,
         account.likesCount,
+        account.archiveOnly ? 1 : 0,
         account.id
     ]);
 }
