@@ -1924,6 +1924,7 @@ export class XAccountController {
                     const tweetsFile = fs.readFileSync(tweetsFilenames[i], 'utf8');
                     tweetsData = JSON.parse(tweetsFile.slice(tweetsFile.indexOf('[')));
                 } catch (e) {
+                    log.error(`XAccountController.importXArchive: Error parsing JSON in ${tweetsFilenames[i]}:`, e);
                     return {
                         status: "error",
                         errorMessage: "Error parsing JSON in tweets.js",
@@ -2021,6 +2022,7 @@ export class XAccountController {
                     const likesFile = fs.readFileSync(likesFilenames[i], 'utf8');
                     likesData = JSON.parse(likesFile.slice(likesFile.indexOf('[')));
                 } catch (e) {
+                    log.error(`XAccountController.importXArchive: Error parsing JSON in ${likesFilenames[i]}:`, e);
                     return {
                         status: "error",
                         errorMessage: "Error parsing JSON in like.js",
@@ -2249,6 +2251,7 @@ export class XAccountController {
             // Try creating a client
             return await this.blueskyClientFromClientID(host, path);
         } catch (e) {
+            log.error("XAccountController.blueskyInitClient: Error creating Bluesky client", e);
             // On error, disconnect and delete old state and session data
             await this.blueskyDisconnect();
 
@@ -2271,7 +2274,7 @@ export class XAccountController {
         try {
             session = await this.blueskyClient.restore(did);
         } catch (e) {
-            log.warn("XAccountController.blueskyGetProfile: Failed to restore session");
+            log.warn("XAccountController.blueskyGetProfile: Failed to restore session", e);
             return null;
         }
         const agent = new Agent(session)
