@@ -63,11 +63,11 @@ import {
     XConversationRow,
     XTweetBlueskyMigrationRow,
     // X API types
-    XAPILegacyUser,
     XAPILegacyTweet,
     XAPILegacyTweetMedia,
     XAPILegacyTweetMediaVideoVariant,
     XAPILegacyURL,
+    XAPIUserCore,
     XAPIData,
     XAPIBookmarksData,
     XAPITimeline,
@@ -610,7 +610,7 @@ export class XAccountController {
         await this.mitmController.stopMITM(ses);
     }
 
-    indexTweet(responseIndex: number, userLegacy: XAPILegacyUser, tweetLegacy: XAPILegacyTweet) {
+    indexTweet(responseIndex: number, userCore: XAPIUserCore, tweetLegacy: XAPILegacyTweet) {
         if (!this.db) {
             this.initDB();
         }
@@ -629,7 +629,7 @@ export class XAccountController {
 
         // Add the tweet
         exec(this.db, 'INSERT OR REPLACE INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            userLegacy["screen_name"],
+            userCore["screen_name"],
             tweetLegacy["id_str"],
             tweetLegacy["conversation_id_str"],
             new Date(tweetLegacy["created_at"]),
@@ -641,7 +641,7 @@ export class XAccountController {
             tweetLegacy["retweeted"] ? 1 : 0,
             tweetLegacy["bookmarked"] ? 1 : 0,
             tweetLegacy["full_text"],
-            `${userLegacy['screen_name']}/status/${tweetLegacy['id_str']}`,
+            `${userCore["screen_name"]}/status/${tweetLegacy['id_str']}`,
             hasMedia ? 1 : 0,
             tweetLegacy["in_reply_to_status_id_str"] ? 1 : 0,
             tweetLegacy["in_reply_to_status_id_str"],
@@ -651,26 +651,26 @@ export class XAccountController {
             new Date(),
         ]);
 
-        log.debug("XAccountController.indexTweet: indexed tweet", this.account?.username, userLegacy, tweetLegacy);
+        log.debug("XAccountController.indexTweet: indexed tweet", this.account?.username, userCore, tweetLegacy);
 
         // Update progress
         if (tweetLegacy["favorited"]) {
-            // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
+            // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
             this.progress.likesIndexed++;
         }
         if (tweetLegacy["bookmarked"]) {
             this.progress.bookmarksIndexed++;
         }
         if (tweetLegacy["full_text"].startsWith("RT @")) {
-            // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
+            // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
             this.progress.retweetsIndexed++;
         }
-        if (userLegacy["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
-            // console.log("DEBUG-### TWEET: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
+        if (userCore["screen_name"] == this.account?.username && !tweetLegacy["full_text"].startsWith("RT @")) {
+            // console.log("DEBUG-### TWEET: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
             this.progress.tweetsIndexed++;
         }
-        if (!tweetLegacy["favorited"] && !tweetLegacy["bookmarked"] && !tweetLegacy["full_text"].startsWith("RT @") && userLegacy["screen_name"] != this.account?.username) {
-            // console.log("DEBUG-### UNKNOWN: ", tweetLegacy["id_str"], userLegacy["screen_name"], tweetLegacy["full_text"]);
+        if (!tweetLegacy["favorited"] && !tweetLegacy["bookmarked"] && !tweetLegacy["full_text"].startsWith("RT @") && userCore["screen_name"] != this.account?.username) {
+            // console.log("DEBUG-### UNKNOWN: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
             this.progress.unknownIndexed++;
         }
     }
@@ -741,7 +741,7 @@ export class XAccountController {
 
                 // Loop through the entries
                 instructions.entries?.forEach((entries) => {
-                    let userLegacy: XAPILegacyUser | undefined;
+                    let userCore: XAPIUserCore | undefined;
                     let tweetLegacy: XAPILegacyTweet | undefined;
 
                     if (entries.content.entryType == "TimelineTimelineModule") {
@@ -752,12 +752,13 @@ export class XAccountController {
                                 item.item.itemContent.tweet_results.result.core &&
                                 item.item.itemContent.tweet_results.result.core.user_results &&
                                 item.item.itemContent.tweet_results.result.core.user_results.result &&
-                                item.item.itemContent.tweet_results.result.core.user_results.result.legacy &&
+                                item.item.itemContent.tweet_results.result.core.user_results.result.core &&
                                 item.item.itemContent.tweet_results.result.legacy
                             ) {
-                                userLegacy = item.item.itemContent.tweet_results.result.core.user_results.result.legacy;
+                                userCore = item.item.itemContent.tweet_results.result.core.user_results.result.core;
                                 tweetLegacy = item.item.itemContent.tweet_results.result.legacy;
                             }
+
                             if (
                                 item.item.itemContent.tweet_results &&
                                 item.item.itemContent.tweet_results.result &&
@@ -765,15 +766,15 @@ export class XAccountController {
                                 item.item.itemContent.tweet_results.result.tweet.core &&
                                 item.item.itemContent.tweet_results.result.tweet.core.user_results &&
                                 item.item.itemContent.tweet_results.result.tweet.core.user_results.result &&
-                                item.item.itemContent.tweet_results.result.tweet.core.user_results.result.legacy &&
+                                item.item.itemContent.tweet_results.result.tweet.core.user_results.result.core &&
                                 item.item.itemContent.tweet_results.result.tweet.legacy
                             ) {
-                                userLegacy = item.item.itemContent.tweet_results.result.tweet.core.user_results.result.legacy;
+                                userCore = item.item.itemContent.tweet_results.result.tweet.core.user_results.result.core;
                                 tweetLegacy = item.item.itemContent.tweet_results.result.tweet.legacy;
                             }
 
-                            if (userLegacy && tweetLegacy) {
-                                this.indexTweet(responseIndex, userLegacy, tweetLegacy)
+                            if (userCore && tweetLegacy) {
+                                this.indexTweet(responseIndex, userCore, tweetLegacy)
                             }
                         });
                     } else if (entries.content.entryType == "TimelineTimelineItem") {
@@ -785,11 +786,13 @@ export class XAccountController {
                             entries.content.itemContent.tweet_results.result.core.user_results &&
                             entries.content.itemContent.tweet_results.result.core.user_results.result &&
                             entries.content.itemContent.tweet_results.result.core.user_results.result.legacy &&
+                            entries.content.itemContent.tweet_results.result.core.user_results.result.core &&
                             entries.content.itemContent.tweet_results.result.legacy
                         ) {
-                            userLegacy = entries.content.itemContent.tweet_results.result.core.user_results.result.legacy;
+                            userCore = entries.content.itemContent.tweet_results.result.core.user_results.result.core;
                             tweetLegacy = entries.content.itemContent.tweet_results.result.legacy;
                         }
+
                         if (
                             entries.content.itemContent &&
                             entries.content.itemContent.tweet_results &&
@@ -799,14 +802,16 @@ export class XAccountController {
                             entries.content.itemContent.tweet_results.result.tweet.core.user_results &&
                             entries.content.itemContent.tweet_results.result.tweet.core.user_results.result &&
                             entries.content.itemContent.tweet_results.result.tweet.core.user_results.result.legacy &&
+                            entries.content.itemContent.tweet_results.result.tweet.core.user_results.result.core &&
                             entries.content.itemContent.tweet_results.result.tweet.legacy
                         ) {
-                            userLegacy = entries.content.itemContent.tweet_results.result.tweet.core.user_results.result.legacy;
+                            userCore = entries.content.itemContent.tweet_results.result.tweet.core.user_results.result.core;
                             tweetLegacy = entries.content.itemContent.tweet_results.result.tweet.legacy;
                         }
 
-                        if (userLegacy && tweetLegacy) {
-                            this.indexTweet(responseIndex, userLegacy, tweetLegacy);
+
+                        if (userCore && tweetLegacy) {
+                            this.indexTweet(responseIndex, userCore, tweetLegacy);
                         }
                     }
 
@@ -868,7 +873,7 @@ export class XAccountController {
         log.debug("XAccountController.indexMedia");
 
         // Loop over all media items
-        tweetLegacy.extended_entities?.media.forEach((media: XAPILegacyTweetMedia) => {
+        tweetLegacy.extended_entities?.media?.forEach((media: XAPILegacyTweetMedia) => {
             const mediaURL = getMediaURL(media);
             const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
 
@@ -2089,7 +2094,7 @@ export class XAccountController {
 
     async importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
         // Loop over all media items
-        tweet.extended_entities?.media.forEach(async (media: XAPILegacyTweetMedia) => {
+        tweet.extended_entities?.media?.forEach(async (media: XAPILegacyTweetMedia) => {
             const existingMedia = exec(this.db, 'SELECT * FROM tweet_media WHERE mediaID = ?', [media.id_str], "get") as XTweetMediaRow;
             if (existingMedia) {
                 log.debug(`XAccountController.importXArchiveMedia: media already exists: ${media.id_str}`);
