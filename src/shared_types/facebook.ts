@@ -27,6 +27,18 @@ export function emptyFacebookProgress(): FacebookProgress {
     };
 }
 
+export type FacebookPostItem = {
+    id: string; // storyID
+    u: string; // URL
+    t: string; //text
+    d: string; // createdAt
+    m: string[]; // media filenames
+}
+
+export type FacebookDeletePostsStartResponse = {
+    posts: FacebookPostItem[];
+}
+
 export type FacebookDatabaseStats = {
     storiesSaved: number;
     storiesDeleted: number;
