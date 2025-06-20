@@ -11,6 +11,7 @@ import unzipper from 'unzipper';
 import {
     getResourcesPath,
     getAccountDataPath,
+    getTimestampDaysAgo
 } from '../util'
 import {
     FacebookAccount,
@@ -19,6 +20,8 @@ import {
     emptyFacebookProgress,
     FacebookDatabaseStats,
     emptyFacebookDatabaseStats,
+    FacebookDeletePostsStartResponse,
+    FacebookPostItem,
 } from '../shared_types'
 import {
     runMigrations,
@@ -226,6 +229,49 @@ export class FacebookAccountController {
         return this.progress;
     }
 
+    // Helper function to fetch tweets with media and URLs
+    private fetchPostsWithMedia(
+        whereClause: string,
+        params: (string | number)[]
+    ): FacebookPostItem[] {
+        const query = `
+            SELECT
+                p.storyID, p.url, p.text, p.createdAt,
+                pm.filename AS mediaFilename
+            FROM story p
+            LEFT JOIN media_story ms ON ms.storyID = p.storyID
+            LEFT JOIN media pm ON pm.mediaID = ms.mediaID
+            WHERE ${whereClause}
+            ORDER BY p.createdAt ASC
+        `;
+
+        const rows = exec(this.db, query, params, "all") as {
+            storyID: string;
+            url: string;
+            text: string;
+            createdAt: string;
+            mediaFilename: string | null;
+        }[];
+
+        // Group the results by tweetID
+        const postMap: Record<string, FacebookPostItem> = {};
+        for (const row of rows) {
+            if (!postMap[row.storyID]) {
+                postMap[row.storyID] = {
+                    id: row.storyID,
+                    u: row.url,
+                    t: (row.text ? row.text.replace(/(?:\r\n|\r|\n)/g, '<br>').trim() : ""),
+                    d: row.createdAt,
+                    m: [],
+                };
+            }
+
+            postMap[row.storyID].m.push(row.mediaFilename!);
+        }
+
+        return Object.values(postMap);
+    }
+
     createJobs(jobTypes: string[]): FacebookJob[] {
         if (!this.db) {
             this.initDB();
@@ -292,8 +338,8 @@ export class FacebookAccountController {
         // Find lifeEventTitle, for life events (like birthdays)
         let lifeEventTitle = null;
         if(
-            data.attachments && 
-            data.attachments.length > 0 && 
+            data.attachments &&
+            data.attachments.length > 0 &&
             data.attachments[0].style_type_renderer.__typename == "StoryAttachmentLifeEventStyleRenderer" &&
             data.attachments[0].style_type_renderer.attachment.style_infos &&
             data.attachments[0].style_type_renderer.attachment.style_infos.length > 0 &&
@@ -313,8 +359,8 @@ export class FacebookAccountController {
         if (existingStory) {
             // Update existing story
             exec(
-                this.db, 
-                'UPDATE story SET url = ?, createdAt = ?, text = ?, title = ?, lifeEventTitle = ?, userID = ?, attachedStoryID = ?, addedToDatabaseAt = ? WHERE storyID = ?', 
+                this.db,
+                'UPDATE story SET url = ?, createdAt = ?, text = ?, title = ?, lifeEventTitle = ?, userID = ?, attachedStoryID = ?, addedToDatabaseAt = ? WHERE storyID = ?',
                 [
                     data.url, // url
                     new Date(data.creation_time * 1000), // createdAt
@@ -330,8 +376,8 @@ export class FacebookAccountController {
         } else {
             // Save the story
             exec(
-                this.db, 
-                'INSERT INTO story (storyID, url, createdAt, text, title, lifeEventTitle, userID, attachedStoryID, addedToDatabaseAt, archivedAt, deletedStoryAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                this.db,
+                'INSERT INTO story (storyID, url, createdAt, text, title, lifeEventTitle, userID, attachedStoryID, addedToDatabaseAt, archivedAt, deletedStoryAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     data.id, // storyID
                     data.url, // url
@@ -394,15 +440,15 @@ export class FacebookAccountController {
         if (existingUser) {
             // Update existing user
             exec(
-                this.db, 
-                'UPDATE user SET url = ?, name = ?, profilePictureFilename = ? WHERE userID = ?', 
+                this.db,
+                'UPDATE user SET url = ?, name = ?, profilePictureFilename = ? WHERE userID = ?',
                 [url, name, profilePictureFilename, userID]
             );
         } else {
             // Save the user
             exec(
-                this.db, 
-                'INSERT INTO user (userID, url, name, profilePictureFilename) VALUES (?, ?, ?, ?)', 
+                this.db,
+                'INSERT INTO user (userID, url, name, profilePictureFilename) VALUES (?, ?, ?, ?)',
                 [userID, url, name, profilePictureFilename]
             );
         }
@@ -419,14 +465,14 @@ export class FacebookAccountController {
         if (existingAttachedStory) {
             // Update existing attached story
             exec(
-                this.db, 
-                'UPDATE attached_story SET text = ? WHERE storyID = ?', 
+                this.db,
+                'UPDATE attached_story SET text = ? WHERE storyID = ?',
                 [text, storyID]
             );
         } else {
             // Save the attached story
             exec(
-                this.db, 
+                this.db,
                 'INSERT INTO attached_story (storyID, text) VALUES (?, ?)',
                 [storyID, text]
             );
@@ -748,7 +794,7 @@ export class FacebookAccountController {
                         log.error("FacebookAccountController.parseAPIResponse: no edges found in response", resp);
                         continue;
                     }
-                    
+
                     for (let i = 0; i < edges.length; i++) {
                         const edge = edges[i];
                         if (edge.node) {
@@ -815,6 +861,37 @@ export class FacebookAccountController {
         const archiveZipPath = path.join(getResourcesPath(), "facebook-archive.zip");
         const archiveZip = await unzipper.Open.file(archiveZipPath);
         await archiveZip.extract({ path: accountPath });
+    }
+
+    // When you start deleting tweets, return a list of tweets to delete
+    async deletePostsStart(): Promise<FacebookDeletePostsStartResponse> {
+        log.info("FacebookAccountController.deletePostsStart");
+
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (!this.account) {
+            throw new Error("Account not found");
+        }
+
+        // Determine the timestamp for filtering tweets
+        const daysOldTimestamp = this.account.deletePostsDaysOldEnabled
+            ? getTimestampDaysAgo(this.account.deletePostsDaysOld)
+            : getTimestampDaysAgo(0);
+
+        // Build the WHERE clause and parameters dynamically
+        const whereClause = `
+            p.deletedStoryAt IS NULL
+            AND p.userID = ?
+            AND p.createdAt <= ?
+        `;
+        const params: (string | number)[] = [this.account.accountID, daysOldTimestamp];
+
+        // Fetch posts using the helper function
+        const posts = this.fetchPostsWithMedia(whereClause, params);
+
+        return { posts };
     }
 
     async syncProgress(progressJSON: string) {
