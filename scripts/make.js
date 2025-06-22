@@ -1,3 +1,4 @@
+/* global console */
 import process from 'process';
 import os from 'os';
 import { execSync } from 'child_process';
