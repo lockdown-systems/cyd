@@ -12,7 +12,7 @@ import log from 'electron-log/main';
 import Database from 'better-sqlite3'
 import { glob } from 'glob';
 
-import { NodeOAuthClient, NodeSavedState, NodeSavedSession, OAuthSession } from '@atproto/oauth-client-node'
+import { NodeOAuthClient, NodeSavedState, NodeSavedSession, OAuthSession, NodeOAuthClientFromMetadataOptions } from '@atproto/oauth-client-node'
 import { Agent, BlobRef, RichText } from '@atproto/api';
 import { Record as BskyPostRecord } from '@atproto/api/dist/client/types/app/bsky/feed/post';
 import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/app/bsky/richtext/facet';
@@ -2207,7 +2207,7 @@ export class XAccountController {
     }
 
     async blueskyClientFromClientID(host: string, path: string): Promise<NodeOAuthClient> {
-        return await NodeOAuthClient.fromClientId({
+        const options: NodeOAuthClientFromMetadataOptions = {
             clientId: `https://${host}/${path}`,
             stateStore: {
                 set: async (key: string, internalState: NodeSavedState): Promise<void> => {
@@ -2233,7 +2233,9 @@ export class XAccountController {
                     await this.setConfig(`blueskySessionStore-${sub}`, "");
                 },
             },
-        });
+        }
+        const clientMetadata = await NodeOAuthClient.fetchMetadata(options)
+        return new NodeOAuthClient({ ...options, clientMetadata });
     }
 
     async blueskyInitClient(): Promise<NodeOAuthClient> {

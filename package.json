@@ -25,8 +25,8 @@
     "config-prod": "./archive-static-sites/build.sh && cp ./config/prod.json ./build/config.json"
   },
   "dependencies": {
-    "@atproto/api": "^0.13.32",
-    "@atproto/oauth-client-node": "^0.2.8",
+    "@atproto/api": "^0.15.16",
+    "@atproto/oauth-client-node": "^0.3.1",
     "@fortawesome/fontawesome-free": "^6.5.2",
     "@rushstack/eslint-patch": "^1.10.3",
     "@types/bootstrap": "^5.2.10",
