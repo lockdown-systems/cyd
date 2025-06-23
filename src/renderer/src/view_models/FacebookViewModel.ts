@@ -232,7 +232,6 @@ export class FacebookViewModel extends BaseViewModel {
     async loadFacebookURL(url: string) {
         this.log("loadFacebookURL", url);
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             // Load the URL
             try {
@@ -261,7 +260,6 @@ export class FacebookViewModel extends BaseViewModel {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getFacebookDataFromHTML(): Promise<FacebookDataItem[]> {
         this.log("getFacebookData");
 
@@ -293,7 +291,6 @@ export class FacebookViewModel extends BaseViewModel {
 
         // Wait for the c_user cookie to be set
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             const c_user = await window.electron.Facebook.getCookie(this.account?.id, "c_user");
             if (c_user !== null) {

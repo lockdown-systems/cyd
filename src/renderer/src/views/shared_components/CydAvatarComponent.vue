@@ -31,7 +31,6 @@ const imageUrl = computed(() => {
 onMounted(async () => {
     // Change the stance every 3 to 8 seconds
     setTimeout(async () => {
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 5000));
             const random = Math.floor(Math.random() * 5);
@@ -51,7 +50,6 @@ onMounted(async () => {
 
     // Blink or look every 3 to 8 seconds
     setTimeout(async () => {
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 5000));
             if (Math.floor(Math.random() * 2) == 0) {
