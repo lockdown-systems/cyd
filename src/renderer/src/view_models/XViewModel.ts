@@ -385,7 +385,6 @@ export class XViewModel extends BaseViewModel {
     async loadURLWithRateLimit(url: string, expectedURLs: (string | RegExp)[] = [], redirectOk: boolean = false) {
         this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             // Reset the rate limit checker
             await window.electron.X.resetRateLimitInfo(this.account.id);
@@ -1215,7 +1214,6 @@ Hang on while I scroll down to your earliest direct message conversations...`;
         await this.sleep(2000);
 
         let errorTriggered = false;
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             await this.waitForPause();
             await window.electron.X.resetRateLimitInfo(this.account.id);
@@ -2289,7 +2287,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.progress.conversationsDeleted = 0;
 
         // Loop through all of the conversations, deleting them one at a time until they are gone
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             error = null;
             success = false;
@@ -2494,7 +2491,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
         this.progress.isUnfollowEveryoneFinished = false;
         this.progress.accountsUnfollowed = 0;
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             error = null;
             success = false;

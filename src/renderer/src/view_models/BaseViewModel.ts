@@ -314,7 +314,6 @@ export class BaseViewModel {
         }
 
         const startTime = Date.now();
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             // Check if the URL has changed
             if (this.webview.getURL() !== startingURL) {
@@ -399,7 +398,6 @@ export class BaseViewModel {
         const startingURL = this.webview.getURL();
 
         const startTime = Date.now();
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             if (Date.now() - startTime > timeout) {
                 throw new TimeoutError(selector);
@@ -464,7 +462,6 @@ export class BaseViewModel {
             await this.waitForLoadingToFinish();
 
             let tries = 0;
-            // eslint-disable-next-line no-constant-condition
             while (true) {
                 try {
                     this.log("loadURL", `try #${tries}, ${url}`);
@@ -502,7 +499,6 @@ export class BaseViewModel {
     }
 
     async waitForURL(waitingForURL: string) {
-        // eslint-disable-next-line no-constant-condition
         while (true) {
             const newURL = this.getWebview()?.getURL();
             this.log("waitForURL", {

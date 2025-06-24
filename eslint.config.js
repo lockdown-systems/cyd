@@ -1,6 +1,7 @@
 const eslint = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 const pluginVue = require("eslint-plugin-vue");
+const globals = require("globals");
 
 module.exports = tseslint.config(
   {
@@ -24,6 +25,14 @@ module.exports = tseslint.config(
         project: "./packages/**/tsconfig.json",
         extraFileExtensions: [".vue"],
         sourceType: "module",
+      },
+    },
+  },
+  {
+    files: ["src/renderer/**/*.{js,ts,vue}"],
+    languageOptions: {
+      globals: {
+        ...globals.browser
       },
     },
   },

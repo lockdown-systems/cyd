@@ -132,6 +132,37 @@ const config: ForgeConfig = {
       path.join(assetsPath, 'icon.png'),
     ],
     protocols: protocols,
+    osxSign: {
+      identity: "Developer ID Application: Lockdown Systems LLC (G762K6CH36)",
+      optionsForFile: (filePath) => {
+        const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
+        const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
+        const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
+        const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
+
+        if (filePath.includes('(Plugin).app')) {
+          return {
+            entitlements: entitlementPlugin,
+          }
+        } else if (filePath.includes('(GPU).app')) {
+          return {
+            entitlements: entitlementGpu,
+          }
+        } else if (filePath.includes('(Renderer).app')) {
+          return {
+            entitlements: entitlementRenderer,
+          }
+        }
+        return {
+          entitlements: entitlementDefault,
+        }
+      }
+    },
+    osxNotarize: {
+      appleId: process.env.APPLE_ID ? process.env.APPLE_ID : '',
+      appleIdPassword: process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '',
+      teamId: 'G762K6CH36'
+    }
   },
   rebuildConfig: {},
   makers: [
@@ -220,8 +251,7 @@ const config: ForgeConfig = {
     })
   ],
   hooks: {
-    // Delete pre-existing code signatures from the app bundle, as this prevents the unversal binary from building
-    // We will codesign it later
+    // Delete pre-existing code signatures from the app bundle, as this prevents the unversal binary from merging correctly
     packageAfterPrune: async (forgeConfig, buildPath, electronVersion, platform, _arch) => {
       if (platform !== 'darwin') {
         return;
@@ -230,130 +260,6 @@ const config: ForgeConfig = {
       console.log("🍎 Deleting pre-existing code signatures from app bundle");
       const appPath = path.join(buildPath, '..', '..', '..');
       removeCodeSignatures(appPath);
-    },
-
-    // macOS codesign here because osxSign seems totally broken
-    preMake: async (_forgeConfig) => {
-      if (os.platform() !== 'darwin' || process.env.MACOS_RELEASE !== 'true') {
-        return;
-      }
-
-      console.log('🍎 Preparing to codesign macOS app bundle');
-
-      const universalBuildPath = path.join(__dirname, 'out', process.env.CYD_ENV == 'prod' ? 'Cyd-darwin-universal' : 'Cyd Dev-darwin-universal');
-      const appPath = path.join(universalBuildPath, process.env.CYD_ENV == 'prod' ? "Cyd.app" : "Cyd Dev.app");
-      const identity = "Developer ID Application: Lockdown Systems LLC (G762K6CH36)";
-      const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
-      const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
-      const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
-      const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
-
-      // Make a list of Mach-O binaries to sign
-      const filesToSign: string[] = [];
-
-      const findMachOBinaries = (dir: string) => {
-        const files = fs.readdirSync(dir);
-        files.forEach(file => {
-          const filePath = path.join(dir, file);
-          const stat = fs.statSync(filePath);
-          if (stat.isDirectory()) {
-            findMachOBinaries(filePath);
-          } else {
-            try {
-              const fileType = execSync(`file "${filePath}"`).toString();
-              if (fileType.includes('Mach-O')) {
-                filesToSign.push(filePath);
-              }
-            } catch (error) {
-              console.error(`Error checking file type for ${filePath}:`, error);
-            }
-          }
-        });
-      };
-
-      findMachOBinaries(appPath);
-
-      // Add the app bundle itself to the list
-      filesToSign.push(appPath);
-
-      // Code sign each file in filesToSign
-      filesToSign.forEach(file => {
-        let options = 'runtime';
-        if (file.includes('Frameworks') || file.includes('.dylib')) {
-          options = 'runtime,library';
-        }
-
-        let entitlements = entitlementDefault;
-        if (file.includes('(Plugin).app')) {
-          entitlements = entitlementPlugin;
-        } else if (file.includes('(GPU).app')) {
-          entitlements = entitlementGpu;
-        } else if (file.includes('(Renderer).app')) {
-          entitlements = entitlementRenderer;
-        }
-
-        try {
-          execSync(`codesign --force --sign "${identity}" --entitlements "${entitlements}" --timestamp --deep --force --options ${options} "${file}"`);
-        } catch (error) {
-          console.error(`Error signing ${file}:`, error);
-        }
-      });
-
-      console.log('🍎 Finished codesigning macOS app bundle');
-    },
-
-    // macOS notarize here because osxNotarize is broken without using osxSign
-    postMake: async (forgeConfig, makeResults) => {
-      if (makeResults[0].platform !== 'darwin' || process.env.MACOS_RELEASE !== 'true') {
-        return makeResults;
-      }
-
-      console.log('🍎 Preparing to notarize macOS artifacts');
-
-      const appleId = process.env.APPLE_ID ? process.env.APPLE_ID : '';
-      const appleIdPassword = process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '';
-      const teamId = "G762K6CH36";
-
-      const artifactPaths: string[] = [];
-      const submissionIDs: string[] = [];
-
-      for (const result of makeResults) {
-        for (const artifactPath of result.artifacts) {
-          // Skip artifiacts that are not DMGs or ZIPs
-          if (artifactPath.endsWith('.dmg') || artifactPath.endsWith('.zip')) {
-            artifactPaths.push(artifactPath);
-
-            // Notarize the artifact
-            console.log(`🍎 Submitting macOS artifact: ${artifactPath}`);
-            const outputJSON = execSync(`xcrun notarytool submit "${artifactPath}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}" -f json`);
-            const output = JSON.parse(outputJSON.toString());
-            submissionIDs.push(output.id);
-          } else {
-            console.log(`🍎 Skipping notarization for artifact: ${artifactPath}`);
-          }
-        }
-      }
-
-      // Wait for the notarization to complete
-      for (let i = 0; i < submissionIDs.length; i++) {
-        const submissionID = submissionIDs[i];
-        const artifactPath = artifactPaths[i];
-
-        console.log(`🍎 Waiting for notarization of macOS artifact: ${artifactPath}`);
-        execSync(`xcrun notarytool wait "${submissionID}" --apple-id "${appleId}" --password "${appleIdPassword}" --team-id "${teamId}"`);
-      }
-
-      // Staple the notarization ticket to the artifact
-      for (const artifactPath of artifactPaths) {
-        if (artifactPath.endsWith('.dmg')) {
-          console.log(`🍎 Stapling notarization ticket to macOS artifact: ${artifactPath}`);
-          execSync(`xcrun stapler staple "${artifactPath}"`);
-        } else {
-          console.log(`🍎 Skipping stapling for artifact: ${artifactPath}`);
-        }
-      }
-
-      return makeResults;
     },
   },
   plugins: [
