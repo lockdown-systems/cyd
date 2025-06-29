@@ -85,7 +85,7 @@ onMounted(async () => {
         <div class="back-buttons">
             <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                 <i class="fa-solid fa-backward" />
-                Back to Import or Build Database
+                Back to Local Database
             </button>
         </div>
 
