@@ -16,40 +16,43 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <div class="wizard-content container mb-4 mt-3 mx-auto">
-        <div class="dashboard row">
-            <div class="col-12 col-md-6 col-lg-6">
-                <div class="card m-2" @click="emit('setState', State.WizardDatabase)">
-                    <div class="card-body align-items-center">
-                        <img src="/assets/icon-database.png" alt="Local Database">
-                        <h1>Local Database</h1>
-                        <p class="small text-muted">
-                            Make or update your local backup of X data. Cyd references this data when you delete from X
-                            or migrate to Bluesky.
-                        </p>
+    <div class="wizard-content">
+        <div class="wizard-scroll-content">
+            <div class="dashboard row">
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card m-2" @click="emit('setState', State.WizardDatabase)">
+                        <div class="card-body align-items-center">
+                            <img src="/assets/icon-database.png" alt="Local Database">
+                            <h1>Local Database</h1>
+                            <p class="small text-muted">
+                                Make or update your local backup of X data. Cyd references this data when you delete
+                                from X
+                                or migrate to Bluesky.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-12 col-md-6 col-lg-6">
-                <div class="card m-2" @click="emit('setState', State.WizardDeleteOptions)">
-                    <div class="card-body align-items-center">
-                        <img src="/assets/icon-delete.png" alt="Delete from X">
-                        <h1>Delete from X</h1>
-                        <p class="small text-muted">
-                            Delete your tweets, retweets, likes, bookmarks, or DMs from your X account, or unfollow
-                            everyone.
-                        </p>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card m-2" @click="emit('setState', State.WizardDeleteOptions)">
+                        <div class="card-body align-items-center">
+                            <img src="/assets/icon-delete.png" alt="Delete from X">
+                            <h1>Delete from X</h1>
+                            <p class="small text-muted">
+                                Delete your tweets, retweets, likes, bookmarks, or DMs from your X account, or unfollow
+                                everyone.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-12 col-md-6 col-lg-6">
-                <div class="card m-2" @click="emit('setState', State.WizardMigrateToBluesky)">
-                    <div class="card-body align-items-center">
-                        <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky">
-                        <h1>Migrate to Bluesky</h1>
-                        <p class="small text-muted">
-                            Migrate your tweets from your X account to a Bluesky account.
-                        </p>
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card m-2" @click="emit('setState', State.WizardMigrateToBluesky)">
+                        <div class="card-body align-items-center">
+                            <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky">
+                            <h1>Migrate to Bluesky</h1>
+                            <p class="small text-muted">
+                                Migrate your tweets from your X account to a Bluesky account.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

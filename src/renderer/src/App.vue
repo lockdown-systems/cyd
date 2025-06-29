@@ -519,9 +519,17 @@ body {
 }
 
 .wizard-content {
-  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.wizard-scroll-content {
+  flex: 1 1 0;
   overflow-y: auto;
-  min-width: 0;
+  min-height: 0;
+  padding: 0 1rem;
 }
 
 .wizard-sidebar {
@@ -549,9 +557,14 @@ body {
   padding: 0.5rem 0 0.5rem 0;
 }
 
-.wizard .buttons {
-  margin-top: 2rem;
-  text-align: center;
+.wizard .back-buttons {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.wizard .next-buttons {
+  margin-top: 1rem;
+  text-align: right;
 }
 
 .wizard-review ul {
