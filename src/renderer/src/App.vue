@@ -533,8 +533,8 @@ body {
 }
 
 .wizard-sidebar {
-  min-width: 280px;
-  flex-basis: 280px;
+  min-width: 150px;
+  flex-basis: 150px;
   overflow-y: auto;
   flex-shrink: 0;
 }
@@ -552,7 +552,7 @@ body {
 }
 
 .wizard-sidebar .stats .card-body h1 {
-  font-size: 1.7em;
+  font-size: 1.5em;
   margin-bottom: 0;
   padding: 0.5rem 0 0.5rem 0;
 }
@@ -583,19 +583,6 @@ body {
 
 .option-card.selected {
   background-color: #f0f0f0;
-}
-
-ul.wizard-nav {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-  margin-bottom: 1em;
-  text-align: center;
-}
-
-ul.wizard-nav button {
-  width: 200px;
-  text-align: left;
 }
 
 /* Run Jobs styles */
