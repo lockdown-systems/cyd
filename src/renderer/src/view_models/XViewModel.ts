@@ -2863,18 +2863,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                 case State.WizardStart:
                     this.showBrowser = false;
                     await this.loadBlank();
-
-                    // Make the user start where they last were
-                    jobsType = getJobsType(this.account.id) || "";
-                    if (jobsType == 'save' || jobsType == 'archive') {
-                        this.state = State.WizardDatabase;
-                    } else if (jobsType == 'delete') {
-                        this.state = State.WizardDeleteOptions;
-                    } else if (jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete') {
-                        this.state = State.WizardMigrateToBluesky;
-                    } else {
-                        this.state = State.WizardDashboard;
-                    }
+                    this.state = State.WizardDashboard;
                     break;
                 
                 case State.WizardDashboard:

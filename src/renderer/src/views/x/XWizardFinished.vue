@@ -38,11 +38,7 @@ const runAgainClicked = async () => {
 };
 
 const nextClicked = async () => {
-    if (jobsType.value == 'save') {
-        emit('setState', State.WizardStart);
-    } else {
-        emit('onRefreshClicked');
-    }
+    emit('setState', State.WizardDashboard);
 };
 
 const viewBlueskyProfileClicked = async () => {
@@ -340,7 +336,7 @@ onMounted(async () => {
             </template>
             <button class="btn btn-primary" @click="nextClicked">
                 <i class="fa-solid fa-forward" />
-                Continue
+                Continue to Dashboard
             </button>
         </div>
     </div>
