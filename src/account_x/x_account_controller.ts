@@ -92,8 +92,6 @@ import {
 
 // for building the static archive site
 import { saveArchive } from './archive';
-import { createAccount, selectAccountType, saveAccount } from '../database/account';
-import { getMITMController } from '../mitm';
 
 const getMediaURL = (media: XAPILegacyTweetMedia): string => {
     // Get the HTTPS URL of the media -- this works for photos
@@ -261,6 +259,7 @@ export class XAccountController {
                 log.info("XAccountController.initDB: now setting archive only account: ", uniqueUsername);
                 this.account.username = uniqueUsername;
                 this.account.archiveOnly = true;
+                log.info("XAccountController.initDB: archiveOnly", this.account.archiveOnly);
                 saveXAccount(this.account);
             }
         }
