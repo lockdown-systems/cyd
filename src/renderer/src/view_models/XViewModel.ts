@@ -978,7 +978,7 @@ export class XViewModel extends BaseViewModel {
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `**I'm saving your tweets.**
+        this.instructions = `# I'm saving your tweets.
 
 Hang on while I scroll down to your earliest tweets.`;
         this.showAutomationNotice = true;
@@ -1166,7 +1166,7 @@ Hang on while I scroll down to your earliest tweets.`;
         let archiveStartResponse: XArchiveStartResponse;
 
         this.showBrowser = true;
-        this.instructions = `**I'm downloading HTML copies of your tweets, starting with the oldest.**
+        this.instructions = `# I'm downloading HTML copies of your tweets, starting with the oldest.
 
 This may take a while...`;
         this.showAutomationNotice = true;
@@ -1206,7 +1206,7 @@ This may take a while...`;
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_CONVERSATIONS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `**I'm saving your direct message conversations.**
+        this.instructions = `# I'm saving your direct message conversations.
 
 Hang on while I scroll down to your earliest direct message conversations...`;
         this.showAutomationNotice = true;
@@ -1349,7 +1349,7 @@ Hang on while I scroll down to your earliest direct message conversations...`;
         let url = '';
 
         this.showBrowser = true;
-        this.instructions = `**I'm saving your direct messages.**
+        this.instructions = `# I'm saving your direct messages.
 
 Please wait while I index all the messages from each conversation...`;
         this.showAutomationNotice = true;
@@ -1485,7 +1485,7 @@ Please wait while I index all the messages from each conversation...`;
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_ARCHIVE_BUILD, navigator.userAgent);
 
         this.showBrowser = false;
-        this.instructions = `**I'm building a searchable archive web page in HTML.**`;
+        this.instructions = `# I'm building a searchable archive web page in HTML.`;
         this.showAutomationNotice = true;
 
         // Build the archive
@@ -1510,7 +1510,7 @@ Please wait while I index all the messages from each conversation...`;
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_LIKES, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `**I'm saving your likes.**
+        this.instructions = `# I'm saving your likes.
 
 Hang on while I scroll down to your earliest likes.`;
         this.showAutomationNotice = true;
@@ -1677,7 +1677,7 @@ Hang on while I scroll down to your earliest likes.`;
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS, navigator.userAgent);
 
         this.showBrowser = true;
-        this.instructions = `**I'm saving your bookmarks.**
+        this.instructions = `# I'm saving your bookmarks.
 
 Hang on while I scroll down to your earliest bookmarks.`;
         this.showAutomationNotice = true;
@@ -1848,7 +1848,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         this.runJobsState = RunJobsState.DeleteTweets;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-        this.instructions = `**I'm deleting your tweets based on your criteria, starting with the earliest.**`;
+        this.instructions = `# I'm deleting your tweets based on your criteria, starting with the earliest.`;
 
         // Load the tweets to delete
         try {
@@ -1957,7 +1957,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         this.runJobsState = RunJobsState.DeleteRetweets;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-        this.instructions = `**I'm deleting your retweets, starting with the earliest.**`;
+        this.instructions = `# I'm deleting your retweets, starting with the earliest.`;
 
         // Load the retweets to delete
         try {
@@ -2066,7 +2066,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         this.runJobsState = RunJobsState.DeleteLikes;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-        this.instructions = `**I'm deleting your likes, starting with the earliest.**`;
+        this.instructions = `# I'm deleting your likes, starting with the earliest.`;
 
         // Load the likes to delete
         try {
@@ -2172,7 +2172,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         this.runJobsState = RunJobsState.DeleteBookmarks;
         let tweetsToDelete: XDeleteTweetsStartResponse;
-        this.instructions = `**I'm deleting your bookmarks, starting with the earliest.**`;
+        this.instructions = `# I'm deleting your bookmarks, starting with the earliest.`;
 
         // Load the bookmarks to delete
         try {
@@ -2281,7 +2281,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         let reloadDMsPage = true;
 
         this.showBrowser = true;
-        this.instructions = `**I'm deleting all your direct message conversations, starting with the most recent.**`;
+        this.instructions = `# I'm deleting all your direct message conversations, starting with the most recent.`;
         this.showAutomationNotice = true;
 
         // Start the progress
@@ -2486,7 +2486,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         let accountToUnfollowIndex = 0;
 
         this.showBrowser = true;
-        this.instructions = `**I'm unfollowing everyone on X for you.**`;
+        this.instructions = `# I'm unfollowing everyone on X for you.`;
         this.showAutomationNotice = true;
 
         // Start the progress
@@ -2616,7 +2616,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY, navigator.userAgent);
 
         this.showBrowser = false;
-        this.instructions = `**I'm migrating your tweets to Bluesky.**`;
+        this.instructions = `# I'm migrating your tweets to Bluesky.`;
         this.showAutomationNotice = true;
 
         this.runJobsState = RunJobsState.MigrateBluesky;
@@ -2681,7 +2681,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
         await window.electron.trackEvent(PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY_DELETE, navigator.userAgent);
 
         this.showBrowser = false;
-        this.instructions = `**I'm deleting your posts from Bluesky that you migrated from X.**`;
+        this.instructions = `# I'm deleting your posts from Bluesky that you migrated from X.`;
         this.showAutomationNotice = true;
 
         this.runJobsState = RunJobsState.MigrateBlueskyDelete;
@@ -2840,7 +2840,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
                     this.instructions = `${this.actionString}
 
-**To get started, log in to your X account below.**`;
+# To get started, log in to your X account below.`;
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
@@ -2888,7 +2888,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                 case State.WizardDatabase:
                     this.showBrowser = false;
                     this.instructions = `
-**I need a local database of the data in your X account before I can delete it.**
+# I need a local database of the data in your X account before I can delete it.
 
 You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
                     this.state = State.WizardDatabaseDisplay;
@@ -2898,7 +2898,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                 case State.WizardImportStart:
                     this.showBrowser = false;
                     this.instructions = `
-**Before you can import your X archive, you need to download it from X. Here's how.**`;
+# Before you can import your X archive, you need to download it from X. Here's how.`;
                     await this.loadBlank();
                     this.state = State.WizardImportStartDisplay;
                     break;
@@ -2913,7 +2913,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
                 case State.WizardImporting:
                     this.showBrowser = false;
                     this.instructions = `
-**I'll help you import your X archive into your local database.**`;
+# I'll help you import your X archive into your local database.`;
                     await this.loadBlank();
                     this.state = State.WizardImportingDisplay;
                     break;
@@ -2924,7 +2924,7 @@ You can either import an X archive, or I can build it from scratch by scrolling 
 I'll help you build a private local database of your X data to the \`Documents\` folder on your computer.
 You'll be able to access it even after you delete it from X.
 
-**Which data do you want to save?**`;
+# Which data do you want to save?`;
                     await this.loadBlank();
                     this.state = State.WizardBuildOptionsDisplay;
                     break;
@@ -2936,7 +2936,7 @@ You'll be able to access it even after you delete it from X.
 - I can backup a copy of your bookmarks, which isn't included in the official X archive.
 - And I can also save a more detailed backup of your direct messages than is available in the official X archive.
 
-**Which data do you want to save?**`;
+# Which data do you want to save?`;
                     await this.loadBlank();
                     this.state = State.WizardArchiveOptionsDisplay;
                     break;
@@ -2944,7 +2944,7 @@ You'll be able to access it even after you delete it from X.
                 case State.WizardDeleteOptions:
                     this.showBrowser = false;
                     this.instructions = `
-**Which data do you want to delete?**`;
+# Which data do you want to delete?`;
                     await this.loadBlank();
                     this.state = State.WizardDeleteOptionsDisplay;
                     break;
@@ -2953,7 +2953,7 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     this.instructions = `I'm almost ready to start helping you claw back your data from X!
 
-**Here's what I'm planning on doing.**`;
+# Here's what I'm planning on doing.`;
                     await this.loadBlank();
                     this.state = State.WizardReviewDisplay;
                     break;
@@ -2973,7 +2973,7 @@ You'll be able to access it even after you delete it from X.
                     this.showBrowser = false;
                     await this.loadBlank();
                     this.instructions = `
-**Just because you're quitting X doesn't mean your posts need to disappear.**
+# Just because you're quitting X doesn't mean your posts need to disappear.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
@@ -2984,14 +2984,14 @@ After you build a local database of your tweets, I can help you migrate them int
                     this.instructions = `
 All done!
 
-**Here's what I did.**`;
+# Here's what I did.`;
                     await this.loadBlank();
                     this.state = State.FinishedRunningJobsDisplay;
                     break;
 
                 case State.WizardCheckPremium:
                     this.showBrowser = false;
-                    this.instructions = `**I'm almost ready to delete your data from X!**
+                    this.instructions = `# I'm almost ready to delete your data from X!
 
 You can save all your data for free, but you need a Premium plan to delete your data.`;
                     await this.loadBlank();
