@@ -1880,8 +1880,8 @@ export class XAccountController {
             }
 
             // We run this check only if we're not in archive only mode
-            if (accountData[0].account.username !== this.account?.username && !this.account?.archiveOnly) {
-                log.info(`XAccountController.verifyXArchive: archiveOnly: ${this.account?.archiveOnly}`);
+            if (accountData[0].account.username !== this.account?.username && !this.account?.username?.startsWith('deleted_account_')) {
+                log.info(`XAccountController.verifyXArchive: username: ${this.account?.username}`);
                 log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
                 return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
             }
