@@ -40,8 +40,6 @@ export enum State {
 
     WizardImportStart = "WizardImportStart",
     WizardImportStartDisplay = "WizardImportStartDisplay",
-    WizardImportDownload = "WizardImportDownload",
-    WizardImportDownloadDisplay = "WizardImportDownloadDisplay",
     WizardImporting = "WizardImporting",
     WizardImportingDisplay = "WizardImportingDisplay",
 
@@ -2890,13 +2888,6 @@ You can either import an X archive, or I can build it from scratch by scrolling 
 # Before you can import your X archive, you need to download it from X. Here's how.`;
                     await this.loadBlank();
                     this.state = State.WizardImportStartDisplay;
-                    break;
-
-                case State.WizardImportDownload:
-                    this.showBrowser = false;
-                    this.instructions = `You have requested your X archive, so now we wait.`;
-                    await this.loadBlank();
-                    this.state = State.WizardImportDownloadDisplay;
                     break;
 
                 case State.WizardImporting:

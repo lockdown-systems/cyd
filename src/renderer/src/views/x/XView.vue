@@ -25,7 +25,6 @@ import XJobStatusComponent from './XJobStatusComponent.vue';
 import XWizardDashboard from './XWizardDashboard.vue';
 import XWizardDatabasePage from './XWizardDatabasePage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
-import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportingPage from './XWizardImportingPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
 import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
@@ -520,9 +519,6 @@ onUnmounted(async () => {
                             @set-state="setState($event)" />
 
                         <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
-
-                        <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
                             @set-state="setState($event)" />
 
                         <XWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
