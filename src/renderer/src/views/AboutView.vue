@@ -14,12 +14,17 @@ const sourceClicked = async () => {
 };
 
 const privacyClicked = async () => {
-    await window.electron.openURL("https://cyd.social/privacy");
+    await window.electron.openURL("https://cyd.social/privacy/");
 };
 
 const termsClicked = async () => {
-    await window.electron.openURL("https://cyd.social/terms");
+    await window.electron.openURL("https://cyd.social/terms/");
 };
+
+const creditsClicked = async () => {
+    await window.electron.openURL("https://cyd.social/credits/");
+};
+
 
 onMounted(async () => {
     appVersion.value = await window.electron.getVersion();
@@ -50,6 +55,7 @@ onMounted(async () => {
                 <span class="btn btn-link" @click="sourceClicked">Source Code</span>
                 <span class="btn btn-link" @click="privacyClicked">Privacy Policy</span>
                 <span class="btn btn-link" @click="termsClicked">Terms of Use</span>
+                <span class="btn btn-link" @click="creditsClicked">Credits</span>
             </p>
         </div>
     </div>
