@@ -244,11 +244,34 @@ export class XAccountController {
         }
     }
 
-    initDB() {
-        if (!this.account || !this.account.username) {
-            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found", this.account, this.account?.username);
+    // Helper method to set up an archive-only account
+    private setupArchiveOnlyAccount() {
+        if (!this.account) {
+            log.error("XAccountController.setupArchiveOnlyAccount: account does not exist");
             return;
         }
+
+        if (!this.account.username) {
+            // We're in archive only mode. Let's create a new account
+            log.info("XAccountController.setupArchiveOnlyAccount: setting a temporary username");
+            const uuid = crypto.randomUUID();
+            const uniqueUsername = `deleted_account_${uuid.slice(0, 8)}`;
+            log.info("XAccountController.setupArchiveOnlyAccount: now setting archive only account: ", uniqueUsername);
+            this.account.username = uniqueUsername;
+            this.account.archiveOnly = true;
+            log.info("XAccountController.setupArchiveOnlyAccount: archiveOnly", this.account.archiveOnly);
+            saveXAccount(this.account);
+        }
+    }
+
+    initDB() {
+        if (!this.account) {
+            log.error("XAccountController.initDB: account does not exist");
+            return;
+        }
+
+        // Set up archive-only account if needed
+        this.setupArchiveOnlyAccount();
 
         // Make sure the account data folder exists
         this.accountDataPath = getAccountDataPath('X', this.account.username);
@@ -440,7 +463,7 @@ export class XAccountController {
                     `ALTER TABLE tweet_media ADD COLUMN startIndex INTEGER;`,
                     `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`
                 ]
-            },
+            }
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -1793,9 +1816,19 @@ export class XAccountController {
     // Unzip twitter archive to the account data folder using unzipper
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
+        if (!this.db) {
+            log.info(`XAccountController.unzipXArchive: db does not exist, creating`)
+            this.initDB();
+        }
+
         if (!this.account) {
+            log.info(`XAccountController.unzipXArchive: account does not exist, bailing`)
             return null;
         }
+
+        // Ensure username is set (for archive-only mode)
+        this.setupArchiveOnlyAccount();
+
         const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "tmp");
 
         const archiveZip = await unzipper.Open.file(archiveZipPath);
@@ -1857,7 +1890,10 @@ export class XAccountController {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
                 return `The account.js file has more than one account.`;
             }
-            if (accountData[0].account.username !== this.account?.username) {
+
+            // We run this check only if we're not in archive only mode
+            if (accountData[0].account.username !== this.account?.username && !this.account?.username?.startsWith('deleted_account_')) {
+                log.info(`XAccountController.verifyXArchive: username: ${this.account?.username}`);
                 log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
                 return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
             }
