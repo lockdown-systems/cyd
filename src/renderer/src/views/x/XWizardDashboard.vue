@@ -18,9 +18,9 @@ const emit = defineEmits<{
 <template>
     <div class="wizard-content">
         <div class="wizard-scroll-content">
-            <div class="dashboard row">
+            <div class="dashboard row g-3">
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card m-2" @click="emit('setState', State.WizardDatabase)">
+                    <div class="card" @click="emit('setState', State.WizardDatabase)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-database.png" alt="Local Database">
                             <h1>Local Database</h1>
@@ -33,7 +33,7 @@ const emit = defineEmits<{
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card m-2" @click="emit('setState', State.WizardDeleteOptions)">
+                    <div class="card" @click="emit('setState', State.WizardDeleteOptions)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-delete.png" alt="Delete from X">
                             <h1>Delete from X</h1>
@@ -45,7 +45,7 @@ const emit = defineEmits<{
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card m-2" @click="emit('setState', State.WizardMigrateToBluesky)">
+                    <div class="card" @click="emit('setState', State.WizardMigrateToBluesky)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky">
                             <h1>Migrate to Bluesky</h1>
@@ -61,7 +61,12 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+.dashboard {
+    padding: 1rem 2rem;
+}
+
 .dashboard .card {
+    padding: 0.5rem;
     text-align: center;
     cursor: pointer;
     transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
