@@ -337,18 +337,11 @@ onMounted(async () => {
                     <i class="fa-solid fa-repeat" />
                     Run Again with Same Settings
                 </button>
-
-                <button class="btn btn-secondary" @click="nextClicked">
-                    <i class="fa-solid fa-forward" />
-                    Continue
-                </button>
             </template>
-            <template v-else>
-                <button class="btn btn-primary" @click="nextClicked">
-                    <i class="fa-solid fa-forward" />
-                    Continue
-                </button>
-            </template>
+            <button class="btn btn-primary" @click="nextClicked">
+                <i class="fa-solid fa-forward" />
+                Continue
+            </button>
         </div>
     </div>
 </template>
