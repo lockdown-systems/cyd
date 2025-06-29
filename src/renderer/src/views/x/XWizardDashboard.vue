@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import {
+    ref,
+    onMounted
+} from 'vue';
+import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
+import { xHasSomeData } from '../../util_x';
 
 // Props
-defineProps<{
+const props = defineProps<{
     model: XViewModel;
 }>();
 
@@ -13,6 +18,12 @@ defineProps<{
 const emit = defineEmits<{
     setState: [value: State]
 }>()
+
+const hasSomeData = ref(false);
+
+onMounted(async () => {
+    hasSomeData.value = await xHasSomeData(props.model.account.id);
+});
 </script>
 
 <template>
@@ -20,7 +31,8 @@ const emit = defineEmits<{
         <div class="wizard-scroll-content">
             <div class="dashboard row g-3">
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card" @click="emit('setState', State.WizardDatabase)">
+                    <div class="card position-relative" @click="emit('setState', State.WizardDatabase)">
+                        <span v-if="!hasSomeData" class="start-here-badge badge bg-primary">Start Here</span>
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-database.png" alt="Local Database">
                             <h1>Local Database</h1>
@@ -70,6 +82,20 @@ const emit = defineEmits<{
     text-align: center;
     cursor: pointer;
     transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    position: relative;
+}
+
+.start-here-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 2;
+    transform: rotate(18deg);
+    font-size: 0.85rem;
+    padding: 0.5em 1.1em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    font-weight: 600;
+    letter-spacing: 0.03em;
 }
 
 .dashboard .card:hover,
