@@ -244,25 +244,34 @@ export class XAccountController {
         }
     }
 
+    // Helper method to set up an archive-only account
+    private setupArchiveOnlyAccount() {
+        if (!this.account) {
+            log.error("XAccountController.setupArchiveOnlyAccount: account does not exist");
+            return;
+        }
+
+        if (!this.account.username) {
+            // We're in archive only mode. Let's create a new account
+            log.info("XAccountController.setupArchiveOnlyAccount: setting a temporary username");
+            const uuid = crypto.randomUUID();
+            const uniqueUsername = `deleted_account_${uuid.slice(0, 8)}`;
+            log.info("XAccountController.setupArchiveOnlyAccount: now setting archive only account: ", uniqueUsername);
+            this.account.username = uniqueUsername;
+            this.account.archiveOnly = true;
+            log.info("XAccountController.setupArchiveOnlyAccount: archiveOnly", this.account.archiveOnly);
+            saveXAccount(this.account);
+        }
+    }
+
     initDB() {
         if (!this.account) {
             log.error("XAccountController.initDB: account does not exist");
             return;
         }
 
-        if (!this.account.username) {
-            // We're in archive only mode. Let's create a new account
-            log.info("XAccountController.initDB: setting a temporary username");
-            const uuid = crypto.randomUUID();
-            const uniqueUsername = `deleted_account_${uuid.slice(0, 8)}`;
-            if (this.account) {
-                log.info("XAccountController.initDB: now setting archive only account: ", uniqueUsername);
-                this.account.username = uniqueUsername;
-                this.account.archiveOnly = true;
-                log.info("XAccountController.initDB: archiveOnly", this.account.archiveOnly);
-                saveXAccount(this.account);
-            }
-        }
+        // Set up archive-only account if needed
+        this.setupArchiveOnlyAccount();
 
         // Make sure the account data folder exists
         this.accountDataPath = getAccountDataPath('X', this.account.username);
@@ -1816,6 +1825,10 @@ export class XAccountController {
             log.info(`XAccountController.unzipXArchive: account does not exist, bailing`)
             return null;
         }
+
+        // Ensure username is set (for archive-only mode)
+        this.setupArchiveOnlyAccount();
+
         const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "tmp");
 
         const archiveZip = await unzipper.Open.file(archiveZipPath);
