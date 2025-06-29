@@ -29,6 +29,9 @@ export enum State {
     WizardPrestart = "WizardPrestart",
     WizardStart = "WizardStart",
 
+    WizardDashboard = "WizardDashboard",
+    WizardDashboardDisplay = "WizardDashboardDisplay",
+
     WizardDatabase = "WizardDatabase",
     WizardDatabaseDisplay = "WizardDatabaseDisplay",
 
@@ -2870,17 +2873,16 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     } else if (jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete') {
                         this.state = State.WizardMigrateToBluesky;
                     } else {
-                        // Otherwise, default to delete options if they have archived, or database if they haven't
-                        if (
-                            await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_importArchive') ||
-                            await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexTweets') ||
-                            await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexLikes')
-                        ) {
-                            this.state = State.WizardDeleteOptions;
-                        } else {
-                            this.state = State.WizardDatabase;
-                        }
+                        this.state = State.WizardDashboard;
                     }
+                    break;
+                
+                case State.WizardDashboard:
+                    this.showBrowser = false;
+                    this.instructions = `
+# It's _your_ data. What do you want to do with it?`;
+                    this.state = State.WizardDashboardDisplay;
+                    await this.loadBlank();
                     break;
 
                 case State.WizardDatabase:

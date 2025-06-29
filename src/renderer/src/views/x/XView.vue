@@ -22,6 +22,7 @@ import AutomationNotice from '../shared_components/AutomationNotice.vue';
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
+import XWizardDashboard from './XWizardDashboard.vue';
 import XWizardDatabasePage from './XWizardDatabasePage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
 import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
@@ -512,6 +513,9 @@ onUnmounted(async () => {
             <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
                 <div class="wizard-container d-flex">
                     <div class="wizard-content flex-grow-1">
+                        <XWizardDashboard v-if="model.state == State.WizardDashboardDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
                         <XWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay" :model="unref(model)"
                             @set-state="setState($event)" />
 

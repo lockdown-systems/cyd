@@ -70,6 +70,12 @@ onMounted(async () => {
     <div class="wizard-sidebar">
         <ul class="wizard-nav">
             <li>
+                <button class="btn btn-light" @click="emit('setState', State.WizardDashboard)">
+                    <i class="fa-solid fa-database" />
+                    Dashboard
+                </button>
+            </li>
+            <li>
                 <button class="btn btn-light" @click="emit('setState', State.WizardDatabase)">
                     <i class="fa-solid fa-database" />
                     Local Database
