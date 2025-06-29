@@ -282,6 +282,8 @@ const startJobs = async () => {
 
     // If in archive-only mode, skip authentication checks
     if (model.value.account.xAccount.archiveOnly) {
+        // Log value of archiveOnly
+        console.log('archiveOnly', model.value.account.xAccount.archiveOnly);
         await model.value.defineJobs();
         model.value.state = State.RunJobs;
         await startStateLoop();
