@@ -33,7 +33,7 @@ import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
-import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
+import XWizardFinished from './XWizardFinished.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
 import XDisplayTweet from './XDisplayTweet.vue';
@@ -550,8 +550,7 @@ onUnmounted(async () => {
                             :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @set-state="setState($event)" />
 
-                        <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
-                            :model="unref(model)"
+                        <XWizardFinished v-if="model.state == State.FinishedRunningJobsDisplay" :model="unref(model)"
                             :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                             :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                             @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"
