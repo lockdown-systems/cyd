@@ -2829,7 +2829,6 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         // Temp variables
         let databaseStatsString: string = "";
-        let jobsType: string = "";
 
         this.log("run", `running state: ${this.state}`);
         try {
