@@ -74,8 +74,16 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="wizard-content container mb-4 mt-3 mx-auto">
-        <div class="mb-4">
+    <div class="wizard-content">
+        <div class="back-buttons">
+            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                @click="emit('setState', State.WizardDashboard)">
+                <i class="fa-solid fa-backward" />
+                Back to Dashboard
+            </button>
+        </div>
+
+        <div class="wizard-scroll-content">
             <h2>
                 Build your local database
             </h2>
@@ -240,21 +248,21 @@ onMounted(async () => {
                     </div>
                 </div>
             </template>
+        </div>
 
-            <div class="buttons">
-                <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
-                    <i class="fa-solid fa-forward" />
-                    <template v-if="buildDatabaseStrategy == 'importArchive'">
-                        Continue to Import Archive
-                    </template>
-                    <template v-else-if="buildDatabaseStrategy == 'buildFromScratch'">
-                        Continue to Build Options
-                    </template>
-                    <template v-else>
-                        Continue to Archive Options
-                    </template>
-                </button>
-            </div>
+        <div class="next-buttons">
+            <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
+                <i class="fa-solid fa-forward" />
+                <template v-if="buildDatabaseStrategy == 'importArchive'">
+                    Continue to Import Archive
+                </template>
+                <template v-else-if="buildDatabaseStrategy == 'buildFromScratch'">
+                    Continue to Build Options
+                </template>
+                <template v-else>
+                    Continue to Archive Options
+                </template>
+            </button>
         </div>
     </div>
 </template>

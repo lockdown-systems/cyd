@@ -36,6 +36,9 @@ const parsedMessage = computed(() => marked.parse(props.message));
   border-bottom-left-radius: 2rem;
   border-bottom-right-radius: 2rem;
   border-top-left-radius: 0;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
 }
 
 .bubble-inner {

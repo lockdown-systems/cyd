@@ -75,67 +75,75 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="wizard-content container mb-4 mt-3 mx-auto">
-        <div class="mb-4">
-            <h2>
-                Archive options
-            </h2>
-            <p class="text-muted">
-                You can save an HTML version of each tweet, and you can save your bookmarks and your direct messages.
-            </p>
+    <div class="wizard-content">
+        <div class="back-buttons">
+            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                <i class="fa-solid fa-backward" />
+                Back to Local Database
+            </button>
         </div>
 
-        <form @submit.prevent>
-            <div class="mb-3">
-                <div class="form-check">
-                    <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox" class="form-check-input">
-                    <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version of each tweet</label>
-                </div>
-                <div class="indent">
-                    <small v-if="databaseStats.tweetsSaved == 0" class="form-text text-muted">
-                        <i class="fa-solid fa-triangle-exclamation" />
-                        Your local database doesn't have any tweets yet. You need to import your X archive or build
-                        your database from scratch before you can save HTML versions of your tweets.
-                    </small>
-                    <small v-else class="form-text text-muted">
-                        Make an HTML archive of each tweet, including its replies, which is good
-                        for taking screenshots <em>(takes much longer than just deleting them)</em>
-                    </small>
-                </div>
-                <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
-                    <small>
-                        <i class="fa-solid fa-circle-info" />
-                        You have <strong>{{ deleteTweetsCountNotArchived }} tweets</strong> that haven't been archived
-                        yet
-                    </small>
-                </div>
-            </div>
-            <div class="mb-3">
-                <div class="form-check">
-                    <input id="archiveBookmarks" v-model="archiveBookmarks" type="checkbox" class="form-check-input">
-                    <label class="form-check-label" for="archiveBookmarks">Save my bookmarks</label>
-                </div>
-            </div>
-            <div class="mb-3">
-                <div class="form-check">
-                    <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
-                    <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
-                </div>
+        <div class="wizard-scroll-content">
+            <div class="mb-4">
+                <h2>
+                    Archive options
+                </h2>
+                <p class="text-muted">
+                    You can save an HTML version of each tweet, and you can save your bookmarks and your direct
+                    messages.
+                </p>
             </div>
 
-            <div class="buttons">
-                <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
-                    <i class="fa-solid fa-backward" />
-                    Back to Import or Build Database
-                </button>
-
-                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="!(archiveTweetsHTML || archiveBookmarks || archiveDMs)" @click="nextClicked">
-                    <i class="fa-solid fa-forward" />
-                    Continue to Review
-                </button>
-            </div>
-        </form>
+            <form @submit.prevent>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="archiveTweetsHTML" v-model="archiveTweetsHTML" type="checkbox"
+                            class="form-check-input">
+                        <label class="form-check-label" for="archiveTweetsHTML">Save an HTML version of each
+                            tweet</label>
+                    </div>
+                    <div class="indent">
+                        <small v-if="databaseStats.tweetsSaved == 0" class="form-text text-muted">
+                            <i class="fa-solid fa-triangle-exclamation" />
+                            Your local database doesn't have any tweets yet. You need to import your X archive or build
+                            your database from scratch before you can save HTML versions of your tweets.
+                        </small>
+                        <small v-else class="form-text text-muted">
+                            Make an HTML archive of each tweet, including its replies, which is good
+                            for taking screenshots <em>(takes much longer than just deleting them)</em>
+                        </small>
+                    </div>
+                    <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
+                        <small>
+                            <i class="fa-solid fa-circle-info" />
+                            You have <strong>{{ deleteTweetsCountNotArchived }} tweets</strong> that haven't been
+                            archived
+                            yet
+                        </small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="archiveBookmarks" v-model="archiveBookmarks" type="checkbox"
+                            class="form-check-input">
+                        <label class="form-check-label" for="archiveBookmarks">Save my bookmarks</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input id="archiveDMs" v-model="archiveDMs" type="checkbox" class="form-check-input">
+                        <label class="form-check-label" for="archiveDMs">Save my direct messages</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="next-buttons">
+            <button type="submit" class="btn btn-primary text-nowrap m-1"
+                :disabled="!(archiveTweetsHTML || archiveBookmarks || archiveDMs)" @click="nextClicked">
+                <i class="fa-solid fa-forward" />
+                Continue to Review
+            </button>
+        </div>
     </div>
 </template>
 

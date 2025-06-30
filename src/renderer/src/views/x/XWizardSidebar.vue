@@ -68,28 +68,7 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-sidebar">
-        <ul class="wizard-nav">
-            <li>
-                <button class="btn btn-light" @click="emit('setState', State.WizardDatabase)">
-                    <i class="fa-solid fa-database" />
-                    Local Database
-                </button>
-            </li>
-            <li>
-                <button class="btn btn-light" @click="emit('setState', State.WizardDeleteOptions)">
-                    <i class="fa-solid fa-fire" />
-                    Delete from X
-                </button>
-            </li>
-            <li>
-                <button class="btn btn-light" @click="emit('setState', State.WizardMigrateToBluesky)">
-                    <i class="fa-brands fa-bluesky" />
-                    Migrate to Bluesky
-                </button>
-            </li>
-        </ul>
-
-        <p v-if="model.account && model.account.xAccount" class="p-3 small text-muted">
+        <p v-if="model.account && model.account.xAccount" class="p-1 small text-muted">
             <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
                 Cyd could not detect how many likes and tweets you have.
                 <a href="#" @click="reloadUserStats">
@@ -112,7 +91,7 @@ onMounted(async () => {
 
         <div class="stats container mt-4">
             <div class="row g-2">
-                <div v-if="databaseStats.tweetsSaved > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.tweetsSaved > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Tweets Saved
@@ -122,7 +101,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.tweetsDeleted > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.tweetsDeleted > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Tweets Deleted
@@ -132,7 +111,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.tweetsSaved > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.tweetsSaved > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             <div>
@@ -145,7 +124,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.retweetsSaved > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.retweetsSaved > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Retweets Saved
@@ -155,7 +134,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.retweetsDeleted > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.retweetsDeleted > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Retweets Deleted
@@ -165,7 +144,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.likesSaved > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.likesSaved > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Likes Saved
@@ -175,7 +154,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.likesDeleted > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.likesDeleted > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Likes Deleted
@@ -185,7 +164,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.bookmarksSaved > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.bookmarksSaved > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Bookmarks Saved
@@ -195,7 +174,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.bookmarksDeleted > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.bookmarksDeleted > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Bookmarks Deleted
@@ -205,7 +184,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.conversationsDeleted > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.conversationsDeleted > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Conversations Deleted
@@ -215,7 +194,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div v-if="databaseStats.accountsUnfollowed > 0" class="col-12 col-md-6">
+                <div v-if="databaseStats.accountsUnfollowed > 0" class="col-12">
                     <div class="card text-center">
                         <div class="card-header">
                             Accounts Unfollowed
