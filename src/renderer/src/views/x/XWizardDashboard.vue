@@ -30,7 +30,7 @@ onMounted(async () => {
     <div class="wizard-content">
         <div class="wizard-scroll-content">
             <div class="dashboard row align-items-stretch g-3">
-                <div class="col-12 col-md-6 col-lg-6">
+                <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100" @click="emit('setState', State.WizardDatabase)">
                         <span v-if="!hasSomeData" class="start-here-badge badge bg-primary">Start Here</span>
                         <div class="card-body align-items-center">
@@ -44,7 +44,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-lg-6">
+                <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100" @click="emit('setState', State.WizardDeleteOptions)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-delete.png" alt="Delete from X">
@@ -56,7 +56,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-lg-6">
+                <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100" @click="emit('setState', State.WizardMigrateToBluesky)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky">
@@ -73,6 +73,19 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.wizard-scroll-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+    height: 100%;
+}
+
+.dashboard {
+    width: 100%;
+}
+
 .dashboard {
     padding: 1rem 2rem;
 }
