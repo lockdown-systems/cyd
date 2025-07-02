@@ -29,13 +29,13 @@ onMounted(async () => {
 <template>
     <div class="wizard-content">
         <div class="wizard-scroll-content">
-            <div class="dashboard row g-3">
+            <div class="dashboard row align-items-stretch g-3">
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card position-relative" @click="emit('setState', State.WizardDatabase)">
+                    <div class="card h-100" @click="emit('setState', State.WizardDatabase)">
                         <span v-if="!hasSomeData" class="start-here-badge badge bg-primary">Start Here</span>
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-database.png" alt="Local Database">
-                            <h1>Local Database</h1>
+                            <h2>Local Database</h2>
                             <p class="small text-muted">
                                 Make or update your local backup of X data. Cyd references this data when you delete
                                 from X
@@ -45,10 +45,10 @@ onMounted(async () => {
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card" @click="emit('setState', State.WizardDeleteOptions)">
+                    <div class="card h-100" @click="emit('setState', State.WizardDeleteOptions)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-delete.png" alt="Delete from X">
-                            <h1>Delete from X</h1>
+                            <h2>Delete from X</h2>
                             <p class="small text-muted">
                                 Delete your tweets, retweets, likes, bookmarks, or DMs from your X account, or unfollow
                                 everyone.
@@ -57,10 +57,10 @@ onMounted(async () => {
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-6">
-                    <div class="card" @click="emit('setState', State.WizardMigrateToBluesky)">
+                    <div class="card h-100" @click="emit('setState', State.WizardMigrateToBluesky)">
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky">
-                            <h1>Migrate to Bluesky</h1>
+                            <h2>Migrate to Bluesky</h2>
                             <p class="small text-muted">
                                 Migrate your tweets from your X account to a Bluesky account.
                             </p>
