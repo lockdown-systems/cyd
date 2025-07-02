@@ -7,7 +7,8 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { xHasSomeData } from '../../util_x';
+import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase, xGetLastDelete } from '../../util_x'
+import { formatDistanceToNow } from 'date-fns';
 
 // Props
 const props = defineProps<{
@@ -20,9 +21,18 @@ const emit = defineEmits<{
 }>()
 
 const hasSomeData = ref(false);
+const lastDatabase = ref<Date | null>(null);
+const lastDelete = ref<Date | null>(null);
 
 onMounted(async () => {
     hasSomeData.value = await xHasSomeData(props.model.account.id);
+
+    const lastImportArchive = await xGetLastImportArchive(props.model.account.id);
+    const lastBuildDatabase = await xGetLastBuildDatabase(props.model.account.id);
+    lastDatabase.value = lastImportArchive && lastBuildDatabase
+        ? (lastImportArchive > lastBuildDatabase ? lastImportArchive : lastBuildDatabase)
+        : lastImportArchive || lastBuildDatabase;
+    lastDelete.value = await xGetLastDelete(props.model.account.id);
 });
 </script>
 
@@ -36,10 +46,13 @@ onMounted(async () => {
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-database.png" alt="Local Database">
                             <h2>Local Database</h2>
-                            <p class="small text-muted">
+                            <p class="small mt-3">
                                 Make or update your local backup of X data. Cyd references this data when you delete
                                 from X
                                 or migrate to Bluesky.
+                            </p>
+                            <p v-if="lastDatabase" class="mt-3 small text-muted text-center">
+                                Last ran {{ formatDistanceToNow(lastDatabase, { addSuffix: true }) }}
                             </p>
                         </div>
                     </div>
@@ -49,9 +62,12 @@ onMounted(async () => {
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-delete.png" alt="Delete from X">
                             <h2>Delete from X</h2>
-                            <p class="small text-muted">
+                            <p class="small mt-3">
                                 Delete your tweets, retweets, likes, bookmarks, or DMs from your X account, or unfollow
                                 everyone.
+                            </p>
+                            <p v-if="lastDelete" class="mt-3 small text-muted text-center">
+                                Last ran {{ formatDistanceToNow(lastDelete, { addSuffix: true }) }}
                             </p>
                         </div>
                     </div>
@@ -61,7 +77,7 @@ onMounted(async () => {
                         <div class="card-body align-items-center">
                             <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky">
                             <h2>Migrate to Bluesky</h2>
-                            <p class="small text-muted">
+                            <p class="small mt-3">
                                 Migrate your tweets from your X account to a Bluesky account.
                             </p>
                         </div>
