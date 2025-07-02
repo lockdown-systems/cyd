@@ -76,7 +76,7 @@ onMounted(async () => {
 <template>
     <div class="wizard-content">
         <div class="back-buttons">
-            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+            <button type="submit" class="btn btn-secondary text-nowrap m-1"
                 @click="emit('setState', State.WizardDashboard)">
                 <i class="fa-solid fa-backward" />
                 Back to Dashboard

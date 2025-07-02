@@ -77,7 +77,7 @@ onMounted(async () => {
 <template>
     <div class="wizard-content">
         <div class="back-buttons">
-            <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+            <button type="submit" class="btn btn-secondary text-nowrap m-1" @click="backClicked">
                 <i class="fa-solid fa-backward" />
                 <template v-if="jobsType == 'delete'">
                     Back to Delete Options
