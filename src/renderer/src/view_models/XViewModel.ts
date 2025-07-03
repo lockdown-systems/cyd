@@ -2849,7 +2849,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     break;
 
                 case State.WizardPrestart:
-                    // Only load user stats if we don't know them yet, or if there's a config telling us to
+                    // Only load user stats if we don't know them yet, or if there's a config telling us to,
                     // and be sure to skip loading user stats if we're in archive-only mode
                     if (
                         (this.account.xAccount?.tweetsCount === -1 ||
