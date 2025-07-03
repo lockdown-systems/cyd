@@ -75,7 +75,7 @@ onMounted(async () => {
                     Local Database
                 </button>
             </li>
-            <li>
+            <li v-if="!model.account?.xAccount?.archiveOnly">
                 <button class="btn btn-light" @click="emit('setState', State.WizardDeleteOptions)">
                     <i class="fa-solid fa-fire" />
                     Delete from X
