@@ -314,7 +314,7 @@ onMounted(async () => {
                     <i class="fa-solid fa-check" />
                     Import finished successfully!
                 </div>
-                <div class="buttons d-flex flex-column flex-md-row justify-content-between">
+                <div v-if="!model.account?.xAccount?.archiveOnly" class="buttons d-flex flex-column flex-md-row justify-content-between">
                     <div class="d-flex flex-column align-items-center mb-3 mb-md-0">
                         <button type="submit" class="btn btn-primary text-nowrap m-1" @click="archiveClicked">
                             <i class="fa-solid fa-forward" />
