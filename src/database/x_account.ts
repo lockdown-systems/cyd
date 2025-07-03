@@ -38,6 +38,7 @@ interface XAccountRow {
     followersCount: number;
     tweetsCount: number;
     likesCount: number;
+    archiveOnly: boolean;
 }
 
 function xAccountRowtoXAccount(row: XAccountRow): XAccount {
@@ -75,7 +76,8 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
         followingCount: row.followingCount,
         followersCount: row.followersCount,
         tweetsCount: row.tweetsCount,
-        likesCount: row.likesCount
+        likesCount: row.likesCount,
+        archiveOnly: !!row.archiveOnly
     }
 }
 

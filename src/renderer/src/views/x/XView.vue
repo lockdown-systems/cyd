@@ -578,7 +578,7 @@ onUnmounted(async () => {
 
                         <XWizardArchiveOnly v-if="model.state == State.WizardArchiveOnlyDisplay"
                             :model="unref(model)"
-                            @set-state="setState($event)" />
+                            @set-state="setState($event)" @update-account="updateAccount" />
 
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
