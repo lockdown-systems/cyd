@@ -1927,7 +1927,71 @@ export class XAccountController {
                 errorMessage: "Error parsing JSON in account.js",
                 importCount: importCount,
                 skipCount: skipCount,
+                updatedArchivePath: archivePath,
             };
+        }
+
+        // If this is an archive-only account (which uses temporary usernames) and we now have the real username,
+        // rename the account directory to use the real username
+        console.log(`XAccountController.importXArchive: archiveOnly: ${this.account?.archiveOnly}`);
+        if (this.account?.archiveOnly) {
+            // These methods create the account data path if it doesn't exist
+            const oldAccountDataPath = getAccountDataPath('X', this.account.username);
+            const newAccountDataPath = getAccountDataPath('X', username);
+
+            log.info(`XAccountController.importXArchive: oldAccountDataPath: ${oldAccountDataPath}`);
+            log.info(`XAccountController.importXArchive: newAccountDataPath: ${newAccountDataPath}`);
+            try {
+                // Move all content recursively from old directory to new directory
+                if (fs.existsSync(oldAccountDataPath)) {
+                    const moveAllContent = (src: string, dest: string) => {
+                        const items = fs.readdirSync(src);
+                        for (const item of items) {
+                            const srcPath = path.join(src, item);
+                            const destPath = path.join(dest, item);
+
+                            if (fs.lstatSync(srcPath).isDirectory()) {
+                                if (!fs.existsSync(destPath)) {
+                                    fs.mkdirSync(destPath, { recursive: true });
+                                }
+                                moveAllContent(srcPath, destPath);
+                                fs.rmdirSync(srcPath); // Remove empty directory
+                            } else {
+                                fs.renameSync(srcPath, destPath);
+                            }
+                        }
+                    };
+
+                    moveAllContent(oldAccountDataPath, newAccountDataPath);
+                    log.info(`XAccountController.importXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`);
+
+                    // Update the archivePath to point to the new location
+                    const oldTmpPath = path.join(oldAccountDataPath, "tmp");
+                    const newTmpPath = path.join(newAccountDataPath, "tmp");
+                    if (archivePath === oldTmpPath) {
+                        archivePath = newTmpPath;
+                        log.info(`XAccountController.importXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`);
+                    }
+                }
+
+                log.info(`XAccountController.importXArchive: Renamed account directory from ${this.account.username} to ${username}`);
+
+                // Update the account username in the database
+                this.account.username = username;
+                await this.updateAccountUsername(username);
+
+                // Reinitialize the database connection to point to the new path
+                if (this.db) {
+                    this.db.close();
+                }
+                this.accountDataPath = newAccountDataPath;
+                this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
+
+                await this.refreshAccount();
+            } catch (error) {
+                log.error(`XAccountController.importXArchive: Failed to rename account directory: ${error}`);
+                // Continue with import even if rename fails
+            }
         }
 
         // Import tweets
@@ -1949,6 +2013,7 @@ export class XAccountController {
                     errorMessage: "No tweets files found",
                     importCount: importCount,
                     skipCount: skipCount,
+                    updatedArchivePath: archivePath,
                 };
             }
 
@@ -1966,6 +2031,7 @@ export class XAccountController {
                         errorMessage: "Error parsing JSON in tweets.js",
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
 
@@ -2017,6 +2083,7 @@ export class XAccountController {
                         errorMessage: "Error importing tweets: " + e,
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
             }
@@ -2026,6 +2093,7 @@ export class XAccountController {
                 errorMessage: "",
                 importCount: importCount,
                 skipCount: skipCount,
+                updatedArchivePath: archivePath,
             };
         }
 
@@ -2048,6 +2116,7 @@ export class XAccountController {
                     errorMessage: "No likes files found",
                     importCount: importCount,
                     skipCount: skipCount,
+                    updatedArchivePath: archivePath,
                 };
             }
 
@@ -2064,6 +2133,7 @@ export class XAccountController {
                         errorMessage: "Error parsing JSON in like.js",
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
 
@@ -2110,6 +2180,7 @@ export class XAccountController {
                         errorMessage: "Error importing tweets: " + e,
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
             }
@@ -2119,6 +2190,7 @@ export class XAccountController {
                 errorMessage: "",
                 importCount: importCount,
                 skipCount: skipCount,
+                updatedArchivePath: archivePath,
             };
         }
 
@@ -2127,6 +2199,7 @@ export class XAccountController {
             errorMessage: "Invalid data type.",
             importCount: importCount,
             skipCount: skipCount,
+            updatedArchivePath: archivePath,
         };
     }
 
@@ -3080,6 +3153,14 @@ export class XAccountController {
             return true;
         } catch (e) {
             return this.handleBlueskyAPIError(e, "blueskyDeleteMigratedTweet", `Error deleting from Bluesky`);
+        }
+    }
+
+    async updateAccountUsername(newUsername: string): Promise<void> {
+        // Update the username in the main database
+        if (this.account) {
+            this.account.username = newUsername;
+            saveXAccount(this.account);
         }
     }
 
