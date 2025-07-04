@@ -63,6 +63,7 @@ export enum State {
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+    WizardArchiveOnly = "WizardArchiveOnly",
     WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
 
     RunJobs = "RunJobs",
@@ -2877,7 +2878,8 @@ Hang on while I scroll down to your earliest bookmarks.`;
                         this.state = State.WizardMigrateToBluesky;
                     } else {
                         // Otherwise, default to:
-                        //  - database if they haven't archived yet,
+                        //  - database if they haven't archived yet and aren't an archiveOnly account,
+                        //  - import start if they haven't archived yet and are an archiveOnly account,
                         //  - delete options if they have archived but aren't an archiveOnly account,
                         //  - or migrate to bluesky if they have archived and are an archiveOnly account.
                         if (
@@ -2891,7 +2893,11 @@ Hang on while I scroll down to your earliest bookmarks.`;
                                 this.state = State.WizardDeleteOptions;
                             }
                         } else {
-                            this.state = State.WizardDatabase;
+                            if (this.account.xAccount?.archiveOnly) {
+                                this.state = State.WizardArchiveOnly;
+                            } else {
+                                this.state = State.WizardDatabase;
+                            }
                         }
                     }
                     break;
@@ -2990,13 +2996,27 @@ After you build a local database of your tweets, I can help you migrate them int
                     this.state = State.WizardMigrateToBlueskyDisplay;
                     break;
 
-                case State.WizardArchiveOnlyDisplay:
+                case State.WizardArchiveOnly:
+                    // Set the account to archive-only mode
+                    if (this.account.xAccount) {
+                        const updatedAccount = {
+                            ...this.account,
+                            xAccount: {
+                                ...this.account.xAccount,
+                                archiveOnly: true
+                            }
+                        };
+
+                        await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
+                        this.account = updatedAccount;
+                    }
+
                     this.showBrowser = false;
                     this.instructions = `
 **You've chosen to use a pre-existing X archive.**
 
 I'll help you save them so you can view them locally or migrate them to Bluesky.`;
-                    await this.loadURL("about:blank");
+                    await this.loadBlank();
                     this.state = State.WizardArchiveOnlyDisplay;
                     break;
 

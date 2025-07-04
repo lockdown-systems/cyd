@@ -40,20 +40,6 @@ const props = defineProps<{
 const emit = defineEmits(['set-state', 'update-account']);
 
 const importArchive = async () => {
-    // Set the account to archive-only mode
-    if (props.model.account.xAccount) {
-        const updatedAccount = {
-            ...props.model.account,
-            xAccount: {
-                ...props.model.account.xAccount,
-                archiveOnly: true
-            }
-        };
-
-        await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
-        emit('update-account');
-    }
-
     // Move to the import page
     emit('set-state', 'WizardImporting');
 };

@@ -33,7 +33,7 @@ const platform = ref('');
 // Buttons
 const backClicked = async () => {
     if (props.model.account?.xAccount?.archiveOnly) {
-        emit('setState', State.WizardArchiveOnlyDisplay);
+        emit('setState', State.WizardArchiveOnly);
     } else {
         emit('setState', State.WizardImportStart);
     }

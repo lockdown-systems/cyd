@@ -498,7 +498,7 @@ onUnmounted(async () => {
 
             <!-- Archive only option -->
             <div v-if="model.state == State.Login" class="text-center ms-2 mt-2 mb-4">
-                <button class="btn btn-secondary" @click="setState(State.WizardArchiveOnlyDisplay)">
+                <button class="btn btn-secondary" @click="setState(State.WizardArchiveOnly)">
                     Import Archive Only
                 </button>
             </div>
@@ -602,7 +602,7 @@ onUnmounted(async () => {
                     </div>
 
                     <!-- wizard side bar, hide if archive only -->
-                    <XWizardSidebar v-if="model.state != State.WizardArchiveOnlyDisplay"
+                    <XWizardSidebar v-if="model.state != State.WizardArchiveOnly"
                         :model="unref(model)"
                         @set-state="setState($event)"
                         @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
