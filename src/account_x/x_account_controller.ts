@@ -1972,6 +1972,23 @@ export class XAccountController {
                         archivePath = newTmpPath;
                         log.info(`XAccountController.importXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`);
                     }
+
+                    // Delete the old deleted_account_ folder after successful migration
+                    try {
+                        if (fs.existsSync(oldAccountDataPath)) {
+                            // Check if the directory is now empty (all content should have been moved)
+                            const remainingItems = fs.readdirSync(oldAccountDataPath);
+                            if (remainingItems.length === 0) {
+                                fs.rmdirSync(oldAccountDataPath);
+                                log.info(`XAccountController.importXArchive: Deleted empty old directory: ${oldAccountDataPath}`);
+                            } else {
+                                log.warn(`XAccountController.importXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`);
+                            }
+                        }
+                    } catch (error) {
+                        log.error(`XAccountController.importXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`);
+                        // Don't fail the import if cleanup fails
+                    }
                 }
 
                 log.info(`XAccountController.importXArchive: Renamed account directory from ${this.account.username} to ${username}`);

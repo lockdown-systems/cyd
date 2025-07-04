@@ -31,11 +31,6 @@
 </template>
 
 <script setup lang="ts">
-import { XViewModel } from '../../view_models/XViewModel';
-
-const props = defineProps<{
-    model: XViewModel;
-}>();
 
 const emit = defineEmits(['set-state', 'update-account']);
 

@@ -357,7 +357,7 @@ onMounted(async () => {
                     <strong>Import failed.</strong> {{ errorMessage }}
                 </div>
                 <div class="buttons">
-                    <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked" v-if="!model.account?.xAccount?.archiveOnly">
+                    <button v-if="!model.account?.xAccount?.archiveOnly" type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                         <i class="fa-solid fa-backward" />
                         Back
                     </button>
