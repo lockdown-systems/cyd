@@ -32,7 +32,11 @@ const platform = ref('');
 
 // Buttons
 const backClicked = async () => {
-    emit('setState', State.WizardImportStart);
+    if (props.model.account?.xAccount?.archiveOnly) {
+        emit('setState', State.WizardArchiveOnly);
+    } else {
+        emit('setState', State.WizardImportStart);
+    }
 };
 
 const archiveClicked = async () => {
@@ -115,6 +119,10 @@ const startClicked = async () => {
         importFailed.value = true;
     } else {
         statusImportingTweets.value = ImportStatus.Finished;
+        // Update the path if it was changed during import (for archive-only accounts)
+        if (tweetsResp.updatedArchivePath) {
+            unzippedPath = tweetsResp.updatedArchivePath;
+        }
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
@@ -128,6 +136,10 @@ const startClicked = async () => {
         importFailed.value = true;
     } else {
         statusImportingLikes.value = ImportStatus.Finished;
+        // Update the path if it was changed during import (for archive-only accounts)
+        if (likesResp.updatedArchivePath) {
+            unzippedPath = likesResp.updatedArchivePath;
+        }
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
@@ -154,6 +166,10 @@ const startClicked = async () => {
     if (!importFailed.value) {
         await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
         importFinished.value = true;
+
+        // Reload the account data to reflect the updated username
+        await props.model.reloadAccount();
+        emitter.emit('account-updated');
     }
 
 };
@@ -314,7 +330,7 @@ onMounted(async () => {
                     <i class="fa-solid fa-check" />
                     Import finished successfully!
                 </div>
-                <div class="buttons d-flex flex-column flex-md-row justify-content-between">
+                <div v-if="!model.account?.xAccount?.archiveOnly" class="buttons d-flex flex-column flex-md-row justify-content-between">
                     <div class="d-flex flex-column align-items-center mb-3 mb-md-0">
                         <button type="submit" class="btn btn-primary text-nowrap m-1" @click="archiveClicked">
                             <i class="fa-solid fa-forward" />
@@ -341,7 +357,7 @@ onMounted(async () => {
                     <strong>Import failed.</strong> {{ errorMessage }}
                 </div>
                 <div class="buttons">
-                    <button type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                    <button v-if="!model.account?.xAccount?.archiveOnly" type="submit" class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
                         <i class="fa-solid fa-backward" />
                         Back
                     </button>

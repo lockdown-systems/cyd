@@ -75,7 +75,7 @@ onMounted(async () => {
                     Local Database
                 </button>
             </li>
-            <li>
+            <li v-if="!model.account?.xAccount?.archiveOnly">
                 <button class="btn btn-light" @click="emit('setState', State.WizardDeleteOptions)">
                     <i class="fa-solid fa-fire" />
                     Delete from X
@@ -92,7 +92,7 @@ onMounted(async () => {
         <p v-if="model.account && model.account.xAccount" class="p-3 small text-muted">
             <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
                 Cyd could not detect how many likes and tweets you have.
-                <a href="#" @click="reloadUserStats">
+                <a v-if="!model.account?.xAccount?.archiveOnly" href="#" @click="reloadUserStats">
                     Try again.
                 </a>
             </template>

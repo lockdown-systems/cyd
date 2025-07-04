@@ -63,6 +63,9 @@ export enum State {
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+    WizardArchiveOnly = "WizardArchiveOnly",
+    WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
+
     RunJobs = "RunJobs",
 
     FinishedRunningJobs = "FinishedRunningJobs",
@@ -2837,7 +2840,9 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
                     this.instructions = `${this.actionString}
 
-**To get started, log in to your X account below.**`;
+**To get started, you can either:**
+- Log in to your X account below to access all features
+- Or click "Import Archive Only" to import your existing X archive without logging in`;
                     this.showBrowser = true;
                     this.showAutomationNotice = false;
                     await this.login();
@@ -2845,11 +2850,13 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     break;
 
                 case State.WizardPrestart:
-                    // Only load user stats if we don't know them yet, or if there's a config telling us to
+                    // Only load user stats if we don't know them yet, or if there's a config telling us to,
+                    // and be sure to skip loading user stats if we're in archive-only mode
                     if (
-                        this.account.xAccount?.tweetsCount === -1 ||
-                        this.account.xAccount?.likesCount === -1 ||
-                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true"
+                        (this.account.xAccount?.tweetsCount === -1 ||
+                            this.account.xAccount?.likesCount === -1 ||
+                            await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true") &&
+                        !this.account.xAccount?.archiveOnly
                     ) {
                         await this.loadUserStats();
                     }
@@ -2870,15 +2877,27 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     } else if (jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete') {
                         this.state = State.WizardMigrateToBluesky;
                     } else {
-                        // Otherwise, default to delete options if they have archived, or database if they haven't
+                        // Otherwise, default to:
+                        //  - database if they haven't archived yet and aren't an archiveOnly account,
+                        //  - import start if they haven't archived yet and are an archiveOnly account,
+                        //  - delete options if they have archived but aren't an archiveOnly account,
+                        //  - or migrate to bluesky if they have archived and are an archiveOnly account.
                         if (
                             await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_importArchive') ||
                             await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexTweets') ||
                             await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexLikes')
                         ) {
-                            this.state = State.WizardDeleteOptions;
+                            if (this.account.xAccount?.archiveOnly) {
+                                this.state = State.WizardMigrateToBluesky;
+                            } else {
+                                this.state = State.WizardDeleteOptions;
+                            }
                         } else {
-                            this.state = State.WizardDatabase;
+                            if (this.account.xAccount?.archiveOnly) {
+                                this.state = State.WizardArchiveOnly;
+                            } else {
+                                this.state = State.WizardDatabase;
+                            }
                         }
                     }
                     break;
@@ -2975,6 +2994,30 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
+                    break;
+
+                case State.WizardArchiveOnly:
+                    // Set the account to archive-only mode
+                    if (this.account.xAccount) {
+                        const updatedAccount = {
+                            ...this.account,
+                            xAccount: {
+                                ...this.account.xAccount,
+                                archiveOnly: true
+                            }
+                        };
+
+                        await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
+                        this.account = updatedAccount;
+                    }
+
+                    this.showBrowser = false;
+                    this.instructions = `
+**You've chosen to use a pre-existing X archive.**
+
+I'll help you save them so you can view them locally or migrate them to Bluesky.`;
+                    await this.loadBlank();
+                    this.state = State.WizardArchiveOnlyDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
