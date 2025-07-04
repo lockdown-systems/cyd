@@ -2876,13 +2876,20 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     } else if (jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete') {
                         this.state = State.WizardMigrateToBluesky;
                     } else {
-                        // Otherwise, default to delete options if they have archived, or database if they haven't
+                        // Otherwise, default to:
+                        //  - database if they haven't archived yet,
+                        //  - delete options if they have archived but aren't an archiveOnly account,
+                        //  - or migrate to bluesky if they have archived and are an archiveOnly account.
                         if (
                             await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_importArchive') ||
                             await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexTweets') ||
                             await window.electron.X.getConfig(this.account.id, 'lastFinishedJob_indexLikes')
                         ) {
-                            this.state = State.WizardDeleteOptions;
+                            if (this.account.xAccount?.archiveOnly) {
+                                this.state = State.WizardMigrateToBluesky;
+                            } else {
+                                this.state = State.WizardDeleteOptions;
+                            }
                         } else {
                             this.state = State.WizardDatabase;
                         }
