@@ -11,6 +11,8 @@ import { openURL } from '../../util';
 import { xHasSomeData } from '../../util_x';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Props
 const props = defineProps<{
@@ -75,13 +77,9 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1"
-                @click="emit('setState', State.WizardDashboard)">
-                <i class="fa-solid fa-backward" />
-                Back to Dashboard
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: 'fa-solid fa-house' },
+        ]" :label="'Local Database'" :icon="'fa-solid fa-database'" />
 
         <div class="wizard-scroll-content">
             <h2>
@@ -250,20 +248,15 @@ onMounted(async () => {
             </template>
         </div>
 
-        <div class="next-buttons">
-            <button type="submit" class="btn btn-primary text-nowrap m-1" @click="nextClicked">
-                <i class="fa-solid fa-forward" />
-                <template v-if="buildDatabaseStrategy == 'importArchive'">
-                    Continue to Import Archive
-                </template>
-                <template v-else-if="buildDatabaseStrategy == 'buildFromScratch'">
-                    Continue to Build Options
-                </template>
-                <template v-else>
-                    Continue to Archive Options
-                </template>
-            </button>
-        </div>
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Dashboard', action: () => emit('setState', State.WizardDashboard), icon: 'fa-solid fa-backward' },
+        ]" :next-buttons="[
+            {
+                label: (buildDatabaseStrategy == 'importArchive' ? 'Continue to Import Archive' : (buildDatabaseStrategy == 'buildFromScratch' ? 'Continue to Build Options' : 'Continue to Archive Options')),
+                action: nextClicked,
+                icon: 'fa-solid fa-forward'
+            },
+        ]" />
     </div>
 </template>
 

@@ -557,16 +557,6 @@ body {
   padding: 0.5rem 0 0.5rem 0;
 }
 
-.wizard .back-buttons {
-  margin-bottom: 1rem;
-  text-align: left;
-}
-
-.wizard .next-buttons {
-  margin-top: 1rem;
-  text-align: right;
-}
-
 .wizard-review ul {
   list-style-type: circle;
   padding-left: 2.5rem;
