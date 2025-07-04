@@ -46,4 +46,5 @@ export type ButtonInfo = {
   icon?: string;
   action: () => void;
   disabled?: boolean;
+  hide?: boolean;
 };

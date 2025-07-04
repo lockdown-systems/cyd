@@ -11,12 +11,12 @@ defineProps<{
     <nav class="buttons d-flex align-items-center mt-2 justify-content-end">
         <div class="d-flex gap-2">
             <button v-for="(button, index) in backButtons" :key="'back-' + index" class="btn btn-secondary text-nowrap"
-                :disabled="button.disabled" @click="button.action">
+                :class="button.hide ? 'hidden' : ''" :disabled="button.disabled" @click="button.action">
                 <i class="fa-solid fa-backward" />
                 {{ button.label }}
             </button>
             <button v-for="(button, index) in nextButtons" :key="'next-' + index" class="btn btn-primary text-nowrap"
-                :disabled="button.disabled" @click="button.action">
+                :class="button.hide ? 'hidden' : ''" :disabled="button.disabled" @click="button.action">
                 <i class="fa-solid fa-forward" />
                 {{ button.label }}
             </button>
@@ -24,4 +24,8 @@ defineProps<{
     </nav>
 </template>
 
-<style scoped></style>
+<style scoped>
+.hidden {
+    display: none;
+}
+</style>

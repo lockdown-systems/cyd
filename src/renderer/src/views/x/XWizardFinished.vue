@@ -11,6 +11,7 @@ import {
 } from '../../view_models/XViewModel'
 import { openURL, getJobsType } from '../../util';
 import UpsellComponent from '../shared_components/UpsellComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -329,15 +330,16 @@ onMounted(async () => {
                     failureStateIndexLikes_FailedToRetryAfterRateLimit &&
                     ((jobsType == 'save' && model.account.xAccount?.archiveLikes) || (jobsType == 'delete' && model.account.xAccount?.deleteLikes))
                 )">
-                <button type="submit" class="btn btn-primary text-nowrap m-1" @click="runAgainClicked">
-                    <i class="fa-solid fa-repeat" />
-                    Run Again with Same Settings
-                </button>
+                <ButtonsComponent :back-buttons="[]" :next-buttons="[
+                    { label: 'Run Again with Same Settings', action: runAgainClicked },
+                    { label: 'Continue to Dashboard', action: nextClicked },
+                ]" />
             </template>
-            <button class="btn btn-primary" @click="nextClicked">
-                <i class="fa-solid fa-forward" />
-                Continue to Dashboard
-            </button>
+            <template v-else>
+                <ButtonsComponent :back-buttons="[]" :next-buttons="[
+                    { label: 'Continue to Dashboard', action: nextClicked },
+                ]" />
+            </template>
         </div>
     </div>
 </template>

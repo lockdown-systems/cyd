@@ -9,9 +9,11 @@ import {
     State
 } from '../../view_models/XViewModel'
 import { xHasSomeData } from '../../util_x';
-import { openURL, setJobsType } from '../../util';
+import { getBreadcrumbIcon, openURL, setJobsType } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Props
 const props = defineProps<{
@@ -148,13 +150,9 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1"
-                @click="emit('setState', State.WizardDashboard)">
-                <i class="fa-solid fa-backward" />
-                Back to Dashboard
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+        ]" label="Delete Options" :icon="getBreadcrumbIcon('delete')" />
 
         <div class="wizard-scroll-content">
             <div class="mb-4">
@@ -407,14 +405,16 @@ onMounted(async () => {
                 </div>
             </form>
         </div>
-        <div class="next-buttons">
-            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || deleteBookmarks || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
-                @click="nextClicked">
-                <i class="fa-solid fa-forward" />
-                Continue to Review
-            </button>
-        </div>
+
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Dashboard', action: () => emit('setState', State.WizardDashboard) },
+        ]" :next-buttons="[
+            {
+                label: 'Continue to Review',
+                action: nextClicked,
+                disabled: (hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || deleteBookmarks || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))
+            },
+        ]" />
     </div>
 </template>
 

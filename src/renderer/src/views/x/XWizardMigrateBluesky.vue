@@ -13,11 +13,13 @@ import {
     BlueskyMigrationProfile,
     XMigrateTweetCounts,
 } from '../../../../shared_types'
-import { setJobsType } from '../../util'
+import { getBreadcrumbIcon, setJobsType } from '../../util'
 import { xHasSomeData, xGetLastImportArchive, xGetLastBuildDatabase } from '../../util_x'
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
 import LoadingComponent from '../shared_components/LoadingComponent.vue';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -174,13 +176,9 @@ onUnmounted(async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1"
-                @click="emit('setState', XState.WizardDashboard)">
-                <i class="fa-solid fa-backward" />
-                Back to Dashboard
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', XState.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+        ]" label="Migrate to Bluesky Options" :icon="getBreadcrumbIcon('bluesky')" />
 
         <div class="wizard-scroll-content">
             <div class="mb-4">
@@ -347,20 +345,21 @@ onUnmounted(async () => {
                 </template>
             </div>
         </div>
-        <div class="next-buttons">
-            <template v-if="state == State.Connected">
-                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="tweetCounts?.toMigrateTweets.length == 0" @click="migrateClicked">
-                    <i class="fa-solid fa-forward" />
-                    Continue to Review
-                </button>
-                <button v-if="(tweetCounts?.alreadyMigratedTweets?.length ?? 0) > 0" type="submit"
-                    class="btn btn-sm btn-danger text-nowrap m-1" @click="deleteClicked">
-                    <i class="fa-solid fa-trash" />
-                    Delete Migrated Tweets from Bluesky
-                </button>
-            </template>
-        </div>
+
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Dashboard', action: () => emit('setState', XState.WizardDashboard) },
+        ]" :next-buttons="state == State.Connected ? [
+            {
+                label: 'Continue to Review',
+                action: migrateClicked,
+                disabled: tweetCounts?.toMigrateTweets.length == 0
+            },
+            {
+                label: 'Delete Migrated Tweets from Bluesky',
+                action: deleteClicked,
+                hide: (tweetCounts?.alreadyMigratedTweets?.length ?? 0) == 0
+            }
+        ] : []" />
     </div>
 </template>
 
