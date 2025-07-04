@@ -7,7 +7,7 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { openURL } from '../../util';
+import { getBreadcrumbIcon, openURL } from '../../util';
 import { xHasSomeData } from '../../util_x';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
@@ -78,8 +78,8 @@ onMounted(async () => {
 <template>
     <div class="wizard-content">
         <BreadcrumbsComponent :buttons="[
-            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: 'fa-solid fa-house' },
-        ]" :label="'Local Database'" :icon="'fa-solid fa-database'" />
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+        ]" label="Local Database" :icon="getBreadcrumbIcon('database')" />
 
         <div class="wizard-scroll-content">
             <h2>

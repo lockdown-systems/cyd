@@ -10,14 +10,14 @@ defineProps<{
 <template>
     <nav class="buttons d-flex align-items-center mt-2 justify-content-end">
         <div class="d-flex gap-2">
-            <button v-for="(button, index) in backButtons" :key="index" class="btn btn-secondary text-nowrap"
-                @click="button.action">
-                <i v-if="button.icon" :class="button.icon" />
+            <button v-for="(button, index) in backButtons" :key="'back-' + index" class="btn btn-secondary text-nowrap"
+                :disabled="button.disabled" @click="button.action">
+                <i class="fa-solid fa-backward" />
                 {{ button.label }}
             </button>
-            <button v-for="(button, index) in nextButtons" :key="index" class="btn btn-primary text-nowrap"
-                @click="button.action">
-                <i v-if="button.icon" :class="button.icon" />
+            <button v-for="(button, index) in nextButtons" :key="'next-' + index" class="btn btn-primary text-nowrap"
+                :disabled="button.disabled" @click="button.action">
+                <i class="fa-solid fa-forward" />
                 {{ button.label }}
             </button>
         </div>

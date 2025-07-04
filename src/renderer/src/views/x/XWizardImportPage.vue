@@ -4,8 +4,11 @@ import {
     State
 } from '../../view_models/XViewModel'
 
+import { getBreadcrumbIcon, openURL } from '../../util';
+
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
-import { openURL } from '../../util';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Props
 defineProps<{
@@ -30,12 +33,10 @@ const backClicked = async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1" @click="backClicked">
-                <i class="fa-solid fa-backward" />
-                Back to Local Database
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+            { label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') },
+        ]" label="Import X Archive" :icon="getBreadcrumbIcon('import')" />
 
         <div class="wizard-scroll-content">
             <div class="mb-4">
@@ -76,15 +77,18 @@ const backClicked = async () => {
                     :show-no-data-warning="false" @set-state="emit('setState', $event)" />
             </div>
         </div>
-        <div class="next-buttons">
-            <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="!(
-                model.account?.xAccount?.archiveTweets ||
-                model.account?.xAccount?.archiveLikes ||
-                model.account?.xAccount?.archiveDMs)" @click="importClicked">
-                <i class="fa-solid fa-file-import" />
-                I've Downloaded My Archive from X
-            </button>
-        </div>
+
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Local Database', action: backClicked },
+        ]" :next-buttons="[
+            {
+                label: 'I\'ve Downloaded My Archive from X',
+                action: importClicked,
+                disabled: !(
+                    model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes ||
+                    model.account?.xAccount?.archiveDMs),
+            },
+        ]" />
     </div>
 </template>
 

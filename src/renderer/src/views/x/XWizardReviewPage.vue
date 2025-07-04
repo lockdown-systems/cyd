@@ -4,9 +4,12 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { openURL, getJobsType } from '../../util';
+import { getBreadcrumbIcon, openURL, getJobsType } from '../../util';
 import { XDeleteReviewStats, emptyXDeleteReviewStats, XMigrateTweetCounts, emptyXMigrateTweetCounts } from '../../../../shared_types';
 import { xHasSomeData } from '../../util_x';
+import type { ButtonInfo } from '../../types';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 import LoadingComponent from '../shared_components/LoadingComponent.vue';
 import AlertStayAwake from '../shared_components/AlertStayAwake.vue';
 
@@ -57,6 +60,8 @@ const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
 
 const deleteTweetsCountNotArchived = ref(0);
 
+const breadcrumbButtons = ref<ButtonInfo[]>([]);
+
 onMounted(async () => {
     loading.value = true;
 
@@ -70,29 +75,50 @@ onMounted(async () => {
         deleteTweetsCountNotArchived.value = await window.electron.X.deleteTweetsCountNotArchived(props.model.account?.id, false);
     }
 
+    // Define the breadcrumb buttons
+    const localDatabaseButton: ButtonInfo = {
+        label: 'Local Database',
+        action: () => emit('setState', State.WizardDatabase),
+        icon: getBreadcrumbIcon('database')
+    };
+    breadcrumbButtons.value = [
+        { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: 'fa-solid fa-house' },
+    ];
+    if (jobsType.value == 'delete') {
+        breadcrumbButtons.value.push({
+            label: 'Delete Options',
+            action: () => emit('setState', State.WizardDeleteOptions),
+            icon: getBreadcrumbIcon('delete')
+        });
+    } else if (jobsType.value == 'save') {
+        breadcrumbButtons.value.push(localDatabaseButton);
+        breadcrumbButtons.value.push({
+            label: 'Build Options',
+            action: () => emit('setState', State.WizardBuildOptions),
+            icon: getBreadcrumbIcon('build')
+        });
+    } else if (jobsType.value == 'archive') {
+        breadcrumbButtons.value.push(localDatabaseButton);
+        breadcrumbButtons.value.push({
+            label: 'Archive Options',
+            action: () => emit('setState', State.WizardArchiveOptions),
+            icon: getBreadcrumbIcon('build')
+        });
+    } else if (jobsType.value == 'migrateBluesky' || jobsType.value == 'migrateBlueskyDelete') {
+        breadcrumbButtons.value.push({
+            label: 'Migrate to Bluesky Options',
+            action: () => emit('setState', State.WizardMigrateToBluesky),
+            icon: getBreadcrumbIcon('bluesky')
+        });
+    }
+
     loading.value = false;
 });
 </script>
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1" @click="backClicked">
-                <i class="fa-solid fa-backward" />
-                <template v-if="jobsType == 'delete'">
-                    Back to Delete Options
-                </template>
-                <template v-else-if="jobsType == 'save'">
-                    Back to Build Options
-                </template>
-                <template v-else-if="jobsType == 'archive'">
-                    Back to Archive Options
-                </template>
-                <template v-else-if="jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete'">
-                    Back to Migrate to Bluesky Options
-                </template>
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="breadcrumbButtons" label="Review" :icon="getBreadcrumbIcon('review')" />
 
         <div class="wizard-scroll-content">
             <div class="mb-4">
@@ -281,25 +307,23 @@ onMounted(async () => {
                 <AlertStayAwake />
             </template>
         </div>
-        <div class="next-buttons">
-            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                :disabled="!(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs)"
-                @click="nextClicked">
-                <i class="fa-solid fa-forward" />
-                <template v-if="jobsType == 'save'">
-                    Build Database
-                </template>
-                <template v-else-if="jobsType == 'archive'">
-                    Start Archiving
-                </template>
-                <template v-else-if="jobsType == 'delete' || jobsType == 'migrateBlueskyDelete'">
-                    Start Deleting
-                </template>
-                <template v-else-if="jobsType == 'migrateBluesky'">
-                    Start Migrating
-                </template>
-            </button>
-        </div>
+
+        <ButtonsComponent :back-buttons="[
+            {
+                label: (jobsType == 'delete' ? 'Back to Delete Options' :
+                    (jobsType == 'save' ? 'Back to Build Options' : (jobsType == 'archive' ? 'Back to Archive Options' : (jobsType == 'migrateBluesky' || jobsType == 'migrateBlueskyDelete' ? 'Back to Migrate to Bluesky Options' : '')))),
+                action: backClicked,
+                icon: 'fa-solid fa-backward'
+            },
+        ]" :next-buttons="[
+            {
+                label: (jobsType == 'save' ? 'Build Database' :
+                    (jobsType == 'archive' ? 'Start Archiving' : (jobsType == 'delete' || jobsType == 'migrateBlueskyDelete' ? 'Start Deleting' : (jobsType == 'migrateBluesky' ? 'Start Migrating' : '')))),
+                action: nextClicked,
+                icon: 'fa-solid fa-forward',
+                disabled: !(model.account?.xAccount?.archiveTweets || model.account?.xAccount?.archiveLikes || model.account?.xAccount?.archiveBookmarks || model.account?.xAccount?.archiveDMs) && (jobsType == 'save' || jobsType == 'archive' || jobsType == 'delete')
+            },
+        ]" />
     </div>
 </template>
 

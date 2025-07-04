@@ -3,7 +3,10 @@ import { ref, onMounted } from 'vue';
 import { XViewModel, State } from '../../view_models/XViewModel'
 import type { XDatabaseStats } from '../../../../shared_types';
 import { emptyXDatabaseStats } from '../../../../shared_types';
-import { setJobsType } from '../../util';
+import { getBreadcrumbIcon, setJobsType } from '../../util';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
+
 
 // Props
 const props = defineProps<{
@@ -76,12 +79,10 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1" @click="backClicked">
-                <i class="fa-solid fa-backward" />
-                Back to Local Database
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+            { label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') },
+        ]" label="Archive Options" :icon="getBreadcrumbIcon('build')" />
 
         <div class="wizard-scroll-content">
             <div class="mb-4">
@@ -137,13 +138,16 @@ onMounted(async () => {
                 </div>
             </form>
         </div>
-        <div class="next-buttons">
-            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                :disabled="!(archiveTweetsHTML || archiveBookmarks || archiveDMs)" @click="nextClicked">
-                <i class="fa-solid fa-forward" />
-                Continue to Review
-            </button>
-        </div>
+
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Local Database', action: backClicked },
+        ]" :next-buttons="[
+            {
+                label: 'Continue to Review',
+                action: nextClicked,
+                disabled: !(archiveTweetsHTML || archiveBookmarks || archiveDMs),
+            },
+        ]" />
     </div>
 </template>
 

@@ -9,7 +9,10 @@ import {
     State
 } from '../../view_models/XViewModel'
 import { XImportArchiveResponse } from '../../../../shared_types'
+import { getBreadcrumbIcon } from '../../util';
 import RunningIcon from '../shared_components/RunningIcon.vue'
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -214,12 +217,11 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1" @click="backClicked">
-                <i class="fa-solid fa-backward" />
-                Back to Import
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+            { label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') },
+            { label: 'Import X Archive', action: backClicked, icon: getBreadcrumbIcon('import') },
+        ]" label="Importing" :icon="getBreadcrumbIcon('import')" />
 
         <div class="wizard-scroll-content">
             <h2>
@@ -314,29 +316,34 @@ onMounted(async () => {
                 </template>
             </template>
         </div>
-        <div class="next-buttons">
-            <template v-if="!importStarted">
-                <button type="submit" class="btn btn-primary text-nowrap m-1" :disabled="importFromArchivePath == ''"
-                    @click="startClicked">
-                    <i class="fa-solid fa-forward" />
-                    Start Import
-                </button>
+
+        <template v-if="!importStarted">
+            <ButtonsComponent :back-buttons="[
+                { label: 'Back to Import X Archive', action: backClicked },
+            ]" :next-buttons="[
+                {
+                    label: 'Start Import',
+                    action: startClicked,
+                    disabled: importFromArchivePath == '',
+                }
+            ]" />
+        </template>
+        <template v-else>
+            <template v-if="importFinished">
+                <ButtonsComponent :back-buttons="[
+                    { label: 'Back to Import from X', action: backClicked },
+                ]" :next-buttons="[
+                    {
+                        label: 'Backup More Data from X',
+                        action: () => emit('setState', State.WizardArchiveOptions),
+                    },
+                    {
+                        label: 'Go to Dashboard',
+                        action: () => emit('setState', State.WizardDashboard),
+                    }
+                ]" />
             </template>
-            <template v-else>
-                <template v-if="importFinished">
-                    <button type="submit" class="btn btn-primary text-nowrap m-1"
-                        @click="emit('setState', State.WizardArchiveOptions);">
-                        <i class="fa-solid fa-forward" />
-                        Backup More Data from X
-                    </button>
-                    <button type="submit" class="btn btn-primary text-nowrap m-1"
-                        @click="emit('setState', State.WizardDashboard);">
-                        <i class="fa-solid fa-forward" />
-                        Dashboard
-                    </button>
-                </template>
-            </template>
-        </div>
+        </template>
     </div>
 </template>
 

@@ -7,9 +7,11 @@ import {
     XViewModel,
     State
 } from '../../view_models/XViewModel'
-import { setJobsType } from '../../util';
+import { setJobsType, getBreadcrumbIcon } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Props
 const props = defineProps<{
@@ -82,12 +84,10 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-content">
-        <div class="back-buttons">
-            <button type="submit" class="btn btn-secondary text-nowrap m-1" @click="backClicked">
-                <i class="fa-solid fa-backward" />
-                Back to Local Database
-            </button>
-        </div>
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+            { label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') },
+        ]" label="Build Options" :icon="getBreadcrumbIcon('build')" />
 
         <div class="wizard-scroll-content">
             <div class="mb-4">
@@ -150,13 +150,15 @@ onMounted(async () => {
             </form>
         </div>
 
-        <div class="next-buttons">
-            <button type="submit" class="btn btn-primary text-nowrap m-1"
-                :disabled="!(archiveTweets || archiveLikes || archiveBookmarks || archiveDMs)" @click="nextClicked">
-                <i class="fa-solid fa-forward" />
-                Continue to Review
-            </button>
-        </div>
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Local Database', action: backClicked },
+        ]" :next-buttons="[
+            {
+                label: 'Continue to Review',
+                action: nextClicked,
+                disabled: !(archiveTweets || archiveLikes || archiveBookmarks || archiveDMs),
+            },
+        ]" />
     </div>
 </template>
 
