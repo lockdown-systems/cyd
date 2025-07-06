@@ -16,7 +16,7 @@ For your convenience, here are the instructions:
 
 - **Visit https://x.com/settings/download_your_data.** You might need to sign in to X first.
 - **Prove your identity.** You'll probably need to type your X password. You might also need to get a verification code sent to your email, or do other things to verify your identity.
-- **Click the "Request archive" button.** Be patient. After requesting your archive, you'll need to wait *at least a day*, and maybe longer. Sorry!
+- **Click the "Request archive" button.** Be patient. After requesting your archive, you'll need to wait _at least a day_, and maybe longer. Sorry!
 - **When it's ready, download the ZIP file from X.** After you've followed these steps and you have your archive ZIP file, click the button below.
 
 After requesting your archive, wait for an email from X. It should look something like this:
@@ -53,10 +53,10 @@ Cyd will validate that the archive actually appears to be an X archive and belon
 
 In the right sidebar, you will also see the buttons **Browse Archive** and **Open Folder**. See [Browse Your Local Archive](../archive) for more information about these.
 
-There is also a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, 38 saved retweets, and 207 saved likes. So far, none of the tweets have been migrated to Bluesky.
+The right sidebar also includes a summary of the amount of data in your local database. In the screenshot above, you can see the local database contains 76 saved tweets, and so far, none of the tweets have been migrated to Bluesky. You can see other metrics by scrolling down.
 
 :::tip The official X archive is missing some data
 
-X only gives you some of your data when you request an archive. Click **Continue to Archive Options** if you'd like to download data that's missing from the official X archive. You'll be able to save your bookmarks, save HTML versions of your tweets, and download a robust backup of your direct messages from there.
+X only gives you some of your data when you request an archive. Click **Backup More Data from X** if you'd like to download data that's missing from the official X archive. You'll be able to save your bookmarks, save HTML versions of your tweets, and download a robust backup of your direct messages from there.
 
 :::
