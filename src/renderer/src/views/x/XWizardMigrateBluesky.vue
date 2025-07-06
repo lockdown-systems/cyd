@@ -357,7 +357,8 @@ onUnmounted(async () => {
             {
                 label: 'Delete Migrated Tweets from Bluesky',
                 action: deleteClicked,
-                hide: (tweetCounts?.alreadyMigratedTweets?.length ?? 0) == 0
+                hide: (tweetCounts?.alreadyMigratedTweets?.length ?? 0) == 0,
+                dangerStyle: true
             }
         ] : []" />
     </div>

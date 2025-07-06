@@ -47,4 +47,5 @@ export type ButtonInfo = {
   action: () => void;
   disabled?: boolean;
   hide?: boolean;
+  dangerStyle?: boolean;
 };
