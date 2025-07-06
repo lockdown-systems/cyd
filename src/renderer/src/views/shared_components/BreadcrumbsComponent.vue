@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-    <nav class="breadcrumbs d-flex align-items-center mt-2 mb-2">
+    <nav class="breadcrumbs d-flex align-items-center mt-2 mb-3">
         <div class="d-flex gap-2">
             <div v-for="(button, index) in buttons" :key="index">
                 <button class="btn btn-sm btn-link text-nowrap" @click="button.action">
