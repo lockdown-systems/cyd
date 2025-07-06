@@ -22,4 +22,4 @@ If you protect your X account with two-factor authentication, you'll need to ent
 
 After you sign in, Cyd will immediately start driving your browser to determine your username, your profile picture, and an estimate of the number of tweets and likes in your X account.
 
-When it's done, you'll up at the Local Database screen. Continue to [Build a Local Database](./local-database/intro).
+When it's done, you'll end up at the Dashboard screen. Continue to [Dashboard](./dashboard).

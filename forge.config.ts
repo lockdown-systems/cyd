@@ -9,6 +9,9 @@ import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { PublisherS3 } from '@electron-forge/publisher-s3';
 
+import { type OsxSignOptions } from '@electron/packager/dist/types';
+import { type NotaryToolCredentials } from '@electron/notarize/lib/types';
+
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -107,6 +110,44 @@ if (process.env.CYD_ENV == 'prod') {
 }
 const mimeTypeScheme = process.env.CYD_ENV == 'prod' ? 'x-scheme-handler/cyd' : 'x-scheme-handler/cyd-dev';
 
+// macOS signing and notarization options
+let osxSign: OsxSignOptions | undefined;
+let osxNotarize: NotaryToolCredentials | undefined;
+if(process.env.MACOS_RELEASE === 'true') {
+  osxSign = {
+      identity: "Developer ID Application: Lockdown Systems LLC (G762K6CH36)",
+      optionsForFile: (filePath) => {
+        const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
+        const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
+        const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
+        const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
+
+        if (filePath.includes('(Plugin).app')) {
+          return {
+            entitlements: entitlementPlugin,
+          }
+        } else if (filePath.includes('(GPU).app')) {
+          return {
+            entitlements: entitlementGpu,
+          }
+        } else if (filePath.includes('(Renderer).app')) {
+          return {
+            entitlements: entitlementRenderer,
+          }
+        }
+        return {
+          entitlements: entitlementDefault,
+        }
+      }
+    }
+
+    osxNotarize = {
+      appleId: process.env.APPLE_ID ? process.env.APPLE_ID : '',
+      appleIdPassword: process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '',
+      teamId: 'G762K6CH36'
+    }
+}
+
 const config: ForgeConfig = {
   packagerConfig: {
     name: process.env.CYD_ENV == 'prod' ? 'Cyd' : 'Cyd Dev',
@@ -132,37 +173,8 @@ const config: ForgeConfig = {
       path.join(assetsPath, 'icon.png'),
     ],
     protocols: protocols,
-    osxSign: {
-      identity: "Developer ID Application: Lockdown Systems LLC (G762K6CH36)",
-      optionsForFile: (filePath) => {
-        const entitlementDefault = path.join(assetsPath, 'entitlements', 'default.plist');
-        const entitlementGpu = path.join(assetsPath, 'entitlements', 'gpu.plist');
-        const entitlementPlugin = path.join(assetsPath, 'entitlements', 'plugin.plist');
-        const entitlementRenderer = path.join(assetsPath, 'entitlements', 'renderer.plist');
-
-        if (filePath.includes('(Plugin).app')) {
-          return {
-            entitlements: entitlementPlugin,
-          }
-        } else if (filePath.includes('(GPU).app')) {
-          return {
-            entitlements: entitlementGpu,
-          }
-        } else if (filePath.includes('(Renderer).app')) {
-          return {
-            entitlements: entitlementRenderer,
-          }
-        }
-        return {
-          entitlements: entitlementDefault,
-        }
-      }
-    },
-    osxNotarize: {
-      appleId: process.env.APPLE_ID ? process.env.APPLE_ID : '',
-      appleIdPassword: process.env.APPLE_PASSWORD ? process.env.APPLE_PASSWORD : '',
-      teamId: 'G762K6CH36'
-    }
+    osxSign: osxSign,
+    osxNotarize: osxNotarize
   },
   rebuildConfig: {},
   makers: [

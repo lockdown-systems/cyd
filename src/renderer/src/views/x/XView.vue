@@ -22,9 +22,9 @@ import AutomationNotice from '../shared_components/AutomationNotice.vue';
 import XProgressComponent from './XProgressComponent.vue';
 import XJobStatusComponent from './XJobStatusComponent.vue';
 
+import XWizardDashboard from './XWizardDashboard.vue';
 import XWizardDatabasePage from './XWizardDatabasePage.vue';
 import XWizardImportPage from './XWizardImportPage.vue';
-import XWizardImportDownloadPage from './XWizardImportDownloadPage.vue';
 import XWizardImportingPage from './XWizardImportingPage.vue';
 import XWizardBuildOptionsPage from './XWizardBuildOptionsPage.vue';
 import XWizardArchiveOptionsPage from './XWizardArchiveOptionsPage.vue';
@@ -32,7 +32,7 @@ import XWizardDeleteOptionsPage from './XWizardDeleteOptionsPage.vue';
 import XWizardReviewPage from './XWizardReviewPage.vue';
 import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
-import XFinishedRunningJobsPage from './XFinishedRunningJobsPage.vue';
+import XWizardFinished from './XWizardFinished.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
 
 import XDisplayTweet from './XDisplayTweet.vue';
@@ -512,13 +512,13 @@ onUnmounted(async () => {
             <div :class="{ 'hidden': model.showBrowser || model.state == State.RunJobs, 'wizard': true, 'ms-2': true }">
                 <div class="wizard-container d-flex">
                     <div class="wizard-content flex-grow-1">
+                        <XWizardDashboard v-if="model.state == State.WizardDashboardDisplay" :model="unref(model)"
+                            @set-state="setState($event)" />
+
                         <XWizardDatabasePage v-if="model.state == State.WizardDatabaseDisplay" :model="unref(model)"
                             @set-state="setState($event)" />
 
                         <XWizardImportPage v-if="model.state == State.WizardImportStartDisplay" :model="unref(model)"
-                            @set-state="setState($event)" />
-
-                        <XWizardImportDownloadPage v-if="model.state == State.WizardImportDownloadDisplay"
                             @set-state="setState($event)" />
 
                         <XWizardImportingPage v-if="model.state == State.WizardImportingDisplay" :model="unref(model)"
@@ -546,8 +546,7 @@ onUnmounted(async () => {
                             :model="unref(model)" :user-authenticated="userAuthenticated" :user-premium="userPremium"
                             @set-state="setState($event)" />
 
-                        <XFinishedRunningJobsPage v-if="model.state == State.FinishedRunningJobsDisplay"
-                            :model="unref(model)"
+                        <XWizardFinished v-if="model.state == State.FinishedRunningJobsDisplay" :model="unref(model)"
                             :failure-state-index-likes_-failed-to-retry-after-rate-limit="failureStateIndexLikes_FailedToRetryAfterRateLimit"
                             :failure-state-index-tweets_-failed-to-retry-after-rate-limit="failureStateIndexTweets_FailedToRetryAfterRateLimit"
                             @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"

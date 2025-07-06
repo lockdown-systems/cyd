@@ -9,9 +9,11 @@ import {
     State
 } from '../../view_models/XViewModel'
 import { xHasSomeData } from '../../util_x';
-import { openURL, setJobsType } from '../../util';
+import { getBreadcrumbIcon, openURL, setJobsType } from '../../util';
 
 import XLastImportOrBuildComponent from './XLastImportOrBuildComponent.vue';
+import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 // Props
 const props = defineProps<{
@@ -147,259 +149,272 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="wizard-content container mb-4 mt-3 mx-auto">
-        <div class="mb-4">
-            <h2>
-                Delete from X
-            </h2>
-            <p class="text-muted">
-                Delete your data from X, except for what you want to keep.
-            </p>
-        </div>
+    <div class="wizard-content">
+        <BreadcrumbsComponent :buttons="[
+            { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
+        ]" label="Delete Options" :icon="getBreadcrumbIcon('delete')" />
 
-        <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true" :show-no-data-warning="true"
-            :button-text="'Build Your Local Database'" :button-state="State.WizardDatabase"
-            @set-state="emit('setState', $event)" />
+        <div class="wizard-scroll-content">
+            <div class="mb-4">
+                <h2>
+                    Delete from X
+                </h2>
+                <p class="text-muted">
+                    Delete your data from X, except for what you want to keep.
+                </p>
+            </div>
 
-        <form @submit.prevent>
-            <!-- deleteTweets -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="form-check">
-                        <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input"
-                            :disabled="!hasSomeData">
-                        <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
-                            Delete my tweets
-                        </label>
-                        <span class="ms-2 text-muted">(recommended)</span>
-                        <button class="btn btn-sm btn-link" @click="deleteTweetsShowMoreClicked">
-                            {{ deleteTweetsShowMoreButtonText }}
-                        </button>
-                    </div>
-                </div>
-                <div v-if="deleteTweetsShowMore" class="indent">
+            <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true"
+                :show-no-data-warning="true" :button-text="'Build Your Local Database'"
+                :button-state="State.WizardDatabase" @set-state="emit('setState', $event)" />
+
+            <form @submit.prevent>
+                <!-- deleteTweets -->
+                <div class="mb-3">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center flex-nowrap">
-                            <div class="form-check">
-                                <input id="deleteTweetsDaysOldEnabled" v-model="deleteTweetsDaysOldEnabled"
-                                    type="checkbox" class="form-check-input" :disabled="!deleteTweets || !hasSomeData">
-                                <label class="form-check-label mr-1 text-nowrap" for="deleteTweetsDaysOldEnabled">
-                                    older than
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <label class="form-check-label mr-1 sr-only" for="deleteTweetsDaysOld">
-                                    days
-                                </label>
-                                <div class="input-group flex-nowrap">
-                                    <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
-                                        class="form-control form-short small"
-                                        :disabled="!deleteTweets || !deleteTweetsDaysOldEnabled || !hasSomeData">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text small">days</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <span v-if="!userAuthenticated || !userPremium"
-                            class="premium badge badge-primary">Premium</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center flex-nowrap">
-                            <div class="form-check">
-                                <input id="deleteTweetsRetweetsThresholdEnabled"
-                                    v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
-                                    class="form-check-input" :disabled="!deleteTweets || !hasSomeData">
-                                <label class="form-check-label mr-1 text-nowrap"
-                                    for="deleteTweetsRetweetsThresholdEnabled">
-                                    unless they have at least
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <label class="form-check-label mr-1 sr-only" for="deleteTweetsRetweetsThreshold">
-                                    retweets
-                                </label>
-                                <div class="input-group flex-nowrap">
-                                    <input id="deleteTweetsRetweetsThreshold" v-model="deleteTweetsRetweetsThreshold"
-                                        type="text" class="form-control form-short small"
-                                        :disabled="!deleteTweets || !deleteTweetsRetweetsThresholdEnabled || !hasSomeData">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text small">retweets</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <span v-if="!userAuthenticated || !userPremium"
-                            class="premium badge badge-primary">Premium</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center flex-nowrap">
-                            <div class="form-check">
-                                <input id="deleteTweetsLikesThresholdEnabled"
-                                    v-model="deleteTweetsLikesThresholdEnabled" type="checkbox" class="form-check-input"
-                                    :disabled="!deleteTweets || !hasSomeData">
-                                <label class="form-check-label mr-1 text-nowrap"
-                                    for="deleteTweetsLikesThresholdEnabled">
-                                    or at least
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <label class="form-check-label mr-1 sr-only" for="deleteTweetsLikesThreshold">
-                                    likes
-                                </label>
-                                <div class="input-group flex-nowrap">
-                                    <input id="deleteTweetsLikesThreshold" v-model="deleteTweetsLikesThreshold"
-                                        type="text" class="form-control form-short small"
-                                        :disabled="!deleteTweets || !deleteTweetsLikesThresholdEnabled">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text small">likes</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <span v-if="!userAuthenticated || !userPremium"
-                            class="premium badge badge-primary">Premium</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- deleteRetweets -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="form-check">
-                        <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox" class="form-check-input"
-                            :disabled="!hasSomeData">
-                        <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
-                            Delete my retweets
-                        </label>
-                        <span class="ms-2 text-muted">(recommended)</span>
-                        <button class="btn btn-sm btn-link" @click="deleteRetweetsShowMoreClicked">
-                            {{ deleteRetweetsShowMoreButtonText }}
-                        </button>
-                    </div>
-                </div>
-                <div v-if="deleteRetweetsShowMore" class="indent">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center flex-nowrap">
-                            <div class="form-check">
-                                <input id="deleteRetweetsDaysOldEnabled" v-model="deleteRetweetsDaysOldEnabled"
-                                    type="checkbox" class="form-check-input"
-                                    :disabled="!deleteRetweets || !hasSomeData">
-                                <label class="form-check-label mr-1 text-nowrap" for="deleteRetweetsDaysOldEnabled">
-                                    older than
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <label class="form-check-label mr-1 sr-only" for="deleteRetweetsDaysOld">
-                                    days
-                                </label>
-                                <div class="input-group flex-nowrap">
-                                    <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld" type="text"
-                                        class="form-control form-short small"
-                                        :disabled="!deleteRetweets || !deleteRetweetsDaysOldEnabled">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text small">days</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <span v-if="!userAuthenticated || !userPremium"
-                            class="premium badge badge-primary">Premium</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- unfollowEveryone -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="form-check">
-                        <input id="unfollowEveryone" v-model="unfollowEveryone" type="checkbox"
-                            class="form-check-input">
-                        <label class="form-check-label mr-1 text-nowrap" for="unfollowEveryone">
-                            Unfollow everyone
-                        </label>
-                        <span class="ms-2 text-muted">(recommended)</span>
-                    </div>
-                    <span v-if="!userAuthenticated || !userPremium" class="premium badge badge-primary">Premium</span>
-                </div>
-            </div>
-
-            <!-- deleteLikes -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="form-check">
-                        <input id="deleteLikes" v-model="deleteLikes" type="checkbox" class="form-check-input"
-                            :disabled="!hasSomeData">
-                        <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
-                            Delete my likes
-                        </label>
-                    </div>
-                    <div class="d-flex align-items-center flex-nowrap">
-                        <span v-if="!userAuthenticated || !userPremium"
-                            class="premium badge badge-primary">Premium</span>
-                    </div>
-                </div>
-                <div class="indent">
-                    <small class="form-text text-muted">
-                        Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't delete
-                        <em>ghost likes</em>.
-                        <a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/ghost-likes')">
-                            Read more</a>.
-                    </small>
-                </div>
-            </div>
-
-            <!-- deleteBookmarks -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="form-check">
-                        <input id="deleteBookmarks" v-model="deleteBookmarks" type="checkbox" class="form-check-input">
-                        <label class="form-check-label mr-1 text-nowrap" for="deleteBookmarks">
-                            Delete my bookmarks
-                        </label>
-                    </div>
-                    <div class="d-flex align-items-center flex-nowrap">
-                        <span v-if="!userAuthenticated || !userPremium"
-                            class="premium badge badge-primary">Premium</span>
-                    </div>
-                </div>
-                <div class="indent">
-                    <small class="form-text text-muted">
-                        Bookmarks are only visible to you on X.
-                    </small>
-                </div>
-            </div>
-
-            <!-- deleteDMs -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
                         <div class="form-check">
-                            <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
-                            <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
-                                Delete my direct messages
+                            <input id="deleteTweets" v-model="deleteTweets" type="checkbox" class="form-check-input"
+                                :disabled="!hasSomeData">
+                            <label class="form-check-label mr-1 text-nowrap" for="deleteTweets">
+                                Delete my tweets
+                            </label>
+                            <span class="ms-2 text-muted">(recommended)</span>
+                            <button class="btn btn-sm btn-link" @click="deleteTweetsShowMoreClicked">
+                                {{ deleteTweetsShowMoreButtonText }}
+                            </button>
+                        </div>
+                    </div>
+                    <div v-if="deleteTweetsShowMore" class="indent">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center flex-nowrap">
+                                <div class="form-check">
+                                    <input id="deleteTweetsDaysOldEnabled" v-model="deleteTweetsDaysOldEnabled"
+                                        type="checkbox" class="form-check-input"
+                                        :disabled="!deleteTweets || !hasSomeData">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteTweetsDaysOldEnabled">
+                                        older than
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <label class="form-check-label mr-1 sr-only" for="deleteTweetsDaysOld">
+                                        days
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteTweetsDaysOld" v-model="deleteTweetsDaysOld" type="text"
+                                            class="form-control form-short small"
+                                            :disabled="!deleteTweets || !deleteTweetsDaysOldEnabled || !hasSomeData">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text small">days</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span v-if="!userAuthenticated || !userPremium"
+                                class="premium badge badge-primary">Premium</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center flex-nowrap">
+                                <div class="form-check">
+                                    <input id="deleteTweetsRetweetsThresholdEnabled"
+                                        v-model="deleteTweetsRetweetsThresholdEnabled" type="checkbox"
+                                        class="form-check-input" :disabled="!deleteTweets || !hasSomeData">
+                                    <label class="form-check-label mr-1 text-nowrap"
+                                        for="deleteTweetsRetweetsThresholdEnabled">
+                                        unless they have at least
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <label class="form-check-label mr-1 sr-only" for="deleteTweetsRetweetsThreshold">
+                                        retweets
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteTweetsRetweetsThreshold"
+                                            v-model="deleteTweetsRetweetsThreshold" type="text"
+                                            class="form-control form-short small"
+                                            :disabled="!deleteTweets || !deleteTweetsRetweetsThresholdEnabled || !hasSomeData">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text small">retweets</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span v-if="!userAuthenticated || !userPremium"
+                                class="premium badge badge-primary">Premium</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center flex-nowrap">
+                                <div class="form-check">
+                                    <input id="deleteTweetsLikesThresholdEnabled"
+                                        v-model="deleteTweetsLikesThresholdEnabled" type="checkbox"
+                                        class="form-check-input" :disabled="!deleteTweets || !hasSomeData">
+                                    <label class="form-check-label mr-1 text-nowrap"
+                                        for="deleteTweetsLikesThresholdEnabled">
+                                        or at least
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <label class="form-check-label mr-1 sr-only" for="deleteTweetsLikesThreshold">
+                                        likes
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteTweetsLikesThreshold" v-model="deleteTweetsLikesThreshold"
+                                            type="text" class="form-control form-short small"
+                                            :disabled="!deleteTweets || !deleteTweetsLikesThresholdEnabled">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text small">likes</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span v-if="!userAuthenticated || !userPremium"
+                                class="premium badge badge-primary">Premium</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- deleteRetweets -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="form-check">
+                            <input id="deleteRetweets" v-model="deleteRetweets" type="checkbox" class="form-check-input"
+                                :disabled="!hasSomeData">
+                            <label class="form-check-label mr-1 text-nowrap" for="deleteRetweets">
+                                Delete my retweets
+                            </label>
+                            <span class="ms-2 text-muted">(recommended)</span>
+                            <button class="btn btn-sm btn-link" @click="deleteRetweetsShowMoreClicked">
+                                {{ deleteRetweetsShowMoreButtonText }}
+                            </button>
+                        </div>
+                    </div>
+                    <div v-if="deleteRetweetsShowMore" class="indent">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center flex-nowrap">
+                                <div class="form-check">
+                                    <input id="deleteRetweetsDaysOldEnabled" v-model="deleteRetweetsDaysOldEnabled"
+                                        type="checkbox" class="form-check-input"
+                                        :disabled="!deleteRetweets || !hasSomeData">
+                                    <label class="form-check-label mr-1 text-nowrap" for="deleteRetweetsDaysOldEnabled">
+                                        older than
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <label class="form-check-label mr-1 sr-only" for="deleteRetweetsDaysOld">
+                                        days
+                                    </label>
+                                    <div class="input-group flex-nowrap">
+                                        <input id="deleteRetweetsDaysOld" v-model="deleteRetweetsDaysOld" type="text"
+                                            class="form-control form-short small"
+                                            :disabled="!deleteRetweets || !deleteRetweetsDaysOldEnabled">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text small">days</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span v-if="!userAuthenticated || !userPremium"
+                                class="premium badge badge-primary">Premium</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- unfollowEveryone -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="form-check">
+                            <input id="unfollowEveryone" v-model="unfollowEveryone" type="checkbox"
+                                class="form-check-input">
+                            <label class="form-check-label mr-1 text-nowrap" for="unfollowEveryone">
+                                Unfollow everyone
+                            </label>
+                            <span class="ms-2 text-muted">(recommended)</span>
+                        </div>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
+                    </div>
+                </div>
+
+                <!-- deleteLikes -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="form-check">
+                            <input id="deleteLikes" v-model="deleteLikes" type="checkbox" class="form-check-input"
+                                :disabled="!hasSomeData">
+                            <label class="form-check-label mr-1 text-nowrap" for="deleteLikes">
+                                Delete my likes
                             </label>
                         </div>
+                        <div class="d-flex align-items-center flex-nowrap">
+                            <span v-if="!userAuthenticated || !userPremium"
+                                class="premium badge badge-primary">Premium</span>
+                        </div>
                     </div>
-                    <span v-if="!userAuthenticated || !userPremium" class="premium badge badge-primary">Premium</span>
+                    <div class="indent">
+                        <small class="form-text text-muted">
+                            Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't
+                            delete
+                            <em>ghost likes</em>.
+                            <a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/ghost-likes')">
+                                Read more</a>.
+                        </small>
+                    </div>
                 </div>
-                <div class="indent">
-                    <small class="form-text text-muted">
-                        This will only delete DMs from your account. The people you've sent
-                        messages to will still have them unless they delete their DMs as well.
-                    </small>
-                </div>
-            </div>
 
-            <div class="buttons">
-                <button type="submit" class="btn btn-primary text-nowrap m-1"
-                    :disabled="(hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || deleteBookmarks || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))"
-                    @click="nextClicked">
-                    <i class="fa-solid fa-forward" />
-                    Continue to Review
-                </button>
-            </div>
-        </form>
+                <!-- deleteBookmarks -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="form-check">
+                            <input id="deleteBookmarks" v-model="deleteBookmarks" type="checkbox"
+                                class="form-check-input">
+                            <label class="form-check-label mr-1 text-nowrap" for="deleteBookmarks">
+                                Delete my bookmarks
+                            </label>
+                        </div>
+                        <div class="d-flex align-items-center flex-nowrap">
+                            <span v-if="!userAuthenticated || !userPremium"
+                                class="premium badge badge-primary">Premium</span>
+                        </div>
+                    </div>
+                    <div class="indent">
+                        <small class="form-text text-muted">
+                            Bookmarks are only visible to you on X.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- deleteDMs -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check">
+                                <input id="deleteDMs" v-model="deleteDMs" type="checkbox" class="form-check-input">
+                                <label class="form-check-label mr-1 text-nowrap" for="deleteDMs">
+                                    Delete my direct messages
+                                </label>
+                            </div>
+                        </div>
+                        <span v-if="!userAuthenticated || !userPremium"
+                            class="premium badge badge-primary">Premium</span>
+                    </div>
+                    <div class="indent">
+                        <small class="form-text text-muted">
+                            This will only delete DMs from your account. The people you've sent
+                            messages to will still have them unless they delete their DMs as well.
+                        </small>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Dashboard', action: () => emit('setState', State.WizardDashboard) },
+        ]" :next-buttons="[
+            {
+                label: 'Continue to Review',
+                action: nextClicked,
+                disabled: (hasSomeData && !(deleteTweets || deleteRetweets || deleteLikes || deleteBookmarks || unfollowEveryone || deleteDMs)) || (!hasSomeData && !(unfollowEveryone || deleteDMs))
+            },
+        ]" />
     </div>
 </template>
 

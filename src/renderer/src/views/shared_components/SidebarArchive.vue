@@ -39,7 +39,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <p v-if="archiveInfo.indexHTMLExists" class="d-flex gap-2 justify-content-center">
+    <p v-if="archiveInfo.indexHTMLExists" class="d-flex flex-column gap-2 align-items-center">
         <button class="btn btn-outline-success btn-sm" @click="openArchive">
             Browse Archive
         </button>

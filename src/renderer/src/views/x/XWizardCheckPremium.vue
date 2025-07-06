@@ -214,13 +214,13 @@ onMounted(async () => {
             </div>
 
             <div v-if="!userPremium" class="buttons">
-                <button v-if="jobsType == 'delete'" type="submit" class="btn btn-outline-secondary text-nowrap m-1"
+                <button v-if="jobsType == 'delete'" type="submit" class="btn btn-secondary text-nowrap m-1"
                     @click="backClicked">
                     <i class="fa-solid fa-backward" />
                     Back to Review
                 </button>
-                <button v-if="jobsType == 'migrateBluesky'" type="submit"
-                    class="btn btn-outline-secondary text-nowrap m-1" @click="backClicked">
+                <button v-if="jobsType == 'migrateBluesky'" type="submit" class="btn btn-secondary text-nowrap m-1"
+                    @click="backClicked">
                     <i class="fa-solid fa-backward" />
                     Back to Migrate to Bluesky
                 </button>
