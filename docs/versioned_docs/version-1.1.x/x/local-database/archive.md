@@ -50,6 +50,4 @@ If you hit a rate limit, Cyd will wait for it to expire. Typically, you will nee
 
 ## Finished
 
-When Cyd is done archiving additional data, it shows you a summary of what it saved:
-
-![Finished archiving additional data from X](./img/archive-finished.png)
+When Cyd is done archiving additional data, it shows you a summary of what it saved.

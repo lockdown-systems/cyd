@@ -20,7 +20,7 @@ If you're using Windows or Mac, download Cyd from the main website:
 
 Are you a Linux user? You're in luck! Cyd is 100% nerd compatible.
 
-There are Debian and RPM-based repositories for Cyd. And if that doesn't work for you, you can download a ZIP file (and it's PGP signature) which will run on any distro.
+There are Debian and RPM-based repositories for Cyd. And if that doesn't work for you, you can download a ZIP file (and its PGP signature) which will run on any distro.
 
 ### Debian-based Distros
 
