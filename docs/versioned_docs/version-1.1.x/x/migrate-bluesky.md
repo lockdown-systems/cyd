@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 # Migrate to Bluesky
@@ -83,7 +83,7 @@ When Cyd migrates your tweets to Bluesky, it does its best to keep everything th
 - **URL tracking is removed.** If your tweet includes links, those links are transferred over to Bluesky except without X's `t.co` URL tracking. The only exception is, if the URL you posted is exceptionally long and doesn't fit in a Bluesky post, Cyd will fallback to using the `t.co` link simply because it's shorter.
 - **Media is preserved.** If you post images or videos, those images and videos are re-posted to Bluesky. The only exception is if the original media is too large to upload to Bluesky. Bluesky has a limit of about 1 MB for images and about 50 MB for videos.
 - **Threads are preserved.** If you posted a Twitter thread (which is just posting replies to your own tweets), they will get migrated as replies to your own posts in Bluesky.
-- **Self-quote tweets are preserved.** If you quote tweet your own tweet, they will get migrated as quote posts of your original post in Bluesky. 
+- **Self-quote tweets are preserved.** If you quote tweet your own tweet, they will get migrated as quote posts of your original post in Bluesky.
 - **Other quote tweets are not preserved.** If you quote tweet someone else, the link to the tweet you're quoting will get added to the end of your Bluesky post as a URL.
 - **Mentions are not preserved.** If you mention X users, their usernames will be in the text of your Bluesky post, but you won't be able to click it to see who they are.
 - **Long tweets get split into multiple Bluesky posts.** The length of a tweet on X and a post on Bluesky are calculated slightly differently, and they also have different maximum lengths. If, for whatever reason, a tweet you're trying to migrate does not fit on Bluesky, Cyd will automatically split it into two posts for you and post them both.
