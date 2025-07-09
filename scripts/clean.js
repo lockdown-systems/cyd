@@ -27,8 +27,8 @@ if (fs.existsSync(buildDir)) {
     });
 }
 
-console.log('Running npm install...');
-execSync('npm install', { stdio: 'inherit' });
+console.log('Running pnpm install...');
+execSync('pnpm install', { stdio: 'inherit' });
 
 if (os.platform() === 'linux') {
     const chromeSandboxPath = path.resolve('node_modules/electron/dist/chrome-sandbox');
