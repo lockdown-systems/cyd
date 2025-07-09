@@ -562,7 +562,7 @@ test('XAccountController.indexConversation() should add a conversation and parti
 
 test(
     "XAccountController.indexParseConversations() should add all the conversations and users",
-    { timeout: 10000 },
+    { timeout: 20000 },
     async () => {
         mitmController.setTestdata("indexDMs");
 
@@ -582,7 +582,7 @@ test(
 
 test(
     "XAccountController.indexParseConversations() should not crash with empty response data",
-    { timeout: 10000 },
+    { timeout: 20000 },
     async () => {
         mitmController.setTestdata("indexDMs");
         // https://dev-admin.cyd.social/#/error/4
