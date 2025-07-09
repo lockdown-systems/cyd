@@ -19,6 +19,7 @@ const parsedMessage = computed(() => marked.parse(props.message));
     </div>
     <div class="col">
       <div class="bubble p-3 text-black">
+        <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-if="message != ''" class="bubble-inner" v-html="parsedMessage" />
         <div v-else class="bubble-inner fs-1">
           <RunningIcon />

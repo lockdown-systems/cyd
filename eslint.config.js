@@ -21,6 +21,8 @@ export default tseslint.config(
       "out/**/*",
       "node_modules/**/*",
       "src/renderer/vite.config.ts",
+      "global.d.ts",
+      "forge.env.d.ts",
     ],
   },
   // TypeScript files
@@ -43,6 +45,15 @@ export default tseslint.config(
       importPlugin.flatConfigs.recommended,
       eslintConfigPrettier,
     ],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        }
+      ],
+    },
     settings: {
       "import/resolver": {
         node: {
