@@ -1,0 +1,10 @@
+ignoredBuiltDependencies:
+  - cypress
+  - electron-winstaller
+  - esbuild
+  - fs-xattr
+  - macos-alias
+
+onlyBuiltDependencies:
+  - better-sqlite3
+  - electron
