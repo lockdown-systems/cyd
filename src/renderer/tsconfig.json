@@ -3,11 +3,7 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -22,16 +18,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     /* Cypress testing */
-    "types": [
-      "cypress"
-    ]
+    "types": ["cypress"]
   },
-  "include": [
-    "./**/*.ts",
-    "./**/*.d.ts",
-    "./**/*.tsx",
-    "./**/*.vue"
-  ],
+  "include": ["./**/*.ts", "./**/*.d.ts", "./**/*.tsx", "./**/*.vue"],
   "references": [
     {
       "path": "../../tsconfig.node.json"

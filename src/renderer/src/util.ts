@@ -16,9 +16,8 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
   const apiClient = new CydAPIClient();
   apiClient.initialize(await window.electron.getAPIURL());
 
-  const deviceDescription = await window.electron.database.getConfig(
-    "deviceDescription"
-  );
+  const deviceDescription =
+    await window.electron.database.getConfig("deviceDescription");
   if (!deviceDescription) {
     // This should never happen
     deviceInfo["deviceDescription"] = "Unknown device";
@@ -100,12 +99,12 @@ export async function setAccountRunning(accountID: number, isRunning: boolean) {
     const powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
     localStorage.setItem(
       `account-${accountID}-power-save-blocker-id`,
-      JSON.stringify(powerSaveBlockerID)
+      JSON.stringify(powerSaveBlockerID),
     );
   } else {
     // Stop power save blocker
     const powerSaveBlockerID = localStorage.getItem(
-      `account-${accountID}-power-save-blocker-id`
+      `account-${accountID}-power-save-blocker-id`,
     );
     if (powerSaveBlockerID) {
       window.electron.stopPowerSaveBlocker(JSON.parse(powerSaveBlockerID));
@@ -115,7 +114,7 @@ export async function setAccountRunning(accountID: number, isRunning: boolean) {
 
   localStorage.setItem(
     `account-${accountID}-running`,
-    JSON.stringify(isRunning)
+    JSON.stringify(isRunning),
   );
 }
 
@@ -160,7 +159,7 @@ export const showQuestionOpenModePremiumFeature =
     return await window.electron.showQuestion(
       "You're about to run a job that normally requires Premium access, but you're running Cyd in open source developer mode, so you don't have to authenticate with the Cyd server to use these features.\n\nIf you're not contributing to Cyd, please support the project by paying for a Premium plan.",
       "Continue",
-      "Cancel"
+      "Cancel",
     );
   };
 

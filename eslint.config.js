@@ -20,7 +20,7 @@ export default tseslint.config(
       "build/**/*",
       "out/**/*",
       "node_modules/**/*",
-      "src/renderer/vite.config.ts"
+      "src/renderer/vite.config.ts",
     ],
   },
   // TypeScript files
@@ -67,10 +67,7 @@ export default tseslint.config(
         ...globals.node,
       },
     },
-    extends: [
-      pluginVue.configs["flat/recommended"],
-      eslintConfigPrettier,
-    ],
+    extends: [pluginVue.configs["flat/recommended"], eslintConfigPrettier],
     settings: {
       "import/resolver": {
         node: {
@@ -78,5 +75,5 @@ export default tseslint.config(
         },
       },
     },
-  }
+  },
 );
