@@ -499,7 +499,7 @@ onUnmounted(async () => {
             <!-- Archive only option -->
             <div v-if="model.state == State.Login" class="text-center ms-2 mt-2 mb-4">
                 <button class="btn btn-secondary" @click="setState(State.WizardArchiveOnly)">
-                    Import Archive Only
+                    Import Archive Only (for deleted X accounts with an archive)
                 </button>
             </div>
 

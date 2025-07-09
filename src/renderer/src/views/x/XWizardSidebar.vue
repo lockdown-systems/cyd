@@ -68,10 +68,10 @@ onMounted(async () => {
 
 <template>
     <div class="wizard-sidebar">
-        <p v-if="model.account && model.account.xAccount" class="p-1 small text-muted">
+        <p v-if="model.account && model.account.xAccount && !model.account?.xAccount?.archiveOnly" class="p-1 small text-muted">
             <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
                 Cyd could not detect how many likes and tweets you have.
-                <a v-if="!model.account?.xAccount?.archiveOnly" href="#" @click="reloadUserStats">
+                <a href="#" @click="reloadUserStats">
                     Try again.
                 </a>
             </template>
