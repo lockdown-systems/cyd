@@ -8,7 +8,10 @@ const archiveData = inject("archiveData") as Ref<XArchive>;
 </script>
 
 <template>
-  <TweetsDisplayComponent :tweets="archiveData.likes" tweetTypePlural="likes" />
+  <TweetsDisplayComponent
+    :tweets="archiveData.likes"
+    tweet-type-plural="likes"
+  />
 </template>
 
 <style scoped></style>

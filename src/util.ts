@@ -189,7 +189,7 @@ export function writeJSONObject(
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
     const suffix = i < keys.length - 1 ? ",\n" : "\n";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     streamWriter.write(
       `    "${key}": ${JSON.stringify((item as any)[key])}${suffix}`,
     );

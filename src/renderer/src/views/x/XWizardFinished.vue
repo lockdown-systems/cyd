@@ -449,9 +449,7 @@ onMounted(async () => {
           <p>
             <strong
               >Uh oh, Cyd encountered
-              {{
-                model.progress.errorsOccured.toLocaleString()
-              }}
+              {{ model.progress.errorsOccured.toLocaleString() }}
               errors.</strong
             >
             Please submit an error report so we can fix the problems you

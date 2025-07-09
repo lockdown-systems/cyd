@@ -50,8 +50,8 @@ const selectConversation = (conversationID: string) => {
           <div class="filter-container">
             <p>
               <input
-                type="text"
                 v-model="conversationFilterText"
+                type="text"
                 class="form-control"
                 placeholder="Filter your conversations"
               />
@@ -81,8 +81,8 @@ const selectConversation = (conversationID: string) => {
           <div class="filter-container">
             <p>
               <input
-                type="text"
                 v-model="messageFilterText"
+                type="text"
                 class="form-control"
                 placeholder="Filter your messages"
               />

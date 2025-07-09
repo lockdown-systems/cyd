@@ -33,8 +33,8 @@ const filteredTweets = computed(() => {
     <div class="filter-container">
       <p>
         <input
-          type="text"
           v-model="filterText"
+          type="text"
           class="form-control"
           :placeholder="filterTextPlaceholder"
         />

@@ -201,7 +201,6 @@ export default class CydAPIClient {
     return fetch(resource, options);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fetchAuthenticated(
     method: string,
     resource: RequestInfo,
