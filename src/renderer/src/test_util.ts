@@ -32,26 +32,22 @@ export const stubElectron = () => {
       dismissNewErrorReports: cy.stub(),
       getAccount: cy.stub().resolves(null),
       getAccounts: cy.stub().resolves([]),
-      createAccount: cy
-        .stub()
-        .resolves({
-          id: 1,
-          type: "X",
-          sortOrder: 0,
-          xAccount: null,
-          blueskyAccount: null,
-          uuid: "uuid",
-        }),
-      selectAccountType: cy
-        .stub()
-        .resolves({
-          id: 1,
-          type: "X",
-          sortOrder: 0,
-          xAccount: null,
-          blueskyAccount: null,
-          uuid: "uuid",
-        }),
+      createAccount: cy.stub().resolves({
+        id: 1,
+        type: "X",
+        sortOrder: 0,
+        xAccount: null,
+        blueskyAccount: null,
+        uuid: "uuid",
+      }),
+      selectAccountType: cy.stub().resolves({
+        id: 1,
+        type: "X",
+        sortOrder: 0,
+        xAccount: null,
+        blueskyAccount: null,
+        uuid: "uuid",
+      }),
       saveAccount: cy.stub(),
       deleteAccount: cy.stub(),
     },

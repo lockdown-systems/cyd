@@ -47,7 +47,7 @@ onMounted(() => {
           >
             <span class="navbar-toggler-icon"></span>
           </button>
-          <div class="collapse navbar-collapse" id="navbarNav">
+          <div id="navbarNav" class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto">
               <li
                 v-if="

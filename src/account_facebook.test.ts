@@ -9,6 +9,7 @@ import {
   FacebookStoryRow,
   FacebookAttachedStoryRow,
   FacebookMediaRow,
+  FacebookAccountController,
 } from "./account_facebook";
 
 // Mock the util module
@@ -85,7 +86,6 @@ global.fetch = fetchMock;
 
 // Import the local modules after stuff has been mocked
 import { Account, ResponseData } from "./shared_types";
-import { FacebookAccountController } from "./account_facebook";
 import { IMITMController } from "./mitm";
 import * as database from "./database";
 

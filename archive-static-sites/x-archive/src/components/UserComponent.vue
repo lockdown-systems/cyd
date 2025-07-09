@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="user" v-if="user">
+  <div v-if="user" class="user">
     <span class="avatar"
       ><img :src="user.profileImageDataURI" alt="Avatar"
     /></span>

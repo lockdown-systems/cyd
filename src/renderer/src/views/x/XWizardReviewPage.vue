@@ -250,13 +250,9 @@ onMounted(async () => {
                   "
                 >
                   unless they have at least
-                  {{
-                    model.account?.xAccount?.deleteTweetsRetweetsThreshold
-                  }}
+                  {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }}
                   retweets or
-                  {{
-                    model.account?.xAccount?.deleteTweetsLikesThreshold
-                  }}
+                  {{ model.account?.xAccount?.deleteTweetsLikesThreshold }}
                   likes
                 </span>
                 <div v-if="deleteTweetsCountNotArchived > 0">

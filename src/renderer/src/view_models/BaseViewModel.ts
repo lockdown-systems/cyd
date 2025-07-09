@@ -221,7 +221,6 @@ export class BaseViewModel {
     this.logs = [];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async error(
     automationErrorType: AutomationErrorType,
     errorReportData: any = null,

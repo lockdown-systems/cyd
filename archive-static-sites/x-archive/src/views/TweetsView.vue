@@ -10,7 +10,7 @@ const archiveData = inject("archiveData") as Ref<XArchive>;
 <template>
   <TweetsDisplayComponent
     :tweets="archiveData.tweets"
-    tweetTypePlural="tweets"
+    tweet-type-plural="tweets"
   />
 </template>
 

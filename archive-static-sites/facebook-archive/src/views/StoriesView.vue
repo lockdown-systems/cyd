@@ -34,8 +34,8 @@ const filteredStories = computed(() => {
     <div class="filter-container">
       <p>
         <input
-          type="text"
           v-model="filterText"
+          type="text"
           class="form-control"
           placeholder="Filter your posts"
         />

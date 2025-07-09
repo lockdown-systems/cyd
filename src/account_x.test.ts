@@ -20,6 +20,7 @@ import {
   isXAPIBookmarksData,
   isXAPIData,
   isXAPIData_v2,
+  XAccountController,
 } from "./account_x";
 
 // Mock the util module
@@ -96,7 +97,6 @@ global.fetch = fetchMock;
 
 // Import the local modules after stuff has been mocked
 import { Account, ResponseData, XProgress } from "./shared_types";
-import { XAccountController } from "./account_x";
 import { IMITMController } from "./mitm";
 import * as database from "./database";
 
