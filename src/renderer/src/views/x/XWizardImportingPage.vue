@@ -35,7 +35,11 @@ const platform = ref('');
 
 // Buttons
 const backClicked = async () => {
-    emit('setState', State.WizardImportStart);
+    if (props.model.account?.xAccount?.archiveOnly) {
+        emit('setState', State.WizardArchiveOnly);
+    } else {
+        emit('setState', State.WizardImportStart);
+    }
 };
 
 const createCountString = (importCount: number, skipCount: number) => {
@@ -110,6 +114,10 @@ const startClicked = async () => {
         importFailed.value = true;
     } else {
         statusImportingTweets.value = ImportStatus.Finished;
+        // Update the path if it was changed during import (for archive-only accounts)
+        if (tweetsResp.updatedArchivePath) {
+            unzippedPath = tweetsResp.updatedArchivePath;
+        }
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
@@ -123,6 +131,10 @@ const startClicked = async () => {
         importFailed.value = true;
     } else {
         statusImportingLikes.value = ImportStatus.Finished;
+        // Update the path if it was changed during import (for archive-only accounts)
+        if (likesResp.updatedArchivePath) {
+            unzippedPath = likesResp.updatedArchivePath;
+        }
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
@@ -149,6 +161,10 @@ const startClicked = async () => {
     if (!importFailed.value) {
         await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
         importFinished.value = true;
+
+        // Reload the account data to reflect the updated username
+        await props.model.reloadAccount();
+        emitter.emit('account-updated');
     }
 
 };
