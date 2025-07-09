@@ -9,8 +9,8 @@ build_archive_site() {
     rm -f ${site}-archive/public/assets/archive.js
     cd ${site}-archive
     rm -r dist || true
-    npm install
-    npm run build
+    pnpm --filter ${site}-archive install
+    pnpm --filter ${site}-archive build
 
     # Zip it up
     cd dist
