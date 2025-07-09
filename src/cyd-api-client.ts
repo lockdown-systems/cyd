@@ -204,6 +204,7 @@ export default class CydAPIClient {
   fetchAuthenticated(
     method: string,
     resource: RequestInfo,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body: any,
   ): Promise<Response> {
     const options: RequestInit = {

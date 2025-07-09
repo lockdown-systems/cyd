@@ -62,6 +62,7 @@ const getImageClass = (_index: number) => {
         </small>
       </div>
       <div v-if="tweetItem.t" class="mt-4 fs-3">
+        <!-- eslint-disable-next-line vue/no-v-html -->
         <p class="tweet-text" v-html="tweetItem.t" />
       </div>
       <div v-else class="mt-4 fs-3">

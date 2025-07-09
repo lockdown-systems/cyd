@@ -1,5 +1,5 @@
 import { WebviewTag } from "electron";
-import { Emitter, EventType } from "mitt";
+import type { Emitter, EventType } from "mitt";
 import type { Account } from "../../../shared_types";
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from "../automation_errors";
@@ -226,7 +226,9 @@ export class BaseViewModel {
 
   async error(
     automationErrorType: AutomationErrorType,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorReportData: any = null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sensitiveContextData: any = null,
     allowContinue: boolean = false,
   ) {
