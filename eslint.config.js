@@ -1,58 +1,53 @@
-const eslint = require("@eslint/js");
-const tseslint = require("typescript-eslint");
-const pluginVue = require("eslint-plugin-vue");
-const globals = require("globals");
+import globals from "globals";
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import pluginVue from "eslint-plugin-vue";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
+import importPlugin from "eslint-plugin-import";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 
-module.exports = tseslint.config(
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export default tseslint.config(
   {
     ignores: [
-      "src/renderer/.vite/",
-      "src/renderer/vite.config.ts",
-      "src/renderer/cypress.config.cjs",
-      "src/renderer/cypress/",
+      "eslint.config.ts",
+      "vitest.config.ts",
+      "vite.*.config.ts",
+      ".vite/**/*",
+      "build/**/*",
+      "dist/**/*",
+      "out/**/*",
+      "node_modules/**/*"
     ],
   },
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...pluginVue.configs["flat/recommended"],
   {
-    plugins: {
-      "typescript-eslint": tseslint.plugin,
-    },
-    languageOptions: {
-      parserOptions: {
-        parser: tseslint.parser,
-        project: "./packages/**/tsconfig.json",
-        extraFileExtensions: [".vue"],
-        sourceType: "module",
-      },
-    },
-  },
-  {
-    files: ["src/renderer/**/*.{js,ts,vue}"],
+    extends: [
+      eslint.configs.recommended,
+      tseslint.configs.recommended,
+      importPlugin.flatConfigs.recommended,
+      pluginVue.configs["flat/recommended"],
+      eslintConfigPrettier,
+    ],
+    files: ["**/*.ts", "**/*.tsx", "**/*.vue"],
     languageOptions: {
       globals: {
-        ...globals.browser
+        ...globals.browser,
+        ...globals.node,
+      },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
       },
     },
-  },
-  {
-    // Ignore @typescript-eslint/no-unused-vars that start with underscore
-    rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
+    settings: {
+      "import/resolver": {
+        node: {
+          extensions: [".js", ".jsx", ".ts", ".tsx", ".vue"],
         },
-      ],
-      // Ignore Vue style rules that conflict with my auto-formatting
-      "vue/max-attributes-per-line": "off",
-      "vue/html-indent": "off",
-      "vue/html-closing-bracket-newline": "off",
-      "vue/first-attribute-linebreak": "off",
-      // It's okay for me to use v-html because of no user-provided input in speech bubbles
-      "vue/no-v-html": "off",
+      },
     },
   }
 );
