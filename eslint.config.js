@@ -18,30 +18,59 @@ export default tseslint.config(
       "vite.*.config.ts",
       ".vite/**/*",
       "build/**/*",
-      "dist/**/*",
       "out/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "src/renderer/vite.config.ts"
     ],
   },
+  // TypeScript files
   {
-    extends: [
-      eslint.configs.recommended,
-      tseslint.configs.recommended,
-      importPlugin.flatConfigs.recommended,
-      pluginVue.configs["flat/recommended"],
-      eslintConfigPrettier,
-    ],
-    files: ["**/*.ts", "**/*.tsx", "**/*.vue"],
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
+      parser: tseslint.parser,
       parserOptions: {
         projectService: true,
         tsconfigRootDir: __dirname,
       },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
+    extends: [
+      eslint.configs.recommended,
+      tseslint.configs.recommended,
+      importPlugin.flatConfigs.recommended,
+      eslintConfigPrettier,
+    ],
+    settings: {
+      "import/resolver": {
+        node: {
+          extensions: [".js", ".jsx", ".ts", ".tsx"],
+        },
+      },
+    },
+  },
+  // Vue files
+  {
+    files: ["**/*.vue"],
+    languageOptions: {
+      parser: pluginVue.parser,
+      parserOptions: {
+        parser: tseslint.parser,
+        projectService: true,
+        tsconfigRootDir: __dirname,
+        extraFileExtensions: [".vue"],
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    extends: [
+      pluginVue.configs["flat/recommended"],
+      eslintConfigPrettier,
+    ],
     settings: {
       "import/resolver": {
         node: {
