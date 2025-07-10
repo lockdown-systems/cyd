@@ -15,7 +15,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.16.2",
-    "@vue/cli-plugin-eslint": "~5.0.8",
     "@vue/cli-plugin-router": "~5.0.8",
     "@vue/cli-plugin-typescript": "~5.0.8",
     "@vue/cli-service": "~5.0.8",

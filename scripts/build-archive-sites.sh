@@ -8,7 +8,6 @@ build_archive_site() {
     echo ">> Building ${site} archive static site..."
     rm -f archive-static-sites/${site}-archive/public/assets/archive.js
     rm -r archive-static-sites/${site}-archive/dist || true
-    pnpm --filter ${site}-archive install
     pnpm --filter ${site}-archive build
 
     # Zip it up
