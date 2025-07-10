@@ -1,4 +1,8 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from "vue-router";
+import {
+  createRouter,
+  createWebHashHistory,
+  type RouteRecordRaw,
+} from "vue-router";
 import StoriesView from "../views/StoriesView.vue";
 
 const routes: Array<RouteRecordRaw> = [

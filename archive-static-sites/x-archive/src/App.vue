@@ -5,7 +5,6 @@ import { XArchive } from "./types";
 
 const archiveDataFound = ref(false);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const archiveData = ref<XArchive>((window as any).archiveData);
 provide("archiveData", archiveData);
 
