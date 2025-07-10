@@ -50,6 +50,7 @@ const formattedAttachedStoryText = computed(() => {
       <h3 v-if="story.lifeEventTitle">{{ story.lifeEventTitle }}</h3>
 
       <!-- Text -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <p v-if="story.text" v-html="formattedText"></p>
 
       <!-- Attached story -->

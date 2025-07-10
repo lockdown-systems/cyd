@@ -51,11 +51,13 @@ const filename = computed(() => {
         ERROR: unknown media type: {{ media.mediaType }}
       </p>
     </template>
+    <!-- eslint-disable vue/no-v-html -->
     <p
       v-if="media.title"
       class="text-muted small mt-1"
       v-html="formattedTitle"
     ></p>
+    <!-- eslint-enable vue/no-v-html -->
   </div>
 </template>
 

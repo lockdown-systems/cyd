@@ -4,7 +4,6 @@ import { formattedDate } from "./helpers";
 import { FacebookArchive } from "./types";
 
 const archiveDataFound = ref(false);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const archiveData = ref<FacebookArchive>((window as any).archiveData);
 
 provide("archiveData", archiveData);
