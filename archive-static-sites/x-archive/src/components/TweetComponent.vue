@@ -75,6 +75,7 @@ function atUriToBlueskyUrl(atUri: string): string {
     </div>
     <div class="mt-2">
       <!-- Text -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <p v-html="formattedText"></p>
       <!-- Media -->
       <div v-if="tweet.media.length > 0">

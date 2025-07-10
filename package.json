@@ -18,7 +18,7 @@
     "test:components": "cd src/renderer && cypress run --component",
     "open-cypress": "cd src/renderer && cypress open",
     "lint": "prettier . --check && eslint --max-warnings=0",
-    "lint-fix": "eslint --fix && prettier --write .",
+    "lint-fix": "prettier --write . && eslint --fix",
     "config-open": "./archive-static-sites/build.sh && cp ./config/open.json ./build/config.json",
     "config-local": "./archive-static-sites/build.sh && cp ./config/local.json ./build/config.json",
     "config-dev": "./archive-static-sites/build.sh && cp ./config/dev.json ./build/config.json",
