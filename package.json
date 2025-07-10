@@ -9,7 +9,6 @@
   "scripts": {
     "clean": "node ./scripts/clean.mjs",
     "start": "electron-forge start",
-    "package": "electron-forge package",
     "make-local": "node ./scripts/make.js make local",
     "make-dev": "node ./scripts/make.js make dev",
     "make-prod": "node ./scripts/make.js make prod",
