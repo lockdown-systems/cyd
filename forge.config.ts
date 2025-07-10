@@ -53,7 +53,7 @@ function findLatestSigntoolPath(): string {
       .readdirSync(baseDir, { withFileTypes: true })
       .filter(
         (dirent) =>
-          dirent.isDirectory() && dirent.name.startsWith(versionPrefix)
+          dirent.isDirectory() && dirent.name.startsWith(versionPrefix),
       )
       .map((dirent) => dirent.name);
 
@@ -63,7 +63,7 @@ function findLatestSigntoolPath(): string {
 
     // Sort the directories to find the largest version
     directories.sort((a, b) =>
-      b.localeCompare(a, undefined, { numeric: true })
+      b.localeCompare(a, undefined, { numeric: true }),
     );
 
     // Get the largest version directory
@@ -74,7 +74,7 @@ function findLatestSigntoolPath(): string {
       baseDir,
       latestVersionDir,
       "x64",
-      "signtool.exe"
+      "signtool.exe",
     );
 
     // Check if signtool.exe exists
@@ -136,18 +136,18 @@ if (process.env.MACOS_RELEASE === "true") {
       const entitlementDefault = path.join(
         assetsPath,
         "entitlements",
-        "default.plist"
+        "default.plist",
       );
       const entitlementGpu = path.join(assetsPath, "entitlements", "gpu.plist");
       const entitlementPlugin = path.join(
         assetsPath,
         "entitlements",
-        "plugin.plist"
+        "plugin.plist",
       );
       const entitlementRenderer = path.join(
         assetsPath,
         "entitlements",
-        "renderer.plist"
+        "renderer.plist",
       );
 
       if (filePath.includes("(Plugin).app")) {
@@ -321,7 +321,7 @@ const config: ForgeConfig = {
       buildPath,
       electronVersion,
       platform,
-      _arch
+      _arch,
     ) => {
       if (platform !== "darwin") {
         return;
