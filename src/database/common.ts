@@ -16,6 +16,18 @@ export interface Sqlite3Count {
   count: number;
 }
 
+// Check if the database is initialized
+export const isDatabaseInitialized = (): boolean => {
+  try {
+    // Check if the database is accessible by running a simple query
+    getMainDatabase().prepare("SELECT 1").get();
+    return true;
+  } catch (error) {
+    log.error("Database initialization check failed:", error);
+    return false;
+  }
+};
+
 // Migrations
 
 export type Migration = {

@@ -200,6 +200,17 @@ async function initializeApp() {
   }
   log.info(`Started with log level ${log.transports.console.level}`);
 
+  // Make sure the database works and we don't have a better-sqlite3 error
+  if (!database.isDatabaseInitialized()) {
+    log.error("Database is not initialized or accessible.");
+    dialog.showErrorBox(
+      "Cyd Error",
+      "The database is not initialized or accessible. The application will now exit.",
+    );
+    app.quit();
+    return;
+  }
+
   // Run database migrations
   try {
     database.runMainMigrations();
