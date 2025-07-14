@@ -235,7 +235,7 @@ onMounted(async () => {
     <div class="wizard-content">
         <BreadcrumbsComponent :buttons="[
             { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
-            { label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') },
+            ...(props.model.account?.xAccount?.archiveOnly ? [] : [{ label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') }]),
             { label: 'Import X Archive', action: backClicked, icon: getBreadcrumbIcon('import') },
         ]" label="Importing" :icon="getBreadcrumbIcon('import')" />
 
