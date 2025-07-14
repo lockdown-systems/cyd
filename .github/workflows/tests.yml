@@ -37,9 +37,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Install @electron/rebuild
-        run: pnpm add -D -w @electron/rebuild
-
       - name: Rebuild native modules for CI
         run: pnpm exec electron-rebuild --force
 
