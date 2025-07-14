@@ -32,7 +32,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential python3
+          sudo apt-get install -y build-essential python3 xvfb
 
       - name: Install dependencies (skip postinstall)
         run: pnpm install --frozen-lockfile
@@ -48,8 +48,10 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
-      - name: Run tests (without rebuild)
-        run: pnpm run test:ci
+      - name: Run tests in Electron environment
+        run: xvfb-run -a pnpm run test:ci
+        env:
+          CI: true
 
       - name: Run component tests
         run: pnpm test:components
