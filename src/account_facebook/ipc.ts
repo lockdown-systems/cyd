@@ -6,6 +6,7 @@ import {
     FacebookJob,
     FacebookProgress,
     FacebookDatabaseStats,
+    FacebookDeletePostsStartResponse,
 } from '../shared_types'
 import { getMITMController } from '../mitm';
 import { packageExceptionForReport } from '../util'
@@ -138,6 +139,24 @@ export const defineIPCFacebook = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('Facebook:deletePostsStart', async (_, accountID: number): Promise<FacebookDeletePostsStartResponse> => {
+        try {
+            const controller = getFacebookAccountController(accountID);
+            return await controller.deletePostsStart();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('Facebook:deletePost', async (_, accountID: number, storyID: string, deleteType: string): Promise<void> => {
+            try {
+                const controller = getFacebookAccountController(accountID);
+                await controller.deletePost(storyID, deleteType);
+            } catch (error) {
+                throw new Error(packageExceptionForReport(error as Error));
+            }
+        });
 
     ipcMain.handle('Facebook:getDatabaseStats', async (_, accountID: number): Promise<FacebookDatabaseStats> => {
         try {

@@ -27,6 +27,7 @@ import type {
     FacebookProgress,
     FacebookJob,
     FacebookDatabaseStats,
+    FacebookDeletePostsStartResponse,
 } from "../../shared_types";
 import App from "./App.vue";
 
@@ -157,6 +158,8 @@ declare global {
                 indexStart: (accountID: number) => Promise<void>;
                 indexStop: (accountID: number) => Promise<void>;
                 savePosts: (accountID: number) => Promise<FacebookProgress>;
+                deletePostsStart: (accountID: number) => Promise<FacebookDeletePostsStartResponse>;
+                deletePost: (accountID: number, storyID: string, deleteType: string) => Promise<void>;
                 getDatabaseStats: (accountID: number) => Promise<FacebookDatabaseStats>;
             },
             onPowerMonitorSuspend: (callback: () => void) => Promise<void>;

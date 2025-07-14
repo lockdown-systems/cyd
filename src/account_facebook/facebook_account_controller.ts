@@ -894,6 +894,19 @@ export class FacebookAccountController {
         return { posts };
     }
 
+    // Save the post's deleted*At timestamp
+    async deletePost(storyID: string, deleteType: string) {
+        if (!this.db) {
+            this.initDB();
+        }
+
+        if (deleteType == "post") {
+            exec(this.db, 'UPDATE story SET deletedStoryAt = ? WHERE storyID = ?', [new Date(), storyID]);
+        } else {
+            throw new Error("Invalid deleteType");
+        }
+    }
+
     async syncProgress(progressJSON: string) {
         this.progress = JSON.parse(progressJSON);
     }

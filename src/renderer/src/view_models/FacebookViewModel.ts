@@ -1,8 +1,14 @@
 import { WebviewTag } from 'electron';
 import { BaseViewModel, TimeoutError, InternetDownError, URLChangedError } from './BaseViewModel';
 import {
+    ArchiveInfo,
+    FacebookDatabaseStats,
+    FacebookDeletePostsStartResponse,
     FacebookJob,
+    FacebookPostItem,
     FacebookProgress,
+    emptyArchiveInfo,
+    emptyFacebookDatabaseStats,
     emptyFacebookProgress
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
@@ -148,6 +154,8 @@ export class FacebookViewModel extends BaseViewModel {
     public progress: FacebookProgress = emptyFacebookProgress();
     public jobs: FacebookJob[] = [];
     public currentJobIndex: number = 0;
+    public databaseStats: FacebookDatabaseStats = emptyFacebookDatabaseStats();
+    public archiveInfo: ArchiveInfo = emptyArchiveInfo();
 
     // Variables related to debugging
     public debugAutopauseEndOfStep: boolean = false;
@@ -161,7 +169,16 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.currentJobIndex = 0;
 
+        await this.refreshDatabaseStats();
+
         super.init(webview);
+    }
+
+     async refreshDatabaseStats() {
+        this.databaseStats = await window.electron.Facebook.getDatabaseStats(this.account.id);
+        this.archiveInfo = await window.electron.archive.getInfo(this.account.id);
+        this.emitter?.emit(`facebook-update-database-stats-${this.account.id}`);
+        this.emitter?.emit(`facebook-update-archive-info-${this.account.id}`);
     }
 
     async defineJobs() {
@@ -186,7 +203,7 @@ export class FacebookViewModel extends BaseViewModel {
         if (jobsType === "delete") {
             if (hasSomeData && this.account.facebookAccount?.deletePosts) {
                 jobTypes.push("deletePosts");
-                shouldBuildArchive = true;
+                // shouldBuildArchive = true;
             }
         }
 
@@ -404,7 +421,7 @@ export class FacebookViewModel extends BaseViewModel {
             await this.scriptClickElement(managedPostsButtonSelector);
             await this.sleep(2000);
         } catch (e) {
-            this.log("runJobIndexTweets", ["selector never appeared", e]);
+            this.log("runJobSavePosts", ["selector never appeared", e]);
             if (e instanceof TimeoutError) {
                 await this.error(AutomationErrorType.facebook_runJob_savePosts_Timeout, {
                     error: formatError(e as Error)
@@ -484,21 +501,101 @@ export class FacebookViewModel extends BaseViewModel {
         return true;
     }
 
-    async runJobDeletePosts(jobIndex: number): Promise<boolean> {
+    async runJobDeletePosts(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_DELETE_POSTS, navigator.userAgent);
 
-        this.showBrowser = true;
+        // this.showBrowser = true;
+        let postsToDelete: FacebookDeletePostsStartResponse;
         this.instructions = `**I'm deleting your posts based on your criteria, starting with the earliest.**`;
 
         this.showAutomationNotice = false;
 
         // TODO: implement
 
+        // Load the posts to delete
+        try {
+            postsToDelete = await window.electron.Facebook.deletePostsStart(this.account.id);
+        } catch (e) {
+            await this.error(AutomationErrorType.facebook_runJob_deletePosts_FailedToStart, {
+                error: formatError(e as Error)
+            })
+            return false;
+        }
+        this.log('runJobDeletePosts', `found ${postsToDelete.posts.length} posts to delete`);
+
+        // Start the progress
+        this.progress.totalPostsToDelete = postsToDelete.posts.length;
+        this.progress.postsDeleted = 0;
+        await this.syncProgress();
+
+        // Delete posts
+        for (let i = 0; i < postsToDelete.posts.length; i++) {
+            const currentPostItem: FacebookPostItem | null = postsToDelete.posts[i];
+
+            // Delete the post
+            let postDeleted = false;
+            let statusCode = 0;
+            for (let tries = 0; tries < 3; tries++) {
+                statusCode = await this.graphqlDelete(
+                    ct0,
+                    'https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet',
+                    "https://x.com/" + this.account.xAccount?.username + "/with_replies",
+                    JSON.stringify({
+                        "variables": {
+                            "tweet_id": currentPostItem.id,
+                            "dark_request": false
+                        },
+                        "queryId": "VaenaVgh5q5ih7kvyVjgtg"
+                    }),
+                );
+                if (statusCode == 200) {
+                    // Update the post's deletedAt date
+                    try {
+                        await window.electron.Facebook.deletePost(this.account.id, currentPostItem.id, "post");
+                        postDeleted = true;
+                        this.progress.postsDeleted += 1;
+                        await this.syncProgress();
+                    } catch (e) {
+                        await this.error(AutomationErrorType.facebook_runJob_deletePosts_FailedToUpdateDeleteTimestamp, {
+                            error: formatError(e as Error)
+                        }, {
+                            post: currentPostItem,
+                            index: i
+                        }, true)
+                    }
+                    break;
+                } else if (statusCode == 429) {
+                    // Rate limited
+                    this.log('runJobDeletePosts', 'Rate limited')
+                    // this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    // await this.waitForRateLimit();
+                    tries = 0;
+                } else {
+                    // Sleep 1 second and try again
+                    this.log("runJobDeleteposts", ["statusCode", statusCode, "failed to delete post, try #", tries]);
+                    await this.sleep(1000);
+                }
+            }
+
+            if (!postDeleted) {
+                await this.error(AutomationErrorType.facebook_runJob_deletePosts_FailedToDelete, {
+                    statusCode: statusCode
+                }, {
+                    post: currentPostItem,
+                    index: i
+                }, true)
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
+
+            await this.waitForPause();
+        }
+
         this.pause();
         await this.waitForPause();
 
         await this.finishJob(jobIndex);
-        return true;
     }
 
     async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
@@ -521,6 +618,9 @@ export class FacebookViewModel extends BaseViewModel {
 
         // Submit progress to the API
         this.emitter?.emit(`x-submit-progress-${this.account.id}`)
+
+        this.pause();
+        await this.waitForPause();
 
         await this.finishJob(jobIndex);
         return true;
@@ -655,6 +755,8 @@ You'll be able to access it even after you delete it from Facebook.`;
                         }
                     }
                     this.currentJobIndex = 0;
+
+                    await this.refreshDatabaseStats();
 
                     // Determine the next state
                     this.state = State.FinishedRunningJobs;
