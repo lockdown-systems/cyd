@@ -39,8 +39,11 @@ jobs:
         env:
           CI: true
 
-      - name: Rebuild native modules for CI
-        run: pnpm exec electron-rebuild --force
+      - name: Rebuild better-sqlite3 for Electron
+        run: |
+          ELECTRON_VERSION=$(node -e "console.log(require('./node_modules/electron/package.json').version)")
+          echo "Rebuilding better-sqlite3 for Electron $ELECTRON_VERSION"
+          npm_config_runtime=electron npm_config_target=$ELECTRON_VERSION npm_config_disturl=https://electronjs.org/headers npm_config_build_from_source=true pnpm rebuild better-sqlite3
 
       - name: Run lint
         run: pnpm lint
