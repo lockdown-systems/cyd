@@ -39,7 +39,7 @@ if (platform == "win32") {
 
 try {
   // Clean up previous builds and install dependencies
-  execSync(`node ./scripts/clean.js`, { stdio: "inherit" });
+  execSync(`node ./scripts/clean.mjs`, { stdio: "inherit" });
 
   // Build
   if (platform == "darwin") {
