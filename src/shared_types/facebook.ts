@@ -1,30 +1,36 @@
 // Facebook models
 
 export type FacebookJob = {
-  id: number | null;
-  jobType: string; // "login", "...",
-  status: string; // "pending", "running", "finished", "failed", "canceled"
-  scheduledAt: Date;
-  startedAt: Date | null;
-  finishedAt: Date | null;
-  progressJSON: string;
-  error: string | null;
+    id: number | null;
+    jobType: string; // "login", "...",
+    status: string; // "pending", "running", "finished", "failed", "canceled"
+    scheduledAt: Date;
+    startedAt: Date | null;
+    finishedAt: Date | null;
+    progressJSON: string;
+    error: string | null;
 };
 
 // Other Facebook types
 
 export type FacebookProgress = {
-  currentJob: string;
-  isSavePostsFinished: boolean;
-  storiesSaved: number;
-};
+    currentJob: string;
+    isSavePostsFinished: boolean;
+    storiesSaved: number;
+    totalPostsToDelete: number,
+    postsDeleted: number,
+    errorsOccured: number,
+}
 
 export function emptyFacebookProgress(): FacebookProgress {
-  return {
-    currentJob: "",
-    isSavePostsFinished: false,
-    storiesSaved: 0,
-  };
+    return {
+        currentJob: "",
+        isSavePostsFinished: false,
+        storiesSaved: 0,
+        totalPostsToDelete: 0,
+        postsDeleted: 0,
+        errorsOccured: 0,
+    };
 }
 
 export type FacebookPostItem = {
@@ -40,13 +46,13 @@ export type FacebookDeletePostsStartResponse = {
 }
 
 export type FacebookDatabaseStats = {
-  storiesSaved: number;
-  storiesDeleted: number;
-};
+    storiesSaved: number;
+    storiesDeleted: number;
+}
 
 export function emptyFacebookDatabaseStats(): FacebookDatabaseStats {
-  return {
-    storiesSaved: 0,
-    storiesDeleted: 0,
-  };
+    return {
+        storiesSaved: 0,
+        storiesDeleted: 0,
+    }
 }
