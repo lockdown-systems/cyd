@@ -4,11 +4,11 @@ import { XAccount, XProgressInfo } from "../../shared_types";
 import { getJobsType } from "./util";
 
 export async function xGetLastImportArchive(
-  accountID: number
+  accountID: number,
 ): Promise<Date | null> {
   const lastFinishedJob_importArchive = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_importArchive"
+    "lastFinishedJob_importArchive",
   );
   if (lastFinishedJob_importArchive) {
     return new Date(lastFinishedJob_importArchive);
@@ -17,15 +17,15 @@ export async function xGetLastImportArchive(
 }
 
 export async function xGetLastBuildDatabase(
-  accountID: number
+  accountID: number,
 ): Promise<Date | null> {
   const lastFinishedJob_indexTweets = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_indexTweets"
+    "lastFinishedJob_indexTweets",
   );
   const lastFinishedJob_indexLikes = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_indexLikes"
+    "lastFinishedJob_indexLikes",
   );
   if (lastFinishedJob_indexTweets || lastFinishedJob_indexLikes) {
     const lastFinishedJob_indexTweets_date = lastFinishedJob_indexTweets
@@ -44,27 +44,27 @@ export async function xGetLastBuildDatabase(
 export async function xGetLastDelete(accountID: number): Promise<Date | null> {
   const lastFinishedJob_deleteTweets = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_deleteTweets"
+    "lastFinishedJob_deleteTweets",
   );
   const lastFinishedJob_deleteRetweets = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_deleteRetweets"
+    "lastFinishedJob_deleteRetweets",
   );
   const lastFinishedJob_deleteLikes = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_deleteLikes"
+    "lastFinishedJob_deleteLikes",
   );
   const lastFinishedJob_deleteBookmarks = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_deleteBookmarks"
+    "lastFinishedJob_deleteBookmarks",
   );
   const lastFinishedJob_unfollowEveryone = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_unfollowEveryone"
+    "lastFinishedJob_unfollowEveryone",
   );
   const lastFinishedJob_deleteDMs = await window.electron.X.getConfig(
     accountID,
-    "lastFinishedJob_deleteDMs"
+    "lastFinishedJob_deleteDMs",
   );
 
   if (
@@ -101,8 +101,8 @@ export async function xGetLastDelete(accountID: number): Promise<Date | null> {
         lastFinishedJob_deleteLikes_date.getTime(),
         lastFinishedJob_deleteBookmarks_date.getTime(),
         lastFinishedJob_unfollowEveryone_date.getTime(),
-        lastFinishedJob_deleteDMs_date.getTime()
-      )
+        lastFinishedJob_deleteDMs_date.getTime(),
+      ),
     );
   }
   return null;
@@ -116,7 +116,7 @@ export async function xHasSomeData(accountID: number): Promise<boolean> {
 
 export async function xRequiresPremium(
   accountID: number,
-  xAccount: XAccount
+  xAccount: XAccount,
 ): Promise<boolean> {
   let requiresPremium = false;
   const jobsType = getJobsType(accountID);
@@ -134,19 +134,19 @@ export async function xRequiresPremium(
   // You can delete tweets for free, but only if you're not using these options
   if (xAccount.deleteTweets && xAccount.deleteTweetsDaysOldEnabled) {
     console.log(
-      "Requires premium: deleteTweets and deleteTweetsDaysOldEnabled"
+      "Requires premium: deleteTweets and deleteTweetsDaysOldEnabled",
     );
     requiresPremium = true;
   }
   if (xAccount.deleteTweets && xAccount.deleteTweetsLikesThresholdEnabled) {
     console.log(
-      "Requires premium: deleteTweets and deleteTweetsLikesThresholdEnabled"
+      "Requires premium: deleteTweets and deleteTweetsLikesThresholdEnabled",
     );
     requiresPremium = true;
   }
   if (xAccount.deleteTweets && xAccount.deleteTweetsRetweetsThresholdEnabled) {
     console.log(
-      "Requires premium: deleteTweets and deleteTweetsRetweetsThresholdEnabled"
+      "Requires premium: deleteTweets and deleteTweetsRetweetsThresholdEnabled",
     );
     requiresPremium = true;
   }
@@ -154,7 +154,7 @@ export async function xRequiresPremium(
   // You can delete retweets for free, but only if you're not using these options
   if (xAccount.deleteRetweets && xAccount.deleteRetweetsDaysOldEnabled) {
     console.log(
-      "Requires premium: deleteRetweets and deleteRetweetsDaysOldEnabled"
+      "Requires premium: deleteRetweets and deleteRetweetsDaysOldEnabled",
     );
     requiresPremium = true;
   }
@@ -183,11 +183,10 @@ export async function xRequiresPremium(
 export async function xPostProgress(
   apiClient: CydAPIClient,
   deviceInfo: DeviceInfo | null,
-  accountID: number
+  accountID: number,
 ) {
-  const progressInfo: XProgressInfo = await window.electron.X.getProgressInfo(
-    accountID
-  );
+  const progressInfo: XProgressInfo =
+    await window.electron.X.getProgressInfo(accountID);
   const postXProgresResp = await apiClient.postXProgress(
     {
       account_uuid: progressInfo.accountUUID,
@@ -206,7 +205,7 @@ export async function xPostProgress(
       total_tweets_migrated_to_bluesky:
         progressInfo.totalTweetsMigratedToBluesky,
     },
-    deviceInfo?.valid ? true : false
+    deviceInfo?.valid ? true : false,
   );
   if (
     postXProgresResp !== true &&
@@ -217,7 +216,7 @@ export async function xPostProgress(
     console.error(
       "xPostProgress",
       "failed to post progress to the API",
-      postXProgresResp.message
+      postXProgresResp.message,
     );
   }
 }

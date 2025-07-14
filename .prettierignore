@@ -1,0 +1,6 @@
+.vite
+out
+pnpm-lock.yaml
+.mypy_cache/
+testdata/
+docs/.docusaurus/

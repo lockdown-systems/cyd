@@ -16,7 +16,7 @@ Open Cyd. Click the **View** menu, and choose **Toggle Developer Tools**.
 If you're using a Mac, the **View** menu button will be at the very top of your screen. If you're using Windows or Linux, the **View** menu button will be at the top of the Cyd window.
 :::
 
-This will open the Developer Tools panel on the right side of the Cyd window. At the top of the panel there are different tabs. Click the **Console** tab. This will show you 
+This will open the Developer Tools panel on the right side of the Cyd window. At the top of the panel there are different tabs. Click the **Console** tab. This will show you
 
 ![Developer Tools Console](./img/devtools-console.png)
 
