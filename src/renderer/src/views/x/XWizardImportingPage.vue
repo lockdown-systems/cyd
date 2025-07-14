@@ -319,9 +319,12 @@ onMounted(async () => {
                         <i class="fa-solid fa-check" />
                         Import finished successfully!
                     </div>
-                    <p class="small text-muted">
+                    <p v-if="!props.model.account?.xAccount?.archiveOnly" class="small text-muted">
                         Cyd can backup even more data from your X account that isn't included in your archive. If you
                         don't care about this, you're ready to delete or migrate your data now.
+                    </p>
+                    <p v-if="props.model.account?.xAccount?.archiveOnly" class="small text-muted">
+                        You're ready to migrate your data now.
                     </p>
                 </template>
                 <template v-if="importFailed">
@@ -347,11 +350,15 @@ onMounted(async () => {
         <template v-else>
             <template v-if="importFinished">
                 <ButtonsComponent :back-buttons="[
-                    { label: 'Back to Import from X', action: backClicked },
+                    {
+                        label: props.model.account?.xAccount?.archiveOnly ? 'Back to Import X Archive' : 'Back to Import from X',
+                        action: () => emit('setState', props.model.account?.xAccount?.archiveOnly ? State.WizardArchiveOnly : State.WizardImportStart)
+                    },
                 ]" :next-buttons="[
                     {
                         label: 'Backup More Data from X',
                         action: () => emit('setState', State.WizardArchiveOptions),
+                        hide: props.model.account?.xAccount?.archiveOnly,
                     },
                     {
                         label: 'Go to Dashboard',
