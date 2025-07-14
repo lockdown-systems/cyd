@@ -18,7 +18,7 @@
     "publish-dev": "node ./scripts/make.js publish dev",
     "publish-prod": "node ./scripts/make.js publish prod",
     "test": "pnpm rebuild && vitest run . && node ./scripts/clean.mjs",
-    "test:ci": "vitest run . && node ./scripts/clean.mjs",
+    "test:ci": "electron --no-sandbox node_modules/vitest/vitest.mjs run . && node ./scripts/clean.mjs",
     "test:components": "cd src/renderer && cypress run --component",
     "open-cypress": "cd src/renderer && cypress open",
     "lint": "prettier . --check && eslint --max-warnings=0",
