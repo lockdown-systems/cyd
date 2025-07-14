@@ -40,7 +40,7 @@ const importArchive = async () => {
 };
 
 const goBack = () => {
-    emit('set-state', 'Login');
+    emit('set-state', 'WizardDashboard');
 };
 </script>
 
