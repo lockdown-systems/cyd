@@ -12,6 +12,7 @@ import {
     XDatabaseStats, emptyXDatabaseStats
 } from '../../../../shared_types';
 import SidebarArchive from '../shared_components/SidebarArchive.vue';
+import { xGetLastImportArchive } from '../../util_x';
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -60,14 +61,30 @@ const enableDebugMode = async () => {
     emit('setState', State.Debug);
 };
 
+// Check if sidebar should be hidden
+const shouldHideSidebar = ref(false);
+
+const updateSidebarVisibility = async () => {
+    if (props.model.account?.xAccount?.archiveOnly) {
+        const lastImportArchive = await xGetLastImportArchive(props.model.account.id);
+        shouldHideSidebar.value = lastImportArchive === null;
+    }
+};
+
 onMounted(async () => {
     shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
     databaseStats.value = await window.electron.X.getDatabaseStats(props.model.account.id);
+    await updateSidebarVisibility();
+});
+
+// Listen for account updates to refresh sidebar visibility
+emitter?.on('account-updated', async () => {
+    await updateSidebarVisibility();
 });
 </script>
 
 <template>
-    <div class="wizard-sidebar">
+    <div v-if="!shouldHideSidebar" class="wizard-sidebar">
         <p v-if="model.account && model.account.xAccount && !model.account?.xAccount?.archiveOnly" class="p-1 small text-muted">
             <template v-if="model.account?.xAccount?.tweetsCount == -1 || model.account?.xAccount?.likesCount == -1">
                 Cyd could not detect how many likes and tweets you have.
