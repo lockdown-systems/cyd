@@ -45,9 +45,3 @@ const goBack = () => {
     emit('set-state', 'WizardDashboard');
 };
 </script>
-
-<style scoped>
-.wizard-content {
-    padding: 2rem 0;
-}
-</style>

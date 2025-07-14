@@ -348,7 +348,7 @@ onMounted(async () => {
             ]" />
         </template>
         <template v-else>
-            <template v-if="importFinished">
+            <template v-if="importFinished || (importFailed && props.model.account?.xAccount?.archiveOnly)">
                 <ButtonsComponent :back-buttons="[
                     {
                         label: props.model.account?.xAccount?.archiveOnly ? 'Back to Import X Archive' : 'Back to Import from X',
@@ -358,7 +358,7 @@ onMounted(async () => {
                     {
                         label: 'Backup More Data from X',
                         action: () => emit('setState', State.WizardArchiveOptions),
-                        hide: props.model.account?.xAccount?.archiveOnly,
+                        hide: props.model.account?.xAccount?.archiveOnly || importFailed,
                     },
                     {
                         label: 'Go to Dashboard',
