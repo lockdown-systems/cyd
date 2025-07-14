@@ -83,6 +83,17 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100" @click="emit('setState', State.WizardArchiveOnly)">
+                        <div class="card-body align-items-center">
+                            <img src="/assets/icon-import.png" alt="Import X Archive">
+                            <h2>Import X Archive</h2>
+                            <p class="small mt-3">
+                                Import data from an X archive file to create a backup without logging to X.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
