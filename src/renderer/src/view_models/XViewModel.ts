@@ -64,6 +64,9 @@ export enum State {
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+    WizardArchiveOnly = "WizardArchiveOnly",
+    WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
+
     RunJobs = "RunJobs",
 
     FinishedRunningJobs = "FinishedRunningJobs",
@@ -2845,11 +2848,13 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     break;
 
                 case State.WizardPrestart:
-                    // Only load user stats if we don't know them yet, or if there's a config telling us to
+                    // Only load user stats if we don't know them yet, or if there's a config telling us to,
+                    // and be sure to skip loading user stats if we're in archive-only mode
                     if (
-                        this.account.xAccount?.tweetsCount === -1 ||
-                        this.account.xAccount?.likesCount === -1 ||
-                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true"
+                        (this.account.xAccount?.tweetsCount === -1 ||
+                            this.account.xAccount?.likesCount === -1 ||
+                            await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true") &&
+                        !this.account.xAccount?.archiveOnly
                     ) {
                         await this.loadUserStats();
                     }
@@ -2862,7 +2867,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     await this.loadBlank();
                     this.state = State.WizardDashboard;
                     break;
-                
+
                 case State.WizardDashboard:
                     this.showBrowser = false;
                     this.instructions = `
@@ -2956,6 +2961,30 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
+                    break;
+
+                case State.WizardArchiveOnly:
+                    // Set the account to archive-only mode
+                    if (this.account.xAccount) {
+                        const updatedAccount = {
+                            ...this.account,
+                            xAccount: {
+                                ...this.account.xAccount,
+                                archiveOnly: true
+                            }
+                        };
+
+                        await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
+                        this.account = updatedAccount;
+                    }
+
+                    this.showBrowser = false;
+                    this.instructions = `
+**You've chosen to use a pre-existing X archive.**
+
+I'll help you save them so you can view them locally or migrate them to Bluesky.`;
+                    await this.loadBlank();
+                    this.state = State.WizardArchiveOnlyDisplay;
                     break;
 
                 case State.FinishedRunningJobs:
