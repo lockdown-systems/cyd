@@ -10,6 +10,10 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
 
+    env:
+      ELECTRON_CACHE: /tmp/.cache/electron
+      ELECTRON_BUILDER_CACHE: /tmp/.cache/electron-builder
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,14 +29,25 @@ jobs:
           node-version: "22.x"
           cache: "pnpm"
 
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install @electron/rebuild
+        run: pnpm add -D -w @electron/rebuild
+
+      - name: Rebuild native modules for CI
+        run: pnpm exec electron-rebuild --force
 
       - name: Run lint
         run: pnpm lint
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run tests (without rebuild)
+        run: pnpm run test:ci
 
       - name: Run component tests
         run: pnpm test:components
