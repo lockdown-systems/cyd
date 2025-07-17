@@ -37,6 +37,7 @@ export type FacebookPostItem = {
     id: string; // storyID
     u: string; // URL
     t: string; //text
+    a: string; //userID
     d: string; // createdAt
     m: string[]; // media filenames
 }
