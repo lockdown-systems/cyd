@@ -24,6 +24,7 @@ const getJobTypeText = (jobType: string) => {
         login: 'Logging in',
         savePosts: 'Saving posts',
         savePostsHTML: 'Saving posts HTML',
+        deletePosts: 'Deleting posts',
         archiveBuild: 'Building archive',
     };
     return jobTypeTexts[jobType] || jobType;
