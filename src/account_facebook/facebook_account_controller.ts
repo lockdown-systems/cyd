@@ -80,9 +80,15 @@ export class FacebookAccountController {
         const ses = session.fromPartition(`persist:account-${this.accountID}`);
         ses.webRequest.onCompleted((_details) => {
             // TODO: Monitor for rate limits
+            // if (_details.url.startsWith("https://www.facebook.com/") && _details.url.includes('/api/graphql')) {
+            //     log.error("Details of webrequest on complete", _details)
+            // }
         });
 
         ses.webRequest.onSendHeaders((details) => {
+            // if (details.url.startsWith("https://www.facebook.com/") && details.url.includes('/api/graphql')) {
+            //     log.error("Details of webrequest on send headers", details)
+            // }
             // Keep track of cookies
             if (details.url.startsWith("https://www.facebook.com/") && details.requestHeaders) {
                 this.cookies = {};
@@ -236,7 +242,7 @@ export class FacebookAccountController {
     ): FacebookPostItem[] {
         const query = `
             SELECT
-                p.storyID, p.url, p.text, p.createdAt,
+                p.storyID, p.url, p.text, p.userID, p.createdAt,
                 pm.filename AS mediaFilename
             FROM story p
             LEFT JOIN media_story ms ON ms.storyID = p.storyID
@@ -249,6 +255,7 @@ export class FacebookAccountController {
             storyID: string;
             url: string;
             text: string;
+            userID: string;
             createdAt: string;
             mediaFilename: string | null;
         }[];
@@ -261,6 +268,7 @@ export class FacebookAccountController {
                     id: row.storyID,
                     u: row.url,
                     t: (row.text ? row.text.replace(/(?:\r\n|\r|\n)/g, '<br>').trim() : ""),
+                    a: row.userID,
                     d: row.createdAt,
                     m: [],
                 };
@@ -863,7 +871,7 @@ export class FacebookAccountController {
         await archiveZip.extract({ path: accountPath });
     }
 
-    // When you start deleting tweets, return a list of tweets to delete
+    // When you start deleting posts, return a list of posts to delete
     async deletePostsStart(): Promise<FacebookDeletePostsStartResponse> {
         log.info("FacebookAccountController.deletePostsStart");
 
@@ -875,7 +883,7 @@ export class FacebookAccountController {
             throw new Error("Account not found");
         }
 
-        // Determine the timestamp for filtering tweets
+        // Determine the timestamp for filtering posts
         const daysOldTimestamp = this.account.deletePostsDaysOldEnabled
             ? getTimestampDaysAgo(this.account.deletePostsDaysOld)
             : getTimestampDaysAgo(0);
