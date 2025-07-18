@@ -72,6 +72,18 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
+                <div v-if="props.model.account?.xAccount?.archiveOnly" class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100" @click="emit('setState', State.WizardArchiveOnly)">
+                        <span v-if="!hasSomeData" class="start-here-badge badge bg-primary">Start Here</span>
+                        <div class="card-body align-items-center">
+                            <img src="/assets/icon-import.png" alt="Import X Archive">
+                            <h2>Import X Archive</h2>
+                            <p class="small mt-3">
+                                Import data from an X archive file to create a backup without logging to X.
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100" @click="emit('setState', State.WizardMigrateToBluesky)">
                         <div class="card-body align-items-center">
@@ -79,17 +91,6 @@ onMounted(async () => {
                             <h2>Migrate to Bluesky</h2>
                             <p class="small mt-3">
                                 Migrate your tweets from your X account to a Bluesky account.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card h-100" @click="emit('setState', State.WizardArchiveOnly)">
-                        <div class="card-body align-items-center">
-                            <img src="/assets/icon-import.png" alt="Import X Archive">
-                            <h2>Import X Archive</h2>
-                            <p class="small mt-3">
-                                Import data from an X archive file to create a backup without logging to X.
                             </p>
                         </div>
                     </div>
