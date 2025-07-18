@@ -7,32 +7,33 @@
         <div class="wizard-scroll-content">
             <h2>Import X Archive</h2>
             <p>
-                You've chosen to import your X archive without logging in. This mode allows you to:
+                If you've deleted your X account, or otherwise can't sign into it, you can still migrate your
+                tweets to Bluesky! You'll need the following:
             </p>
             <ul>
-                <li>Import your X archive data</li>
-                <li>Save your tweets and bookmarks locally</li>
-                <li>Migrate your data to Bluesky (if you have a Premium plan)</li>
+                <li>A copy of your X archive that you downloaded earlier, for importing into Cyd</li>
+                <li>A Cyd <strong>Premium plan</strong>, for migrating to Bluesky</li>
             </ul>
             <p>
-                <b>Note:</b> Some features like deleting DMs or managing your X account will not be available in this mode.
+                When you're ready, <a href="#" @click="importArchive">continue to import your X archive</a>.
             </p>
-
-            <div class="mt-4">
-                <button class="btn btn-primary" @click="importArchive">
-                    Import X Archive
-                </button>
-                <button class="btn btn-secondary ms-2" @click="goBack">
-                    Go Back
-                </button>
-            </div>
         </div>
+
+        <ButtonsComponent :back-buttons="[
+            { label: 'Back to Dashboard', action: goBack, icon: 'fa-solid fa-backward' },
+        ]" :next-buttons="[
+            {
+                label: 'Continue to Import X Archive',
+                action: importArchive,
+            },
+        ]" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { getBreadcrumbIcon } from '../../util';
 import BreadcrumbsComponent from '../shared_components/BreadcrumbsComponent.vue';
+import ButtonsComponent from '../shared_components/ButtonsComponent.vue';
 
 const emit = defineEmits(['set-state', 'update-account']);
 

@@ -2980,9 +2980,9 @@ After you build a local database of your tweets, I can help you migrate them int
 
                     this.showBrowser = false;
                     this.instructions = `
-**You've chosen to use a pre-existing X archive.**
+# You've chosen to use a pre-existing X archive.
 
-I'll help you save them so you can view them locally or migrate them to Bluesky.`;
+I'll help you import your X data so you can view it locally or migrate your tweets to Bluesky.`;
                     await this.loadBlank();
                     this.state = State.WizardArchiveOnlyDisplay;
                     break;
