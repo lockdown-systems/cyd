@@ -140,6 +140,11 @@ const setState = async (state: State) => {
     await startStateLoop();
 };
 
+const archiveOnlyClicked = async () => {
+    model.value.cancelWaitForURL = true; // Cancel any ongoing wait for URL
+    await setState(State.WizardArchiveOnly);
+};
+
 const startStateLoop = async () => {
     console.log('State loop started');
     await setAccountRunning(props.account.id, true);
@@ -498,7 +503,7 @@ onUnmounted(async () => {
 
             <!-- Archive only option -->
             <div v-if="model.state == State.Login" class="text-center ms-2 mt-2 mb-4">
-                <button class="btn btn-secondary" @click="setState(State.WizardArchiveOnly)">
+                <button class="btn btn-secondary" @click="archiveOnlyClicked">
                     Import Archive Only (for deleted X accounts with an archive)
                 </button>
             </div>

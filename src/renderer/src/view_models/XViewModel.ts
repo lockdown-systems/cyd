@@ -629,6 +629,10 @@ export class XViewModel extends BaseViewModel {
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
         try {
             await this.waitForURL("https://x.com/home");
+            if (this.cancelWaitForURL) {
+                this.log("login", "Login cancelled");
+                return;
+            }
         } catch (e) {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
