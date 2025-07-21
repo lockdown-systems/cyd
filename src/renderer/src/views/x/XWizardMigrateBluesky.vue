@@ -206,8 +206,8 @@ onUnmounted(async () => {
                 </div>
 
                 <XLastImportOrBuildComponent :account-i-d="model.account.id" :show-button="true"
-                    :show-no-data-warning="true" :button-text="'Build Your Local Database'"
-                    :button-state="XState.WizardDatabase" @set-state="emit('setState', $event)" />
+                    :show-no-data-warning="true" :archive-only="props.model.account?.xAccount?.archiveOnly"
+                    @set-state="emit('setState', $event)" />
 
                 <template v-if="state == State.Loading">
                     <LoadingComponent />
