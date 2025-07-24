@@ -19,6 +19,7 @@ import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/ap
 
 import {
     getResourcesPath,
+    getDataPath,
     getAccountDataPath,
     getTimestampDaysAgo
 } from '../util'
@@ -1889,6 +1890,15 @@ export class XAccountController {
             if (accountData.length !== 1) {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
                 return `The account.js file has more than one account.`;
+            }
+
+            // Make sure there is not already an account with this username
+            const dataPath = getDataPath();
+            const xDataPath = path.join(dataPath, 'X');
+            const newAccountDataPath = path.join(xDataPath, accountData[0].account.username);
+            if (fs.existsSync(newAccountDataPath)) {
+                log.error(`XAccountController.verifyXArchive: account already exists: ${newAccountDataPath}`);
+                return `The account @${accountData[0].account.username} already exists. Please delete the profile in Cyd and try again.`;
             }
 
             // We run this check only if we're not in archive only mode
