@@ -56,6 +56,8 @@ export class BaseViewModel {
 
     public isPaused: boolean;
 
+    public cancelWaitForURL: boolean;
+
     // If the computer resumes from sleep, should we resume the automation?
     public shouldResumeOnResume: boolean;
     // Only allow the suspend events to be triggerer once at a time
@@ -86,6 +88,7 @@ export class BaseViewModel {
         this.domReady = false;
 
         this.isPaused = false;
+        this.cancelWaitForURL = false;
         this.shouldResumeOnResume = false;
         this.suspendLock = false;
 
@@ -499,7 +502,8 @@ export class BaseViewModel {
     }
 
     async waitForURL(waitingForURL: string) {
-        while (true) {
+        this.cancelWaitForURL = false;
+        while (!this.cancelWaitForURL) {
             const newURL = this.getWebview()?.getURL();
             this.log("waitForURL", {
                 waitingForURL: waitingForURL,
