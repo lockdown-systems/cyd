@@ -228,7 +228,7 @@ onUnmounted(() => {
                                         <input id="subscribe" v-model="userSubscribe" type="checkbox"
                                             class="form-check-input">
                                         <label class="form-check-label" for="subscribe">
-                                            Opt-in to occasional email updates about Cyd
+                                            Opt-in to occasional email updates about Lockdown Systems, the developers of Cyd
                                         </label>
                                     </div>
 
