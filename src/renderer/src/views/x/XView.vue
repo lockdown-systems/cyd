@@ -141,7 +141,15 @@ const setState = async (state: State) => {
 };
 
 const archiveOnlyClicked = async () => {
-    model.value.cancelWaitForURL = true; // Cancel any ongoing wait for URL
+    // Cancel any ongoing wait for URL
+    model.value.cancelWaitForURL = true;
+
+    // Set the account to archive-only mode
+    await window.electron.database.saveAccount(JSON.stringify({
+        ...props.account, 
+        archiveOnly: true
+    }));
+
     await setState(State.WizardArchiveOnly);
 };
 

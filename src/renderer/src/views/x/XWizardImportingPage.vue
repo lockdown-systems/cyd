@@ -104,6 +104,17 @@ const startClicked = async () => {
     }
     statusValidating.value = ImportStatus.Finished;
 
+    // After unzipping and verifying, if we're in archive-only mode, the unzippedPath has changed
+    if (props.model.account?.xAccount?.archiveOnly) {
+        unzippedPath = await window.electron.getAccountDataPath(props.model.account.id, "tmp");
+        if (!unzippedPath) {
+            statusValidating.value = ImportStatus.Failed;
+            errorMessages.value.push('Failed to get account data path for archive-only account');
+            importFailed.value = true;
+            return;
+        }
+    }
+
     // Import tweets
     statusImportingTweets.value = ImportStatus.Active;
     const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, unzippedPath, 'tweets');
