@@ -1975,7 +1975,7 @@ export class XAccountController {
                 this.accountDataPath = newAccountDataPath;
                 this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
 
-                await this.refreshAccount();
+                this.refreshAccount();
             } catch (error) {
                 log.error(`XAccountController.verifyXArchive: Failed to rename account directory: ${error}`);
                 // Continue with import even if rename fails
