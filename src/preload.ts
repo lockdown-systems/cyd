@@ -23,7 +23,7 @@ import {
     FacebookDatabaseStats,
 } from './shared_types'
 
-contextBridge.exposeInMainWorld('electron', {
+const electronAPI = {
     // Export ipcRenderer to the frontend
     ipcRenderer: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -383,4 +383,8 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('Facebook:getDatabaseStats', accountID);
         },
     },
-})
+}
+
+contextBridge.exposeInMainWorld('electron', electronAPI)
+
+export type ElectronAPI = typeof electronAPI;
