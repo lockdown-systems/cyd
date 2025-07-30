@@ -1898,7 +1898,7 @@ export class XAccountController {
             const newAccountDataPath = path.join(xDataPath, accountData[0].account.username);
             if (fs.existsSync(newAccountDataPath)) {
                 log.error(`XAccountController.verifyXArchive: account already exists: ${newAccountDataPath}`);
-                return `The account @${accountData[0].account.username} already exists. Please delete the profile in Cyd and try again.`;
+                return `The account @${accountData[0].account.username} already exists. Please delete ${newAccountDataPath} and try again.`;
             }
 
             // We run this check only if we're not in archive only mode
