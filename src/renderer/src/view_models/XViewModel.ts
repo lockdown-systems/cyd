@@ -390,12 +390,6 @@ export class XViewModel extends BaseViewModel {
         this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
 
         while (true) {
-            // Quit early if canceled
-            if (this.cancelWaitForURL) {
-                this.log("loadURLWithRateLimit", "cancelling URL load");
-                return;
-            }
-
             // Reset the rate limit checker
             await window.electron.X.resetRateLimitInfo(this.account.id);
 
@@ -438,6 +432,12 @@ export class XViewModel extends BaseViewModel {
                     }
 
                     if (changedToUnexpected) {
+                        // Quit early if canceled
+                        if (this.cancelWaitForURL) {
+                            this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}, but ignoring because canceled`);
+                            return;
+                        }
+
                         this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
                         throw new URLChangedError(url, this.webview?.getURL() || '');
                     } else {
