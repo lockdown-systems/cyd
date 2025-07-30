@@ -390,6 +390,12 @@ export class XViewModel extends BaseViewModel {
         this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
 
         while (true) {
+            // Quit early if canceled
+            if (this.cancelWaitForURL) {
+                this.log("loadURLWithRateLimit", "cancelling URL load");
+                return;
+            }
+
             // Reset the rate limit checker
             await window.electron.X.resetRateLimitInfo(this.account.id);
 
