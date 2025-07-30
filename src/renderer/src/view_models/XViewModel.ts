@@ -435,7 +435,7 @@ export class XViewModel extends BaseViewModel {
                         // Quit early if canceled
                         if (this.cancelWaitForURL) {
                             this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}, but ignoring because canceled`);
-                            return;
+                            break;
                         }
 
                         this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
@@ -633,9 +633,15 @@ export class XViewModel extends BaseViewModel {
 
         // Load the login page and wait for it to redirect to home
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
+        if (this.cancelWaitForURL) {
+            // If the user clicks archive only before the page is done loading, we cancel the login
+            this.log("login", "Login cancelled");
+            return;
+        }
         try {
             await this.waitForURL("https://x.com/home");
             if (this.cancelWaitForURL) {
+                // If the user clicks archive only after the page is done loading, while we're waiting for the URL to change
                 this.log("login", "Login cancelled");
                 return;
             }
