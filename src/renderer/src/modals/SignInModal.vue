@@ -227,8 +227,8 @@ onUnmounted(() => {
                                     <div class="form-check subscribe mt-2">
                                         <input id="subscribe" v-model="userSubscribe" type="checkbox"
                                             class="form-check-input">
-                                        <label class="form-check-label" for="subscribe">
-                                            Opt-in to occasional email updates about Lockdown Systems, the developers of Cyd
+                                        <label class="form-check-label small" for="subscribe">
+                                            Opt-in to occasional email updates from the Lockdown Systems collective, the developers of Cyd
                                         </label>
                                     </div>
 
