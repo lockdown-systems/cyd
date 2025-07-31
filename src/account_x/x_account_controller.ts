@@ -1713,7 +1713,7 @@ export class XAccountController {
     async getDatabaseStats(): Promise<XDatabaseStats> {
         const databaseStats = emptyXDatabaseStats();
         if (!this.account?.username) {
-            log.info('XAccountController.getDatabaseStats: no account');
+            log.debug('XAccountController.getDatabaseStats: no account');
             return databaseStats;
         }
 

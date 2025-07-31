@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import log from 'electron-log/main';
 
 import { XAccountController } from './x_account_controller';
 
@@ -24,10 +25,10 @@ const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
     if (!controllers[accountID]) {
-        console.log("Creating new XAccountController for accountID", accountID);
+        log.debug("Creating new XAccountController for accountID", accountID);
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
-    console.log("Returning existing XAccountController for accountID", accountID);
+    log.debug("Returning existing XAccountController for accountID", accountID);
     controllers[accountID].refreshAccount();
     return controllers[accountID];
 }
