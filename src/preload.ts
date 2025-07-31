@@ -21,6 +21,7 @@ import {
     FacebookJob,
     FacebookProgress,
     FacebookDatabaseStats,
+    XAccount,
 } from './shared_types'
 
 const electronAPI = {
@@ -311,7 +312,7 @@ const electronAPI = {
         deleteConfigLike: (accountID: number, key: string): Promise<void> => {
             return ipcRenderer.invoke('X:deleteConfigLike', accountID, key);
         },
-        getImageDataURI: (accountID: number, url: string): Promise<void> => {
+        getImageDataURI: (accountID: number, url: string): Promise<string> => {
             return ipcRenderer.invoke('X:getImageDataURI', accountID, url);
         },
         blueskyGetProfile: (accountID: number): Promise<BlueskyMigrationProfile | null> => {
@@ -338,6 +339,9 @@ const electronAPI = {
         getMediaPath: (accountID: number): Promise<string> => {
             return ipcRenderer.invoke('X:getMediaPath', accountID);
         },
+        initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
+            return ipcRenderer.invoke('X:initArchiveOnlyMode', accountID);
+        }
     },
     Facebook: {
         resetProgress: (accountID: number): Promise<FacebookProgress> => {

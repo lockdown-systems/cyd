@@ -251,15 +251,7 @@ export class XAccountController {
             return;
         }
 
-        // Create a temporary username in archive-only account, if needed
-        if (this.account.archiveOnly && !this.account.username) {
-            log.info("XAccountController.initDB: setting a temporary username");
-            const uuid = crypto.randomUUID();
-            const uniqueUsername = `deleted_account_${uuid.slice(0, 8)}`;
-            this.account.username = uniqueUsername;
-            log.info("XAccountController.initDB: temporary username: ", uniqueUsername);
-            saveXAccount(this.account);
-        }
+        log.info("XAccountController.initDB: account", this.account);
 
         // Make sure the account data folder exists
         this.accountDataPath = getAccountDataPath('X', this.account.username);
@@ -1805,12 +1797,12 @@ export class XAccountController {
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
         if (!this.db) {
-            log.info(`XAccountController.unzipXArchive: db does not exist, creating`)
+            log.warn(`XAccountController.unzipXArchive: db does not exist, creating`)
             this.initDB();
         }
 
         if (!this.account) {
-            log.info(`XAccountController.unzipXArchive: account does not exist, bailing`)
+            log.warn(`XAccountController.unzipXArchive: account does not exist, bailing`)
             return null;
         }
 
@@ -3188,5 +3180,25 @@ export class XAccountController {
         }
         const accountDataPath = getAccountDataPath("X", this.account.username);
         return path.join(accountDataPath, "Tweet Media");
+    }
+
+    // Set archiveOnly to true, and set a temporary username
+    async initArchiveOnlyMode(): Promise<XAccount> {
+        if (!this.account) {
+            log.warn(`XAccountController.initArchiveOnlyMode: account does not exist, bailing`);
+            throw new Error("Account not found");
+        }
+
+        if(!this.account.username) {
+            const uuid = crypto.randomUUID();
+            const tempUsername = `deleted_account_${uuid.slice(0, 8)}`;
+            this.account.username = tempUsername;
+            log.info("XAccountController.initArchiveOnlyMode: temporary username: ", tempUsername);
+        }
+
+        this.account.archiveOnly = true;
+        saveXAccount(this.account);
+
+        return this.account;
     }
 }

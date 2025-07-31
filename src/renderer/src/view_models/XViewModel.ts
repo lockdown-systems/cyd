@@ -12,7 +12,8 @@ import {
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
-    XMigrateTweetCounts
+    XMigrateTweetCounts,
+    Account,
 } from '../../../shared_types';
 import { XViewerResults, XUserInfo } from "../types_x"
 import { PlausibleEvents } from "../types";
@@ -2848,6 +2849,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         // Temp variables
         let databaseStatsString: string = "";
+        let updatedAccount: Account | null = null;
 
         this.log("run", `running state: ${this.state}`);
         try {
@@ -2981,16 +2983,9 @@ After you build a local database of your tweets, I can help you migrate them int
 
                 case State.WizardArchiveOnly:
                     // Set the account to archive-only mode
-                    if (this.account.xAccount) {
-                        const updatedAccount = {
-                            ...this.account,
-                            xAccount: {
-                                ...this.account.xAccount,
-                                archiveOnly: true
-                            }
-                        };
-
-                        await window.electron.database.saveAccount(JSON.stringify(updatedAccount));
+                    await window.electron.X.initArchiveOnlyMode(this.account.id);
+                    updatedAccount = await window.electron.database.getAccount(this.account.id);
+                    if (updatedAccount !== null) {
                         this.account = updatedAccount;
                     }
 

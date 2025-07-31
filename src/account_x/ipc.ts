@@ -502,4 +502,13 @@ export const defineIPCX = () => {
             throw new Error(packageExceptionForReport(error as Error));
         }
     });
+
+    ipcMain.handle('X:initArchiveOnlyMode', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.initArchiveOnlyMode();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
 };
