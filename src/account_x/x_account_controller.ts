@@ -19,6 +19,7 @@ import { Link as BskyRichtextFacetLink } from '@atproto/api/dist/client/types/ap
 
 import {
     getResourcesPath,
+    getDataPath,
     getAccountDataPath,
     getTimestampDaysAgo
 } from '../util'
@@ -245,10 +246,12 @@ export class XAccountController {
     }
 
     initDB() {
-        if (!this.account || !this.account.username) {
-            log.error("XAccountController: cannot initialize the database because the account is not found, or the account username is not found", this.account, this.account?.username);
+        if (!this.account) {
+            log.error("XAccountController.initDB: account does not exist");
             return;
         }
+
+        log.info("XAccountController.initDB: account", this.account);
 
         // Make sure the account data folder exists
         this.accountDataPath = getAccountDataPath('X', this.account.username);
@@ -440,7 +443,7 @@ export class XAccountController {
                     `ALTER TABLE tweet_media ADD COLUMN startIndex INTEGER;`,
                     `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`
                 ]
-            },
+            }
         ])
         log.info("XAccountController.initDB: database initialized");
     }
@@ -1702,7 +1705,7 @@ export class XAccountController {
     async getDatabaseStats(): Promise<XDatabaseStats> {
         const databaseStats = emptyXDatabaseStats();
         if (!this.account?.username) {
-            log.info('XAccountController.getDatabaseStats: no account');
+            log.debug('XAccountController.getDatabaseStats: no account');
             return databaseStats;
         }
 
@@ -1793,9 +1796,16 @@ export class XAccountController {
     // Unzip twitter archive to the account data folder using unzipper
     // Return unzipped path if success, else null.
     async unzipXArchive(archiveZipPath: string): Promise<string | null> {
+        if (!this.db) {
+            log.warn(`XAccountController.unzipXArchive: db does not exist, creating`)
+            this.initDB();
+        }
+
         if (!this.account) {
+            log.warn(`XAccountController.unzipXArchive: account does not exist, bailing`)
             return null;
         }
+
         const unzippedPath = path.join(getAccountDataPath("X", this.account.username), "tmp");
 
         const archiveZip = await unzipper.Open.file(archiveZipPath);
@@ -1850,6 +1860,7 @@ export class XAccountController {
         }
 
         // Make sure the account.js file belongs to the right account
+        let username;
         try {
             const accountFile = fs.readFileSync(accountPath, 'utf8');
             const accountData: XArchiveAccount[] = JSON.parse(accountFile.slice("window.YTD.account.part0 = ".length));
@@ -1857,12 +1868,110 @@ export class XAccountController {
                 log.error(`XAccountController.verifyXArchive: account.js has more than one account`);
                 return `The account.js file has more than one account.`;
             }
-            if (accountData[0].account.username !== this.account?.username) {
+
+            // Make sure there is not already an account with this username
+            const dataPath = getDataPath();
+            const xDataPath = path.join(dataPath, 'X');
+            const newAccountDataPath = path.join(xDataPath, accountData[0].account.username);
+            if (fs.existsSync(newAccountDataPath)) {
+                log.error(`XAccountController.verifyXArchive: account already exists: ${newAccountDataPath}`);
+                return `The account @${accountData[0].account.username} already exists. Please delete ${newAccountDataPath} and try again.`;
+            }
+
+            // Store the username for later use
+            username = accountData[0].account.username;
+
+            // We run this check only if we're not in archive only mode
+            if (username !== this.account?.username && !this.account?.archiveOnly) {
+                log.info(`XAccountController.verifyXArchive: username: ${this.account?.username}`);
                 log.error(`XAccountController.verifyXArchive: account.js does not belong to the right account`);
-                return `This archive is for @${accountData[0].account.username}, not @${this.account?.username}.`;
+                return `This archive is for @${username}, not @${this.account?.username}.`;
             }
         } catch {
             return "Error parsing JSON in account.js";
+        }
+
+        // If this is an archive-only account (which uses temporary usernames) and we now have the real username,
+        // rename the account directory to use the real username
+        console.log(`XAccountController.verifyXArchive: archiveOnly: ${this.account?.archiveOnly}`);
+        if (this.account?.archiveOnly) {
+            // Close the database before renaming the account directory
+            if (this.db) {
+                this.db.close();
+                this.db = null;
+            }
+
+            // These methods create the account data path if it doesn't exist
+            const oldAccountDataPath = getAccountDataPath('X', this.account.username);
+            const newAccountDataPath = getAccountDataPath('X', username);
+
+            log.info(`XAccountController.verifyXArchive: oldAccountDataPath: ${oldAccountDataPath}`);
+            log.info(`XAccountController.verifyXArchive: newAccountDataPath: ${newAccountDataPath}`);
+            try {
+                // Move all content recursively from old directory to new directory
+                if (fs.existsSync(oldAccountDataPath)) {
+                    const moveAllContent = (src: string, dest: string) => {
+                        const items = fs.readdirSync(src);
+                        for (const item of items) {
+                            const srcPath = path.join(src, item);
+                            const destPath = path.join(dest, item);
+
+                            if (fs.lstatSync(srcPath).isDirectory()) {
+                                if (!fs.existsSync(destPath)) {
+                                    fs.mkdirSync(destPath, { recursive: true });
+                                }
+                                moveAllContent(srcPath, destPath);
+                                fs.rmdirSync(srcPath); // Remove empty directory
+                            } else {
+                                fs.renameSync(srcPath, destPath);
+                            }
+                        }
+                    };
+
+                    moveAllContent(oldAccountDataPath, newAccountDataPath);
+                    log.info(`XAccountController.verifyXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`);
+
+                    // Update the archivePath to point to the new location
+                    const oldTmpPath = path.join(oldAccountDataPath, "tmp");
+                    const newTmpPath = path.join(newAccountDataPath, "tmp");
+                    if (archivePath === oldTmpPath) {
+                        archivePath = newTmpPath;
+                        log.info(`XAccountController.verifyXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`);
+                    }
+
+                    // Delete the old deleted_account_ folder after successful migration
+                    try {
+                        if (fs.existsSync(oldAccountDataPath)) {
+                            // Check if the directory is now empty (all content should have been moved)
+                            const remainingItems = fs.readdirSync(oldAccountDataPath);
+                            if (remainingItems.length === 0) {
+                                fs.rmdirSync(oldAccountDataPath);
+                                log.info(`XAccountController.verifyXArchive: Deleted empty old directory: ${oldAccountDataPath}`);
+                            } else {
+                                log.warn(`XAccountController.verifyXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`);
+                            }
+                        }
+                    } catch (error) {
+                        log.error(`XAccountController.verifyXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`);
+                        // Don't fail the import if cleanup fails
+                    }
+                }
+
+                log.info(`XAccountController.verifyXArchive: Renamed account directory from ${this.account.username} to ${username}`);
+
+                // Update the account username in the database
+                this.account.username = username;
+                await this.updateAccountUsername(username);
+
+                // Reinitialize the database connection to point to the new path
+                this.accountDataPath = newAccountDataPath;
+                this.db = new Database(path.join(this.accountDataPath, 'data.sqlite3'), {});
+
+                this.refreshAccount();
+            } catch (error) {
+                log.error(`XAccountController.verifyXArchive: Failed to rename account directory: ${error}`);
+                // Continue with import even if rename fails
+            }
         }
 
         return null;
@@ -1891,6 +2000,7 @@ export class XAccountController {
                 errorMessage: "Error parsing JSON in account.js",
                 importCount: importCount,
                 skipCount: skipCount,
+                updatedArchivePath: archivePath,
             };
         }
 
@@ -1913,6 +2023,7 @@ export class XAccountController {
                     errorMessage: "No tweets files found",
                     importCount: importCount,
                     skipCount: skipCount,
+                    updatedArchivePath: archivePath,
                 };
             }
 
@@ -1930,6 +2041,7 @@ export class XAccountController {
                         errorMessage: "Error parsing JSON in tweets.js",
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
 
@@ -1981,6 +2093,7 @@ export class XAccountController {
                         errorMessage: "Error importing tweets: " + e,
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
             }
@@ -1990,6 +2103,7 @@ export class XAccountController {
                 errorMessage: "",
                 importCount: importCount,
                 skipCount: skipCount,
+                updatedArchivePath: archivePath,
             };
         }
 
@@ -2012,6 +2126,7 @@ export class XAccountController {
                     errorMessage: "No likes files found",
                     importCount: importCount,
                     skipCount: skipCount,
+                    updatedArchivePath: archivePath,
                 };
             }
 
@@ -2028,6 +2143,7 @@ export class XAccountController {
                         errorMessage: "Error parsing JSON in like.js",
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
 
@@ -2074,6 +2190,7 @@ export class XAccountController {
                         errorMessage: "Error importing tweets: " + e,
                         importCount: importCount,
                         skipCount: skipCount,
+                        updatedArchivePath: archivePath,
                     };
                 }
             }
@@ -2083,6 +2200,7 @@ export class XAccountController {
                 errorMessage: "",
                 importCount: importCount,
                 skipCount: skipCount,
+                updatedArchivePath: archivePath,
             };
         }
 
@@ -2091,6 +2209,7 @@ export class XAccountController {
             errorMessage: "Invalid data type.",
             importCount: importCount,
             skipCount: skipCount,
+            updatedArchivePath: archivePath,
         };
     }
 
@@ -3047,11 +3166,39 @@ export class XAccountController {
         }
     }
 
+    async updateAccountUsername(newUsername: string): Promise<void> {
+        // Update the username in the main database
+        if (this.account) {
+            this.account.username = newUsername;
+            saveXAccount(this.account);
+        }
+    }
+
     async getMediaPath(): Promise<string> {
         if (!this.account || !this.account.username) {
             return "";
         }
         const accountDataPath = getAccountDataPath("X", this.account.username);
         return path.join(accountDataPath, "Tweet Media");
+    }
+
+    // Set archiveOnly to true, and set a temporary username
+    async initArchiveOnlyMode(): Promise<XAccount> {
+        if (!this.account) {
+            log.warn(`XAccountController.initArchiveOnlyMode: account does not exist, bailing`);
+            throw new Error("Account not found");
+        }
+
+        if(!this.account.username) {
+            const uuid = crypto.randomUUID();
+            const tempUsername = `deleted_account_${uuid.slice(0, 8)}`;
+            this.account.username = tempUsername;
+            log.info("XAccountController.initArchiveOnlyMode: temporary username: ", tempUsername);
+        }
+
+        this.account.archiveOnly = true;
+        saveXAccount(this.account);
+
+        return this.account;
     }
 }

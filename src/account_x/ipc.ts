@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import log from 'electron-log/main';
 
 import { XAccountController } from './x_account_controller';
 
@@ -24,8 +25,10 @@ const controllers: Record<number, XAccountController> = {};
 
 const getXAccountController = (accountID: number): XAccountController => {
     if (!controllers[accountID]) {
+        log.debug("Creating new XAccountController for accountID", accountID);
         controllers[accountID] = new XAccountController(accountID, getMITMController(accountID));
     }
+    log.debug("Returning existing XAccountController for accountID", accountID);
     controllers[accountID].refreshAccount();
     return controllers[accountID];
 }
@@ -495,6 +498,15 @@ export const defineIPCX = () => {
         try {
             const controller = getXAccountController(accountID);
             return await controller.getMediaPath();
+        } catch (error) {
+            throw new Error(packageExceptionForReport(error as Error));
+        }
+    });
+
+    ipcMain.handle('X:initArchiveOnlyMode', async (_, accountID: number): Promise<void> => {
+        try {
+            const controller = getXAccountController(accountID);
+            await controller.initArchiveOnlyMode();
         } catch (error) {
             throw new Error(packageExceptionForReport(error as Error));
         }

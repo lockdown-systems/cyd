@@ -34,6 +34,7 @@ import XWizardCheckPremium from './XWizardCheckPremium.vue';
 import XWizardMigrateBluesky from './XWizardMigrateBluesky.vue';
 import XWizardFinished from './XWizardFinished.vue';
 import XWizardSidebar from './XWizardSidebar.vue';
+import XWizardArchiveOnly from './XWizardArchiveOnly.vue';
 
 import XDisplayTweet from './XDisplayTweet.vue';
 
@@ -137,6 +138,12 @@ const setState = async (state: State) => {
     console.log('Setting state', state);
     model.value.state = state;
     await startStateLoop();
+};
+
+const archiveOnlyClicked = async () => {
+    // Cancel any ongoing wait for URL
+    model.value.cancelWaitForURL = true;
+    await setState(State.WizardArchiveOnly);
 };
 
 const startStateLoop = async () => {
@@ -274,6 +281,21 @@ emitter?.on(`x-reload-media-path-${props.account.id}`, async () => {
 });
 
 const startJobs = async () => {
+    if (model.value.account.xAccount == null) {
+        console.error('startJobs', 'Account is null');
+        return;
+    }
+
+    // If in archive-only mode, skip authentication checks
+    if (model.value.account.xAccount.archiveOnly) {
+        // Log value of archiveOnly
+        console.log('archiveOnly', model.value.account.xAccount.archiveOnly);
+        await model.value.defineJobs();
+        model.value.state = State.RunJobs;
+        await startStateLoop();
+        return;
+    }
+
     // Premium check
     if (model.value.account?.xAccount && await xRequiresPremium(model.value.account.id, model.value.account.xAccount)) {
         // In open mode, allow the user to continue
@@ -480,6 +502,13 @@ onUnmounted(async () => {
                 screen. <a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/u2f')">Read more</a>.
             </p>
 
+            <!-- Archive only option -->
+            <div v-if="model.state == State.Login" class="text-center ms-2 mt-2 mb-4">
+                <button class="btn btn-secondary" @click="archiveOnlyClicked">
+                    Import Archive Only (for deleted X accounts with an archive)
+                </button>
+            </div>
+
             <AutomationNotice :show-browser="model.showBrowser" :show-automation-notice="model.showAutomationNotice" />
         </template>
 
@@ -552,6 +581,10 @@ onUnmounted(async () => {
                             @set-state="setState($event)" @finished-run-again-clicked="finishedRunAgainClicked"
                             @on-refresh-clicked="emit('onRefreshClicked')" />
 
+                        <XWizardArchiveOnly v-if="model.state == State.WizardArchiveOnlyDisplay"
+                            :model="unref(model)"
+                            @set-state="setState($event)" @update-account="updateAccount" />
+
                         <!-- Debug state -->
                         <div v-if="model.state == State.Debug">
                             <p>Debug debug debug!!!</p>
@@ -573,8 +606,10 @@ onUnmounted(async () => {
                         </div>
                     </div>
 
-                    <!-- wizard side bar -->
-                    <XWizardSidebar :model="unref(model)" @set-state="setState($event)"
+                    <!-- wizard side bar, hide if archive only -->
+                    <XWizardSidebar v-if="model.state != State.WizardArchiveOnly"
+                        :model="unref(model)"
+                        @set-state="setState($event)"
                         @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged" />
                 </div>
             </div>

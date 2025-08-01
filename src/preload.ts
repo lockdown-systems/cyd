@@ -21,9 +21,10 @@ import {
     FacebookJob,
     FacebookProgress,
     FacebookDatabaseStats,
+    XAccount,
 } from './shared_types'
 
-contextBridge.exposeInMainWorld('electron', {
+const electronAPI = {
     // Export ipcRenderer to the frontend
     ipcRenderer: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -311,7 +312,7 @@ contextBridge.exposeInMainWorld('electron', {
         deleteConfigLike: (accountID: number, key: string): Promise<void> => {
             return ipcRenderer.invoke('X:deleteConfigLike', accountID, key);
         },
-        getImageDataURI: (accountID: number, url: string): Promise<void> => {
+        getImageDataURI: (accountID: number, url: string): Promise<string> => {
             return ipcRenderer.invoke('X:getImageDataURI', accountID, url);
         },
         blueskyGetProfile: (accountID: number): Promise<BlueskyMigrationProfile | null> => {
@@ -338,6 +339,9 @@ contextBridge.exposeInMainWorld('electron', {
         getMediaPath: (accountID: number): Promise<string> => {
             return ipcRenderer.invoke('X:getMediaPath', accountID);
         },
+        initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
+            return ipcRenderer.invoke('X:initArchiveOnlyMode', accountID);
+        }
     },
     Facebook: {
         resetProgress: (accountID: number): Promise<FacebookProgress> => {
@@ -383,4 +387,8 @@ contextBridge.exposeInMainWorld('electron', {
             return ipcRenderer.invoke('Facebook:getDatabaseStats', accountID);
         },
     },
-})
+}
+
+contextBridge.exposeInMainWorld('electron', electronAPI)
+
+export type ElectronAPI = typeof electronAPI;

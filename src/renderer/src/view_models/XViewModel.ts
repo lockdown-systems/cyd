@@ -12,7 +12,8 @@ import {
     XProgressInfo, emptyXProgressInfo,
     XDeleteTweetsStartResponse,
     XDatabaseStats, emptyXDatabaseStats,
-    XMigrateTweetCounts
+    XMigrateTweetCounts,
+    Account,
 } from '../../../shared_types';
 import { XViewerResults, XUserInfo } from "../types_x"
 import { PlausibleEvents } from "../types";
@@ -63,6 +64,9 @@ export enum State {
 
     WizardMigrateToBluesky = "WizardMigrateToBluesky",
     WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
+
+    WizardArchiveOnly = "WizardArchiveOnly",
+    WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
 
     RunJobs = "RunJobs",
 
@@ -429,6 +433,12 @@ export class XViewModel extends BaseViewModel {
                     }
 
                     if (changedToUnexpected) {
+                        // Quit early if canceled
+                        if (this.cancelWaitForURL) {
+                            this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}, but ignoring because canceled`);
+                            break;
+                        }
+
                         this.log("loadURLWithRateLimit", `UNEXPECTED, URL change to ${this.webview?.getURL()}`);
                         throw new URLChangedError(url, this.webview?.getURL() || '');
                     } else {
@@ -624,8 +634,18 @@ export class XViewModel extends BaseViewModel {
 
         // Load the login page and wait for it to redirect to home
         await this.loadURLWithRateLimit("https://x.com/login", ["https://x.com/home", "https://x.com/i/flow/login"]);
+        if (this.cancelWaitForURL) {
+            // If the user clicks archive only before the page is done loading, we cancel the login
+            this.log("login", "Login cancelled");
+            return;
+        }
         try {
             await this.waitForURL("https://x.com/home");
+            if (this.cancelWaitForURL) {
+                // If the user clicks archive only after the page is done loading, while we're waiting for the URL to change
+                this.log("login", "Login cancelled");
+                return;
+            }
         } catch (e) {
             if (e instanceof URLChangedError) {
                 await this.error(AutomationErrorType.X_login_URLChanged, {
@@ -2829,6 +2849,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
         // Temp variables
         let databaseStatsString: string = "";
+        let updatedAccount: Account | null = null;
 
         this.log("run", `running state: ${this.state}`);
         try {
@@ -2845,11 +2866,13 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     break;
 
                 case State.WizardPrestart:
-                    // Only load user stats if we don't know them yet, or if there's a config telling us to
+                    // Only load user stats if we don't know them yet, or if there's a config telling us to,
+                    // and be sure to skip loading user stats if we're in archive-only mode
                     if (
-                        this.account.xAccount?.tweetsCount === -1 ||
-                        this.account.xAccount?.likesCount === -1 ||
-                        await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true"
+                        (this.account.xAccount?.tweetsCount === -1 ||
+                            this.account.xAccount?.likesCount === -1 ||
+                            await window.electron.X.getConfig(this.account.id, 'reloadUserStats') == "true") &&
+                        !this.account.xAccount?.archiveOnly
                     ) {
                         await this.loadUserStats();
                     }
@@ -2862,7 +2885,7 @@ Hang on while I scroll down to your earliest bookmarks.`;
                     await this.loadBlank();
                     this.state = State.WizardDashboard;
                     break;
-                
+
                 case State.WizardDashboard:
                     this.showBrowser = false;
                     this.instructions = `
@@ -2956,6 +2979,23 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
                     this.state = State.WizardMigrateToBlueskyDisplay;
+                    break;
+
+                case State.WizardArchiveOnly:
+                    // Set the account to archive-only mode
+                    await window.electron.X.initArchiveOnlyMode(this.account.id);
+                    updatedAccount = await window.electron.database.getAccount(this.account.id);
+                    if (updatedAccount !== null) {
+                        this.account = updatedAccount;
+                    }
+
+                    this.showBrowser = false;
+                    this.instructions = `
+# You've chosen to use a pre-existing X archive.
+
+I'll help you import your X data so you can view it locally or migrate your tweets to Bluesky.`;
+                    await this.loadBlank();
+                    this.state = State.WizardArchiveOnlyDisplay;
                     break;
 
                 case State.FinishedRunningJobs:

@@ -301,6 +301,7 @@ export interface XImportArchiveResponse {
     errorMessage: string;
     importCount: number;
     skipCount: number;
+    updatedArchivePath?: string; // The updated path after directory rename for archive-only accounts
 }
 
 // Migration types

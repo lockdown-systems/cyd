@@ -35,7 +35,11 @@ const platform = ref('');
 
 // Buttons
 const backClicked = async () => {
-    emit('setState', State.WizardImportStart);
+    if (props.model.account?.xAccount?.archiveOnly) {
+        emit('setState', State.WizardArchiveOnly);
+    } else {
+        emit('setState', State.WizardImportStart);
+    }
 };
 
 const createCountString = (importCount: number, skipCount: number) => {
@@ -100,6 +104,17 @@ const startClicked = async () => {
     }
     statusValidating.value = ImportStatus.Finished;
 
+    // After unzipping and verifying, if we're in archive-only mode, the unzippedPath has changed
+    if (props.model.account?.xAccount?.archiveOnly) {
+        unzippedPath = await window.electron.getAccountDataPath(props.model.account.id, "tmp");
+        if (!unzippedPath) {
+            statusValidating.value = ImportStatus.Failed;
+            errorMessages.value.push('Failed to get account data path for archive-only account');
+            importFailed.value = true;
+            return;
+        }
+    }
+
     // Import tweets
     statusImportingTweets.value = ImportStatus.Active;
     const tweetsResp: XImportArchiveResponse = await window.electron.X.importXArchive(props.model.account.id, unzippedPath, 'tweets');
@@ -110,6 +125,10 @@ const startClicked = async () => {
         importFailed.value = true;
     } else {
         statusImportingTweets.value = ImportStatus.Finished;
+        // Update the path if it was changed during import (for archive-only accounts)
+        if (tweetsResp.updatedArchivePath) {
+            unzippedPath = tweetsResp.updatedArchivePath;
+        }
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
@@ -123,6 +142,10 @@ const startClicked = async () => {
         importFailed.value = true;
     } else {
         statusImportingLikes.value = ImportStatus.Finished;
+        // Update the path if it was changed during import (for archive-only accounts)
+        if (likesResp.updatedArchivePath) {
+            unzippedPath = likesResp.updatedArchivePath;
+        }
     }
     emitter.emit(`x-update-database-stats-${props.model.account.id}`);
 
@@ -149,6 +172,10 @@ const startClicked = async () => {
     if (!importFailed.value) {
         await window.electron.X.setConfig(props.model.account.id, 'lastFinishedJob_importArchive', new Date().toISOString());
         importFinished.value = true;
+
+        // Reload the account data to reflect the updated username
+        await props.model.reloadAccount();
+        emitter.emit('account-updated');
     }
 
 };
@@ -219,7 +246,7 @@ onMounted(async () => {
     <div class="wizard-content">
         <BreadcrumbsComponent :buttons="[
             { label: 'Dashboard', action: () => emit('setState', State.WizardDashboard), icon: getBreadcrumbIcon('dashboard') },
-            { label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') },
+            ...(props.model.account?.xAccount?.archiveOnly ? [] : [{ label: 'Local Database', action: backClicked, icon: getBreadcrumbIcon('database') }]),
             { label: 'Import X Archive', action: backClicked, icon: getBreadcrumbIcon('import') },
         ]" label="Importing" :icon="getBreadcrumbIcon('import')" />
 
@@ -303,9 +330,12 @@ onMounted(async () => {
                         <i class="fa-solid fa-check" />
                         Import finished successfully!
                     </div>
-                    <p class="small text-muted">
+                    <p v-if="!props.model.account?.xAccount?.archiveOnly" class="small text-muted">
                         Cyd can backup even more data from your X account that isn't included in your archive. If you
                         don't care about this, you're ready to delete or migrate your data now.
+                    </p>
+                    <p v-if="props.model.account?.xAccount?.archiveOnly" class="small text-muted">
+                        You're ready to migrate your data now.
                     </p>
                 </template>
                 <template v-if="importFailed">
@@ -329,13 +359,17 @@ onMounted(async () => {
             ]" />
         </template>
         <template v-else>
-            <template v-if="importFinished">
+            <template v-if="importFinished || (importFailed && props.model.account?.xAccount?.archiveOnly)">
                 <ButtonsComponent :back-buttons="[
-                    { label: 'Back to Import from X', action: backClicked },
+                    {
+                        label: props.model.account?.xAccount?.archiveOnly ? 'Back to Import X Archive' : 'Back to Import from X',
+                        action: () => emit('setState', props.model.account?.xAccount?.archiveOnly ? State.WizardArchiveOnly : State.WizardImportStart)
+                    },
                 ]" :next-buttons="[
                     {
                         label: 'Backup More Data from X',
                         action: () => emit('setState', State.WizardArchiveOptions),
+                        hide: props.model.account?.xAccount?.archiveOnly || importFailed,
                     },
                     {
                         label: 'Go to Dashboard',

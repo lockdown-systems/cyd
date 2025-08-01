@@ -73,6 +73,9 @@ if (electronSquirrelStartup) {
     app.quit();
 }
 
+// Check if we're in dev mode
+const cydDevMode = process.env.CYD_DEV === "1";
+
 // Initialize the logger
 log.initialize();
 log.transports.file.level = config.mode == "prod" ? false : "debug"; // Disable file logging in prod mode
@@ -149,9 +152,6 @@ app.on('open-url', (event, url) => {
     openCydURL(url);
 })
 
-// Check if we're in dev mode
-const cydDevMode = process.env.CYD_DEV === "1";
-
 async function initializeApp() {
     // Display message in dev mode
     if (config.mode == "dev") {
@@ -181,7 +181,7 @@ async function initializeApp() {
     }
 
     // Set the log level
-    if (config.mode != "prod") {
+    if (config.mode != "prod" && cydDevMode) {
         log.transports.console.level = "debug";
     } else {
         log.transports.console.level = "info";
@@ -555,13 +555,13 @@ async function createWindow() {
 
         ipcMain.handle('startPowerSaveBlocker', async (_): Promise<number> => {
             const powerSaveBlockerID = powerSaveBlocker.start('prevent-app-suspension');
-            log.info('Started power save blocker with ID:', powerSaveBlockerID);
+            log.debug('Started power save blocker with ID:', powerSaveBlockerID);
             return powerSaveBlockerID;
         });
 
         ipcMain.handle('stopPowerSaveBlocker', async (_, powerSaveBlockerID: number) => {
             powerSaveBlocker.stop(powerSaveBlockerID)
-            log.info('Stopped power save blocker with ID:', powerSaveBlockerID);
+            log.debug('Stopped power save blocker with ID:', powerSaveBlockerID);
         });
 
         ipcMain.handle('getImageDataURIFromFile', async (_, filename: string): Promise<string> => {
@@ -570,7 +570,7 @@ async function createWindow() {
                 const data = fs.readFileSync(filename);
                 return `data:${mimeType};base64,${data.toString('base64')}`;
             } catch (error) {
-                console.error('Failed to get image data URI:', error);
+                log.error('Failed to get image data URI:', error);
                 return "";
             }
         });

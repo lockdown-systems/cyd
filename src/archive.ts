@@ -76,13 +76,13 @@ export const defineIPCArchive = () => {
     ipcMain.handle('archive:openFolder', async (_, accountID: number, folderName: string): Promise<void> => {
         const account = getAccount(accountID);
         if (!account) {
-            log.error('archive:openFolder', `Account not found: ${accountID}`);
+            log.warn('archive:openFolder', `Account not found: ${accountID}`);
             return;
         }
 
         const archivePath = getArchivePath(account);
         if (!archivePath) {
-            log.error('archive:openFolder', `error getting archive path`);
+            log.warn('archive:openFolder', `error getting archive path`);
             return;
         }
 
@@ -95,13 +95,13 @@ export const defineIPCArchive = () => {
 
         const account = getAccount(accountID);
         if (!account) {
-            log.error('archive:getInfo', `Account not found: ${accountID}`);
+            log.warn('archive:getInfo', `Account not found: ${accountID}`);
             return archiveInfo;
         }
 
         const archivePath = getArchivePath(account);
         if (!archivePath) {
-            log.error('archive:getInfo', `error getting archive path`);
+            log.debug('archive:getInfo', `failed to get archive path`);
             return archiveInfo;
         }
 
