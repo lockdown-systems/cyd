@@ -1,13 +1,21 @@
 import { WebviewTag } from 'electron';
 import { BaseViewModel, TimeoutError, InternetDownError, URLChangedError } from './BaseViewModel';
 import {
+    ArchiveInfo,
+    FacebookDatabaseStats,
+    FacebookDeletePostsStartResponse,
     FacebookJob,
+    FacebookPostItem,
     FacebookProgress,
+    emptyArchiveInfo,
+    emptyFacebookDatabaseStats,
     emptyFacebookProgress
 } from '../../../shared_types';
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from '../automation_errors';
 import { formatError, getJobsType } from '../util';
+import { facebookHasSomeData } from '../util_facebook';
+
 
 export enum State {
     Login = "Login",
@@ -146,6 +154,8 @@ export class FacebookViewModel extends BaseViewModel {
     public progress: FacebookProgress = emptyFacebookProgress();
     public jobs: FacebookJob[] = [];
     public currentJobIndex: number = 0;
+    public databaseStats: FacebookDatabaseStats = emptyFacebookDatabaseStats();
+    public archiveInfo: ArchiveInfo = emptyArchiveInfo();
 
     // Variables related to debugging
     public debugAutopauseEndOfStep: boolean = false;
@@ -159,11 +169,21 @@ export class FacebookViewModel extends BaseViewModel {
 
         this.currentJobIndex = 0;
 
+        await this.refreshDatabaseStats();
+
         super.init(webview);
+    }
+
+     async refreshDatabaseStats() {
+        this.databaseStats = await window.electron.Facebook.getDatabaseStats(this.account.id);
+        this.archiveInfo = await window.electron.archive.getInfo(this.account.id);
+        this.emitter?.emit(`facebook-update-database-stats-${this.account.id}`);
+        this.emitter?.emit(`facebook-update-archive-info-${this.account.id}`);
     }
 
     async defineJobs() {
         let shouldBuildArchive = false;
+        const hasSomeData = await facebookHasSomeData(this.account.id);
 
         const jobsType = getJobsType(this.account.id);
 
@@ -177,6 +197,13 @@ export class FacebookViewModel extends BaseViewModel {
                 if (this.account?.facebookAccount?.savePostsHTML) {
                     jobTypes.push("savePostsHTML");
                 }
+            }
+        }
+
+        if (jobsType === "delete") {
+            if (hasSomeData && this.account.facebookAccount?.deletePosts) {
+                jobTypes.push("deletePosts");
+                // shouldBuildArchive = true;
             }
         }
 
@@ -280,6 +307,51 @@ export class FacebookViewModel extends BaseViewModel {
                 return json;
             })();
         `);
+    }
+
+    // Returns the API response's status code, or 0 on error
+    async graphqlDelete(url: string, referrer: string, body: URLSearchParams): Promise<number> {
+        this.log("graphqlDelete", [url, body]);
+        this.log(
+            `const response = await fetch('${url}', {
+                "headers": {
+                    "content-type": "application/x-www-form-urlencoded",
+                    "X-FB-Friendly-Name": "ProfileCometBulkStoryCurationMutation",
+                    "X-ASBD-ID": "359341",
+                    "X-FB-LSD": "wTDZUBVH-SkO66P4M4rD_S",
+                },
+                "referrer": '${referrer}',
+                "body": '${body}',
+                "method": "POST",
+            })
+            console.log(response.status);
+            if (response.status == 200) {
+                console.log(await response.text());
+            }`
+        )
+        // return await this.getWebview()?.executeJavaScript(`
+        //     (async () => {
+        //         const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
+        //         try {
+        //             const response = await fetch('${url}', {
+        //                 "headers": {
+        //                     "content-type": "application/x-www-form-urlencoded",
+        //                     "X-FB-Friendly-Name": "ProfileCometBulkStoryCurationMutation",
+        //                 },
+        //                 "referrer": '${referrer}',
+        //                 "body": '${body}',
+        //                 "method": "POST",
+        //             })
+        //             console.log(response.status);
+        //             if (response.status == 200) {
+        //                 console.log(await response.text());
+        //             }
+        //             return response.status;
+        //         } catch (e) {
+        //             return 0;
+        //         }
+        //     })();
+        // `);
     }
 
     async login() {
@@ -394,7 +466,7 @@ export class FacebookViewModel extends BaseViewModel {
             await this.scriptClickElement(managedPostsButtonSelector);
             await this.sleep(2000);
         } catch (e) {
-            this.log("runJobIndexTweets", ["selector never appeared", e]);
+            this.log("runJobSavePosts", ["selector never appeared", e]);
             if (e instanceof TimeoutError) {
                 await this.error(AutomationErrorType.facebook_runJob_savePosts_Timeout, {
                     error: formatError(e as Error)
@@ -474,18 +546,168 @@ export class FacebookViewModel extends BaseViewModel {
         return true;
     }
 
-    async runJobDeletePosts(jobIndex: number): Promise<boolean> {
+    async runJobDeletePosts(jobIndex: number) {
         await window.electron.trackEvent(PlausibleEvents.FACEBOOK_JOB_STARTED_DELETE_POSTS, navigator.userAgent);
 
-        this.showBrowser = true;
-        this.instructions = `Instructions here...`;
+        // this.showBrowser = true;
+        let postsToDelete: FacebookDeletePostsStartResponse;
+        this.instructions = `**I'm deleting your posts based on your criteria, starting with the earliest.**`;
 
         this.showAutomationNotice = false;
 
         // TODO: implement
 
+        // Load the posts to delete
+        try {
+            postsToDelete = await window.electron.Facebook.deletePostsStart(this.account.id);
+        } catch (e) {
+            await this.error(AutomationErrorType.facebook_runJob_deletePosts_FailedToStart, {
+                error: formatError(e as Error)
+            })
+            return false;
+        }
+        this.log('runJobDeletePosts', `found ${postsToDelete.posts.length} posts to delete`);
+
+        // Start the progress
+        this.progress.totalPostsToDelete = postsToDelete.posts.length;
+        this.progress.postsDeleted = 0;
+        await this.syncProgress();
+
+        // Delete posts
+        for (let i = 0; i < postsToDelete.posts.length; i++) {
+            const currentPostItem: FacebookPostItem | null = postsToDelete.posts[i];
+
+            // Delete the post
+            let postDeleted = false;
+            let statusCode = 0;
+            const formData = new URLSearchParams({
+                "av": currentPostItem.a,
+                "__aaid": "0",
+                "__user": currentPostItem.a,
+                "__a": "1",
+                "__req": "1w",
+                "__hs": "20286.HYP:comet_pkg.2.1...0",
+                "dpr": "1",
+                "__ccg": "EXCELLENT",
+                "__rev": "1024844477",
+                "__s": "pvamf1:3779rt:v7aahb",
+                "__hsi": "7527981783556921304",
+                "__dyn": "7xeUjGU5a5Q1ryaxG4Vp41twWwIxu13wFwhUKbgS3q2ibwNwnof8boG0x8bo6u3y4o2Gwfi0LVEtwMw6ywIK1Rwwwg8a8462mcwfG12wOx62G5Usw9m1YwBgK7o6C0Mo4G17yovwRwlE-U2exi4UaEW2au1jwUBwJK14xm3y11xfxmu3W3y261eBx_wHwUwa67EbUG2-azqwaW223908O3216xi4UK2K2WEjxK2B08-269wkopg6C13xecwBwWwjHDzUiBG2OUqwjVqwLwHwa211zU520XEaUcGy8qw",
+                "__csr": "hc1gNQpb4guOsO5N4rfikaOhlgxsQ98BskB9qq9ElrPIvuzZHkSF5fla-BiPttJv_Ji9AHllQhFHVdGpsmFdaVO2bheXnHNzplLmBWO4AQqDBVoy8ZeuXCJ6GGnleqEy8SRuaBGl3unW8-8yrxirHAHKGiS9GQQjhkWJ2V49_xaAGzuK9ye8z9bjCye-8LGBt5iXBCBZxmueSESXUyAdCx3jG8V4um4kAqUCEJzm--Xnzd4CKcKdyElDmiVoOqdG8yo-4uUrxm78ylpFXCGh5HybAGbzV9UyQ-chkKFeqqHhEG59Gxt24cKql2UhwKyaK2_giAgmyKQeypF4uazEKeyEOEdFaDxCEyewKHKmeyoqAx6axe48K4omx2UvhUWjUix2fxmbWGUgwgoLGEmCxmbCzFodUd85i1gwo5QEsCHxe1ww8ufwxG0g69g2cAwj8-1ogJ90iA1Aw5twnUHgfoWbwQwTwlXxm5F98dFrg6py8b82BwxgB0km17gG78hwaG9xK0Do2Dx24Wo3qzE3gxy3ypxWm4SWykC0CE6u0je1Bwjk0hqu0L8lyU9E2jxe58uCwt8CcybyV81ro05hu8g4CE0FW0ipk0Jo9o0hcw2ME1ap-0iW00zS804p-1Rwiodo29wYy83ew8qlwwg2Jw5lx60uh0oE2cwdVCy981MU0XG5UfE1u8-0d0o0pxw3Caw-waG0Bk0eFwmU1F4u9gO8wJxK0VU34UeQ4o1740aWg1LU3Fxi0jGcwf61SxN4xN1Tg0uvC9Ag22w2eE31w1Mm0z404HEzU3YA42FO1sIGUF7ykbwOU882Rxq0OA0pe0rW02k24E2ryoy0iK0kow",
+                "__hsdp": "g4f4A8xqezEJdEgy989qqirA32hAwh8oG3sbAq8BqNc4aeK9aJcNR6A6OaAB5VcWEaL4Ep5BsD8gIugpq1m8789QD4EO58lMrJIAIh3JEehMI5yBWqf58aANlQx5mlH2VG8goG6YW4jTsXjMwb8N2AKh8kCACAQtkCugyGgychAqaIXzyVNcmhO6Bb8nD6mxiWEiBTQ898AhmyOaCgRApp-QLSIj4Ehc9SBBIuDmigX8Bjl4uArJ58t9jIB39AFaJ7lEgea99jKGFIygN24y5Vv23hV9jJ4ePEwWi8KliybO4gGcpqjxp4PeyaliGzGUQwkcp2AimdiJem7UeoBomx2iCAhxqAiiuby3UJzFREyj6iUmHFBjwwGq8K210CzQlK6oizqixKaBQiHy4KQcyd4Q4SAnCDUihUf8GRzpGz4qEXz9EuzErjUjiyQ942Qbyk48C65V8n89y458iKm6EswZoSbgW9a3S4V8S3a5oqGUmx23Vx-5Aqauu544po-Q2im4QbNMy5U9-8AA80R8qLIMbVmIk2p91RG2d28F7hp9Q3Kt38hgpwl8aGmdpAA2EEdUuAzoZ4xa1awba4UGdho88B788AG2a32q5oO1wghxS2q5SQgiVxNrgswjUnwCxW2iewywrUfUao5mcG13wLxm4USfxAwvwk9k1440Wxm0J8pwjo20yoe40xU6m467p8uwhUk51w9j0r8fQ15waW2i0ou2K3q1KwpEb8vwlawYwXwdq3y3C3qE2nG582mwqoe87O0ie1Ewl8nyU5W484e7o7icAzo840R862u58461OxquEgK5U5m1Lw9i1byE4i0XEaGwWzk3u1vzUc8ao-8Uqxi5UcU2kzo5bwaurw7PyocGyU6m7E9UuUO3acw4owNwqu16w9213woE7a0RF4bwqocU7-3W",
+                "__hblp": "0okdEkAl2UoVoeEqwTxByo7y488US48bFE9o2Pxa1lxq3m0ge3G0AVEcob-4e1lU8E4e48iBwzConxe2e6EPy8S8By8gAgK688EeEf85KcG7E3wzV99826wqaCwsEe8zwRwLg846o6C2-eUO3i7fwxK486a2i36U7K2-4i0Oxy10wTw8y2Dyofo4ibxu58dp41Qw8uq1Kwh9Etxi1hwkk1oiGeybwGS32q2e0ji4UvwGw_wTwdK3u3e1SAyEnwPxm0A8eEcEgzEaQcG13wmo5G17yo4G1GwZwoUlK1dw829wHwRwnUao5y4XguwhU886e3qEeE4y0z88o3FweW3q4UW1bwpEb8vwhWyqxS7EK2-0y84S7oqAwQwSHw9mEkzofES5E98hwGwIwUwv84S0Ro984e2DwEwzxi1qwNx66kE21Azo3Swo9UkxW2a1OxquEgK5U5m6U5e0woiwiUG14yU2mwiUW4oCEeER1W68S12xW1GyAcK8xi5UcU2kyo5rw8Gq5plw7PyocGwj898uwDxXz88oyu1xwCwOG5UGfxR1ibzUjhK1xwi827VE4e3e2p6wCwi8cVU2ky94bAwgo8E9UK0xoe8",
+                "__sjsp": "g4f4A8xqezEJdEgy989qqirA32hAwhcmG3sbAq8BqPY49A-9ah4l2x0ABOmWJsACjeGtTPLbq6hpmDZ4T7A8vrbduxbmfyUhBDsx9VkDcpoDBA-fJ4hpEIHfFd1a5OafwEGmmhVHh5SfyJ29WhuEmgF6y44U9eHjO6gpm8KhbymAtd7l9z25A8z4CqaoEibDlR5AtxdoYpq5bB4FdZ22kmhp2FeCh9264Q5uEgx9F16ayUkld7CxiEcA6ErQ4VGFxt24EzBx-54gV38wjwCwyoy6QiaAK4GBKeUkgF2Aazkpem1pylwLjh66ki16DmBFcpS6V63m8K18zQlK3R0FDh8Za4UF4Q54Am4e4A1jg-9z9U4q364Q2N2U9oom7C4Q1cwtAeyiwp86q2K1Tg4m6k2im4QbNM889-4y0fe10qN8aag2Zgug6W2G0OAi1twdZ04IwrSQgiUwo0iO0So3LwNxAw72l031E6m460Dxgo2kM2Ig0jUw",
+                "__comet_req": "15",
+                "fb_dtsg": "NAftYZuU8CYUrUNLdnYvL4fxuLRvS-SmR8yY2dMuYeaNDbPJjXX2u2w:28:1752141799",
+                "jazoest": "25615",
+                "lsd": "wTDZUBVH-SkO66P4M4rD_S",
+                "__spin_r": "1024844477",
+                "__spin_b": "trunk",
+                "__spin_t": "1752744844",
+                "__crn": "comet.fbweb.CometProfileTimelineListViewRoute",
+                "fb_api_caller_class": "RelayModern",
+                "fb_api_req_friendly_name": "ProfileCometBulkStoryCurationMutation",
+                "server_timestamps": "true",
+                "doc_id": "24023103950672548",
+                "variables": JSON.stringify({
+                    "input": {
+                        "story_actions": [{
+                            "action":"DELETE",
+                            "story_id": currentPostItem.id,
+                            "story_location":"TIMELINE"
+                        }],
+                        "actor_id":currentPostItem.a,
+                        "client_mutation_id":"1"
+                    },
+                    "afterTime":null,
+                    "beforeTime":null,
+                    "feedLocation":"TIMELINE",
+                    "feedbackSource":0,
+                    "focusCommentID":null,
+                    "gridMediaWidth":230,
+                    "includeGroupScheduledPosts":false,
+                    "includeScheduledPosts":false,
+                    "memorializedSplitTimeFilter":null,
+                    "postedBy":null,
+                    "privacy":null,
+                    "privacySelectorRenderLocation":"COMET_STREAM",
+                    "scale":1,
+                    "taggedInOnly":null,
+                    "omitPinnedPost":true,
+                    "renderLocation":"timeline",
+                    "useDefaultActor":false,
+                    "trackingCode":null,
+                    "is_professional_dashboard":false,
+                    "__relay_internal__pv__GHLShouldChangeAdIdFieldNamerelayprovider":true,
+                    "__relay_internal__pv__GHLShouldChangeSponsoredDataFieldNamerelayprovider":true,
+                    "__relay_internal__pv__IsWorkUserrelayprovider":false,
+                    "__relay_internal__pv__FBReels_deprecate_short_form_video_context_gkrelayprovider":true,
+                    "__relay_internal__pv__FeedDeepDiveTopicPillThreadViewEnabledrelayprovider":false,
+                    "__relay_internal__pv__CometImmersivePhotoCanUserDisable3DMotionrelayprovider":false,
+                    "__relay_internal__pv__WorkCometIsEmployeeGKProviderrelayprovider":false,
+                    "__relay_internal__pv__IsMergQAPollsrelayprovider":false,
+                    "__relay_internal__pv__FBReelsMediaFooter_comet_enable_reels_ads_gkrelayprovider":false,
+                    "__relay_internal__pv__CometUFIReactionsEnableShortNamerelayprovider":false,
+                    "__relay_internal__pv__CometUFIShareActionMigrationrelayprovider":true,
+                    "__relay_internal__pv__CometUFI_dedicated_comment_routable_dialog_gkrelayprovider":false,
+                    "__relay_internal__pv__StoriesArmadilloReplyEnabledrelayprovider":true,
+                    "__relay_internal__pv__FBReelsIFUTileContent_reelsIFUPlayOnHoverrelayprovider":false
+                })
+            })
+            for (let tries = 0; tries < 3; tries++) {
+                statusCode = await this.graphqlDelete(
+                    'https://www.facebook.com/api/graphql/',
+                    `https://www.facebook.com/profile.php?id=${this.account.facebookAccount?.accountID}`,
+                    formData
+                );
+                if (statusCode == 200) {
+                    // Update the post's deletedAt date
+                    try {
+                        await window.electron.Facebook.deletePost(this.account.id, currentPostItem.id, "post");
+                        postDeleted = true;
+                        this.progress.postsDeleted += 1;
+                        await this.syncProgress();
+                    } catch (e) {
+                        await this.error(AutomationErrorType.facebook_runJob_deletePosts_FailedToUpdateDeleteTimestamp, {
+                            error: formatError(e as Error)
+                        }, {
+                            post: currentPostItem,
+                            index: i
+                        }, true)
+                    }
+                    break;
+                } else if (statusCode == 429) {
+                    // Rate limited
+                    this.log('runJobDeletePosts', 'Rate limited')
+                    // this.rateLimitInfo = await window.electron.X.isRateLimited(this.account.id);
+                    // await this.waitForRateLimit();
+                    tries = 0;
+                } else {
+                    // Sleep 1 second and try again
+                    this.log("runJobDeleteposts", ["statusCode", statusCode, "failed to delete post, try #", tries]);
+                    await this.sleep(1000);
+                }
+            }
+
+            if (!postDeleted) {
+                await this.error(AutomationErrorType.facebook_runJob_deletePosts_FailedToDelete, {
+                    statusCode: statusCode
+                }, {
+                    post: currentPostItem,
+                    index: i
+                }, true)
+
+                this.progress.errorsOccured += 1;
+                await this.syncProgress();
+            }
+
+            await this.waitForPause();
+        }
+
+        this.pause();
+        await this.waitForPause();
+
         await this.finishJob(jobIndex);
-        return true;
     }
 
     async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
@@ -508,6 +730,9 @@ export class FacebookViewModel extends BaseViewModel {
 
         // Submit progress to the API
         this.emitter?.emit(`x-submit-progress-${this.account.id}`)
+
+        this.pause();
+        await this.waitForPause();
 
         await this.finishJob(jobIndex);
         return true;
@@ -643,13 +868,15 @@ You'll be able to access it even after you delete it from Facebook.`;
                     }
                     this.currentJobIndex = 0;
 
+                    await this.refreshDatabaseStats();
+
                     // Determine the next state
                     this.state = State.FinishedRunningJobs;
 
                     this.showBrowser = false;
                     await this.loadURL("about:blank");
                     break;
-                
+
                 case State.FinishedRunningJobs:
                     this.showBrowser = false;
                     this.instructions = `

@@ -86,6 +86,11 @@ export enum AutomationErrorType {
     facebook_runJob_savePosts_URLChanged = "facebook_runJob_savePosts_URLChanged",
     facebook_runJob_savePosts_OtherError = "facebook_runJob_savePosts_OtherError",
     facebook_runJob_archiveBuild_ArchiveBuildError = "facebook_runJob_archiveBuild_ArchiveBuildError",
+    facebook_runJob_deletePosts_FailedToStart = "facebook_runJob_deletePosts_FailedToStart",
+    facebook_runJob_deletePosts_Ct0CookieNotFound = "facebook_runJob_deletePosts_Ct0CookieNotFound",
+    facebook_runJob_deletePosts_FailedToDelete = "facebook_runJob_deletePosts_FailedToDelete",
+    facebook_runJob_deletePosts_FailedToUpdateDeleteTimestamp = "facebook_runJob_deletePosts_FailedToUpdateDeleteTimestamp",
+    facebook_runJob_deletePosts_UnknownError = "facebook_runJob_deletePosts_UnknownError",
 }
 
 export const AutomationErrorTypeToMessage = {

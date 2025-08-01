@@ -21,6 +21,7 @@ import {
     FacebookJob,
     FacebookProgress,
     FacebookDatabaseStats,
+    FacebookDeletePostsStartResponse,
 } from './shared_types'
 
 contextBridge.exposeInMainWorld('electron', {
@@ -378,6 +379,12 @@ contextBridge.exposeInMainWorld('electron', {
         },
         savePosts: (accountID: number): Promise<FacebookProgress> => {
             return ipcRenderer.invoke('Facebook:savePosts', accountID);
+        },
+        deletePostsStart: (accountID: number): Promise<FacebookDeletePostsStartResponse> => {
+            return ipcRenderer.invoke('Facebook:deletePostsStart', accountID);
+        },
+        deleteTweet: (accountID: number, storyID: string, deleteType: string): Promise<void> => {
+            return ipcRenderer.invoke('Facebook:deletePost', accountID, storyID, deleteType);
         },
         getDatabaseStats: (accountID: number): Promise<FacebookDatabaseStats> => {
             return ipcRenderer.invoke('Facebook:getDatabaseStats', accountID);

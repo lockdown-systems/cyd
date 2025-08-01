@@ -39,7 +39,7 @@ export interface Story {
     user: User;
     attachedStory?: AttachedStory;
     media: Media[];
-    shares: Share[];
+    // shares: Share[];
 
     addedToDatabaseAt: string;
     archivedAt: string | null;
