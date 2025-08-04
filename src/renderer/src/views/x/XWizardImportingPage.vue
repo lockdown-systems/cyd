@@ -92,20 +92,26 @@ const startClicked = async () => {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(`${e}`);
         importFailed.value = true;
-        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+        // Only delete the unzipped archive if we extracted it from a ZIP file
+        if (isZip) {
+            await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+        }
         return;
     }
     if (verifyResp !== null) {
         statusValidating.value = ImportStatus.Failed;
         errorMessages.value.push(verifyResp);
         importFailed.value = true;
-        await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+        // Only delete the unzipped archive if we extracted it from a ZIP file
+        if (isZip) {
+            await window.electron.X.deleteUnzippedXArchive(props.model.account.id, unzippedPath);
+        }
         return;
     }
     statusValidating.value = ImportStatus.Finished;
 
     // After unzipping and verifying, if we're in archive-only mode, the unzippedPath has changed
-    if (props.model.account?.xAccount?.archiveOnly) {
+    if (props.model.account?.xAccount?.archiveOnly && isZip) {
         unzippedPath = await window.electron.getAccountDataPath(props.model.account.id, "tmp");
         if (!unzippedPath) {
             statusValidating.value = ImportStatus.Failed;
