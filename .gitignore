@@ -37,3 +37,4 @@ src/renderer/cypress/screenshots/
 testdata/settingsPath*
 testdata/dataPath*
 testdata/tmp
+coverage/

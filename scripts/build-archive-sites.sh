@@ -1,23 +1,21 @@
 #!/bin/bash
 
-# Change to the directory of the script
-cd "$(dirname "$0")"
+# Change to the root directory of the project
+cd "$(dirname "$0")/.."
 
 build_archive_site() {
     site=$1
     echo ">> Building ${site} archive static site..."
-    rm -f ${site}-archive/public/assets/archive.js
-    cd ${site}-archive
-    rm -r dist || true
-    npm install
-    npm run build
+    rm -f archive-static-sites/${site}-archive/public/assets/archive.js
+    rm -r archive-static-sites/${site}-archive/dist || true
+    pnpm --filter ${site}-archive build
 
     # Zip it up
-    cd dist
+    cd archive-static-sites/${site}-archive/dist
     mkdir -p ../../../build/
     rm -f ../../../build/${site}-archive.zip
     zip -r ../../../build/${site}-archive.zip .
-    cd ../..
+    cd ../../..
 }
 
 # Build each site

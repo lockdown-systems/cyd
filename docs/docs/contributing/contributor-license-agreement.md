@@ -28,11 +28,11 @@ The purpose of this contributor agreement ("Agreement") is to clarify and docume
 
 Subject to the terms and conditions of this Agreement, You hereby grant to Us a worldwide, royalty-free, NON-exclusive, perpetual and irrevocable (except as stated in Section 8.2) license, with the right to transfer an unlimited number of non-exclusive licenses or to grant sublicenses to third parties, under the Copyright covering the Contribution to use the Contribution by all means, including, but not limited to:
 
-* publish the Contribution,
-* modify the Contribution,
-* prepare derivative works based upon or containing the Contribution and/or to combine the Contribution with other Materials,
-* reproduce the Contribution in original or modified form,
-* distribute, to make the Contribution available to the public, display and publicly perform the Contribution in original or modified form.
+- publish the Contribution,
+- modify the Contribution,
+- prepare derivative works based upon or containing the Contribution and/or to combine the Contribution with other Materials,
+- reproduce the Contribution in original or modified form,
+- distribute, to make the Contribution available to the public, display and publicly perform the Contribution in original or modified form.
 
 ### 2.2 Moral rights
 

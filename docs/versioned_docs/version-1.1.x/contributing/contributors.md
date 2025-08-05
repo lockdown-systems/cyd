@@ -10,7 +10,7 @@ Thanks for your interest in contributing to Cyd! The source code and issue track
 
 All members of the Cyd community must agree to comply with our [Contributor Covenant Code of Conduct](./code-of-conduct).
 
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](./code-of-conduct) 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](./code-of-conduct)
 
 ## Legal stuff
 
