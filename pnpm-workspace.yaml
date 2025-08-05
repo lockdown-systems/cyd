@@ -1,14 +1,17 @@
 packages:
-  - "archive-static-sites/x-archive"
-  - "archive-static-sites/facebook-archive"
-  - "docs"
+  - archive-static-sites/x-archive
+  - archive-static-sites/facebook-archive
+  - docs
 
 ignoredBuiltDependencies:
+  - core-js
+  - core-js-pure
   - cypress
   - electron-winstaller
   - esbuild
   - fs-xattr
   - macos-alias
+  - yorkie
 
 onlyBuiltDependencies:
   - better-sqlite3
