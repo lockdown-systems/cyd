@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getAccountIcon } from '../util';
-import type { Account } from '../../../shared_types';
+import { ref, onMounted } from "vue";
+import { getAccountIcon } from "../util";
+import type { Account } from "../../../shared_types";
 
-import { getAccountRunning, setAccountRunning } from '../util';
+import { getAccountRunning, setAccountRunning } from "../util";
 
-import CydAvatarComponent from './shared_components/CydAvatarComponent.vue';
+import CydAvatarComponent from "./shared_components/CydAvatarComponent.vue";
 
-import XView from './x/XView.vue';
-import FacebookView from './facebook/FacebookView.vue';
+import XView from "./x/XView.vue";
+import FacebookView from "./facebook/FacebookView.vue";
 
 const props = defineProps<{
   account: Account;
 }>();
 
 const emit = defineEmits<{
-  accountSelected: [account: Account, accountType: string],
-  onRemoveClicked: []
-}>()
+  accountSelected: [account: Account, accountType: string];
+  onRemoveClicked: [];
+}>();
 
 // Feature flags
 const featureFacebook = ref(false);
@@ -34,16 +34,16 @@ const refresh = async () => {
 };
 
 const accountClicked = (accountType: string) => {
-  emit('accountSelected', props.account, accountType);
+  emit("accountSelected", props.account, accountType);
 };
 
 onMounted(async () => {
-  featureFacebook.value = await window.electron.isFeatureEnabled('facebook');
-  blueskyFeature.value = await window.electron.isFeatureEnabled('bluesky');
+  featureFacebook.value = await window.electron.isFeatureEnabled("facebook");
+  blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
 
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {
-    console.error('Account was running and got interrupted');
+    console.error("Account was running and got interrupted");
     await setAccountRunning(props.account.id, false);
   }
 });
@@ -57,12 +57,12 @@ onMounted(async () => {
           <CydAvatarComponent :height="200" />
         </div>
         <p class="lead">
-          With <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd">, you can automatically delete your data
-          in tech platforms, except for what you want to keep.
+          With
+          <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd" />, you
+          can automatically delete your data in tech platforms, except for what
+          you want to keep.
         </p>
-        <p class="lead fw-bold">
-          Ready to get started? Add a new account.
-        </p>
+        <p class="lead fw-bold">Ready to get started? Add a new account.</p>
 
         <div class="select-account row">
           <div class="col-12 col-md-6">
@@ -72,9 +72,7 @@ onMounted(async () => {
                   <i :class="getAccountIcon('X')" />
                 </div>
                 <div class="description">
-                  <div class="name">
-                    X
-                  </div>
+                  <div class="name">X</div>
                   <small class="info text-muted">
                     Formerly Twitter, owned by billionaire Elon Musk
                   </small>
@@ -84,7 +82,10 @@ onMounted(async () => {
           </div>
 
           <div v-if="featureFacebook" class="col-12 col-md-6">
-            <div class="card m-2 select-account-facebook" @click="accountClicked('Facebook')">
+            <div
+              class="card m-2 select-account-facebook"
+              @click="accountClicked('Facebook')"
+            >
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
                   <i :class="getAccountIcon('Facebook')" />
@@ -103,7 +104,10 @@ onMounted(async () => {
           </div>
 
           <div v-if="blueskyFeature" class="col-12 col-md-6">
-            <div class="card m-2 select-account-bluesky" @click="accountClicked('Bluesky')">
+            <div
+              class="card m-2 select-account-bluesky"
+              @click="accountClicked('Bluesky')"
+            >
               <div class="card-body d-flex align-items-center">
                 <div class="logo mr-3">
                   <i :class="getAccountIcon('Bluesky')" />
@@ -122,18 +126,24 @@ onMounted(async () => {
           </div>
         </div>
 
-        <p class="text-muted mt-3">
-          More platforms coming soon.
-        </p>
+        <p class="text-muted mt-3">More platforms coming soon.</p>
       </div>
     </template>
 
     <template v-else-if="account.type == 'X'">
-      <XView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+      <XView
+        :account="account"
+        @on-refresh-clicked="refresh"
+        @on-remove-clicked="emit('onRemoveClicked')"
+      />
     </template>
 
     <template v-else-if="account.type == 'Facebook'">
-      <FacebookView :account="account" @on-refresh-clicked="refresh" @on-remove-clicked="emit('onRemoveClicked')" />
+      <FacebookView
+        :account="account"
+        @on-refresh-clicked="refresh"
+        @on-remove-clicked="emit('onRemoveClicked')"
+      />
     </template>
 
     <template v-else>

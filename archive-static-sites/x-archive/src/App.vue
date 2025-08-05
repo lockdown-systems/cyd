@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue'
-import { formattedDate } from './helpers'
-import { XArchive } from './types'
+import { ref, onMounted, provide } from "vue";
+import { formattedDate } from "./helpers";
+import { XArchive } from "./types";
 
 const archiveDataFound = ref(false);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const archiveData = ref<XArchive>((window as any).archiveData);
-provide('archiveData', archiveData);
+provide("archiveData", archiveData);
 
 onMounted(() => {
   // Make sure the archive data is there
-  archiveDataFound.value = 'archiveData' in window;
+  archiveDataFound.value = "archiveData" in window;
 
   // Set the document title
   if (archiveDataFound.value) {
     document.title = `@${archiveData.value.username}'s Archive`;
   }
-})
+});
 </script>
 
 <template>
@@ -26,13 +26,26 @@ onMounted(() => {
       <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
           <a class="navbar-brand" href="https://cyd.social" target="_blank">
-            <img src="./assets/icon.svg" alt="Cyd" class="icon" style="height: 40px;">
+            <img
+              src="./assets/icon.svg"
+              alt="Cyd"
+              class="icon"
+              style="height: 40px"
+            />
           </a>
           <span class="navbar-text">
-            <i class="fa-brands fa-x-twitter"></i> Archive: <b>@{{ archiveData.username }}</b>
+            <i class="fa-brands fa-x-twitter"></i> Archive:
+            <b>@{{ archiveData.username }}</b>
           </span>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
@@ -41,16 +54,22 @@ onMounted(() => {
                 <router-link to="/" class="nav-link">Tweets</router-link>
               </li>
               <li v-if="archiveData.retweets.length > 0" class="nav-item">
-                <router-link to="/retweets" class="nav-link">Retweets</router-link>
+                <router-link to="/retweets" class="nav-link"
+                  >Retweets</router-link
+                >
               </li>
               <li v-if="archiveData.likes.length > 0" class="nav-item">
                 <router-link to="/likes" class="nav-link">Likes</router-link>
               </li>
               <li v-if="archiveData.bookmarks.length > 0" class="nav-item">
-                <router-link to="/bookmarks" class="nav-link">Bookmarks</router-link>
+                <router-link to="/bookmarks" class="nav-link"
+                  >Bookmarks</router-link
+                >
               </li>
               <li v-if="archiveData.conversations.length > 0" class="nav-item">
-                <router-link to="/messages" class="nav-link">Messages</router-link>
+                <router-link to="/messages" class="nav-link"
+                  >Messages</router-link
+                >
               </li>
             </ul>
           </div>
@@ -62,22 +81,30 @@ onMounted(() => {
       <footer class="mt-auto bg-light py-3">
         <div class="container">
           <p class="text-center mb-0">
-            Archive created with <a href="https://cyd.social/">Cyd</a>
-            v{{ archiveData.appVersion }} |
-            Exported {{ formattedDate(archiveData.createdAt) }}
+            Archive created with <a href="https://cyd.social/">Cyd</a> v{{
+              archiveData.appVersion
+            }}
+            | Exported {{ formattedDate(archiveData.createdAt) }}
           </p>
         </div>
       </footer>
     </div>
   </template>
   <template v-else>
-    <div class="archive-data-missing d-flex justify-content-center align-items-center vh-100">
+    <div
+      class="archive-data-missing d-flex justify-content-center align-items-center vh-100"
+    >
       <div class="container">
         <div class="text-center">
-          <img src="./assets/omgkevin.svg" alt="Error" class="img-fluid mb-4 error-image">
+          <img
+            src="./assets/omgkevin.svg"
+            alt="Error"
+            class="img-fluid mb-4 error-image"
+          />
         </div>
         <p class="text-center">
-          Uh oh! <code>assets/archive.js</code> is missing, so I cannot display your archive.
+          Uh oh! <code>assets/archive.js</code> is missing, so I cannot display
+          your archive.
         </p>
         <p class="text-center">Try archiving your X data with Cyd again.</p>
       </div>

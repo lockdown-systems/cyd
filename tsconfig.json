@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "rootDir": "./",
-    "types": [],
+    "types": []
   },
   "include": ["src", "forge.config.ts"],
   "exclude": ["node_modules"]

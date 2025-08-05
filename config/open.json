@@ -1,6 +1,6 @@
 {
-    "mode": "open",
-    "apiURL": "",
-    "dashURL": "",
-    "plausibleDomain": "open-plausible-app.cyd.social"
+  "mode": "open",
+  "apiURL": "",
+  "dashURL": "",
+  "plausibleDomain": "open-plausible-app.cyd.social"
 }

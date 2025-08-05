@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { marked } from 'marked';
+import { computed } from "vue";
+import { marked } from "marked";
 
-import CydAvatarComponent from './CydAvatarComponent.vue';
-import RunningIcon from './RunningIcon.vue';
+import CydAvatarComponent from "./CydAvatarComponent.vue";
+import RunningIcon from "./RunningIcon.vue";
 
 const props = defineProps<{
   message: string;

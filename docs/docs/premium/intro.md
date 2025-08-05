@@ -12,4 +12,4 @@ Check out the [Pricing page](https://cyd.social/pricing/) for more information. 
 
 If you're part of an organization and you think Premium accounts would be useful for your members, check out [Cyd for Teams](../cyd-for-teams/intro).
 
-Cyd is developed by the [Lockdown Systems Collective](https://lockdown.systems), a worker-owned cooperative. 
+Cyd is developed by the [Lockdown Systems Collective](https://lockdown.systems), a worker-owned cooperative.

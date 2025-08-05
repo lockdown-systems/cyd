@@ -1,6 +1,6 @@
 {
-    "mode": "dev",
-    "apiURL": "https://dev-api.cyd.social",
-    "dashURL": "https://dev-dash.cyd.social",
-    "plausibleDomain": "dev-plausible-app.cyd.social"
+  "mode": "dev",
+  "apiURL": "https://dev-api.cyd.social",
+  "dashURL": "https://dev-dash.cyd.social",
+  "plausibleDomain": "dev-plausible-app.cyd.social"
 }
