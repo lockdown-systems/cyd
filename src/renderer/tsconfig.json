@@ -16,9 +16,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    /* Cypress testing */
-    "types": ["cypress"]
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["./**/*.ts", "./**/*.d.ts", "./**/*.tsx", "./**/*.vue"],
   "references": [
