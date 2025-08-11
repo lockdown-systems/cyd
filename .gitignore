@@ -38,3 +38,6 @@ testdata/settingsPath*
 testdata/dataPath*
 testdata/tmp
 coverage/
+
+# Other
+CLAUDE.md
