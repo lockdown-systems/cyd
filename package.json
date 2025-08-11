@@ -19,8 +19,6 @@
     "publish-prod": "node ./scripts/make.js publish prod",
     "test": "node ./scripts/test.js",
     "test:ci": "electron --no-sandbox node_modules/vitest/vitest.mjs run . --coverage && node ./scripts/clean.mjs",
-    "test:components": "cd src/renderer && cypress run --component",
-    "open-cypress": "cd src/renderer && cypress open",
     "lint": "prettier . --check && eslint --max-warnings=0",
     "fix": "eslint --fix",
     "format": "prettier --write .",
@@ -112,8 +110,6 @@
     "vue-tsc": "^3.0.1"
   },
   "optionalDependencies": {
-    "@cypress/vue": "^6.0.2",
-    "appdmg": "^0.6.6",
-    "cypress": "^14.5.1"
+    "appdmg": "^0.6.6"
   }
 }
