@@ -44,7 +44,10 @@ try {
   // Rebuild macos-alias specifically for Node.js (needed for DMG creation)
   if (platform === "darwin") {
     console.log("Rebuilding macos-alias for Node.js...");
-    execSync(`cd node_modules/macos-alias && rm -rf build && node-gyp rebuild`, { stdio: "inherit" });
+    execSync(
+      `cd node_modules/macos-alias && rm -rf build && node-gyp rebuild`,
+      { stdio: "inherit" },
+    );
   }
 
   // Build
