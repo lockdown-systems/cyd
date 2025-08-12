@@ -9,22 +9,26 @@ export default defineConfig({
       "/assets": resolve(__dirname, "src/renderer/public/assets"),
     },
   },
-  // Ensure TypeScript checking is enabled with same strictness as VS Code
   esbuild: {
     target: "ES2020",
   },
   test: {
     typecheck: {
       enabled: true,
-      tsconfig: "./tsconfig.test.json", // Use unified test TypeScript config
+      tsconfig: "./tsconfig.test.json",
     },
     environment: "jsdom",
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    // Default to testing src directory when no specific path is provided
     root: "./",
     setupFiles: ["src/renderer/src/test-setup.ts"],
     coverage: {
       provider: "v8",
+      include: ["src/**/*.{js,ts,vue}"],
+      all: true,
+      perFile: true,
+      clean: true,
+      skipFull: false,
+      reportOnFailure: true,
       exclude: [
         "coverage/**",
         "dist/**",
@@ -41,6 +45,9 @@ export default defineConfig({
         "forge.config.ts",
         "vite.*.config.ts",
         "eslint.config.mjs",
+        "**/*.{test,spec}.{js,ts,tsx,vue}",
+        "**/test-setup.ts",
+        "**/test_util.ts",
       ],
     },
   },
