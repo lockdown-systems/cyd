@@ -1,7 +1,15 @@
 import { vi } from "vitest";
+import type { ElectronAPI } from "../../preload";
 
 export const stubElectron = () => {
   return {
+    ipcRenderer: {
+      send: vi.fn(),
+      on: vi.fn(),
+      once: vi.fn(),
+      removeAllListeners: vi.fn(),
+    },
+    quitAndInstallUpdate: vi.fn(),
     checkForUpdates: vi.fn(),
     getVersion: vi.fn().mockResolvedValue("0.0.1"),
     getMode: vi.fn().mockResolvedValue("prod"),
@@ -24,9 +32,20 @@ export const stubElectron = () => {
     onPowerMonitorSuspend: vi.fn(),
     onPowerMonitorResume: vi.fn(),
     getImageDataURIFromFile: vi.fn().mockResolvedValue(""),
+    archive: {
+      importArchive: vi.fn(),
+      getArchiveInfo: vi.fn().mockResolvedValue(null),
+      isPageAlreadySaved: vi.fn().mockResolvedValue(false),
+      savePage: vi.fn().mockResolvedValue(true),
+      openFolder: vi.fn(),
+      getInfo: vi.fn().mockResolvedValue(null),
+    },
     database: {
       getConfig: vi.fn().mockResolvedValue(null),
       setConfig: vi.fn(),
+      deleteConfig: vi.fn(),
+      deleteConfigLike: vi.fn(),
+      saveAccount: vi.fn(),
       getErrorReport: vi.fn().mockResolvedValue(null),
       getNewErrorReports: vi.fn().mockResolvedValue([]),
       createErrorReport: vi.fn().mockResolvedValue(undefined),
@@ -91,7 +110,7 @@ export const stubElectron = () => {
       updateBlueskyAccount: vi.fn(),
       deleteBlueskyAccount: vi.fn(),
     },
-    facebook: {
+    Facebook: {
       startImport: vi.fn(),
       startDeleteData: vi.fn(),
       buildArchive: vi.fn(),
@@ -106,7 +125,7 @@ export const stubElectron = () => {
       getFinishedJobs: vi.fn().mockResolvedValue([]),
       previewTweet: vi.fn(),
     },
-    x: {
+    X: {
       startImport: vi.fn(),
       startDeleteData: vi.fn(),
       buildArchive: vi.fn(),
@@ -121,6 +140,10 @@ export const stubElectron = () => {
       getFinishedJobs: vi.fn().mockResolvedValue([]),
       previewTweet: vi.fn(),
       migrateToBluesky: vi.fn(),
+      resetProgress: vi.fn().mockResolvedValue({ progress: 0 }),
+      createJobs: vi.fn().mockResolvedValue([]),
+      getLastFinishedJob: vi.fn().mockResolvedValue(null),
+      updateJob: vi.fn(),
     },
-  };
+  } as unknown as ElectronAPI;
 };
