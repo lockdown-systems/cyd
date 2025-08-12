@@ -20,6 +20,8 @@ export default defineConfig({
     },
     environment: "jsdom",
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    // Default to testing src directory when no specific path is provided
+    root: "./",
     setupFiles: ["src/renderer/src/test-setup.ts"],
     coverage: {
       provider: "v8",
