@@ -21,11 +21,7 @@ const imageUrl = computed(() => {
     filename = `${filename}-look`;
   }
 
-  if (import.meta.env.MODE === "production") {
-    return new URL(`${filename}.svg`, import.meta.url).href;
-  } else {
-    return `/assets/${filename}.svg`;
-  }
+  return `/assets/${filename}.svg`;
 });
 
 onMounted(async () => {
