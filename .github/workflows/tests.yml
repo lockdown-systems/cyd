@@ -48,10 +48,7 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
-      - name: Run tests in Electron environment
+      - name: Run tests
         run: xvfb-run -a pnpm run test:ci
         env:
           CI: true
-
-      - name: Run component tests
-        run: pnpm test:components
