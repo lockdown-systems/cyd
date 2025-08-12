@@ -266,7 +266,7 @@ onUnmounted(() => {
                       v-model="userEmail"
                       type="email"
                       class="form-control"
-                      data-vue-ref="emailInputEl"
+                      data-testid="email-input"
                       placeholder="Email address"
                     />
                   </div>
@@ -289,7 +289,7 @@ onUnmounted(() => {
                       type="submit"
                       class="btn btn-primary mt-2"
                       rel="startContinueButtonEl"
-                      data-vue-ref="startContinueButtonEl"
+                      data-testid="continue-button"
                       @click="authenticate"
                     >
                       Continue
@@ -310,7 +310,7 @@ onUnmounted(() => {
                       type="text"
                       class="form-control verification-code"
                       rel="verificationCodeInputEl"
-                      data-vue-ref="verificationCodeInputEl"
+                      data-testid="verification-code-input"
                       maxlength="6"
                     />
                   </div>
@@ -319,7 +319,7 @@ onUnmounted(() => {
                       type="submit"
                       class="btn btn-secondary"
                       rel="backButtonEl"
-                      data-vue-ref="backButtonEl"
+                      data-testid="back-button"
                       @click="goBack"
                     >
                       Back

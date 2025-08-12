@@ -7,13 +7,14 @@ import CydAPIClient from "../../../cyd-api-client";
 import { stubElectron } from "../test_util";
 
 describe("SignInModal", () => {
-  let wrapper: VueWrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof SignInModal>>;
 
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
 
     // Setup global window.electron
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (global as any).window = {
       electron: stubElectron(),
     };
@@ -37,9 +38,9 @@ describe("SignInModal", () => {
       },
     });
 
-    const emailInput = wrapper.find('[data-vue-ref="emailInputEl"]');
+    const emailInput = wrapper.find('[data-testid="email-input"]');
     expect(emailInput.exists()).toBe(true);
-    expect(emailInput.element.value).toBe("");
+    expect((emailInput.element as HTMLInputElement).value).toBe("");
   });
 
   it("prepopulates the email field if it is saved", () => {
@@ -56,9 +57,9 @@ describe("SignInModal", () => {
       },
     });
 
-    const emailInput = wrapper.find('[data-vue-ref="emailInputEl"]');
+    const emailInput = wrapper.find('[data-testid="email-input"]');
     expect(emailInput.exists()).toBe(true);
-    expect(emailInput.element.value).toBe(testEmail);
+    expect((emailInput.element as HTMLInputElement).value).toBe(testEmail);
   });
 
   it("shows an error message if the email field is blank", async () => {
@@ -73,9 +74,9 @@ describe("SignInModal", () => {
       },
     });
 
-    const emailInput = wrapper.find('[data-vue-ref="emailInputEl"]');
+    const emailInput = wrapper.find('[data-testid="email-input"]');
     expect(emailInput.exists()).toBe(true);
-    expect(emailInput.element.value).toBe("");
+    expect((emailInput.element as HTMLInputElement).value).toBe("");
 
     // Call the authenticate method directly to avoid DOM event issues
     const componentInstance = wrapper.vm;
@@ -106,9 +107,9 @@ describe("SignInModal", () => {
       },
     });
 
-    const emailInput = wrapper.find('[data-vue-ref="emailInputEl"]');
+    const emailInput = wrapper.find('[data-testid="email-input"]');
     expect(emailInput.exists()).toBe(true);
-    expect(emailInput.element.value).toBe(testEmail);
+    expect((emailInput.element as HTMLInputElement).value).toBe(testEmail);
 
     // Call the authenticate method directly
     const componentInstance = wrapper.vm;
@@ -146,9 +147,9 @@ describe("SignInModal", () => {
       },
     });
 
-    const emailInput = wrapper.find('[data-vue-ref="emailInputEl"]');
+    const emailInput = wrapper.find('[data-testid="email-input"]');
     expect(emailInput.exists()).toBe(true);
-    expect(emailInput.element.value).toBe(testEmail);
+    expect((emailInput.element as HTMLInputElement).value).toBe(testEmail);
 
     // Call the authenticate method directly
     const componentInstance = wrapper.vm;
@@ -162,7 +163,7 @@ describe("SignInModal", () => {
     expect(window.electron.showError).not.toHaveBeenCalled();
 
     const verificationCodeInput = wrapper.find(
-      '[data-vue-ref="verificationCodeInputEl"]',
+      '[data-testid="verification-code-input"]',
     );
     expect(verificationCodeInput.exists()).toBe(true);
   });
@@ -204,7 +205,7 @@ describe("SignInModal", () => {
     await nextTick();
 
     const verificationCodeInput = wrapper.find(
-      '[data-vue-ref="verificationCodeInputEl"]',
+      '[data-testid="verification-code-input"]',
     );
     expect(verificationCodeInput.exists()).toBe(true);
 
@@ -291,7 +292,7 @@ describe("SignInModal", () => {
     await nextTick();
 
     const verificationCodeInput = wrapper.find(
-      '[data-vue-ref="verificationCodeInputEl"]',
+      '[data-testid="verification-code-input"]',
     );
     expect(verificationCodeInput.exists()).toBe(true);
 
@@ -359,7 +360,7 @@ describe("SignInModal", () => {
     await nextTick();
 
     const verificationCodeInput = wrapper.find(
-      '[data-vue-ref="verificationCodeInputEl"]',
+      '[data-testid="verification-code-input"]',
     );
     expect(verificationCodeInput.exists()).toBe(true);
 
@@ -417,7 +418,7 @@ describe("SignInModal", () => {
     await nextTick();
 
     const verificationCodeInput = wrapper.find(
-      '[data-vue-ref="verificationCodeInputEl"]',
+      '[data-testid="verification-code-input"]',
     );
     expect(verificationCodeInput.exists()).toBe(true);
 
@@ -426,7 +427,7 @@ describe("SignInModal", () => {
     await nextTick();
 
     // Should be back to start
-    const emailInput = wrapper.find('[data-vue-ref="emailInputEl"]');
+    const emailInput = wrapper.find('[data-testid="email-input"]');
     expect(emailInput.exists()).toBe(true);
     expect(window.electron.showError).not.toHaveBeenCalled();
   });
