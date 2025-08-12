@@ -7,6 +7,7 @@ import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 // Use require to bypass ESM import issues with @electron/fuses v2.0.0
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 import { PublisherS3 } from "@electron-forge/publisher-s3";
 
