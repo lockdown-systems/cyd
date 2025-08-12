@@ -16,9 +16,15 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node"]
   },
   "include": ["./**/*.ts", "./**/*.d.ts", "./**/*.tsx", "./**/*.vue"],
+  "exclude": [
+    "../../node_modules",
+    "../../eslint.config.mjs",
+    "../../vitest.config.ts"
+  ],
   "references": [
     {
       "path": "../../tsconfig.node.json"
