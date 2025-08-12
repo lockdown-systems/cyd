@@ -44,13 +44,16 @@ const emailInputEl = ref<HTMLInputElement | null>(null);
 const startContinueButtonEl = ref<HTMLButtonElement | null>(null);
 const verificationCodeInputEl = ref<HTMLInputElement | null>(null);
 
-watch(verificationCode, async (newValue, _oldValue) => {
-  if (newValue.length < 6) {
-    // Strip non-numeric characters
-    verificationCode.value = newValue.replace(/[^0-9]/g, "");
+watch(verificationCode, async (newValue: string, _oldValue: string) => {
+  const filtered = newValue.replace(/[^0-9]/g, "").slice(0, 6);
+
+  if (filtered !== newValue) {
+    verificationCode.value = filtered;
+    return; // Exit early to avoid infinite loop
   }
+
   // Auto-submit on 6 digits
-  if (newValue.length === 6) {
+  if (filtered.length === 6) {
     signInState.value = "token";
     await registerDevice();
   }

@@ -10,7 +10,7 @@ const args = process.argv.slice(2);
 const testPattern = args.length > 0 ? args.join(" ") : "src";
 
 // Build the command
-const vitestArgs = ["run", "--coverage"];
+const vitestArgs = ["run", "--coverage", "--run"];
 if (args.length > 0) {
   vitestArgs.push(...args);
 } else {
@@ -29,8 +29,15 @@ rebuild.on("close", (code) => {
   }
 
   // Run vitest in Electron (like test:ci script)
-  const vitestCmd = ["--no-sandbox", "node_modules/vitest/vitest.mjs", ...vitestArgs];
-  const vitest = spawn("electron", vitestCmd, { stdio: "inherit", shell: true });
+  const vitestCmd = [
+    "--no-sandbox",
+    "node_modules/vitest/vitest.mjs",
+    ...vitestArgs,
+  ];
+  const vitest = spawn("electron", vitestCmd, {
+    stdio: "inherit",
+    shell: true,
+  });
 
   vitest.on("close", (code) => {
     // Run cleanup script
