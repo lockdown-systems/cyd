@@ -94,35 +94,35 @@ importers:
         version: 5.3.2(chart.js@4.5.0)(vue@3.5.18(typescript@5.9.2))
     devDependencies:
       '@electron-forge/cli':
-        specifier: 7.8.3
-        version: 7.8.3(encoding@0.1.13)
+        specifier: 7.4.0
+        version: 7.4.0(encoding@0.1.13)
       '@electron-forge/maker-deb':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/maker-dmg':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/maker-rpm':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/maker-squirrel':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/maker-zip':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/plugin-auto-unpack-natives':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/plugin-fuses':
-        specifier: 7.8.3
-        version: 7.8.3(@electron/fuses@1.8.0)
+        specifier: 7.4.0
+        version: 7.4.0(@electron/fuses@1.8.0)
       '@electron-forge/plugin-vite':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron-forge/publisher-s3':
-        specifier: 7.8.3
-        version: 7.8.3
+        specifier: 7.4.0
+        version: 7.4.0
       '@electron/fuses':
         specifier: ^1.8.0
         version: 1.8.0
@@ -523,6 +523,11 @@ packages:
 
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
+
+  '@aws-sdk/abort-controller@3.374.0':
+    resolution: {integrity: sha512-pO1pqFBdIF28ZvnJmg58Erj35RLzXsTrjvHghdc/xgtSvodFFCNrUsPg6AP3On8eiw9elpHoS4P8jMx1pHDXEw==}
+    engines: {node: '>=14.0.0'}
+    deprecated: This package has moved to @smithy/abort-controller
 
   '@aws-sdk/client-s3@3.864.0':
     resolution: {integrity: sha512-QGYi9bWliewxumsvbJLLyx9WC0a4DP4F+utygBcq0zwPxaM0xDfBspQvP1dsepi7mW5aAjZmJ2+Xb7X0EhzJ/g==}
@@ -1700,100 +1705,104 @@ packages:
     resolution: {integrity: sha512-P1ml0nvOmEFdmu0smSXOqTS1sxU5tqvnc0dA4MTKV39kye+bhQnjkIKEE18fNOvxjyB86k8esoCIFM3x4RykOQ==}
     engines: {node: '>=18.0'}
 
-  '@electron-forge/cli@7.8.3':
-    resolution: {integrity: sha512-BSAjGGfVf0yp3NQhXYmyCw9T//YCQHuktMv4HXfDVfo7AoV6DA1oEhqldI4Q7aHKeRob5+yBkvRRYPiu5ayCPw==}
+  '@electron-forge/cli@7.4.0':
+    resolution: {integrity: sha512-a+zZv3ja/IxkJzNyx4sOHSZv6DPV85S0PEVF6pcRjUpbDL5r+DxjRFsNc0Nq4UIWyFm1nw7RWoPdd9uDst4Tvg==}
     engines: {node: '>= 16.4.0'}
     hasBin: true
 
-  '@electron-forge/core-utils@7.8.3':
-    resolution: {integrity: sha512-8jhK7AvUKEqDyTMMuRhvS1TkE73YEnHYAxVvkJq35e1KdCwGbGnSRhaEs7OOqRfkKxfepdJ7BMKFSoKFeP+z0Q==}
+  '@electron-forge/core-utils@7.4.0':
+    resolution: {integrity: sha512-9RLG0F9SX466TpkaTcW+V15KmnGuTpmr7NKMRlngtHXmnkBUJz4Mxp1x33WZLgL90dJrxrRgHSfVBtA4lstDPw==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/core@7.8.3':
-    resolution: {integrity: sha512-qX2vi/LP3HcSqSfLfzMeH2ll8SFZQnOk8VN/b3bq6XrBCbrfrSsTYYWakN6mmfalLJcQRm4jCEc6gcyuGO4i6Q==}
+  '@electron-forge/core@7.4.0':
+    resolution: {integrity: sha512-pYHKpB2CKeQgWsb+gox+FPkEvP+6Q2zGj2eZtgZRtKppoWIXrHIpOtcm6FllJ/gZ5u4AsQzVIYReAHGaBa0osw==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/maker-base@7.8.3':
-    resolution: {integrity: sha512-WmF66cHdziaK8Asi7IRTLxZjCZ8IqXXHr6IPl4d5oatN6s5RG+HHzG1hiJ7LzlOEntqdSpE8Wh2nB2TmyR4huQ==}
+  '@electron-forge/maker-base@7.4.0':
+    resolution: {integrity: sha512-LwWS4VPdwjISl1KpLhmM1Qr1M3sRTTQ/RsX+GlFd7cQ1W/FsgxMjaTG4Od1d+a5CGVTh3s6X2g99TSUfxjOveg==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/maker-deb@7.8.3':
-    resolution: {integrity: sha512-GZHJU06LRFJkv1wMc3bjMVzedQhyxnyMZqgDJjE9TIlXXZkN2EqGmKLw/HxwNRA1R8yuQeA4Ih6/dEB4bZTevg==}
+  '@electron-forge/maker-deb@7.4.0':
+    resolution: {integrity: sha512-npWea3IpGeu96xNqJpsCOYX6V4E+HY6u/okeTUzUOMX96UteT14MecdUefMam158glRTX84k2ryh7WcBoOa4mg==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/maker-dmg@7.8.3':
-    resolution: {integrity: sha512-N3yKU89D7pC/xPeblSQyBQT1DLKzZMl4V5kla6nc3LIA0oyjz99Gosv8IAj9vFkreQ5QRqpTIlu1ecDL9JY9dQ==}
+  '@electron-forge/maker-dmg@7.4.0':
+    resolution: {integrity: sha512-xRCMNtnpvQNwrDYvwbVFegnErnIMpHGZANrjwushlH9+Fsu60DFvf5s3AVkgsYdQTqlY7wYRG1mziYZmRlPAIw==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/maker-rpm@7.8.3':
-    resolution: {integrity: sha512-TqHHdF5D3Dy4NgG+pi8eRc18P1D0FF1LE+CqQF4MRof+XrpHhRtog5Ac4gWjvg1Wma6WjPyTdryHAkURsoBbuQ==}
+  '@electron-forge/maker-rpm@7.4.0':
+    resolution: {integrity: sha512-N64Yh/K/91GzIk28T1jKsCGgYaquDuhXcEJW+TkVyP5tPZ9aTz9SjXLBxAg8WhcroArAZEsVyPOFKthmFzAUuA==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/maker-squirrel@7.8.3':
-    resolution: {integrity: sha512-6XSEhZMbgfjAaCm8A54pNjn4ghfxJgPu4i7ok3PhP44WOrFPaPivLttpvKRnxRb0PGZstPjPBFcwL1F9S1trjA==}
+  '@electron-forge/maker-squirrel@7.4.0':
+    resolution: {integrity: sha512-mCQyufnSNfjffiKho59ZqVg4W601zGOl6h01OyfDwjOU/G4iQtpnnDEOXGe26q7OVT5ORb1WDnfyGgBeJ6Ge7g==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/maker-zip@7.8.3':
-    resolution: {integrity: sha512-ytao285wKAjKBO6eULzLeqUDP5Zh7beQlGyHjgOMknk7FI0sNy+zGdh3CrCGIhkXSHU/DpukPwRu2SiKvIaIGA==}
+  '@electron-forge/maker-zip@7.4.0':
+    resolution: {integrity: sha512-UGbMdpuK/P29x1FFRWNOs3bNz+7QNFWVWyTM5hcWqib66cNuUmoaPifQyuwW2POIrIohrxlzLK87/i9Zc8g4dA==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/plugin-auto-unpack-natives@7.8.3':
-    resolution: {integrity: sha512-7tRhySvfdTrBC4PEhAzjzjJGT5dBSU6jhy3XlQ8LJH50jHIT9bioQq6dfn/3iw/VaD1ftGWKx+HlntYCmBhViw==}
+  '@electron-forge/plugin-auto-unpack-natives@7.4.0':
+    resolution: {integrity: sha512-jJ/v2blH32bcvdlJbeeW/yO99K9SduW8yrS7zuFN6y+B1cmzLd+S7L8oCcOghFDMAlYjQaBlnCe/nMJbT9mN4g==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/plugin-base@7.8.3':
-    resolution: {integrity: sha512-0CzPQlO3BGu5bLCrx2Xqo6B1yoHhA9wG9boZE58ANr8Qma1NQfAWZU3LnMmF3EdWNTX76PxpZeeb3QbPNcxSuA==}
+  '@electron-forge/plugin-base@7.4.0':
+    resolution: {integrity: sha512-LcTNtEc2YaWvhhqWVIfdJ+J0/krSgc2dqYAHhOH2aLUSm9End3dKO/PZ1Y6DPsiPiJKHnSLBJ/XBN/16NY4Sjw==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/plugin-fuses@7.8.3':
-    resolution: {integrity: sha512-OPWfoVsQ3xzK7GB3C6zoGlUu21RCOEQAm5+zg9VP1HJg5dsrKkqU8A2DsHGxe7PHthUCuQUgcls0ciDOHvckCQ==}
+  '@electron-forge/plugin-fuses@7.4.0':
+    resolution: {integrity: sha512-LKcyIaO0sUkzZdOB1PySjG1R9KAl5Vi453ZQcambBI7RpZtPKozluNd0zlXey1cf7ycTwhzvmrI6ss3LHQyjvw==}
     engines: {node: '>= 16.4.0'}
     peerDependencies:
-      '@electron/fuses': ^1.0.0
+      '@electron/fuses': '>=1.0.0'
 
-  '@electron-forge/plugin-vite@7.8.3':
-    resolution: {integrity: sha512-f18x58SMpk47DADyydsMJSqHFDb2zp7WP3NwwpbfzSoyrfjuMaZFRlHsOP1JC7GhWejYMudHOUWLjKcZaeFWzQ==}
+  '@electron-forge/plugin-vite@7.4.0':
+    resolution: {integrity: sha512-GZqBUsyNH0XCvQlBKMS0aOJM6PX80irijgPR9Lfl6ctYIuKTo+82td+nIK8Fef/qSDUEt/U1f4Qb9GfLfhRRig==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/publisher-base@7.8.3':
-    resolution: {integrity: sha512-kurRKVNyLsK2JgmVl88UHu0+qSH+PysMtk/xP0YX5sYNMVxRay8+S1T10tAh6Qom94KwpF3CLYtkebvxb/fq+A==}
+  '@electron-forge/publisher-base@7.4.0':
+    resolution: {integrity: sha512-PiJk4RfaC55SnVnteLW2ZIQNM9DpGOi6YoUn5t8i9UcVp2rFIdya7bJY/b9u1hwubm4d5+TdypMVEuJjM44CJQ==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/publisher-s3@7.8.3':
-    resolution: {integrity: sha512-K6hP+9ZVr7hKLjdQCBNOd9pP+/1SEUggI/LruFjsiUisjkgokoMkY6ufABsB8hmeaCnfjlTJ87nREG8bhdgTVg==}
+  '@electron-forge/publisher-s3@7.4.0':
+    resolution: {integrity: sha512-JjBcXU5bYLm7gyEvS9lhdJxFypGLqtteH492an+V8p7J1mUL870WmYGjKHOMkMJkxvsAubARUiFNfgn0xfvMww==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/publisher-static@7.8.3':
-    resolution: {integrity: sha512-U1PWEjT/L1MsSHDdoama0Anww0PB9heOgmFXvD3EQlUe0HLFeL1oPUWWFErUfDWnjZ6cvDa+pU7IRqYqjio9vg==}
+  '@electron-forge/publisher-static@7.4.0':
+    resolution: {integrity: sha512-0LXVSGfL4ENY+5up3Xev/+mSPgYWuaS6O2JpsJdfJ+XtbzLuGHdJmyUV9wWPq+ABdXaILWN9Li9d022QeR6qLQ==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/shared-types@7.8.3':
-    resolution: {integrity: sha512-gkZtD7ALXHPDOthJo1rQYLDNfG09fdDRMWvjEgaXdF3Z69xXFfnOWPNuOkRUODNalMnuuGs6l7jDl+QFQgHlDg==}
+  '@electron-forge/shared-types@7.4.0':
+    resolution: {integrity: sha512-5Ehy6enUjBaU08odf9u9TOhmOVXlqobzMvKUixtkdAWgV1XZAUJmn+p21xhj0IkO92MQiXMGv66w9pDNjRT8uQ==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/template-base@7.8.3':
-    resolution: {integrity: sha512-C0tVODDNKoqhCf7T1HRONJs9DKAmjmk8Of0t8rVjT0ERDzMvLGlBByd785v5lFlKbGERyoaXsYltxPAu92G3aA==}
+  '@electron-forge/template-base@7.4.0':
+    resolution: {integrity: sha512-3YWdRSGzQfQPQkQxStn2wkJ/SuNGGKo9slwFJGvqMV+Pbx3/M/hYi9sMXOuaqVZgeaBp8Ap27yFPxaIIOC3vcA==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/template-vite-typescript@7.8.3':
-    resolution: {integrity: sha512-HJjjY9xmlpl0vx10mrXdWn2RYHExfazACxmDNNmGO1eq3eqrQk/3R+NDGyqMJ7ajBsRVbkQNt+wayH7HkRJUjA==}
+  '@electron-forge/template-vite-typescript@7.4.0':
+    resolution: {integrity: sha512-wdByG807VWcUd81E6572b/G/Ki8gb+GrCIWxO7Cl3qBa+yNaU1sHhBwB1RyTbQy1r8ubSBtsWrRD1J/yzHKWoQ==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/template-vite@7.8.3':
-    resolution: {integrity: sha512-tDL5h+UO5iOzdEYNVsSu4zkUVN4RTxti5iXzcBquKd9Kgt/A/M7xHeuKj7g1Ds7Ul/n2XcFvcfgLcRmiXQeVDA==}
+  '@electron-forge/template-vite@7.4.0':
+    resolution: {integrity: sha512-YPVyCGiBKmZPCxK/Bd2louV3PBcxI2nT2+tRKP+mlEHOWrxbZIfmZSR2lIAFvK/ALKlwUKROdmlwyi7ZcdT7JQ==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/template-webpack-typescript@7.8.3':
-    resolution: {integrity: sha512-Xz3X7YJvot08Xm+0BLIS28GJH+0z9vEN9xYX76SOL4jqDcHH8lRFpNWcE2HsxxxRbCVH+s0etVmACZcWoujUrw==}
+  '@electron-forge/template-webpack-typescript@7.4.0':
+    resolution: {integrity: sha512-O5gwjNSGFNRdJWyiCtevcOBDPAMhgOPvLORh9qR1GcjyTutWwHWmZzycqH+MmkhpQPgrAYDEeipXcOQhSbzNZA==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/template-webpack@7.8.3':
-    resolution: {integrity: sha512-1zkji5px1kDXbigFN5959anCf3HAVBvam3bHh2VejnCScegLQP3JBjAn2Nw2ILWq6ej5JNuA/V99b1dr11hPOw==}
+  '@electron-forge/template-webpack@7.4.0':
+    resolution: {integrity: sha512-W558AEGwQrwEtKIbIJPPs0LIsaC/1Vncj5NgqKehEMJjBb0KQq4hwBu/6dauQrfun4jRCOp7LV+OVrf5XPJ7QA==}
     engines: {node: '>= 16.4.0'}
 
-  '@electron-forge/tracer@7.8.3':
-    resolution: {integrity: sha512-YVVDaPEUOvR1z+DDdj8wR/vO9OSlC91wz4/2Iqe9rqQz8sztnnQBClMAZTqu9bkDTFyHrns8j8v7tPVuVS6ULQ==}
+  '@electron-forge/tracer@7.4.0':
+    resolution: {integrity: sha512-F4jbnDn4yIZjmky1FZ6rgBKTM05AZQQfHkyJW2hdS4pDKJjdKAqWytoZKDi1/S6Cr6tN+DD0TFGD3V0i6HPHYQ==}
     engines: {node: '>= 14.17.5'}
+
+  '@electron-forge/web-multi-logger@7.4.0':
+    resolution: {integrity: sha512-XHKs37q4S8BzH1lTKhuOFO6k4R7XdrsZfox+qlp4HpiYKw8yq4rcasB0zUO5YKZ2aTJ1t79X1jxSJb5qhImdHA==}
+    engines: {node: '>= 16.4.0'}
 
   '@electron/asar@3.4.1':
     resolution: {integrity: sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA==}
@@ -2525,6 +2534,10 @@ packages:
   '@slorber/remark-comment@1.0.0':
     resolution: {integrity: sha512-RCE24n7jsOj1M0UPvIQCHTe7fI0sFL4S2nwKVWwHyVr/wI/H8GosgsJGyhnsZoGFnD/P2hLf1mSbrrgSLN93NA==}
 
+  '@smithy/abort-controller@1.1.0':
+    resolution: {integrity: sha512-5imgGUlZL4dW4YWdMYAKLmal9ny/tlenM81QZY7xYyb76z9Z/QOg7oM5Ak9HQl8QfFTlGVWwcMXl+54jroRgEQ==}
+    engines: {node: '>=14.0.0'}
+
   '@smithy/abort-controller@4.0.5':
     resolution: {integrity: sha512-jcrqdTQurIrBbUm4W2YdLVMQDoL0sA9DTxYd2s+R/y+2U9NLOP7Xf/YqfSg1FZhlZIYEnvk2mwbyvIfdLEPo8g==}
     engines: {node: '>=18.0.0'}
@@ -2660,6 +2673,10 @@ packages:
   '@smithy/smithy-client@4.4.10':
     resolution: {integrity: sha512-iW6HjXqN0oPtRS0NK/zzZ4zZeGESIFcxj2FkWed3mcK8jdSdHzvnCKXSjvewESKAgGKAbJRA+OsaqKhkdYRbQQ==}
     engines: {node: '>=18.0.0'}
+
+  '@smithy/types@1.2.0':
+    resolution: {integrity: sha512-z1r00TvBqF3dh4aHhya7nz1HhvCg4TRmw51fjMrh5do3h+ngSstt/yKlNbHeb9QxJmFbmN8KEVSWgb1bRvfEoA==}
+    engines: {node: '>=14.0.0'}
 
   '@smithy/types@4.3.2':
     resolution: {integrity: sha512-QO4zghLxiQ5W9UZmX2Lo0nta2PuE1sSrXUYDoaB6HMR762C0P7v/HEPHf6ZdglTVssJG1bsrSBxdc3quvDSihw==}
@@ -2851,9 +2868,6 @@ packages:
 
   '@tsconfig/node16@1.0.4':
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
-
-  '@types/appdmg@0.5.5':
-    resolution: {integrity: sha512-G+n6DgZTZFOteITE30LnWj+HRVIGr7wMlAiLWOO02uJFWVEitaPU9JVXm9wJokkgshBawb2O1OykdcsmkkZfgg==}
 
   '@types/archiver@6.0.3':
     resolution: {integrity: sha512-a6wUll6k3zX6qs5KlxIggs1P1JcYJaTCx2gnlr+f0S1yd2DoaEwoIK10HmBaLnZwWneBz+JBm0dwcZu0zECBcQ==}
@@ -4165,12 +4179,12 @@ packages:
     resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
     engines: {node: '>=14'}
 
-  commander@11.1.0:
-    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
-    engines: {node: '>=16'}
-
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
+
+  commander@4.1.1:
+    resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
+    engines: {node: '>= 6'}
 
   commander@5.1.0:
     resolution: {integrity: sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==}
@@ -4953,9 +4967,9 @@ packages:
     os: [darwin, linux]
     hasBin: true
 
-  electron-installer-dmg@5.0.1:
-    resolution: {integrity: sha512-qOa1aAQdX57C+vzhDk3549dd/PRlNL4F8y736MTD1a43qptD+PvHY97Bo9gSf+OZ8iUWE7BrYSpk/FgLUe40EA==}
-    engines: {node: '>= 16'}
+  electron-installer-dmg@4.0.0:
+    resolution: {integrity: sha512-g3W6XnyUa7QGrAF7ViewHdt6bXV2KYU1Pm1CY3pZpp+H6mOjCHHAhf/iZAxtaX1ERCb+SQHz7xSsAHuNH9I8ZQ==}
+    engines: {node: '>= 12.13.0'}
     hasBin: true
 
   electron-installer-redhat@3.4.0:
@@ -5304,6 +5318,10 @@ packages:
     resolution: {integrity: sha512-XYfuKMvj4O35f/pOXLObndIRvyQ+/+6AhODh+OKWj9S9498pHHn/IMszH+gt0fBCRWMNfk1ZSp5x3AifmnI2vg==}
     engines: {node: '>=6'}
 
+  expand-tilde@2.0.2:
+    resolution: {integrity: sha512-A5EmesHW6rfnZ9ysHQjPdJRni0SRar0tjtG5MNtm9n5TUvsYU8oozprtRD4AqHxcZWWlVuAmQo2nWKfN9oyjTw==}
+    engines: {node: '>=0.10.0'}
+
   expect-type@1.2.2:
     resolution: {integrity: sha512-JhFGDVJ7tmDJItKhYgJCGLOWjuK9vPxiXoUFLwLDc99NlmklilbiQJwoctZtt13+xMw91MCk/REan6MWHqDjyA==}
     engines: {node: '>=12.0.0'}
@@ -5314,6 +5332,12 @@ packages:
 
   exponential-backoff@3.1.2:
     resolution: {integrity: sha512-8QxYTVXUkuy7fIIoitQkPwGonB8F3Zj8eEO8Sqg9Zv/bkI7RJAzowee4gr81Hak/dUTpA2Z7VfQgoijjPNlUZA==}
+
+  express-ws@5.0.2:
+    resolution: {integrity: sha512-0uvmuk61O9HXgLhGl3QhNSEtRsQevtmbL94/eILaliEADZBHZOQUAiHFrGPrgsjikohyrmSG5g+sCfASTt0lkQ==}
+    engines: {node: '>=4.5.0'}
+    peerDependencies:
+      express: ^4.0.0 || ^5.0.0-alpha.1
 
   express@4.21.2:
     resolution: {integrity: sha512-28HqgMZAmih1Czt9ny7qr6ek2qddF4FclbMzwhCREB6OFfH+rXAnuNCwo1/wFvrtbgsQDb4kSbX9de9lFbrXnA==}
@@ -5618,6 +5642,9 @@ packages:
     resolution: {integrity: sha512-+CEb+GDCM7tkOS2wdMKTn9vU7DgnKUTuDlehkNJKNSovdCOVxs14OfKCk4cvSaR3za4gj+OBdl9opPN9xrJ0zA==}
     hasBin: true
 
+  get-installed-path@2.1.1:
+    resolution: {integrity: sha512-Qkn9eq6tW5/q9BDVdMpB8tOHljX9OSP0jRC5TRNVA4qRc839t4g8KQaR8t0Uv0EFVL0MlyG7m/ofjEgAROtYsA==}
+
   get-intrinsic@1.3.0:
     resolution: {integrity: sha512-9fSjSaos/fRIVIp+xSJlE6lfwhES7LNtKaCBIamHsjr2na1BiABJPo0mOjjz8GJDURarmCPGqaiVg5mfjb98CQ==}
     engines: {node: '>= 0.4'}
@@ -5697,6 +5724,14 @@ packages:
   global-dirs@3.0.1:
     resolution: {integrity: sha512-NBcGGFbBA9s1VzD41QXDG+3++t9Mn5t1FpLdhESY6oKY4gYTFpX4wO3sqGUa0Srjtbfj3szX0RnemmrVRUdULA==}
     engines: {node: '>=10'}
+
+  global-modules@1.0.0:
+    resolution: {integrity: sha512-sKzpEkf11GpOFuw0Zzjzmt4B4UZwjOcG757PPvrfhxcLFbq0wpsgpOqxpxtxFiCG4DtG93M6XRVbF2oGdev7bg==}
+    engines: {node: '>=0.10.0'}
+
+  global-prefix@1.0.2:
+    resolution: {integrity: sha512-5lsx1NUDHtSjfg0eHlmYvZKv8/nVqX4ckFbM+FrGcQ+04KWcWFo9P5MxPZYSzUvyzmdTbI7Eix8Q4IbELDqzKg==}
+    engines: {node: '>=0.10.0'}
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
@@ -5870,6 +5905,10 @@ packages:
 
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
+
+  homedir-polyfill@1.0.3:
+    resolution: {integrity: sha512-eSmmWE5bZTK2Nou4g0AI3zZ9rswp7GRKoKXS1BLUkvPviOqs4YTN1djQIqrXy9k5gEtdLPy86JjRwsNM9tnDcA==}
+    engines: {node: '>=0.10.0'}
 
   hosted-git-info@2.8.9:
     resolution: {integrity: sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==}
@@ -6338,6 +6377,10 @@ packages:
   is-weakset@2.0.4:
     resolution: {integrity: sha512-mfcwb6IzQyOKTs84CQMrOwW4gQcaTOAWJ0zzJCl2WSPDrWk/OzDaImWFH3djXhb24g4eudZfLRozAvPGw4d9hQ==}
     engines: {node: '>= 0.4'}
+
+  is-windows@1.0.2:
+    resolution: {integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==}
+    engines: {node: '>=0.10.0'}
 
   is-wsl@2.2.0:
     resolution: {integrity: sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==}
@@ -7538,6 +7581,10 @@ packages:
   parse-numeric-range@1.3.0:
     resolution: {integrity: sha512-twN+njEipszzlMJd4ONUYgSfZPDxgHhT9Ahed5uTigpQn90FggW4SA/AIPq/6a149fTbE9qBEcSwE3FAEp6wQQ==}
 
+  parse-passwd@1.0.0:
+    resolution: {integrity: sha512-1Y1A//QUXEZK7YKz+rD9WydcE1+EuPr6ZBgKecAB8tmoW6UFv0NREVJe1p+jRxtThkcbbKkfwIbWJe/IeE6m2Q==}
+    engines: {node: '>=0.10.0'}
+
   parse5-htmlparser2-tree-adapter@6.0.1:
     resolution: {integrity: sha512-qPuWvbLgvDGilKc5BoicRovlT4MtYT6JfJyBOMDsKoiT+GiuP5qyrPCnR9HcPECIJJmZh5jRndyNThnhhb/vlA==}
 
@@ -8637,9 +8684,17 @@ packages:
   resolve-alpn@1.2.1:
     resolution: {integrity: sha512-0a1F4l73/ZFZOakJnQ3FvkJ2+gSTQWz/r2KE5OdDY0TxPm5h4GkqkWWfM47T7HsbnOtcJVEF4epCVy6u7Q3K+g==}
 
+  resolve-dir@1.0.1:
+    resolution: {integrity: sha512-R7uiTjECzvOsWSfdM0QKFNBVFcK27aHOUwdvK53BcW8zqnGdYp0Fbj82cy54+2A4P2tFM22J5kRfe1R+lM/1yg==}
+    engines: {node: '>=0.10.0'}
+
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
     engines: {node: '>=4'}
+
+  resolve-package@1.0.1:
+    resolution: {integrity: sha512-rzB7NnQpOkPHBWFPP3prUMqOP6yg3HkRGgcvR+lDyvyHoY3fZLFLYDkPXh78SPVBAE6VTCk/V+j8we4djg6o4g==}
+    engines: {node: '>=4', npm: '>=2'}
 
   resolve-pathname@3.0.0:
     resolution: {integrity: sha512-C7rARubxI8bXFNB/hqcp/4iUeIXJhJZvFPFPiSPRnhU5UPxzMFIl+2E6yY6c4k9giDJAhtV+enfA+G89N6Csng==}
@@ -10180,6 +10235,22 @@ packages:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
+  xterm-addon-fit@0.5.0:
+    resolution: {integrity: sha512-DsS9fqhXHacEmsPxBJZvfj2la30Iz9xk+UKjhQgnYNkrUIN5CYLbw7WEfz117c7+S86S/tpHPfvNxJsF5/G8wQ==}
+    deprecated: This package is now deprecated. Move to @xterm/addon-fit instead.
+    peerDependencies:
+      xterm: ^4.0.0
+
+  xterm-addon-search@0.8.2:
+    resolution: {integrity: sha512-I1863mjn8P6uVrqm/X+btalVsqjAKLhnhpbP7SavAOpEkI1jJhbHU2UTp7NjeRtcKTks6UWk/ycgds5snDSejg==}
+    deprecated: This package is now deprecated. Move to @xterm/addon-search instead.
+    peerDependencies:
+      xterm: ^4.0.0
+
+  xterm@4.19.0:
+    resolution: {integrity: sha512-c3Cp4eOVsYY5Q839dR5IejghRPpxciGmLWWaP9g+ppfMeBChMeLa1DCA+pmX/jyDZ+zxFOmlJL/82qVdayVoGQ==}
+    deprecated: This package is now deprecated. Move to @xterm/xterm instead.
+
   y18n@4.0.3:
     resolution: {integrity: sha512-JKhqTOwSrqNA1NY5lSztJ1GrBiUodLMmIZuLiDaMRJ+itFd+ABVE8XBjOvIWL+rSqNDC74LCSFmlb/U4UZ4hJQ==}
 
@@ -10227,6 +10298,11 @@ packages:
   yargs@17.7.2:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
     engines: {node: '>=12'}
+
+  yarn-or-npm@3.0.1:
+    resolution: {integrity: sha512-fTiQP6WbDAh5QZAVdbMQkecZoahnbOjClTQhzv74WX5h2Uaidj1isf9FDes11TKtsZ0/ZVfZsqZ+O3x6aLERHQ==}
+    engines: {node: '>=8.6.0'}
+    hasBin: true
 
   yauzl@2.10.0:
     resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
@@ -10564,6 +10640,11 @@ snapshots:
     dependencies:
       '@aws-sdk/types': 3.862.0
       '@smithy/util-utf8': 2.3.0
+      tslib: 2.8.1
+
+  '@aws-sdk/abort-controller@3.374.0':
+    dependencies:
+      '@smithy/abort-controller': 1.1.0
       tslib: 2.8.1
 
   '@aws-sdk/client-s3@3.864.0':
@@ -12818,27 +12899,25 @@ snapshots:
       - uglify-js
       - webpack-cli
 
-  '@electron-forge/cli@7.8.3(encoding@0.1.13)':
+  '@electron-forge/cli@7.4.0(encoding@0.1.13)':
     dependencies:
-      '@electron-forge/core': 7.8.3(encoding@0.1.13)
-      '@electron-forge/core-utils': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/core': 7.4.0(encoding@0.1.13)
+      '@electron-forge/shared-types': 7.4.0
       '@electron/get': 3.1.0
       chalk: 4.1.2
-      commander: 11.1.0
+      commander: 4.1.1
       debug: 4.4.1
       fs-extra: 10.1.0
       listr2: 7.0.2
-      log-symbols: 4.1.0
       semver: 7.7.2
     transitivePeerDependencies:
       - bluebird
       - encoding
       - supports-color
 
-  '@electron-forge/core-utils@7.8.3':
+  '@electron-forge/core-utils@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
       '@electron/rebuild': 3.7.2
       '@malept/cross-spawn-promise': 2.0.0
       chalk: 4.1.2
@@ -12847,23 +12926,24 @@ snapshots:
       fs-extra: 10.1.0
       log-symbols: 4.1.0
       semver: 7.7.2
+      yarn-or-npm: 3.0.1
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/core@7.8.3(encoding@0.1.13)':
+  '@electron-forge/core@7.4.0(encoding@0.1.13)':
     dependencies:
-      '@electron-forge/core-utils': 7.8.3
-      '@electron-forge/maker-base': 7.8.3
-      '@electron-forge/plugin-base': 7.8.3
-      '@electron-forge/publisher-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
-      '@electron-forge/template-base': 7.8.3
-      '@electron-forge/template-vite': 7.8.3
-      '@electron-forge/template-vite-typescript': 7.8.3
-      '@electron-forge/template-webpack': 7.8.3
-      '@electron-forge/template-webpack-typescript': 7.8.3
-      '@electron-forge/tracer': 7.8.3
+      '@electron-forge/core-utils': 7.4.0
+      '@electron-forge/maker-base': 7.4.0
+      '@electron-forge/plugin-base': 7.4.0
+      '@electron-forge/publisher-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
+      '@electron-forge/template-base': 7.4.0
+      '@electron-forge/template-vite': 7.4.0
+      '@electron-forge/template-vite-typescript': 7.4.0
+      '@electron-forge/template-webpack': 7.4.0
+      '@electron-forge/template-webpack-typescript': 7.4.0
+      '@electron-forge/tracer': 7.4.0
       '@electron/get': 3.1.0
       '@electron/packager': 18.4.0
       '@electron/rebuild': 3.7.2
@@ -12874,68 +12954,69 @@ snapshots:
       filenamify: 4.3.0
       find-up: 5.0.0
       fs-extra: 10.1.0
-      global-dirs: 3.0.1
       got: 11.8.6
       interpret: 3.1.1
-      jiti: 2.5.1
       listr2: 7.0.2
       lodash: 4.17.21
       log-symbols: 4.1.0
       node-fetch: 2.7.0(encoding@0.1.13)
+      progress: 2.0.3
       rechoir: 0.8.0
+      resolve-package: 1.0.1
       semver: 7.7.2
       source-map-support: 0.5.21
       sudo-prompt: 9.2.1
       username: 5.1.0
+      yarn-or-npm: 3.0.1
     transitivePeerDependencies:
       - bluebird
       - encoding
       - supports-color
 
-  '@electron-forge/maker-base@7.8.3':
+  '@electron-forge/maker-base@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
       fs-extra: 10.1.0
       which: 2.0.2
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/maker-deb@7.8.3':
+  '@electron-forge/maker-deb@7.4.0':
     dependencies:
-      '@electron-forge/maker-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/maker-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
     optionalDependencies:
       electron-installer-debian: 3.2.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/maker-dmg@7.8.3':
+  '@electron-forge/maker-dmg@7.4.0':
     dependencies:
-      '@electron-forge/maker-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/maker-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
       fs-extra: 10.1.0
     optionalDependencies:
-      electron-installer-dmg: 5.0.1
+      electron-installer-dmg: 4.0.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/maker-rpm@7.8.3':
+  '@electron-forge/maker-rpm@7.4.0':
     dependencies:
-      '@electron-forge/maker-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/maker-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
     optionalDependencies:
       electron-installer-redhat: 3.4.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/maker-squirrel@7.8.3':
+  '@electron-forge/maker-squirrel@7.4.0':
     dependencies:
-      '@electron-forge/maker-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/maker-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
       fs-extra: 10.1.0
     optionalDependencies:
       electron-winstaller: 5.4.0
@@ -12943,10 +13024,10 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@electron-forge/maker-zip@7.8.3':
+  '@electron-forge/maker-zip@7.4.0':
     dependencies:
-      '@electron-forge/maker-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/maker-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
       cross-zip: 4.0.1
       fs-extra: 10.1.0
       got: 11.8.6
@@ -12954,73 +13035,78 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@electron-forge/plugin-auto-unpack-natives@7.8.3':
+  '@electron-forge/plugin-auto-unpack-natives@7.4.0':
     dependencies:
-      '@electron-forge/plugin-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/plugin-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/plugin-base@7.8.3':
+  '@electron-forge/plugin-base@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/plugin-fuses@7.8.3(@electron/fuses@1.8.0)':
+  '@electron-forge/plugin-fuses@7.4.0(@electron/fuses@1.8.0)':
     dependencies:
-      '@electron-forge/plugin-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/plugin-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
       '@electron/fuses': 1.8.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/plugin-vite@7.8.3':
+  '@electron-forge/plugin-vite@7.4.0':
     dependencies:
-      '@electron-forge/plugin-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/core-utils': 7.4.0
+      '@electron-forge/plugin-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
+      '@electron-forge/web-multi-logger': 7.4.0
       chalk: 4.1.2
       debug: 4.4.1
       fs-extra: 10.1.0
       listr2: 7.0.2
     transitivePeerDependencies:
       - bluebird
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
-  '@electron-forge/publisher-base@7.8.3':
+  '@electron-forge/publisher-base@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/publisher-s3@7.8.3':
+  '@electron-forge/publisher-s3@7.4.0':
     dependencies:
+      '@aws-sdk/abort-controller': 3.374.0
       '@aws-sdk/client-s3': 3.864.0
       '@aws-sdk/lib-storage': 3.864.0(@aws-sdk/client-s3@3.864.0)
       '@aws-sdk/types': 3.862.0
-      '@electron-forge/publisher-static': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/publisher-static': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
       debug: 4.4.1
     transitivePeerDependencies:
       - aws-crt
       - bluebird
       - supports-color
 
-  '@electron-forge/publisher-static@7.8.3':
+  '@electron-forge/publisher-static@7.4.0':
     dependencies:
-      '@electron-forge/publisher-base': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/publisher-base': 7.4.0
+      '@electron-forge/shared-types': 7.4.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/shared-types@7.8.3':
+  '@electron-forge/shared-types@7.4.0':
     dependencies:
-      '@electron-forge/tracer': 7.8.3
+      '@electron-forge/tracer': 7.4.0
       '@electron/packager': 18.4.0
       '@electron/rebuild': 3.7.2
       listr2: 7.0.2
@@ -13028,10 +13114,9 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@electron-forge/template-base@7.8.3':
+  '@electron-forge/template-base@7.4.0':
     dependencies:
-      '@electron-forge/core-utils': 7.8.3
-      '@electron-forge/shared-types': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
       '@malept/cross-spawn-promise': 2.0.0
       debug: 4.4.1
       fs-extra: 10.1.0
@@ -13040,45 +13125,57 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@electron-forge/template-vite-typescript@7.8.3':
+  '@electron-forge/template-vite-typescript@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
-      '@electron-forge/template-base': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
+      '@electron-forge/template-base': 7.4.0
       fs-extra: 10.1.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/template-vite@7.8.3':
+  '@electron-forge/template-vite@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
-      '@electron-forge/template-base': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
+      '@electron-forge/template-base': 7.4.0
       fs-extra: 10.1.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/template-webpack-typescript@7.8.3':
+  '@electron-forge/template-webpack-typescript@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
-      '@electron-forge/template-base': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
+      '@electron-forge/template-base': 7.4.0
       fs-extra: 10.1.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/template-webpack@7.8.3':
+  '@electron-forge/template-webpack@7.4.0':
     dependencies:
-      '@electron-forge/shared-types': 7.8.3
-      '@electron-forge/template-base': 7.8.3
+      '@electron-forge/shared-types': 7.4.0
+      '@electron-forge/template-base': 7.4.0
       fs-extra: 10.1.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
 
-  '@electron-forge/tracer@7.8.3':
+  '@electron-forge/tracer@7.4.0':
     dependencies:
       chrome-trace-event: 1.0.4
+
+  '@electron-forge/web-multi-logger@7.4.0':
+    dependencies:
+      express: 4.21.2
+      express-ws: 5.0.2(express@4.21.2)
+      xterm: 4.19.0
+      xterm-addon-fit: 0.5.0(xterm@4.19.0)
+      xterm-addon-search: 0.8.2(xterm@4.19.0)
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -13773,6 +13870,11 @@ snapshots:
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
 
+  '@smithy/abort-controller@1.1.0':
+    dependencies:
+      '@smithy/types': 1.2.0
+      tslib: 2.8.1
+
   '@smithy/abort-controller@4.0.5':
     dependencies:
       '@smithy/types': 4.3.2
@@ -13999,6 +14101,10 @@ snapshots:
       '@smithy/protocol-http': 5.1.3
       '@smithy/types': 4.3.2
       '@smithy/util-stream': 4.2.4
+      tslib: 2.8.1
+
+  '@smithy/types@1.2.0':
+    dependencies:
       tslib: 2.8.1
 
   '@smithy/types@4.3.2':
@@ -14231,11 +14337,6 @@ snapshots:
   '@tsconfig/node14@1.0.3': {}
 
   '@tsconfig/node16@1.0.4': {}
-
-  '@types/appdmg@0.5.5':
-    dependencies:
-      '@types/node': 24.2.1
-    optional: true
 
   '@types/archiver@6.0.3':
     dependencies:
@@ -16014,9 +16115,9 @@ snapshots:
 
   commander@10.0.1: {}
 
-  commander@11.1.0: {}
-
   commander@2.20.3: {}
+
+  commander@4.1.1: {}
 
   commander@5.1.0: {}
 
@@ -16699,9 +16800,8 @@ snapshots:
       - supports-color
     optional: true
 
-  electron-installer-dmg@5.0.1:
+  electron-installer-dmg@4.0.0:
     dependencies:
-      '@types/appdmg': 0.5.5
       debug: 4.4.1
       minimist: 1.2.8
     optionalDependencies:
@@ -17211,6 +17311,10 @@ snapshots:
 
   expand-template@2.0.3: {}
 
+  expand-tilde@2.0.2:
+    dependencies:
+      homedir-polyfill: 1.0.3
+
   expect-type@1.2.2: {}
 
   expect@30.0.5:
@@ -17223,6 +17327,14 @@ snapshots:
       jest-util: 30.0.5
 
   exponential-backoff@3.1.2: {}
+
+  express-ws@5.0.2(express@4.21.2):
+    dependencies:
+      express: 4.21.2
+      ws: 7.5.10
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   express@4.21.2:
     dependencies:
@@ -17597,6 +17709,10 @@ snapshots:
       tiny-each-async: 2.0.3
     optional: true
 
+  get-installed-path@2.1.1:
+    dependencies:
+      global-modules: 1.0.0
+
   get-intrinsic@1.3.0:
     dependencies:
       call-bind-apply-helpers: 1.0.2
@@ -17712,6 +17828,20 @@ snapshots:
   global-dirs@3.0.1:
     dependencies:
       ini: 2.0.0
+
+  global-modules@1.0.0:
+    dependencies:
+      global-prefix: 1.0.2
+      is-windows: 1.0.2
+      resolve-dir: 1.0.1
+
+  global-prefix@1.0.2:
+    dependencies:
+      expand-tilde: 2.0.2
+      homedir-polyfill: 1.0.3
+      ini: 1.3.8
+      is-windows: 1.0.2
+      which: 1.3.1
 
   globals@14.0.0: {}
 
@@ -17996,6 +18126,10 @@ snapshots:
   hoist-non-react-statics@3.3.2:
     dependencies:
       react-is: 16.13.1
+
+  homedir-polyfill@1.0.3:
+    dependencies:
+      parse-passwd: 1.0.0
 
   hosted-git-info@2.8.9: {}
 
@@ -18462,6 +18596,8 @@ snapshots:
       call-bound: 1.0.4
       get-intrinsic: 1.3.0
 
+  is-windows@1.0.2: {}
+
   is-wsl@2.2.0:
     dependencies:
       is-docker: 2.2.1
@@ -18586,7 +18722,8 @@ snapshots:
 
   jiti@1.21.7: {}
 
-  jiti@2.5.1: {}
+  jiti@2.5.1:
+    optional: true
 
   joi@17.13.3:
     dependencies:
@@ -20023,6 +20160,8 @@ snapshots:
 
   parse-numeric-range@1.3.0: {}
 
+  parse-passwd@1.0.0: {}
+
   parse5-htmlparser2-tree-adapter@6.0.1:
     dependencies:
       parse5: 6.0.1
@@ -21242,7 +21381,16 @@ snapshots:
 
   resolve-alpn@1.2.1: {}
 
+  resolve-dir@1.0.1:
+    dependencies:
+      expand-tilde: 2.0.2
+      global-modules: 1.0.0
+
   resolve-from@4.0.0: {}
+
+  resolve-package@1.0.1:
+    dependencies:
+      get-installed-path: 2.1.1
 
   resolve-pathname@3.0.0: {}
 
@@ -23053,6 +23201,16 @@ snapshots:
 
   xtend@4.0.2: {}
 
+  xterm-addon-fit@0.5.0(xterm@4.19.0):
+    dependencies:
+      xterm: 4.19.0
+
+  xterm-addon-search@0.8.2(xterm@4.19.0):
+    dependencies:
+      xterm: 4.19.0
+
+  xterm@4.19.0: {}
+
   y18n@4.0.3: {}
 
   y18n@5.0.8: {}
@@ -23109,6 +23267,11 @@ snapshots:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 21.1.1
+
+  yarn-or-npm@3.0.1:
+    dependencies:
+      cross-spawn: 6.0.6
+      pkg-dir: 4.2.0
 
   yauzl@2.10.0:
     dependencies:
