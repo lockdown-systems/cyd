@@ -19,6 +19,7 @@ export default tseslint.config(
       ".vite/**/*",
       "build/**/*",
       "out/**/*",
+      "coverage/**/*",
       "node_modules/**/*",
       "src/renderer/vite.config.ts",
       "global.d.ts",
