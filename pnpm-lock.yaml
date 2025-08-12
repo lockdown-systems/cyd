@@ -116,7 +116,7 @@ importers:
         version: 7.4.0
       '@electron-forge/plugin-fuses':
         specifier: 7.4.0
-        version: 7.4.0(@electron/fuses@2.0.0)
+        version: 7.4.0(@electron/fuses@1.8.0)
       '@electron-forge/plugin-vite':
         specifier: 7.4.0
         version: 7.4.0
@@ -124,8 +124,8 @@ importers:
         specifier: 7.4.0
         version: 7.4.0
       '@electron/fuses':
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^1.8.0
+        version: 1.8.0
       '@electron/notarize':
         specifier: ^3.0.2
         version: 3.0.2
@@ -1809,9 +1809,8 @@ packages:
     engines: {node: '>=10.12.0'}
     hasBin: true
 
-  '@electron/fuses@2.0.0':
-    resolution: {integrity: sha512-lyb1zK3YHeWUjaz7yiK0GnxSPduwASKMyiDbCtbn3spP6EEt+UWtktggWehG0icFrXAk3GwvcJ4nCrJO0N9IhQ==}
-    engines: {node: '>=22.12.0'}
+  '@electron/fuses@1.8.0':
+    resolution: {integrity: sha512-zx0EIq78WlY/lBb1uXlziZmDZI4ubcCXIMJ4uGjXzZW0nS19TjSPeXPAjzzTmKQlJUZm0SbmZhPKP7tuQ1SsEw==}
     hasBin: true
 
   '@electron/get@2.0.3':
@@ -11966,7 +11965,7 @@ snapshots:
       '@docusaurus/logger': 3.8.1
       '@docusaurus/utils': 3.8.1(acorn@8.15.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       babel-plugin-dynamic-import-node: 2.3.3
-      fs-extra: 11.3.0
+      fs-extra: 11.3.1
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@swc/core'
@@ -12107,7 +12106,7 @@ snapshots:
       escape-html: 1.0.3
       estree-util-value-to-estree: 3.4.0
       file-loader: 6.2.0(webpack@5.100.0)
-      fs-extra: 11.3.0
+      fs-extra: 11.3.1
       image-size: 2.0.2
       mdast-util-mdx: 3.0.0
       mdast-util-to-string: 4.0.0
@@ -12677,7 +12676,7 @@ snapshots:
       '@docusaurus/logger': 3.8.1
       '@docusaurus/utils': 3.8.1(acorn@8.15.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@docusaurus/utils-common': 3.8.1(acorn@8.15.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      fs-extra: 11.3.0
+      fs-extra: 11.3.1
       joi: 17.13.3
       js-yaml: 4.1.0
       lodash: 4.17.21
@@ -12700,7 +12699,7 @@ snapshots:
       escape-string-regexp: 4.0.0
       execa: 5.1.1
       file-loader: 6.2.0(webpack@5.100.0)
-      fs-extra: 11.3.0
+      fs-extra: 11.3.1
       github-slugger: 1.5.0
       globby: 11.1.0
       gray-matter: 4.0.3
@@ -12876,11 +12875,11 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@electron-forge/plugin-fuses@7.4.0(@electron/fuses@2.0.0)':
+  '@electron-forge/plugin-fuses@7.4.0(@electron/fuses@1.8.0)':
     dependencies:
       '@electron-forge/plugin-base': 7.4.0
       '@electron-forge/shared-types': 7.4.0
-      '@electron/fuses': 2.0.0
+      '@electron/fuses': 1.8.0
     transitivePeerDependencies:
       - bluebird
       - supports-color
@@ -13009,7 +13008,11 @@ snapshots:
       glob: 7.2.3
       minimatch: 3.1.2
 
-  '@electron/fuses@2.0.0': {}
+  '@electron/fuses@1.8.0':
+    dependencies:
+      chalk: 4.1.2
+      fs-extra: 9.1.0
+      minimist: 1.2.8
 
   '@electron/get@2.0.3':
     dependencies:
