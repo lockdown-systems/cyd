@@ -3066,11 +3066,10 @@ export class XAccountController {
       "get",
     ) as Sqlite3Count;
 
-    // Tweets to migrate
+    // Tweets to migrate (including deleted tweets)
     const toMigrateTweets = this.fetchTweetsWithMediaAndURLs(
       `
-            t.deletedTweetAt IS NULL
-            AND t.text NOT LIKE ?
+            t.text NOT LIKE ?
             AND t.isLiked = ?
             AND t.username = ?
             AND t.tweetID NOT IN (SELECT tweetID FROM tweet_bsky_migration)
@@ -3090,14 +3089,13 @@ export class XAccountController {
             AND tweet.text NOT LIKE ?
             AND tweet.isLiked = ?
             AND tweet.username = ?
-            AND tweet.deletedTweetAt IS NULL
             AND (tweet.isReply = ? AND tweet.replyUserID != ?)
         `,
       ["RT @%", 0, username, 1, userID],
       "get",
     ) as Sqlite3Count;
 
-    // Already migrated tweets
+    // Already migrated tweets (including deleted ones)
     const alreadyMigratedTweets = this.fetchTweetsWithMediaAndURLs(
       `
             t.text NOT LIKE ?
@@ -3837,7 +3835,6 @@ export class XAccountController {
       saveXAccount(this.account);
     }
   }
-
   async getMediaPath(): Promise<string> {
     if (!this.account || !this.account.username) {
       return "";
