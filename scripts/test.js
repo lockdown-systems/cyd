@@ -28,8 +28,9 @@ rebuild.on("close", (code) => {
     process.exit(code);
   }
 
-  // Run vitest
-  const vitest = spawn("vitest", vitestArgs, { stdio: "inherit", shell: true });
+  // Run vitest in Electron (like test:ci script)
+  const vitestCmd = ["--no-sandbox", "node_modules/vitest/vitest.mjs", ...vitestArgs];
+  const vitest = spawn("electron", vitestCmd, { stdio: "inherit", shell: true });
 
   vitest.on("close", (code) => {
     // Run cleanup script
