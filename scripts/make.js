@@ -41,6 +41,12 @@ try {
   // Clean up previous builds and install dependencies
   execSync(`node ./scripts/clean.mjs`, { stdio: "inherit" });
 
+  // Rebuild macos-alias specifically for Node.js (needed for DMG creation)
+  if (platform === "darwin") {
+    console.log("Rebuilding macos-alias for Node.js...");
+    execSync(`cd node_modules/macos-alias && rm -rf build && node-gyp rebuild`, { stdio: "inherit" });
+  }
+
   // Build
   if (platform == "darwin") {
     execSync(`electron-forge ${command} --arch universal`, {
