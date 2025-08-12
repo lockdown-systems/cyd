@@ -6,7 +6,8 @@ import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
-import { FuseV1Options, FuseVersion } from "@electron/fuses";
+// Use require to bypass ESM import issues with @electron/fuses v2.0.0
+const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 import { PublisherS3 } from "@electron-forge/publisher-s3";
 
 import { type OsxSignOptions } from "@electron/packager/dist/types";
