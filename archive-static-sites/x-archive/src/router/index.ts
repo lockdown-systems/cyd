@@ -1,4 +1,8 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from "vue-router";
+import {
+  createRouter,
+  createWebHashHistory,
+  type RouteRecordRaw,
+} from "vue-router";
 import TweetsView from "../views/TweetsView.vue";
 import RetweetsView from "../views/RetweetsView.vue";
 import LikesView from "../views/LikesView.vue";

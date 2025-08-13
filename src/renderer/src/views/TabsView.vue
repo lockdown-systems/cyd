@@ -1,20 +1,27 @@
 <script setup lang="ts">
-import { inject, Ref, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import AccountButton from './shared_components/AccountButton.vue';
-import AccountView from './AccountView.vue';
-import CydAPIClient from '../../../cyd-api-client';
-import type { DeviceInfo } from '../types';
-import type { Account } from '../../../shared_types';
-import AboutView from './AboutView.vue';
-import { openURL } from '../util';
+import {
+  inject,
+  Ref,
+  ref,
+  onMounted,
+  onUnmounted,
+  getCurrentInstance,
+} from "vue";
+import AccountButton from "./shared_components/AccountButton.vue";
+import AccountView from "./AccountView.vue";
+import CydAPIClient from "../../../cyd-api-client";
+import type { DeviceInfo } from "../types";
+import type { Account } from "../../../shared_types";
+import AboutView from "./AboutView.vue";
+import { openURL } from "../util";
 
 defineProps<{
   updatesAvailable: boolean;
 }>();
 
 const emit = defineEmits<{
-  checkForUpdatesClicked: []
-}>()
+  checkForUpdatesClicked: [];
+}>();
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -26,10 +33,10 @@ const userBtnShowMenu = ref(false);
 const accounts = ref<Account[]>([]);
 const activeAccountID = ref<number | null>(null);
 
-const apiClient = inject('apiClient') as Ref<CydAPIClient>;
-const deviceInfo = inject('deviceInfo') as Ref<DeviceInfo | null>;
-const refreshDeviceInfo = inject('refreshDeviceInfo') as () => Promise<void>;
-const refreshAPIClient = inject('refreshAPIClient') as () => Promise<void>;
+const apiClient = inject("apiClient") as Ref<CydAPIClient>;
+const deviceInfo = inject("deviceInfo") as Ref<DeviceInfo | null>;
+const refreshDeviceInfo = inject("refreshDeviceInfo") as () => Promise<void>;
+const refreshAPIClient = inject("refreshAPIClient") as () => Promise<void>;
 
 const hideAllAccounts = ref(false);
 
@@ -41,9 +48,9 @@ const accountClicked = async (account: Account) => {
   activeAccountID.value = account.id;
 
   // If we clicked out of an unknown account, remove the unknown account
-  if (account.type !== 'unknown') {
+  if (account.type !== "unknown") {
     for (let i = 0; i < accounts.value.length; i++) {
-      if (accounts.value[i].type === 'unknown') {
+      if (accounts.value[i].type === "unknown") {
         const accountIDToDelete = accounts.value[i].id;
         await window.electron.database.deleteAccount(accountIDToDelete);
         accounts.value = await window.electron.database.getAccounts();
@@ -57,9 +64,11 @@ const addAccountClicked = async () => {
   hideAboutView();
 
   // Do we already have an unknown account?
-  const unknownAccount = accounts.value.find((account) => account.type === 'unknown');
+  const unknownAccount = accounts.value.find(
+    (account) => account.type === "unknown",
+  );
   if (unknownAccount) {
-    console.log('Already have an unknown account, setting it as active');
+    console.log("Already have an unknown account, setting it as active");
     activeAccountID.value = unknownAccount.id;
     return;
   }
@@ -68,21 +77,23 @@ const addAccountClicked = async () => {
   const account = await window.electron.database.createAccount();
   accounts.value = await window.electron.database.getAccounts();
   activeAccountID.value = account.id;
-  console.log('Added new account', account);
+  console.log("Added new account", account);
 };
 
 const removeAccount = async (accountID: number) => {
-  if (await window.electron.showQuestion(
-    'Are you sure you want to remove this account from Cyd?',
-    'Yes, remove it',
-    'No, keep it'
-  )) {
+  if (
+    await window.electron.showQuestion(
+      "Are you sure you want to remove this account from Cyd?",
+      "Yes, remove it",
+      "No, keep it",
+    )
+  ) {
     console.log(`Removing account ${accountID}`);
     await window.electron.database.deleteAccount(accountID);
     accounts.value = await window.electron.database.getAccounts();
 
     if (accounts.value.length === 0) {
-      console.log('No accounts left, adding an unknown account');
+      console.log("No accounts left, adding an unknown account");
       await addAccountClicked();
     } else {
       console.log(`Setting active account to first account`);
@@ -91,17 +102,23 @@ const removeAccount = async (accountID: number) => {
       }
     }
 
-    console.log('Accounts after removing', JSON.parse(JSON.stringify(accounts.value)));
+    console.log(
+      "Accounts after removing",
+      JSON.parse(JSON.stringify(accounts.value)),
+    );
   }
-}
+};
 
 const accountSelected = async (account: Account, accountType: string) => {
   hideAboutView();
 
   try {
-    const newAccount = await window.electron.database.selectAccountType(account.id, accountType);
+    const newAccount = await window.electron.database.selectAccountType(
+      account.id,
+      accountType,
+    );
     if (newAccount === null) {
-      throw new Error('Failed to select account type');
+      throw new Error("Failed to select account type");
     }
 
     // For the account in the accounts list
@@ -116,7 +133,7 @@ const accountSelected = async (account: Account, accountType: string) => {
       await window.electron.showError(e.message);
     }
   }
-}
+};
 
 const userMenuPopupEl = ref<HTMLDivElement | null>(null);
 const userMenuBtnEl = ref<HTMLDivElement | null>(null);
@@ -143,7 +160,7 @@ const openDashboard = async () => {
   openURL(nativeLoginURL);
 };
 
-emitter?.on('show-manage-account', openDashboard);
+emitter?.on("show-manage-account", openDashboard);
 
 const openCydForTeams = async () => {
   userBtnShowMenu.value = false;
@@ -153,7 +170,7 @@ const openCydForTeams = async () => {
   openURL(nativeLoginURL);
 };
 
-emitter?.on('show-manage-account-teams', openCydForTeams);
+emitter?.on("show-manage-account-teams", openCydForTeams);
 
 const manageAccountClicked = async () => {
   openDashboard();
@@ -175,22 +192,22 @@ const aboutClicked = async () => {
 };
 
 const signInClicked = async () => {
-  emitter?.emit('show-sign-in');
+  emitter?.emit("show-sign-in");
 };
 
 const signOutClicked = async () => {
   if (deviceInfo.value === null) {
-    window.electron.showError('Cannot sign out without device info');
+    window.electron.showError("Cannot sign out without device info");
     return;
   }
 
   // Delete the logged in device
   const deleteDeviceResp = await apiClient.value.deleteDevice({
     // this API route takes either a UUID or a device token
-    uuid: deviceInfo.value.deviceToken
+    uuid: deviceInfo.value.deviceToken,
   });
   if (deleteDeviceResp !== undefined && deleteDeviceResp.error) {
-    console.log("Error deleting device", deleteDeviceResp.message)
+    console.log("Error deleting device", deleteDeviceResp.message);
   }
 
   // Delete the device from the local storage
@@ -205,22 +222,22 @@ const signOutClicked = async () => {
 
   userBtnShowMenu.value = false;
 
-  emitter?.emit('signed-out');
+  emitter?.emit("signed-out");
 };
 
 const checkForUpdatesClicked = async () => {
-  emit('checkForUpdatesClicked');
+  emit("checkForUpdatesClicked");
   userBtnShowMenu.value = false;
 };
 
 const advancedSettingsClicked = async () => {
   userBtnShowMenu.value = false;
-  emitter?.emit('show-advanced-settings');
+  emitter?.emit("show-advanced-settings");
 };
 
 const reloadAccounts = async () => {
   accounts.value = await window.electron.database.getAccounts();
-  console.log('Reloading accounts', JSON.parse(JSON.stringify(accounts.value)));
+  console.log("Reloading accounts", JSON.parse(JSON.stringify(accounts.value)));
 };
 
 onMounted(async () => {
@@ -231,16 +248,16 @@ onMounted(async () => {
     activeAccountID.value = accounts.value[0].id;
   }
 
-  document.addEventListener('click', outsideUserMenuClicked);
-  document.addEventListener('auxclick', outsideUserMenuClicked);
+  document.addEventListener("click", outsideUserMenuClicked);
+  document.addEventListener("auxclick", outsideUserMenuClicked);
 
-  emitter?.on('signed-in', openDashboard);
-  emitter?.on('account-updated', reloadAccounts);
+  emitter?.on("signed-in", openDashboard);
+  emitter?.on("account-updated", reloadAccounts);
 });
 
 onUnmounted(async () => {
-  document.removeEventListener('click', outsideUserMenuClicked);
-  document.removeEventListener('auxclick', outsideUserMenuClicked);
+  document.removeEventListener("click", outsideUserMenuClicked);
+  document.removeEventListener("auxclick", outsideUserMenuClicked);
 });
 </script>
 
@@ -249,17 +266,25 @@ onUnmounted(async () => {
     <div class="d-flex">
       <div class="sidebar col-auto d-flex flex-column gap-2">
         <div class="accounts-list flex-grow-1 d-flex flex-column gap-2 mt-3">
-          <AccountButton v-for="account in accounts" :key="account.id"
-            :class="['account-button', `account-button-${account.id}`]" :account="account"
-            :active="account.id === activeAccountID" @click="accountClicked(account)"
-            @on-remove-clicked="removeAccount(account.id)" />
+          <AccountButton
+            v-for="account in accounts"
+            :key="account.id"
+            :class="['account-button', `account-button-${account.id}`]"
+            :account="account"
+            :active="account.id === activeAccountID"
+            @click="accountClicked(account)"
+            @on-remove-clicked="removeAccount(account.id)"
+          />
         </div>
 
         <div class="btns-list d-flex flex-column gap-2 mb-3">
           <div class="btn-container">
-            <div class="add-account-btn sidebar-btn d-flex justify-content-center align-items-center"
-              @mouseover="addAccountBtnShowInfo = true" @mouseleave="addAccountBtnShowInfo = false"
-              @click="addAccountClicked">
+            <div
+              class="add-account-btn sidebar-btn d-flex justify-content-center align-items-center"
+              @mouseover="addAccountBtnShowInfo = true"
+              @mouseleave="addAccountBtnShowInfo = false"
+              @click="addAccountClicked"
+            >
               <i class="fa-solid fa-plus" />
             </div>
             <div v-if="addAccountBtnShowInfo" class="info-popup">
@@ -268,26 +293,33 @@ onUnmounted(async () => {
           </div>
 
           <div class="btn-container">
-            <div ref="userMenuBtnEl" class="user-btn sidebar-btn d-flex justify-content-center align-items-center"
-              @mouseover="userBtnShowInfo = true" @mouseleave="userBtnShowInfo = false" @click="userMenuClicked">
+            <div
+              ref="userMenuBtnEl"
+              class="user-btn sidebar-btn d-flex justify-content-center align-items-center"
+              @mouseover="userBtnShowInfo = true"
+              @mouseleave="userBtnShowInfo = false"
+              @click="userMenuClicked"
+            >
               <i class="fa-solid fa-bars" />
             </div>
             <div v-if="userBtnShowInfo" class="info-popup">
               <template v-if="deviceInfo?.valid">
                 You are signed in to Cyd as {{ deviceInfo?.userEmail }}
               </template>
-              <template v-else>
-                You are not signed in to Cyd
-              </template>
+              <template v-else> You are not signed in to Cyd </template>
             </div>
-            <div v-if="userBtnShowMenu" ref="userMenuPopupEl" class="menu-popup">
+            <div
+              v-if="userBtnShowMenu"
+              ref="userMenuPopupEl"
+              class="menu-popup"
+            >
               <ul>
                 <template v-if="deviceInfo?.valid">
                   <li class="menu-text">
                     Signed in as {{ deviceInfo?.userEmail }}
                   </li>
                   <li class="menu-line">
-                    <hr>
+                    <hr />
                   </li>
                   <li class="menu-btn" @click="manageAccountClicked">
                     Manage my Cyd account
@@ -297,18 +329,16 @@ onUnmounted(async () => {
                   </li>
                 </template>
                 <template v-else>
-                  <li class="menu-text">
-                    Not signed in to Cyd
-                  </li>
+                  <li class="menu-text">Not signed in to Cyd</li>
                   <li class="menu-line">
-                    <hr>
+                    <hr />
                   </li>
                   <li class="menu-btn" @click="signInClicked">
                     Sign in to Cyd to access premium features
                   </li>
                 </template>
                 <li class="menu-line">
-                  <hr>
+                  <hr />
                 </li>
                 <li class="menu-btn" @click="checkForUpdatesClicked">
                   Check for updates
@@ -316,9 +346,7 @@ onUnmounted(async () => {
                 <li class="menu-btn" @click="advancedSettingsClicked">
                   Advanced settings
                 </li>
-                <li class="menu-btn" @click="aboutClicked">
-                  About
-                </li>
+                <li class="menu-btn" @click="aboutClicked">About</li>
               </ul>
             </div>
           </div>
@@ -327,9 +355,14 @@ onUnmounted(async () => {
 
       <div class="flex-grow-1">
         <!-- Accounts -->
-        <AccountView v-for="account in accounts" :key="account.id" :account="account"
-          :class="{ 'hide': hideAllAccounts || activeAccountID !== account.id }" @account-selected="accountSelected"
-          @on-remove-clicked="removeAccount(account.id)" />
+        <AccountView
+          v-for="account in accounts"
+          :key="account.id"
+          :account="account"
+          :class="{ hide: hideAllAccounts || activeAccountID !== account.id }"
+          @account-selected="accountSelected"
+          @on-remove-clicked="removeAccount(account.id)"
+        />
 
         <!-- About -->
         <AboutView :should-show="showAbout" />

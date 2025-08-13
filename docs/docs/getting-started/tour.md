@@ -10,7 +10,7 @@ When you open Cyd for the first time, you'll see a window like this:
 
 ## Main panel
 
-Most of the window shows the currently selected account. Since you haven't added any accounts yet, you're presented with the option to add a new account. At the moment, only the X platform is supported. 
+Most of the window shows the currently selected account. Since you haven't added any accounts yet, you're presented with the option to add a new account. At the moment, only the X platform is supported.
 
 Read more about [signing into your X account](../x/sign-in).
 

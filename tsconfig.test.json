@@ -1,0 +1,21 @@
+{
+  "extends": "./src/renderer/tsconfig.json",
+  "compilerOptions": {
+    // Override specific settings for test environment
+    "types": ["vitest/globals", "node"],
+    "allowJs": true,
+    // Ensure same strictness as renderer tsconfig
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts"
+  ]
+}

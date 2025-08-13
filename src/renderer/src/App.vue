@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { IpcRendererEvent } from 'electron';
-import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue"
-import semver from "semver"
+import { IpcRendererEvent } from "electron";
+import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue";
+import semver from "semver";
 
-import { DeviceInfo, PlausibleEvents } from './types';
-import { getDeviceInfo, openURL } from './util';
-import CydAPIClient, { APIErrorResponse, GetVersionAPIResponse } from '../../cyd-api-client';
+import { DeviceInfo, PlausibleEvents } from "./types";
+import { getDeviceInfo, openURL } from "./util";
+import CydAPIClient, {
+  APIErrorResponse,
+  GetVersionAPIResponse,
+} from "../../cyd-api-client";
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
@@ -24,11 +27,11 @@ const isSignedIn = ref(false);
 
 // API client
 const apiClient = ref(new CydAPIClient());
-provide('apiClient', apiClient);
+provide("apiClient", apiClient);
 
 // Device info
 const deviceInfo = ref<DeviceInfo | null>(null);
-provide('deviceInfo', deviceInfo);
+provide("deviceInfo", deviceInfo);
 
 const refreshDeviceInfo = async () => {
   try {
@@ -42,7 +45,7 @@ const refreshDeviceInfo = async () => {
     window.electron.showError("Failed to get saved device info.");
   }
 };
-provide('refreshDeviceInfo', refreshDeviceInfo);
+provide("refreshDeviceInfo", refreshDeviceInfo);
 
 // Refresh API client
 const refreshAPIClient = async () => {
@@ -52,16 +55,16 @@ const refreshAPIClient = async () => {
   apiClient.value.initialize(await window.electron.getAPIURL());
   await refreshDeviceInfo();
 };
-provide('refreshAPIClient', refreshAPIClient);
+provide("refreshAPIClient", refreshAPIClient);
 
 // User info
-const userEmail = ref('');
-provide('userEmail', userEmail);
+const userEmail = ref("");
+provide("userEmail", userEmail);
 
 // For advanced option to delete all settings and restart the app, before we do this we need to kill all of the
 // potential webviews by hiding the TabsView component
 const shouldHideTabsView = ref(false);
-emitter?.on('delete-all-settings-and-restart', async () => {
+emitter?.on("delete-all-settings-and-restart", async () => {
   shouldHideTabsView.value = true;
 });
 
@@ -69,20 +72,20 @@ emitter?.on('delete-all-settings-and-restart', async () => {
 
 // Sign in modal
 const showSignInModal = ref(false);
-emitter?.on('show-sign-in', () => {
+emitter?.on("show-sign-in", () => {
   showSignInModal.value = true;
 });
 
 // Automation error report modal
 const showAutomationErrorReportModal = ref(false);
-emitter?.on('show-automation-error', (accountID: number) => {
+emitter?.on("show-automation-error", (accountID: number) => {
   localStorage.setItem("automationErrorAccountID", accountID.toString());
   showAutomationErrorReportModal.value = true;
 });
 
 // Advanced settings modal
 const showAdvancedSettingsModal = ref(false);
-emitter?.on('show-advanced-settings', () => {
+emitter?.on("show-advanced-settings", () => {
   showAdvancedSettingsModal.value = true;
 });
 
@@ -109,7 +112,7 @@ const startUserActivityInterval = () => {
 };
 
 // Stop the interval when signing out
-emitter?.on('signed-out', () => {
+emitter?.on("signed-out", () => {
   if (userActivityInterval) {
     clearInterval(userActivityInterval);
     userActivityInterval = null;
@@ -131,52 +134,67 @@ const updateStatus = ref(UpdateStatus.Unknown);
 let checkForUpdatesInterval: ReturnType<typeof setTimeout> | null = null;
 
 const checkForUpdates = async (shouldAlert: boolean = false) => {
-  console.log("checkForUpdates", "checking for updates")
+  console.log("checkForUpdates", "checking for updates");
   const currentVersion = await window.electron.getVersion();
   const resp = await apiClient.value.getVersion();
-  if (resp && 'error' in (resp as APIErrorResponse) === false) {
+  if (resp && "error" in (resp as APIErrorResponse) === false) {
     const latestVersion = (resp as GetVersionAPIResponse).version;
     if (semver.gt(latestVersion, currentVersion)) {
-      console.log("checkForUpdates", `updates available, currentVersion=${currentVersion}, latestVersion=${latestVersion}`);
+      console.log(
+        "checkForUpdates",
+        `updates available, currentVersion=${currentVersion}, latestVersion=${latestVersion}`,
+      );
       updatesAvailable.value = true;
 
       // Tell the main process to check for updates
       await window.electron.checkForUpdates();
 
       if (shouldAlert) {
-        await window.electron.showMessage("An update is available", `You are running Cyd ${currentVersion}. Cyd ${latestVersion} is the latest version, and you should upgrade.`);
+        await window.electron.showMessage(
+          "An update is available",
+          `You are running Cyd ${currentVersion}. Cyd ${latestVersion} is the latest version, and you should upgrade.`,
+        );
       }
     } else {
       console.log("checkForUpdates", "no updates available", currentVersion);
       updatesAvailable.value = false;
 
       if (shouldAlert) {
-        await window.electron.showMessage("No updates are available", `You are running Cyd ${currentVersion}, which is the latest version.`)
+        await window.electron.showMessage(
+          "No updates are available",
+          `You are running Cyd ${currentVersion}, which is the latest version.`,
+        );
       }
     }
   } else {
-    console.log("checkForUpdates", "error checking for updates", resp)
+    console.log("checkForUpdates", "error checking for updates", resp);
     if (shouldAlert) {
       await window.electron.showError("Failed to check for updates");
     }
   }
-}
+};
 
 const restartToUpdateClicked = async () => {
   await window.electron.quitAndInstallUpdate();
-}
+};
 
 // Update status events
-const cydAutoUpdaterErrorEventName = 'cydAutoUpdaterError';
-const cydAutoUpdaterCheckingForUpdatesEventName = 'cydAutoUpdaterCheckingForUpdates';
-const cydAutoUpdaterUpdateAvailableEventName = 'cydAutoUpdaterUpdateAvailable';
-const cydAutoUpdaterUpdateNotAvailableEventName = 'cydAutoUpdaterUpdateNotAvailable';
-const cydAutoUpdaterUpdateDownloadedEventName = 'cydAutoUpdaterUpdateDownloaded';
+const cydAutoUpdaterErrorEventName = "cydAutoUpdaterError";
+const cydAutoUpdaterCheckingForUpdatesEventName =
+  "cydAutoUpdaterCheckingForUpdates";
+const cydAutoUpdaterUpdateAvailableEventName = "cydAutoUpdaterUpdateAvailable";
+const cydAutoUpdaterUpdateNotAvailableEventName =
+  "cydAutoUpdaterUpdateNotAvailable";
+const cydAutoUpdaterUpdateDownloadedEventName =
+  "cydAutoUpdaterUpdateDownloaded";
 
-const platform = ref('');
+const platform = ref("");
 
 onMounted(async () => {
-  await window.electron.trackEvent(PlausibleEvents.APP_OPENED, navigator.userAgent);
+  await window.electron.trackEvent(
+    PlausibleEvents.APP_OPENED,
+    navigator.userAgent,
+  );
 
   apiClient.value.initialize(await window.electron.getAPIURL());
 
@@ -200,41 +218,64 @@ onMounted(async () => {
 
   // Change the app title
   const mode = await window.electron.getMode();
-  if (mode === 'prod') {
-    document.title = 'Cyd';
+  if (mode === "prod") {
+    document.title = "Cyd";
   } else {
     document.title = `Cyd (${mode})`;
   }
 
   // Check for updates
   await checkForUpdates();
-  checkForUpdatesInterval = setInterval(checkForUpdates, 1000 * 60 * 60) // every 60 minutes
+  checkForUpdatesInterval = setInterval(checkForUpdates, 1000 * 60 * 60); // every 60 minutes
 
   // If the user clicks "Open Cyd" from the Cyd dashboard website, it should open Cyd and refresh premium here
-  window.electron.ipcRenderer.on(cydAutoUpdaterErrorEventName, async (_event: IpcRendererEvent, _queryString: string) => {
-    updateStatus.value = UpdateStatus.Error;
-  });
-  window.electron.ipcRenderer.on(cydAutoUpdaterCheckingForUpdatesEventName, async (_event: IpcRendererEvent, _queryString: string) => {
-    updateStatus.value = UpdateStatus.Checking;
-  });
-  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateAvailableEventName, async (_event: IpcRendererEvent, _queryString: string) => {
-    updateStatus.value = UpdateStatus.Available;
-  });
-  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateNotAvailableEventName, async (_event: IpcRendererEvent, _queryString: string) => {
-    updateStatus.value = UpdateStatus.NotAvailable;
-  });
-  window.electron.ipcRenderer.on(cydAutoUpdaterUpdateDownloadedEventName, async (_event: IpcRendererEvent, _queryString: string) => {
-    updateStatus.value = UpdateStatus.Downloaded;
-  });
+  window.electron.ipcRenderer.on(
+    cydAutoUpdaterErrorEventName,
+    async (_event: IpcRendererEvent, _queryString: string) => {
+      updateStatus.value = UpdateStatus.Error;
+    },
+  );
+  window.electron.ipcRenderer.on(
+    cydAutoUpdaterCheckingForUpdatesEventName,
+    async (_event: IpcRendererEvent, _queryString: string) => {
+      updateStatus.value = UpdateStatus.Checking;
+    },
+  );
+  window.electron.ipcRenderer.on(
+    cydAutoUpdaterUpdateAvailableEventName,
+    async (_event: IpcRendererEvent, _queryString: string) => {
+      updateStatus.value = UpdateStatus.Available;
+    },
+  );
+  window.electron.ipcRenderer.on(
+    cydAutoUpdaterUpdateNotAvailableEventName,
+    async (_event: IpcRendererEvent, _queryString: string) => {
+      updateStatus.value = UpdateStatus.NotAvailable;
+    },
+  );
+  window.electron.ipcRenderer.on(
+    cydAutoUpdaterUpdateDownloadedEventName,
+    async (_event: IpcRendererEvent, _queryString: string) => {
+      updateStatus.value = UpdateStatus.Downloaded;
+    },
+  );
 });
 
 onUnmounted(() => {
   // Cleanup the update status events
   window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterErrorEventName);
-  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterCheckingForUpdatesEventName);
-  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateAvailableEventName);
-  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateNotAvailableEventName);
-  window.electron.ipcRenderer.removeAllListeners(cydAutoUpdaterUpdateDownloadedEventName);
+  window.electron.ipcRenderer.removeAllListeners(
+    cydAutoUpdaterCheckingForUpdatesEventName,
+  );
+  window.electron.ipcRenderer.removeAllListeners(
+    cydAutoUpdaterUpdateAvailableEventName,
+  );
+  window.electron.ipcRenderer.removeAllListeners(
+    cydAutoUpdaterUpdateNotAvailableEventName,
+  );
+  window.electron.ipcRenderer.removeAllListeners(
+    cydAutoUpdaterUpdateDownloadedEventName,
+  );
 
   // Cleanup check for updates interval
   if (checkForUpdatesInterval) {
@@ -251,10 +292,15 @@ onUnmounted(() => {
           <div class="d-flex align-items-center h-100">
             <div class="w-100">
               <div class="text-center">
-                <img src="/assets/cyd-plain.svg" class="cyd-avatar mb-3" alt="Cyd Avatar">
+                <img
+                  src="/assets/cyd-plain.svg"
+                  class="cyd-avatar mb-3"
+                  alt="Cyd Avatar"
+                />
               </div>
               <p class="lead text-muted text-center">
-                Automatically delete your old posts, except the ones you want to keep.
+                Automatically delete your old posts, except the ones you want to
+                keep.
               </p>
             </div>
           </div>
@@ -262,12 +308,16 @@ onUnmounted(() => {
       </div>
     </template>
     <template v-else>
-      <TabsView v-if="!shouldHideTabsView" :updates-available="updatesAvailable"
-        @check-for-updates-clicked="checkForUpdates(true)" />
+      <TabsView
+        v-if="!shouldHideTabsView"
+        :updates-available="updatesAvailable"
+        @check-for-updates-clicked="checkForUpdates(true)"
+      />
 
       <div v-if="updatesAvailable" class="updates-bar">
         <p>
-          <strong>Cyd update available.</strong> You should always use the latest version of Cyd.
+          <strong>Cyd update available.</strong> You should always use the
+          latest version of Cyd.
         </p>
         <p class="text-muted">
           <template v-if="platform === 'linux'">
@@ -285,9 +335,16 @@ onUnmounted(() => {
                 Restart to Update
               </button>
             </template>
-            <template v-else-if="updateStatus == UpdateStatus.Error || updateStatus == UpdateStatus.NotAvailable">
-              Error with automatic update. Install the latest version of Cyd <a href="#"
-                @click="openURL('https://cyd.social/download/')">from the website</a>.
+            <template
+              v-else-if="
+                updateStatus == UpdateStatus.Error ||
+                updateStatus == UpdateStatus.NotAvailable
+              "
+            >
+              Error with automatic update. Install the latest version of Cyd
+              <a href="#" @click="openURL('https://cyd.social/download/')"
+                >from the website</a
+              >.
             </template>
           </template>
         </p>
@@ -295,15 +352,25 @@ onUnmounted(() => {
     </template>
 
     <!-- Sign in modal -->
-    <SignInModal v-if="showSignInModal" @hide="showSignInModal = false" @close="showSignInModal = false" />
+    <SignInModal
+      v-if="showSignInModal"
+      @hide="showSignInModal = false"
+      @close="showSignInModal = false"
+    />
 
     <!-- Automation error report modal -->
-    <AutomationErrorReportModal v-if="showAutomationErrorReportModal" @hide="showAutomationErrorReportModal = false"
-      @close="showAutomationErrorReportModal = false" />
+    <AutomationErrorReportModal
+      v-if="showAutomationErrorReportModal"
+      @hide="showAutomationErrorReportModal = false"
+      @close="showAutomationErrorReportModal = false"
+    />
 
     <!-- Advanced settings modal -->
-    <AdvancedSettingsModal v-if="showAdvancedSettingsModal" @hide="showAdvancedSettingsModal = false"
-      @close="showAdvancedSettingsModal = false" />
+    <AdvancedSettingsModal
+      v-if="showAdvancedSettingsModal"
+      @hide="showAdvancedSettingsModal = false"
+      @close="showAdvancedSettingsModal = false"
+    />
   </div>
 </template>
 
@@ -437,7 +504,6 @@ body {
 }
 
 @media (min-width: 820px) {
-
   .modal-lg,
   .modal-xl {
     --bs-modal-width: 700px;
@@ -445,7 +511,6 @@ body {
 }
 
 @media (min-width: 992px) {
-
   .modal-lg,
   .modal-xl {
     --bs-modal-width: 800px;
@@ -667,8 +732,8 @@ body {
 }
 
 .alert-details {
-  margin-top: .25rem;
-  font-size: .875em;
+  margin-top: 0.25rem;
+  font-size: 0.875em;
 }
 
 .alert {

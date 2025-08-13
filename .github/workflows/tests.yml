@@ -10,36 +10,45 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
 
+    env:
+      ELECTRON_CACHE: /tmp/.cache/electron
+      ELECTRON_BUILDER_CACHE: /tmp/.cache/electron-builder
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
+          cache: "pnpm"
 
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 xvfb
 
-      - name: Install dependencies
-        run: npm ci
-      - name: Save Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies (skip postinstall)
+        run: pnpm install --frozen-lockfile
+        env:
+          CI: true
+
+      - name: Rebuild better-sqlite3 for Electron
+        run: |
+          ELECTRON_VERSION=$(node -e "console.log(require('./node_modules/electron/package.json').version)")
+          echo "Rebuilding better-sqlite3 for Electron $ELECTRON_VERSION"
+          npm_config_runtime=electron npm_config_target=$ELECTRON_VERSION npm_config_disturl=https://electronjs.org/headers npm_config_build_from_source=true pnpm rebuild better-sqlite3
 
       - name: Run lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Run tests
-        run: npm run test
-
-      - name: Run component tests
-        run: npm run test:components
+        run: xvfb-run -a pnpm run test:ci
+        env:
+          CI: true
