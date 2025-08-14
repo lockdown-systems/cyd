@@ -47,7 +47,6 @@
     "glob": "^11.0.3",
     "http-encoding": "^2.1.1",
     "http-mitm-proxy": "^1.1.0",
-    "image-size": "^2.0.2",
     "jsdom": "^26.1.0",
     "marked": "^16.1.2",
     "mhtml2html": "^3.0.0",
