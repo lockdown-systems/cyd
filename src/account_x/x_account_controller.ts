@@ -3360,18 +3360,30 @@ export class XAccountController {
       return `Error selecting tweet media: ${e}`;
     }
 
-    if (
-      tweetMedia.length == 1 &&
-      (tweetMedia[0].mediaType == "video" ||
-        tweetMedia[0].mediaType == "animated_gif")
-    ) {
-      // Video media
+    // Check if we have any video or animated_gif media
+    const videoMedia = tweetMedia.find(
+      (media) =>
+        media.mediaType === "video" || media.mediaType === "animated_gif",
+    );
+
+    if (videoMedia) {
+      // Video media (Bluesky only supports one video per post, so use the first one)
+      const allVideoMedia = tweetMedia.filter(
+        (media) =>
+          media.mediaType === "video" || media.mediaType === "animated_gif",
+      );
+      if (allVideoMedia.length > 1) {
+        log.warn(
+          `XAccountController.blueskyMigrateTweetBuildRecord: Tweet has ${allVideoMedia.length} videos/animated GIFs, but Bluesky only supports 1. Using the first one: ${videoMedia.filename}`,
+        );
+      }
+
       // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
       const maxSize = 50000000;
 
-      // Load the video
+      // Load the video (use first video/animated_gif found)
       const outputPath = await this.getMediaPath();
-      const mediaPath = path.join(outputPath, tweetMedia[0].filename);
+      const mediaPath = path.join(outputPath, videoMedia.filename);
       let mediaData;
       try {
         mediaData = fs.readFileSync(mediaPath);
@@ -3384,23 +3396,26 @@ export class XAccountController {
       // Make sure it's not too big
       if (mediaData.length > maxSize) {
         log.warn(
-          `XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${tweetMedia[0].filename}`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${videoMedia.filename}`,
         );
         shouldContinue = false;
       }
 
       if (shouldContinue) {
         // Determine the MIME type
-        const mimeType = mime.lookup(mediaPath);
+        let mimeType = mime.lookup(mediaPath);
+        if (mimeType == "application/mp4") {
+          mimeType = "video/mp4";
+        }
         if (!mimeType) {
           log.warn(
-            `XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${tweetMedia[0].filename}`,
+            `XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${videoMedia.filename}`,
           );
           shouldContinue = false;
         }
         if (mimeType != "video/mp4") {
           log.warn(
-            `XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${tweetMedia[0].filename} (mime type is ${mimeType})`,
+            `XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${videoMedia.filename} (mime type is ${mimeType})`,
           );
           shouldContinue = false;
         }
@@ -3409,19 +3424,19 @@ export class XAccountController {
       if (shouldContinue) {
         // Upload the video
         log.info(
-          `XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${tweetMedia[0].filename}`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${videoMedia.filename}`,
         );
         const resp = await agent.uploadBlob(mediaData, {
           encoding: "video/mp4",
         });
         log.info(
-          `XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${tweetMedia[0].filename} response`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${videoMedia.filename} response`,
           resp,
         );
         const videoBlob: BlobRef = resp.data.blob;
 
         // Remove the link from the tweet text
-        text = text.replace(tweetMedia[0].url, "");
+        text = text.replace(videoMedia.url, "");
         text = text.trim();
 
         // If there's already an embedded record, turn it into a recordWithMedia embed
@@ -3463,7 +3478,15 @@ export class XAccountController {
           };
         }
       }
-    } else if (tweetMedia.length > 0) {
+    }
+
+    // Handle remaining non-video media as images
+    const imageMedia = tweetMedia.filter(
+      (media) =>
+        media.mediaType !== "video" && media.mediaType !== "animated_gif",
+    );
+
+    if (imageMedia.length > 0) {
       // Images media
       // max size for images: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/images.json
       const maxSize = 1000000;
@@ -3478,7 +3501,7 @@ export class XAccountController {
         };
       }[] = [];
 
-      for (const media of tweetMedia) {
+      for (const media of imageMedia) {
         // Load the image
         const outputPath = await this.getMediaPath();
         const mediaPath = path.join(outputPath, media.filename);
