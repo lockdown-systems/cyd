@@ -3468,7 +3468,8 @@ export class XAccountController {
         }
 
         // Determine the aspect ratio
-        const dimensions = sizeOf(mediaPath);
+        const imageBuffer = await fs.promises.readFile(mediaPath);
+        const dimensions = sizeOf(new Uint8Array(imageBuffer));
 
         // Upload the image
         log.info(
