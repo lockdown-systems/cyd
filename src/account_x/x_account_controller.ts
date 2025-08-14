@@ -21,7 +21,6 @@ import {
 } from "@atproto/oauth-client-node";
 import { Agent, BlobRef, RichText } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
-import { Link as BskyRichtextFacetLink } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 
 import {
   getResourcesPath,
@@ -3145,13 +3144,8 @@ export class XAccountController {
 
     // Start building the tweet text and facets
     let text = tweet.text;
-    const facets: {
-      index: {
-        byteStart: number;
-        byteEnd: number;
-      };
-      features: BskyRichtextFacetLink[];
-    }[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const facets: any[] = [];
 
     // Replace t.co links with actual links
     let tweetURLs: XTweetURLRow[];
@@ -3259,7 +3253,8 @@ export class XAccountController {
     }
 
     // Handle quotes
-    let embed = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let embed: any = null;
     if (tweet.isQuote && tweet.quotedTweet) {
       // Parse the quoted tweet URL to see if it's a self-quote
       // URL looks like: https://twitter.com/{username}/status/{tweetID}
