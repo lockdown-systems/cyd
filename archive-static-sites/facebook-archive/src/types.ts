@@ -30,16 +30,16 @@ export interface Share {
 }
 
 export interface Story {
-    storyID: string;
-    url: string;
-    createdAt: string;
-    text?: string;
-    title?: string;
-    lifeEventTitle?: string;
-    user: User;
-    attachedStory?: AttachedStory;
-    media: Media[];
-    // shares: Share[];
+  storyID: string;
+  url: string;
+  createdAt: string;
+  text?: string;
+  title?: string;
+  lifeEventTitle?: string;
+  user: User;
+  attachedStory?: AttachedStory;
+  media: Media[];
+  // shares: Share[];
 
   addedToDatabaseAt: string;
   archivedAt: string | null;

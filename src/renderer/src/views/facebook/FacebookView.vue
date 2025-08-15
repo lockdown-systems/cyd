@@ -18,23 +18,27 @@ import AccountHeader from "../shared_components/AccountHeader.vue";
 import SpeechBubble from "../shared_components/SpeechBubble.vue";
 import AutomationNotice from "../shared_components/AutomationNotice.vue";
 
-import FacebookWizardSidebar from './FacebookWizardSidebar.vue';
-import FacebookWizardBuildOptionsPage from './FacebookWizardBuildOptionsPage.vue';
-import FacebookJobStatusComponent from './FacebookJobStatusComponent.vue';
-import FacebookWizardDeleteOptionsPage from './FacebookWizardDeleteOptionsPage.vue';
-import FacebookWizardReviewPage from './FacebookWizardReviewPage.vue';
-import FacebookFinishedRunningJobsPage from './FacebookFinishedRunningJobsPage.vue';
+import FacebookWizardSidebar from "./FacebookWizardSidebar.vue";
+import FacebookWizardBuildOptionsPage from "./FacebookWizardBuildOptionsPage.vue";
+import FacebookJobStatusComponent from "./FacebookJobStatusComponent.vue";
+import FacebookWizardDeleteOptionsPage from "./FacebookWizardDeleteOptionsPage.vue";
+import FacebookWizardReviewPage from "./FacebookWizardReviewPage.vue";
+import FacebookFinishedRunningJobsPage from "./FacebookFinishedRunningJobsPage.vue";
 
 import type {
-    Account,
-    FacebookProgress,
-    FacebookJob,
-} from '../../../../shared_types';
-import type { DeviceInfo } from '../../types';
-import { AutomationErrorType } from '../../automation_errors';
-import { FacebookViewModel, State, FacebookViewModelState } from '../../view_models/FacebookViewModel'
-import { setAccountRunning, openURL } from '../../util';
-import { facebookPostProgress } from '../../util_facebook';
+  Account,
+  FacebookProgress,
+  FacebookJob,
+} from "../../../../shared_types";
+import type { DeviceInfo } from "../../types";
+import { AutomationErrorType } from "../../automation_errors";
+import {
+  FacebookViewModel,
+  State,
+  FacebookViewModelState,
+} from "../../view_models/FacebookViewModel";
+import { setAccountRunning, openURL } from "../../util";
+import { facebookPostProgress } from "../../util_facebook";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
