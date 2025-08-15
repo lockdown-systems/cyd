@@ -156,61 +156,6 @@ ORDER BY story.createdAt DESC;
     return stories;
 };
 
-export const saveArchive = (db: Database.Database, appVersion: string, username: string, filename: string) => {
-    // Build the FacebookArchive object
-    const facebookArchive: FacebookArchive = {
-        appVersion,
-        username,
-        createdAt: new Date().toISOString(),
-        stories: selectStories(db),
-    };
-
-    // Because of how SQLite handles JSON, we need to check if the media and urls are null
-    // and set them to empty arrays if they are
-
-    if (
-      deepEqual(story.attachedStory, {
-        storyID: null,
-        text: null,
-        media: [],
-      })
-    ) {
-      story.attachedStory = undefined;
-    }
-
-    story.media = removeItems(story.media, {
-      mediaType: null,
-      mediaID: null,
-      filename: null,
-      isPlayable: null,
-      accessibilityCaption: null,
-      title: null,
-      url: null,
-      needsVideoDownload: null,
-    });
-    story.shares = removeItems(story.shares, {
-      description: null,
-      title: null,
-      url: null,
-      media: {
-        mediaType: null,
-        mediaID: null,
-        filename: null,
-        isPlayable: null,
-        title: null,
-        url: null,
-        needsVideoDownload: null,
-      },
-    });
-
-    // Remove all the null values to reduce the size of the archive
-    story = deepConvertNullToUndefined(story);
-    stories.push(story);
-  });
-
-  return stories;
-};
-
 export const saveArchive = (
   db: Database.Database,
   appVersion: string,
