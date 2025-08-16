@@ -69,7 +69,10 @@ export const stubElectron = (): ElectronAPI => {
       isPageAlreadySaved: vi.fn().mockResolvedValue(false),
       savePage: vi.fn().mockResolvedValue(true),
       openFolder: vi.fn(),
-      getInfo: vi.fn().mockResolvedValue(null),
+      getInfo: vi.fn().mockResolvedValue({
+        folderEmpty: true,
+        indexHTMLExists: false,
+      }),
     },
     X: {
       resetProgress: vi.fn().mockResolvedValue({ progress: 0 }),
