@@ -94,7 +94,9 @@ export const stubElectron = (): ElectronAPI => {
       archiveBuild: vi.fn().mockResolvedValue(undefined),
       syncProgress: vi.fn(),
       resetRateLimitInfo: vi.fn().mockResolvedValue(undefined),
-      isRateLimited: vi.fn().mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 }),
+      isRateLimited: vi
+        .fn()
+        .mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 }),
       getProgress: vi.fn().mockResolvedValue({ progress: 0 }),
       getProgressInfo: vi.fn().mockResolvedValue({}),
       getDatabaseStats: vi.fn().mockResolvedValue({}),
