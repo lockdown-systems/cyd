@@ -149,6 +149,7 @@ describe("TabsView", () => {
             emitter: {
               on: vi.fn(),
               emit: vi.fn(),
+              off: vi.fn(),
             },
           },
         },
