@@ -2283,20 +2283,6 @@ export class XAccountController {
         return `The account.js file has more than one account.`;
       }
 
-      // Make sure there is not already an account with this username
-      const dataPath = getDataPath();
-      const xDataPath = path.join(dataPath, "X");
-      const newAccountDataPath = path.join(
-        xDataPath,
-        accountData[0].account.username,
-      );
-      if (fs.existsSync(newAccountDataPath)) {
-        log.error(
-          `XAccountController.verifyXArchive: account already exists: ${newAccountDataPath}`,
-        );
-        return `The account @${accountData[0].account.username} already exists. Please delete ${newAccountDataPath} and try again.`;
-      }
-
       // Store the username for later use
       username = accountData[0].account.username;
 
@@ -2315,20 +2301,23 @@ export class XAccountController {
     }
 
     // If this is an archive-only account (which uses temporary usernames) and we now have the real username,
-    // rename the account directory to use the real username
+    // check if we need to rename the account directory or if it already exists with the correct name
     console.log(
       `XAccountController.verifyXArchive: archiveOnly: ${this.account?.archiveOnly}`,
     );
     if (this.account?.archiveOnly) {
-      // Close the database before renaming the account directory
+      // Close the database before any directory operations
       if (this.db) {
         this.db.close();
         this.db = null;
       }
 
-      // These methods create the account data path if it doesn't exist
+      // `getAccountDataPath` creates the account data path if it doesn't exist
       const oldAccountDataPath = getAccountDataPath("X", this.account.username);
-      const newAccountDataPath = getAccountDataPath("X", username);
+      // We manually build the path here so that we can check if the folder exists
+      const dataPath = getDataPath();
+      const xDataPath = path.join(dataPath, "X");
+      const newAccountDataPath = path.join(xDataPath, username);
 
       log.info(
         `XAccountController.verifyXArchive: oldAccountDataPath: ${oldAccountDataPath}`,
@@ -2336,87 +2325,151 @@ export class XAccountController {
       log.info(
         `XAccountController.verifyXArchive: newAccountDataPath: ${newAccountDataPath}`,
       );
-      try {
-        // Move all content recursively from old directory to new directory
-        if (fs.existsSync(oldAccountDataPath)) {
-          const moveAllContent = (src: string, dest: string) => {
-            const items = fs.readdirSync(src);
-            for (const item of items) {
-              const srcPath = path.join(src, item);
-              const destPath = path.join(dest, item);
 
-              if (fs.lstatSync(srcPath).isDirectory()) {
-                if (!fs.existsSync(destPath)) {
-                  fs.mkdirSync(destPath, { recursive: true });
-                }
-                moveAllContent(srcPath, destPath);
-                fs.rmdirSync(srcPath); // Remove empty directory
-              } else {
-                fs.renameSync(srcPath, destPath);
-              }
-            }
-          };
+      // Check if the folder already exists with the correct username
+      if (fs.existsSync(newAccountDataPath)) {
+        log.info(
+          `XAccountController.verifyXArchive: Folder already exists with correct username, using existing folder: ${newAccountDataPath}`,
+        );
 
-          moveAllContent(oldAccountDataPath, newAccountDataPath);
-          log.info(
-            `XAccountController.verifyXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`,
-          );
-
-          // Update the archivePath to point to the new location
-          const oldTmpPath = path.join(oldAccountDataPath, "tmp");
-          const newTmpPath = path.join(newAccountDataPath, "tmp");
-          if (archivePath === oldTmpPath) {
-            archivePath = newTmpPath;
-            log.info(
-              `XAccountController.verifyXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`,
-            );
-          }
-
-          // Delete the old deleted_account_ folder after successful migration
-          try {
-            if (fs.existsSync(oldAccountDataPath)) {
-              // Check if the directory is now empty (all content should have been moved)
-              const remainingItems = fs.readdirSync(oldAccountDataPath);
-              if (remainingItems.length === 0) {
-                fs.rmdirSync(oldAccountDataPath);
-                log.info(
-                  `XAccountController.verifyXArchive: Deleted empty old directory: ${oldAccountDataPath}`,
-                );
-              } else {
-                log.warn(
-                  `XAccountController.verifyXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`,
-                );
-              }
-            }
-          } catch (error) {
-            log.error(
-              `XAccountController.verifyXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`,
-            );
-            // Don't fail the import if cleanup fails
-          }
-        }
+        // Update the archivePath to point to the correct location in the existing folder
+        // If archivePath was pointing to a tmp directory, update it to the new tmp directory
+        const oldTmpPath = path.join(oldAccountDataPath, "tmp");
 
         log.info(
-          `XAccountController.verifyXArchive: Renamed account directory from ${this.account.username} to ${username}`,
+          `XAccountController.verifyXArchive: archivePath: ${archivePath}`,
+        );
+        log.info(
+          `XAccountController.verifyXArchive: oldTmpPath: ${oldTmpPath}`,
+        );
+        log.info(
+          `XAccountController.verifyXArchive: archivePath === oldTmpPath: ${archivePath === oldTmpPath}`,
+        );
+
+        // When using an existing folder, we need to copy the archive contents into the account's data directory
+        // Create a tmp directory to hold the archive contents temporarily
+        const tmpPath = path.join(newAccountDataPath, "tmp");
+        if (!fs.existsSync(tmpPath)) {
+          fs.mkdirSync(tmpPath, { recursive: true });
+        }
+
+        // Copy the archive contents to the tmp directory
+        const copyRecursive = (src: string, dest: string) => {
+          const items = fs.readdirSync(src);
+          for (const item of items) {
+            const srcPath = path.join(src, item);
+            const destPath = path.join(dest, item);
+
+            if (fs.lstatSync(srcPath).isDirectory()) {
+              if (!fs.existsSync(destPath)) {
+                fs.mkdirSync(destPath, { recursive: true });
+              }
+              copyRecursive(srcPath, destPath);
+            } else {
+              fs.copyFileSync(srcPath, destPath);
+            }
+          }
+        };
+
+        // Copy the original archive contents to the tmp directory
+        copyRecursive(archivePath, tmpPath);
+
+        // Update archivePath to point to the tmp directory where we copied the contents
+        archivePath = tmpPath;
+        log.info(
+          `XAccountController.verifyXArchive: Copied archive contents to tmp directory: ${archivePath}`,
         );
 
         // Update the account username in the database
         this.account.username = username;
         await this.updateAccountUsername(username);
 
-        // Reinitialize the database connection to point to the new path
+        // Use the existing path
         this.accountDataPath = newAccountDataPath;
-        this.db = new Database(
-          path.join(this.accountDataPath, "data.sqlite3"),
-          {},
-        );
+        this.initDB();
 
         this.refreshAccount();
-      } catch (error) {
-        log.error(
-          `XAccountController.verifyXArchive: Failed to rename account directory: ${error}`,
-        );
-        // Continue with import even if rename fails
+      } else {
+        // Only rename if the new folder doesn't already exist
+        try {
+          // Move all content recursively from old directory to new directory
+          if (fs.existsSync(oldAccountDataPath)) {
+            const moveAllContent = (src: string, dest: string) => {
+              const items = fs.readdirSync(src);
+              for (const item of items) {
+                const srcPath = path.join(src, item);
+                const destPath = path.join(dest, item);
+
+                if (fs.lstatSync(srcPath).isDirectory()) {
+                  if (!fs.existsSync(destPath)) {
+                    fs.mkdirSync(destPath, { recursive: true });
+                  }
+                  moveAllContent(srcPath, destPath);
+                  fs.rmdirSync(srcPath); // Remove empty directory
+                } else {
+                  fs.renameSync(srcPath, destPath);
+                }
+              }
+            };
+
+            moveAllContent(oldAccountDataPath, newAccountDataPath);
+            log.info(
+              `XAccountController.verifyXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`,
+            );
+
+            // Update the archivePath to point to the new location
+            const oldTmpPath = path.join(oldAccountDataPath, "tmp");
+            const newTmpPath = path.join(newAccountDataPath, "tmp");
+            if (archivePath === oldTmpPath) {
+              archivePath = newTmpPath;
+              log.info(
+                `XAccountController.verifyXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`,
+              );
+            }
+
+            // Delete the old deleted_account_ folder after successful migration
+            try {
+              if (fs.existsSync(oldAccountDataPath)) {
+                // Check if the directory is now empty (all content should have been moved)
+                const remainingItems = fs.readdirSync(oldAccountDataPath);
+                if (remainingItems.length === 0) {
+                  fs.rmdirSync(oldAccountDataPath);
+                  log.info(
+                    `XAccountController.verifyXArchive: Deleted empty old directory: ${oldAccountDataPath}`,
+                  );
+                } else {
+                  log.warn(
+                    `XAccountController.verifyXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`,
+                  );
+                }
+              }
+            } catch (error) {
+              log.error(
+                `XAccountController.verifyXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`,
+              );
+              // Don't fail the import if cleanup fails
+            }
+          }
+
+          log.info(
+            `XAccountController.verifyXArchive: Renamed account directory from ${this.account.username} to ${username}`,
+          );
+
+          // Update the account username in the database
+          this.account.username = username;
+          await this.updateAccountUsername(username);
+
+          // Reinitialize the database connection to point to the new path
+          this.accountDataPath = newAccountDataPath;
+          this.initDB();
+
+          this.refreshAccount();
+        } catch (error) {
+          log.error(
+            `XAccountController.verifyXArchive: Failed to rename account directory: ${error}`,
+          );
+          // Continue with import even if rename fails
+        }
       }
     }
 
