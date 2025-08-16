@@ -5,7 +5,46 @@ import os from "os";
 import fetch from "node-fetch";
 import unzipper from "unzipper";
 import mime from "mime-types";
-import sizeOf from "image-size";
+
+// Simple image dimension reader for PNG and JPG
+async function getImageDimensions(
+  filePath: string,
+): Promise<{ width: number; height: number } | null> {
+  try {
+    const buffer = await fs.promises.readFile(filePath);
+
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    if (
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47
+    ) {
+      // PNG: width and height are at bytes 16-19 and 20-23 (big-endian)
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+      return { width, height };
+    }
+
+    // JPG/JPEG signature: FF D8
+    if (buffer[0] === 0xff && buffer[1] === 0xd8) {
+      // Scan for SOF0 (Start of Frame) marker: FF C0
+      for (let i = 2; i < buffer.length - 8; i++) {
+        if (buffer[i] === 0xff && buffer[i + 1] === 0xc0) {
+          // Height at offset 5-6, width at offset 7-8 (big-endian)
+          const height = buffer.readUInt16BE(i + 5);
+          const width = buffer.readUInt16BE(i + 7);
+          return { width, height };
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    log.error(`Error reading image dimensions: ${error}`);
+    return null;
+  }
+}
 
 import { app, session, shell } from "electron";
 import log from "electron-log/main";
@@ -21,7 +60,6 @@ import {
 } from "@atproto/oauth-client-node";
 import { Agent, BlobRef, RichText } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
-import { Link as BskyRichtextFacetLink } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 
 import {
   getResourcesPath,
@@ -3145,13 +3183,8 @@ export class XAccountController {
 
     // Start building the tweet text and facets
     let text = tweet.text;
-    const facets: {
-      index: {
-        byteStart: number;
-        byteEnd: number;
-      };
-      features: BskyRichtextFacetLink[];
-    }[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const facets: any[] = [];
 
     // Replace t.co links with actual links
     let tweetURLs: XTweetURLRow[];
@@ -3259,7 +3292,8 @@ export class XAccountController {
     }
 
     // Handle quotes
-    let embed = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let embed: any = null;
     if (tweet.isQuote && tweet.quotedTweet) {
       // Parse the quoted tweet URL to see if it's a self-quote
       // URL looks like: https://twitter.com/{username}/status/{tweetID}
@@ -3326,18 +3360,30 @@ export class XAccountController {
       return `Error selecting tweet media: ${e}`;
     }
 
-    if (
-      tweetMedia.length == 1 &&
-      (tweetMedia[0].mediaType == "video" ||
-        tweetMedia[0].mediaType == "animated_gif")
-    ) {
-      // Video media
+    // Check if we have any video or animated_gif media
+    const videoMedia = tweetMedia.find(
+      (media) =>
+        media.mediaType === "video" || media.mediaType === "animated_gif",
+    );
+
+    if (videoMedia) {
+      // Video media (Bluesky only supports one video per post, so use the first one)
+      const allVideoMedia = tweetMedia.filter(
+        (media) =>
+          media.mediaType === "video" || media.mediaType === "animated_gif",
+      );
+      if (allVideoMedia.length > 1) {
+        log.warn(
+          `XAccountController.blueskyMigrateTweetBuildRecord: Tweet has ${allVideoMedia.length} videos/animated GIFs, but Bluesky only supports 1. Using the first one: ${videoMedia.filename}`,
+        );
+      }
+
       // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
       const maxSize = 50000000;
 
-      // Load the video
+      // Load the video (use first video/animated_gif found)
       const outputPath = await this.getMediaPath();
-      const mediaPath = path.join(outputPath, tweetMedia[0].filename);
+      const mediaPath = path.join(outputPath, videoMedia.filename);
       let mediaData;
       try {
         mediaData = fs.readFileSync(mediaPath);
@@ -3350,23 +3396,26 @@ export class XAccountController {
       // Make sure it's not too big
       if (mediaData.length > maxSize) {
         log.warn(
-          `XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${tweetMedia[0].filename}`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${videoMedia.filename}`,
         );
         shouldContinue = false;
       }
 
       if (shouldContinue) {
         // Determine the MIME type
-        const mimeType = mime.lookup(mediaPath);
+        let mimeType = mime.lookup(mediaPath);
+        if (mimeType == "application/mp4") {
+          mimeType = "video/mp4";
+        }
         if (!mimeType) {
           log.warn(
-            `XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${tweetMedia[0].filename}`,
+            `XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${videoMedia.filename}`,
           );
           shouldContinue = false;
         }
         if (mimeType != "video/mp4") {
           log.warn(
-            `XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${tweetMedia[0].filename} (mime type is ${mimeType})`,
+            `XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${videoMedia.filename} (mime type is ${mimeType})`,
           );
           shouldContinue = false;
         }
@@ -3375,19 +3424,19 @@ export class XAccountController {
       if (shouldContinue) {
         // Upload the video
         log.info(
-          `XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${tweetMedia[0].filename}`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${videoMedia.filename}`,
         );
         const resp = await agent.uploadBlob(mediaData, {
           encoding: "video/mp4",
         });
         log.info(
-          `XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${tweetMedia[0].filename} response`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${videoMedia.filename} response`,
           resp,
         );
         const videoBlob: BlobRef = resp.data.blob;
 
         // Remove the link from the tweet text
-        text = text.replace(tweetMedia[0].url, "");
+        text = text.replace(videoMedia.url, "");
         text = text.trim();
 
         // If there's already an embedded record, turn it into a recordWithMedia embed
@@ -3429,7 +3478,15 @@ export class XAccountController {
           };
         }
       }
-    } else if (tweetMedia.length > 0) {
+    }
+
+    // Handle remaining non-video media as images
+    const imageMedia = tweetMedia.filter(
+      (media) =>
+        media.mediaType !== "video" && media.mediaType !== "animated_gif",
+    );
+
+    if (imageMedia.length > 0) {
       // Images media
       // max size for images: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/images.json
       const maxSize = 1000000;
@@ -3444,7 +3501,7 @@ export class XAccountController {
         };
       }[] = [];
 
-      for (const media of tweetMedia) {
+      for (const media of imageMedia) {
         // Load the image
         const outputPath = await this.getMediaPath();
         const mediaPath = path.join(outputPath, media.filename);
@@ -3473,7 +3530,7 @@ export class XAccountController {
         }
 
         // Determine the aspect ratio
-        const dimensions = sizeOf(mediaPath);
+        const dimensions = await getImageDimensions(mediaPath);
 
         // Upload the image
         log.info(
@@ -3490,8 +3547,8 @@ export class XAccountController {
           alt: "",
           image: resp.data.blob,
           aspectRatio: {
-            width: dimensions.width ? dimensions.width : 1,
-            height: dimensions.height ? dimensions.height : 1,
+            width: dimensions?.width || 1,
+            height: dimensions?.height || 1,
           },
         });
 
