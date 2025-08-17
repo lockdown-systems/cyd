@@ -36,9 +36,6 @@ Run the tests:
 ```sh
 # Node.js tests
 pnpm test
-
-# Vue.js component tests
-pnpm test:components
 ```
 
 ## Other server modes
