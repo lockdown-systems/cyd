@@ -17,6 +17,9 @@ export type FacebookProgress = {
   currentJob: string;
   isSavePostsFinished: boolean;
   storiesSaved: number;
+  totalPostsToDelete: number;
+  postsDeleted: number;
+  errorsOccured: number;
 };
 
 export function emptyFacebookProgress(): FacebookProgress {
@@ -24,8 +27,24 @@ export function emptyFacebookProgress(): FacebookProgress {
     currentJob: "",
     isSavePostsFinished: false,
     storiesSaved: 0,
+    totalPostsToDelete: 0,
+    postsDeleted: 0,
+    errorsOccured: 0,
   };
 }
+
+export type FacebookPostItem = {
+  id: string; // storyID
+  u: string; // URL
+  t: string; //text
+  a: string; //userID
+  d: string; // createdAt
+  m: string[]; // media filenames
+};
+
+export type FacebookDeletePostsStartResponse = {
+  posts: FacebookPostItem[];
+};
 
 export type FacebookDatabaseStats = {
   storiesSaved: number;

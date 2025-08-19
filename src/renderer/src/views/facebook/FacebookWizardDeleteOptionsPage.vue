@@ -222,80 +222,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!--     -->
-      <div class="mb-3">
-        <div class="d-flex align-items-center justify-content-between">
-          <div class="form-check">
-            <input
-              id="deleteReposts"
-              v-model="deleteReposts"
-              type="checkbox"
-              class="form-check-input"
-              :disabled="!hasSomeData"
-            />
-            <label
-              class="form-check-label mr-1 text-nowrap"
-              for="deleteReposts"
-            >
-              Delete my reposts
-            </label>
-            <span class="ms-2 text-muted">(recommended)</span>
-            <button
-              class="btn btn-sm btn-link"
-              @click="deleteRepostsShowMoreClicked"
-            >
-              {{ deleteRepostsShowMoreButtonText }}
-            </button>
-          </div>
-        </div>
-        <div v-if="deleteRepostsShowMore" class="indent">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center flex-nowrap">
-              <div class="form-check">
-                <input
-                  id="deleteRepostsDaysOldEnabled"
-                  v-model="deleteRepostsDaysOldEnabled"
-                  type="checkbox"
-                  class="form-check-input"
-                  :disabled="!deleteReposts || !hasSomeData"
-                />
-                <label
-                  class="form-check-label mr-1 text-nowrap"
-                  for="deleteRepostsDaysOldEnabled"
-                >
-                  older than
-                </label>
-              </div>
-              <div class="d-flex align-items-center">
-                <label
-                  class="form-check-label mr-1 sr-only"
-                  for="deleteRepostsDaysOld"
-                >
-                  days
-                </label>
-                <div class="input-group flex-nowrap">
-                  <input
-                    id="deleteRepostsDaysOld"
-                    v-model="deleteRepostsDaysOld"
-                    type="text"
-                    class="form-control form-short small"
-                    :disabled="!deleteReposts || !deleteRepostsDaysOldEnabled"
-                  />
-                  <div class="input-group-append">
-                    <span class="input-group-text small">days</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <span
-              v-if="!userAuthenticated || !userPremium"
-              class="premium badge badge-primary"
-              >Premium</span
-            >
-          </div>
-        </div>
-      </div>
-
       <div class="buttons">
         <button
           type="submit"
@@ -313,7 +239,7 @@ onMounted(async () => {
           @click="nextClicked"
         >
           <i class="fa-solid fa-forward" />
-          Continue to Review (NOT IMPL YET)
+          Continue to Review
         </button>
       </div>
     </form>

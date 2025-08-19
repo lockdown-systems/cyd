@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { FacebookViewModel, State } from "../../view_models/FacebookViewModel";
 import { getJobsType } from "../../util";
+import { facebookHasSomeData } from "../../util_facebook";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
 
@@ -28,6 +29,8 @@ const jobsType = ref("");
 const backClicked = async () => {
   if (jobsType.value == "save") {
     emit("setState", State.WizardBuildOptions);
+  } else if (jobsType.value == "delete") {
+    emit("setState", State.WizardDeleteOptions);
   } else {
     // Display error
     console.error("Unknown review type:", jobsType.value);
@@ -37,10 +40,15 @@ const backClicked = async () => {
   }
 };
 
+// Settings
+// const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
+const hasSomeData = ref(false);
+
 onMounted(async () => {
   loading.value = true;
 
   jobsType.value = getJobsType(props.model.account.id) || "";
+  hasSomeData.value = await facebookHasSomeData(props.model.account.id);
 
   loading.value = false;
 });
@@ -74,6 +82,25 @@ onMounted(async () => {
           </ul>
         </div>
 
+        <div v-if="jobsType == 'delete'">
+          <h3>
+            <i class="fa-solid fa-fire me-1" />
+            Delete my data
+          </h3>
+          <ul>
+            <li
+              v-if="hasSomeData && model.account?.facebookAccount?.deleteTweets"
+            >
+              <b
+                >{{
+                  deleteReviewStats.tweetsToDelete.toLocaleString()
+                }}
+                tweets</b
+              >
+            </li>
+          </ul>
+        </div>
+
         <div class="buttons">
           <button
             type="submit"
@@ -83,6 +110,9 @@ onMounted(async () => {
             <i class="fa-solid fa-backward" />
             <template v-if="jobsType == 'save'">
               Back to Build Options
+            </template>
+            <template v-else-if="jobsType == 'delete'">
+              Back to Delete Options
             </template>
           </button>
 
@@ -94,6 +124,13 @@ onMounted(async () => {
           >
             <i class="fa-solid fa-forward" />
             <template v-if="jobsType == 'save'"> Build Database </template>
+            <template
+              v-else-if="
+                jobsType == 'delete' || jobsType == 'migrateBlueskyDelete'
+              "
+            >
+              Start Deleting
+            </template>
           </button>
         </div>
       </form>

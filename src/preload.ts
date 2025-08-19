@@ -21,10 +21,10 @@ import {
   FacebookJob,
   FacebookProgress,
   FacebookDatabaseStats,
-  XAccount,
+  FacebookDeletePostsStartResponse,
 } from "./shared_types";
 
-const electronAPI = {
+contextBridge.exposeInMainWorld("electron", {
   // Export ipcRenderer to the frontend
   ipcRenderer: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -435,7 +435,7 @@ const electronAPI = {
     deleteConfigLike: (accountID: number, key: string): Promise<void> => {
       return ipcRenderer.invoke("X:deleteConfigLike", accountID, key);
     },
-    getImageDataURI: (accountID: number, url: string): Promise<string> => {
+    getImageDataURI: (accountID: number, url: string): Promise<void> => {
       return ipcRenderer.invoke("X:getImageDataURI", accountID, url);
     },
     blueskyGetProfile: (
@@ -481,9 +481,6 @@ const electronAPI = {
     },
     getMediaPath: (accountID: number): Promise<string> => {
       return ipcRenderer.invoke("X:getMediaPath", accountID);
-    },
-    initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
-      return ipcRenderer.invoke("X:initArchiveOnlyMode", accountID);
     },
   },
   Facebook: {
@@ -540,12 +537,25 @@ const electronAPI = {
     savePosts: (accountID: number): Promise<FacebookProgress> => {
       return ipcRenderer.invoke("Facebook:savePosts", accountID);
     },
+    deletePostsStart: (
+      accountID: number,
+    ): Promise<FacebookDeletePostsStartResponse> => {
+      return ipcRenderer.invoke("Facebook:deletePostsStart", accountID);
+    },
+    deleteTweet: (
+      accountID: number,
+      storyID: string,
+      deleteType: string,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Facebook:deletePost",
+        accountID,
+        storyID,
+        deleteType,
+      );
+    },
     getDatabaseStats: (accountID: number): Promise<FacebookDatabaseStats> => {
       return ipcRenderer.invoke("Facebook:getDatabaseStats", accountID);
     },
   },
-};
-
-contextBridge.exposeInMainWorld("electron", electronAPI);
-
-export type ElectronAPI = typeof electronAPI;
+});
