@@ -1,21 +1,18 @@
-import type { ForgeConfig } from "@electron-forge/shared-types";
-import { MakerSquirrel } from "@electron-forge/maker-squirrel";
-import { MakerDMG } from "@electron-forge/maker-dmg";
-import { MakerZIP } from "@electron-forge/maker-zip";
-import { MakerDeb } from "@electron-forge/maker-deb";
-import { MakerRpm } from "@electron-forge/maker-rpm";
-import { VitePlugin } from "@electron-forge/plugin-vite";
-import { FusesPlugin } from "@electron-forge/plugin-fuses";
-import { FuseV1Options, FuseVersion } from "@electron/fuses";
-import { PublisherS3 } from "@electron-forge/publisher-s3";
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
+const { MakerSquirrel } = require("@electron-forge/maker-squirrel");
+const { MakerDMG } = require("@electron-forge/maker-dmg");
+const { MakerZIP } = require("@electron-forge/maker-zip");
+const { MakerDeb } = require("@electron-forge/maker-deb");
+const { MakerRpm } = require("@electron-forge/maker-rpm");
+const { VitePlugin } = require("@electron-forge/plugin-vite");
+const { FusesPlugin } = require("@electron-forge/plugin-fuses");
+const { FuseV1Options, FuseVersion } = require("@electron/fuses");
+const { PublisherS3 } = require("@electron-forge/publisher-s3");
 
-import { type OsxSignOptions } from "@electron/packager/dist/types";
-import { type NotaryToolCredentials } from "@electron/notarize/lib/types";
-
-import { execSync } from "child_process";
-import path from "path";
-import fs from "fs";
-import os from "os";
+const { execSync } = require("child_process");
+const path = require("path");
+const fs = require("fs");
+const os = require("os");
 
 // Make sure build path exists
 const buildPath = path.join(__dirname, "build");
@@ -127,12 +124,12 @@ const mimeTypeScheme =
     : "x-scheme-handler/cyd-dev";
 
 // macOS signing and notarization options
-let osxSign: OsxSignOptions | undefined;
-let osxNotarize: NotaryToolCredentials | undefined;
+let osxSign: any | undefined;
+let osxNotarize: any | undefined;
 if (process.env.MACOS_RELEASE === "true") {
   osxSign = {
     identity: "Developer ID Application: Lockdown Systems LLC (G762K6CH36)",
-    optionsForFile: (filePath) => {
+    optionsForFile: (filePath: string) => {
       const entitlementDefault = path.join(
         assetsPath,
         "entitlements",
@@ -178,7 +175,7 @@ if (process.env.MACOS_RELEASE === "true") {
   };
 }
 
-const config: ForgeConfig = {
+const config = {
   packagerConfig: {
     name: process.env.CYD_ENV == "prod" ? "Cyd" : "Cyd Dev",
     executableName:
@@ -368,4 +365,4 @@ const config: ForgeConfig = {
   ],
 };
 
-export default config;
+module.exports = config;
