@@ -10,5 +10,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
     zip \
     sudo
 
+# Install pnpm
+RUN npm install -g pnpm
+
 WORKDIR /workspace
 
