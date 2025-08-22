@@ -1,7 +1,7 @@
 /* global console */
-const process = require("process");
-const os = require("os");
-const { execSync } = require("child_process");
+import process from "process";
+import os from "os";
+import { execSync } from "child_process";
 
 // Validate input
 
