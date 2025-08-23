@@ -8,7 +8,7 @@ build_archive_site() {
     echo ">> Building ${site} archive static site..."
     rm -f archive-static-sites/${site}-archive/public/assets/archive.js
     rm -r archive-static-sites/${site}-archive/dist || true
-    pnpm --filter ${site}-archive build
+    npm run build --workspace=archive-static-sites/${site}-archive
 
     # Zip it up
     cd archive-static-sites/${site}-archive/dist

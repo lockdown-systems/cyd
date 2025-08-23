@@ -12,7 +12,7 @@ if (process.env.CI === "true" || process.env.CI === "1") {
 console.log("Rebuilding native modules for Electron...");
 console.log("- Searching dependency tree");
 try {
-  execSync("pnpm exec electron-rebuild --force", {
+  execSync("npx electron-rebuild --force", {
     stdio: "inherit",
     cwd: process.cwd(),
   });

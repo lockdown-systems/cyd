@@ -7,17 +7,17 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@fortawesome/fontawesome-free": "^7.0.0",
     "bootstrap": "^5.3.7",
-    "vue": "^3.5.17",
+    "vue": "^3.5.19",
     "vue-class-component": "8.0.0-rc.1",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@types/node": "^22.16.2",
-    "@vue/cli-plugin-router": "~5.0.8",
-    "@vue/cli-plugin-typescript": "~5.0.8",
-    "@vue/cli-service": "~5.0.8",
-    "typescript": "^5.8.3"
+    "@types/node": "^24.3.0",
+    "@vue/cli-plugin-router": "~5.0.9",
+    "@vue/cli-plugin-typescript": "~5.0.9",
+    "@vue/cli-service": "~5.0.9",
+    "typescript": "^5.9.2"
   }
 }
