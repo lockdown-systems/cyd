@@ -2391,6 +2391,8 @@ export class XAccountController {
         this.refreshAccount();
       } else {
         // Only rename if the new folder doesn't already exist
+        // `getAccountDataPath` creates the account data path if it doesn't exist
+        const newAccountDataPath = getAccountDataPath("X", username);
         try {
           // Move all content recursively from old directory to new directory
           if (fs.existsSync(oldAccountDataPath)) {
