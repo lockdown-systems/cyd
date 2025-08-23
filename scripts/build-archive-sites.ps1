@@ -7,8 +7,7 @@ Set-Location -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition)
 Write-Output ">> Building X archive static site..."
 Set-Location -Path "../archive-static-sites/x-archive"
 Remove-Item -Recurse -Force "dist" -ErrorAction SilentlyContinue
-npm install --workspace=archive-static-sites/x-archive
-npm run build --workspace=archive-static-sites/x-archive
+npm run build
 
 # Zip it up
 Set-Location -Path "dist"
@@ -19,8 +18,7 @@ Set-Location -Path "../.."
 Write-Output ">> Building Facebook archive static site..."
 Set-Location -Path "facebook-archive"
 Remove-Item -Recurse -Force "dist" -ErrorAction SilentlyContinue
-npm install --workspace=archive-static-sites/facebook-archive
-npm run build --workspace=archive-static-sites/facebook-archive
+npm run build
 
 # Zip it up
 Set-Location -Path "dist"
