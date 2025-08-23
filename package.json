@@ -8,8 +8,8 @@
   "authors": "Lockdown Systems LLC",
   "scripts": {
     "clean": "node ./scripts/clean.mjs",
-    "rebuild": "pnpm exec electron-rebuild --force",
-    "rebuild-clean": "rm -rf node_modules/better-sqlite3/build && pnpm exec electron-rebuild --force",
+    "rebuild": "npx electron-rebuild --force",
+    "rebuild-clean": "rm -rf node_modules/better-sqlite3/build && npx electron-rebuild --force",
     "postinstall": "node scripts/postinstall.js",
     "start": "electron-forge start",
     "dev": "electron-forge start",
@@ -110,5 +110,10 @@
   },
   "optionalDependencies": {
     "appdmg": "^0.6.6"
-  }
+  },
+  "workspaces": [
+    "archive-static-sites/x-archive",
+    "archive-static-sites/facebook-archive",
+    "docs"
+  ]
 }
