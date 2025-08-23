@@ -4,15 +4,12 @@ import path from "path";
 import os from "os";
 import { execSync } from "child_process";
 
-const directoriesToRemove = ["./out", "./node_modules"];
-
-directoriesToRemove.forEach((dir) => {
-  const fullPath = path.resolve(dir);
-  if (fs.existsSync(fullPath)) {
-    console.log(`Deleting: ${fullPath}`);
-    fs.rmSync(fullPath, { recursive: true, force: true });
-  }
-});
+// Delete output from last release
+const fullPath = path.resolve("./out");
+if (fs.existsSync(fullPath)) {
+  console.log(`Deleting: ${fullPath}`);
+  fs.rmSync(fullPath, { recursive: true, force: true });
+}
 
 // Delete all files in the build directory except config.json
 const buildDir = path.resolve("./build");
@@ -27,8 +24,23 @@ if (fs.existsSync(buildDir)) {
   });
 }
 
-console.log("Running npm install...");
+console.log("Running npm install for Cyd...");
 execSync("npm install", { stdio: "inherit" });
+
+console.log("Running npm install for docs...");
+execSync("npm install", { stdio: "inherit", cwd: "docs" });
+
+console.log("Running npm install for x-archive...");
+execSync("npm install", {
+  stdio: "inherit",
+  cwd: "archive-static-sites/x-archive",
+});
+
+console.log("Running npm install for facebook-archive...");
+execSync("npm install", {
+  stdio: "inherit",
+  cwd: "archive-static-sites/facebook-archive",
+});
 
 if (os.platform() === "linux") {
   const chromeSandboxPath = path.resolve(
