@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # For Developers
 
-Cyd is a desktop app for Windows, Mac, and Linux written in Node.js. To run Cyd locally, all you need is [Node.JS LTS](https://nodejs.org/en) for your operating systems.
+Cyd is a desktop app for Windows, Mac, and Linux written in Node.js. To run Cyd locally, you need is [Node.JS LTS](https://nodejs.org/en) for your operating systems.
 
 Install dependencies.
 
@@ -21,24 +21,20 @@ npm run config-open
 Run Cyd:
 
 ```sh
-npm run start
+npm start
 ```
 
 To make it so devtools automatically opens, and so each embedded webview has a separate devtools window open, set the environment variables `CYD_DEV` to `1`:
 
 ```sh
-CYD_DEV=1
-npm run start
+CYD_DEV=1 npm start
 ```
 
 Run the tests:
 
 ```sh
 # Node.js tests
-npm run test
-
-# Vue.js component tests
-npm run test:components
+npm test
 ```
 
 ## Other server modes

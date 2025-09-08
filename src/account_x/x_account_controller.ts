@@ -5,7 +5,46 @@ import os from "os";
 import fetch from "node-fetch";
 import unzipper from "unzipper";
 import mime from "mime-types";
-import sizeOf from "image-size";
+
+// Simple image dimension reader for PNG and JPG
+async function getImageDimensions(
+  filePath: string,
+): Promise<{ width: number; height: number } | null> {
+  try {
+    const buffer = await fs.promises.readFile(filePath);
+
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    if (
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47
+    ) {
+      // PNG: width and height are at bytes 16-19 and 20-23 (big-endian)
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+      return { width, height };
+    }
+
+    // JPG/JPEG signature: FF D8
+    if (buffer[0] === 0xff && buffer[1] === 0xd8) {
+      // Scan for SOF0 (Start of Frame) marker: FF C0
+      for (let i = 2; i < buffer.length - 8; i++) {
+        if (buffer[i] === 0xff && buffer[i + 1] === 0xc0) {
+          // Height at offset 5-6, width at offset 7-8 (big-endian)
+          const height = buffer.readUInt16BE(i + 5);
+          const width = buffer.readUInt16BE(i + 7);
+          return { width, height };
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    log.error(`Error reading image dimensions: ${error}`);
+    return null;
+  }
+}
 
 import { app, session, shell } from "electron";
 import log from "electron-log/main";
@@ -21,7 +60,6 @@ import {
 } from "@atproto/oauth-client-node";
 import { Agent, BlobRef, RichText } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
-import { Link as BskyRichtextFacetLink } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 
 import {
   getResourcesPath,
@@ -2245,20 +2283,6 @@ export class XAccountController {
         return `The account.js file has more than one account.`;
       }
 
-      // Make sure there is not already an account with this username
-      const dataPath = getDataPath();
-      const xDataPath = path.join(dataPath, "X");
-      const newAccountDataPath = path.join(
-        xDataPath,
-        accountData[0].account.username,
-      );
-      if (fs.existsSync(newAccountDataPath)) {
-        log.error(
-          `XAccountController.verifyXArchive: account already exists: ${newAccountDataPath}`,
-        );
-        return `The account @${accountData[0].account.username} already exists. Please delete ${newAccountDataPath} and try again.`;
-      }
-
       // Store the username for later use
       username = accountData[0].account.username;
 
@@ -2277,20 +2301,23 @@ export class XAccountController {
     }
 
     // If this is an archive-only account (which uses temporary usernames) and we now have the real username,
-    // rename the account directory to use the real username
+    // check if we need to rename the account directory or if it already exists with the correct name
     console.log(
       `XAccountController.verifyXArchive: archiveOnly: ${this.account?.archiveOnly}`,
     );
     if (this.account?.archiveOnly) {
-      // Close the database before renaming the account directory
+      // Close the database before any directory operations
       if (this.db) {
         this.db.close();
         this.db = null;
       }
 
-      // These methods create the account data path if it doesn't exist
+      // `getAccountDataPath` creates the account data path if it doesn't exist
       const oldAccountDataPath = getAccountDataPath("X", this.account.username);
-      const newAccountDataPath = getAccountDataPath("X", username);
+      // We manually build the path here so that we can check if the folder exists
+      const dataPath = getDataPath();
+      const xDataPath = path.join(dataPath, "X");
+      const newAccountDataPath = path.join(xDataPath, username);
 
       log.info(
         `XAccountController.verifyXArchive: oldAccountDataPath: ${oldAccountDataPath}`,
@@ -2298,87 +2325,153 @@ export class XAccountController {
       log.info(
         `XAccountController.verifyXArchive: newAccountDataPath: ${newAccountDataPath}`,
       );
-      try {
-        // Move all content recursively from old directory to new directory
-        if (fs.existsSync(oldAccountDataPath)) {
-          const moveAllContent = (src: string, dest: string) => {
-            const items = fs.readdirSync(src);
-            for (const item of items) {
-              const srcPath = path.join(src, item);
-              const destPath = path.join(dest, item);
 
-              if (fs.lstatSync(srcPath).isDirectory()) {
-                if (!fs.existsSync(destPath)) {
-                  fs.mkdirSync(destPath, { recursive: true });
-                }
-                moveAllContent(srcPath, destPath);
-                fs.rmdirSync(srcPath); // Remove empty directory
-              } else {
-                fs.renameSync(srcPath, destPath);
-              }
-            }
-          };
+      // Check if the folder already exists with the correct username
+      if (fs.existsSync(newAccountDataPath)) {
+        log.info(
+          `XAccountController.verifyXArchive: Folder already exists with correct username, using existing folder: ${newAccountDataPath}`,
+        );
 
-          moveAllContent(oldAccountDataPath, newAccountDataPath);
-          log.info(
-            `XAccountController.verifyXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`,
-          );
-
-          // Update the archivePath to point to the new location
-          const oldTmpPath = path.join(oldAccountDataPath, "tmp");
-          const newTmpPath = path.join(newAccountDataPath, "tmp");
-          if (archivePath === oldTmpPath) {
-            archivePath = newTmpPath;
-            log.info(
-              `XAccountController.verifyXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`,
-            );
-          }
-
-          // Delete the old deleted_account_ folder after successful migration
-          try {
-            if (fs.existsSync(oldAccountDataPath)) {
-              // Check if the directory is now empty (all content should have been moved)
-              const remainingItems = fs.readdirSync(oldAccountDataPath);
-              if (remainingItems.length === 0) {
-                fs.rmdirSync(oldAccountDataPath);
-                log.info(
-                  `XAccountController.verifyXArchive: Deleted empty old directory: ${oldAccountDataPath}`,
-                );
-              } else {
-                log.warn(
-                  `XAccountController.verifyXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`,
-                );
-              }
-            }
-          } catch (error) {
-            log.error(
-              `XAccountController.verifyXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`,
-            );
-            // Don't fail the import if cleanup fails
-          }
-        }
+        // Update the archivePath to point to the correct location in the existing folder
+        // If archivePath was pointing to a tmp directory, update it to the new tmp directory
+        const oldTmpPath = path.join(oldAccountDataPath, "tmp");
 
         log.info(
-          `XAccountController.verifyXArchive: Renamed account directory from ${this.account.username} to ${username}`,
+          `XAccountController.verifyXArchive: archivePath: ${archivePath}`,
+        );
+        log.info(
+          `XAccountController.verifyXArchive: oldTmpPath: ${oldTmpPath}`,
+        );
+        log.info(
+          `XAccountController.verifyXArchive: archivePath === oldTmpPath: ${archivePath === oldTmpPath}`,
+        );
+
+        // When using an existing folder, we need to copy the archive contents into the account's data directory
+        // Create a tmp directory to hold the archive contents temporarily
+        const tmpPath = path.join(newAccountDataPath, "tmp");
+        if (!fs.existsSync(tmpPath)) {
+          fs.mkdirSync(tmpPath, { recursive: true });
+        }
+
+        // Copy the archive contents to the tmp directory
+        const copyRecursive = (src: string, dest: string) => {
+          const items = fs.readdirSync(src);
+          for (const item of items) {
+            const srcPath = path.join(src, item);
+            const destPath = path.join(dest, item);
+
+            if (fs.lstatSync(srcPath).isDirectory()) {
+              if (!fs.existsSync(destPath)) {
+                fs.mkdirSync(destPath, { recursive: true });
+              }
+              copyRecursive(srcPath, destPath);
+            } else {
+              fs.copyFileSync(srcPath, destPath);
+            }
+          }
+        };
+
+        // Copy the original archive contents to the tmp directory
+        copyRecursive(archivePath, tmpPath);
+
+        // Update archivePath to point to the tmp directory where we copied the contents
+        archivePath = tmpPath;
+        log.info(
+          `XAccountController.verifyXArchive: Copied archive contents to tmp directory: ${archivePath}`,
         );
 
         // Update the account username in the database
         this.account.username = username;
         await this.updateAccountUsername(username);
 
-        // Reinitialize the database connection to point to the new path
+        // Use the existing path
         this.accountDataPath = newAccountDataPath;
-        this.db = new Database(
-          path.join(this.accountDataPath, "data.sqlite3"),
-          {},
-        );
+        this.initDB();
 
         this.refreshAccount();
-      } catch (error) {
-        log.error(
-          `XAccountController.verifyXArchive: Failed to rename account directory: ${error}`,
-        );
-        // Continue with import even if rename fails
+      } else {
+        // Only rename if the new folder doesn't already exist
+        // `getAccountDataPath` creates the account data path if it doesn't exist
+        const newAccountDataPath = getAccountDataPath("X", username);
+        try {
+          // Move all content recursively from old directory to new directory
+          if (fs.existsSync(oldAccountDataPath)) {
+            const moveAllContent = (src: string, dest: string) => {
+              const items = fs.readdirSync(src);
+              for (const item of items) {
+                const srcPath = path.join(src, item);
+                const destPath = path.join(dest, item);
+
+                if (fs.lstatSync(srcPath).isDirectory()) {
+                  if (!fs.existsSync(destPath)) {
+                    fs.mkdirSync(destPath, { recursive: true });
+                  }
+                  moveAllContent(srcPath, destPath);
+                  fs.rmdirSync(srcPath); // Remove empty directory
+                } else {
+                  fs.renameSync(srcPath, destPath);
+                }
+              }
+            };
+
+            moveAllContent(oldAccountDataPath, newAccountDataPath);
+            log.info(
+              `XAccountController.verifyXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`,
+            );
+
+            // Update the archivePath to point to the new location
+            const oldTmpPath = path.join(oldAccountDataPath, "tmp");
+            const newTmpPath = path.join(newAccountDataPath, "tmp");
+            if (archivePath === oldTmpPath) {
+              archivePath = newTmpPath;
+              log.info(
+                `XAccountController.verifyXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`,
+              );
+            }
+
+            // Delete the old deleted_account_ folder after successful migration
+            try {
+              if (fs.existsSync(oldAccountDataPath)) {
+                // Check if the directory is now empty (all content should have been moved)
+                const remainingItems = fs.readdirSync(oldAccountDataPath);
+                if (remainingItems.length === 0) {
+                  fs.rmdirSync(oldAccountDataPath);
+                  log.info(
+                    `XAccountController.verifyXArchive: Deleted empty old directory: ${oldAccountDataPath}`,
+                  );
+                } else {
+                  log.warn(
+                    `XAccountController.verifyXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`,
+                  );
+                }
+              }
+            } catch (error) {
+              log.error(
+                `XAccountController.verifyXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`,
+              );
+              // Don't fail the import if cleanup fails
+            }
+          }
+
+          log.info(
+            `XAccountController.verifyXArchive: Renamed account directory from ${this.account.username} to ${username}`,
+          );
+
+          // Update the account username in the database
+          this.account.username = username;
+          await this.updateAccountUsername(username);
+
+          // Reinitialize the database connection to point to the new path
+          this.accountDataPath = newAccountDataPath;
+          this.initDB();
+
+          this.refreshAccount();
+        } catch (error) {
+          log.error(
+            `XAccountController.verifyXArchive: Failed to rename account directory: ${error}`,
+          );
+          // Continue with import even if rename fails
+        }
       }
     }
 
@@ -3145,13 +3238,8 @@ export class XAccountController {
 
     // Start building the tweet text and facets
     let text = tweet.text;
-    const facets: {
-      index: {
-        byteStart: number;
-        byteEnd: number;
-      };
-      features: BskyRichtextFacetLink[];
-    }[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const facets: any[] = [];
 
     // Replace t.co links with actual links
     let tweetURLs: XTweetURLRow[];
@@ -3259,7 +3347,8 @@ export class XAccountController {
     }
 
     // Handle quotes
-    let embed = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let embed: any = null;
     if (tweet.isQuote && tweet.quotedTweet) {
       // Parse the quoted tweet URL to see if it's a self-quote
       // URL looks like: https://twitter.com/{username}/status/{tweetID}
@@ -3326,18 +3415,30 @@ export class XAccountController {
       return `Error selecting tweet media: ${e}`;
     }
 
-    if (
-      tweetMedia.length == 1 &&
-      (tweetMedia[0].mediaType == "video" ||
-        tweetMedia[0].mediaType == "animated_gif")
-    ) {
-      // Video media
+    // Check if we have any video or animated_gif media
+    const videoMedia = tweetMedia.find(
+      (media) =>
+        media.mediaType === "video" || media.mediaType === "animated_gif",
+    );
+
+    if (videoMedia) {
+      // Video media (Bluesky only supports one video per post, so use the first one)
+      const allVideoMedia = tweetMedia.filter(
+        (media) =>
+          media.mediaType === "video" || media.mediaType === "animated_gif",
+      );
+      if (allVideoMedia.length > 1) {
+        log.warn(
+          `XAccountController.blueskyMigrateTweetBuildRecord: Tweet has ${allVideoMedia.length} videos/animated GIFs, but Bluesky only supports 1. Using the first one: ${videoMedia.filename}`,
+        );
+      }
+
       // max size for videos: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/video.json
       const maxSize = 50000000;
 
-      // Load the video
+      // Load the video (use first video/animated_gif found)
       const outputPath = await this.getMediaPath();
-      const mediaPath = path.join(outputPath, tweetMedia[0].filename);
+      const mediaPath = path.join(outputPath, videoMedia.filename);
       let mediaData;
       try {
         mediaData = fs.readFileSync(mediaPath);
@@ -3350,23 +3451,26 @@ export class XAccountController {
       // Make sure it's not too big
       if (mediaData.length > maxSize) {
         log.warn(
-          `XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${tweetMedia[0].filename}`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: media file too large: ${videoMedia.filename}`,
         );
         shouldContinue = false;
       }
 
       if (shouldContinue) {
         // Determine the MIME type
-        const mimeType = mime.lookup(mediaPath);
+        let mimeType = mime.lookup(mediaPath);
+        if (mimeType == "application/mp4") {
+          mimeType = "video/mp4";
+        }
         if (!mimeType) {
           log.warn(
-            `XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${tweetMedia[0].filename}`,
+            `XAccountController.blueskyMigrateTweetBuildRecord: could not determine MIME type for media file: ${videoMedia.filename}`,
           );
           shouldContinue = false;
         }
         if (mimeType != "video/mp4") {
           log.warn(
-            `XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${tweetMedia[0].filename} (mime type is ${mimeType})`,
+            `XAccountController.blueskyMigrateTweetBuildRecord: video file is not mp4: ${videoMedia.filename} (mime type is ${mimeType})`,
           );
           shouldContinue = false;
         }
@@ -3375,19 +3479,19 @@ export class XAccountController {
       if (shouldContinue) {
         // Upload the video
         log.info(
-          `XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${tweetMedia[0].filename}`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: uploading video ${videoMedia.filename}`,
         );
         const resp = await agent.uploadBlob(mediaData, {
           encoding: "video/mp4",
         });
         log.info(
-          `XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${tweetMedia[0].filename} response`,
+          `XAccountController.blueskyMigrateTweetBuildRecord: uploaded video ${videoMedia.filename} response`,
           resp,
         );
         const videoBlob: BlobRef = resp.data.blob;
 
         // Remove the link from the tweet text
-        text = text.replace(tweetMedia[0].url, "");
+        text = text.replace(videoMedia.url, "");
         text = text.trim();
 
         // If there's already an embedded record, turn it into a recordWithMedia embed
@@ -3429,7 +3533,15 @@ export class XAccountController {
           };
         }
       }
-    } else if (tweetMedia.length > 0) {
+    }
+
+    // Handle remaining non-video media as images
+    const imageMedia = tweetMedia.filter(
+      (media) =>
+        media.mediaType !== "video" && media.mediaType !== "animated_gif",
+    );
+
+    if (imageMedia.length > 0) {
       // Images media
       // max size for images: https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/embed/images.json
       const maxSize = 1000000;
@@ -3444,7 +3556,7 @@ export class XAccountController {
         };
       }[] = [];
 
-      for (const media of tweetMedia) {
+      for (const media of imageMedia) {
         // Load the image
         const outputPath = await this.getMediaPath();
         const mediaPath = path.join(outputPath, media.filename);
@@ -3473,7 +3585,7 @@ export class XAccountController {
         }
 
         // Determine the aspect ratio
-        const dimensions = sizeOf(mediaPath);
+        const dimensions = await getImageDimensions(mediaPath);
 
         // Upload the image
         log.info(
@@ -3490,8 +3602,8 @@ export class XAccountController {
           alt: "",
           image: resp.data.blob,
           aspectRatio: {
-            width: dimensions.width ? dimensions.width : 1,
-            height: dimensions.height ? dimensions.height : 1,
+            width: dimensions?.width || 1,
+            height: dimensions?.height || 1,
           },
         });
 

@@ -4,41 +4,37 @@ sidebar_position: 2
 
 # For Developers
 
-Cyd is a desktop app for Windows, Mac, and Linux written in Node.js. To run Cyd locally, you need is [Node.JS LTS](https://nodejs.org/en) for your operating systems and [pnpm](pnpm.io/).
+Cyd is a desktop app for Windows, Mac, and Linux written in Node.js. To run Cyd locally, you need is [Node.JS LTS](https://nodejs.org/en) for your operating systems.
 
 Install dependencies.
 
 ```sh
-pnpm install
+npm install
 ```
 
 Configure your Cyd environment to use "open" mode. This disables the server, which allows outside contributors to build features.
 
 ```sh
-pnpm config-open
+npm run config-open
 ```
 
 Run Cyd:
 
 ```sh
-pnpm start
+npm start
 ```
 
 To make it so devtools automatically opens, and so each embedded webview has a separate devtools window open, set the environment variables `CYD_DEV` to `1`:
 
 ```sh
-CYD_DEV=1
-pnpm start
+CYD_DEV=1 npm start
 ```
 
 Run the tests:
 
 ```sh
 # Node.js tests
-pnpm test
-
-# Vue.js component tests
-pnpm test:components
+npm test
 ```
 
 ## Other server modes
@@ -49,11 +45,11 @@ If you're part of Lockdown Systems and you need to test functionality that uses 
 
 ```sh
 # local mode: use a locally-hosted server at localhost:5000
-pnpm config-local
+npm run config-local
 
 # dev mode: use the dev server at dev-api.cyd.social
-pnpm config-dev
+npm run config-dev
 
 # prod mode: use the prod server at prod-api.cyd.social
-pnpm config-prod
+npm run config-prod
 ```
