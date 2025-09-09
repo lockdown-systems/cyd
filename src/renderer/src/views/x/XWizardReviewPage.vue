@@ -19,7 +19,10 @@ import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
 import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
-import { TombstoneBannerBackground, TombstoneBannerSocialIcons } from "../../types_x";
+import {
+  TombstoneBannerBackground,
+  TombstoneBannerSocialIcons,
+} from "../../types_x";
 
 // Props
 const props = defineProps<{
@@ -73,8 +76,12 @@ const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 const hasSomeData = ref(false);
 const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
 
-const tombstoneUpdateBannerBackground = ref<TombstoneBannerBackground>(TombstoneBannerBackground.Night);
-const tombstoneUpdateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(TombstoneBannerSocialIcons.None);
+const tombstoneUpdateBannerBackground = ref<TombstoneBannerBackground>(
+  TombstoneBannerBackground.Night,
+);
+const tombstoneUpdateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(
+  TombstoneBannerSocialIcons.None,
+);
 
 const deleteTweetsCountNotArchived = ref(0);
 
@@ -105,20 +112,39 @@ onMounted(async () => {
   }
 
   if (jobsType.value == "tombstone") {
-    if (props.model.account?.xAccount?.tombstoneUpdateBannerBackground == "morning") {
+    if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerBackground ==
+      "morning"
+    ) {
       tombstoneUpdateBannerBackground.value = TombstoneBannerBackground.Morning;
     } else {
       tombstoneUpdateBannerBackground.value = TombstoneBannerBackground.Night;
     }
 
-    if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == "bluesky") {
-      tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.Bluesky;
-    } else if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == "mastodon") {
-      tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.Mastodon;
-    } else if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == "bluesky-mastodon") {
-      tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.BlueskyMastodon;
-    } else if (props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons == "mastodon-bluesky") {
-      tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.MastodonBluesky;
+    if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "bluesky"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.Bluesky;
+    } else if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "mastodon"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.Mastodon;
+    } else if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "bluesky-mastodon"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.BlueskyMastodon;
+    } else if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "mastodon-bluesky"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.MastodonBluesky;
     } else {
       tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.None;
     }
@@ -408,10 +434,14 @@ onMounted(async () => {
               <li v-if="model.account?.xAccount?.tombstoneUpdateBanner">
                 <div>Update your banner</div>
                 <XTombstoneBannerComponent
-                  :update-banner="model.account?.xAccount?.tombstoneUpdateBanner"
+                  :update-banner="
+                    model.account?.xAccount?.tombstoneUpdateBanner
+                  "
                   :update-banner-background="tombstoneUpdateBannerBackground"
                   :update-banner-social-icons="tombstoneUpdateBannerSocialIcons"
-                  :update-banner-show-text="model.account?.xAccount?.tombstoneUpdateBannerShowText"
+                  :update-banner-show-text="
+                    model.account?.xAccount?.tombstoneUpdateBannerShowText
+                  "
                 />
               </li>
               <li v-if="model.account?.xAccount?.tombstoneUpdateBio">
@@ -419,7 +449,9 @@ onMounted(async () => {
                 <p class="text-center text-muted small mb-1">Bio Preview</p>
                 <p class="small">
                   {{ model.account?.xAccount?.tombstoneUpdateBioText }}
-                  <span v-if="model.account?.xAccount?.tombstoneUpdateBioCreditCyd">
+                  <span
+                    v-if="model.account?.xAccount?.tombstoneUpdateBioCreditCyd"
+                  >
                     {{ tombstoneUpdateBioCreditCydText }}
                   </span>
                 </p>
@@ -472,6 +504,7 @@ onMounted(async () => {
               >Learn more.</a
             >
           </p>
+        </div>
         <AlertStayAwake />
       </template>
     </div>
