@@ -8,6 +8,10 @@ When you're on the new account screen in Cyd, choose the X platform. You'll see 
 
 ![Sign in to X](./img/sign-in.png)
 
+:::tip Already deleted your X account?
+If you've already deleted your account but you have an archive of your data, click **Import Archive Only**. This will bring you to [Archive Only Mode](./archive-only).
+:::
+
 Cyd (the bird) is at the top of the window giving you instructions, and the bottom part of the window is Cyd's embedded web browser.
 
 :::tip The Cyd server doesn't have any access to your password or your data
@@ -22,4 +26,4 @@ If you protect your X account with two-factor authentication, you'll need to ent
 
 After you sign in, Cyd will immediately start driving your browser to determine your username, your profile picture, and an estimate of the number of tweets and likes in your X account.
 
-When it's done, you'll up at the Local Database screen. Continue to [Build a Local Database](./local-database/intro).
+When it's done, you'll end up at the Dashboard screen. Continue to [Dashboard](./dashboard).

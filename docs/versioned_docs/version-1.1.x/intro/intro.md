@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Welcome to Cyd
 
-Cyd is an open source app for Windows, Mac, and Linux that makes it easy for you to claw back your data from Big Tech platforms. Right now Cyd supports X, but more platforms (*cough Facebook cough*) are coming soon.
+Cyd is an open source app for Windows, Mac, and Linux that makes it easy for you to claw back your data from Big Tech platforms. Right now Cyd supports X, but more platforms are coming soon.
 
 Cyd helps you create a local, private backup of your data &mdash; like all of your tweets, retweets, likes, bookmarks, and direct messages. Once you've done this, Cyd helps you choose what data you want to delete from your online account. You can delete it all, or you can be selective, deleting most of it but keeping what went viral.
 
@@ -41,6 +41,12 @@ Cyd runs directly on your computer and not on our servers. Cyd is designed so th
 
 ## In the Media
 
+### June 25, 2025 | New York Times, Wirecutter
+
+[**I Tried, and Failed, to Disappear From the Internet**](https://www.nytimes.com/wirecutter/reviews/how-to-disappear-from-the-internet/) by Max Eddy
+
+> Watching Cyd work was mesmerizing. My posts flashed by almost too fast to read; it was like watching my life pass before my eyes. It was fun to revisit my posts at warp speed, but painful, too, because each time something appeared on the screen, it was also being deleted. Photo from my wedding? Gone. Photo of my pet rat, Pepper? Gone. The process made me choke up a bit.
+
 ### December 13, 2024 | Lifehacker
 
 [**This Free App Archives and Deletes Your Tweets**](https://lifehacker.com/tech/cyd-app-archives-and-deletes-tweets-for-free) by Justin Pot
@@ -63,7 +69,7 @@ Cyd runs directly on your computer and not on our servers. Cyd is designed so th
 
 [**I deleted thousands of tweets from X with this new tool - for free**](https://www.zdnet.com/article/i-deleted-thousands-of-tweets-from-x-with-this-new-tool-for-free/) by Jason Perlow
 
-> Now you can easily migrate from X with this powerful tool that deletes tweets, likes, and DMs, while backing up your data for a fresh start elsewhere. 
+> Now you can easily migrate from X with this powerful tool that deletes tweets, likes, and DMs, while backing up your data for a fresh start elsewhere.
 
 ---
 

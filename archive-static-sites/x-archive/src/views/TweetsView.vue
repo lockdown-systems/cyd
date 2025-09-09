@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { Ref, inject } from 'vue'
+import { Ref, inject } from "vue";
 
-import { XArchive } from '../types'
-import TweetsDisplayComponent from '@/components/TweetsDisplayComponent.vue'
+import { XArchive } from "../types";
+import TweetsDisplayComponent from "@/components/TweetsDisplayComponent.vue";
 
-const archiveData = inject('archiveData') as Ref<XArchive>;
+const archiveData = inject("archiveData") as Ref<XArchive>;
 </script>
 
 <template>
-  <TweetsDisplayComponent :tweets="archiveData.tweets" tweetTypePlural="tweets" />
+  <TweetsDisplayComponent
+    :tweets="archiveData.tweets"
+    tweet-type-plural="tweets"
+  />
 </template>
 
 <style scoped></style>

@@ -11,15 +11,16 @@ The simplest way to prevent your Mac from automatically going to sleep is to use
 Download and install Caffeine from https://www.caffeine-app.net/. When you run it, an empty coffee cup icon appears in the top-right of your menu bar. Click it (the icon changes to a cup full of hot coffee) and Caffeine will prevent your computer from sleeping. Click it again to disable it.
 
 <video
-  src="https://cyd.social/content/media/2024/10/caffeine.mp4"
-  width="1034"
-  height="428"
-  loop
-  autoPlay
-  muted
-  playsInline
-  preload="metadata"
-></video>
+src="https://cyd.social/content/media/2024/10/caffeine.mp4"
+width="1034"
+height="428"
+loop
+autoPlay
+muted
+playsInline
+preload="metadata"
+
+> </video>
 
 Now you can safely run Cyd for an extended period of time.
 

@@ -1,179 +1,254 @@
 export enum AutomationErrorType {
-    // X
-    X_manualBugReport = "X_manualBugReport",
-    X_login_FailedToGetUsername = "X_login_FailedToGetUsername",
-    X_login_URLChanged = "X_login_URLChanged",
-    X_login_WaitingForURLFailed = "X_login_WaitingForURLFailed",
-    X_login_GetViewerUserFailed = "X_login_GetViewerUserFailed",
-    x_runJob_indexTweets_Timeout = "x_runJob_indexTweets_Timeout",
-    x_runJob_indexTweets_URLChanged = "x_runJob_indexTweets_URLChanged",
-    x_runJob_indexTweets_OtherError = "x_runJob_indexTweets_OtherError",
-    x_runJob_indexTweets_ParseTweetsError = "x_runJob_indexTweets_ParseTweetsError",
-    x_runJob_indexTweets_VerifyThereIsNoMoreError = "x_runJob_indexTweets_VerifyThereIsNoMoreError",
-    x_runJob_indexLikes_Timeout = "x_runJob_indexLikes_Timeout",
-    x_runJob_indexLikes_URLChanged = "x_runJob_indexLikes_URLChanged",
-    x_runJob_indexLikes_OtherError = "x_runJob_indexLikes_OtherError",
-    x_runJob_indexLikes_ParseTweetsError = "x_runJob_indexLikes_ParseTweetsError",
-    x_runJob_indexLikes_VerifyThereIsNoMoreError = "x_runJob_indexLikes_VerifyThereIsNoMoreError",
-    x_runJob_archiveTweets_FailedToStart = "x_runJob_archiveTweets_FailedToStart",
-    x_runJob_archiveTweets_FailedToCheckDate = "x_runJob_archiveTweets_FailedToCheckDate",
-    x_runJob_archiveTweets_FailedToArchive = "x_runJob_archiveTweets_FailedToArchive",
-    x_runJob_archiveTweets_WaitForSelectorError = "x_runJob_archiveTweets_WaitForSelectorError",
-    x_runJob_indexConversations_Timeout = "x_runJob_indexConversations_Timeout",
-    x_runJob_indexConversations_URLChanged = "x_runJob_indexConversations_URLChanged",
-    x_runJob_indexConversations_OtherError = "x_runJob_indexConversations_OtherError",
-    x_runJob_indexConversations_ParseConversationsError = "x_runJob_indexConversations_ParseConversationsError",
-    x_runJob_indexMessages_Timeout = "x_runJob_indexMessages_Timeout",
-    x_runJob_indexMessages_FailedToStart = "x_runJob_indexMessages_FailedToStart",
-    x_runJob_indexMessages_URLChangedButDidnt = "x_runJob_indexMessages_URLChangedButDidnt",
-    x_runJob_indexMessages_OtherError = "x_runJob_indexMessages_OtherError",
-    x_runJob_indexMessages_ParseMessagesError = "x_runJob_indexMessages_ParseMessagesError",
-    x_runJob_indexBookmarks_Timeout = "x_runJob_indexBookmarks_Timeout",
-    x_runJob_indexBookmarks_URLChanged = "x_runJob_indexBookmarks_URLChanged",
-    x_runJob_indexBookmarks_OtherError = "x_runJob_indexBookmarks_OtherError",
-    x_runJob_indexBookmarks_ParseTweetsError = "x_runJob_indexBookmarks_ParseTweetsError",
-    x_runJob_indexBookmarks_VerifyThereIsNoMoreError = "x_runJob_indexBookmarks_VerifyThereIsNoMoreError",
-    x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
-    x_runJob_deleteTweets_FailedToStart = "x_runJob_deleteTweets_FailedToStart",
-    x_runJob_deleteTweets_Ct0CookieNotFound = "x_runJob_deleteTweets_Ct0CookieNotFound",
-    x_runJob_deleteTweets_FailedToDelete = "x_runJob_deleteTweets_FailedToDelete",
-    x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp = "x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp",
-    x_runJob_deleteTweets_UnknownError = "x_runJob_deleteTweets_UnknownError",
-    x_runJob_deleteRetweets_FailedToStart = "x_runJob_deleteRetweets_FailedToStart",
-    x_runJob_deleteRetweets_Ct0CookieNotFound = "x_runJob_deleteRetweets_Ct0CookieNotFound",
-    x_runJob_deleteRetweets_FailedToDelete = "x_runJob_deleteRetweets_FailedToDelete",
-    x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp = "x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp",
-    x_runJob_deleteRetweets_UnknownError = "x_runJob_deleteRetweets_UnknownError",
-    x_runJob_deleteLikes_FailedToStart = "x_runJob_deleteLikes_FailedToStart",
-    x_runJob_deleteLikes_Ct0CookieNotFound = "x_runJob_deleteLikes_Ct0CookieNotFound",
-    x_runJob_deleteLikes_FailedToDelete = "x_runJob_deleteLikes_FailedToDelete",
-    x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp = "x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp",
-    x_runJob_deleteBookmarks_FailedToStart = "x_runJob_deleteBookmarks_FailedToStart",
-    x_runJob_deleteBookmarks_Ct0CookieNotFound = "x_runJob_deleteBookmarks_Ct0CookieNotFound",
-    x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp = "x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp",
-    x_runJob_deleteBookmarks_FailedToDelete = "x_runJob_deleteBookmarks_FailedToDelete",
-    x_runJob_deleteDMs_URLChanged = "x_runJob_deleteDMs_URLChanged",
-    x_runJob_deleteDMs_OtherError = "x_runJob_deleteDMs_OtherError",
-    x_runJob_deleteDMs_ParseConversationsError = "x_runJob_deleteDMs_ParseConversationsError",
-    x_runJob_deleteDMs_MouseoverFailed = "x_runJob_deleteDMs_MouseoverFailed",
-    x_runJob_deleteDMs_WaitForConversationsFailed = "x_runJob_deleteDMs_WaitForConversationsFailed",
-    x_runJob_deleteDMs_WaitForMenuButtonFailed = "x_runJob_deleteDMs_WaitForMenuButtonFailed",
-    x_runJob_deleteDMs_WaitForDeleteButtonFailed = "x_runJob_deleteDMs_WaitForDeleteButtonFailed",
-    x_runJob_deleteDMs_WaitForConfirmButtonFailed = "x_runJob_deleteDMs_WaitForConfirmButtonFailed",
-    x_runJob_deleteDMs_ClickMenuFailed = "x_runJob_deleteDMs_ClickMenuFailed",
-    x_runJob_deleteDMs_ClickDeleteFailed = "x_runJob_deleteDMs_ClickDeleteFailed",
-    x_runJob_deleteDMs_ClickConfirmFailed = "x_runJob_deleteDMs_ClickConfirmFailed",
-    x_runJob_deleteDMs_UnknownError = "x_runJob_deleteDMs_UnknownError",
-    x_runJob_unfollowEveryone_URLChanged = "x_runJob_unfollowEveryone_URLChanged",
-    x_runJob_unfollowEveryone_OtherError = "x_runJob_unfollowEveryone_OtherError",
-    x_runJob_unfollowEveryone_MouseoverFailed = "x_runJob_unfollowEveryone_MouseoverFailed",
-    x_runJob_unfollowEveryone_UnknownError = "x_runJob_unfollowEveryone_UnknownError",
-    x_runJob_unfollowEveryone_ClickUnfollowFailed = "x_runJob_unfollowEveryone_ClickUnfollowFailed",
-    x_runJob_unfollowEveryone_WaitForConfirmButtonFailed = "x_runJob_unfollowEveryone_WaitForConfirmButtonFailed",
-    x_runJob_unfollowEveryone_ClickConfirmFailed = "x_runJob_unfollowEveryone_ClickConfirmFailed",
-    x_runJob_UnknownError = "x_runJob_UnknownError",
-    x_runError = "x_runError",
-    x_unknownError = "x_unknown",
-    x_loadURLError = "x_loadURLError",
-    x_loadURLURLChanged = "x_loadURLURLChanged",
+  // X
+  X_manualBugReport = "X_manualBugReport",
+  X_login_FailedToGetUsername = "X_login_FailedToGetUsername",
+  X_login_URLChanged = "X_login_URLChanged",
+  X_login_WaitingForURLFailed = "X_login_WaitingForURLFailed",
+  X_login_GetViewerUserFailed = "X_login_GetViewerUserFailed",
+  x_runJob_indexTweets_Timeout = "x_runJob_indexTweets_Timeout",
+  x_runJob_indexTweets_URLChanged = "x_runJob_indexTweets_URLChanged",
+  x_runJob_indexTweets_OtherError = "x_runJob_indexTweets_OtherError",
+  x_runJob_indexTweets_ParseTweetsError = "x_runJob_indexTweets_ParseTweetsError",
+  x_runJob_indexTweets_VerifyThereIsNoMoreError = "x_runJob_indexTweets_VerifyThereIsNoMoreError",
+  x_runJob_indexLikes_Timeout = "x_runJob_indexLikes_Timeout",
+  x_runJob_indexLikes_URLChanged = "x_runJob_indexLikes_URLChanged",
+  x_runJob_indexLikes_OtherError = "x_runJob_indexLikes_OtherError",
+  x_runJob_indexLikes_ParseTweetsError = "x_runJob_indexLikes_ParseTweetsError",
+  x_runJob_indexLikes_VerifyThereIsNoMoreError = "x_runJob_indexLikes_VerifyThereIsNoMoreError",
+  x_runJob_archiveTweets_FailedToStart = "x_runJob_archiveTweets_FailedToStart",
+  x_runJob_archiveTweets_FailedToCheckDate = "x_runJob_archiveTweets_FailedToCheckDate",
+  x_runJob_archiveTweets_FailedToArchive = "x_runJob_archiveTweets_FailedToArchive",
+  x_runJob_archiveTweets_WaitForSelectorError = "x_runJob_archiveTweets_WaitForSelectorError",
+  x_runJob_indexConversations_Timeout = "x_runJob_indexConversations_Timeout",
+  x_runJob_indexConversations_URLChanged = "x_runJob_indexConversations_URLChanged",
+  x_runJob_indexConversations_OtherError = "x_runJob_indexConversations_OtherError",
+  x_runJob_indexConversations_ParseConversationsError = "x_runJob_indexConversations_ParseConversationsError",
+  x_runJob_indexMessages_Timeout = "x_runJob_indexMessages_Timeout",
+  x_runJob_indexMessages_FailedToStart = "x_runJob_indexMessages_FailedToStart",
+  x_runJob_indexMessages_URLChangedButDidnt = "x_runJob_indexMessages_URLChangedButDidnt",
+  x_runJob_indexMessages_OtherError = "x_runJob_indexMessages_OtherError",
+  x_runJob_indexMessages_ParseMessagesError = "x_runJob_indexMessages_ParseMessagesError",
+  x_runJob_indexBookmarks_Timeout = "x_runJob_indexBookmarks_Timeout",
+  x_runJob_indexBookmarks_URLChanged = "x_runJob_indexBookmarks_URLChanged",
+  x_runJob_indexBookmarks_OtherError = "x_runJob_indexBookmarks_OtherError",
+  x_runJob_indexBookmarks_ParseTweetsError = "x_runJob_indexBookmarks_ParseTweetsError",
+  x_runJob_indexBookmarks_VerifyThereIsNoMoreError = "x_runJob_indexBookmarks_VerifyThereIsNoMoreError",
+  x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
+  x_runJob_deleteTweets_FailedToStart = "x_runJob_deleteTweets_FailedToStart",
+  x_runJob_deleteTweets_Ct0CookieNotFound = "x_runJob_deleteTweets_Ct0CookieNotFound",
+  x_runJob_deleteTweets_FailedToDelete = "x_runJob_deleteTweets_FailedToDelete",
+  x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp = "x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp",
+  x_runJob_deleteTweets_UnknownError = "x_runJob_deleteTweets_UnknownError",
+  x_runJob_deleteRetweets_FailedToStart = "x_runJob_deleteRetweets_FailedToStart",
+  x_runJob_deleteRetweets_Ct0CookieNotFound = "x_runJob_deleteRetweets_Ct0CookieNotFound",
+  x_runJob_deleteRetweets_FailedToDelete = "x_runJob_deleteRetweets_FailedToDelete",
+  x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp = "x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp",
+  x_runJob_deleteRetweets_UnknownError = "x_runJob_deleteRetweets_UnknownError",
+  x_runJob_deleteLikes_FailedToStart = "x_runJob_deleteLikes_FailedToStart",
+  x_runJob_deleteLikes_Ct0CookieNotFound = "x_runJob_deleteLikes_Ct0CookieNotFound",
+  x_runJob_deleteLikes_FailedToDelete = "x_runJob_deleteLikes_FailedToDelete",
+  x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp = "x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp",
+  x_runJob_deleteBookmarks_FailedToStart = "x_runJob_deleteBookmarks_FailedToStart",
+  x_runJob_deleteBookmarks_Ct0CookieNotFound = "x_runJob_deleteBookmarks_Ct0CookieNotFound",
+  x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp = "x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp",
+  x_runJob_deleteBookmarks_FailedToDelete = "x_runJob_deleteBookmarks_FailedToDelete",
+  x_runJob_deleteDMs_URLChanged = "x_runJob_deleteDMs_URLChanged",
+  x_runJob_deleteDMs_OtherError = "x_runJob_deleteDMs_OtherError",
+  x_runJob_deleteDMs_ParseConversationsError = "x_runJob_deleteDMs_ParseConversationsError",
+  x_runJob_deleteDMs_MouseoverFailed = "x_runJob_deleteDMs_MouseoverFailed",
+  x_runJob_deleteDMs_WaitForConversationsFailed = "x_runJob_deleteDMs_WaitForConversationsFailed",
+  x_runJob_deleteDMs_WaitForMenuButtonFailed = "x_runJob_deleteDMs_WaitForMenuButtonFailed",
+  x_runJob_deleteDMs_WaitForDeleteButtonFailed = "x_runJob_deleteDMs_WaitForDeleteButtonFailed",
+  x_runJob_deleteDMs_WaitForConfirmButtonFailed = "x_runJob_deleteDMs_WaitForConfirmButtonFailed",
+  x_runJob_deleteDMs_ClickMenuFailed = "x_runJob_deleteDMs_ClickMenuFailed",
+  x_runJob_deleteDMs_ClickDeleteFailed = "x_runJob_deleteDMs_ClickDeleteFailed",
+  x_runJob_deleteDMs_ClickConfirmFailed = "x_runJob_deleteDMs_ClickConfirmFailed",
+  x_runJob_deleteDMs_UnknownError = "x_runJob_deleteDMs_UnknownError",
+  x_runJob_unfollowEveryone_URLChanged = "x_runJob_unfollowEveryone_URLChanged",
+  x_runJob_unfollowEveryone_OtherError = "x_runJob_unfollowEveryone_OtherError",
+  x_runJob_unfollowEveryone_MouseoverFailed = "x_runJob_unfollowEveryone_MouseoverFailed",
+  x_runJob_unfollowEveryone_UnknownError = "x_runJob_unfollowEveryone_UnknownError",
+  x_runJob_unfollowEveryone_ClickUnfollowFailed = "x_runJob_unfollowEveryone_ClickUnfollowFailed",
+  x_runJob_unfollowEveryone_WaitForConfirmButtonFailed = "x_runJob_unfollowEveryone_WaitForConfirmButtonFailed",
+  x_runJob_unfollowEveryone_ClickConfirmFailed = "x_runJob_unfollowEveryone_ClickConfirmFailed",
+  x_runJob_UnknownError = "x_runJob_UnknownError",
+  x_runError = "x_runError",
+  x_unknownError = "x_unknown",
+  x_loadURLError = "x_loadURLError",
+  x_loadURLURLChanged = "x_loadURLURLChanged",
 
-    // Facebook
-    facebook_manualBugReport = "facebook_manualBugReport",
-    facebook_unknownError = "facebook_unknown",
-    facebook_loadURLError = "facebook_loadURLError",
-    facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
-    facebook_runJob_savePosts_Timeout = "facebook_runJob_savePosts_Timeout",
-    facebook_runJob_savePosts_URLChanged = "facebook_runJob_savePosts_URLChanged",
-    facebook_runJob_savePosts_OtherError = "facebook_runJob_savePosts_OtherError",
-    facebook_runJob_archiveBuild_ArchiveBuildError = "facebook_runJob_archiveBuild_ArchiveBuildError",
+  // Facebook
+  facebook_manualBugReport = "facebook_manualBugReport",
+  facebook_unknownError = "facebook_unknown",
+  facebook_loadURLError = "facebook_loadURLError",
+  facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
+  facebook_runJob_savePosts_Timeout = "facebook_runJob_savePosts_Timeout",
+  facebook_runJob_savePosts_URLChanged = "facebook_runJob_savePosts_URLChanged",
+  facebook_runJob_savePosts_OtherError = "facebook_runJob_savePosts_OtherError",
+  facebook_runJob_archiveBuild_ArchiveBuildError = "facebook_runJob_archiveBuild_ArchiveBuildError",
 }
 
 export const AutomationErrorTypeToMessage = {
-    // X
-    [AutomationErrorType.X_manualBugReport]: "You're manually reporting a bug",
-    [AutomationErrorType.X_login_FailedToGetUsername]: "Failed to get username on login",
-    [AutomationErrorType.X_login_URLChanged]: "URL changed on login",
-    [AutomationErrorType.X_login_WaitingForURLFailed]: "Waiting for URL failed on login",
-    [AutomationErrorType.X_login_GetViewerUserFailed]: "Failed to get user information on login",
-    [AutomationErrorType.x_runJob_indexTweets_Timeout]: "Timeout while indexing tweets",
-    [AutomationErrorType.x_runJob_indexTweets_URLChanged]: "URL changed while indexing tweets",
-    [AutomationErrorType.x_runJob_indexTweets_OtherError]: "Error while indexing tweets",
-    [AutomationErrorType.x_runJob_indexTweets_ParseTweetsError]: "Failed to parse tweets while indexing tweets",
-    [AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError]: "Failed to verify you finished saving tweets while indexing tweets",
-    [AutomationErrorType.x_runJob_indexLikes_Timeout]: "Timeout while indexing likes",
-    [AutomationErrorType.x_runJob_indexLikes_URLChanged]: "URL changed while indexing likes",
-    [AutomationErrorType.x_runJob_indexLikes_OtherError]: "Error while indexing likes",
-    [AutomationErrorType.x_runJob_indexLikes_ParseTweetsError]: "Failed to parse tweets while indexing likes",
-    [AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError]: "Failed to verify you finished saving likes while indexing likes",
-    [AutomationErrorType.x_runJob_archiveTweets_FailedToStart]: "Failed to start archiving tweets",
-    [AutomationErrorType.x_runJob_archiveTweets_FailedToCheckDate]: "Failed to check date while archiving tweets",
-    [AutomationErrorType.x_runJob_archiveTweets_FailedToArchive]: "Failed to create an archive of a tweet",
-    [AutomationErrorType.x_runJob_archiveTweets_WaitForSelectorError]: "Failed to wait for tweet to load while archiving as HTML",
-    [AutomationErrorType.x_runJob_indexConversations_Timeout]: "Timeout while indexing conversations",
-    [AutomationErrorType.x_runJob_indexConversations_URLChanged]: "URL changed while indexing conversations",
-    [AutomationErrorType.x_runJob_indexConversations_OtherError]: "Error while indexing conversations",
-    [AutomationErrorType.x_runJob_indexConversations_ParseConversationsError]: "Failed to parse conversations while indexing conversations",
-    [AutomationErrorType.x_runJob_indexMessages_Timeout]: "Timeout while indexing messages",
-    [AutomationErrorType.x_runJob_indexMessages_FailedToStart]: "Failed to start indexing messages",
-    [AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt]: "URL changed (but didn't) while indexing conversations",
-    [AutomationErrorType.x_runJob_indexMessages_OtherError]: "Error while indexing messages",
-    [AutomationErrorType.x_runJob_indexMessages_ParseMessagesError]: "Failed to parse messages while indexing messages",
-    [AutomationErrorType.x_runJob_indexBookmarks_Timeout]: "Timeout while indexing bookmarks",
-    [AutomationErrorType.x_runJob_indexBookmarks_URLChanged]: "URL changed while indexing bookmarks",
-    [AutomationErrorType.x_runJob_indexBookmarks_OtherError]: "Error while indexing bookmarks",
-    [AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError]: "Failed to parse tweets while indexing bookmarks",
-    [AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError]: "Failed to verify you finished saving bookmarks while indexing bookmarks",
-    [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]: "Failed to archive build",
-    [AutomationErrorType.x_runJob_deleteTweets_FailedToStart]: "Failed to start deleting tweets",
-    [AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound]: "ct0 cookie not found while deleting tweets",
-    [AutomationErrorType.x_runJob_deleteTweets_FailedToDelete]: "Failed to delete tweet",
-    [AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp]: "Failed to update delete timestamp while deleting tweets",
-    [AutomationErrorType.x_runJob_deleteTweets_UnknownError]: "An unknown error occurred while deleting tweets",
-    [AutomationErrorType.x_runJob_deleteRetweets_FailedToStart]: "Failed to start deleting retweets",
-    [AutomationErrorType.x_runJob_deleteRetweets_Ct0CookieNotFound]: "ct0 cookie not found while deleting retweets",
-    [AutomationErrorType.x_runJob_deleteRetweets_FailedToDelete]: "Failed to delete retweet",
-    [AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp]: "Failed to update delete timestamp while deleting retweets",
-    [AutomationErrorType.x_runJob_deleteRetweets_UnknownError]: "An unknown error occurred while deleting retweets",
-    [AutomationErrorType.x_runJob_deleteLikes_FailedToStart]: "Failed to start deleting likes",
-    [AutomationErrorType.x_runJob_deleteLikes_Ct0CookieNotFound]: "ct0 cookie not found while deleting likes",
-    [AutomationErrorType.x_runJob_deleteLikes_FailedToDelete]: "Failed to delete like",
-    [AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp]: "Failed to update delete timestamp while deleting likes",
-    [AutomationErrorType.x_runJob_deleteBookmarks_FailedToStart]: "Failed to start deleting bookmarks",
-    [AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound]: "ct0 cookie not found while deleting bookmarks",
-    [AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp]: "Failed to update delete timestamp while deleting bookmarks",
-    [AutomationErrorType.x_runJob_deleteBookmarks_FailedToDelete]: "Failed to delete bookmark",
-    [AutomationErrorType.x_runJob_deleteDMs_URLChanged]: "URL changed while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_OtherError]: "Error while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_ParseConversationsError]: "Failed to parse conversations while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed]: "Failed to mouseover while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed]: "Failed to wait for conversations to load while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed]: "Failed to wait for conversation menu button while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed]: "Failed to wait for delete button while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed]: "Failed to wait for delete confirmation button while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed]: "Failed to click menu while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed]: "Failed to click delete while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed]: "Failed to click confirm while deleting DMs",
-    [AutomationErrorType.x_runJob_deleteDMs_UnknownError]: "An unknown error occurred while deleting DMs",
-    [AutomationErrorType.x_runJob_unfollowEveryone_URLChanged]: "URL changed while unfollowing everyone",
-    [AutomationErrorType.x_runJob_unfollowEveryone_OtherError]: "Error while unfollowing everyone",
-    [AutomationErrorType.x_runJob_unfollowEveryone_MouseoverFailed]: "Failed to mouseover while unfollowing everyone",
-    [AutomationErrorType.x_runJob_unfollowEveryone_ClickUnfollowFailed]: "Failed to click unfollow while unfollowing everyone",
-    [AutomationErrorType.x_runJob_unfollowEveryone_WaitForConfirmButtonFailed]: "Failed to wait for confirm button while unfollowing everyone",
-    [AutomationErrorType.x_runJob_unfollowEveryone_UnknownError]: "An unknown error occurred while unfollowing everyone",
-    [AutomationErrorType.x_runJob_unfollowEveryone_ClickConfirmFailed]: "Failed to click confirm while unfollowing everyone",
-    [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occurred",
-    [AutomationErrorType.x_runError]: "Error while in X run function",
-    [AutomationErrorType.x_unknownError]: "An unknown error occurred",
-    [AutomationErrorType.x_loadURLError]: "Error while loading URL",
-    [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
+  // X
+  [AutomationErrorType.X_manualBugReport]: "You're manually reporting a bug",
+  [AutomationErrorType.X_login_FailedToGetUsername]:
+    "Failed to get username on login",
+  [AutomationErrorType.X_login_URLChanged]: "URL changed on login",
+  [AutomationErrorType.X_login_WaitingForURLFailed]:
+    "Waiting for URL failed on login",
+  [AutomationErrorType.X_login_GetViewerUserFailed]:
+    "Failed to get user information on login",
+  [AutomationErrorType.x_runJob_indexTweets_Timeout]:
+    "Timeout while indexing tweets",
+  [AutomationErrorType.x_runJob_indexTweets_URLChanged]:
+    "URL changed while indexing tweets",
+  [AutomationErrorType.x_runJob_indexTweets_OtherError]:
+    "Error while indexing tweets",
+  [AutomationErrorType.x_runJob_indexTweets_ParseTweetsError]:
+    "Failed to parse tweets while indexing tweets",
+  [AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError]:
+    "Failed to verify you finished saving tweets while indexing tweets",
+  [AutomationErrorType.x_runJob_indexLikes_Timeout]:
+    "Timeout while indexing likes",
+  [AutomationErrorType.x_runJob_indexLikes_URLChanged]:
+    "URL changed while indexing likes",
+  [AutomationErrorType.x_runJob_indexLikes_OtherError]:
+    "Error while indexing likes",
+  [AutomationErrorType.x_runJob_indexLikes_ParseTweetsError]:
+    "Failed to parse tweets while indexing likes",
+  [AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError]:
+    "Failed to verify you finished saving likes while indexing likes",
+  [AutomationErrorType.x_runJob_archiveTweets_FailedToStart]:
+    "Failed to start archiving tweets",
+  [AutomationErrorType.x_runJob_archiveTweets_FailedToCheckDate]:
+    "Failed to check date while archiving tweets",
+  [AutomationErrorType.x_runJob_archiveTweets_FailedToArchive]:
+    "Failed to create an archive of a tweet",
+  [AutomationErrorType.x_runJob_archiveTweets_WaitForSelectorError]:
+    "Failed to wait for tweet to load while archiving as HTML",
+  [AutomationErrorType.x_runJob_indexConversations_Timeout]:
+    "Timeout while indexing conversations",
+  [AutomationErrorType.x_runJob_indexConversations_URLChanged]:
+    "URL changed while indexing conversations",
+  [AutomationErrorType.x_runJob_indexConversations_OtherError]:
+    "Error while indexing conversations",
+  [AutomationErrorType.x_runJob_indexConversations_ParseConversationsError]:
+    "Failed to parse conversations while indexing conversations",
+  [AutomationErrorType.x_runJob_indexMessages_Timeout]:
+    "Timeout while indexing messages",
+  [AutomationErrorType.x_runJob_indexMessages_FailedToStart]:
+    "Failed to start indexing messages",
+  [AutomationErrorType.x_runJob_indexMessages_URLChangedButDidnt]:
+    "URL changed (but didn't) while indexing conversations",
+  [AutomationErrorType.x_runJob_indexMessages_OtherError]:
+    "Error while indexing messages",
+  [AutomationErrorType.x_runJob_indexMessages_ParseMessagesError]:
+    "Failed to parse messages while indexing messages",
+  [AutomationErrorType.x_runJob_indexBookmarks_Timeout]:
+    "Timeout while indexing bookmarks",
+  [AutomationErrorType.x_runJob_indexBookmarks_URLChanged]:
+    "URL changed while indexing bookmarks",
+  [AutomationErrorType.x_runJob_indexBookmarks_OtherError]:
+    "Error while indexing bookmarks",
+  [AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError]:
+    "Failed to parse tweets while indexing bookmarks",
+  [AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError]:
+    "Failed to verify you finished saving bookmarks while indexing bookmarks",
+  [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]:
+    "Failed to archive build",
+  [AutomationErrorType.x_runJob_deleteTweets_FailedToStart]:
+    "Failed to start deleting tweets",
+  [AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound]:
+    "ct0 cookie not found while deleting tweets",
+  [AutomationErrorType.x_runJob_deleteTweets_FailedToDelete]:
+    "Failed to delete tweet",
+  [AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp]:
+    "Failed to update delete timestamp while deleting tweets",
+  [AutomationErrorType.x_runJob_deleteTweets_UnknownError]:
+    "An unknown error occurred while deleting tweets",
+  [AutomationErrorType.x_runJob_deleteRetweets_FailedToStart]:
+    "Failed to start deleting retweets",
+  [AutomationErrorType.x_runJob_deleteRetweets_Ct0CookieNotFound]:
+    "ct0 cookie not found while deleting retweets",
+  [AutomationErrorType.x_runJob_deleteRetweets_FailedToDelete]:
+    "Failed to delete retweet",
+  [AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp]:
+    "Failed to update delete timestamp while deleting retweets",
+  [AutomationErrorType.x_runJob_deleteRetweets_UnknownError]:
+    "An unknown error occurred while deleting retweets",
+  [AutomationErrorType.x_runJob_deleteLikes_FailedToStart]:
+    "Failed to start deleting likes",
+  [AutomationErrorType.x_runJob_deleteLikes_Ct0CookieNotFound]:
+    "ct0 cookie not found while deleting likes",
+  [AutomationErrorType.x_runJob_deleteLikes_FailedToDelete]:
+    "Failed to delete like",
+  [AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp]:
+    "Failed to update delete timestamp while deleting likes",
+  [AutomationErrorType.x_runJob_deleteBookmarks_FailedToStart]:
+    "Failed to start deleting bookmarks",
+  [AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound]:
+    "ct0 cookie not found while deleting bookmarks",
+  [AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp]:
+    "Failed to update delete timestamp while deleting bookmarks",
+  [AutomationErrorType.x_runJob_deleteBookmarks_FailedToDelete]:
+    "Failed to delete bookmark",
+  [AutomationErrorType.x_runJob_deleteDMs_URLChanged]:
+    "URL changed while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_OtherError]:
+    "Error while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_ParseConversationsError]:
+    "Failed to parse conversations while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed]:
+    "Failed to mouseover while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed]:
+    "Failed to wait for conversations to load while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed]:
+    "Failed to wait for conversation menu button while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed]:
+    "Failed to wait for delete button while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed]:
+    "Failed to wait for delete confirmation button while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed]:
+    "Failed to click menu while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed]:
+    "Failed to click delete while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed]:
+    "Failed to click confirm while deleting DMs",
+  [AutomationErrorType.x_runJob_deleteDMs_UnknownError]:
+    "An unknown error occurred while deleting DMs",
+  [AutomationErrorType.x_runJob_unfollowEveryone_URLChanged]:
+    "URL changed while unfollowing everyone",
+  [AutomationErrorType.x_runJob_unfollowEveryone_OtherError]:
+    "Error while unfollowing everyone",
+  [AutomationErrorType.x_runJob_unfollowEveryone_MouseoverFailed]:
+    "Failed to mouseover while unfollowing everyone",
+  [AutomationErrorType.x_runJob_unfollowEveryone_ClickUnfollowFailed]:
+    "Failed to click unfollow while unfollowing everyone",
+  [AutomationErrorType.x_runJob_unfollowEveryone_WaitForConfirmButtonFailed]:
+    "Failed to wait for confirm button while unfollowing everyone",
+  [AutomationErrorType.x_runJob_unfollowEveryone_UnknownError]:
+    "An unknown error occurred while unfollowing everyone",
+  [AutomationErrorType.x_runJob_unfollowEveryone_ClickConfirmFailed]:
+    "Failed to click confirm while unfollowing everyone",
+  [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occurred",
+  [AutomationErrorType.x_runError]: "Error while in X run function",
+  [AutomationErrorType.x_unknownError]: "An unknown error occurred",
+  [AutomationErrorType.x_loadURLError]: "Error while loading URL",
+  [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
 
-    // Facebook
-    [AutomationErrorType.facebook_manualBugReport]: "You're manually reporting a bug",
-    [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
-    [AutomationErrorType.facebook_loadURLError]: "Error while loading URL",
-    [AutomationErrorType.facebook_runJob_UnknownError]: "An unknown error occurred",
-    [AutomationErrorType.facebook_runJob_savePosts_Timeout]: "Timeout while saving posts",
-    [AutomationErrorType.facebook_runJob_savePosts_URLChanged]: "URL changed while saving posts",
-    [AutomationErrorType.facebook_runJob_savePosts_OtherError]: "Error while saving posts",
-    [AutomationErrorType.facebook_runJob_archiveBuild_ArchiveBuildError]: "Failed to archive build",
-}
+  // Facebook
+  [AutomationErrorType.facebook_manualBugReport]:
+    "You're manually reporting a bug",
+  [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
+  [AutomationErrorType.facebook_loadURLError]: "Error while loading URL",
+  [AutomationErrorType.facebook_runJob_UnknownError]:
+    "An unknown error occurred",
+  [AutomationErrorType.facebook_runJob_savePosts_Timeout]:
+    "Timeout while saving posts",
+  [AutomationErrorType.facebook_runJob_savePosts_URLChanged]:
+    "URL changed while saving posts",
+  [AutomationErrorType.facebook_runJob_savePosts_OtherError]:
+    "Error while saving posts",
+  [AutomationErrorType.facebook_runJob_archiveBuild_ArchiveBuildError]:
+    "Failed to archive build",
+};

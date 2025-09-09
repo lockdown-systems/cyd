@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Delete from X
@@ -16,11 +16,11 @@ Here's a description of each option:
 
 ### Delete my tweets
 
-Delete the **tweets** in your account. If you don't check any checkboxes that modify it below, this will delete *all* of your tweets. Optionally, you can choose which tweets you want to keep:
+Delete the **tweets** in your account. If you don't check any checkboxes that modify it below, this will delete _all_ of your tweets. Optionally, you can choose which tweets you want to keep:
 
-- **older than __ days**: You can choose to only delete older tweets. For example, if you want your X account to be ephemeral, you can choose to delete everything older 30 days.
-- **unless they have at least __ retweets**: You can see a retweets threshold, allowing you to keep tweets that went viral.
-- **unless they have at least __ likes**: You can see a likes threshold, allowing you to keep tweets that went viral.
+- **older than \_\_ days**: You can choose to only delete older tweets. For example, if you want your X account to be ephemeral, you can choose to delete everything older 30 days.
+- **unless they have at least \_\_ retweets**: You can see a retweets threshold, allowing you to keep tweets that went viral.
+- **unless they have at least \_\_ likes**: You can see a likes threshold, allowing you to keep tweets that went viral.
 
 :::tip
 
@@ -30,9 +30,9 @@ We recommend that you delete as many tweets as you feel comfortable with.
 
 ### Delete my retweets
 
-Delete the **retweets** in your account. If you don't check any checkboxes that modify it below, this will delete *all* of your retweets. Optionally, you can choose which retweets you want to keep:
+Delete the **retweets** in your account. If you don't check any checkboxes that modify it below, this will delete _all_ of your retweets. Optionally, you can choose which retweets you want to keep:
 
-- **older than __ days**: You can choose to only delete older retweets.
+- **older than \_\_ days**: You can choose to only delete older retweets.
 
 :::tip
 
@@ -88,8 +88,8 @@ Some of the Delete Options require a Premium plan - [learn more about Premium pl
 
 It's free to:
 
-- Delete *all* of your tweets
-- Delete *all* of your retweets
+- Delete _all_ of your tweets
+- Delete _all_ of your retweets
 
 You need a Premium plan to:
 
@@ -126,8 +126,4 @@ Cyd deletes your data as fast as it can, but X imposes limits on how fast this i
 
 ## Finished
 
-When Cyd is done deleting your data, it shows you a summary of what it deleted:
-
-![Finished deleting data from X](./img/delete-finished.png)
-
-After deleting your data, Cyd updates your local archive again to mark the date that you deleted each tweet, retweet, like, or bookmark.
+When Cyd is done deleting your data, it shows you a summary of what it deleted. Cyd also updates your local archive again to mark the date that you deleted each tweet, retweet, like, or bookmark.

@@ -1,27 +1,34 @@
 <script setup lang="ts">
-import { Ref, inject, ref, computed } from 'vue'
+import { Ref, inject, ref, computed } from "vue";
 
-import { XArchive } from '../types'
-import ConversationComponent from '../components/ConversationComponent.vue'
-import MessageComponent from '../components/MessageComponent.vue'
+import { XArchive } from "../types";
+import ConversationComponent from "../components/ConversationComponent.vue";
+import MessageComponent from "../components/MessageComponent.vue";
 
-const archiveData = inject('archiveData') as Ref<XArchive>;
+const archiveData = inject("archiveData") as Ref<XArchive>;
 
 const selectedConversationID = ref<string | null>(null);
-const conversationFilterText = ref('');
-const messageFilterText = ref('');
+const conversationFilterText = ref("");
+const messageFilterText = ref("");
 
 const filteredConversations = computed(() => {
-  return archiveData.value.conversations.filter(conversation =>
-    conversation.participantSearchString.toLowerCase().includes(conversationFilterText.value.toLowerCase()) &&
-    conversation.participants.length > 0
+  return archiveData.value.conversations.filter(
+    (conversation) =>
+      conversation.participantSearchString
+        .toLowerCase()
+        .includes(conversationFilterText.value.toLowerCase()) &&
+      conversation.participants.length > 0,
   );
 });
 
 const filteredMessages = computed(() => {
-  return archiveData.value.messages.filter(message =>
-    message.text.toLowerCase().includes(messageFilterText.value.toLowerCase()) &&
-      message.conversationID === selectedConversationID.value ? selectedConversationID.value : ''
+  return archiveData.value.messages.filter((message) =>
+    message.text
+      .toLowerCase()
+      .includes(messageFilterText.value.toLowerCase()) &&
+    message.conversationID === selectedConversationID.value
+      ? selectedConversationID.value
+      : "",
   );
 });
 
@@ -41,16 +48,30 @@ const selectConversation = (conversationID: string) => {
       <div class="col-md-5">
         <div class="conversations-container">
           <div class="filter-container">
-            <p><input type="text" v-model="conversationFilterText" class="form-control"
-                placeholder="Filter your conversations"></p>
-            <p class="text-center text-muted small">Showing {{ filteredConversations.length.toLocaleString() }}
-              conversations</p>
+            <p>
+              <input
+                v-model="conversationFilterText"
+                type="text"
+                class="form-control"
+                placeholder="Filter your conversations"
+              />
+            </p>
+            <p class="text-center text-muted small">
+              Showing
+              {{ filteredConversations.length.toLocaleString() }} conversations
+            </p>
           </div>
 
           <div class="items-list">
-            <ConversationComponent v-for="conversation in filteredConversations" :key="conversation.conversationID"
-              :conversation="conversation" :is-selected="selectedConversationID == conversation.conversationID"
-              @click="selectConversation(conversation.conversationID)" />
+            <ConversationComponent
+              v-for="conversation in filteredConversations"
+              :key="conversation.conversationID"
+              :conversation="conversation"
+              :is-selected="
+                selectedConversationID == conversation.conversationID
+              "
+              @click="selectConversation(conversation.conversationID)"
+            />
           </div>
         </div>
       </div>
@@ -58,13 +79,25 @@ const selectConversation = (conversationID: string) => {
       <div class="col-md-7">
         <div class="messages-container">
           <div class="filter-container">
-            <p><input type="text" v-model="messageFilterText" class="form-control" placeholder="Filter your messages">
+            <p>
+              <input
+                v-model="messageFilterText"
+                type="text"
+                class="form-control"
+                placeholder="Filter your messages"
+              />
             </p>
-            <p class="text-center text-muted small">Showing {{ filteredMessages.length.toLocaleString() }} messages</p>
+            <p class="text-center text-muted small">
+              Showing {{ filteredMessages.length.toLocaleString() }} messages
+            </p>
           </div>
 
           <div class="items-list">
-            <MessageComponent v-for="message in filteredMessages" :key="message.messageID" :message="message" />
+            <MessageComponent
+              v-for="message in filteredMessages"
+              :key="message.messageID"
+              :message="message"
+            />
           </div>
         </div>
       </div>

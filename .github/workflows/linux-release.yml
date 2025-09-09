@@ -35,7 +35,7 @@ jobs:
         run: |
           docker buildx create --use
           docker buildx build -t my-builder --load .
-      
+
       - name: Build Linux release in Docker container
         run: docker run --rm -v $(pwd):/workspace -w /workspace my-builder ./scripts/make-linux-release.sh
 
@@ -86,7 +86,7 @@ jobs:
         run: |
           docker buildx create --use
           docker buildx build -t my-builder --load .
-      
+
       - name: Build Linux release in Docker container
         run: docker run --rm -v $(pwd):/workspace -w /workspace my-builder ./scripts/make-linux-release.sh
 

@@ -8,8 +8,9 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./"
+    "rootDir": "./",
+    "types": []
   },
   "include": ["src", "forge.config.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "eslint.config.mjs", "*.config.mjs"]
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { marked } from 'marked';
+import { computed } from "vue";
+import { marked } from "marked";
 
-import CydAvatarComponent from './CydAvatarComponent.vue';
-import RunningIcon from './RunningIcon.vue';
+import CydAvatarComponent from "./CydAvatarComponent.vue";
+import RunningIcon from "./RunningIcon.vue";
 
 const props = defineProps<{
   message: string;
@@ -19,6 +19,7 @@ const parsedMessage = computed(() => marked.parse(props.message));
     </div>
     <div class="col">
       <div class="bubble p-3 text-black">
+        <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-if="message != ''" class="bubble-inner" v-html="parsedMessage" />
         <div v-else class="bubble-inner fs-1">
           <RunningIcon />
@@ -36,6 +37,9 @@ const parsedMessage = computed(() => marked.parse(props.message));
   border-bottom-left-radius: 2rem;
   border-bottom-right-radius: 2rem;
   border-top-left-radius: 0;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
 }
 
 .bubble-inner {
