@@ -124,6 +124,21 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div
+            class="card h-100"
+            @click="emit('setState', State.WizardTombstone)"
+          >
+            <div class="card-body align-items-center">
+              <img src="/assets/icon-tombstone.png" alt="Tombstone" />
+              <h2>Tombstone</h2>
+              <p class="small mt-3">
+                Update your X profile to make it clear that you've moved on to
+                better social media sites.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
