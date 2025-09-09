@@ -83,6 +83,8 @@ export function getBreadcrumbIcon(breadcrumbType: string): string {
       return "fa-solid fa-eye";
     case "bluesky":
       return "fa-brands fa-bluesky";
+    case "tombstone":
+      return "fa-solid fa-skull";
     default:
       return "fa-solid fa-question";
   }
