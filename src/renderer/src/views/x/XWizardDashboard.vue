@@ -19,11 +19,17 @@ const emit = defineEmits<{
   setState: [value: State];
 }>();
 
+// Feature flags
+const featureXTombstone = ref(false);
+
 const hasSomeData = ref(false);
 const lastDatabase = ref<Date | null>(null);
 const lastDelete = ref<Date | null>(null);
 
 onMounted(async () => {
+  featureXTombstone.value =
+    await window.electron.isFeatureEnabled("x_tombstone");
+
   hasSomeData.value = await xHasSomeData(props.model.account.id);
 
   const lastImportArchive = await xGetLastImportArchive(props.model.account.id);
@@ -124,7 +130,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="col-12 col-md-6 col-lg-5">
+        <div v-if="featureXTombstone" class="col-12 col-md-6 col-lg-5">
           <div
             class="card h-100"
             @click="emit('setState', State.WizardTombstone)"
