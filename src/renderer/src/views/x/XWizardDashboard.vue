@@ -41,10 +41,10 @@ onMounted(async () => {
 <template>
   <div class="wizard-content">
     <div class="wizard-scroll-content">
-      <div class="dashboard row align-items-stretch g-3">
+      <div class="dashboard row align-items-stretch g-3 justify-content-center">
         <div
           v-if="!props.model.account?.xAccount?.archiveOnly"
-          class="col-12 col-md-6 col-lg-4"
+          class="col-12 col-md-6 col-lg-5"
         >
           <div
             class="card h-100"
@@ -69,7 +69,7 @@ onMounted(async () => {
         </div>
         <div
           v-if="!props.model.account?.xAccount?.archiveOnly"
-          class="col-12 col-md-6 col-lg-4"
+          class="col-12 col-md-6 col-lg-5"
         >
           <div
             class="card h-100"
@@ -91,7 +91,7 @@ onMounted(async () => {
         </div>
         <div
           v-if="props.model.account?.xAccount?.archiveOnly"
-          class="col-12 col-md-6 col-lg-4"
+          class="col-12 col-md-6 col-lg-5"
         >
           <div
             class="card h-100"
@@ -110,7 +110,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="col-12 col-md-6 col-lg-4">
+        <div class="col-12 col-md-6 col-lg-5">
           <div
             class="card h-100"
             @click="emit('setState', State.WizardMigrateToBluesky)"
@@ -124,7 +124,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="col-12 col-md-6 col-lg-4">
+        <div class="col-12 col-md-6 col-lg-5">
           <div
             class="card h-100"
             @click="emit('setState', State.WizardTombstone)"
