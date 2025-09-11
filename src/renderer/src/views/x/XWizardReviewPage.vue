@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { XViewModel, State } from "../../view_models/XViewModel";
+import {
+  XViewModel,
+  State,
+  tombstoneUpdateBioCreditCydText,
+} from "../../view_models/XViewModel";
 import { getBreadcrumbIcon, openURL, getJobsType } from "../../util";
 import {
   XDeleteReviewStats,
@@ -14,6 +18,11 @@ import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue"
 import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
+import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
+import {
+  TombstoneBannerBackground,
+  TombstoneBannerSocialIcons,
+} from "../../types_x";
 
 // Props
 const props = defineProps<{
@@ -47,6 +56,8 @@ const backClicked = async () => {
     jobsType.value == "migrateBlueskyDelete"
   ) {
     emit("setState", State.WizardMigrateToBluesky);
+  } else if (jobsType.value == "tombstone") {
+    emit("setState", State.WizardTombstone);
   } else {
     // Display error
     console.error("Unknown review type:", jobsType.value);
@@ -64,6 +75,13 @@ const archiveClicked = async () => {
 const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
 const hasSomeData = ref(false);
 const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
+
+const tombstoneUpdateBannerBackground = ref<TombstoneBannerBackground>(
+  TombstoneBannerBackground.Night,
+);
+const tombstoneUpdateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(
+  TombstoneBannerSocialIcons.None,
+);
 
 const deleteTweetsCountNotArchived = ref(0);
 
@@ -91,6 +109,45 @@ onMounted(async () => {
         props.model.account?.id,
         false,
       );
+  }
+
+  if (jobsType.value == "tombstone") {
+    if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerBackground ==
+      "morning"
+    ) {
+      tombstoneUpdateBannerBackground.value = TombstoneBannerBackground.Morning;
+    } else {
+      tombstoneUpdateBannerBackground.value = TombstoneBannerBackground.Night;
+    }
+
+    if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "bluesky"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.Bluesky;
+    } else if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "mastodon"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.Mastodon;
+    } else if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "bluesky-mastodon"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.BlueskyMastodon;
+    } else if (
+      props.model.account?.xAccount?.tombstoneUpdateBannerSocialIcons ==
+      "mastodon-bluesky"
+    ) {
+      tombstoneUpdateBannerSocialIcons.value =
+        TombstoneBannerSocialIcons.MastodonBluesky;
+    } else {
+      tombstoneUpdateBannerSocialIcons.value = TombstoneBannerSocialIcons.None;
+    }
   }
 
   // Define the breadcrumb buttons
@@ -134,6 +191,12 @@ onMounted(async () => {
       label: "Migrate to Bluesky Options",
       action: () => emit("setState", State.WizardMigrateToBluesky),
       icon: getBreadcrumbIcon("bluesky"),
+    });
+  } else if (jobsType.value == "tombstone") {
+    breadcrumbButtons.value.push({
+      label: "Tombstone Options",
+      action: () => emit("setState", State.WizardTombstone),
+      icon: getBreadcrumbIcon("tombstone"),
     });
   }
 
@@ -361,6 +424,43 @@ onMounted(async () => {
               </li>
             </ul>
           </div>
+
+          <div v-if="jobsType == 'tombstone'">
+            <h3>
+              <i class="fa-solid fa-skull me-1" />
+              Tombstone
+            </h3>
+            <ul>
+              <li v-if="model.account?.xAccount?.tombstoneUpdateBanner">
+                <div>Update your banner</div>
+                <XTombstoneBannerComponent
+                  :update-banner="
+                    model.account?.xAccount?.tombstoneUpdateBanner
+                  "
+                  :update-banner-background="tombstoneUpdateBannerBackground"
+                  :update-banner-social-icons="tombstoneUpdateBannerSocialIcons"
+                  :update-banner-show-text="
+                    model.account?.xAccount?.tombstoneUpdateBannerShowText
+                  "
+                />
+              </li>
+              <li v-if="model.account?.xAccount?.tombstoneUpdateBio">
+                <div>Update your bio</div>
+                <p class="text-center text-muted small mb-1">Bio Preview</p>
+                <p class="small">
+                  {{ model.account?.xAccount?.tombstoneUpdateBioText }}
+                  <span
+                    v-if="model.account?.xAccount?.tombstoneUpdateBioCreditCyd"
+                  >
+                    {{ tombstoneUpdateBioCreditCydText }}
+                  </span>
+                </p>
+              </li>
+              <li v-if="model.account?.xAccount?.tombstoneLockAccount">
+                Lock your account
+              </li>
+            </ul>
+          </div>
         </form>
 
         <div
@@ -405,7 +505,6 @@ onMounted(async () => {
             >
           </p>
         </div>
-
         <AlertStayAwake />
       </template>
     </div>
@@ -423,7 +522,9 @@ onMounted(async () => {
                   : jobsType == 'migrateBluesky' ||
                       jobsType == 'migrateBlueskyDelete'
                     ? 'Back to Migrate to Bluesky Options'
-                    : '',
+                    : jobsType == 'tombstone'
+                      ? 'Back to Tombstone Options'
+                      : '',
           action: backClicked,
           icon: 'fa-solid fa-backward',
         },
@@ -439,7 +540,9 @@ onMounted(async () => {
                   ? 'Start Deleting'
                   : jobsType == 'migrateBluesky'
                     ? 'Start Migrating'
-                    : '',
+                    : jobsType == 'tombstone'
+                      ? 'Update Profile'
+                      : '',
           action: nextClicked,
           icon: 'fa-solid fa-forward',
           disabled:

@@ -322,7 +322,7 @@ async function createWindow() {
   );
   win = new BrowserWindow({
     width: 1000,
-    height: 850,
+    height: 900,
     minWidth: 900,
     minHeight: 700,
     webPreferences: {

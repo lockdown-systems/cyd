@@ -19,11 +19,17 @@ const emit = defineEmits<{
   setState: [value: State];
 }>();
 
+// Feature flags
+const featureXTombstone = ref(false);
+
 const hasSomeData = ref(false);
 const lastDatabase = ref<Date | null>(null);
 const lastDelete = ref<Date | null>(null);
 
 onMounted(async () => {
+  featureXTombstone.value =
+    await window.electron.isFeatureEnabled("x_tombstone");
+
   hasSomeData.value = await xHasSomeData(props.model.account.id);
 
   const lastImportArchive = await xGetLastImportArchive(props.model.account.id);
@@ -41,10 +47,10 @@ onMounted(async () => {
 <template>
   <div class="wizard-content">
     <div class="wizard-scroll-content">
-      <div class="dashboard row align-items-stretch g-3">
+      <div class="dashboard row align-items-stretch g-3 justify-content-center">
         <div
           v-if="!props.model.account?.xAccount?.archiveOnly"
-          class="col-12 col-md-6 col-lg-4"
+          class="col-12 col-md-6 col-lg-5"
         >
           <div
             class="card h-100"
@@ -69,7 +75,7 @@ onMounted(async () => {
         </div>
         <div
           v-if="!props.model.account?.xAccount?.archiveOnly"
-          class="col-12 col-md-6 col-lg-4"
+          class="col-12 col-md-6 col-lg-5"
         >
           <div
             class="card h-100"
@@ -91,7 +97,7 @@ onMounted(async () => {
         </div>
         <div
           v-if="props.model.account?.xAccount?.archiveOnly"
-          class="col-12 col-md-6 col-lg-4"
+          class="col-12 col-md-6 col-lg-5"
         >
           <div
             class="card h-100"
@@ -110,7 +116,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="col-12 col-md-6 col-lg-4">
+        <div class="col-12 col-md-6 col-lg-5">
           <div
             class="card h-100"
             @click="emit('setState', State.WizardMigrateToBluesky)"
@@ -120,6 +126,21 @@ onMounted(async () => {
               <h2>Migrate to Bluesky</h2>
               <p class="small mt-3">
                 Migrate your tweets from your X account to a Bluesky account.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div v-if="featureXTombstone" class="col-12 col-md-6 col-lg-5">
+          <div
+            class="card h-100"
+            @click="emit('setState', State.WizardTombstone)"
+          >
+            <div class="card-body align-items-center">
+              <img src="/assets/icon-tombstone.png" alt="Tombstone" />
+              <h2>Tombstone</h2>
+              <p class="small mt-3">
+                Update your X profile to make it clear that you've moved on to
+                better social media sites.
               </p>
             </div>
           </div>

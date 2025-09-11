@@ -511,6 +511,21 @@ onUnmounted(() => {
         </div>
       </template>
 
+      <!-- Tombstone update banner -->
+      <template v-if="progress.currentJob == 'tombstoneUpdateBanner'">
+        <p>Updating the banner on your X profile</p>
+      </template>
+
+      <!-- Tombstone update bio -->
+      <template v-if="progress.currentJob == 'tombstoneUpdateBio'">
+        <p>Updating your bio on your X profile</p>
+      </template>
+
+      <!-- Tombstone lock account -->
+      <template v-if="progress.currentJob == 'tombstoneLockAccount'">
+        <p>Locking your X account</p>
+      </template>
+
       <!-- Rate Limit -->
       <p v-if="rateLimitInfo?.isRateLimited" class="rate-limit">
         You have hit a rate limit!

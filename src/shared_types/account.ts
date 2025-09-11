@@ -15,6 +15,7 @@ export type XAccount = {
   accessedAt: Date;
   username: string;
   userID: string;
+  bio: string;
   profileImageDataURI: string;
   importFromArchive: boolean;
   saveMyData: boolean;
@@ -44,6 +45,15 @@ export type XAccount = {
   followersCount: number;
   tweetsCount: number;
   likesCount: number;
+  tombstoneUpdateBanner: boolean;
+  tombstoneUpdateBannerBackground: string;
+  tombstoneUpdateBannerSocialIcons: string;
+  tombstoneUpdateBannerShowText: boolean;
+  tombstoneBannerDataURL: string;
+  tombstoneUpdateBio: boolean;
+  tombstoneUpdateBioText: string;
+  tombstoneUpdateBioCreditCyd: boolean;
+  tombstoneLockAccount: boolean;
 };
 
 export type BlueskyAccount = {

@@ -10,6 +10,7 @@ interface XAccountRow {
   accessedAt: string;
   username: string;
   userID: string;
+  bio: string;
   profileImageDataURI: string;
   importFromArchive: boolean;
   saveMyData: boolean;
@@ -39,6 +40,15 @@ interface XAccountRow {
   tweetsCount: number;
   likesCount: number;
   archiveOnly: boolean;
+  tombstoneUpdateBanner: boolean;
+  tombstoneUpdateBannerBackground: string;
+  tombstoneUpdateBannerSocialIcons: string;
+  tombstoneUpdateBannerShowText: boolean;
+  tombstoneBannerDataURL: string;
+  tombstoneUpdateBio: boolean;
+  tombstoneUpdateBioText: string;
+  tombstoneUpdateBioCreditCyd: boolean;
+  tombstoneLockAccount: boolean;
 }
 
 function xAccountRowtoXAccount(row: XAccountRow): XAccount {
@@ -49,6 +59,7 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
     accessedAt: new Date(row.accessedAt),
     username: row.username,
     userID: row.userID,
+    bio: row.bio,
     profileImageDataURI: row.profileImageDataURI,
     importFromArchive: !!row.importFromArchive,
     saveMyData: !!row.saveMyData,
@@ -79,6 +90,15 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
     tweetsCount: row.tweetsCount,
     likesCount: row.likesCount,
     archiveOnly: !!row.archiveOnly,
+    tombstoneUpdateBanner: !!row.tombstoneUpdateBanner,
+    tombstoneUpdateBannerBackground: row.tombstoneUpdateBannerBackground,
+    tombstoneUpdateBannerSocialIcons: row.tombstoneUpdateBannerSocialIcons,
+    tombstoneUpdateBannerShowText: !!row.tombstoneUpdateBannerShowText,
+    tombstoneBannerDataURL: row.tombstoneBannerDataURL,
+    tombstoneUpdateBio: !!row.tombstoneUpdateBio,
+    tombstoneUpdateBioText: row.tombstoneUpdateBioText,
+    tombstoneUpdateBioCreditCyd: !!row.tombstoneUpdateBioCreditCyd,
+    tombstoneLockAccount: !!row.tombstoneLockAccount,
   };
 }
 
@@ -135,6 +155,7 @@ export const saveXAccount = (account: XAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             userID = ?,
+            bio = ?,
             profileImageDataURI = ?,
             importFromArchive = ?,
             saveMyData = ?,
@@ -163,12 +184,22 @@ export const saveXAccount = (account: XAccount) => {
             followersCount = ?,
             tweetsCount = ?,
             likesCount = ?,
-            archiveOnly = ?
+            archiveOnly = ?,
+            tombstoneUpdateBanner = ?,
+            tombstoneUpdateBannerBackground = ?,
+            tombstoneUpdateBannerSocialIcons = ?,
+            tombstoneUpdateBannerShowText = ?,
+            tombstoneBannerDataURL = ?,
+            tombstoneUpdateBio = ?,
+            tombstoneUpdateBioText = ?,
+            tombstoneUpdateBioCreditCyd = ?,
+            tombstoneLockAccount = ?
         WHERE id = ?
     `,
     [
       account.username,
       account.userID,
+      account.bio,
       account.profileImageDataURI,
       account.importFromArchive ? 1 : 0,
       account.saveMyData ? 1 : 0,
@@ -198,6 +229,15 @@ export const saveXAccount = (account: XAccount) => {
       account.tweetsCount,
       account.likesCount,
       account.archiveOnly ? 1 : 0,
+      account.tombstoneUpdateBanner ? 1 : 0,
+      account.tombstoneUpdateBannerBackground,
+      account.tombstoneUpdateBannerSocialIcons,
+      account.tombstoneUpdateBannerShowText ? 1 : 0,
+      account.tombstoneBannerDataURL,
+      account.tombstoneUpdateBio ? 1 : 0,
+      account.tombstoneUpdateBioText,
+      account.tombstoneUpdateBioCreditCyd ? 1 : 0,
+      account.tombstoneLockAccount ? 1 : 0,
       account.id,
     ],
   );

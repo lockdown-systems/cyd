@@ -32,6 +32,7 @@ import XWizardDeleteOptionsPage from "./XWizardDeleteOptionsPage.vue";
 import XWizardReviewPage from "./XWizardReviewPage.vue";
 import XWizardCheckPremium from "./XWizardCheckPremium.vue";
 import XWizardMigrateBluesky from "./XWizardMigrateBluesky.vue";
+import XWizardTombstone from "./XWizardTombstone.vue";
 import XWizardFinished from "./XWizardFinished.vue";
 import XWizardSidebar from "./XWizardSidebar.vue";
 import XWizardArchiveOnly from "./XWizardArchiveOnly.vue";
@@ -795,6 +796,34 @@ onUnmounted(async () => {
                 </button>
               </p>
             </div>
+          </div>
+
+          <!-- Add the XWizardTombstone component -->
+          <XWizardTombstone
+            v-if="model.state == State.WizardTombstoneDisplay"
+            :model="unref(model)"
+            @set-state="setState($event)"
+            @update-account="updateAccount"
+          />
+
+          <!-- Debug state -->
+          <div v-if="model.state == State.Debug">
+            <p>Debug debug debug!!!</p>
+            <p>
+              <button class="btn btn-danger" @click="debugModeTriggerError(1)">
+                Trigger Error
+              </button>
+            </p>
+            <p>
+              <button class="btn btn-danger" @click="debugModeTriggerError(3)">
+                Trigger 3 Errors
+              </button>
+            </p>
+            <p>
+              <button class="btn btn-primary" @click="debugModeDisable">
+                Cancel Debug Mode
+              </button>
+            </p>
           </div>
 
           <!-- wizard side bar, hide if archive only -->

@@ -76,6 +76,9 @@ export enum State {
   WizardMigrateToBluesky = "WizardMigrateToBluesky",
   WizardMigrateToBlueskyDisplay = "WizardMigrateToBlueskyDisplay",
 
+  WizardTombstone = "WizardTombstone",
+  WizardTombstoneDisplay = "WizardTombstoneDisplay",
+
   WizardArchiveOnly = "WizardArchiveOnly",
   WizardArchiveOnlyDisplay = "WizardArchiveOnlyDisplay",
 
@@ -113,6 +116,9 @@ export type XViewModelState = {
   jobs: XJob[];
   currentJobIndex: number;
 };
+
+export const tombstoneUpdateBioCreditCydText =
+  " (I escaped X using https://cyd.social)";
 
 export class XViewModel extends BaseViewModel {
   public progress: XProgress = emptyXProgress();
@@ -165,13 +171,31 @@ export class XViewModel extends BaseViewModel {
     const jobTypes = [];
 
     const jobsType = getJobsType(this.account.id);
+
+    // Migrate to Bluesky
     if (jobsType == "migrateBluesky") {
       jobTypes.push("migrateBluesky");
       shouldBuildArchive = true;
     } else if (jobsType == "migrateBlueskyDelete") {
       jobTypes.push("migrateBlueskyDelete");
       shouldBuildArchive = true;
-    } else {
+    }
+    // Tombstone
+    else if (jobsType == "tombstone") {
+      jobTypes.push("login");
+
+      if (this.account.xAccount?.tombstoneUpdateBanner) {
+        jobTypes.push("tombstoneUpdateBanner");
+      }
+      if (this.account.xAccount?.tombstoneUpdateBio) {
+        jobTypes.push("tombstoneUpdateBio");
+      }
+      if (this.account.xAccount?.tombstoneLockAccount) {
+        jobTypes.push("tombstoneLockAccount");
+      }
+    }
+    // Save, archive, or delete
+    else {
       jobTypes.push("login");
 
       if (this.account.xAccount?.saveMyData) {
@@ -378,6 +402,8 @@ export class XViewModel extends BaseViewModel {
             username:
               viewerResults.data.viewer.user_results.result.legacy.screen_name,
             userID: viewerResults.data.viewer.user_results.result.rest_id,
+            bio: viewerResults.data.viewer.user_results.result.legacy
+              .description,
             profileImageDataURI: await window.electron.X.getImageDataURI(
               this.account.id,
               viewerResults.data.viewer.user_results.result.legacy
@@ -850,6 +876,7 @@ export class XViewModel extends BaseViewModel {
     if (this.account && this.account.xAccount) {
       this.account.xAccount.username = userInfo.username;
       this.account.xAccount.userID = userInfo.userID;
+      this.account.xAccount.bio = userInfo.bio;
       this.account.xAccount.profileImageDataURI = userInfo.profileImageDataURI;
       this.account.xAccount.followersCount = userInfo.followersCount;
       this.account.xAccount.followingCount = userInfo.followingCount;
@@ -857,7 +884,7 @@ export class XViewModel extends BaseViewModel {
       this.account.xAccount.likesCount = userInfo.likesCount;
     }
     await window.electron.database.saveAccount(JSON.stringify(this.account));
-    this.log("login", "saved user information");
+    this.log("login", ["saved user information", userInfo]);
 
     // Tell XView to reload mediaPath, now that we have a username
     this.emitter?.emit(`x-reload-media-path-${this.account.id}`);
@@ -3497,6 +3524,261 @@ Hang on while I scroll down to your earliest bookmarks.`;
     return true;
   }
 
+  async runJobTombstoneUpdateBanner(jobIndex: number): Promise<boolean> {
+    await window.electron.trackEvent(
+      PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BANNER,
+      navigator.userAgent,
+    );
+
+    this.showBrowser = true;
+    this.instructions = `**I'm updating your banner.**`;
+    this.showAutomationNotice = true;
+
+    // Load the profile page
+    await this.loadURLWithRateLimit("https://x.com/settings/profile");
+
+    // TODO: implement
+    await this.sleep(2000);
+
+    await this.finishJob(jobIndex);
+    return true;
+  }
+
+  async runJobTombstoneUpdateBio(jobIndex: number): Promise<boolean> {
+    await window.electron.trackEvent(
+      PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BIO,
+      navigator.userAgent,
+    );
+
+    this.showBrowser = true;
+    this.instructions = `**I'm updating your bio.**`;
+    this.showAutomationNotice = true;
+
+    // When submitting the profile form, it doesn't seem to get the bio text value from
+    // the <textarea>, so we need to instead inject input events into the webview.
+
+    // Load the profile page
+    await this.loadURLWithRateLimit("https://x.com/settings/profile");
+
+    // Wait for bio field to appear
+    await this.waitForSelector(
+      'div[role="dialog"] textarea',
+      "https://x.com/settings/profile",
+    );
+    await this.sleep(200);
+
+    // Click in the modal
+    await this.scriptClickElement('div[role="group"][tabindex="0"]');
+
+    // Press until the bio field is selected
+    this.log("runJobTombstoneUpdateBio", "pressing tab to select bio field");
+    let selected = false;
+    for (let i = 0; i < 50; i++) {
+      // Press tab
+      await this.getWebview()?.sendInputEvent({
+        type: "keyDown",
+        keyCode: "Tab",
+      });
+      await this.sleep(10);
+      await this.getWebview()?.sendInputEvent({
+        type: "keyUp",
+        keyCode: "Tab",
+      });
+      await this.sleep(10);
+
+      // Check if the textarea is selected
+      const tagName = await this.getWebview()?.executeJavaScript(
+        `document.activeElement.tagName`,
+      );
+      if (tagName == "TEXTAREA") {
+        this.log("runJobTombstoneUpdateBio", "bio textarea selected");
+        selected = true;
+        break;
+      }
+    }
+    if (!selected) {
+      // TODO: error
+      console.error("runJobTombstoneUpdateBio", "bio textarea not found");
+    }
+
+    // Select and delete the existing bio
+    this.log("runJobTombstoneUpdateBio", "select and delete the existing bio");
+    await this.getWebview()?.executeJavaScript(
+      `document.activeElement.click()`,
+    );
+    await this.getWebview()?.sendInputEvent({
+      type: "keyDown",
+      keyCode: "CommandOrControl+A",
+    });
+    await this.sleep(10);
+    await this.getWebview()?.sendInputEvent({
+      type: "keyUp",
+      keyCode: "CommandOrControl+A",
+    });
+    await this.sleep(10);
+    await this.getWebview()?.sendInputEvent({
+      type: "keyDown",
+      keyCode: "Backspace",
+    });
+    await this.sleep(10);
+    await this.getWebview()?.sendInputEvent({
+      type: "keyUp",
+      keyCode: "Backspace",
+    });
+    await this.sleep(10);
+
+    this.pause();
+    await this.waitForPause();
+
+    // Type the new bio character by character
+    let bioText = this.account.xAccount?.tombstoneUpdateBioText ?? "";
+    if (this.account.xAccount?.tombstoneUpdateBioCreditCyd) {
+      bioText = bioText + tombstoneUpdateBioCreditCydText;
+    }
+    if (bioText.length > 160) {
+      bioText = bioText.substring(0, 160);
+    }
+
+    function getKeyEventForChar(char: string): { keyCode: string } {
+      // Lowercase letters
+      if (char >= "a" && char <= "z") {
+        return { keyCode: char.toUpperCase() }; // 'A' for 'a'
+      }
+      // Uppercase letters
+      if (char >= "A" && char <= "Z") {
+        return { keyCode: `Shift+${char}` }; // 'Shift+A' for 'A'
+      }
+      // Numbers
+      if (char >= "0" && char <= "9") {
+        return { keyCode: char };
+      }
+      // Space
+      if (char === " ") return { keyCode: "Space" };
+
+      // Shifted symbols
+      const shiftSymbols: Record<string, string> = {
+        "!": "Shift+1",
+        "@": "Shift+2",
+        "#": "Shift+3",
+        $: "Shift+4",
+        "%": "Shift+5",
+        "^": "Shift+6",
+        "&": "Shift+7",
+        "*": "Shift+8",
+        "(": "Shift+9",
+        ")": "Shift+0",
+        _: "Shift+-",
+        "+": "Shift+=",
+        ":": "Shift+;",
+        '"': "Shift+'",
+        "<": "Shift+,",
+        ">": "Shift+.",
+        "?": "Shift+/",
+        "|": "Shift+\\",
+        "~": "Shift+`",
+        "{": "Shift+[",
+        "}": "Shift+]",
+      };
+      if (char in shiftSymbols) {
+        return { keyCode: shiftSymbols[char] };
+      }
+
+      // Direct mapping for some symbols (no shift)
+      const directMap: Record<string, string> = {
+        "-": "-",
+        "=": "=",
+        "[": "[",
+        "]": "]",
+        "\\": "\\",
+        ";": ";",
+        "'": "'",
+        ",": ",",
+        ".": ".",
+        "/": "/",
+        "`": "`",
+      };
+      if (char in directMap) {
+        return { keyCode: directMap[char] };
+      }
+
+      // Fallback
+      return { keyCode: char };
+    }
+
+    for (const char of bioText) {
+      this.log("runJobTombstoneUpdateBio", ["typing char", char]);
+      const { keyCode } = getKeyEventForChar(char);
+      const webview = this.getWebview();
+      await webview?.sendInputEvent({ type: "keyDown", keyCode });
+      await this.sleep(10);
+      await webview?.sendInputEvent({ type: "keyUp", keyCode });
+      await this.sleep(10);
+    }
+
+    this.pause();
+    await this.waitForPause();
+
+    // Click save
+    await this.scriptClickElement('button[data-testid="Profile_Save_Button"]');
+    await this.sleep(200);
+    await this.waitForLoadingToFinish();
+
+    this.pause();
+    await this.waitForPause();
+
+    await this.finishJob(jobIndex);
+    return true;
+  }
+
+  async runJobTombstoneLockAccount(jobIndex: number): Promise<boolean> {
+    await window.electron.trackEvent(
+      PlausibleEvents.X_JOB_STARTED_TOMBSTONE_LOCK_ACCOUNT,
+      navigator.userAgent,
+    );
+
+    this.showBrowser = true;
+    this.instructions = `**I'm locking your account.**`;
+    this.showAutomationNotice = true;
+
+    // Load the audience, media and tagging settings page
+    await this.loadURLWithRateLimit(
+      "https://x.com/settings/audience_and_tagging",
+    );
+
+    // Is the "Protect your tweets" box already checked?
+    if (
+      await this.getWebview()
+        ?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].checked
+`)
+    ) {
+      this.log("runJobTombstoneLockAccount", "account is already locked");
+    }
+    // Check the "Protect your tweets" box
+    else {
+      this.log(
+        "runJobTombstoneLockAccount",
+        "checking the account lock checkbox",
+      );
+      await this.getWebview()?.executeJavaScript(
+        `document.querySelectorAll('input[type="checkbox"]')[0].click()`,
+      );
+      await this.sleep(200);
+      await this.waitForSelector(
+        'button[data-testid="confirmationSheetConfirm"]',
+        "https://x.com/settings/audience_and_tagging",
+      );
+      await this.sleep(200);
+      await this.scriptClickElement(
+        'button[data-testid="confirmationSheetConfirm"]',
+      );
+      await this.sleep(200);
+      await this.waitForLoadingToFinish();
+    }
+
+    await this.finishJob(jobIndex);
+    return true;
+  }
+
   async runJob(jobIndex: number) {
     this.runJobsState = RunJobsState.Default;
 
@@ -3582,6 +3864,18 @@ Hang on while I scroll down to your earliest bookmarks.`;
 
       case "migrateBlueskyDelete":
         await this.runJobMigrateBlueskyDelete(jobIndex);
+        break;
+
+      case "tombstoneUpdateBanner":
+        await this.runJobTombstoneUpdateBanner(jobIndex);
+        break;
+
+      case "tombstoneUpdateBio":
+        await this.runJobTombstoneUpdateBio(jobIndex);
+        break;
+
+      case "tombstoneLockAccount":
+        await this.runJobTombstoneLockAccount(jobIndex);
         break;
     }
   }
@@ -3726,6 +4020,15 @@ You'll be able to access it even after you delete it from X.
 
 After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
           this.state = State.WizardMigrateToBlueskyDisplay;
+          break;
+
+        case State.WizardTombstone:
+          this.showBrowser = false;
+          await this.loadURL("about:blank");
+          this.instructions = `
+**Quitting X? Good riddance.**
+Using my Tombstone feature, I can help you update your profile to tell your followers where to find you next. I can also help you lock your account.`;
+          this.state = State.WizardTombstoneDisplay;
           break;
 
         case State.WizardArchiveOnly:

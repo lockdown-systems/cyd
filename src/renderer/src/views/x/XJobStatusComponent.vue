@@ -44,6 +44,9 @@ const getJobTypeText = (jobType: string) => {
     unfollowEveryone: "Unfollowing everyone",
     migrateBluesky: "Migrating to Bluesky",
     migrateBlueskyDelete: "Deleting from Bluesky",
+    tombstoneUpdateBanner: "Updating banner",
+    tombstoneUpdateBio: "Updating bio",
+    tombstoneLockAccount: "Locking account",
   };
   return jobTypeTexts[jobType] || jobType;
 };

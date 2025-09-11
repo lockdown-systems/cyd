@@ -839,6 +839,41 @@ export class BaseViewModel {
     this.log("resume", "resumed");
   }
 
+  async scriptSendClickInputEvent(selector: string): Promise<void> {
+    // Get the coordinates of the element
+    const code = `
+        (() => {
+            const el = document.querySelector('${selector}');
+            const rect = el.getBoundingClientRect();
+            return rect;
+        })()
+        `;
+    const rect: DOMRect = await this.getWebview()?.executeJavaScript(code);
+    const centerX = Math.round(rect.x + rect.width / 2);
+    const centerY = Math.round(rect.y + rect.height / 2);
+
+    // Create a new mouse event
+    await this.getWebview()?.sendInputEvent({
+      type: "mouseDown",
+      x: centerX,
+      y: centerY,
+      button: "left",
+      clickCount: 1,
+    });
+  }
+
+  // Pause and resume the jobs
+
+  pause() {
+    this.isPaused = true;
+    this.log("pause", "paused");
+  }
+
+  resume() {
+    this.isPaused = false;
+    this.log("resume", "resumed");
+  }
+
   async waitForPause() {
     if (!this.isPaused) {
       return;
