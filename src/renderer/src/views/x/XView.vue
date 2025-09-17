@@ -13,7 +13,6 @@ import {
 import Electron from "electron";
 
 import CydAPIClient from "../../../../cyd-api-client";
-import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
 
 import AccountHeader from "../shared_components/AccountHeader.vue";
 import SpeechBubble from "../shared_components/SpeechBubble.vue";
@@ -64,6 +63,7 @@ import {
 } from "../../util";
 import { xRequiresPremium, xPostProgress } from "../../util_x";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
+import { usePlatformView } from "../../composables/usePlatformView";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -93,6 +93,16 @@ const canStateLoopRun = ref(true);
 
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
+
+// Use shared platform view composable for authentication and common state
+const {
+  userAuthenticated,
+  userPremium,
+  updateUserAuthenticated,
+  updateUserPremium,
+  setupAuthListeners,
+  cleanup: platformCleanup,
+} = usePlatformView(props.account, model, "X");
 
 // Keep currentState in sync
 watch(
@@ -259,60 +269,8 @@ const reloadMediaPath = async () => {
 // Enable/disable clicking in the webview
 const clickingEnabled = ref(false);
 
-// User variables
-const userAuthenticated = ref(false);
-const userPremium = ref(false);
-
-const updateUserAuthenticated = async () => {
-  userAuthenticated.value =
-    (await apiClient.value.ping()) && deviceInfo.value?.valid ? true : false;
-  console.log(
-    "updateUserAuthenticated",
-    "User authenticated",
-    userAuthenticated.value,
-  );
-};
 provide("xUpdateUserAuthenticated", updateUserAuthenticated);
-
-const updateUserPremium = async () => {
-  if (!userAuthenticated.value) {
-    return;
-  }
-
-  // Check if the user has premium
-  let userPremiumResp: UserPremiumAPIResponse;
-  const resp = await apiClient.value.getUserPremium();
-  if (resp && "error" in resp === false) {
-    userPremiumResp = resp;
-  } else {
-    await window.electron.showMessage(
-      "Failed to check if you have Premium access.",
-      "Please try again later.",
-    );
-    return;
-  }
-  userPremium.value = userPremiumResp.premium_access;
-
-  if (!userPremium.value) {
-    console.log("User does not have Premium access");
-    emitter?.emit(`x-premium-check-failed-${props.account.id}`);
-  }
-
-  console.log("updateUserPremium", "User premium", userPremiumResp);
-};
 provide("xUpdateUserPremium", updateUserPremium);
-
-emitter?.on("signed-in", async () => {
-  console.log("XView: User signed in");
-  await updateUserAuthenticated();
-  await updateUserPremium();
-});
-
-emitter?.on("signed-out", async () => {
-  console.log("XView: User signed out");
-  userAuthenticated.value = false;
-  userPremium.value = false;
-});
 
 emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
   await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
@@ -463,6 +421,8 @@ const debugModeDisable = async () => {
 // Lifecycle
 
 onMounted(async () => {
+  setupAuthListeners();
+
   await reloadMediaPath();
 
   if (webviewComponent.value !== null) {
@@ -514,6 +474,9 @@ onMounted(async () => {
 
 onUnmounted(async () => {
   canStateLoopRun.value = false;
+
+  // Cleanup platform composable
+  await platformCleanup();
 
   // Make sure the account isn't running and power save blocker is stopped
   await setAccountRunning(props.account.id, false);

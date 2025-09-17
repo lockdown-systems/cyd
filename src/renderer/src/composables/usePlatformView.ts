@@ -1,19 +1,17 @@
 import { ref, watch, inject, getCurrentInstance, type Ref } from "vue";
-import CydAPIClient from "../../../cyd-api-client";
-import { UserPremiumAPIResponse } from "../../../cyd-api-client";
+import CydAPIClient, { UserPremiumAPIResponse } from "../../../cyd-api-client";
 import type { Account } from "../../../shared_types";
 import type { DeviceInfo } from "../types";
+import type { BasePlatformViewModel } from "../types/PlatformView";
 import { setAccountRunning } from "../util";
 
 /**
  * Shared composable for platform views that handles common functionality
  * like authentication, state management, and progress tracking
  */
-export function usePlatformView(
-  account: Account,
-  model: any,
-  platformName: string,
-) {
+export function usePlatformView<
+  T extends BasePlatformViewModel & { run: () => Promise<void> },
+>(account: Account, model: Ref<T>, platformName: string) {
   // Get dependencies
   const vueInstance = getCurrentInstance();
   const emitter = vueInstance?.appContext.config.globalProperties.emitter;
@@ -72,10 +70,9 @@ export function usePlatformView(
 
   // Shared methods
   const updateAccount = async () => {
+    console.log("Updating account");
     await model.value.reloadAccount();
-    emitter?.emit("account-updated");
   };
-
   const setState = async (state: string) => {
     console.log("Setting state", state);
     model.value.state = state;
@@ -105,6 +102,11 @@ export function usePlatformView(
   const updateUserAuthenticated = async () => {
     userAuthenticated.value =
       (await apiClient.value.ping()) && deviceInfo.value?.valid ? true : false;
+    console.log(
+      "updateUserAuthenticated",
+      "User authenticated",
+      userAuthenticated.value,
+    );
   };
 
   const updateUserPremium = async () => {
@@ -124,6 +126,13 @@ export function usePlatformView(
       return;
     }
     userPremium.value = userPremiumResp.premium_access;
+
+    if (!userPremium.value) {
+      console.log("User does not have Premium access");
+      emitter?.emit(
+        `${platformName.toLowerCase()}-premium-check-failed-${account.id}`,
+      );
+    }
 
     console.log("updateUserPremium", "User premium", userPremiumResp);
   };
@@ -148,6 +157,10 @@ export function usePlatformView(
     await setAccountRunning(account.id, false);
   };
 
+  // Platform model methods
+  const pause = () => model.value.pause();
+  const resume = () => model.value.resume();
+
   return {
     // State
     currentState,
@@ -167,6 +180,8 @@ export function usePlatformView(
     updateUserPremium,
     setupAuthListeners,
     cleanup,
+    pause,
+    resume,
 
     // Dependencies
     emitter,
