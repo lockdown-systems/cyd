@@ -102,6 +102,8 @@ const {
   userPremium,
   updateUserAuthenticated,
   updateUserPremium,
+  setState,
+  startStateLoop,
   setupAuthListeners,
   setupPlatformEventHandlers,
   createAutomationHandlers,
@@ -151,36 +153,10 @@ const updateAccount = async () => {
   emitter?.emit("account-updated");
 };
 
-const setState = async (state: State) => {
-  console.log("Setting state", state);
-  model.value.state = state;
-  await startStateLoop();
-};
-
 const archiveOnlyClicked = async () => {
   // Cancel any ongoing wait for URL
   model.value.cancelWaitForURL = true;
-  await setState(State.WizardArchiveOnly);
-};
-
-const startStateLoop = async () => {
-  console.log("State loop started");
-  await setAccountRunning(props.account.id, true);
-
-  while (canStateLoopRun.value) {
-    // Run next state
-    await model.value.run();
-
-    // Break out of the state loop if the view model is in a display state
-    if ((model.value.state as string).endsWith("Display")) {
-      break;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-
-  await setAccountRunning(props.account.id, false);
-  console.log("State loop ended");
+  await setState(State.WizardArchiveOnly.toString());
 };
 
 const onAutomationErrorRetry = async () => {
@@ -188,7 +164,7 @@ const onAutomationErrorRetry = async () => {
 
   // If we're currently on the finished page, then move back to the review page
   if (model.value.state == State.FinishedRunningJobsDisplay) {
-    await setState(State.WizardReview);
+    await setState(State.WizardReview.toString());
   } else {
     // Store the state of the view model before the error
     const state: XViewModelState | undefined = model.value.saveState();
