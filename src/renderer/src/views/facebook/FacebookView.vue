@@ -1,18 +1,5 @@
 <script setup lang="ts">
-import {
-  Ref,
-  ref,
-  unref,
-  watch,
-  onMounted,
-  onUnmounted,
-  inject,
-  getCurrentInstance,
-} from "vue";
-import Electron from "electron";
-
-import CydAPIClient from "../../../../cyd-api-client";
-import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
+import { ref, unref, onMounted, onUnmounted, computed } from "vue";
 
 import AccountHeader from "../shared_components/AccountHeader.vue";
 import SpeechBubble from "../shared_components/SpeechBubble.vue";
@@ -24,25 +11,17 @@ import FacebookJobStatusComponent from "./FacebookJobStatusComponent.vue";
 import FacebookWizardDeleteOptionsPage from "./FacebookWizardDeleteOptionsPage.vue";
 import FacebookFinishedRunningJobsPage from "./FacebookFinishedRunningJobsPage.vue";
 
-import type {
-  Account,
-  FacebookProgress,
-  FacebookJob,
-} from "../../../../shared_types";
-import type { DeviceInfo } from "../../types";
+import type { Account, FacebookJob } from "../../../../shared_types";
 import { AutomationErrorType } from "../../automation_errors";
 import {
   FacebookViewModel,
   State,
   FacebookViewModelState,
 } from "../../view_models/FacebookViewModel";
-import { setAccountRunning, openURL } from "../../util";
+import { openURL } from "../../util";
 import { facebookPostProgress } from "../../util_facebook";
 import FacebookWizardReviewPage from "./FacebookWizardReviewPage.vue";
-
-// Get the global emitter
-const vueInstance = getCurrentInstance();
-const emitter = vueInstance?.appContext.config.globalProperties.emitter;
+import { usePlatformView } from "../../composables/usePlatformView";
 
 const props = defineProps<{
   account: Account;
@@ -50,118 +29,64 @@ const props = defineProps<{
 
 const emit = defineEmits(["onRefreshClicked", "onRemoveClicked"]);
 
-const apiClient = inject("apiClient") as Ref<CydAPIClient>;
-const deviceInfo = inject("deviceInfo") as Ref<DeviceInfo | null>;
-
-const currentState = ref<State>(State.Login);
-
-const progress = ref<FacebookProgress | null>(null);
-const currentJobs = ref<FacebookJob[]>([]);
-const isPaused = ref<boolean>(false);
-
-const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
-const webviewComponent = ref<Electron.WebviewTag | null>(null);
-const canStateLoopRun = ref(true);
-
 // The Facebook view model
 const model = ref<FacebookViewModel>(
-  new FacebookViewModel(props.account, emitter),
+  new FacebookViewModel(props.account, null), // emitter will be accessed through composable
 );
 
-// Keep currentState in sync
-watch(
-  () => model.value.state,
-  async (newState) => {
-    if (newState) {
-      currentState.value = newState as State;
-    }
-  },
-  { deep: true },
-);
+// Use shared platform view composable for authentication and common state
+const {
+  currentState,
+  progress,
+  currentJobs,
+  isPaused,
+  clickingEnabled,
+  userAuthenticated,
+  userPremium,
+  speechBubbleComponent,
+  webviewComponent,
+  updateAccount,
+  setState,
+  startStateLoop,
+  setupAuthListeners,
+  setupPlatformEventHandlers,
+  createAutomationHandlers,
+  cleanup: platformCleanup,
+  initializePlatformView,
+  emitter,
+  apiClient,
+  deviceInfo,
+} = usePlatformView(props.account, model, "Facebook");
 
-// Keep progress updated
-watch(
-  () => model.value.progress,
-  (newProgress) => {
-    if (newProgress) progress.value = newProgress;
-  },
-  { deep: true },
-);
+// After composable setup, update model with emitter
+model.value.emitter = emitter;
 
-// Keep jobs status updated
-watch(
-  () => model.value.jobs,
-  (newJobs) => {
-    if (newJobs) currentJobs.value = newJobs;
-  },
-  { deep: true },
-);
-
-// Keep isPaused updated
-watch(
-  () => model.value.isPaused,
-  (newIsPaused) => {
-    if (newIsPaused !== undefined) isPaused.value = newIsPaused;
-  },
-  { deep: true },
-);
-
-const updateAccount = async () => {
-  await model.value.reloadAccount();
-  emitter?.emit("account-updated");
-};
-
-const setState = async (state: State) => {
-  console.log("Setting state", state);
-  model.value.state = state;
-  await startStateLoop();
-};
-
-const startStateLoop = async () => {
-  console.log("State loop started");
-  await setAccountRunning(props.account.id, true);
-
-  while (canStateLoopRun.value) {
-    // Run next state
-    await model.value.run();
-
-    // Break out of the state loop if the view model is in a display state
-    if ((model.value.state as string).endsWith("Display")) {
-      break;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-
-  await setAccountRunning(props.account.id, false);
-  console.log("State loop ended");
-};
+// Typed computed properties for template usage
+const typedCurrentJobs = computed(() => currentJobs.value as FacebookJob[]);
 
 const onAutomationErrorRetry = async () => {
   console.log("Retrying automation after error");
-
-  // TODO: implent retry logic
-};
-
-const onAutomationErrorCancel = () => {
-  console.log("Cancelling automation after error");
+  // TODO: implement retry logic for Facebook
   emit("onRefreshClicked");
 };
-
-const onAutomationErrorResume = () => {
-  console.log("Resuming after after error");
-  model.value.resume();
-};
-
 const onCancelAutomation = () => {
   console.log("Cancelling automation");
 
   // Submit progress to the API
-  // TODO: impl?
-  emitter.value.emit(`facebook-submit-progress-${props.account.id}`);
+  emitter?.emit(`facebook-submit-progress-${props.account.id}`);
 
   emit("onRefreshClicked");
 };
+
+// Create automation handlers using composable
+const automationHandlers = createAutomationHandlers(
+  () => emit("onRefreshClicked"), // onRefresh
+  onAutomationErrorRetry, // onRetry (Facebook-specific)
+);
+
+// Override the cancel handler to include Facebook-specific logic
+automationHandlers[`cancel-automation-${props.account.id}`] =
+  onCancelAutomation;
 
 const onReportBug = async () => {
   console.log("Report bug clicked");
@@ -182,63 +107,20 @@ const onReportBug = async () => {
   );
 };
 
-// User variables
-const userAuthenticated = ref(false);
-const userPremium = ref(false);
-
-const updateUserAuthenticated = async () => {
-  userAuthenticated.value =
-    (await apiClient.value.ping()) && deviceInfo.value?.valid ? true : false;
-};
-
-const updateUserPremium = async () => {
-  if (!userAuthenticated.value) {
-    return;
-  }
-
-  // Check if the user has premium
-  let userPremiumResp: UserPremiumAPIResponse;
-  const resp = await apiClient.value.getUserPremium();
-  if (resp && "error" in resp === false) {
-    userPremiumResp = resp;
-  } else {
-    await window.electron.showMessage(
-      "Failed to check if you have Premium access.",
-      "Please try again later.",
+// Setup platform-specific event handlers
+setupPlatformEventHandlers({
+  ...automationHandlers,
+  [`facebook-submit-progress-${props.account.id}`]: async () => {
+    await facebookPostProgress(
+      apiClient.value,
+      deviceInfo.value,
+      props.account.id,
     );
-    return;
-  }
-  userPremium.value = userPremiumResp.premium_access;
-
-  if (!userPremium.value) {
-    console.log("User does not have Premium access");
-    // TODO: `facebook-premium-check-failed` emit
-    emitter?.emit(`facebook-premium-check-failed-${props.account.id}`);
-  }
-};
-
-// Enable/disable clicking in the webview
-const clickingEnabled = ref(false);
-
-emitter?.on("signed-in", async () => {
-  console.log("FacebookView: User signed in");
-  await updateUserAuthenticated();
-  await updateUserPremium();
+  },
 });
 
-emitter?.on("signed-out", async () => {
-  console.log("FacebookView: User signed out");
-  userAuthenticated.value = false;
-  userPremium.value = false;
-});
-
-emitter?.on(`facebook-submit-progress-${props.account.id}`, async () => {
-  await facebookPostProgress(
-    apiClient.value,
-    deviceInfo.value,
-    props.account.id,
-  );
-});
+// Setup authentication listeners
+setupAuthListeners();
 
 const startJobs = async () => {
   // Premium check
@@ -323,7 +205,7 @@ onMounted(async () => {
 
     // Start the state loop
     if (props.account.facebookAccount !== null) {
-      await model.value.init(webview);
+      await initializePlatformView(webview);
 
       // If there's a saved state from a retry, restore it
       const savedState = localStorage.getItem(
@@ -346,50 +228,10 @@ onMounted(async () => {
   } else {
     console.error("Webview component not found");
   }
-
-  // Emitter for the view model to cancel automation
-  emitter?.on(`cancel-automation-${props.account.id}`, onCancelAutomation);
-
-  // Define automation error handlers on the global emitter for this account
-  emitter?.on(
-    `automation-error-${props.account.id}-retry`,
-    onAutomationErrorRetry,
-  );
-  emitter?.on(
-    `automation-error-${props.account.id}-cancel`,
-    onAutomationErrorCancel,
-  );
-  emitter?.on(
-    `automation-error-${props.account.id}-resume`,
-    onAutomationErrorResume,
-  );
 });
 
 onUnmounted(async () => {
-  canStateLoopRun.value = false;
-
-  // Make sure the account isn't running and power save blocker is stopped
-  await setAccountRunning(props.account.id, false);
-
-  // Remove cancel automation handler
-  emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
-
-  // Remove automation error handlers
-  emitter?.off(
-    `automation-error-${props.account.id}-retry`,
-    onAutomationErrorRetry,
-  );
-  emitter?.off(
-    `automation-error-${props.account.id}-cancel`,
-    onAutomationErrorCancel,
-  );
-  emitter?.off(
-    `automation-error-${props.account.id}-resume`,
-    onAutomationErrorResume,
-  );
-
-  // Cleanup the view controller
-  await model.value.cleanup();
+  await platformCleanup();
 });
 </script>
 
@@ -425,8 +267,8 @@ onUnmounted(async () => {
         <div class="d-flex align-items-center">
           <!-- Job status -->
           <FacebookJobStatusComponent
-            v-if="currentJobs.length > 0 && model.state == State.RunJobs"
-            :jobs="currentJobs"
+            v-if="typedCurrentJobs.length > 0 && model.state == State.RunJobs"
+            :jobs="typedCurrentJobs"
             :is-paused="isPaused"
             :clicking-enabled="clickingEnabled"
             class="job-status-component"
