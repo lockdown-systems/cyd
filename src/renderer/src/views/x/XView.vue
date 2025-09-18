@@ -11,7 +11,6 @@ import {
   provide,
   computed,
 } from "vue";
-import Electron from "electron";
 
 import CydAPIClient from "../../../../cyd-api-client";
 
@@ -84,9 +83,6 @@ const failureStateIndexLikes_FailedToRetryAfterRateLimit = ref(false);
 
 const rateLimitInfo = ref<XRateLimitInfo | null>(null);
 
-const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
-const webviewComponent = ref<Electron.WebviewTag | null>(null);
-
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
@@ -100,6 +96,12 @@ const {
   clickingEnabled,
   userAuthenticated,
   userPremium,
+  speechBubbleComponent,
+  webviewComponent,
+  accountHeaderProps,
+  speechBubbleProps,
+  automationNoticeProps,
+  webviewProps,
   updateUserAuthenticated,
   updateUserPremium,
   setState,
@@ -430,8 +432,7 @@ onUnmounted(async () => {
 <template>
   <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
     <AccountHeader
-      :account="account"
-      :show-refresh-button="true"
+      v-bind="accountHeaderProps"
       @on-refresh-clicked="emit('onRefreshClicked')"
       @on-remove-clicked="emit('onRemoveClicked')"
     />
@@ -446,7 +447,7 @@ onUnmounted(async () => {
           <!-- Speech bubble -->
           <SpeechBubble
             ref="speechBubbleComponent"
-            :message="model.instructions || ''"
+            v-bind="speechBubbleProps"
             class="mb-2"
             :class="{ 'w-100': currentJobs.length === 0 }"
           />
@@ -501,25 +502,11 @@ onUnmounted(async () => {
         </button>
       </div>
 
-      <AutomationNotice
-        :show-browser="model.showBrowser"
-        :show-automation-notice="model.showAutomationNotice"
-      />
+      <AutomationNotice v-bind="automationNoticeProps" />
     </template>
 
     <!-- Webview -->
-    <webview
-      ref="webviewComponent"
-      src="about:blank"
-      class="webview"
-      :partition="`persist:account-${account.id}`"
-      :class="{
-        hidden: !model.showBrowser,
-        'webview-automation-border': model.showAutomationNotice,
-        'webview-input-border': !model.showAutomationNotice,
-        'webview-clickable': clickingEnabled,
-      }"
-    />
+    <webview ref="webviewComponent" v-bind="webviewProps" />
 
     <template v-if="model.state != State.WizardStart">
       <!-- RunJobs states -->

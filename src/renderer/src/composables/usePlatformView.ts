@@ -1,4 +1,11 @@
-import { ref, watch, inject, getCurrentInstance, type Ref } from "vue";
+import {
+  ref,
+  watch,
+  inject,
+  getCurrentInstance,
+  type Ref,
+  computed,
+} from "vue";
 import CydAPIClient, { UserPremiumAPIResponse } from "../../../cyd-api-client";
 import type { Account } from "../../../shared_types";
 import type { DeviceInfo } from "../types";
@@ -30,6 +37,10 @@ export function usePlatformView<
   const userAuthenticated = ref(false);
   const userPremium = ref(false);
 
+  // Shared component references
+  const speechBubbleComponent = ref(null);
+  const webviewComponent = ref(null);
+
   // Track registered event handlers for cleanup
   const registeredHandlers = ref<
     Array<{
@@ -37,6 +48,35 @@ export function usePlatformView<
       handler: (...args: unknown[]) => void | Promise<void>;
     }>
   >([]);
+
+  // Computed properties for shared template elements
+  const accountHeaderProps = computed(() => ({
+    account,
+    showRefreshButton: true,
+  }));
+
+  const speechBubbleProps = computed(() => ({
+    message: model.value.instructions || "",
+  }));
+
+  const automationNoticeProps = computed(() => ({
+    showBrowser: model.value.showBrowser,
+    showAutomationNotice: model.value.showAutomationNotice,
+  }));
+
+  const webviewProps = computed(() => ({
+    src: "about:blank",
+    partition: `persist:account-${account.id}`,
+    class: [
+      "webview",
+      {
+        hidden: !model.value.showBrowser,
+        "webview-automation-border": model.value.showAutomationNotice,
+        "webview-input-border": !model.value.showAutomationNotice,
+        "webview-clickable": clickingEnabled.value,
+      },
+    ],
+  }));
 
   // Watch model state changes
   watch(
@@ -235,6 +275,16 @@ export function usePlatformView<
     clickingEnabled,
     userAuthenticated,
     userPremium,
+
+    // Component refs
+    speechBubbleComponent,
+    webviewComponent,
+
+    // Template props
+    accountHeaderProps,
+    speechBubbleProps,
+    automationNoticeProps,
+    webviewProps,
 
     // Methods
     updateAccount,
