@@ -9,6 +9,7 @@ import {
   inject,
   getCurrentInstance,
   provide,
+  computed,
 } from "vue";
 import Electron from "electron";
 
@@ -78,24 +79,25 @@ const emit = defineEmits(["onRefreshClicked", "onRemoveClicked"]);
 const apiClient = inject("apiClient") as Ref<CydAPIClient>;
 const deviceInfo = inject("deviceInfo") as Ref<DeviceInfo | null>;
 
-const currentState = ref<State>(State.Login);
 const failureStateIndexTweets_FailedToRetryAfterRateLimit = ref(false);
 const failureStateIndexLikes_FailedToRetryAfterRateLimit = ref(false);
 
-const progress = ref<XProgress | null>(null);
 const rateLimitInfo = ref<XRateLimitInfo | null>(null);
-const currentJobs = ref<XJob[]>([]);
-const isPaused = ref<boolean>(false);
 
 const speechBubbleComponent = ref<typeof SpeechBubble | null>(null);
 const webviewComponent = ref<Electron.WebviewTag | null>(null);
-const canStateLoopRun = ref(true);
 
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
 // Use shared platform view composable for authentication and common state
 const {
+  currentState,
+  progress,
+  currentJobs,
+  isPaused,
+  canStateLoopRun,
+  clickingEnabled,
   userAuthenticated,
   userPremium,
   updateUserAuthenticated,
@@ -104,13 +106,16 @@ const {
   cleanup: platformCleanup,
 } = usePlatformView(props.account, model, "X");
 
-// Keep currentState in sync
+// Typed computed properties for template usage
+const typedProgress = computed(() => progress.value as XProgress | null);
+const typedCurrentJobs = computed(() => currentJobs.value as XJob[]);
+
+// X-specific state watcher for failure states (composable handles basic state sync)
 watch(
   () => model.value.state,
   async (newState) => {
     if (newState) {
-      currentState.value = newState as State;
-      // Update failure states on state change
+      // Update X-specific failure states on state change
       failureStateIndexTweets_FailedToRetryAfterRateLimit.value =
         (await window.electron.X.getConfig(
           props.account.id,
@@ -130,38 +135,11 @@ watch(
   { deep: true },
 );
 
-// Keep progress updated
-watch(
-  () => model.value.progress,
-  (newProgress) => {
-    if (newProgress) progress.value = newProgress;
-  },
-  { deep: true },
-);
-
-// Keep rateLimitInfo updated
+// Keep rateLimitInfo updated (X-specific)
 watch(
   () => model.value.rateLimitInfo,
   (newRateLimitInfo) => {
     if (newRateLimitInfo) rateLimitInfo.value = newRateLimitInfo;
-  },
-  { deep: true },
-);
-
-// Keep jobs status updated
-watch(
-  () => model.value.jobs,
-  (newJobs) => {
-    if (newJobs) currentJobs.value = newJobs;
-  },
-  { deep: true },
-);
-
-// Keep isPaused updated
-watch(
-  () => model.value.isPaused,
-  (newIsPaused) => {
-    if (newIsPaused !== undefined) isPaused.value = newIsPaused;
   },
   { deep: true },
 );
@@ -265,9 +243,6 @@ const reloadMediaPath = async () => {
   mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
   console.log("mediaPath", mediaPath.value);
 };
-
-// Enable/disable clicking in the webview
-const clickingEnabled = ref(false);
 
 provide("xUpdateUserAuthenticated", updateUserAuthenticated);
 provide("xUpdateUserPremium", updateUserPremium);
@@ -533,7 +508,7 @@ onUnmounted(async () => {
               ((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) &&
               model.state == State.RunJobs
             "
-            :progress="progress"
+            :progress="typedProgress"
             :rate-limit-info="rateLimitInfo"
             :account-i-d="account.id"
           />
@@ -543,7 +518,7 @@ onUnmounted(async () => {
           <!-- Job status -->
           <XJobStatusComponent
             v-if="currentJobs.length > 0 && model.state == State.RunJobs"
-            :jobs="currentJobs"
+            :jobs="typedCurrentJobs"
             :is-paused="isPaused"
             :clicking-enabled="clickingEnabled"
             class="job-status-component"
