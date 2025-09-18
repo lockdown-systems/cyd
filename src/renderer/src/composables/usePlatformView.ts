@@ -30,6 +30,14 @@ export function usePlatformView<
   const userAuthenticated = ref(false);
   const userPremium = ref(false);
 
+  // Track registered event handlers for cleanup
+  const registeredHandlers = ref<
+    Array<{
+      event: string;
+      handler: (...args: unknown[]) => void | Promise<void>;
+    }>
+  >([]);
+
   // Watch model state changes
   watch(
     () => model.value.state,
@@ -139,22 +147,78 @@ export function usePlatformView<
 
   // Event listeners for authentication
   const setupAuthListeners = () => {
-    emitter?.on("signed-in", async () => {
+    const signedInHandler = async () => {
       console.log(`${platformName}View: User signed in`);
       await updateUserAuthenticated();
       await updateUserPremium();
-    });
+    };
 
-    emitter?.on("signed-out", async () => {
+    const signedOutHandler = async () => {
       console.log(`${platformName}View: User signed out`);
       userAuthenticated.value = false;
       userPremium.value = false;
+    };
+
+    emitter?.on("signed-in", signedInHandler);
+    emitter?.on("signed-out", signedOutHandler);
+
+    registeredHandlers.value.push(
+      { event: "signed-in", handler: signedInHandler },
+      { event: "signed-out", handler: signedOutHandler },
+    );
+  };
+
+  // Generic event handler setup for platform-specific events
+  const setupPlatformEventHandlers = (
+    handlers: Record<string, () => void | Promise<void>>,
+  ) => {
+    Object.entries(handlers).forEach(([event, handler]) => {
+      const eventName = event.includes("${account.id}")
+        ? event.replace("${account.id}", account.id.toString())
+        : event;
+      emitter?.on(eventName, handler);
+      registeredHandlers.value.push({ event: eventName, handler });
     });
+  };
+
+  // Generic automation event handlers that can be shared
+  const createAutomationHandlers = (
+    onRefresh: () => void,
+    onRetry?: () => void | Promise<void>,
+  ) => {
+    return {
+      [`cancel-automation-${account.id}`]: () => {
+        console.log("Cancelling automation");
+        onRefresh();
+      },
+      [`automation-error-${account.id}-cancel`]: () => {
+        console.log("Cancelling automation after error");
+        onRefresh();
+      },
+      [`automation-error-${account.id}-resume`]: () => {
+        console.log("Resuming after error");
+        resume(); // Use composable's resume method
+      },
+      [`automation-error-${account.id}-retry`]: async () => {
+        console.log("Retrying automation after error");
+        if (onRetry) {
+          await onRetry();
+        } else {
+          onRefresh();
+        }
+      },
+    };
   };
 
   const cleanup = async () => {
     canStateLoopRun.value = false;
     await setAccountRunning(account.id, false);
+
+    // Remove all registered event handlers
+    registeredHandlers.value.forEach(({ event, handler }) => {
+      emitter?.off(event, handler);
+    });
+    registeredHandlers.value = [];
   };
 
   // Platform model methods
@@ -179,6 +243,8 @@ export function usePlatformView<
     updateUserAuthenticated,
     updateUserPremium,
     setupAuthListeners,
+    setupPlatformEventHandlers,
+    createAutomationHandlers,
     cleanup,
     pause,
     resume,

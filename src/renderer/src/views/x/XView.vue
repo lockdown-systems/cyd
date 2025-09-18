@@ -103,6 +103,8 @@ const {
   updateUserAuthenticated,
   updateUserPremium,
   setupAuthListeners,
+  setupPlatformEventHandlers,
+  createAutomationHandlers,
   cleanup: platformCleanup,
 } = usePlatformView(props.account, model, "X");
 
@@ -198,24 +200,24 @@ const onAutomationErrorRetry = async () => {
   }
 };
 
-const onAutomationErrorCancel = () => {
-  console.log("Cancelling automation after error");
-  emit("onRefreshClicked");
-};
-
-const onAutomationErrorResume = () => {
-  console.log("Resuming after after error");
-  model.value.resume();
-};
-
 const onCancelAutomation = () => {
   console.log("Cancelling automation");
 
   // Submit progress to the API
-  emitter.value.emit(`x-submit-progress-${props.account.id}`);
+  emitter?.emit(`x-submit-progress-${props.account.id}`);
 
   emit("onRefreshClicked");
 };
+
+// Create automation handlers using composable
+const automationHandlers = createAutomationHandlers(
+  () => emit("onRefreshClicked"), // onRefresh
+  onAutomationErrorRetry, // onRetry (X-specific)
+);
+
+// Override the cancel handler to include X-specific logic
+automationHandlers[`cancel-automation-${props.account.id}`] =
+  onCancelAutomation;
 
 const onReportBug = async () => {
   console.log("Report bug clicked");
@@ -246,14 +248,6 @@ const reloadMediaPath = async () => {
 
 provide("xUpdateUserAuthenticated", updateUserAuthenticated);
 provide("xUpdateUserPremium", updateUserPremium);
-
-emitter?.on(`x-submit-progress-${props.account.id}`, async () => {
-  await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
-});
-
-emitter?.on(`x-reload-media-path-${props.account.id}`, async () => {
-  await reloadMediaPath();
-});
 
 const startJobs = async () => {
   if (model.value.account.xAccount == null) {
@@ -429,22 +423,18 @@ onMounted(async () => {
     console.error("Webview component not found");
   }
 
-  // Emitter for the view model to cancel automation
-  emitter?.on(`cancel-automation-${props.account.id}`, onCancelAutomation);
+  // Setup automation event handlers using composable
+  setupPlatformEventHandlers(automationHandlers);
 
-  // Define automation error handlers on the global emitter for this account
-  emitter?.on(
-    `automation-error-${props.account.id}-retry`,
-    onAutomationErrorRetry,
-  );
-  emitter?.on(
-    `automation-error-${props.account.id}-cancel`,
-    onAutomationErrorCancel,
-  );
-  emitter?.on(
-    `automation-error-${props.account.id}-resume`,
-    onAutomationErrorResume,
-  );
+  // Setup X-specific event handlers
+  setupPlatformEventHandlers({
+    [`x-submit-progress-${props.account.id}`]: async () => {
+      await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
+    },
+    [`x-reload-media-path-${props.account.id}`]: async () => {
+      await reloadMediaPath();
+    },
+  });
 });
 
 onUnmounted(async () => {
@@ -455,23 +445,6 @@ onUnmounted(async () => {
 
   // Make sure the account isn't running and power save blocker is stopped
   await setAccountRunning(props.account.id, false);
-
-  // Remove cancel automation handler
-  emitter?.off(`cancel-automation-${props.account.id}`, onCancelAutomation);
-
-  // Remove automation error handlers
-  emitter?.off(
-    `automation-error-${props.account.id}-retry`,
-    onAutomationErrorRetry,
-  );
-  emitter?.off(
-    `automation-error-${props.account.id}-cancel`,
-    onAutomationErrorCancel,
-  );
-  emitter?.off(
-    `automation-error-${props.account.id}-resume`,
-    onAutomationErrorResume,
-  );
 
   // Cleanup the view controller
   await model.value.cleanup();
