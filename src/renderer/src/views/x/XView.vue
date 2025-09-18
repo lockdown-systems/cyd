@@ -8,7 +8,6 @@ import {
   onUnmounted,
   inject,
   getCurrentInstance,
-  provide,
   computed,
 } from "vue";
 
@@ -102,6 +101,7 @@ const {
   speechBubbleProps,
   automationNoticeProps,
   webviewProps,
+  updateAccount,
   updateUserAuthenticated,
   updateUserPremium,
   setState,
@@ -110,6 +110,8 @@ const {
   setupPlatformEventHandlers,
   createAutomationHandlers,
   cleanup: platformCleanup,
+  setupProviders,
+  initializePlatformView,
 } = usePlatformView(props.account, model, "X");
 
 // Typed computed properties for template usage
@@ -149,11 +151,6 @@ watch(
   },
   { deep: true },
 );
-
-const updateAccount = async () => {
-  await model.value.reloadAccount();
-  emitter?.emit("account-updated");
-};
 
 const archiveOnlyClicked = async () => {
   // Cancel any ongoing wait for URL
@@ -223,9 +220,6 @@ const reloadMediaPath = async () => {
   mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
   console.log("mediaPath", mediaPath.value);
 };
-
-provide("xUpdateUserAuthenticated", updateUserAuthenticated);
-provide("xUpdateUserPremium", updateUserPremium);
 
 const startJobs = async () => {
   if (model.value.account.xAccount == null) {
@@ -369,6 +363,7 @@ const debugModeDisable = async () => {
 
 onMounted(async () => {
   setupAuthListeners();
+  setupProviders();
 
   await reloadMediaPath();
 
@@ -377,7 +372,7 @@ onMounted(async () => {
 
     // Start the state loop
     if (props.account.xAccount !== null) {
-      await model.value.init(webview);
+      await initializePlatformView(webview);
 
       // If there's a saved state from a retry, restore it
       const savedState = localStorage.getItem(

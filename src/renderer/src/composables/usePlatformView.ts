@@ -6,6 +6,7 @@ import {
   type Ref,
   computed,
 } from "vue";
+import type { WebviewTag } from "electron";
 import CydAPIClient, { UserPremiumAPIResponse } from "../../../cyd-api-client";
 import type { Account } from "../../../shared_types";
 import type { DeviceInfo } from "../types";
@@ -17,7 +18,11 @@ import { setAccountRunning } from "../util";
  * like authentication, state management, and progress tracking
  */
 export function usePlatformView<
-  T extends BasePlatformViewModel & { run: () => Promise<void> },
+  T extends BasePlatformViewModel & {
+    run: () => Promise<void>;
+    init: (webview: WebviewTag) => Promise<void>;
+    cleanup: () => void;
+  },
 >(account: Account, model: Ref<T>, platformName: string) {
   // Get dependencies
   const vueInstance = getCurrentInstance();
@@ -120,6 +125,7 @@ export function usePlatformView<
   const updateAccount = async () => {
     console.log("Updating account");
     await model.value.reloadAccount();
+    emitter?.emit("account-updated");
   };
   const setState = async (state: string) => {
     console.log("Setting state", state);
@@ -265,6 +271,41 @@ export function usePlatformView<
   const pause = () => model.value.pause();
   const resume = () => model.value.resume();
 
+  // Lifecycle management
+  const initializePlatformView = async (webview: WebviewTag) => {
+    console.log("Initializing platform view");
+    await model.value.init(webview);
+  };
+
+  const setupProviders = () => {
+    // Setup shared provide statements that components can inject
+    const vueInject = vueInstance?.appContext.app.provide;
+    if (vueInject) {
+      vueInject(
+        `${platformName}UpdateUserAuthenticated`,
+        updateUserAuthenticated,
+      );
+      vueInject(`${platformName}UpdateUserPremium`, updateUserPremium);
+    }
+  };
+
+  const platformCleanup = async () => {
+    console.log("Cleaning up platform view");
+    canStateLoopRun.value = false;
+
+    // Cleanup all registered event handlers
+    registeredHandlers.value.forEach(({ event, handler }) => {
+      emitter?.off(event, handler);
+    });
+    registeredHandlers.value = [];
+
+    // Cleanup account running state
+    await setAccountRunning(account.id, false);
+
+    // Cleanup the view controller
+    await model.value.cleanup();
+  };
+
   return {
     // State
     currentState,
@@ -298,6 +339,9 @@ export function usePlatformView<
     cleanup,
     pause,
     resume,
+    initializePlatformView,
+    setupProviders,
+    platformCleanup,
 
     // Dependencies
     emitter,
