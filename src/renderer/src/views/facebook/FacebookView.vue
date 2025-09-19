@@ -22,6 +22,7 @@ import { openURL } from "../../util";
 import { facebookPostProgress } from "../../util_facebook";
 import FacebookWizardReviewPage from "./FacebookWizardReviewPage.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
+import { FacebookPlatformConfig } from "../../config/platforms/FacebookPlatformConfig";
 
 const props = defineProps<{
   account: Account;
@@ -56,7 +57,7 @@ const {
   emitter,
   apiClient,
   deviceInfo,
-} = usePlatformView(props.account, model, "Facebook");
+} = usePlatformView(props.account, model, FacebookPlatformConfig);
 
 // After composable setup, update model with emitter
 model.value.emitter = emitter;

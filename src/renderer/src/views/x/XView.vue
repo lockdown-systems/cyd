@@ -63,6 +63,7 @@ import {
 import { xRequiresPremium, xPostProgress } from "../../util_x";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
+import { XPlatformConfig } from "../../config/platforms/XPlatformConfig";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -112,7 +113,7 @@ const {
   cleanup: platformCleanup,
   setupProviders,
   initializePlatformView,
-} = usePlatformView(props.account, model, "X");
+} = usePlatformView(props.account, model, XPlatformConfig);
 
 // Typed computed properties for template usage
 const typedProgress = computed(() => progress.value as XProgress | null);

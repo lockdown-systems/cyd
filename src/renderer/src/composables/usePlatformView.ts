@@ -11,6 +11,7 @@ import CydAPIClient, { UserPremiumAPIResponse } from "../../../cyd-api-client";
 import type { Account } from "../../../shared_types";
 import type { DeviceInfo } from "../types";
 import type { BasePlatformViewModel } from "../types/PlatformView";
+import type { PlatformConfig } from "../types/PlatformConfig";
 import { setAccountRunning } from "../util";
 
 /**
@@ -23,7 +24,7 @@ export function usePlatformView<
     init: (webview: WebviewTag) => Promise<void>;
     cleanup: () => void;
   },
->(account: Account, model: Ref<T>, platformName: string) {
+>(account: Account, model: Ref<T>, config: PlatformConfig) {
   // Get dependencies
   const vueInstance = getCurrentInstance();
   const emitter = vueInstance?.appContext.config.globalProperties.emitter;
@@ -121,6 +122,15 @@ export function usePlatformView<
     { deep: true },
   );
 
+  // Feature flag helpers
+  const hasFeature = (feature: keyof typeof config.features) => {
+    return config.features[feature];
+  };
+
+  const requiresPremium = () => {
+    return config.features.hasPremiumGating;
+  };
+
   // Shared methods
   const updateAccount = async () => {
     console.log("Updating account");
@@ -168,6 +178,12 @@ export function usePlatformView<
       return;
     }
 
+    // Only check premium if this platform uses premium gating
+    if (!config.features.hasPremiumGating) {
+      userPremium.value = true; // Always considered premium if platform doesn't use gating
+      return;
+    }
+
     let userPremiumResp: UserPremiumAPIResponse;
     const resp = await apiClient.value.getUserPremium();
     if (resp && "error" in resp === false) {
@@ -184,7 +200,7 @@ export function usePlatformView<
     if (!userPremium.value) {
       console.log("User does not have Premium access");
       emitter?.emit(
-        `${platformName.toLowerCase()}-premium-check-failed-${account.id}`,
+        `${config.name.toLowerCase()}-premium-check-failed-${account.id}`,
       );
     }
 
@@ -194,13 +210,13 @@ export function usePlatformView<
   // Event listeners for authentication
   const setupAuthListeners = () => {
     const signedInHandler = async () => {
-      console.log(`${platformName}View: User signed in`);
+      console.log(`${config.name}View: User signed in`);
       await updateUserAuthenticated();
       await updateUserPremium();
     };
 
     const signedOutHandler = async () => {
-      console.log(`${platformName}View: User signed out`);
+      console.log(`${config.name}View: User signed out`);
       userAuthenticated.value = false;
       userPremium.value = false;
     };
@@ -282,10 +298,10 @@ export function usePlatformView<
     const vueInject = vueInstance?.appContext.app.provide;
     if (vueInject) {
       vueInject(
-        `${platformName}UpdateUserAuthenticated`,
+        `${config.name}UpdateUserAuthenticated`,
         updateUserAuthenticated,
       );
-      vueInject(`${platformName}UpdateUserPremium`, updateUserPremium);
+      vueInject(`${config.name}UpdateUserPremium`, updateUserPremium);
     }
   };
 
@@ -307,6 +323,13 @@ export function usePlatformView<
   };
 
   return {
+    // Configuration
+    config,
+
+    // Feature helpers
+    hasFeature,
+    requiresPremium,
+
     // State
     currentState,
     progress,
