@@ -20,21 +20,6 @@ import AutomationNotice from "../shared_components/AutomationNotice.vue";
 import XProgressComponent from "./XProgressComponent.vue";
 import XJobStatusComponent from "./XJobStatusComponent.vue";
 
-import XWizardDashboard from "./XWizardDashboard.vue";
-import XWizardDatabasePage from "./XWizardDatabasePage.vue";
-import XWizardImportPage from "./XWizardImportPage.vue";
-import XWizardImportingPage from "./XWizardImportingPage.vue";
-import XWizardBuildOptionsPage from "./XWizardBuildOptionsPage.vue";
-import XWizardArchiveOptionsPage from "./XWizardArchiveOptionsPage.vue";
-import XWizardDeleteOptionsPage from "./XWizardDeleteOptionsPage.vue";
-import XWizardReviewPage from "./XWizardReviewPage.vue";
-import XWizardCheckPremium from "./XWizardCheckPremium.vue";
-import XWizardMigrateBluesky from "./XWizardMigrateBluesky.vue";
-import XWizardTombstone from "./XWizardTombstone.vue";
-import XWizardFinished from "./XWizardFinished.vue";
-import XWizardSidebar from "./XWizardSidebar.vue";
-import XWizardArchiveOnly from "./XWizardArchiveOnly.vue";
-
 import XDisplayTweet from "./XDisplayTweet.vue";
 
 import type {
@@ -63,7 +48,7 @@ import {
 import { xRequiresPremium, xPostProgress } from "../../util_x";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
-import { XPlatformConfig } from "../../config/platforms/XPlatformConfig";
+import { getPlatformConfig } from "../../config/platforms";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -88,6 +73,7 @@ const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
 // Use shared platform view composable for authentication and common state
 const {
+  config,
   currentState,
   progress,
   currentJobs,
@@ -113,7 +99,7 @@ const {
   cleanup: platformCleanup,
   setupProviders,
   initializePlatformView,
-} = usePlatformView(props.account, model, XPlatformConfig);
+} = usePlatformView(props.account, model, getPlatformConfig("X")!);
 
 // Typed computed properties for template usage
 const typedProgress = computed(() => progress.value as XProgress | null);
@@ -546,83 +532,13 @@ onUnmounted(async () => {
       >
         <div class="wizard-container d-flex">
           <div class="wizard-content flex-grow-1">
-            <XWizardDashboard
-              v-if="model.state == State.WizardDashboardDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-            />
-
-            <XWizardDatabasePage
-              v-if="model.state == State.WizardDatabaseDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-            />
-
-            <XWizardImportPage
-              v-if="model.state == State.WizardImportStartDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-            />
-
-            <XWizardImportingPage
-              v-if="model.state == State.WizardImportingDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-            />
-
-            <XWizardBuildOptionsPage
-              v-if="model.state == State.WizardBuildOptionsDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-            />
-
-            <XWizardArchiveOptionsPage
-              v-if="model.state == State.WizardArchiveOptionsDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-            />
-
-            <XWizardDeleteOptionsPage
-              v-if="model.state == State.WizardDeleteOptionsDisplay"
+            <!-- Dynamic wizard component rendering based on platform configuration -->
+            <component
+              :is="config.components.wizardPages[model.state]"
+              v-if="config.components.wizardPages[model.state]"
               :model="unref(model)"
               :user-authenticated="userAuthenticated"
               :user-premium="userPremium"
-              @update-account="updateAccount"
-              @set-state="setState($event)"
-            />
-
-            <XWizardReviewPage
-              v-if="model.state == State.WizardReviewDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-              @start-jobs="startJobs"
-            />
-
-            <XWizardCheckPremium
-              v-if="model.state == State.WizardCheckPremiumDisplay"
-              :model="unref(model)"
-              :user-authenticated="userAuthenticated"
-              :user-premium="userPremium"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-              @start-jobs-just-save="startJobsJustSave"
-              @update-user-premium="updateUserPremium"
-            />
-
-            <XWizardMigrateBluesky
-              v-if="model.state == State.WizardMigrateToBlueskyDisplay"
-              :model="unref(model)"
-              :user-authenticated="userAuthenticated"
-              :user-premium="userPremium"
-              @set-state="setState($event)"
-            />
-
-            <XWizardFinished
-              v-if="model.state == State.FinishedRunningJobsDisplay"
-              :model="unref(model)"
               :failure-state-index-likes_-failed-to-retry-after-rate-limit="
                 failureStateIndexLikes_FailedToRetryAfterRateLimit
               "
@@ -630,15 +546,12 @@ onUnmounted(async () => {
                 failureStateIndexTweets_FailedToRetryAfterRateLimit
               "
               @set-state="setState($event)"
+              @update-account="updateAccount"
+              @start-jobs="startJobs"
+              @start-jobs-just-save="startJobsJustSave"
+              @update-user-premium="updateUserPremium"
               @finished-run-again-clicked="finishedRunAgainClicked"
               @on-refresh-clicked="emit('onRefreshClicked')"
-            />
-
-            <XWizardArchiveOnly
-              v-if="model.state == State.WizardArchiveOnlyDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
             />
 
             <!-- Debug state -->
@@ -697,8 +610,12 @@ onUnmounted(async () => {
           </div>
 
           <!-- wizard side bar, hide if archive only -->
-          <XWizardSidebar
-            v-if="model.state != State.WizardArchiveOnly"
+          <component
+            :is="config.components.wizardSidebar"
+            v-if="
+              model.state != State.WizardArchiveOnly &&
+              config.components.wizardSidebar
+            "
             :model="unref(model)"
             @set-state="setState($event)"
             @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged"

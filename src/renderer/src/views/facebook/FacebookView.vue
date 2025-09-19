@@ -5,12 +5,6 @@ import AccountHeader from "../shared_components/AccountHeader.vue";
 import SpeechBubble from "../shared_components/SpeechBubble.vue";
 import AutomationNotice from "../shared_components/AutomationNotice.vue";
 
-import FacebookWizardSidebar from "./FacebookWizardSidebar.vue";
-import FacebookWizardBuildOptionsPage from "./FacebookWizardBuildOptionsPage.vue";
-import FacebookJobStatusComponent from "./FacebookJobStatusComponent.vue";
-import FacebookWizardDeleteOptionsPage from "./FacebookWizardDeleteOptionsPage.vue";
-import FacebookFinishedRunningJobsPage from "./FacebookFinishedRunningJobsPage.vue";
-
 import type { Account, FacebookJob } from "../../../../shared_types";
 import { AutomationErrorType } from "../../automation_errors";
 import {
@@ -20,9 +14,8 @@ import {
 } from "../../view_models/FacebookViewModel";
 import { openURL } from "../../util";
 import { facebookPostProgress } from "../../util_facebook";
-import FacebookWizardReviewPage from "./FacebookWizardReviewPage.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
-import { FacebookPlatformConfig } from "../../config/platforms/FacebookPlatformConfig";
+import { getPlatformConfig } from "../../config/platforms";
 
 const props = defineProps<{
   account: Account;
@@ -37,6 +30,7 @@ const model = ref<FacebookViewModel>(
 
 // Use shared platform view composable for authentication and common state
 const {
+  config,
   currentState,
   progress,
   currentJobs,
@@ -57,7 +51,7 @@ const {
   emitter,
   apiClient,
   deviceInfo,
-} = usePlatformView(props.account, model, FacebookPlatformConfig);
+} = usePlatformView(props.account, model, getPlatformConfig("Facebook")!);
 
 // After composable setup, update model with emitter
 model.value.emitter = emitter;
@@ -267,8 +261,13 @@ onUnmounted(async () => {
 
         <div class="d-flex align-items-center">
           <!-- Job status -->
-          <FacebookJobStatusComponent
-            v-if="typedCurrentJobs.length > 0 && model.state == State.RunJobs"
+          <component
+            :is="config.components.jobStatus"
+            v-if="
+              typedCurrentJobs.length > 0 &&
+              model.state == State.RunJobs &&
+              config.components.jobStatus
+            "
             :jobs="typedCurrentJobs"
             :is-paused="isPaused"
             :clicking-enabled="clickingEnabled"
@@ -330,34 +329,17 @@ onUnmounted(async () => {
       >
         <div class="wizard-container d-flex">
           <div class="wizard-content flex-grow-1">
-            <FacebookWizardBuildOptionsPage
-              v-if="model.state == State.WizardBuildOptionsDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-            />
-
-            <FacebookWizardReviewPage
-              v-if="model.state == State.WizardReviewDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
-              @start-jobs="startJobs"
-              @update-account="updateAccount"
-            />
-
-            <FacebookWizardDeleteOptionsPage
-              v-if="model.state == State.WizardDeleteOptionsDisplay"
+            <!-- Dynamic wizard component rendering based on platform configuration -->
+            <component
+              :is="config.components.wizardPages[model.state]"
+              v-if="config.components.wizardPages[model.state]"
               :model="unref(model)"
               :user-authenticated="userAuthenticated"
               :user-premium="userPremium"
+              @set-state="setState($event)"
               @update-account="updateAccount"
-              @set-state="setState($event)"
-            />
-
-            <FacebookFinishedRunningJobsPage
-              v-if="model.state == State.FinishedRunningJobsDisplay"
-              :model="unref(model)"
-              @set-state="setState($event)"
+              @start-jobs="startJobs"
+              @on-refresh-clicked="emit('onRefreshClicked')"
             />
 
             <!-- Debug state -->
@@ -388,7 +370,9 @@ onUnmounted(async () => {
           </div>
 
           <!-- wizard side bar -->
-          <FacebookWizardSidebar
+          <component
+            :is="config.components.wizardSidebar"
+            v-if="config.components.wizardSidebar"
             :model="unref(model)"
             @set-state="setState($event)"
             @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged"

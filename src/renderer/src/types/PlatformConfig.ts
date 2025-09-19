@@ -60,8 +60,6 @@ export interface PlatformComponents {
   finishedRunningJobs?: Component;
 }
 
-
-
 /**
  * Complete platform configuration interface
  * This defines everything needed to configure a platform view
@@ -84,5 +82,3 @@ export interface PlatformConfig {
  * Registry type for managing multiple platform configurations
  */
 export type PlatformConfigRegistry = Record<string, PlatformConfig>;
-
-
