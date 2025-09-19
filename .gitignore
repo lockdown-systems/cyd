@@ -39,6 +39,9 @@ testdata/dataPath*
 testdata/tmp
 coverage/
 
+# ESLint cache
+.eslintcache
+
 # Other
 CLAUDE.md
 CLAUDE_NOTES.md
