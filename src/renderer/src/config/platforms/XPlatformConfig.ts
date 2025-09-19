@@ -27,8 +27,6 @@ import XLastImportOrBuildComponent from "../../views/x/XLastImportOrBuildCompone
  */
 export const XPlatformConfig: PlatformConfig = {
   name: "X",
-  displayName: "X (Twitter)",
-  version: "1.0.0",
 
   features: {
     hasArchiveOnly: true, // X supports "Archive Only" mode to skip authentication
@@ -36,16 +34,12 @@ export const XPlatformConfig: PlatformConfig = {
     hasComplexImport: true, // X supports multi-step import workflows (zip files, etc.)
     hasMigration: true, // X supports migration to Bluesky
     hasU2FSupport: true, // X supports U2F security keys for 2FA
-    hasAdvancedOptions: true, // X has advanced configuration options
-    hasMultipleExportFormats: true, // X supports multiple export formats
-    hasRateLimitHandling: true, // X requires special rate limiting handling
   },
 
   urls: {
     u2fDocs: "https://docs.cyd.social/docs/x/tips/u2f",
     helpDocs: "https://docs.cyd.social/docs/x",
     migrationDocs: "https://docs.cyd.social/docs/x/migrate-bluesky",
-    advancedDocs: "https://docs.cyd.social/docs/x/tips",
   },
 
   components: {
@@ -72,71 +66,5 @@ export const XPlatformConfig: PlatformConfig = {
       [State.FinishedRunningJobsDisplay]: XWizardFinished,
       [State.WizardArchiveOnlyDisplay]: XWizardArchiveOnly,
     },
-  },
-
-  premium: {
-    features: [
-      "Delete tweets",
-      "Delete retweets",
-      "Delete likes",
-      "Delete bookmarks",
-      "Migrate tweets to Bluesky",
-      "Advanced export options",
-    ],
-    requiredForBasicOps: false, // Basic archiving doesn't require premium
-    requiredForDeletion: true, // Deletion features require premium
-    requiredForMigration: true, // Migration to Bluesky requires premium
-  },
-
-  states: {
-    stateDisplayNames: {
-      [State.WizardStart]: "Starting...",
-      [State.WizardPrestart]: "Preparing",
-      [State.WizardDashboardDisplay]: "Dashboard",
-      [State.WizardDatabaseDisplay]: "Database",
-      [State.WizardImportStartDisplay]: "Import",
-      [State.WizardImportingDisplay]: "Importing...",
-      [State.WizardBuildOptionsDisplay]: "Build Options",
-      [State.WizardArchiveOptionsDisplay]: "Archive Options",
-      [State.WizardDeleteOptionsDisplay]: "Delete Options",
-      [State.WizardReviewDisplay]: "Review",
-      [State.WizardCheckPremiumDisplay]: "Premium Check",
-      [State.WizardMigrateToBlueskyDisplay]: "Migrate to Bluesky",
-      [State.WizardTombstoneDisplay]: "Account Suspended",
-      [State.WizardArchiveOnlyDisplay]: "Archive Only",
-      [State.Login]: "Login",
-      [State.RunJobs]: "Running Jobs",
-      [State.FinishedRunningJobsDisplay]: "Finished",
-      [State.Debug]: "Debug Mode",
-    },
-
-    initialState: State.WizardStart,
-
-    displayStates: [
-      State.WizardDashboardDisplay,
-      State.WizardDatabaseDisplay,
-      State.WizardImportStartDisplay,
-      State.WizardBuildOptionsDisplay,
-      State.WizardArchiveOptionsDisplay,
-      State.WizardDeleteOptionsDisplay,
-      State.WizardReviewDisplay,
-      State.WizardCheckPremiumDisplay,
-      State.WizardMigrateToBlueskyDisplay,
-      State.WizardTombstoneDisplay,
-      State.WizardArchiveOnlyDisplay,
-      State.FinishedRunningJobsDisplay,
-      State.Debug,
-    ],
-
-    authRequiredStates: [
-      State.WizardDeleteOptionsDisplay,
-      State.WizardCheckPremiumDisplay,
-      State.WizardMigrateToBlueskyDisplay,
-    ],
-
-    premiumRequiredStates: [
-      State.WizardDeleteOptionsDisplay,
-      State.WizardMigrateToBlueskyDisplay,
-    ],
   },
 };

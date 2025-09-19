@@ -18,15 +18,6 @@ export interface PlatformFeatures {
 
   /** Does platform support U2F security keys for 2FA? */
   hasU2FSupport: boolean;
-
-  /** Are there advanced configuration options available? */
-  hasAdvancedOptions: boolean;
-
-  /** Does platform support multiple data export formats? */
-  hasMultipleExportFormats: boolean;
-
-  /** Does platform require special handling for rate limiting? */
-  hasRateLimitHandling: boolean;
 }
 
 /**
@@ -41,9 +32,6 @@ export interface PlatformUrls {
 
   /** Migration guides URL (optional, only if hasMigration is true) */
   migrationDocs?: string;
-
-  /** Advanced options documentation (optional, only if hasAdvancedOptions is true) */
-  advancedDocs?: string;
 }
 
 /**
@@ -72,53 +60,15 @@ export interface PlatformComponents {
   finishedRunningJobs?: Component;
 }
 
-/**
- * Platform-specific premium feature configuration
- */
-export interface PlatformPremiumConfig {
-  /** List of premium feature names for this platform */
-  features: string[];
 
-  /** Whether premium is required for basic operations */
-  requiredForBasicOps: boolean;
-
-  /** Whether premium is required for data deletion */
-  requiredForDeletion: boolean;
-
-  /** Whether premium is required for migration features */
-  requiredForMigration: boolean;
-}
-
-/**
- * State machine configuration for platform-specific wizard flows
- */
-export interface PlatformStateConfig {
-  /** Map of state enum values to display names */
-  stateDisplayNames: Record<string, string>;
-
-  /** Initial state when platform view loads */
-  initialState: string;
-
-  /** States that represent display/idle modes (end state loop) */
-  displayStates: string[];
-
-  /** States that require authentication */
-  authRequiredStates: string[];
-
-  /** States that require premium access */
-  premiumRequiredStates: string[];
-}
 
 /**
  * Complete platform configuration interface
  * This defines everything needed to configure a platform view
  */
 export interface PlatformConfig {
-  /** Internal platform identifier (e.g., 'X', 'Facebook') */
+  /** Platform identifier (e.g., 'X', 'Facebook') */
   name: string;
-
-  /** Human-readable platform name (e.g., 'X (Twitter)', 'Facebook') */
-  displayName: string;
 
   /** Platform feature flags */
   features: PlatformFeatures;
@@ -128,15 +78,6 @@ export interface PlatformConfig {
 
   /** Component mapping for the platform */
   components: PlatformComponents;
-
-  /** Premium feature configuration */
-  premium: PlatformPremiumConfig;
-
-  /** State machine configuration */
-  states: PlatformStateConfig;
-
-  /** Platform version (for compatibility checking) */
-  version: string;
 }
 
 /**
@@ -144,16 +85,4 @@ export interface PlatformConfig {
  */
 export type PlatformConfigRegistry = Record<string, PlatformConfig>;
 
-/**
- * Utility type for platform names (used for type safety)
- */
-export type PlatformName = string;
 
-/**
- * Configuration validation result
- */
-export interface PlatformConfigValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-}
