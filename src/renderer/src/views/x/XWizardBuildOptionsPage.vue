@@ -2,10 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { XViewModel, State } from "../../view_models/XViewModel";
 import { setJobsType, getBreadcrumbIcon } from "../../util";
-import type {
-  StandardWizardPageProps,
-  StandardWizardPageEvents,
-} from "../../types/WizardPage";
+import type { StandardWizardPageProps } from "../../types/WizardPage";
 import { useWizardPage } from "../../composables/useWizardPage";
 import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
@@ -18,12 +15,20 @@ interface Props extends StandardWizardPageProps {
 const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<
-  StandardWizardPageEvents & {
-    updateAccount: [];
-    setState: [value: State];
-  }
->();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+  "updateAccount",
+  "setState",
+]);
 
 // Use wizard page composable
 const wizardConfig = {
@@ -45,9 +50,9 @@ const {
   setLoading,
   setProceedEnabled,
   updateFormData,
-  getFormData,
-  handleNext,
-  handleBack,
+  getFormData: _getFormData,
+  handleNext: _handleNext,
+  handleBack: _handleBack,
   isLoading,
   canProceed,
 } = useWizardPage(props, emit, wizardConfig);

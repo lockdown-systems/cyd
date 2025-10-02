@@ -862,18 +862,6 @@ export class BaseViewModel {
     });
   }
 
-  // Pause and resume the jobs
-
-  pause() {
-    this.isPaused = true;
-    this.log("pause", "paused");
-  }
-
-  resume() {
-    this.isPaused = false;
-    this.log("resume", "resumed");
-  }
-
   async waitForPause() {
     if (!this.isPaused) {
       return;

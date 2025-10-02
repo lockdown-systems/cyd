@@ -238,7 +238,7 @@ const electronAPI = {
     ): Promise<XJob | null> => {
       return ipcRenderer.invoke("X:getLastFinishedJob", accountID, jobType);
     },
-    updateJob: (accountID: number, jobJSON: XJob) => {
+    updateJob: (accountID: number, jobJSON: string) => {
       ipcRenderer.invoke("X:updateJob", accountID, jobJSON);
     },
     indexStart: (accountID: number) => {

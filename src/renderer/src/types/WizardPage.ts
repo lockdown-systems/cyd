@@ -44,6 +44,11 @@ export interface StandardWizardPageEvents {
 
   /** Handle refresh action */
   "on-refresh-clicked": () => void;
+
+  /** Navigation button events */
+  "next-clicked": () => void;
+  "back-clicked": () => void;
+  "cancel-clicked": () => void;
 }
 
 /**

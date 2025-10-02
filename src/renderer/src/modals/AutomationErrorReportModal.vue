@@ -375,7 +375,7 @@ onUnmounted(() => {
                         <label>Account type:</label>
                         <span>{{ errorReport.accountType }}</span>
                       </li>
-                      <li v-if="includeSensitiveData && errorReport != ''">
+                      <li v-if="includeSensitiveData && errorReport !== null">
                         <label>Username:</label>
                         <span>{{ errorReport.accountUsername }}</span>
                       </li>

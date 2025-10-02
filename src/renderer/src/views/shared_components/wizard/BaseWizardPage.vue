@@ -4,7 +4,6 @@ import BreadcrumbsComponent from "../BreadcrumbsComponent.vue";
 import ButtonsComponent from "../ButtonsComponent.vue";
 import type {
   StandardWizardPageProps,
-  StandardWizardPageEvents,
   WizardPageConfig,
 } from "../../../types/WizardPage";
 
@@ -66,20 +65,18 @@ const props = withDefaults(defineProps<BaseWizardPageProps>(), {
 });
 
 // Events
-const emit = defineEmits<{
-  // Standard wizard page events
-  "set-state": (state: string) => void;
-  "update-account": () => void;
-  "start-jobs": () => void;
-  "start-jobs-just-save": () => void;
-  "update-user-premium": () => void;
-  "finished-run-again-clicked": () => void;
-  "on-refresh-clicked": () => void;
-  // Navigation button events
-  "next-clicked": () => void;
-  "back-clicked": () => void;
-  "cancel-clicked": () => void;
-}>();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+]);
 
 // Computed configuration
 const pageConfig = computed(() => ({
@@ -98,10 +95,6 @@ const handleNext = () => {
 
 const handleBack = () => {
   emit("back-clicked");
-};
-
-const handleCancel = () => {
-  emit("cancel-clicked");
 };
 
 // Computed breadcrumb configuration

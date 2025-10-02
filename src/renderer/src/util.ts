@@ -98,7 +98,8 @@ export function logObj(obj: any) {
 export async function setAccountRunning(accountID: number, isRunning: boolean) {
   if (isRunning) {
     // Start power save blocker
-    const powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
+    const powerSaveBlockerID =
+      await window.electron.startPowerSaveBlocker(accountID);
     localStorage.setItem(
       `account-${accountID}-power-save-blocker-id`,
       JSON.stringify(powerSaveBlockerID),
@@ -109,7 +110,10 @@ export async function setAccountRunning(accountID: number, isRunning: boolean) {
       `account-${accountID}-power-save-blocker-id`,
     );
     if (powerSaveBlockerID) {
-      window.electron.stopPowerSaveBlocker(JSON.parse(powerSaveBlockerID));
+      window.electron.stopPowerSaveBlocker(
+        accountID,
+        JSON.parse(powerSaveBlockerID),
+      );
       localStorage.removeItem(`account-${accountID}-power-save-blocker-id`);
     }
   }

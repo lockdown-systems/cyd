@@ -21,7 +21,7 @@
     "test": "bash -c 'electron --no-sandbox node_modules/vitest/vitest.mjs run --coverage --run \"${1:-src}\"' --",
     "test:windows": "electron --no-sandbox node_modules/vitest/vitest.mjs run --coverage --run src",
     "test:ci": "electron --no-sandbox node_modules/vitest/vitest.mjs run . --coverage",
-    "lint": "prettier . --check && eslint --cache --max-warnings=0",
+    "lint": "prettier . --check && eslint --cache --max-warnings=0 && vue-tsc --project src/renderer/tsconfig.json --noEmit",
     "fix": "eslint --fix",
     "format": "prettier --write .",
     "config-open": "cp ./config/open.json ./build/config.json",
