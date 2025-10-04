@@ -10,9 +10,9 @@ import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
 } from "../../types_x";
+import { useWizardPageLight } from "../../composables/useWizardPageLight";
 import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import BaseWizardPageLight from "../shared_components/wizard/BaseWizardPageLight.vue";
 
 // Props
 const props = defineProps<{
@@ -25,11 +25,23 @@ const emit = defineEmits<{
   setState: [value: State];
 }>();
 
+// Use wizard page light for state management
+const { isLoading, setLoading } = useWizardPageLight();
+
 // Buttons
+const backClicked = () => {
+  emit("setState", State.WizardDashboard);
+};
+
 const nextClicked = async () => {
-  await saveSettings();
-  setJobsType(props.model.account.id, "tombstone");
-  emit("setState", State.WizardReview);
+  setLoading(true);
+  try {
+    await saveSettings();
+    setJobsType(props.model.account.id, "tombstone");
+    emit("setState", State.WizardReview);
+  } finally {
+    setLoading(false);
+  }
 };
 
 // Settings
@@ -221,243 +233,262 @@ const bioCharactersLeft = computed(() => {
   }
 });
 
+// Dynamic button label based on selections
+const nextButtonLabel = computed(() => {
+  if (updateBanner.value && updateBio.value && lockAccount.value) {
+    return "Update My Banner and Bio, and Lock My Account";
+  } else if (updateBanner.value && updateBio.value) {
+    return "Update My Banner and Bio";
+  } else if (updateBanner.value && lockAccount.value) {
+    return "Update My Banner and Lock My Account";
+  } else if (updateBio.value && lockAccount.value) {
+    return "Update My Bio and Lock My Account";
+  } else if (updateBanner.value) {
+    return "Update My Banner";
+  } else if (updateBio.value) {
+    return "Update My Bio";
+  } else if (lockAccount.value) {
+    return "Lock My Account";
+  } else {
+    return "Select a Checkbox Above to Continue";
+  }
+});
+
+// Next button should be disabled if nothing is selected or bio is too long
+const isNextDisabled = computed(() => {
+  return (
+    !(updateBanner.value || updateBio.value || lockAccount.value) ||
+    (updateBio.value && bioCharactersLeft.value < 0)
+  );
+});
+
 onMounted(async () => {
   console.log("XWizardTombstone", "onMounted");
-  await loadSettings();
+  setLoading(true);
+  try {
+    await loadSettings();
+  } finally {
+    setLoading(false);
+  }
 });
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
+  <BaseWizardPageLight
+    :breadcrumb-props="{
+      buttons: [
         {
           label: 'Dashboard',
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
-      ]"
-      label="Tombstone"
-      :icon="getBreadcrumbIcon('tombstone')"
-    />
+      ],
+      label: 'Tombstone',
+      icon: getBreadcrumbIcon('tombstone'),
+    }"
+    :button-props="{
+      backButtons: [
+        {
+          label: 'Back to Dashboard',
+          action: backClicked,
+          disabled: isLoading,
+        },
+      ],
+      nextButtons: [
+        {
+          label: nextButtonLabel,
+          action: nextClicked,
+          disabled: isLoading || isNextDisabled,
+        },
+      ],
+    }"
+  >
+    <template #content>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>Hello, darkness, my old friend</h2>
+          <p class="text-muted">
+            It's time to move on from X. How can I help you?
+          </p>
 
-    <div class="wizard-scroll-content">
-      <div class="mb-4">
-        <h2>Hello, darkness, my old friend</h2>
-        <p class="text-muted">
-          It's time to move on from X. How can I help you?
-        </p>
-
-        <form @submit.prevent>
-          <div class="mb-3">
-            <div class="form-check">
-              <input
-                id="updateBanner"
-                v-model="updateBanner"
-                type="checkbox"
-                class="form-check-input"
-              />
-              <label class="form-check-label" for="updateBanner"
-                >Update profile banner</label
-              >
-            </div>
-            <div class="indent">
-              <small class="form-text text-muted">
-                Customize the background, show Bluesky or Mastodon icons, and
-                include text about how you escaped.
-              </small>
-            </div>
-          </div>
-          <div class="indent">
-            <div class="mb-1 d-flex align-items-center">
-              <label
-                class="form-check-label me-2 text-nowrap"
-                for="updateBannerBackground"
-              >
-                Background
-              </label>
-              <select
-                id="updateBannerBackground"
-                v-model="updateBannerBackground"
-                class="form-select w-auto"
-                aria-label="Background"
-                :disabled="!updateBanner"
-              >
-                <option value="night">Night</option>
-                <option value="morning">Morning</option>
-              </select>
-            </div>
-            <div class="mb-1 d-flex align-items-center">
-              <label
-                class="form-check-label me-2 text-nowrap"
-                for="updateBannerSocialIcons"
-              >
-                Social icons
-              </label>
-              <select
-                id="updateBannerSocialIcons"
-                v-model="updateBannerSocialIcons"
-                class="form-select w-auto"
-                aria-label="Social icons"
-                :disabled="!updateBanner"
-              >
-                <option value="none">None</option>
-                <option value="bluesky">Bluesky</option>
-                <option value="mastodon">Mastodon</option>
-                <option value="bluesky-mastodon">
-                  Bluesky (left) and Mastodon (right)
-                </option>
-                <option value="mastodon-bluesky">
-                  Mastodon (left) and Bluesky (right)
-                </option>
-              </select>
-            </div>
-            <div class="mb-3 form-check">
-              <input
-                id="updateBannerShowText"
-                v-model="updateBannerShowText"
-                type="checkbox"
-                class="form-check-input"
-                :disabled="!updateBanner"
-              />
-              <label class="form-check-label" for="updateBannerShowText">
-                Include "I escaped from X/Twitter" text
-              </label>
-            </div>
-          </div>
-          <XTombstoneBannerComponent
-            :update-banner="updateBanner"
-            :update-banner-background="updateBannerBackground"
-            :update-banner-social-icons="updateBannerSocialIcons"
-            :update-banner-show-text="updateBannerShowText"
-          />
-          <div class="mb-3">
-            <div class="form-check">
-              <input
-                id="updateBio"
-                v-model="updateBio"
-                type="checkbox"
-                class="form-check-input"
-              />
-              <label class="form-check-label" for="updateBio"
-                >Update bio text</label
-              >
-            </div>
-            <div class="indent">
-              <small class="form-text text-muted">
-                Make sure your new bio text tells your followers that you are
-                leaving X, and where to find you now.
-              </small>
-            </div>
-          </div>
-          <div class="indent">
-            <div class="mb-1">
-              <label for="updateBioText" class="form-label visually-hidden"
-                >Bio text</label
-              >
-              <textarea
-                id="updateBioText"
-                v-model="updateBioText"
-                class="form-control"
-                :class="{ 'form-error': bioCharactersLeft < 0 }"
-                rows="2"
-                :disabled="!updateBio"
-              />
-            </div>
-            <div
-              class="mb-3 text-end form-text small"
-              :class="{
-                'text-danger': bioCharactersLeft < 0,
-                'text-muted': bioCharactersLeft >= 0,
-              }"
-            >
-              {{ bioCharacters }} of 160 characters
-            </div>
-            <p
-              v-if="updateBio && bioCharactersLeft < 0"
-              class="text-danger small"
-            >
-              Your bio is {{ bioCharactersLeft * -1 }} characters too long
-            </p>
+          <form @submit.prevent>
             <div class="mb-3">
               <div class="form-check">
                 <input
-                  id="updateBioCreditCyd"
-                  v-model="updateBioCreditCyd"
+                  id="updateBanner"
+                  v-model="updateBanner"
                   type="checkbox"
                   class="form-check-input"
-                  :disabled="!updateBio"
                 />
-                <label class="form-check-label" for="updateBioCreditCyd">
-                  Link to Cyd's website in bio
-                </label>
+                <label class="form-check-label" for="updateBanner"
+                  >Update profile banner</label
+                >
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  Add "(I escaped X using https://cyd.social)" to the end of
-                  your bio. This uses
-                  {{ tombstoneUpdateBioCreditCydText.length }}
-                  characters, but is appreciated!
+                  Customize the background, show Bluesky or Mastodon icons, and
+                  include text about how you escaped.
                 </small>
               </div>
             </div>
-          </div>
-          <div class="mb-3">
-            <div class="form-check">
-              <input
-                id="lockAccount"
-                v-model="lockAccount"
-                type="checkbox"
-                class="form-check-input"
-              />
-              <label class="form-check-label" for="lockAccount"
-                >Lock account</label
-              >
+            <div class="indent">
+              <div class="mb-1 d-flex align-items-center">
+                <label
+                  class="form-check-label me-2 text-nowrap"
+                  for="updateBannerBackground"
+                >
+                  Background
+                </label>
+                <select
+                  id="updateBannerBackground"
+                  v-model="updateBannerBackground"
+                  class="form-select w-auto"
+                  aria-label="Background"
+                  :disabled="!updateBanner"
+                >
+                  <option value="night">Night</option>
+                  <option value="morning">Morning</option>
+                </select>
+              </div>
+              <div class="mb-1 d-flex align-items-center">
+                <label
+                  class="form-check-label me-2 text-nowrap"
+                  for="updateBannerSocialIcons"
+                >
+                  Social icons
+                </label>
+                <select
+                  id="updateBannerSocialIcons"
+                  v-model="updateBannerSocialIcons"
+                  class="form-select w-auto"
+                  aria-label="Social icons"
+                  :disabled="!updateBanner"
+                >
+                  <option value="none">None</option>
+                  <option value="bluesky">Bluesky</option>
+                  <option value="mastodon">Mastodon</option>
+                  <option value="bluesky-mastodon">
+                    Bluesky (left) and Mastodon (right)
+                  </option>
+                  <option value="mastodon-bluesky">
+                    Mastodon (left) and Bluesky (right)
+                  </option>
+                </select>
+              </div>
+              <div class="mb-3 form-check">
+                <input
+                  id="updateBannerShowText"
+                  v-model="updateBannerShowText"
+                  type="checkbox"
+                  class="form-check-input"
+                  :disabled="!updateBanner"
+                />
+                <label class="form-check-label" for="updateBannerShowText">
+                  Include "I escaped from X/Twitter" text
+                </label>
+              </div>
+            </div>
+            <XTombstoneBannerComponent
+              :update-banner="updateBanner"
+              :update-banner-background="updateBannerBackground"
+              :update-banner-social-icons="updateBannerSocialIcons"
+              :update-banner-show-text="updateBannerShowText"
+            />
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  id="updateBio"
+                  v-model="updateBio"
+                  type="checkbox"
+                  class="form-check-input"
+                />
+                <label class="form-check-label" for="updateBio"
+                  >Update bio text</label
+                >
+              </div>
+              <div class="indent">
+                <small class="form-text text-muted">
+                  Make sure your new bio text tells your followers that you are
+                  leaving X, and where to find you now.
+                </small>
+              </div>
             </div>
             <div class="indent">
-              <small class="form-text text-muted">
-                Enable the "Protect your posts" feature, so only your followers
-                can see your posts.
-              </small>
+              <div class="mb-1">
+                <label for="updateBioText" class="form-label visually-hidden"
+                  >Bio text</label
+                >
+                <textarea
+                  id="updateBioText"
+                  v-model="updateBioText"
+                  class="form-control"
+                  :class="{ 'form-error': bioCharactersLeft < 0 }"
+                  rows="2"
+                  :disabled="!updateBio"
+                />
+              </div>
+              <div
+                class="mb-3 text-end form-text small"
+                :class="{
+                  'text-danger': bioCharactersLeft < 0,
+                  'text-muted': bioCharactersLeft >= 0,
+                }"
+              >
+                {{ bioCharacters }} of 160 characters
+              </div>
+              <p
+                v-if="updateBio && bioCharactersLeft < 0"
+                class="text-danger small"
+              >
+                Your bio is {{ bioCharactersLeft * -1 }} characters too long
+              </p>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input
+                    id="updateBioCreditCyd"
+                    v-model="updateBioCreditCyd"
+                    type="checkbox"
+                    class="form-check-input"
+                    :disabled="!updateBio"
+                  />
+                  <label class="form-check-label" for="updateBioCreditCyd">
+                    Link to Cyd's website in bio
+                  </label>
+                </div>
+                <div class="indent">
+                  <small class="form-text text-muted">
+                    Add "(I escaped X using https://cyd.social)" to the end of
+                    your bio. This uses
+                    {{ tombstoneUpdateBioCreditCydText.length }}
+                    characters, but is appreciated!
+                  </small>
+                </div>
+              </div>
             </div>
-          </div>
-        </form>
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  id="lockAccount"
+                  v-model="lockAccount"
+                  type="checkbox"
+                  class="form-check-input"
+                />
+                <label class="form-check-label" for="lockAccount"
+                  >Lock account</label
+                >
+              </div>
+              <div class="indent">
+                <small class="form-text text-muted">
+                  Enable the "Protect your posts" feature, so only your
+                  followers can see your posts.
+                </small>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[
-        {
-          label: 'Back to Dashboard',
-          action: () => emit('setState', State.WizardDashboard),
-        },
-      ]"
-      :next-buttons="[
-        {
-          label:
-            updateBanner && updateBio && lockAccount
-              ? 'Update My Banner and Bio, and Lock My Account'
-              : updateBanner && updateBio
-                ? 'Update My Banner and Bio'
-                : updateBanner && lockAccount
-                  ? 'Update My Banner and Lock My Account'
-                  : updateBio && lockAccount
-                    ? 'Update My Bio and Lock My Account'
-                    : updateBanner
-                      ? 'Update My Banner'
-                      : updateBio
-                        ? 'Update My Bio'
-                        : lockAccount
-                          ? 'Lock My Account'
-                          : 'Select a Checkbox Above to Continue',
-          action: () => nextClicked,
-          disabled:
-            !(updateBanner || updateBio || lockAccount) ||
-            (updateBio && bioCharactersLeft < 0),
-        },
-      ]"
-    />
-  </div>
+    </template>
+  </BaseWizardPageLight>
 </template>
 
 <style scoped>

@@ -1,115 +1,10 @@
-<template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
-        {
-          label: 'Dashboard',
-          action: () => emit('set-state', 'WizardDashboard'),
-          icon: getBreadcrumbIcon('dashboard'),
-        },
-      ]"
-      label="Import X Archive"
-      :icon="getBreadcrumbIcon('import')"
-    />
-
-    <div class="wizard-scroll-content">
-      <div class="mb-4">
-        <h2 class="mb-3">Import X Archive</h2>
-        <p class="lead text-muted">
-          Can't access your X account? No problem! You can still migrate your
-          tweets to Bluesky using an archive file that you previously downloaded
-          from X.
-        </p>
-      </div>
-
-      <div class="row g-4 mb-4">
-        <div class="col-md-6">
-          <div class="info-card">
-            <div class="card-header">
-              <h4 class="mb-0">What You'll Need</h4>
-            </div>
-            <div class="card-body">
-              <div class="card-item">
-                <i class="fa-solid fa-file-archive text-primary me-3" />
-                <div>
-                  <strong>X Archive File</strong>
-                  <p class="mb-0 small text-muted">
-                    A copy of your X archive that you downloaded earlier
-                  </p>
-                </div>
-              </div>
-              <div class="card-item">
-                <i class="fa-solid fa-crown text-warning me-3" />
-                <div>
-                  <strong>Cyd Premium Plan</strong>
-                  <p class="mb-0 small text-muted">
-                    Required for migrating to Bluesky
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="info-card">
-            <div class="card-header">
-              <h4 class="mb-0">Unavailable Features</h4>
-            </div>
-            <div class="card-body">
-              <div class="card-item">
-                <i class="fa-solid fa-fire text-muted me-3" />
-                <div>
-                  <strong>Can't Delete Data</strong>
-                  <p class="mb-0 small text-muted">
-                    Cyd can't delete data from your account if you're not logged
-                    in
-                  </p>
-                </div>
-              </div>
-              <div class="card-item">
-                <i class="fa-solid fa-floppy-disk text-muted me-3" />
-                <div>
-                  <strong>Can't Save Extra Data</strong>
-                  <p class="mb-0 small text-muted">
-                    Cyd can't save extra data from your account, like HTML
-                    versions of your tweets
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[
-        {
-          label: 'Back to Dashboard',
-          action: goBack,
-          icon: 'fa-solid fa-backward',
-        },
-      ]"
-      :next-buttons="[
-        {
-          label: 'Continue to Import X Archive',
-          action: importArchive,
-        },
-      ]"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { getBreadcrumbIcon } from "../../util";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import BaseWizardPageLight from "../shared_components/wizard/BaseWizardPageLight.vue";
 
 const emit = defineEmits(["set-state", "update-account"]);
 
 const importArchive = async () => {
-  // Move to the import page
   emit("set-state", "WizardImporting");
 };
 
@@ -117,6 +12,109 @@ const goBack = () => {
   emit("set-state", "WizardDashboard");
 };
 </script>
+
+<template>
+  <BaseWizardPageLight
+    :breadcrumb-props="{
+      buttons: [
+        {
+          label: 'Dashboard',
+          action: () => emit('set-state', 'WizardDashboard'),
+          icon: getBreadcrumbIcon('dashboard'),
+        },
+      ],
+      label: 'Import X Archive',
+      icon: getBreadcrumbIcon('import'),
+    }"
+    :button-props="{
+      backButtons: [
+        {
+          label: 'Back to Dashboard',
+          action: goBack,
+        },
+      ],
+      nextButtons: [
+        {
+          label: 'Continue to Import X Archive',
+          action: importArchive,
+        },
+      ],
+    }"
+  >
+    <template #content>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2 class="mb-3">Import X Archive</h2>
+          <p class="lead text-muted">
+            Can't access your X account? No problem! You can still migrate your
+            tweets to Bluesky using an archive file that you previously
+            downloaded from X.
+          </p>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="card-header">
+                <h4 class="mb-0">What You'll Need</h4>
+              </div>
+              <div class="card-body">
+                <div class="card-item">
+                  <i class="fa-solid fa-file-archive text-primary me-3" />
+                  <div>
+                    <strong>X Archive File</strong>
+                    <p class="mb-0 small text-muted">
+                      A copy of your X archive that you downloaded earlier
+                    </p>
+                  </div>
+                </div>
+                <div class="card-item">
+                  <i class="fa-solid fa-crown text-warning me-3" />
+                  <div>
+                    <strong>Cyd Premium Plan</strong>
+                    <p class="mb-0 small text-muted">
+                      Required for migrating to Bluesky
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="info-card">
+              <div class="card-header">
+                <h4 class="mb-0">Unavailable Features</h4>
+              </div>
+              <div class="card-body">
+                <div class="card-item">
+                  <i class="fa-solid fa-fire text-muted me-3" />
+                  <div>
+                    <strong>Can't Delete Data</strong>
+                    <p class="mb-0 small text-muted">
+                      Cyd can't delete data from your account if you're not
+                      logged in
+                    </p>
+                  </div>
+                </div>
+                <div class="card-item">
+                  <i class="fa-solid fa-floppy-disk text-muted me-3" />
+                  <div>
+                    <strong>Can't Save Extra Data</strong>
+                    <p class="mb-0 small text-muted">
+                      Cyd can't save extra data from your account, like HTML
+                      versions of your tweets
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </BaseWizardPageLight>
+</template>
 
 <style scoped>
 .hero-icon {
