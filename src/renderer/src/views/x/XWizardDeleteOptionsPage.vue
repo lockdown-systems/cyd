@@ -3,30 +3,52 @@ import { ref, onMounted, computed } from "vue";
 import { XViewModel, State } from "../../view_models/XViewModel";
 import { xHasSomeData } from "../../util_x";
 import { getBreadcrumbIcon, openURL, setJobsType } from "../../util";
-
+import type { StandardWizardPageProps } from "../../types/WizardPage";
+import { useWizardPage } from "../../composables/useWizardPage";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
 
 // Props
-const props = defineProps<{
+interface Props extends StandardWizardPageProps {
   model: XViewModel;
-  userAuthenticated: boolean;
-  userPremium: boolean;
-}>();
+}
+
+const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<{
-  updateAccount: [];
-  setState: [value: State];
-}>();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+  "updateAccount",
+  "setState",
+]);
 
-// Buttons
-const nextClicked = async () => {
-  await saveSettings();
-  setJobsType(props.model.account.id, "delete");
-  emit("setState", State.WizardReview);
+// Use wizard page composable
+const wizardConfig = {
+  showBreadcrumbs: true,
+  showButtons: true,
+  showBackButton: true,
+  showNextButton: true,
+  showCancelButton: false,
+  buttonText: {
+    back: "Back to Dashboard",
+    next: "Continue to Review",
+  },
+  breadcrumbs: {
+    title: "Delete Options",
+  },
 };
+
+const { setLoading, setProceedEnabled, updateFormData, isLoading, canProceed } =
+  useWizardPage(props, emit, wizardConfig);
 
 // Show more
 const deleteTweetsShowMore = ref(false);
@@ -61,47 +83,100 @@ const deleteBookmarks = ref(false);
 const deleteDMs = ref(false);
 const unfollowEveryone = ref(false);
 
+const hasSomeData = ref(false);
+
+// Custom next handler
+const nextClicked = async () => {
+  await saveSettings();
+  setJobsType(props.model.account.id, "delete");
+  emit("setState", State.WizardReview);
+};
+
+// Custom back handler
+const backClicked = async () => {
+  emit("setState", State.WizardDashboard);
+};
+
+// Check if any delete option is selected
+const hasValidSelection = computed(() => {
+  return (
+    (hasSomeData.value &&
+      (deleteTweets.value ||
+        deleteRetweets.value ||
+        deleteLikes.value ||
+        deleteBookmarks.value ||
+        unfollowEveryone.value ||
+        deleteDMs.value)) ||
+    (!hasSomeData.value && (unfollowEveryone.value || deleteDMs.value))
+  );
+});
+
+// Update proceed state when selection changes
+const updateProceedState = () => {
+  setProceedEnabled(hasValidSelection.value);
+};
+
 const loadSettings = async () => {
   console.log("XWizardDeleteOptionsPage", "loadSettings");
-  const account = await window.electron.database.getAccount(
-    props.model.account?.id,
-  );
-  if (account && account.xAccount) {
-    deleteTweets.value = account.xAccount.deleteTweets;
-    deleteTweetsDaysOld.value = account.xAccount.deleteTweetsDaysOld;
-    deleteTweetsDaysOldEnabled.value =
-      account.xAccount.deleteTweetsDaysOldEnabled;
-    deleteTweetsRetweetsThresholdEnabled.value =
-      account.xAccount.deleteTweetsRetweetsThresholdEnabled;
-    deleteTweetsRetweetsThreshold.value =
-      account.xAccount.deleteTweetsRetweetsThreshold;
-    deleteTweetsLikesThresholdEnabled.value =
-      account.xAccount.deleteTweetsLikesThresholdEnabled;
-    deleteTweetsLikesThreshold.value =
-      account.xAccount.deleteTweetsLikesThreshold;
-    deleteRetweets.value = account.xAccount.deleteRetweets;
-    deleteRetweetsDaysOldEnabled.value =
-      account.xAccount.deleteRetweetsDaysOldEnabled;
-    deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
-    deleteLikes.value = account.xAccount.deleteLikes;
-    deleteBookmarks.value = account.xAccount.deleteBookmarks;
-    deleteDMs.value = account.xAccount.deleteDMs;
-    unfollowEveryone.value = account.xAccount.unfollowEveryone;
-  }
+  setLoading(true);
+  try {
+    const account = await window.electron.database.getAccount(
+      props.model.account?.id,
+    );
+    if (account && account.xAccount) {
+      deleteTweets.value = account.xAccount.deleteTweets;
+      deleteTweetsDaysOld.value = account.xAccount.deleteTweetsDaysOld;
+      deleteTweetsDaysOldEnabled.value =
+        account.xAccount.deleteTweetsDaysOldEnabled;
+      deleteTweetsRetweetsThresholdEnabled.value =
+        account.xAccount.deleteTweetsRetweetsThresholdEnabled;
+      deleteTweetsRetweetsThreshold.value =
+        account.xAccount.deleteTweetsRetweetsThreshold;
+      deleteTweetsLikesThresholdEnabled.value =
+        account.xAccount.deleteTweetsLikesThresholdEnabled;
+      deleteTweetsLikesThreshold.value =
+        account.xAccount.deleteTweetsLikesThreshold;
+      deleteRetweets.value = account.xAccount.deleteRetweets;
+      deleteRetweetsDaysOldEnabled.value =
+        account.xAccount.deleteRetweetsDaysOldEnabled;
+      deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
+      deleteLikes.value = account.xAccount.deleteLikes;
+      deleteBookmarks.value = account.xAccount.deleteBookmarks;
+      deleteDMs.value = account.xAccount.deleteDMs;
+      unfollowEveryone.value = account.xAccount.unfollowEveryone;
 
-  // Should delete tweets show more options?
-  if (
-    deleteTweets.value &&
-    (deleteTweetsDaysOldEnabled.value ||
-      deleteTweetsRetweetsThresholdEnabled.value ||
-      deleteTweetsLikesThresholdEnabled.value)
-  ) {
-    deleteTweetsShowMore.value = true;
-  }
+      // Store in form data
+      updateFormData("deleteTweets", deleteTweets.value);
+      updateFormData(
+        "deleteTweetsDaysOldEnabled",
+        deleteTweetsDaysOldEnabled.value,
+      );
+      updateFormData("deleteTweetsDaysOld", deleteTweetsDaysOld.value);
+      updateFormData("deleteRetweets", deleteRetweets.value);
+      updateFormData("deleteLikes", deleteLikes.value);
+      updateFormData("deleteBookmarks", deleteBookmarks.value);
+      updateFormData("deleteDMs", deleteDMs.value);
+      updateFormData("unfollowEveryone", unfollowEveryone.value);
+    }
 
-  // Should delete retweets show more options?
-  if (deleteRetweets.value && deleteRetweetsDaysOldEnabled.value) {
-    deleteRetweetsShowMore.value = true;
+    // Should delete tweets show more options?
+    if (
+      deleteTweets.value &&
+      (deleteTweetsDaysOldEnabled.value ||
+        deleteTweetsRetweetsThresholdEnabled.value ||
+        deleteTweetsLikesThresholdEnabled.value)
+    ) {
+      deleteTweetsShowMore.value = true;
+    }
+
+    // Should delete retweets show more options?
+    if (deleteRetweets.value && deleteRetweetsDaysOldEnabled.value) {
+      deleteRetweetsShowMore.value = true;
+    }
+
+    updateProceedState();
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -115,45 +190,50 @@ const saveSettings = async () => {
     );
     return;
   }
-  const account = await window.electron.database.getAccount(
-    props.model.account?.id,
-  );
-  if (account && account.xAccount) {
-    account.xAccount.saveMyData = false;
-    account.xAccount.deleteMyData = true;
-    account.xAccount.archiveMyData = false;
 
-    account.xAccount.deleteTweets = deleteTweets.value;
-    account.xAccount.deleteTweetsDaysOldEnabled =
-      deleteTweetsDaysOldEnabled.value;
-    account.xAccount.deleteTweetsDaysOld = deleteTweetsDaysOld.value;
-    account.xAccount.deleteTweetsRetweetsThresholdEnabled =
-      deleteTweetsRetweetsThresholdEnabled.value;
-    account.xAccount.deleteTweetsRetweetsThreshold =
-      deleteTweetsRetweetsThreshold.value;
-    account.xAccount.deleteTweetsLikesThresholdEnabled =
-      deleteTweetsLikesThresholdEnabled.value;
-    account.xAccount.deleteTweetsLikesThreshold =
-      deleteTweetsLikesThreshold.value;
-    account.xAccount.deleteRetweets = deleteRetweets.value;
-    account.xAccount.deleteRetweetsDaysOldEnabled =
-      deleteRetweetsDaysOldEnabled.value;
-    account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
-    account.xAccount.deleteLikes = deleteLikes.value;
-    account.xAccount.deleteBookmarks = deleteBookmarks.value;
-    account.xAccount.deleteDMs = deleteDMs.value;
-    account.xAccount.unfollowEveryone = unfollowEveryone.value;
+  setLoading(true);
+  try {
+    const account = await window.electron.database.getAccount(
+      props.model.account?.id,
+    );
+    if (account && account.xAccount) {
+      account.xAccount.saveMyData = false;
+      account.xAccount.deleteMyData = true;
+      account.xAccount.archiveMyData = false;
 
-    await window.electron.database.saveAccount(JSON.stringify(account));
-    emit("updateAccount");
+      account.xAccount.deleteTweets = deleteTweets.value;
+      account.xAccount.deleteTweetsDaysOldEnabled =
+        deleteTweetsDaysOldEnabled.value;
+      account.xAccount.deleteTweetsDaysOld = deleteTweetsDaysOld.value;
+      account.xAccount.deleteTweetsRetweetsThresholdEnabled =
+        deleteTweetsRetweetsThresholdEnabled.value;
+      account.xAccount.deleteTweetsRetweetsThreshold =
+        deleteTweetsRetweetsThreshold.value;
+      account.xAccount.deleteTweetsLikesThresholdEnabled =
+        deleteTweetsLikesThresholdEnabled.value;
+      account.xAccount.deleteTweetsLikesThreshold =
+        deleteTweetsLikesThreshold.value;
+      account.xAccount.deleteRetweets = deleteRetweets.value;
+      account.xAccount.deleteRetweetsDaysOldEnabled =
+        deleteRetweetsDaysOldEnabled.value;
+      account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
+      account.xAccount.deleteLikes = deleteLikes.value;
+      account.xAccount.deleteBookmarks = deleteBookmarks.value;
+      account.xAccount.deleteDMs = deleteDMs.value;
+      account.xAccount.unfollowEveryone = unfollowEveryone.value;
+
+      await window.electron.database.saveAccount(JSON.stringify(account));
+      emit("updateAccount");
+    }
+  } finally {
+    setLoading(false);
   }
 };
 
-const hasSomeData = ref(false);
-
 onMounted(async () => {
-  await loadSettings();
   hasSomeData.value = await xHasSomeData(props.model.account.id);
+
+  await loadSettings();
 
   if (!hasSomeData.value) {
     deleteTweets.value = false;
@@ -164,20 +244,42 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
+  <BaseWizardPage
+    :model="model"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :config="wizardConfig"
+    :is-loading="isLoading"
+    :can-proceed="canProceed && hasValidSelection"
+    :breadcrumb-props="{
+      buttons: [
         {
           label: 'Dashboard',
-          action: () => emit('setState', State.WizardDashboard),
+          action: backClicked,
           icon: getBreadcrumbIcon('dashboard'),
         },
-      ]"
-      label="Delete Options"
-      :icon="getBreadcrumbIcon('delete')"
-    />
-
-    <div class="wizard-scroll-content">
+      ],
+      label: 'Delete Options',
+      icon: getBreadcrumbIcon('delete'),
+    }"
+    :button-props="{
+      backButtons: [
+        {
+          label: 'Back to Dashboard',
+          action: backClicked,
+          disabled: isLoading,
+        },
+      ],
+      nextButtons: [
+        {
+          label: 'Continue to Review',
+          action: nextClicked,
+          disabled: isLoading || !hasValidSelection,
+        },
+      ],
+    }"
+  >
+    <template #content>
       <div class="mb-4">
         <h2>Delete from X</h2>
         <p class="text-muted">
@@ -205,6 +307,7 @@ onMounted(async () => {
                 type="checkbox"
                 class="form-check-input"
                 :disabled="!hasSomeData"
+                @change="updateProceedState"
               />
               <label
                 class="form-check-label mr-1 text-nowrap"
@@ -377,6 +480,7 @@ onMounted(async () => {
                 type="checkbox"
                 class="form-check-input"
                 :disabled="!hasSomeData"
+                @change="updateProceedState"
               />
               <label
                 class="form-check-label mr-1 text-nowrap"
@@ -452,6 +556,7 @@ onMounted(async () => {
                 v-model="unfollowEveryone"
                 type="checkbox"
                 class="form-check-input"
+                @change="updateProceedState"
               />
               <label
                 class="form-check-label mr-1 text-nowrap"
@@ -479,6 +584,7 @@ onMounted(async () => {
                 type="checkbox"
                 class="form-check-input"
                 :disabled="!hasSomeData"
+                @change="updateProceedState"
               />
               <label
                 class="form-check-label mr-1 text-nowrap"
@@ -521,6 +627,7 @@ onMounted(async () => {
                 v-model="deleteBookmarks"
                 type="checkbox"
                 class="form-check-input"
+                @change="updateProceedState"
               />
               <label
                 class="form-check-label mr-1 text-nowrap"
@@ -554,6 +661,7 @@ onMounted(async () => {
                   v-model="deleteDMs"
                   type="checkbox"
                   class="form-check-input"
+                  @change="updateProceedState"
                 />
                 <label
                   class="form-check-label mr-1 text-nowrap"
@@ -578,34 +686,8 @@ onMounted(async () => {
           </div>
         </div>
       </form>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[
-        {
-          label: 'Back to Dashboard',
-          action: () => emit('setState', State.WizardDashboard),
-        },
-      ]"
-      :next-buttons="[
-        {
-          label: 'Continue to Review',
-          action: nextClicked,
-          disabled:
-            (hasSomeData &&
-              !(
-                deleteTweets ||
-                deleteRetweets ||
-                deleteLikes ||
-                deleteBookmarks ||
-                unfollowEveryone ||
-                deleteDMs
-              )) ||
-            (!hasSomeData && !(unfollowEveryone || deleteDMs)),
-        },
-      ]"
-    />
-  </div>
+    </template>
+  </BaseWizardPage>
 </template>
 
 <style scoped>

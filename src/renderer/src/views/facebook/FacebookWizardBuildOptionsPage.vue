@@ -1,38 +1,92 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { FacebookViewModel, State } from "../../view_models/FacebookViewModel";
-import { setJobsType } from "../../util";
+import { setJobsType, getBreadcrumbIcon } from "../../util";
+import type { StandardWizardPageProps } from "../../types/WizardPage";
+import { useWizardPage } from "../../composables/useWizardPage";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 // Props
-const props = defineProps<{
+interface Props extends StandardWizardPageProps {
   model: FacebookViewModel;
-}>();
+}
+
+const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<{
-  updateAccount: [];
-  setState: [value: State];
-}>();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+  "updateAccount",
+  "setState",
+]);
 
-// Buttons
+// Use wizard page composable
+const wizardConfig = {
+  showBreadcrumbs: true,
+  showButtons: true,
+  showBackButton: false,
+  showNextButton: true,
+  showCancelButton: false,
+  buttonText: {
+    next: "Continue to Review",
+  },
+  breadcrumbs: {
+    title: "Build Options",
+  },
+};
+
+const { setLoading, setProceedEnabled, updateFormData, isLoading, canProceed } =
+  useWizardPage(props, emit, wizardConfig);
+
+// Settings
+const savePosts = ref(false);
+const savePostsHTML = ref(false);
+
+// Custom next handler
 const nextClicked = async () => {
   await saveSettings();
   setJobsType(props.model.account.id, "save");
   emit("setState", State.WizardReview);
 };
 
-// Settings
-const savePosts = ref(false);
-const savePostsHTML = ref(false);
+// Check if any save option is selected
+const hasValidSelection = computed(() => {
+  return savePosts.value;
+});
+
+// Update proceed state when selection changes
+const updateProceedState = () => {
+  setProceedEnabled(hasValidSelection.value);
+};
 
 const loadSettings = async () => {
   console.log("FacebookWizardBuildOptionsPage", "loadSettings");
-  const account = await window.electron.database.getAccount(
-    props.model.account?.id,
-  );
-  if (account && account.facebookAccount) {
-    savePosts.value = account.facebookAccount.savePosts;
-    savePostsHTML.value = account.facebookAccount.savePostsHTML;
+  setLoading(true);
+  try {
+    const account = await window.electron.database.getAccount(
+      props.model.account?.id,
+    );
+    if (account && account.facebookAccount) {
+      savePosts.value = account.facebookAccount.savePosts;
+      savePostsHTML.value = account.facebookAccount.savePostsHTML;
+
+      // Store in form data
+      updateFormData("savePosts", savePosts.value);
+      updateFormData("savePostsHTML", savePostsHTML.value);
+
+      updateProceedState();
+    }
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -46,14 +100,20 @@ const saveSettings = async () => {
     );
     return;
   }
-  const account = await window.electron.database.getAccount(
-    props.model.account?.id,
-  );
-  if (account && account.facebookAccount) {
-    account.facebookAccount.savePosts = savePosts.value;
-    account.facebookAccount.savePostsHTML = savePostsHTML.value;
-    await window.electron.database.saveAccount(JSON.stringify(account));
-    emit("updateAccount");
+
+  setLoading(true);
+  try {
+    const account = await window.electron.database.getAccount(
+      props.model.account?.id,
+    );
+    if (account && account.facebookAccount) {
+      account.facebookAccount.savePosts = savePosts.value;
+      account.facebookAccount.savePostsHTML = savePostsHTML.value;
+      await window.electron.database.saveAccount(JSON.stringify(account));
+      emit("updateAccount");
+    }
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -63,61 +123,76 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="wizard-content container mb-4 mt-3 mx-auto">
-    <div class="mb-4">
-      <h2>Build your local database</h2>
-      <p class="text-muted">You can save posts.</p>
-    </div>
-
-    <form @submit.prevent>
-      <div class="mb-3">
-        <div class="form-check">
-          <input
-            id="savePosts"
-            v-model="savePosts"
-            type="checkbox"
-            class="form-check-input"
-          />
-          <label class="form-check-label" for="savePosts">Save my posts</label>
-        </div>
+  <BaseWizardPage
+    :model="model"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :config="wizardConfig"
+    :is-loading="isLoading"
+    :can-proceed="canProceed && hasValidSelection"
+    :breadcrumb-props="{
+      buttons: [],
+      label: 'Build Options',
+      icon: getBreadcrumbIcon('build'),
+    }"
+    :button-props="{
+      backButtons: [],
+      nextButtons: [
+        {
+          label: 'Continue to Review',
+          action: nextClicked,
+          disabled: isLoading || !hasValidSelection,
+        },
+      ],
+    }"
+  >
+    <template #content>
+      <div class="mb-4">
+        <h2>Build your local database</h2>
+        <p class="text-muted">You can save posts.</p>
       </div>
-      <div class="indent">
+
+      <form @submit.prevent>
         <div class="mb-3">
           <div class="form-check">
             <input
-              id="savePostsHTML"
-              v-model="savePostsHTML"
+              id="savePosts"
+              v-model="savePosts"
               type="checkbox"
               class="form-check-input"
-              :disabled="!savePosts"
+              @change="updateProceedState"
             />
-            <label class="form-check-label" for="savePostsHTML">
-              Save an HTML version of each post
-            </label>
-          </div>
-          <div class="indent">
-            <small class="form-text text-muted">
-              Make an HTML archive of each post, including its comments, which
-              is good for taking screenshots
-              <em>(takes longer)</em>
-            </small>
+            <label class="form-check-label" for="savePosts"
+              >Save my posts</label
+            >
           </div>
         </div>
-      </div>
-
-      <div class="buttons">
-        <button
-          type="submit"
-          class="btn btn-primary text-nowrap m-1"
-          :disabled="!savePosts"
-          @click="nextClicked"
-        >
-          <i class="fa-solid fa-forward" />
-          Continue to Review
-        </button>
-      </div>
-    </form>
-  </div>
+        <div class="indent">
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="savePostsHTML"
+                v-model="savePostsHTML"
+                type="checkbox"
+                class="form-check-input"
+                :disabled="!savePosts"
+              />
+              <label class="form-check-label" for="savePostsHTML">
+                Save an HTML version of each post
+              </label>
+            </div>
+            <div class="indent">
+              <small class="form-text text-muted">
+                Make an HTML archive of each post, including its comments, which
+                is good for taking screenshots
+                <em>(takes longer)</em>
+              </small>
+            </div>
+          </div>
+        </div>
+      </form>
+    </template>
+  </BaseWizardPage>
 </template>
 
 <style scoped></style>

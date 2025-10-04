@@ -1,34 +1,54 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { XViewModel, State } from "../../view_models/XViewModel";
 import type { XDatabaseStats } from "../../../../shared_types";
 import { emptyXDatabaseStats } from "../../../../shared_types";
 import { getBreadcrumbIcon, setJobsType } from "../../util";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import type { StandardWizardPageProps } from "../../types/WizardPage";
+import { useWizardPage } from "../../composables/useWizardPage";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 // Props
-const props = defineProps<{
+interface Props extends StandardWizardPageProps {
   model: XViewModel;
-}>();
+}
+
+const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<{
-  updateAccount: [];
-  setState: [value: State];
-}>();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+  "updateAccount",
+  "setState",
+]);
 
-// Buttons
-const nextClicked = async () => {
-  await saveSettings();
-  setJobsType(props.model.account.id, "archive");
-  emit("setState", State.WizardReview);
+// Use wizard page composable
+const wizardConfig = {
+  showBreadcrumbs: true,
+  showButtons: true,
+  showBackButton: true,
+  showNextButton: true,
+  showCancelButton: false,
+  buttonText: {
+    back: "Back to Local Database",
+    next: "Continue to Review",
+  },
+  breadcrumbs: {
+    title: "Archive Options",
+  },
 };
 
-const backClicked = async () => {
-  await saveSettings();
-  emit("setState", State.WizardDatabase);
-};
+const { setLoading, setProceedEnabled, updateFormData, isLoading, canProceed } =
+  useWizardPage(props, emit, wizardConfig);
 
 // Settings
 const archiveTweetsHTML = ref(false);
@@ -36,42 +56,86 @@ const archiveBookmarks = ref(false);
 const archiveDMs = ref(false);
 
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
+const deleteTweetsCountNotArchived = ref(0);
+
+// Custom next handler
+const nextClicked = async () => {
+  await saveSettings();
+  setJobsType(props.model.account.id, "archive");
+  emit("setState", State.WizardReview);
+};
+
+// Custom back handler
+const backClicked = async () => {
+  await saveSettings();
+  emit("setState", State.WizardDatabase);
+};
+
+// Check if any archive option is selected
+const hasValidSelection = computed(() => {
+  return archiveTweetsHTML.value || archiveBookmarks.value || archiveDMs.value;
+});
+
+// Update proceed state when selection changes
+const updateProceedState = () => {
+  setProceedEnabled(hasValidSelection.value);
+};
 
 const loadSettings = async () => {
-  console.log("XWizardBuildOptionsPage", "loadSettings");
-  const account = await window.electron.database.getAccount(
-    props.model.account?.id,
-  );
-  if (account && account.xAccount) {
-    archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
-    archiveBookmarks.value = account.xAccount.archiveBookmarks;
-    archiveDMs.value = account.xAccount.archiveDMs;
+  console.log("XWizardArchiveOptionsPage", "loadSettings");
+  setLoading(true);
+  try {
+    const account = await window.electron.database.getAccount(
+      props.model.account?.id,
+    );
+    if (account && account.xAccount) {
+      archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
+      archiveBookmarks.value = account.xAccount.archiveBookmarks;
+      archiveDMs.value = account.xAccount.archiveDMs;
+
+      // Store in form data
+      updateFormData("archiveTweetsHTML", archiveTweetsHTML.value);
+      updateFormData("archiveBookmarks", archiveBookmarks.value);
+      updateFormData("archiveDMs", archiveDMs.value);
+
+      updateProceedState();
+    }
+  } finally {
+    setLoading(false);
   }
 };
 
 const saveSettings = async () => {
-  console.log("XWizardBuildOptionsPage", "saveSettings");
+  console.log("XWizardArchiveOptionsPage", "saveSettings");
   if (!props.model.account) {
-    console.error("XWizardBuildOptionsPage", "saveSettings", "account is null");
+    console.error(
+      "XWizardArchiveOptionsPage",
+      "saveSettings",
+      "account is null",
+    );
     return;
   }
-  const account = await window.electron.database.getAccount(
-    props.model.account?.id,
-  );
-  if (account && account.xAccount) {
-    account.xAccount.saveMyData = false;
-    account.xAccount.deleteMyData = false;
-    account.xAccount.archiveMyData = true;
 
-    account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
-    account.xAccount.archiveBookmarks = archiveBookmarks.value;
-    account.xAccount.archiveDMs = archiveDMs.value;
-    await window.electron.database.saveAccount(JSON.stringify(account));
-    emit("updateAccount");
+  setLoading(true);
+  try {
+    const account = await window.electron.database.getAccount(
+      props.model.account?.id,
+    );
+    if (account && account.xAccount) {
+      account.xAccount.saveMyData = false;
+      account.xAccount.deleteMyData = false;
+      account.xAccount.archiveMyData = true;
+
+      account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
+      account.xAccount.archiveBookmarks = archiveBookmarks.value;
+      account.xAccount.archiveDMs = archiveDMs.value;
+      await window.electron.database.saveAccount(JSON.stringify(account));
+      emit("updateAccount");
+    }
+  } finally {
+    setLoading(false);
   }
 };
-
-const deleteTweetsCountNotArchived = ref(0);
 
 onMounted(async () => {
   await loadSettings();
@@ -87,9 +151,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
+  <BaseWizardPage
+    :model="model"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :config="wizardConfig"
+    :is-loading="isLoading"
+    :can-proceed="canProceed && hasValidSelection"
+    :breadcrumb-props="{
+      buttons: [
         {
           label: 'Dashboard',
           action: () => emit('setState', State.WizardDashboard),
@@ -100,12 +170,28 @@ onMounted(async () => {
           action: backClicked,
           icon: getBreadcrumbIcon('database'),
         },
-      ]"
-      label="Archive Options"
-      :icon="getBreadcrumbIcon('build')"
-    />
-
-    <div class="wizard-scroll-content">
+      ],
+      label: 'Archive Options',
+      icon: getBreadcrumbIcon('build'),
+    }"
+    :button-props="{
+      backButtons: [
+        {
+          label: 'Back to Local Database',
+          action: backClicked,
+          disabled: isLoading,
+        },
+      ],
+      nextButtons: [
+        {
+          label: 'Continue to Review',
+          action: nextClicked,
+          disabled: isLoading || !hasValidSelection,
+        },
+      ],
+    }"
+  >
+    <template #content>
       <div class="mb-4">
         <h2>Archive options</h2>
         <p class="text-muted">
@@ -122,6 +208,7 @@ onMounted(async () => {
               v-model="archiveTweetsHTML"
               type="checkbox"
               class="form-check-input"
+              @change="updateProceedState"
             />
             <label class="form-check-label" for="archiveTweetsHTML"
               >Save an HTML version of each tweet</label
@@ -159,6 +246,7 @@ onMounted(async () => {
               v-model="archiveBookmarks"
               type="checkbox"
               class="form-check-input"
+              @change="updateProceedState"
             />
             <label class="form-check-label" for="archiveBookmarks"
               >Save my bookmarks</label
@@ -172,6 +260,7 @@ onMounted(async () => {
               v-model="archiveDMs"
               type="checkbox"
               class="form-check-input"
+              @change="updateProceedState"
             />
             <label class="form-check-label" for="archiveDMs"
               >Save my direct messages</label
@@ -179,19 +268,8 @@ onMounted(async () => {
           </div>
         </div>
       </form>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[{ label: 'Back to Local Database', action: backClicked }]"
-      :next-buttons="[
-        {
-          label: 'Continue to Review',
-          action: nextClicked,
-          disabled: !(archiveTweetsHTML || archiveBookmarks || archiveDMs),
-        },
-      ]"
-    />
-  </div>
+    </template>
+  </BaseWizardPage>
 </template>
 
 <style scoped></style>
