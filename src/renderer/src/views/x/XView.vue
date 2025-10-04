@@ -50,7 +50,6 @@ import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
 import PlatformView from "../PlatformView.vue";
 import XProgressComponent from "./XProgressComponent.vue";
-import XWizardTombstone from "./XWizardTombstone.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -436,15 +435,8 @@ onUnmounted(async () => {
       />
     </template>
 
-    <!-- X-specific wizard content: Tombstone and Debug -->
+    <!-- X-specific wizard content: Debug -->
     <template #wizard-content-extra>
-      <XWizardTombstone
-        v-if="model.state == State.WizardTombstoneDisplay"
-        :model="unref(model)"
-        @set-state="setState($event)"
-        @update-account="updateAccount"
-      />
-
       <div v-if="model.state == State.Debug">
         <p>Debug debug debug!!!</p>
         <p>
