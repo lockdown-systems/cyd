@@ -1,9 +1,3 @@
-import type { Account } from "../../../shared_types";
-
-export interface BasePlatformViewProps {
-  account: Account;
-}
-
 export interface BasePlatformViewModel {
   state: string;
   runJobsState: string;
@@ -16,9 +10,4 @@ export interface BasePlatformViewModel {
   pause: () => void;
   resume: () => void;
   reloadAccount: () => Promise<void>;
-}
-
-export interface PlatformViewEmits {
-  onRefreshClicked: [];
-  onRemoveClicked: [];
 }

@@ -125,6 +125,3 @@ export const PlatformStates = {
   /** X: Display archive only wizard page */
   WizardArchiveOnlyDisplay: "WizardArchiveOnlyDisplay",
 } as const;
-
-export type PlatformState =
-  (typeof PlatformStates)[keyof typeof PlatformStates];
