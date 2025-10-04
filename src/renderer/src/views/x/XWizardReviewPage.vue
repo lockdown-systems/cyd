@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import {
   XViewModel,
   State,
@@ -13,9 +13,10 @@ import {
   emptyXMigrateTweetCounts,
 } from "../../../../shared_types";
 import { xHasSomeData } from "../../util_x";
+import type { StandardWizardPageProps } from "../../types/WizardPage";
 import type { ButtonInfo } from "../../types";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import { useWizardPage } from "../../composables/useWizardPage";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
 import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
@@ -25,25 +26,63 @@ import {
 } from "../../types_x";
 
 // Props
-const props = defineProps<{
+interface Props extends StandardWizardPageProps {
   model: XViewModel;
-}>();
+}
+
+const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<{
-  updateAccount: [];
-  setState: [value: State];
-  startJobs: [];
-}>();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+  "updateAccount",
+  "setState",
+  "startJobs",
+]);
 
-// Buttons
+// Use wizard page composable
+const wizardConfig = {
+  showBreadcrumbs: true,
+  showButtons: true,
+  showBackButton: true,
+  showNextButton: true,
+  showCancelButton: false,
+  breadcrumbs: {
+    title: "Review",
+  },
+};
+
+const { setLoading, isLoading } = useWizardPage(props, emit, wizardConfig);
+
+const jobsType = ref("");
+const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
+const hasSomeData = ref(false);
+const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
+
+const tombstoneUpdateBannerBackground = ref<TombstoneBannerBackground>(
+  TombstoneBannerBackground.Night,
+);
+const tombstoneUpdateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(
+  TombstoneBannerSocialIcons.None,
+);
+
+const deleteTweetsCountNotArchived = ref(0);
+
+// Custom next handler
 const nextClicked = async () => {
   emit("startJobs");
 };
 
-const loading = ref(true);
-const jobsType = ref("");
-
+// Custom back handler
 const backClicked = async () => {
   if (jobsType.value == "delete") {
     emit("setState", State.WizardDeleteOptions);
@@ -59,7 +98,6 @@ const backClicked = async () => {
   } else if (jobsType.value == "tombstone") {
     emit("setState", State.WizardTombstone);
   } else {
-    // Display error
     console.error("Unknown review type:", jobsType.value);
     await window.electron.showError(
       "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
@@ -71,24 +109,103 @@ const archiveClicked = async () => {
   emit("setState", State.WizardArchiveOptions);
 };
 
-// Settings
-const deleteReviewStats = ref<XDeleteReviewStats>(emptyXDeleteReviewStats());
-const hasSomeData = ref(false);
-const tweetCounts = ref<XMigrateTweetCounts>(emptyXMigrateTweetCounts());
+// Dynamic button labels
+const backButtonLabel = computed(() => {
+  if (jobsType.value == "delete") return "Back to Delete Options";
+  if (jobsType.value == "save") return "Back to Build Options";
+  if (jobsType.value == "archive") return "Back to Archive Options";
+  if (
+    jobsType.value == "migrateBluesky" ||
+    jobsType.value == "migrateBlueskyDelete"
+  )
+    return "Back to Migrate to Bluesky Options";
+  if (jobsType.value == "tombstone") return "Back to Tombstone Options";
+  return "";
+});
 
-const tombstoneUpdateBannerBackground = ref<TombstoneBannerBackground>(
-  TombstoneBannerBackground.Night,
-);
-const tombstoneUpdateBannerSocialIcons = ref<TombstoneBannerSocialIcons>(
-  TombstoneBannerSocialIcons.None,
-);
+const nextButtonLabel = computed(() => {
+  if (jobsType.value == "save") return "Build Database";
+  if (jobsType.value == "archive") return "Start Archiving";
+  if (jobsType.value == "delete" || jobsType.value == "migrateBlueskyDelete")
+    return "Start Deleting";
+  if (jobsType.value == "migrateBluesky") return "Start Migrating";
+  if (jobsType.value == "tombstone") return "Update Profile";
+  return "";
+});
 
-const deleteTweetsCountNotArchived = ref(0);
+// Dynamic breadcrumb buttons
+const breadcrumbButtons = computed(() => {
+  const buttons: ButtonInfo[] = [
+    {
+      label: "Dashboard",
+      action: () => emit("setState", State.WizardDashboard),
+      icon: "fa-solid fa-house",
+    },
+  ];
 
-const breadcrumbButtons = ref<ButtonInfo[]>([]);
+  const localDatabaseButton: ButtonInfo = {
+    label: "Local Database",
+    action: () => emit("setState", State.WizardDatabase),
+    icon: getBreadcrumbIcon("database"),
+  };
+
+  if (jobsType.value == "delete") {
+    buttons.push({
+      label: "Delete Options",
+      action: () => emit("setState", State.WizardDeleteOptions),
+      icon: getBreadcrumbIcon("delete"),
+    });
+  } else if (jobsType.value == "save") {
+    buttons.push(localDatabaseButton);
+    buttons.push({
+      label: "Build Options",
+      action: () => emit("setState", State.WizardBuildOptions),
+      icon: getBreadcrumbIcon("build"),
+    });
+  } else if (jobsType.value == "archive") {
+    buttons.push(localDatabaseButton);
+    buttons.push({
+      label: "Archive Options",
+      action: () => emit("setState", State.WizardArchiveOptions),
+      icon: getBreadcrumbIcon("build"),
+    });
+  } else if (
+    jobsType.value == "migrateBluesky" ||
+    jobsType.value == "migrateBlueskyDelete"
+  ) {
+    buttons.push({
+      label: "Migrate to Bluesky Options",
+      action: () => emit("setState", State.WizardMigrateToBluesky),
+      icon: getBreadcrumbIcon("bluesky"),
+    });
+  } else if (jobsType.value == "tombstone") {
+    buttons.push({
+      label: "Tombstone Options",
+      action: () => emit("setState", State.WizardTombstone),
+      icon: getBreadcrumbIcon("tombstone"),
+    });
+  }
+
+  return buttons;
+});
+
+// Next button disabled state
+const isNextDisabled = computed(() => {
+  return (
+    !(
+      props.model.account?.xAccount?.archiveTweets ||
+      props.model.account?.xAccount?.archiveLikes ||
+      props.model.account?.xAccount?.archiveBookmarks ||
+      props.model.account?.xAccount?.archiveDMs
+    ) &&
+    (jobsType.value == "save" ||
+      jobsType.value == "archive" ||
+      jobsType.value == "delete")
+  );
+});
 
 onMounted(async () => {
-  loading.value = true;
+  setLoading(true);
 
   jobsType.value = getJobsType(props.model.account.id) || "";
 
@@ -150,74 +267,46 @@ onMounted(async () => {
     }
   }
 
-  // Define the breadcrumb buttons
-  const localDatabaseButton: ButtonInfo = {
-    label: "Local Database",
-    action: () => emit("setState", State.WizardDatabase),
-    icon: getBreadcrumbIcon("database"),
-  };
-  breadcrumbButtons.value = [
-    {
-      label: "Dashboard",
-      action: () => emit("setState", State.WizardDashboard),
-      icon: "fa-solid fa-house",
-    },
-  ];
-  if (jobsType.value == "delete") {
-    breadcrumbButtons.value.push({
-      label: "Delete Options",
-      action: () => emit("setState", State.WizardDeleteOptions),
-      icon: getBreadcrumbIcon("delete"),
-    });
-  } else if (jobsType.value == "save") {
-    breadcrumbButtons.value.push(localDatabaseButton);
-    breadcrumbButtons.value.push({
-      label: "Build Options",
-      action: () => emit("setState", State.WizardBuildOptions),
-      icon: getBreadcrumbIcon("build"),
-    });
-  } else if (jobsType.value == "archive") {
-    breadcrumbButtons.value.push(localDatabaseButton);
-    breadcrumbButtons.value.push({
-      label: "Archive Options",
-      action: () => emit("setState", State.WizardArchiveOptions),
-      icon: getBreadcrumbIcon("build"),
-    });
-  } else if (
-    jobsType.value == "migrateBluesky" ||
-    jobsType.value == "migrateBlueskyDelete"
-  ) {
-    breadcrumbButtons.value.push({
-      label: "Migrate to Bluesky Options",
-      action: () => emit("setState", State.WizardMigrateToBluesky),
-      icon: getBreadcrumbIcon("bluesky"),
-    });
-  } else if (jobsType.value == "tombstone") {
-    breadcrumbButtons.value.push({
-      label: "Tombstone Options",
-      action: () => emit("setState", State.WizardTombstone),
-      icon: getBreadcrumbIcon("tombstone"),
-    });
-  }
-
-  loading.value = false;
+  setLoading(false);
 });
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="breadcrumbButtons"
-      label="Review"
-      :icon="getBreadcrumbIcon('review')"
-    />
-
-    <div class="wizard-scroll-content">
+  <BaseWizardPage
+    :model="model"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :config="wizardConfig"
+    :is-loading="isLoading"
+    :can-proceed="!isNextDisabled"
+    :breadcrumb-props="{
+      buttons: breadcrumbButtons,
+      label: 'Review',
+      icon: getBreadcrumbIcon('review'),
+    }"
+    :button-props="{
+      backButtons: [
+        {
+          label: backButtonLabel,
+          action: backClicked,
+          disabled: isLoading,
+        },
+      ],
+      nextButtons: [
+        {
+          label: nextButtonLabel,
+          action: nextClicked,
+          disabled: isLoading || isNextDisabled,
+        },
+      ],
+    }"
+  >
+    <template #content>
       <div class="mb-4">
         <h2>Review your choices</h2>
       </div>
 
-      <template v-if="loading">
+      <template v-if="isLoading">
         <LoadingComponent />
       </template>
       <template v-else>
@@ -507,58 +596,8 @@ onMounted(async () => {
         </div>
         <AlertStayAwake />
       </template>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[
-        {
-          label:
-            jobsType == 'delete'
-              ? 'Back to Delete Options'
-              : jobsType == 'save'
-                ? 'Back to Build Options'
-                : jobsType == 'archive'
-                  ? 'Back to Archive Options'
-                  : jobsType == 'migrateBluesky' ||
-                      jobsType == 'migrateBlueskyDelete'
-                    ? 'Back to Migrate to Bluesky Options'
-                    : jobsType == 'tombstone'
-                      ? 'Back to Tombstone Options'
-                      : '',
-          action: backClicked,
-          icon: 'fa-solid fa-backward',
-        },
-      ]"
-      :next-buttons="[
-        {
-          label:
-            jobsType == 'save'
-              ? 'Build Database'
-              : jobsType == 'archive'
-                ? 'Start Archiving'
-                : jobsType == 'delete' || jobsType == 'migrateBlueskyDelete'
-                  ? 'Start Deleting'
-                  : jobsType == 'migrateBluesky'
-                    ? 'Start Migrating'
-                    : jobsType == 'tombstone'
-                      ? 'Update Profile'
-                      : '',
-          action: nextClicked,
-          icon: 'fa-solid fa-forward',
-          disabled:
-            !(
-              model.account?.xAccount?.archiveTweets ||
-              model.account?.xAccount?.archiveLikes ||
-              model.account?.xAccount?.archiveBookmarks ||
-              model.account?.xAccount?.archiveDMs
-            ) &&
-            (jobsType == 'save' ||
-              jobsType == 'archive' ||
-              jobsType == 'delete'),
-        },
-      ]"
-    />
-  </div>
+    </template>
+  </BaseWizardPage>
 </template>
 
 <style scoped></style>

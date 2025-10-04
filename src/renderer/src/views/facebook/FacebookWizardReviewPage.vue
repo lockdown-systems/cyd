@@ -1,35 +1,63 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { FacebookViewModel, State } from "../../view_models/FacebookViewModel";
-import { getJobsType } from "../../util";
+import { getBreadcrumbIcon, getJobsType } from "../../util";
+import type { StandardWizardPageProps } from "../../types/WizardPage";
+import { useWizardPage } from "../../composables/useWizardPage";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
 
 // Props
-const props = defineProps<{
+interface Props extends StandardWizardPageProps {
   model: FacebookViewModel;
-}>();
+}
+
+const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<{
-  updateAccount: [];
-  setState: [value: State];
-  startJobs: [];
-}>();
+const emit = defineEmits([
+  "set-state",
+  "update-account",
+  "start-jobs",
+  "start-jobs-just-save",
+  "update-user-premium",
+  "finished-run-again-clicked",
+  "on-refresh-clicked",
+  "next-clicked",
+  "back-clicked",
+  "cancel-clicked",
+  "updateAccount",
+  "setState",
+  "startJobs",
+]);
 
-// Buttons
+// Use wizard page composable
+const wizardConfig = {
+  showBreadcrumbs: true,
+  showButtons: true,
+  showBackButton: true,
+  showNextButton: true,
+  showCancelButton: false,
+  breadcrumbs: {
+    title: "Review",
+  },
+};
+
+const { setLoading, isLoading } = useWizardPage(props, emit, wizardConfig);
+
+const jobsType = ref("");
+
+// Custom next handler
 const nextClicked = async () => {
   emit("startJobs");
 };
 
-const loading = ref(true);
-const jobsType = ref("");
-
+// Custom back handler
 const backClicked = async () => {
   if (jobsType.value == "save") {
     emit("setState", State.WizardBuildOptions);
   } else {
-    // Display error
     console.error("Unknown review type:", jobsType.value);
     await window.electron.showError(
       "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
@@ -37,70 +65,104 @@ const backClicked = async () => {
   }
 };
 
+// Dynamic button labels
+const backButtonLabel = computed(() => {
+  if (jobsType.value == "save") return "Back to Build Options";
+  return "";
+});
+
+const nextButtonLabel = computed(() => {
+  if (jobsType.value == "save") return "Build Database";
+  return "";
+});
+
+// Dynamic breadcrumb buttons
+const breadcrumbButtons = computed(() => {
+  const buttons = [];
+  if (jobsType.value == "save") {
+    buttons.push({
+      label: "Build Options",
+      action: () => emit("setState", State.WizardBuildOptions),
+      icon: getBreadcrumbIcon("build"),
+    });
+  }
+  return buttons;
+});
+
+// Next button disabled state
+const isNextDisabled = computed(() => {
+  return !props.model.account?.facebookAccount?.savePosts;
+});
+
 onMounted(async () => {
-  loading.value = true;
-
+  setLoading(true);
   jobsType.value = getJobsType(props.model.account.id) || "";
-
-  loading.value = false;
+  setLoading(false);
 });
 </script>
 
 <template>
-  <div class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
-    <div class="mb-4">
-      <h2>Review your choices</h2>
-    </div>
+  <BaseWizardPage
+    :model="model"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :config="wizardConfig"
+    :is-loading="isLoading"
+    :can-proceed="!isNextDisabled"
+    :breadcrumb-props="{
+      buttons: breadcrumbButtons,
+      label: 'Review',
+      icon: getBreadcrumbIcon('review'),
+    }"
+    :button-props="{
+      backButtons: [
+        {
+          label: backButtonLabel,
+          action: backClicked,
+          disabled: isLoading,
+        },
+      ],
+      nextButtons: [
+        {
+          label: nextButtonLabel,
+          action: nextClicked,
+          disabled: isLoading || isNextDisabled,
+        },
+      ],
+    }"
+  >
+    <template #content>
+      <div class="mb-4">
+        <h2>Review your choices</h2>
+      </div>
 
-    <template v-if="loading">
-      <LoadingComponent />
+      <template v-if="isLoading">
+        <LoadingComponent />
+      </template>
+      <template v-else>
+        <form @submit.prevent>
+          <div v-if="jobsType == 'save'">
+            <h3>
+              <i class="fa-solid fa-floppy-disk me-1" />
+              Build a local database
+            </h3>
+            <ul>
+              <li v-if="model.account?.facebookAccount?.savePosts">
+                Save posts
+                <ul>
+                  <li v-if="model.account?.facebookAccount?.savePostsHTML">
+                    Save HTML versions of posts
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </form>
+
+        <AlertStayAwake />
+      </template>
     </template>
-    <template v-else>
-      <form @submit.prevent>
-        <div v-if="jobsType == 'save'">
-          <h3>
-            <i class="fa-solid fa-floppy-disk me-1" />
-            Build a local database
-          </h3>
-          <ul>
-            <li v-if="model.account?.facebookAccount?.savePosts">
-              Save posts
-              <ul>
-                <li v-if="model.account?.facebookAccount?.savePostsHTML">
-                  Save HTML versions of posts
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-
-        <div class="buttons">
-          <button
-            type="submit"
-            class="btn btn-outline-secondary text-nowrap m-1"
-            @click="backClicked"
-          >
-            <i class="fa-solid fa-backward" />
-            <template v-if="jobsType == 'save'">
-              Back to Build Options
-            </template>
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary text-nowrap m-1"
-            :disabled="!model.account?.facebookAccount?.savePosts"
-            @click="nextClicked"
-          >
-            <i class="fa-solid fa-forward" />
-            <template v-if="jobsType == 'save'"> Build Database </template>
-          </button>
-        </div>
-      </form>
-
-      <AlertStayAwake />
-    </template>
-  </div>
+  </BaseWizardPage>
 </template>
 
 <style scoped></style>
