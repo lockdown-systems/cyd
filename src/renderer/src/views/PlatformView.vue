@@ -19,7 +19,7 @@
  * 3. Create platform-specific components (wizards, job status, etc.)
  */
 
-import { unref, computed, type Ref } from "vue";
+import { unref, computed } from "vue";
 import type { Account } from "../../../shared_types";
 import type { PlatformConfig } from "../types/PlatformConfig";
 import type { BasePlatformViewModel } from "../types/PlatformView";
@@ -34,17 +34,17 @@ import { PlatformStates } from "../types/PlatformStates";
 const props = defineProps<{
   account: Account;
   config: PlatformConfig;
-  model: Ref<BasePlatformViewModel>;
+  model: BasePlatformViewModel;
   // Composable outputs
-  currentState: Ref<string>;
-  progress: Ref<unknown>;
-  currentJobs: Ref<unknown[]>;
-  isPaused: Ref<boolean>;
-  clickingEnabled: Ref<boolean>;
-  userAuthenticated: Ref<boolean>;
-  userPremium: Ref<boolean>;
-  speechBubbleComponent: Ref<InstanceType<typeof SpeechBubble> | null>;
-  webviewComponent: Ref<HTMLElement | null>;
+  currentState: string;
+  progress: unknown;
+  currentJobs: unknown[];
+  isPaused: boolean;
+  clickingEnabled: boolean;
+  userAuthenticated: boolean;
+  userPremium: boolean;
+  speechBubbleComponent: InstanceType<typeof SpeechBubble> | null;
+  webviewComponent: HTMLElement | null;
   accountHeaderProps: {
     account: Account;
     showRefreshButton: boolean;
@@ -87,10 +87,10 @@ const emit = defineEmits<{
   setDebugAutopauseEndOfStep: [value: boolean];
 }>();
 
-// Computed values for accessing refs in template
-const modelState = computed(() => props.model.value.state);
-const modelShowBrowser = computed(() => props.model.value.showBrowser);
-const currentJobsLength = computed(() => props.currentJobs.value.length);
+// Computed values for accessing props in template
+const modelState = computed(() => props.model.state);
+const modelShowBrowser = computed(() => props.model.showBrowser);
+const currentJobsLength = computed(() => props.currentJobs.length);
 </script>
 
 <template>

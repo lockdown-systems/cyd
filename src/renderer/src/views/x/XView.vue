@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * XView.vue - X Platform Wrapper
+ *
+ * Thin wrapper around PlatformView that handles X-specific logic:
+ * - XViewModel instantiation
+ * - X-specific state (rateLimitInfo, failure states, mediaPath)
+ * - X-specific methods (archiveOnlyClicked, startJobs, etc.)
+ * - X-specific event handlers
+ */
+
 import {
   Ref,
   ref,
@@ -13,19 +23,9 @@ import {
 
 import CydAPIClient from "../../../../cyd-api-client";
 
-import AccountHeader from "../shared_components/AccountHeader.vue";
-import SpeechBubble from "../shared_components/SpeechBubble.vue";
-import AutomationNotice from "../shared_components/AutomationNotice.vue";
-
-import XProgressComponent from "./XProgressComponent.vue";
-import XJobStatusComponent from "./XJobStatusComponent.vue";
-
-import XDisplayTweet from "./XDisplayTweet.vue";
-
 import type {
   Account,
   XProgress,
-  XJob,
   XRateLimitInfo,
 } from "../../../../shared_types";
 import type { DeviceInfo } from "../../types";
@@ -33,22 +33,22 @@ import { AutomationErrorType } from "../../automation_errors";
 import {
   XViewModel,
   State,
-  RunJobsState,
   FailureState,
   XViewModelState,
 } from "../../view_models/XViewModel";
 import {
   setAccountRunning,
   showQuestionOpenModePremiumFeature,
-  openURL,
   setPremiumTasks,
   getJobsType,
   formatError,
 } from "../../util";
 import { xRequiresPremium, xPostProgress } from "../../util_x";
-import LoadingComponent from "../shared_components/LoadingComponent.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
+import PlatformView from "../PlatformView.vue";
+import XProgressComponent from "./XProgressComponent.vue";
+import XWizardTombstone from "./XWizardTombstone.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -63,15 +63,16 @@ const emit = defineEmits(["onRefreshClicked", "onRemoveClicked"]);
 const apiClient = inject("apiClient") as Ref<CydAPIClient>;
 const deviceInfo = inject("deviceInfo") as Ref<DeviceInfo | null>;
 
+// X-specific state
 const failureStateIndexTweets_FailedToRetryAfterRateLimit = ref(false);
 const failureStateIndexLikes_FailedToRetryAfterRateLimit = ref(false);
-
 const rateLimitInfo = ref<XRateLimitInfo | null>(null);
+const mediaPath = ref("");
 
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
-// Use shared platform view composable for authentication and common state
+// Use shared platform view composable
 const {
   config,
   currentState,
@@ -103,9 +104,8 @@ const {
 
 // Typed computed properties for template usage
 const typedProgress = computed(() => progress.value as XProgress | null);
-const typedCurrentJobs = computed(() => currentJobs.value as XJob[]);
 
-// X-specific state watcher for failure states (composable handles basic state sync)
+// X-specific state watcher for failure states
 watch(
   () => model.value.state,
   async (newState) => {
@@ -139,8 +139,8 @@ watch(
   { deep: true },
 );
 
+// X-specific methods
 const archiveOnlyClicked = async () => {
-  // Cancel any ongoing wait for URL
   model.value.cancelWaitForURL = true;
   await setState(State.WizardArchiveOnly.toString());
 };
@@ -148,11 +148,9 @@ const archiveOnlyClicked = async () => {
 const onAutomationErrorRetry = async () => {
   console.log("Retrying automation after error");
 
-  // If we're currently on the finished page, then move back to the review page
   if (model.value.state == State.FinishedRunningJobsDisplay) {
     await setState(State.WizardReview.toString());
   } else {
-    // Store the state of the view model before the error
     const state: XViewModelState | undefined = model.value.saveState();
     localStorage.setItem(
       `account-${props.account.id}-state`,
@@ -164,30 +162,21 @@ const onAutomationErrorRetry = async () => {
 
 const onCancelAutomation = () => {
   console.log("Cancelling automation");
-
-  // Submit progress to the API
   emitter?.emit(`x-submit-progress-${props.account.id}`);
-
   emit("onRefreshClicked");
 };
 
-// Create automation handlers using composable
 const automationHandlers = createAutomationHandlers(
-  () => emit("onRefreshClicked"), // onRefresh
-  onAutomationErrorRetry, // onRetry (X-specific)
+  () => emit("onRefreshClicked"),
+  onAutomationErrorRetry,
 );
 
-// Override the cancel handler to include X-specific logic
 automationHandlers[`cancel-automation-${props.account.id}`] =
   onCancelAutomation;
 
 const onReportBug = async () => {
   console.log("Report bug clicked");
-
-  // Pause
   model.value.pause();
-
-  // Submit error report
   await model.value.error(
     AutomationErrorType.X_manualBugReport,
     {
@@ -200,9 +189,6 @@ const onReportBug = async () => {
   );
 };
 
-// Media path
-const mediaPath = ref("");
-
 const reloadMediaPath = async () => {
   mediaPath.value = await window.electron.X.getMediaPath(props.account.id);
   console.log("mediaPath", mediaPath.value);
@@ -214,9 +200,7 @@ const startJobs = async () => {
     return;
   }
 
-  // If in archive-only mode, skip authentication checks
   if (model.value.account.xAccount.archiveOnly) {
-    // Log value of archiveOnly
     console.log("archiveOnly", model.value.account.xAccount.archiveOnly);
     await model.value.defineJobs();
     model.value.state = State.RunJobs;
@@ -224,7 +208,6 @@ const startJobs = async () => {
     return;
   }
 
-  // Premium check
   if (
     model.value.account?.xAccount &&
     (await xRequiresPremium(
@@ -232,22 +215,17 @@ const startJobs = async () => {
       model.value.account.xAccount,
     ))
   ) {
-    // In open mode, allow the user to continue
     if ((await window.electron.getMode()) == "open") {
       if (!(await showQuestionOpenModePremiumFeature())) {
         return;
       }
-    }
-    // Otherwise, make sure the user is authenticated
-    else {
-      // Determine the premium check reason and tasks -- defaults to deleting data
+    } else {
       const jobsType = getJobsType(model.value.account.id);
       let premiumTasks: string[] = [];
       if (jobsType == "migrateBluesky") {
         premiumTasks = ["Migrate tweets to Bluesky"];
       }
 
-      // If the user is not authenticated, go to premium check
       await updateUserAuthenticated();
       console.log("userAuthenticated", userAuthenticated.value);
       if (!userAuthenticated.value) {
@@ -257,7 +235,6 @@ const startJobs = async () => {
         return;
       }
 
-      // If the user is authenticated but does not have a premium plan, go to premium check
       await updateUserPremium();
       console.log("userPremium", userPremium.value);
       if (!userPremium.value) {
@@ -269,7 +246,6 @@ const startJobs = async () => {
     }
   }
 
-  // All good, start the jobs
   console.log("Starting jobs");
   await model.value.defineJobs();
   model.value.state = State.RunJobs;
@@ -304,7 +280,6 @@ const finishedRunAgainClicked = async () => {
 };
 
 // Debug functions
-
 const debugAutopauseEndOfStepChanged = async (value: boolean) => {
   model.value.debugAutopauseEndOfStep = value;
 };
@@ -347,7 +322,6 @@ const debugModeDisable = async () => {
 };
 
 // Lifecycle
-
 onMounted(async () => {
   setupAuthListeners();
   setupProviders();
@@ -357,11 +331,9 @@ onMounted(async () => {
   if (webviewComponent.value !== null) {
     const webview = webviewComponent.value;
 
-    // Start the state loop
     if (props.account.xAccount !== null) {
       await initializePlatformView(webview);
 
-      // If there's a saved state from a retry, restore it
       const savedState = localStorage.getItem(
         `account-${props.account.id}-state`,
       );
@@ -383,10 +355,9 @@ onMounted(async () => {
     console.error("Webview component not found");
   }
 
-  // Setup automation event handlers using composable
   setupPlatformEventHandlers(automationHandlers);
 
-  // Setup X-specific event handlers
+  // X-specific event handlers
   setupPlatformEventHandlers({
     [`x-submit-progress-${props.account.id}`]: async () => {
       await xPostProgress(apiClient.value, deviceInfo.value, props.account.id);
@@ -399,235 +370,125 @@ onMounted(async () => {
 
 onUnmounted(async () => {
   canStateLoopRun.value = false;
-
-  // Cleanup platform composable
   await platformCleanup();
-
-  // Make sure the account isn't running and power save blocker is stopped
   await setAccountRunning(props.account.id, false);
-
-  // Cleanup the view controller
   await model.value.cleanup();
 });
 </script>
 
 <template>
-  <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
-    <AccountHeader
-      v-bind="accountHeaderProps"
-      @on-refresh-clicked="emit('onRefreshClicked')"
-      @on-remove-clicked="emit('onRemoveClicked')"
-    />
-
-    <template v-if="model.state == State.WizardStart">
-      <LoadingComponent />
+  <PlatformView
+    :account="account"
+    :config="config"
+    :model="model"
+    :current-state="currentState"
+    :progress="progress"
+    :current-jobs="currentJobs"
+    :is-paused="isPaused"
+    :clicking-enabled="clickingEnabled"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :speech-bubble-component="speechBubbleComponent"
+    :webview-component="webviewComponent"
+    :account-header-props="accountHeaderProps"
+    :speech-bubble-props="speechBubbleProps"
+    :automation-notice-props="automationNoticeProps"
+    :webview-props="webviewProps"
+    @on-refresh-clicked="emit('onRefreshClicked')"
+    @on-remove-clicked="emit('onRemoveClicked')"
+    @set-state="setState($event)"
+    @update-account="updateAccount"
+    @start-jobs="startJobs"
+    @start-jobs-just-save="startJobsJustSave"
+    @finished-run-again-clicked="finishedRunAgainClicked"
+    @update-user-premium="updateUserPremium"
+    @archive-only-clicked="archiveOnlyClicked"
+    @on-pause="model.pause()"
+    @on-resume="model.resume()"
+    @on-cancel="emit('onRefreshClicked')"
+    @on-report-bug="onReportBug"
+    @on-clicking-enabled="clickingEnabled = true"
+    @on-clicking-disabled="clickingEnabled = false"
+    @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged"
+  >
+    <!-- X-specific progress extra: rate limit info -->
+    <template #progress-extra>
+      <XProgressComponent
+        v-if="rateLimitInfo && rateLimitInfo.isRateLimited"
+        :progress="typedProgress"
+        :rate-limit-info="rateLimitInfo"
+        :account-i-d="account.id"
+      />
     </template>
 
-    <template v-if="model.state != State.WizardStart">
-      <div class="d-flex ms-2">
-        <div class="d-flex flex-column flex-grow-1">
-          <!-- Speech bubble -->
-          <SpeechBubble
-            ref="speechBubbleComponent"
-            v-bind="speechBubbleProps"
-            class="mb-2"
-            :class="{ 'w-100': currentJobs.length === 0 }"
-          />
-
-          <!-- Progress -->
-          <XProgressComponent
-            v-if="
-              ((rateLimitInfo && rateLimitInfo.isRateLimited) || progress) &&
-              model.state == State.RunJobs
-            "
-            :progress="typedProgress"
-            :rate-limit-info="rateLimitInfo"
-            :account-i-d="account.id"
-          />
-        </div>
-
-        <div class="d-flex align-items-center">
-          <!-- Job status -->
-          <XJobStatusComponent
-            v-if="currentJobs.length > 0 && model.state == State.RunJobs"
-            :jobs="typedCurrentJobs"
-            :is-paused="isPaused"
-            :clicking-enabled="clickingEnabled"
-            class="job-status-component"
-            @on-pause="model.pause()"
-            @on-resume="model.resume()"
-            @on-cancel="emit('onRefreshClicked')"
-            @on-report-bug="onReportBug"
-            @on-clicking-enabled="clickingEnabled = true"
-            @on-clicking-disabled="clickingEnabled = false"
-          />
-        </div>
-      </div>
-
-      <!-- U2F security key notice -->
-      <p
-        v-if="model.state == State.Login"
-        class="u2f-info text-center text-muted small ms-2"
+    <!-- X-specific wizard page props -->
+    <template #wizard-page-extra>
+      <template
+        v-if="
+          config.components.wizardPages[model.state] &&
+          (model.state == State.WizardReviewDisplay ||
+            model.state == State.WizardDeleteOptionsDisplay)
+        "
       >
-        <i class="fa-solid fa-circle-info me-2" />
-        If you use a U2F security key (like a Yubikey) for 2FA, press it when
-        you see a white screen.
-        <a href="#" @click="openURL('https://docs.cyd.social/docs/x/tips/u2f')"
-          >Read more</a
-        >.
-      </p>
-
-      <!-- Archive only option -->
-      <div v-if="model.state == State.Login" class="text-center ms-2 mt-2 mb-4">
-        <button class="btn btn-secondary" @click="archiveOnlyClicked">
-          Import Archive Only (for deleted X accounts with an archive)
-        </button>
-      </div>
-
-      <AutomationNotice v-bind="automationNoticeProps" />
+        <!-- Pass failure state props to wizard pages that need them -->
+        <component
+          :is="config.components.wizardPages[model.state]"
+          :model="unref(model)"
+          :user-authenticated="userAuthenticated"
+          :user-premium="userPremium"
+          :failure-state-index-likes_-failed-to-retry-after-rate-limit="
+            failureStateIndexLikes_FailedToRetryAfterRateLimit
+          "
+          :failure-state-index-tweets_-failed-to-retry-after-rate-limit="
+            failureStateIndexTweets_FailedToRetryAfterRateLimit
+          "
+          @set-state="setState($event)"
+          @update-account="updateAccount"
+          @start-jobs="startJobs"
+          @start-jobs-just-save="startJobsJustSave"
+          @update-user-premium="updateUserPremium"
+          @finished-run-again-clicked="finishedRunAgainClicked"
+          @on-refresh-clicked="emit('onRefreshClicked')"
+        />
+      </template>
     </template>
 
-    <!-- Webview -->
-    <webview ref="webviewComponent" v-bind="webviewProps" />
+    <!-- X-specific wizard content: Tombstone and Debug -->
+    <template #wizard-content-extra>
+      <XWizardTombstone
+        v-if="model.state == State.WizardTombstoneDisplay"
+        :model="unref(model)"
+        @set-state="setState($event)"
+        @update-account="updateAccount"
+      />
 
-    <template v-if="model.state != State.WizardStart">
-      <!-- RunJobs states -->
-      <div
-        :class="{
-          hidden:
-            model.showBrowser ||
-            !(
-              model.state == State.RunJobs &&
-              model.runJobsState != RunJobsState.Default
-            ),
-          'run-jobs-state': true,
-          'ms-2': true,
-        }"
-      >
-        <div class="run-jobs-state-container d-flex">
-          <div class="run-jobs-state-content flex-grow-1">
-            <XDisplayTweet
-              v-if="
-                model.runJobsState == RunJobsState.DeleteTweets ||
-                model.runJobsState == RunJobsState.DeleteRetweets ||
-                model.runJobsState == RunJobsState.DeleteLikes ||
-                model.runJobsState == RunJobsState.DeleteBookmarks ||
-                model.runJobsState == RunJobsState.MigrateBluesky ||
-                model.runJobsState == RunJobsState.MigrateBlueskyDelete
-              "
-              :model="unref(model)"
-              :media-path="mediaPath"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Wizard -->
-      <div
-        :class="{
-          hidden: model.showBrowser || model.state == State.RunJobs,
-          wizard: true,
-          'ms-2': true,
-        }"
-      >
-        <div class="wizard-container d-flex">
-          <div class="wizard-content flex-grow-1">
-            <!-- Dynamic wizard component rendering based on platform configuration -->
-            <component
-              :is="config.components.wizardPages[model.state]"
-              v-if="config.components.wizardPages[model.state]"
-              :model="unref(model)"
-              :user-authenticated="userAuthenticated"
-              :user-premium="userPremium"
-              :failure-state-index-likes_-failed-to-retry-after-rate-limit="
-                failureStateIndexLikes_FailedToRetryAfterRateLimit
-              "
-              :failure-state-index-tweets_-failed-to-retry-after-rate-limit="
-                failureStateIndexTweets_FailedToRetryAfterRateLimit
-              "
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-              @start-jobs="startJobs"
-              @start-jobs-just-save="startJobsJustSave"
-              @update-user-premium="updateUserPremium"
-              @finished-run-again-clicked="finishedRunAgainClicked"
-              @on-refresh-clicked="emit('onRefreshClicked')"
-            />
-
-            <!-- Debug state -->
-            <div v-if="model.state == State.Debug">
-              <p>Debug debug debug!!!</p>
-              <p>
-                <button
-                  class="btn btn-danger"
-                  @click="debugModeTriggerError(1)"
-                >
-                  Trigger Error
-                </button>
-              </p>
-              <p>
-                <button
-                  class="btn btn-danger"
-                  @click="debugModeTriggerError(3)"
-                >
-                  Trigger 3 Errors
-                </button>
-              </p>
-              <p>
-                <button class="btn btn-primary" @click="debugModeDisable">
-                  Cancel Debug Mode
-                </button>
-              </p>
-            </div>
-          </div>
-
-          <!-- Add the XWizardTombstone component -->
-          <XWizardTombstone
-            v-if="model.state == State.WizardTombstoneDisplay"
-            :model="unref(model)"
-            @set-state="setState($event)"
-            @update-account="updateAccount"
-          />
-
-          <!-- Debug state -->
-          <div v-if="model.state == State.Debug">
-            <p>Debug debug debug!!!</p>
-            <p>
-              <button class="btn btn-danger" @click="debugModeTriggerError(1)">
-                Trigger Error
-              </button>
-            </p>
-            <p>
-              <button class="btn btn-danger" @click="debugModeTriggerError(3)">
-                Trigger 3 Errors
-              </button>
-            </p>
-            <p>
-              <button class="btn btn-primary" @click="debugModeDisable">
-                Cancel Debug Mode
-              </button>
-            </p>
-          </div>
-
-          <!-- wizard side bar, hide if archive only -->
-          <component
-            :is="config.components.wizardSidebar"
-            v-if="
-              model.state != State.WizardArchiveOnly &&
-              config.components.wizardSidebar
-            "
-            :model="unref(model)"
-            @set-state="setState($event)"
-            @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged"
-          />
-        </div>
+      <div v-if="model.state == State.Debug">
+        <p>Debug debug debug!!!</p>
+        <p>
+          <button class="btn btn-danger" @click="debugModeTriggerError(1)">
+            Trigger Error
+          </button>
+        </p>
+        <p>
+          <button class="btn btn-danger" @click="debugModeTriggerError(3)">
+            Trigger 3 Errors
+          </button>
+        </p>
+        <p>
+          <button class="btn btn-primary" @click="debugModeDisable">
+            Cancel Debug Mode
+          </button>
+        </p>
       </div>
     </template>
-  </div>
+
+    <!-- X-specific display content props: media path -->
+    <template #display-content-extra>
+      <component
+        :is="config.components.displayContent"
+        :model="unref(model)"
+        :media-path="mediaPath"
+      />
+    </template>
+  </PlatformView>
 </template>
-
-<style scoped>
-.job-status-component {
-  width: 220px;
-}
-</style>
