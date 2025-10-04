@@ -394,6 +394,13 @@ onUnmounted(async () => {
     :speech-bubble-props="speechBubbleProps"
     :automation-notice-props="automationNoticeProps"
     :webview-props="webviewProps"
+    :display-content-props="{ mediaPath }"
+    :wizard-page-props="{
+      failureStateIndexLikes_FailedToRetryAfterRateLimit:
+        failureStateIndexLikes_FailedToRetryAfterRateLimit,
+      failureStateIndexTweets_FailedToRetryAfterRateLimit:
+        failureStateIndexTweets_FailedToRetryAfterRateLimit,
+    }"
     @on-refresh-clicked="emit('onRefreshClicked')"
     @on-remove-clicked="emit('onRemoveClicked')"
     @set-state="setState($event)"
@@ -421,37 +428,6 @@ onUnmounted(async () => {
       />
     </template>
 
-    <!-- X-specific wizard page props -->
-    <template #wizard-page-extra>
-      <template
-        v-if="
-          config.components.wizardPages[model.state] &&
-          (model.state == State.WizardReviewDisplay ||
-            model.state == State.WizardDeleteOptionsDisplay)
-        "
-      >
-        <!-- Pass failure state props to wizard pages that need them -->
-        <component
-          :is="config.components.wizardPages[model.state]"
-          :model="unref(model)"
-          :user-authenticated="userAuthenticated"
-          :user-premium="userPremium"
-          :failure-state-index-likes_-failed-to-retry-after-rate-limit="
-            failureStateIndexLikes_FailedToRetryAfterRateLimit
-          "
-          :failure-state-index-tweets_-failed-to-retry-after-rate-limit="
-            failureStateIndexTweets_FailedToRetryAfterRateLimit
-          "
-          @set-state="setState($event)"
-          @update-account="updateAccount"
-          @start-jobs="startJobs"
-          @start-jobs-just-save="startJobsJustSave"
-          @update-user-premium="updateUserPremium"
-          @finished-run-again-clicked="finishedRunAgainClicked"
-          @on-refresh-clicked="emit('onRefreshClicked')"
-        />
-      </template>
-    </template>
 
     <!-- X-specific wizard content: Tombstone and Debug -->
     <template #wizard-content-extra>
@@ -482,13 +458,5 @@ onUnmounted(async () => {
       </div>
     </template>
 
-    <!-- X-specific display content props: media path -->
-    <template #display-content-extra>
-      <component
-        :is="config.components.displayContent"
-        :model="unref(model)"
-        :media-path="mediaPath"
-      />
-    </template>
   </PlatformView>
 </template>

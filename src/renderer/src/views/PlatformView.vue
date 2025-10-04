@@ -57,6 +57,9 @@ const props = defineProps<{
     showAutomationNotice: boolean;
   };
   webviewProps: Record<string, unknown>;
+  // Platform-specific props
+  displayContentProps?: Record<string, unknown>;
+  wizardPageProps?: Record<string, unknown>;
 }>();
 
 const emit = defineEmits<{
@@ -204,6 +207,7 @@ const currentJobsLength = computed(() => props.currentJobs.length);
             <component
               :is="config.components.displayContent"
               :model="unref(model)"
+              v-bind="displayContentProps"
             >
               <!-- Slot for additional display content props -->
               <slot name="display-content-extra" :model="model" />
@@ -229,6 +233,7 @@ const currentJobsLength = computed(() => props.currentJobs.length);
               :model="unref(model)"
               :user-authenticated="userAuthenticated"
               :user-premium="userPremium"
+              v-bind="wizardPageProps"
               @set-state="emit('setState', $event)"
               @update-account="emit('updateAccount')"
               @start-jobs="emit('startJobs')"
