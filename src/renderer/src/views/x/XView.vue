@@ -19,6 +19,7 @@ import {
   inject,
   getCurrentInstance,
   computed,
+  nextTick,
 } from "vue";
 
 import CydAPIClient from "../../../../cyd-api-client";
@@ -328,6 +329,9 @@ onMounted(async () => {
   setupProviders();
 
   await reloadMediaPath();
+
+  // Wait for child components to mount
+  await nextTick();
 
   if (platformViewRef.value?.webviewComponent !== null && platformViewRef.value?.webviewComponent !== undefined) {
     const webview = platformViewRef.value.webviewComponent;
