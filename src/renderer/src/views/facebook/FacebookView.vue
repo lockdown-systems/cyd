@@ -1,21 +1,42 @@
 <script setup lang="ts">
-import { ref, unref, onMounted, onUnmounted, computed } from "vue";
+/**
+ * FacebookView.vue - Facebook Platform Wrapper
+ *
+ * Thin wrapper around PlatformView that handles Facebook-specific logic:
+ * - FacebookViewModel instantiation
+ * - Facebook-specific state and event handlers
+ */
 
-import AccountHeader from "../shared_components/AccountHeader.vue";
-import SpeechBubble from "../shared_components/SpeechBubble.vue";
-import AutomationNotice from "../shared_components/AutomationNotice.vue";
+import {
+  Ref,
+  ref,
+  onMounted,
+  onUnmounted,
+  inject,
+  getCurrentInstance,
+  nextTick,
+} from "vue";
 
-import type { Account, FacebookJob } from "../../../../shared_types";
+import CydAPIClient from "../../../../cyd-api-client";
+
+import type { WebviewTag } from "electron";
+import type { Account } from "../../../../shared_types";
+import type { DeviceInfo } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import {
   FacebookViewModel,
   State,
   FacebookViewModelState,
 } from "../../view_models/FacebookViewModel";
-import { openURL } from "../../util";
+import { setAccountRunning } from "../../util";
 import { facebookPostProgress } from "../../util_facebook";
 import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
+import PlatformView from "../PlatformView.vue";
+
+// Get the global emitter
+const vueInstance = getCurrentInstance();
+const emitter = vueInstance?.appContext.config.globalProperties.emitter;
 
 const props = defineProps<{
   account: Account;
@@ -23,23 +44,32 @@ const props = defineProps<{
 
 const emit = defineEmits(["onRefreshClicked", "onRemoveClicked"]);
 
+const apiClient = inject("apiClient") as Ref<CydAPIClient>;
+const deviceInfo = inject("deviceInfo") as Ref<DeviceInfo | null>;
+
 // The Facebook view model
 const model = ref<FacebookViewModel>(
-  new FacebookViewModel(props.account, null), // emitter will be accessed through composable
+  new FacebookViewModel(props.account, emitter),
 );
 
-// Use shared platform view composable for authentication and common state
+// Template ref to PlatformView component
+const platformViewRef = ref<InstanceType<typeof PlatformView> | null>(null);
+
+// Use shared platform view composable
 const {
   config,
   currentState,
   progress,
   currentJobs,
   isPaused,
+  canStateLoopRun,
   clickingEnabled,
   userAuthenticated,
   userPremium,
-  speechBubbleComponent,
-  webviewComponent,
+  accountHeaderProps,
+  speechBubbleProps,
+  automationNoticeProps,
+  webviewProps,
   updateAccount,
   setState,
   startStateLoop,
@@ -47,49 +77,43 @@ const {
   setupPlatformEventHandlers,
   createAutomationHandlers,
   cleanup: platformCleanup,
+  setupProviders,
   initializePlatformView,
-  emitter,
-  apiClient,
-  deviceInfo,
 } = usePlatformView(props.account, model, getPlatformConfig("Facebook")!);
 
-// After composable setup, update model with emitter
-model.value.emitter = emitter;
-
-// Typed computed properties for template usage
-const typedCurrentJobs = computed(() => currentJobs.value as FacebookJob[]);
-
+// Facebook-specific methods
 const onAutomationErrorRetry = async () => {
   console.log("Retrying automation after error");
-  // TODO: implement retry logic for Facebook
-  emit("onRefreshClicked");
+
+  if (model.value.state == State.FinishedRunningJobsDisplay) {
+    await setState(State.WizardReview.toString());
+  } else {
+    const state: FacebookViewModelState | undefined = model.value.saveState();
+    localStorage.setItem(
+      `account-${props.account.id}-state`,
+      JSON.stringify(state),
+    );
+    emit("onRefreshClicked");
+  }
 };
+
 const onCancelAutomation = () => {
   console.log("Cancelling automation");
-
-  // Submit progress to the API
   emitter?.emit(`facebook-submit-progress-${props.account.id}`);
-
   emit("onRefreshClicked");
 };
 
-// Create automation handlers using composable
 const automationHandlers = createAutomationHandlers(
-  () => emit("onRefreshClicked"), // onRefresh
-  onAutomationErrorRetry, // onRetry (Facebook-specific)
+  () => emit("onRefreshClicked"),
+  onAutomationErrorRetry,
 );
 
-// Override the cancel handler to include Facebook-specific logic
 automationHandlers[`cancel-automation-${props.account.id}`] =
   onCancelAutomation;
 
 const onReportBug = async () => {
   console.log("Report bug clicked");
-
-  // Pause
   model.value.pause();
-
-  // Submit error report
   await model.value.error(
     AutomationErrorType.facebook_manualBugReport,
     {
@@ -102,22 +126,12 @@ const onReportBug = async () => {
   );
 };
 
-// Setup platform-specific event handlers
-setupPlatformEventHandlers({
-  ...automationHandlers,
-  [`facebook-submit-progress-${props.account.id}`]: async () => {
-    await facebookPostProgress(
-      apiClient.value,
-      deviceInfo.value,
-      props.account.id,
-    );
-  },
-});
-
-// Setup authentication listeners
-setupAuthListeners();
-
 const startJobs = async () => {
+  if (model.value.account.facebookAccount == null) {
+    console.error("startJobs", "Account is null");
+    return;
+  }
+
   // Premium check
   // if (model.value.account?.facebookAccount && await facebookRequiresPremium(model.value.account?.facebookAccount)) {
   //     // In open mode, allow the user to continue
@@ -146,7 +160,6 @@ const startJobs = async () => {
   //     }
   // }
 
-  // All good, start the jobs
   console.log("Starting jobs");
   await model.value.defineJobs();
   model.value.state = State.RunJobs;
@@ -154,7 +167,6 @@ const startJobs = async () => {
 };
 
 // Debug functions
-
 const debugAutopauseEndOfStepChanged = async (value: boolean) => {
   model.value.debugAutopauseEndOfStep = value;
 };
@@ -162,15 +174,19 @@ const debugAutopauseEndOfStepChanged = async (value: boolean) => {
 const debugModeTriggerError = async (count: number = 1) => {
   console.log("Debug mode error triggered", count);
   if (count == 1) {
-    await model.value.error(
-      AutomationErrorType.facebook_unknownError,
-      {
-        message: "Debug mode error triggered",
-      },
-      {
-        currentURL: model.value.webview?.getURL(),
-      },
-    );
+    try {
+      throw new Error("Debug mode error triggered");
+    } catch (e) {
+      await model.value.error(
+        AutomationErrorType.facebook_unknownError,
+        {
+          message: "Debug mode error triggered",
+        },
+        {
+          currentURL: model.value.webview?.getURL(),
+        },
+      );
+    }
   } else {
     for (let i = 0; i < count; i++) {
       await model.value.error(
@@ -193,16 +209,22 @@ const debugModeDisable = async () => {
 };
 
 // Lifecycle
-
 onMounted(async () => {
-  if (webviewComponent.value !== null) {
-    const webview = webviewComponent.value;
+  setupAuthListeners();
+  setupProviders();
 
-    // Start the state loop
+  // Wait for child components to mount
+  await nextTick();
+
+  if (
+    platformViewRef.value?.webviewComponent !== null &&
+    platformViewRef.value?.webviewComponent !== undefined
+  ) {
+    const webview = platformViewRef.value.webviewComponent as WebviewTag;
+
     if (props.account.facebookAccount !== null) {
       await initializePlatformView(webview);
 
-      // If there's a saved state from a retry, restore it
       const savedState = localStorage.getItem(
         `account-${props.account.id}-state`,
       );
@@ -223,164 +245,79 @@ onMounted(async () => {
   } else {
     console.error("Webview component not found");
   }
+
+  setupPlatformEventHandlers(automationHandlers);
+
+  // Facebook-specific event handlers
+  setupPlatformEventHandlers({
+    [`facebook-submit-progress-${props.account.id}`]: async () => {
+      await facebookPostProgress(
+        apiClient.value,
+        deviceInfo.value,
+        props.account.id,
+      );
+    },
+  });
 });
 
 onUnmounted(async () => {
+  canStateLoopRun.value = false;
   await platformCleanup();
+  await setAccountRunning(props.account.id, false);
+  await model.value.cleanup();
 });
 </script>
 
 <template>
-  <div :class="['wrapper', `account-${account.id}`, 'd-flex', 'flex-column']">
-    <AccountHeader
-      :account="account"
-      :show-refresh-button="true"
-      @on-refresh-clicked="emit('onRefreshClicked')"
-      @on-remove-clicked="emit('onRemoveClicked')"
-    />
-
-    <template v-if="model.state == State.WizardStart">
-      <div class="text-center ms-2 mt-5">
-        <img src="/assets/cyd-loading.gif" alt="Loading" />
+  <PlatformView
+    ref="platformViewRef"
+    :account="account"
+    :config="config"
+    :model="model"
+    :current-state="currentState"
+    :progress="progress"
+    :current-jobs="currentJobs"
+    :is-paused="isPaused"
+    :clicking-enabled="clickingEnabled"
+    :user-authenticated="userAuthenticated"
+    :user-premium="userPremium"
+    :account-header-props="accountHeaderProps"
+    :speech-bubble-props="speechBubbleProps"
+    :automation-notice-props="automationNoticeProps"
+    :webview-props="webviewProps"
+    @on-refresh-clicked="emit('onRefreshClicked')"
+    @on-remove-clicked="emit('onRemoveClicked')"
+    @set-state="setState($event)"
+    @update-account="updateAccount"
+    @start-jobs="startJobs"
+    @on-pause="model.pause()"
+    @on-resume="model.resume()"
+    @on-cancel="emit('onRefreshClicked')"
+    @on-report-bug="onReportBug"
+    @on-clicking-enabled="clickingEnabled = true"
+    @on-clicking-disabled="clickingEnabled = false"
+    @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged"
+  >
+    <!-- Facebook-specific wizard content: Debug -->
+    <template #wizard-content-extra>
+      <div v-if="model.state == State.Debug">
+        <p>Debug debug debug!!!</p>
+        <p>
+          <button class="btn btn-danger" @click="debugModeTriggerError(1)">
+            Trigger Error
+          </button>
+        </p>
+        <p>
+          <button class="btn btn-danger" @click="debugModeTriggerError(3)">
+            Trigger 3 Errors
+          </button>
+        </p>
+        <p>
+          <button class="btn btn-primary" @click="debugModeDisable">
+            Cancel Debug Mode
+          </button>
+        </p>
       </div>
     </template>
-
-    <template v-if="model.state != State.WizardStart">
-      <div class="d-flex ms-2">
-        <div class="d-flex flex-column flex-grow-1">
-          <!-- Speech bubble -->
-          <SpeechBubble
-            ref="speechBubbleComponent"
-            :message="model.instructions || ''"
-            class="mb-2"
-            :class="{ 'w-100': currentJobs.length === 0 }"
-          />
-
-          <!-- Progress -->
-        </div>
-
-        <div class="d-flex align-items-center">
-          <!-- Job status -->
-          <component
-            :is="config.components.jobStatus"
-            v-if="
-              typedCurrentJobs.length > 0 &&
-              model.state == State.RunJobs &&
-              config.components.jobStatus
-            "
-            :jobs="typedCurrentJobs"
-            :is-paused="isPaused"
-            :clicking-enabled="clickingEnabled"
-            class="job-status-component"
-            @on-pause="model.pause()"
-            @on-resume="model.resume()"
-            @on-cancel="emit('onRefreshClicked')"
-            @on-report-bug="onReportBug"
-            @on-clicking-enabled="clickingEnabled = true"
-            @on-clicking-disabled="clickingEnabled = false"
-          />
-        </div>
-      </div>
-
-      <!-- U2F security key notice -->
-      <p
-        v-if="model.state == State.Login"
-        class="u2f-info text-center text-muted small ms-2"
-      >
-        <i class="fa-solid fa-circle-info me-2" />
-        If you use a U2F security key (like a Yubikey) for 2FA, press it during
-        the security key step after clicking Continue.
-        <a
-          href="#"
-          @click="openURL('https://docs.cyd.social/docs/facebook/tips/u2f')"
-        >
-          Read more</a
-        >.
-      </p>
-
-      <AutomationNotice
-        :show-browser="model.showBrowser"
-        :show-automation-notice="model.showAutomationNotice"
-      />
-    </template>
-
-    <!-- Webview -->
-    <webview
-      ref="webviewComponent"
-      src="about:blank"
-      class="webview"
-      :partition="`persist:account-${account.id}`"
-      :class="{
-        hidden: !model.showBrowser,
-        'webview-automation-border': model.showAutomationNotice,
-        'webview-input-border': !model.showAutomationNotice,
-        'webview-clickable': clickingEnabled,
-      }"
-    />
-
-    <template v-if="model.state != State.WizardStart">
-      <!-- Wizard -->
-      <div
-        :class="{
-          hidden: model.showBrowser || model.state == State.RunJobs,
-          wizard: true,
-          'ms-2': true,
-        }"
-      >
-        <div class="wizard-container d-flex">
-          <div class="wizard-content flex-grow-1">
-            <!-- Dynamic wizard component rendering based on platform configuration -->
-            <component
-              :is="config.components.wizardPages[model.state]"
-              v-if="config.components.wizardPages[model.state]"
-              :model="unref(model)"
-              :user-authenticated="userAuthenticated"
-              :user-premium="userPremium"
-              @set-state="setState($event)"
-              @update-account="updateAccount"
-              @start-jobs="startJobs"
-              @on-refresh-clicked="emit('onRefreshClicked')"
-            />
-
-            <!-- Debug state -->
-            <div v-if="model.state == State.Debug">
-              <p>Debug debug debug!!!</p>
-              <p>
-                <button
-                  class="btn btn-danger"
-                  @click="debugModeTriggerError(1)"
-                >
-                  Trigger Error
-                </button>
-              </p>
-              <p>
-                <button
-                  class="btn btn-danger"
-                  @click="debugModeTriggerError(3)"
-                >
-                  Trigger 3 Errors
-                </button>
-              </p>
-              <p>
-                <button class="btn btn-primary" @click="debugModeDisable">
-                  Cancel Debug Mode
-                </button>
-              </p>
-            </div>
-          </div>
-
-          <!-- wizard side bar -->
-          <component
-            :is="config.components.wizardSidebar"
-            v-if="config.components.wizardSidebar"
-            :model="unref(model)"
-            @set-state="setState($event)"
-            @set-debug-autopause-end-of-step="debugAutopauseEndOfStepChanged"
-          />
-        </div>
-      </div>
-    </template>
-  </div>
+  </PlatformView>
 </template>
-
-<style scoped></style>
