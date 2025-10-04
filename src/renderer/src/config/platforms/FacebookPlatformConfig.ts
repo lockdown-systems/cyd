@@ -8,6 +8,7 @@ import FacebookWizardBuildOptionsPage from "../../views/facebook/FacebookWizardB
 import FacebookWizardDeleteOptionsPage from "../../views/facebook/FacebookWizardDeleteOptionsPage.vue";
 import FacebookWizardReviewPage from "../../views/facebook/FacebookWizardReviewPage.vue";
 import FacebookFinishedRunningJobsPage from "../../views/facebook/FacebookFinishedRunningJobsPage.vue";
+import FacebookLastImportOrBuildComponent from "../../views/facebook/FacebookLastImportOrBuildComponent.vue";
 
 /**
  * Facebook Platform Configuration
@@ -18,7 +19,7 @@ export const FacebookPlatformConfig: PlatformConfig = {
 
   features: {
     hasArchiveOnly: false, // Facebook does not support "Archive Only" mode
-    hasPremiumGating: false, // Facebook does not use premium gating currently
+    hasPremiumGating: true, // Facebook has premium gating (commented out in code but structure exists)
     hasComplexImport: false, // Facebook has simpler import workflows
     hasMigration: false, // Facebook does not support migration to other platforms
     hasU2FSupport: false, // Facebook does not support U2F security keys in our implementation
@@ -32,13 +33,17 @@ export const FacebookPlatformConfig: PlatformConfig = {
     jobStatus: FacebookJobStatusComponent,
     wizardSidebar: FacebookWizardSidebar,
     progressComponent: FacebookJobStatusComponent, // Facebook uses job status for progress
+    lastImportOrBuild: FacebookLastImportOrBuildComponent,
     finishedRunningJobs: FacebookFinishedRunningJobsPage,
 
     // Map wizard states to their corresponding components
     wizardPages: {
       [State.WizardBuildOptionsDisplay]: FacebookWizardBuildOptionsPage,
+      [State.WizardArchiveOptionsDisplay]: FacebookWizardBuildOptionsPage, // Reuse build options for now
       [State.WizardDeleteOptionsDisplay]: FacebookWizardDeleteOptionsPage,
+      [State.WizardCheckPremiumDisplay]: FacebookWizardReviewPage, // Premium check uses review page for now
       [State.WizardReviewDisplay]: FacebookWizardReviewPage,
+      [State.WizardDeleteReviewDisplay]: FacebookWizardReviewPage, // Reuse review page for delete review
       [State.FinishedRunningJobsDisplay]: FacebookFinishedRunningJobsPage,
     },
   },
