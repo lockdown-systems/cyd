@@ -19,7 +19,7 @@
  * 3. Create platform-specific components (wizards, job status, etc.)
  */
 
-import { unref, computed } from "vue";
+import { unref, computed, ref, onMounted } from "vue";
 import type { Account } from "../../../shared_types";
 import type { PlatformConfig } from "../types/PlatformConfig";
 import type { BasePlatformViewModel } from "../types/PlatformView";
@@ -43,8 +43,6 @@ const props = defineProps<{
   clickingEnabled: boolean;
   userAuthenticated: boolean;
   userPremium: boolean;
-  speechBubbleComponent: InstanceType<typeof SpeechBubble> | null;
-  webviewComponent: HTMLElement | null;
   accountHeaderProps: {
     account: Account;
     showRefreshButton: boolean;
@@ -89,6 +87,16 @@ const emit = defineEmits<{
   // Debug events
   setDebugAutopauseEndOfStep: [value: boolean];
 }>();
+
+// Template refs for components that parent needs access to
+const speechBubbleComponent = ref<InstanceType<typeof SpeechBubble> | null>(null);
+const webviewComponent = ref<HTMLElement | null>(null);
+
+// Expose refs to parent component
+defineExpose({
+  speechBubbleComponent,
+  webviewComponent,
+});
 
 // Computed values for accessing props in template
 const modelState = computed(() => props.model.state);

@@ -72,6 +72,9 @@ const mediaPath = ref("");
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
 
+// Template ref to PlatformView component
+const platformViewRef = ref<InstanceType<typeof PlatformView> | null>(null);
+
 // Use shared platform view composable
 const {
   config,
@@ -83,8 +86,6 @@ const {
   clickingEnabled,
   userAuthenticated,
   userPremium,
-  speechBubbleComponent,
-  webviewComponent,
   accountHeaderProps,
   speechBubbleProps,
   automationNoticeProps,
@@ -328,8 +329,8 @@ onMounted(async () => {
 
   await reloadMediaPath();
 
-  if (webviewComponent.value !== null) {
-    const webview = webviewComponent.value;
+  if (platformViewRef.value?.webviewComponent !== null && platformViewRef.value?.webviewComponent !== undefined) {
+    const webview = platformViewRef.value.webviewComponent;
 
     if (props.account.xAccount !== null) {
       await initializePlatformView(webview);
@@ -378,6 +379,7 @@ onUnmounted(async () => {
 
 <template>
   <PlatformView
+    ref="platformViewRef"
     :account="account"
     :config="config"
     :model="model"
@@ -388,8 +390,6 @@ onUnmounted(async () => {
     :clicking-enabled="clickingEnabled"
     :user-authenticated="userAuthenticated"
     :user-premium="userPremium"
-    :speech-bubble-component="speechBubbleComponent"
-    :webview-component="webviewComponent"
     :account-header-props="accountHeaderProps"
     :speech-bubble-props="speechBubbleProps"
     :automation-notice-props="automationNoticeProps"
