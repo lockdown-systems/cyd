@@ -429,7 +429,7 @@ onUnmounted(async () => {
     <!-- X-specific progress extra: rate limit info -->
     <template #progress-extra>
       <XProgressComponent
-        v-if="rateLimitInfo && rateLimitInfo.isRateLimited"
+        v-if="typedProgress"
         :progress="typedProgress"
         :rate-limit-info="rateLimitInfo"
         :account-i-d="account.id"

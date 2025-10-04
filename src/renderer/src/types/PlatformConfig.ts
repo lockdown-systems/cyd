@@ -44,9 +44,6 @@ export interface PlatformComponents {
   /** Wizard navigation sidebar component */
   wizardSidebar: Component;
 
-  /** Progress display component */
-  progressComponent: Component;
-
   /** Map of wizard page states to their corresponding components */
   wizardPages: Record<string, Component>;
 

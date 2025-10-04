@@ -2,7 +2,6 @@ import type { PlatformConfig } from "../../types/PlatformConfig";
 import { State } from "../../view_models/XViewModel";
 
 // Import X platform components
-import XProgressComponent from "../../views/x/XProgressComponent.vue";
 import XJobStatusComponent from "../../views/x/XJobStatusComponent.vue";
 import XWizardSidebar from "../../views/x/XWizardSidebar.vue";
 import XWizardDashboard from "../../views/x/XWizardDashboard.vue";
@@ -45,7 +44,6 @@ export const XPlatformConfig: PlatformConfig = {
   components: {
     jobStatus: XJobStatusComponent,
     wizardSidebar: XWizardSidebar,
-    progressComponent: XProgressComponent,
     displayContent: XDisplayTweet,
     lastImportOrBuild: XLastImportOrBuildComponent,
     finishedRunningJobs: XWizardFinished,

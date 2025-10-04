@@ -129,16 +129,9 @@ const currentJobsLength = computed(() => props.currentJobs.length);
             :class="{ 'w-100': currentJobsLength === 0 }"
           />
 
-          <!-- Progress component (platform-specific) -->
+          <!-- Progress slot for platform-specific progress display -->
           <div v-if="progress && modelState == PlatformStates.RunJobs">
-            <component
-              :is="config.components.progressComponent"
-              :progress="progress"
-              :account-i-d="account.id"
-            >
-              <!-- Slot for platform-specific progress extras (e.g., rate limit info) -->
-              <slot name="progress-extra" :progress="progress" />
-            </component>
+            <slot name="progress-extra" :progress="progress" />
           </div>
         </div>
 

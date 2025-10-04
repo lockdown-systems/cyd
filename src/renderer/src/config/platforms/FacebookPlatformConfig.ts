@@ -32,7 +32,6 @@ export const FacebookPlatformConfig: PlatformConfig = {
   components: {
     jobStatus: FacebookJobStatusComponent,
     wizardSidebar: FacebookWizardSidebar,
-    progressComponent: FacebookJobStatusComponent, // Facebook uses job status for progress
     lastImportOrBuild: FacebookLastImportOrBuildComponent,
     finishedRunningJobs: FacebookFinishedRunningJobsPage,
 
