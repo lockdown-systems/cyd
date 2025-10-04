@@ -14,6 +14,9 @@ import type { BasePlatformViewModel } from "../types/PlatformView";
 import type { PlatformConfig } from "../types/PlatformConfig";
 import { setAccountRunning } from "../util";
 
+// Track registered providers to avoid duplicates
+const registeredProviders = new Set<string>();
+
 /**
  * Shared composable for platform views that handles common functionality
  * like authentication, state management, and progress tracking
@@ -297,11 +300,18 @@ export function usePlatformView<
     // Setup shared provide statements that components can inject
     const vueInject = vueInstance?.appContext.app.provide;
     if (vueInject) {
-      vueInject(
-        `${config.name}UpdateUserAuthenticated`,
-        updateUserAuthenticated,
-      );
-      vueInject(`${config.name}UpdateUserPremium`, updateUserPremium);
+      const authKey = `${config.name}UpdateUserAuthenticated`;
+      const premiumKey = `${config.name}UpdateUserPremium`;
+
+      // Check if providers are already registered to avoid Vue warnings
+      if (!registeredProviders.has(authKey)) {
+        vueInject(authKey, updateUserAuthenticated);
+        registeredProviders.add(authKey);
+      }
+      if (!registeredProviders.has(premiumKey)) {
+        vueInject(premiumKey, updateUserPremium);
+        registeredProviders.add(premiumKey);
+      }
     }
   };
 
@@ -314,6 +324,12 @@ export function usePlatformView<
       emitter?.off(event, handler);
     });
     registeredHandlers.value = [];
+
+    // Cleanup registered providers
+    const authKey = `${config.name}UpdateUserAuthenticated`;
+    const premiumKey = `${config.name}UpdateUserPremium`;
+    registeredProviders.delete(authKey);
+    registeredProviders.delete(premiumKey);
 
     // Cleanup account running state
     await setAccountRunning(account.id, false);
