@@ -204,3 +204,26 @@ export const clearJobsType = (accountID: number): void => {
 export const formatError = (error: Error): string => {
   return `${error.message}\n\n${error.stack}`;
 };
+
+// Breadcrumb helper functions for wizard pages
+// These create common breadcrumb button objects to reduce duplication
+
+export const createDashboardBreadcrumb = <T>(
+  setState: (state: T) => void,
+  dashboardState: T,
+) => ({
+  label: "Dashboard",
+  action: () => setState(dashboardState),
+  icon: getBreadcrumbIcon("dashboard"),
+});
+
+export const createBackBreadcrumb = <T>(
+  label: string,
+  setState: (state: T) => void,
+  targetState: T,
+  iconType?: string,
+) => ({
+  label,
+  action: () => setState(targetState),
+  icon: getBreadcrumbIcon(iconType || "back"),
+});
