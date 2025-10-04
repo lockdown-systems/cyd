@@ -130,7 +130,12 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div v-if="featureXTombstone" class="col-12 col-md-6 col-lg-5">
+        <div
+          v-if="
+            featureXTombstone && !props.model.account?.xAccount?.archiveOnly
+          "
+          class="col-12 col-md-6 col-lg-5"
+        >
           <div
             class="card h-100"
             @click="emit('setState', State.WizardTombstone)"
