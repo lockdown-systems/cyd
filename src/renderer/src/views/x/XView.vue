@@ -24,6 +24,7 @@ import {
 
 import CydAPIClient from "../../../../cyd-api-client";
 
+import type { WebviewTag } from "electron";
 import type {
   Account,
   XProgress,
@@ -333,8 +334,11 @@ onMounted(async () => {
   // Wait for child components to mount
   await nextTick();
 
-  if (platformViewRef.value?.webviewComponent !== null && platformViewRef.value?.webviewComponent !== undefined) {
-    const webview = platformViewRef.value.webviewComponent;
+  if (
+    platformViewRef.value?.webviewComponent !== null &&
+    platformViewRef.value?.webviewComponent !== undefined
+  ) {
+    const webview = platformViewRef.value.webviewComponent as WebviewTag;
 
     if (props.account.xAccount !== null) {
       await initializePlatformView(webview);
@@ -432,7 +436,6 @@ onUnmounted(async () => {
       />
     </template>
 
-
     <!-- X-specific wizard content: Tombstone and Debug -->
     <template #wizard-content-extra>
       <XWizardTombstone
@@ -461,6 +464,5 @@ onUnmounted(async () => {
         </p>
       </div>
     </template>
-
   </PlatformView>
 </template>

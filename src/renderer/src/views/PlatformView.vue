@@ -19,7 +19,7 @@
  * 3. Create platform-specific components (wizards, job status, etc.)
  */
 
-import { unref, computed, ref, onMounted } from "vue";
+import { unref, computed, ref } from "vue";
 import type { Account } from "../../../shared_types";
 import type { PlatformConfig } from "../types/PlatformConfig";
 import type { BasePlatformViewModel } from "../types/PlatformView";
@@ -89,7 +89,9 @@ const emit = defineEmits<{
 }>();
 
 // Template refs for components that parent needs access to
-const speechBubbleComponent = ref<InstanceType<typeof SpeechBubble> | null>(null);
+const speechBubbleComponent = ref<InstanceType<typeof SpeechBubble> | null>(
+  null,
+);
 const webviewComponent = ref<HTMLElement | null>(null);
 
 // Expose refs to parent component
