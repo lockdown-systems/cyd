@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getBreadcrumbIcon } from "../../util";
-import BaseWizardPageLight from "../shared_components/wizard/BaseWizardPageLight.vue";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 const emit = defineEmits(["set-state", "update-account"]);
 
@@ -14,7 +14,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <BaseWizardPageLight
+  <BaseWizardPage
     :breadcrumb-props="{
       buttons: [
         {
@@ -113,7 +113,7 @@ const goBack = () => {
         </div>
       </div>
     </template>
-  </BaseWizardPageLight>
+  </BaseWizardPage>
 </template>
 
 <style scoped>

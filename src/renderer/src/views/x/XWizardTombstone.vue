@@ -10,9 +10,9 @@ import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
 } from "../../types_x";
-import { useWizardPageLight } from "../../composables/useWizardPageLight";
+import { useWizardPage } from "../../composables/useWizardPage";
 import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
-import BaseWizardPageLight from "../shared_components/wizard/BaseWizardPageLight.vue";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 // Props
 const props = defineProps<{
@@ -26,7 +26,7 @@ const emit = defineEmits<{
 }>();
 
 // Use wizard page light for state management
-const { isLoading, setLoading } = useWizardPageLight();
+const { isLoading, setLoading } = useWizardPage();
 
 // Buttons
 const backClicked = () => {
@@ -274,7 +274,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <BaseWizardPageLight
+  <BaseWizardPage
     :breadcrumb-props="{
       buttons: [
         {
@@ -488,7 +488,7 @@ onMounted(async () => {
         </div>
       </div>
     </template>
-  </BaseWizardPageLight>
+  </BaseWizardPage>
 </template>
 
 <style scoped>

@@ -30,22 +30,13 @@ const emit = defineEmits([
 ]);
 
 // Use wizard page composable
-const wizardConfig = {
-  showBreadcrumbs: true,
-  showButtons: true,
-  showBackButton: false,
-  showNextButton: true,
-  showCancelButton: false,
-  buttonText: {
-    next: "Continue to Review",
-  },
-  breadcrumbs: {
-    title: "Build Options",
-  },
-};
+const { isLoading, setLoading } = useWizardPage();
 
-const { setLoading, setProceedEnabled, updateFormData, isLoading, canProceed } =
-  useWizardPage(props, emit, wizardConfig);
+// Proceed state
+const canProceed = ref(false);
+const setProceedEnabled = (enabled: boolean) => {
+  canProceed.value = enabled;
+};
 
 // Settings
 const savePosts = ref(false);
@@ -78,10 +69,6 @@ const loadSettings = async () => {
     if (account && account.facebookAccount) {
       savePosts.value = account.facebookAccount.savePosts;
       savePostsHTML.value = account.facebookAccount.savePostsHTML;
-
-      // Store in form data
-      updateFormData("savePosts", savePosts.value);
-      updateFormData("savePostsHTML", savePostsHTML.value);
 
       updateProceedState();
     }
@@ -124,12 +111,6 @@ onMounted(async () => {
 
 <template>
   <BaseWizardPage
-    :model="model"
-    :user-authenticated="userAuthenticated"
-    :user-premium="userPremium"
-    :config="wizardConfig"
-    :is-loading="isLoading"
-    :can-proceed="canProceed && hasValidSelection"
     :breadcrumb-props="{
       buttons: [],
       label: 'Build Options',
@@ -147,50 +128,52 @@ onMounted(async () => {
     }"
   >
     <template #content>
-      <div class="mb-4">
-        <h2>Build your local database</h2>
-        <p class="text-muted">You can save posts.</p>
-      </div>
-
-      <form @submit.prevent>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="savePosts"
-              v-model="savePosts"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="savePosts"
-              >Save my posts</label
-            >
-          </div>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>Build your local database</h2>
+          <p class="text-muted">You can save posts.</p>
         </div>
-        <div class="indent">
+
+        <form @submit.prevent>
           <div class="mb-3">
             <div class="form-check">
               <input
-                id="savePostsHTML"
-                v-model="savePostsHTML"
+                id="savePosts"
+                v-model="savePosts"
                 type="checkbox"
                 class="form-check-input"
-                :disabled="!savePosts"
+                @change="updateProceedState"
               />
-              <label class="form-check-label" for="savePostsHTML">
-                Save an HTML version of each post
-              </label>
-            </div>
-            <div class="indent">
-              <small class="form-text text-muted">
-                Make an HTML archive of each post, including its comments, which
-                is good for taking screenshots
-                <em>(takes longer)</em>
-              </small>
+              <label class="form-check-label" for="savePosts"
+                >Save my posts</label
+              >
             </div>
           </div>
-        </div>
-      </form>
+          <div class="indent">
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  id="savePostsHTML"
+                  v-model="savePostsHTML"
+                  type="checkbox"
+                  class="form-check-input"
+                  :disabled="!savePosts"
+                />
+                <label class="form-check-label" for="savePostsHTML">
+                  Save an HTML version of each post
+                </label>
+              </div>
+              <div class="indent">
+                <small class="form-text text-muted">
+                  Make an HTML archive of each post, including its comments,
+                  which is good for taking screenshots
+                  <em>(takes longer)</em>
+                </small>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </template>
   </BaseWizardPage>
 </template>

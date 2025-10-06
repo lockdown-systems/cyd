@@ -32,23 +32,13 @@ const emit = defineEmits([
 ]);
 
 // Use wizard page composable
-const wizardConfig = {
-  showBreadcrumbs: true,
-  showButtons: true,
-  showBackButton: true,
-  showNextButton: true,
-  showCancelButton: false,
-  buttonText: {
-    back: "Back to Import or Build Database",
-    next: "Continue to Review (NOT IMPL YET)",
-  },
-  breadcrumbs: {
-    title: "Delete Options",
-  },
-};
+const { isLoading, setLoading } = useWizardPage();
 
-const { setLoading, setProceedEnabled, updateFormData, isLoading, canProceed } =
-  useWizardPage(props, emit, wizardConfig);
+// Proceed state
+const canProceed = ref(false);
+const setProceedEnabled = (enabled: boolean) => {
+  canProceed.value = enabled;
+};
 
 // Show more
 const deletePostsShowMore = ref(false);
@@ -116,20 +106,6 @@ const loadSettings = async () => {
       deleteRepostsDaysOld.value = account.facebookAccount.deleteRepostsDaysOld;
       deleteRepostsDaysOldEnabled.value =
         account.facebookAccount.deleteRepostsDaysOldEnabled;
-
-      // Store in form data
-      updateFormData("deletePosts", deletePosts.value);
-      updateFormData(
-        "deletePostsDaysOldEnabled",
-        deletePostsDaysOldEnabled.value,
-      );
-      updateFormData("deletePostsDaysOld", deletePostsDaysOld.value);
-      updateFormData("deleteReposts", deleteReposts.value);
-      updateFormData(
-        "deleteRepostsDaysOldEnabled",
-        deleteRepostsDaysOldEnabled.value,
-      );
-      updateFormData("deleteRepostsDaysOld", deleteRepostsDaysOld.value);
     }
 
     // Should delete posts show more options?
@@ -199,12 +175,6 @@ onMounted(async () => {
 
 <template>
   <BaseWizardPage
-    :model="model"
-    :user-authenticated="userAuthenticated"
-    :user-premium="userPremium"
-    :config="wizardConfig"
-    :is-loading="isLoading"
-    :can-proceed="canProceed && hasValidSelection"
     :breadcrumb-props="{
       buttons: [],
       label: 'Delete Options',
@@ -228,178 +198,182 @@ onMounted(async () => {
     }"
   >
     <template #content>
-      <div class="mb-4">
-        <h2>Delete from Facebook</h2>
-        <p class="text-muted">
-          Delete your data from Facebook, except for what you want to keep.
-        </p>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>Delete from Facebook</h2>
+          <p class="text-muted">
+            Delete your data from Facebook, except for what you want to keep.
+          </p>
+        </div>
+
+        <FacebookLastImportOrBuildComponent
+          :account-i-d="model.account.id"
+          :show-button="true"
+          :show-no-data-warning="true"
+          :button-text="'Build Your Local Database'"
+          :button-text-no-data="'Build Your Local Database'"
+          :button-state="State.WizardBuildOptions"
+          @set-state="emit('setState', $event)"
+        />
+
+        <form @submit.prevent>
+          <!-- deletePosts -->
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="form-check">
+                <input
+                  id="deletePosts"
+                  v-model="deletePosts"
+                  type="checkbox"
+                  class="form-check-input"
+                  :disabled="!hasSomeData"
+                  @change="updateProceedState"
+                />
+                <label
+                  class="form-check-label mr-1 text-nowrap"
+                  for="deletePosts"
+                >
+                  Delete my posts
+                </label>
+                <span class="ms-2 text-muted">(recommended)</span>
+                <button
+                  class="btn btn-sm btn-link"
+                  @click="deletePostsShowMoreClicked"
+                >
+                  {{ deletePostsShowMoreButtonText }}
+                </button>
+              </div>
+            </div>
+            <div v-if="deletePostsShowMore" class="indent">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center flex-nowrap">
+                  <div class="form-check">
+                    <input
+                      id="deletePostsDaysOldEnabled"
+                      v-model="deletePostsDaysOldEnabled"
+                      type="checkbox"
+                      class="form-check-input"
+                      :disabled="!deletePosts || !hasSomeData"
+                    />
+                    <label
+                      class="form-check-label mr-1 text-nowrap"
+                      for="deletePostsDaysOldEnabled"
+                    >
+                      older than
+                    </label>
+                  </div>
+                  <div class="d-flex align-items-center">
+                    <label
+                      class="form-check-label mr-1 sr-only"
+                      for="deletePostsDaysOld"
+                    >
+                      days
+                    </label>
+                    <div class="input-group flex-nowrap">
+                      <input
+                        id="deletePostsDaysOld"
+                        v-model="deletePostsDaysOld"
+                        type="text"
+                        class="form-control form-short small"
+                        :disabled="
+                          !deletePosts ||
+                          !deletePostsDaysOldEnabled ||
+                          !hasSomeData
+                        "
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text small">days</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span
+                  v-if="!userAuthenticated || !userPremium"
+                  class="premium badge badge-primary"
+                  >Premium</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- deleteReposts -->
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="form-check">
+                <input
+                  id="deleteReposts"
+                  v-model="deleteReposts"
+                  type="checkbox"
+                  class="form-check-input"
+                  :disabled="!hasSomeData"
+                  @change="updateProceedState"
+                />
+                <label
+                  class="form-check-label mr-1 text-nowrap"
+                  for="deleteReposts"
+                >
+                  Delete my reposts
+                </label>
+                <span class="ms-2 text-muted">(recommended)</span>
+                <button
+                  class="btn btn-sm btn-link"
+                  @click="deleteRepostsShowMoreClicked"
+                >
+                  {{ deleteRepostsShowMoreButtonText }}
+                </button>
+              </div>
+            </div>
+            <div v-if="deleteRepostsShowMore" class="indent">
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center flex-nowrap">
+                  <div class="form-check">
+                    <input
+                      id="deleteRepostsDaysOldEnabled"
+                      v-model="deleteRepostsDaysOldEnabled"
+                      type="checkbox"
+                      class="form-check-input"
+                      :disabled="!deleteReposts || !hasSomeData"
+                    />
+                    <label
+                      class="form-check-label mr-1 text-nowrap"
+                      for="deleteRepostsDaysOldEnabled"
+                    >
+                      older than
+                    </label>
+                  </div>
+                  <div class="d-flex align-items-center">
+                    <label
+                      class="form-check-label mr-1 sr-only"
+                      for="deleteRepostsDaysOld"
+                    >
+                      days
+                    </label>
+                    <div class="input-group flex-nowrap">
+                      <input
+                        id="deleteRepostsDaysOld"
+                        v-model="deleteRepostsDaysOld"
+                        type="text"
+                        class="form-control form-short small"
+                        :disabled="
+                          !deleteReposts || !deleteRepostsDaysOldEnabled
+                        "
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text small">days</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span
+                  v-if="!userAuthenticated || !userPremium"
+                  class="premium badge badge-primary"
+                  >Premium</span
+                >
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
-
-      <FacebookLastImportOrBuildComponent
-        :account-i-d="model.account.id"
-        :show-button="true"
-        :show-no-data-warning="true"
-        :button-text="'Build Your Local Database'"
-        :button-text-no-data="'Build Your Local Database'"
-        :button-state="State.WizardBuildOptions"
-        @set-state="emit('setState', $event)"
-      />
-
-      <form @submit.prevent>
-        <!-- deletePosts -->
-        <div class="mb-3">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="form-check">
-              <input
-                id="deletePosts"
-                v-model="deletePosts"
-                type="checkbox"
-                class="form-check-input"
-                :disabled="!hasSomeData"
-                @change="updateProceedState"
-              />
-              <label
-                class="form-check-label mr-1 text-nowrap"
-                for="deletePosts"
-              >
-                Delete my posts
-              </label>
-              <span class="ms-2 text-muted">(recommended)</span>
-              <button
-                class="btn btn-sm btn-link"
-                @click="deletePostsShowMoreClicked"
-              >
-                {{ deletePostsShowMoreButtonText }}
-              </button>
-            </div>
-          </div>
-          <div v-if="deletePostsShowMore" class="indent">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="d-flex align-items-center flex-nowrap">
-                <div class="form-check">
-                  <input
-                    id="deletePostsDaysOldEnabled"
-                    v-model="deletePostsDaysOldEnabled"
-                    type="checkbox"
-                    class="form-check-input"
-                    :disabled="!deletePosts || !hasSomeData"
-                  />
-                  <label
-                    class="form-check-label mr-1 text-nowrap"
-                    for="deletePostsDaysOldEnabled"
-                  >
-                    older than
-                  </label>
-                </div>
-                <div class="d-flex align-items-center">
-                  <label
-                    class="form-check-label mr-1 sr-only"
-                    for="deletePostsDaysOld"
-                  >
-                    days
-                  </label>
-                  <div class="input-group flex-nowrap">
-                    <input
-                      id="deletePostsDaysOld"
-                      v-model="deletePostsDaysOld"
-                      type="text"
-                      class="form-control form-short small"
-                      :disabled="
-                        !deletePosts ||
-                        !deletePostsDaysOldEnabled ||
-                        !hasSomeData
-                      "
-                    />
-                    <div class="input-group-append">
-                      <span class="input-group-text small">days</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <span
-                v-if="!userAuthenticated || !userPremium"
-                class="premium badge badge-primary"
-                >Premium</span
-              >
-            </div>
-          </div>
-        </div>
-
-        <!-- deleteReposts -->
-        <div class="mb-3">
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="form-check">
-              <input
-                id="deleteReposts"
-                v-model="deleteReposts"
-                type="checkbox"
-                class="form-check-input"
-                :disabled="!hasSomeData"
-                @change="updateProceedState"
-              />
-              <label
-                class="form-check-label mr-1 text-nowrap"
-                for="deleteReposts"
-              >
-                Delete my reposts
-              </label>
-              <span class="ms-2 text-muted">(recommended)</span>
-              <button
-                class="btn btn-sm btn-link"
-                @click="deleteRepostsShowMoreClicked"
-              >
-                {{ deleteRepostsShowMoreButtonText }}
-              </button>
-            </div>
-          </div>
-          <div v-if="deleteRepostsShowMore" class="indent">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="d-flex align-items-center flex-nowrap">
-                <div class="form-check">
-                  <input
-                    id="deleteRepostsDaysOldEnabled"
-                    v-model="deleteRepostsDaysOldEnabled"
-                    type="checkbox"
-                    class="form-check-input"
-                    :disabled="!deleteReposts || !hasSomeData"
-                  />
-                  <label
-                    class="form-check-label mr-1 text-nowrap"
-                    for="deleteRepostsDaysOldEnabled"
-                  >
-                    older than
-                  </label>
-                </div>
-                <div class="d-flex align-items-center">
-                  <label
-                    class="form-check-label mr-1 sr-only"
-                    for="deleteRepostsDaysOld"
-                  >
-                    days
-                  </label>
-                  <div class="input-group flex-nowrap">
-                    <input
-                      id="deleteRepostsDaysOld"
-                      v-model="deleteRepostsDaysOld"
-                      type="text"
-                      class="form-control form-short small"
-                      :disabled="!deleteReposts || !deleteRepostsDaysOldEnabled"
-                    />
-                    <div class="input-group-append">
-                      <span class="input-group-text small">days</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <span
-                v-if="!userAuthenticated || !userPremium"
-                class="premium badge badge-primary"
-                >Premium</span
-              >
-            </div>
-          </div>
-        </div>
-      </form>
     </template>
   </BaseWizardPage>
 </template>

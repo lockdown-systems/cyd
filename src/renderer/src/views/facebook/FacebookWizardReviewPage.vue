@@ -33,18 +33,7 @@ const emit = defineEmits([
 ]);
 
 // Use wizard page composable
-const wizardConfig = {
-  showBreadcrumbs: true,
-  showButtons: true,
-  showBackButton: true,
-  showNextButton: true,
-  showCancelButton: false,
-  breadcrumbs: {
-    title: "Review",
-  },
-};
-
-const { setLoading, isLoading } = useWizardPage(props, emit, wizardConfig);
+const { isLoading, setLoading } = useWizardPage();
 
 const jobsType = ref("");
 
@@ -103,12 +92,6 @@ onMounted(async () => {
 
 <template>
   <BaseWizardPage
-    :model="model"
-    :user-authenticated="userAuthenticated"
-    :user-premium="userPremium"
-    :config="wizardConfig"
-    :is-loading="isLoading"
-    :can-proceed="!isNextDisabled"
     :breadcrumb-props="{
       buttons: breadcrumbButtons,
       label: 'Review',
@@ -132,35 +115,37 @@ onMounted(async () => {
     }"
   >
     <template #content>
-      <div class="mb-4">
-        <h2>Review your choices</h2>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>Review your choices</h2>
+        </div>
+
+        <template v-if="isLoading">
+          <LoadingComponent />
+        </template>
+        <template v-else>
+          <form @submit.prevent>
+            <div v-if="jobsType == 'save'">
+              <h3>
+                <i class="fa-solid fa-floppy-disk me-1" />
+                Build a local database
+              </h3>
+              <ul>
+                <li v-if="model.account?.facebookAccount?.savePosts">
+                  Save posts
+                  <ul>
+                    <li v-if="model.account?.facebookAccount?.savePostsHTML">
+                      Save HTML versions of posts
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </form>
+
+          <AlertStayAwake />
+        </template>
       </div>
-
-      <template v-if="isLoading">
-        <LoadingComponent />
-      </template>
-      <template v-else>
-        <form @submit.prevent>
-          <div v-if="jobsType == 'save'">
-            <h3>
-              <i class="fa-solid fa-floppy-disk me-1" />
-              Build a local database
-            </h3>
-            <ul>
-              <li v-if="model.account?.facebookAccount?.savePosts">
-                Save posts
-                <ul>
-                  <li v-if="model.account?.facebookAccount?.savePostsHTML">
-                    Save HTML versions of posts
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </form>
-
-        <AlertStayAwake />
-      </template>
     </template>
   </BaseWizardPage>
 </template>

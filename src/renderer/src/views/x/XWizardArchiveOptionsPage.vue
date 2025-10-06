@@ -32,23 +32,13 @@ const emit = defineEmits([
 ]);
 
 // Use wizard page composable
-const wizardConfig = {
-  showBreadcrumbs: true,
-  showButtons: true,
-  showBackButton: true,
-  showNextButton: true,
-  showCancelButton: false,
-  buttonText: {
-    back: "Back to Local Database",
-    next: "Continue to Review",
-  },
-  breadcrumbs: {
-    title: "Archive Options",
-  },
-};
+const { isLoading, setLoading } = useWizardPage();
 
-const { setLoading, setProceedEnabled, updateFormData, isLoading, canProceed } =
-  useWizardPage(props, emit, wizardConfig);
+// Proceed state
+const canProceed = ref(false);
+const setProceedEnabled = (enabled: boolean) => {
+  canProceed.value = enabled;
+};
 
 // Settings
 const archiveTweetsHTML = ref(false);
@@ -92,11 +82,6 @@ const loadSettings = async () => {
       archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
       archiveBookmarks.value = account.xAccount.archiveBookmarks;
       archiveDMs.value = account.xAccount.archiveDMs;
-
-      // Store in form data
-      updateFormData("archiveTweetsHTML", archiveTweetsHTML.value);
-      updateFormData("archiveBookmarks", archiveBookmarks.value);
-      updateFormData("archiveDMs", archiveDMs.value);
 
       updateProceedState();
     }
@@ -152,12 +137,6 @@ onMounted(async () => {
 
 <template>
   <BaseWizardPage
-    :model="model"
-    :user-authenticated="userAuthenticated"
-    :user-premium="userPremium"
-    :config="wizardConfig"
-    :is-loading="isLoading"
-    :can-proceed="canProceed && hasValidSelection"
     :breadcrumb-props="{
       buttons: [
         {
@@ -192,82 +171,84 @@ onMounted(async () => {
     }"
   >
     <template #content>
-      <div class="mb-4">
-        <h2>Archive options</h2>
-        <p class="text-muted">
-          You can save an HTML version of each tweet, and you can save your
-          bookmarks and your direct messages.
-        </p>
-      </div>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>Archive options</h2>
+          <p class="text-muted">
+            You can save an HTML version of each tweet, and you can save your
+            bookmarks and your direct messages.
+          </p>
+        </div>
 
-      <form @submit.prevent>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveTweetsHTML"
-              v-model="archiveTweetsHTML"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveTweetsHTML"
-              >Save an HTML version of each tweet</label
-            >
+        <form @submit.prevent>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="archiveTweetsHTML"
+                v-model="archiveTweetsHTML"
+                type="checkbox"
+                class="form-check-input"
+                @change="updateProceedState"
+              />
+              <label class="form-check-label" for="archiveTweetsHTML"
+                >Save an HTML version of each tweet</label
+              >
+            </div>
+            <div class="indent">
+              <small
+                v-if="databaseStats.tweetsSaved == 0"
+                class="form-text text-muted"
+              >
+                <i class="fa-solid fa-triangle-exclamation" />
+                Your local database doesn't have any tweets yet. You need to
+                import your X archive or build your database from scratch before
+                you can save HTML versions of your tweets.
+              </small>
+              <small v-else class="form-text text-muted">
+                Make an HTML archive of each tweet, including its replies, which
+                is good for taking screenshots
+                <em>(takes much longer than just deleting them)</em>
+              </small>
+            </div>
+            <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
+              <small>
+                <i class="fa-solid fa-circle-info" />
+                You have
+                <strong>{{ deleteTweetsCountNotArchived }} tweets</strong> that
+                haven't been archived yet
+              </small>
+            </div>
           </div>
-          <div class="indent">
-            <small
-              v-if="databaseStats.tweetsSaved == 0"
-              class="form-text text-muted"
-            >
-              <i class="fa-solid fa-triangle-exclamation" />
-              Your local database doesn't have any tweets yet. You need to
-              import your X archive or build your database from scratch before
-              you can save HTML versions of your tweets.
-            </small>
-            <small v-else class="form-text text-muted">
-              Make an HTML archive of each tweet, including its replies, which
-              is good for taking screenshots
-              <em>(takes much longer than just deleting them)</em>
-            </small>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="archiveBookmarks"
+                v-model="archiveBookmarks"
+                type="checkbox"
+                class="form-check-input"
+                @change="updateProceedState"
+              />
+              <label class="form-check-label" for="archiveBookmarks"
+                >Save my bookmarks</label
+              >
+            </div>
           </div>
-          <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
-            <small>
-              <i class="fa-solid fa-circle-info" />
-              You have
-              <strong>{{ deleteTweetsCountNotArchived }} tweets</strong> that
-              haven't been archived yet
-            </small>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="archiveDMs"
+                v-model="archiveDMs"
+                type="checkbox"
+                class="form-check-input"
+                @change="updateProceedState"
+              />
+              <label class="form-check-label" for="archiveDMs"
+                >Save my direct messages</label
+              >
+            </div>
           </div>
-        </div>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveBookmarks"
-              v-model="archiveBookmarks"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveBookmarks"
-              >Save my bookmarks</label
-            >
-          </div>
-        </div>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveDMs"
-              v-model="archiveDMs"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveDMs"
-              >Save my direct messages</label
-            >
-          </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </template>
   </BaseWizardPage>
 </template>

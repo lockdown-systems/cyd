@@ -31,31 +31,13 @@ const emit = defineEmits([
 ]);
 
 // Use wizard page composable
-const wizardConfig = {
-  showBreadcrumbs: true,
-  showButtons: true,
-  showBackButton: true,
-  showNextButton: true,
-  showCancelButton: false,
-  buttonText: {
-    back: "Back to Local Database",
-    next: "Continue to Review",
-  },
-  breadcrumbs: {
-    title: "Build Options",
-  },
-};
+const { isLoading, setLoading } = useWizardPage();
 
-const {
-  setLoading,
-  setProceedEnabled,
-  updateFormData,
-  getFormData: _getFormData,
-  handleNext: _handleNext,
-  handleBack: _handleBack,
-  isLoading,
-  canProceed,
-} = useWizardPage(props, emit, wizardConfig);
+// Proceed state
+const canProceed = ref(false);
+const setProceedEnabled = (enabled: boolean) => {
+  canProceed.value = enabled;
+};
 
 // Settings
 const archiveTweets = ref(false);
@@ -106,13 +88,6 @@ const loadSettings = async () => {
       archiveBookmarks.value = account.xAccount.archiveBookmarks;
       archiveDMs.value = account.xAccount.archiveDMs;
 
-      // Store in form data
-      updateFormData("archiveTweets", archiveTweets.value);
-      updateFormData("archiveTweetsHTML", archiveTweetsHTML.value);
-      updateFormData("archiveLikes", archiveLikes.value);
-      updateFormData("archiveBookmarks", archiveBookmarks.value);
-      updateFormData("archiveDMs", archiveDMs.value);
-
       updateProceedState();
     }
   } finally {
@@ -157,12 +132,6 @@ onMounted(async () => {
 
 <template>
   <BaseWizardPage
-    :model="model"
-    :user-authenticated="userAuthenticated"
-    :user-premium="userPremium"
-    :config="wizardConfig"
-    :is-loading="isLoading"
-    :can-proceed="canProceed && hasValidSelection"
     :breadcrumb-props="{
       buttons: [
         {
@@ -197,101 +166,103 @@ onMounted(async () => {
     }"
   >
     <template #content>
-      <div class="mb-4">
-        <h2>Build options</h2>
-        <p class="text-muted">
-          You can save tweets, likes, and direct messages.
-        </p>
-      </div>
-
-      <XLastImportOrBuildComponent
-        :account-i-d="model.account.id"
-        :show-button="false"
-        :show-no-data-warning="false"
-        @set-state="emit('setState', $event)"
-      />
-
-      <form @submit.prevent>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveTweets"
-              v-model="archiveTweets"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveTweets">
-              Save my tweets
-            </label>
-          </div>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>Build options</h2>
+          <p class="text-muted">
+            You can save tweets, likes, and direct messages.
+          </p>
         </div>
-        <div class="indent">
+
+        <XLastImportOrBuildComponent
+          :account-i-d="model.account.id"
+          :show-button="false"
+          :show-no-data-warning="false"
+          @set-state="emit('setState', $event)"
+        />
+
+        <form @submit.prevent>
           <div class="mb-3">
             <div class="form-check">
               <input
-                id="archiveTweetsHTML"
-                v-model="archiveTweetsHTML"
+                id="archiveTweets"
+                v-model="archiveTweets"
                 type="checkbox"
                 class="form-check-input"
-                :disabled="!archiveTweets"
+                @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveTweetsHTML">
-                Save an HTML version of each tweet
+              <label class="form-check-label" for="archiveTweets">
+                Save my tweets
               </label>
             </div>
-            <div class="indent">
-              <small class="form-text text-muted">
-                Make an HTML archive of each tweet, including its replies, which
-                is good for taking screenshots
-                <em>(takes longer)</em>
-              </small>
+          </div>
+          <div class="indent">
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  id="archiveTweetsHTML"
+                  v-model="archiveTweetsHTML"
+                  type="checkbox"
+                  class="form-check-input"
+                  :disabled="!archiveTweets"
+                />
+                <label class="form-check-label" for="archiveTweetsHTML">
+                  Save an HTML version of each tweet
+                </label>
+              </div>
+              <div class="indent">
+                <small class="form-text text-muted">
+                  Make an HTML archive of each tweet, including its replies,
+                  which is good for taking screenshots
+                  <em>(takes longer)</em>
+                </small>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveLikes"
-              v-model="archiveLikes"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveLikes">
-              Save my likes
-            </label>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="archiveLikes"
+                v-model="archiveLikes"
+                type="checkbox"
+                class="form-check-input"
+                @change="updateProceedState"
+              />
+              <label class="form-check-label" for="archiveLikes">
+                Save my likes
+              </label>
+            </div>
           </div>
-        </div>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveBookmarks"
-              v-model="archiveBookmarks"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveBookmarks">
-              Save my bookmarks
-            </label>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="archiveBookmarks"
+                v-model="archiveBookmarks"
+                type="checkbox"
+                class="form-check-input"
+                @change="updateProceedState"
+              />
+              <label class="form-check-label" for="archiveBookmarks">
+                Save my bookmarks
+              </label>
+            </div>
           </div>
-        </div>
-        <div class="mb-3">
-          <div class="form-check">
-            <input
-              id="archiveDMs"
-              v-model="archiveDMs"
-              type="checkbox"
-              class="form-check-input"
-              @change="updateProceedState"
-            />
-            <label class="form-check-label" for="archiveDMs">
-              Save my direct messages
-            </label>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                id="archiveDMs"
+                v-model="archiveDMs"
+                type="checkbox"
+                class="form-check-input"
+                @change="updateProceedState"
+              />
+              <label class="form-check-label" for="archiveDMs">
+                Save my direct messages
+              </label>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </template>
   </BaseWizardPage>
 </template>
