@@ -4,8 +4,7 @@ import { XViewModel, State } from "../../view_models/XViewModel";
 import { XImportArchiveResponse } from "../../../../shared_types";
 import { getBreadcrumbIcon } from "../../util";
 import RunningIcon from "../shared_components/RunningIcon.vue";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -287,9 +286,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
+  <BaseWizardPage
+    :breadcrumb-props="{
+      buttons: [
         {
           label: 'Dashboard',
           action: () => emit('setState', State.WizardDashboard),
@@ -309,203 +308,207 @@ onMounted(async () => {
           action: backClicked,
           icon: getBreadcrumbIcon('import'),
         },
-      ]"
-      label="Importing"
-      :icon="getBreadcrumbIcon('import')"
-    />
+      ],
+      label: 'Importing',
+      icon: getBreadcrumbIcon('import'),
+    }"
+    :button-props="
+      !importStarted
+        ? {
+            backButtons: [
+              { label: 'Back to Import X Archive', action: backClicked },
+            ],
+            nextButtons: [
+              {
+                label: 'Start Import',
+                action: startClicked,
+                disabled: importFromArchivePath == '',
+              },
+            ],
+          }
+        : importFinished ||
+            (importFailed && props.model.account?.xAccount?.archiveOnly)
+          ? {
+              backButtons: [
+                {
+                  label: props.model.account?.xAccount?.archiveOnly
+                    ? 'Back to Import X Archive'
+                    : 'Back to Import from X',
+                  action: () =>
+                    emit(
+                      'setState',
+                      props.model.account?.xAccount?.archiveOnly
+                        ? State.WizardArchiveOnly
+                        : State.WizardImportStart,
+                    ),
+                },
+              ],
+              nextButtons: [
+                {
+                  label: 'Backup More Data from X',
+                  action: () => emit('setState', State.WizardArchiveOptions),
+                  hide:
+                    props.model.account?.xAccount?.archiveOnly || importFailed,
+                },
+                {
+                  label: 'Go to Dashboard',
+                  action: () => emit('setState', State.WizardDashboard),
+                },
+              ],
+            }
+          : {
+              backButtons: [],
+              nextButtons: [],
+            }
+    "
+  >
+    <template #content>
+      <div class="wizard-scroll-content">
+        <h2>Import your X archive</h2>
+        <p class="text-muted">
+          <template v-if="!importStarted">
+            Browse for the ZIP file of the X archive you downloaded, or the
+            folder where you have already extracted it.
+          </template>
+          <template v-else> Importing your archive... </template>
+        </p>
 
-    <div class="wizard-scroll-content">
-      <h2>Import your X archive</h2>
-      <p class="text-muted">
         <template v-if="!importStarted">
-          Browse for the ZIP file of the X archive you downloaded, or the folder
-          where you have already extracted it.
-        </template>
-        <template v-else> Importing your archive... </template>
-      </p>
-
-      <template v-if="!importStarted">
-        <div class="input-group">
-          <input
-            v-model="importFromArchivePath"
-            type="text"
-            class="form-control"
-            placeholder="Import your X archive"
-            readonly
-          />
-          <template v-if="platform == 'darwin'">
-            <button
-              class="btn btn-secondary"
-              @click="importFromArchiveBrowseClicked"
-            >
-              Browse for Archive
-            </button>
-          </template>
-          <template v-else>
-            <button
-              class="btn btn-secondary me-1"
-              @click="importFromArchiveBrowseZipClicked"
-            >
-              Browse for ZIP
-            </button>
-            <button
-              class="btn btn-secondary"
-              @click="importFromArchiveBrowseFolderClicked"
-            >
-              Browse for Unzipped Folder
-            </button>
-          </template>
-        </div>
-      </template>
-      <template v-else>
-        <ul class="import-status">
-          <li
-            :class="
-              statusValidating == ImportStatus.Pending ? 'text-muted' : ''
-            "
-          >
-            <i
-              v-if="statusValidating != ImportStatus.Active"
-              :class="['fa', iconFromStatus(statusValidating)]"
+          <div class="input-group">
+            <input
+              v-model="importFromArchivePath"
+              type="text"
+              class="form-control"
+              placeholder="Import your X archive"
+              readonly
             />
-            <i v-else>
-              <RunningIcon />
-            </i>
-            Validating X archive
-          </li>
-          <li
-            :class="
-              statusImportingTweets == ImportStatus.Pending ? 'text-muted' : ''
-            "
-          >
-            <i
-              v-if="statusImportingTweets != ImportStatus.Active"
-              :class="['fa', iconFromStatus(statusImportingTweets)]"
-            />
-            <i v-else>
-              <RunningIcon />
-            </i>
-            Importing tweets
-            <span v-if="tweetCountString != ''" class="text-muted">
-              ({{ tweetCountString }})
-            </span>
-          </li>
-          <li
-            :class="
-              statusImportingLikes == ImportStatus.Pending ? 'text-muted' : ''
-            "
-          >
-            <i
-              v-if="statusImportingLikes != ImportStatus.Active"
-              :class="['fa', iconFromStatus(statusImportingLikes)]"
-            />
-            <i v-else>
-              <RunningIcon />
-            </i>
-            Importing likes
-            <span v-if="likeCountString != ''" class="text-muted">
-              ({{ likeCountString }})
-            </span>
-          </li>
-          <li
-            :class="
-              statusBuildCydArchive == ImportStatus.Pending ? 'text-muted' : ''
-            "
-          >
-            <i
-              v-if="statusBuildCydArchive != ImportStatus.Active"
-              :class="['fa', iconFromStatus(statusBuildCydArchive)]"
-            />
-            <i v-else>
-              <RunningIcon />
-            </i>
-            Build Cyd archive
-          </li>
-        </ul>
-
-        <template v-if="importFinished">
-          <div class="alert alert-success mt-3">
-            <i class="fa-solid fa-check" />
-            Import finished successfully!
-          </div>
-          <p
-            v-if="!props.model.account?.xAccount?.archiveOnly"
-            class="small text-muted"
-          >
-            Cyd can backup even more data from your X account that isn't
-            included in your archive. If you don't care about this, you're ready
-            to delete or migrate your data now.
-          </p>
-          <p
-            v-if="props.model.account?.xAccount?.archiveOnly"
-            class="small text-muted"
-          >
-            You're ready to migrate your data now.
-          </p>
-        </template>
-        <template v-if="importFailed">
-          <div
-            v-for="errorMessage in errorMessages"
-            :key="errorMessage"
-            class="alert alert-danger mt-3 text-break"
-          >
-            <strong>Import failed.</strong> {{ errorMessage }}
+            <template v-if="platform == 'darwin'">
+              <button
+                class="btn btn-secondary"
+                @click="importFromArchiveBrowseClicked"
+              >
+                Browse for Archive
+              </button>
+            </template>
+            <template v-else>
+              <button
+                class="btn btn-secondary me-1"
+                @click="importFromArchiveBrowseZipClicked"
+              >
+                Browse for ZIP
+              </button>
+              <button
+                class="btn btn-secondary"
+                @click="importFromArchiveBrowseFolderClicked"
+              >
+                Browse for Unzipped Folder
+              </button>
+            </template>
           </div>
         </template>
-      </template>
-    </div>
+        <template v-else>
+          <ul class="import-status">
+            <li
+              :class="
+                statusValidating == ImportStatus.Pending ? 'text-muted' : ''
+              "
+            >
+              <i
+                v-if="statusValidating != ImportStatus.Active"
+                :class="['fa', iconFromStatus(statusValidating)]"
+              />
+              <i v-else>
+                <RunningIcon />
+              </i>
+              Validating X archive
+            </li>
+            <li
+              :class="
+                statusImportingTweets == ImportStatus.Pending
+                  ? 'text-muted'
+                  : ''
+              "
+            >
+              <i
+                v-if="statusImportingTweets != ImportStatus.Active"
+                :class="['fa', iconFromStatus(statusImportingTweets)]"
+              />
+              <i v-else>
+                <RunningIcon />
+              </i>
+              Importing tweets
+              <span v-if="tweetCountString != ''" class="text-muted">
+                ({{ tweetCountString }})
+              </span>
+            </li>
+            <li
+              :class="
+                statusImportingLikes == ImportStatus.Pending ? 'text-muted' : ''
+              "
+            >
+              <i
+                v-if="statusImportingLikes != ImportStatus.Active"
+                :class="['fa', iconFromStatus(statusImportingLikes)]"
+              />
+              <i v-else>
+                <RunningIcon />
+              </i>
+              Importing likes
+              <span v-if="likeCountString != ''" class="text-muted">
+                ({{ likeCountString }})
+              </span>
+            </li>
+            <li
+              :class="
+                statusBuildCydArchive == ImportStatus.Pending
+                  ? 'text-muted'
+                  : ''
+              "
+            >
+              <i
+                v-if="statusBuildCydArchive != ImportStatus.Active"
+                :class="['fa', iconFromStatus(statusBuildCydArchive)]"
+              />
+              <i v-else>
+                <RunningIcon />
+              </i>
+              Build Cyd archive
+            </li>
+          </ul>
 
-    <template v-if="!importStarted">
-      <ButtonsComponent
-        :back-buttons="[
-          { label: 'Back to Import X Archive', action: backClicked },
-        ]"
-        :next-buttons="[
-          {
-            label: 'Start Import',
-            action: startClicked,
-            disabled: importFromArchivePath == '',
-          },
-        ]"
-      />
+          <template v-if="importFinished">
+            <div class="alert alert-success mt-3">
+              <i class="fa-solid fa-check" />
+              Import finished successfully!
+            </div>
+            <p
+              v-if="!props.model.account?.xAccount?.archiveOnly"
+              class="small text-muted"
+            >
+              Cyd can backup even more data from your X account that isn't
+              included in your archive. If you don't care about this, you're
+              ready to delete or migrate your data now.
+            </p>
+            <p
+              v-if="props.model.account?.xAccount?.archiveOnly"
+              class="small text-muted"
+            >
+              You're ready to migrate your data now.
+            </p>
+          </template>
+          <template v-if="importFailed">
+            <div
+              v-for="errorMessage in errorMessages"
+              :key="errorMessage"
+              class="alert alert-danger mt-3 text-break"
+            >
+              <strong>Import failed.</strong> {{ errorMessage }}
+            </div>
+          </template>
+        </template>
+      </div>
     </template>
-    <template v-else>
-      <template
-        v-if="
-          importFinished ||
-          (importFailed && props.model.account?.xAccount?.archiveOnly)
-        "
-      >
-        <ButtonsComponent
-          :back-buttons="[
-            {
-              label: props.model.account?.xAccount?.archiveOnly
-                ? 'Back to Import X Archive'
-                : 'Back to Import from X',
-              action: () =>
-                emit(
-                  'setState',
-                  props.model.account?.xAccount?.archiveOnly
-                    ? State.WizardArchiveOnly
-                    : State.WizardImportStart,
-                ),
-            },
-          ]"
-          :next-buttons="[
-            {
-              label: 'Backup More Data from X',
-              action: () => emit('setState', State.WizardArchiveOptions),
-              hide: props.model.account?.xAccount?.archiveOnly || importFailed,
-            },
-            {
-              label: 'Go to Dashboard',
-              action: () => emit('setState', State.WizardDashboard),
-            },
-          ]"
-        />
-      </template>
-    </template>
-  </div>
+  </BaseWizardPage>
 </template>
 
 <style scoped>

@@ -5,8 +5,7 @@ import { getBreadcrumbIcon, openURL } from "../../util";
 import { xHasSomeData } from "../../util_x";
 
 import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 // Props
 const props = defineProps<{
@@ -73,244 +72,26 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
+  <BaseWizardPage
+    :breadcrumb-props="{
+      buttons: [
         {
           label: 'Dashboard',
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
-      ]"
-      label="Local Database"
-      :icon="getBreadcrumbIcon('database')"
-    />
-
-    <div class="wizard-scroll-content">
-      <h2>Build your local database</h2>
-      <p class="text-muted">
-        There are different ways to get data from your X account. How would you
-        like to proceed?
-      </p>
-
-      <XLastImportOrBuildComponent
-        :account-i-d="model.account.id"
-        :show-button="false"
-        :show-no-data-warning="false"
-        @set-state="emit('setState', $event)"
-      />
-
-      <!-- import archive recommended -->
-      <template v-if="recommendedState == RecommendedState.ImportArchive">
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
-          @click="buildDatabaseStrategy = 'importArchive'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>
-                Import X archive
-                <span class="ms-2 text-muted">(recommended)</span>
-              </div>
-              <small class="info text-muted">
-                You have a lot of data so importing your X archive is definitely
-                the way to go.
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
-          @click="buildDatabaseStrategy = 'buildFromScratch'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>Build database from scratch</div>
-              <small class="info text-muted">
-                X restricts how much of your data you can access. You likely
-                won't get all of your data if you have Cyd build it from
-                scratch. Building from scratch is a great way to backup your
-                direct messages, though.
-                <a
-                  href="#"
-                  @click="
-                    openURL(
-                      'https://docs.cyd.social/docs/x/local-database/build',
-                    )
-                  "
-                >
-                  Read more</a
-                >.
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
-          @click="buildDatabaseStrategy = 'archiveData'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>Save HTML tweets, direct messages, and/or bookmarks</div>
-              <small class="info text-muted">
-                Cyd can save an HTML version of each tweet, and detailed backup
-                of your direct messages, and your bookmarks.
-              </small>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- build from scratch recommended -->
-      <template
-        v-else-if="recommendedState == RecommendedState.BuildFromScratch"
-      >
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
-          @click="buildDatabaseStrategy = 'buildFromScratch'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>
-                Build database from scratch
-                <span class="ms-2 text-muted">(recommended)</span>
-              </div>
-              <small class="info text-muted">
-                You don't have a lot of data in your X account, so having Cyd
-                scroll through your profile will be faster. Building from
-                scratch is also a great way to backup your direct messages.
-                <a
-                  href="#"
-                  @click="
-                    openURL(
-                      'https://docs.cyd.social/docs/x/local-database/build',
-                    )
-                  "
-                >
-                  Read more</a
-                >.
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
-          @click="buildDatabaseStrategy = 'importArchive'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>Import X archive</div>
-              <small class="info text-muted">
-                Importing your X archive will work great, but you'll need to
-                wait at least a day for X to send it to you if you don't already
-                have it.
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
-          @click="buildDatabaseStrategy = 'archiveData'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>Save HTML tweets, direct messages, and/or bookmarks</div>
-              <small class="info text-muted">
-                Cyd can save an HTML version of each tweet, and detailed backup
-                of your direct messages, and your bookmarks.
-              </small>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- unknown which is better -->
-      <template v-else>
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
-          @click="buildDatabaseStrategy = 'importArchive'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>
-                Import X archive
-                <span class="ms-2 text-muted">(recommended)</span>
-              </div>
-              <small class="info text-muted">
-                Importing your X archive will work great, but you'll need to
-                wait at least a day for X to send it to you if you don't already
-                have it.
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
-          @click="buildDatabaseStrategy = 'buildFromScratch'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>Build database from scratch</div>
-              <small class="info text-muted">
-                Having Cyd scroll through your profile is faster than importing
-                your X archive, but it only works if you have less than about
-                2,000 tweets or likes. Building from scratch is a great way to
-                backup your direct messages, though.
-                <a
-                  href="#"
-                  @click="
-                    openURL(
-                      'https://docs.cyd.social/docs/x/local-database/build',
-                    )
-                  "
-                >
-                  Read more</a
-                >.
-              </small>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="option-card card mb-3"
-          :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
-          @click="buildDatabaseStrategy = 'archiveData'"
-        >
-          <div class="card-body d-flex align-items-center">
-            <div>
-              <div>Save HTML tweets, direct messages, and/or bookmarks</div>
-              <small class="info text-muted">
-                Cyd can save an HTML version of each tweet, and detailed backup
-                of your direct messages, and your bookmarks.
-              </small>
-            </div>
-          </div>
-        </div>
-      </template>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[
+      ],
+      label: 'Local Database',
+      icon: getBreadcrumbIcon('database'),
+    }"
+    :button-props="{
+      backButtons: [
         {
           label: 'Back to Dashboard',
           action: () => emit('setState', State.WizardDashboard),
-          icon: 'fa-solid fa-backward',
         },
-      ]"
-      :next-buttons="[
+      ],
+      nextButtons: [
         {
           label:
             buildDatabaseStrategy == 'importArchive'
@@ -319,11 +100,228 @@ onMounted(async () => {
                 ? 'Continue to Build Options'
                 : 'Continue to Archive Options',
           action: nextClicked,
-          icon: 'fa-solid fa-forward',
         },
-      ]"
-    />
-  </div>
+      ],
+    }"
+  >
+    <template #content>
+      <div class="wizard-scroll-content">
+        <h2>Build your local database</h2>
+        <p class="text-muted">
+          There are different ways to get data from your X account. How would
+          you like to proceed?
+        </p>
+
+        <XLastImportOrBuildComponent
+          :account-i-d="model.account.id"
+          :show-button="false"
+          :show-no-data-warning="false"
+          @set-state="emit('setState', $event)"
+        />
+
+        <!-- import archive recommended -->
+        <template v-if="recommendedState == RecommendedState.ImportArchive">
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
+            @click="buildDatabaseStrategy = 'importArchive'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>
+                  Import X archive
+                  <span class="ms-2 text-muted">(recommended)</span>
+                </div>
+                <small class="info text-muted">
+                  You have a lot of data so importing your X archive is
+                  definitely the way to go.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
+            @click="buildDatabaseStrategy = 'buildFromScratch'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>Build database from scratch</div>
+                <small class="info text-muted">
+                  X restricts how much of your data you can access. You likely
+                  won't get all of your data if you have Cyd build it from
+                  scratch. Building from scratch is a great way to backup your
+                  direct messages, though.
+                  <a
+                    href="#"
+                    @click="
+                      openURL(
+                        'https://docs.cyd.social/docs/x/local-database/build',
+                      )
+                    "
+                  >
+                    Read more</a
+                  >.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
+            @click="buildDatabaseStrategy = 'archiveData'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>Save HTML tweets, direct messages, and/or bookmarks</div>
+                <small class="info text-muted">
+                  Cyd can save an HTML version of each tweet, and detailed
+                  backup of your direct messages, and your bookmarks.
+                </small>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- build from scratch recommended -->
+        <template
+          v-else-if="recommendedState == RecommendedState.BuildFromScratch"
+        >
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
+            @click="buildDatabaseStrategy = 'buildFromScratch'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>
+                  Build database from scratch
+                  <span class="ms-2 text-muted">(recommended)</span>
+                </div>
+                <small class="info text-muted">
+                  You don't have a lot of data in your X account, so having Cyd
+                  scroll through your profile will be faster. Building from
+                  scratch is also a great way to backup your direct messages.
+                  <a
+                    href="#"
+                    @click="
+                      openURL(
+                        'https://docs.cyd.social/docs/x/local-database/build',
+                      )
+                    "
+                  >
+                    Read more</a
+                  >.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
+            @click="buildDatabaseStrategy = 'importArchive'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>Import X archive</div>
+                <small class="info text-muted">
+                  Importing your X archive will work great, but you'll need to
+                  wait at least a day for X to send it to you if you don't
+                  already have it.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
+            @click="buildDatabaseStrategy = 'archiveData'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>Save HTML tweets, direct messages, and/or bookmarks</div>
+                <small class="info text-muted">
+                  Cyd can save an HTML version of each tweet, and detailed
+                  backup of your direct messages, and your bookmarks.
+                </small>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- unknown which is better -->
+        <template v-else>
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'importArchive' }"
+            @click="buildDatabaseStrategy = 'importArchive'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>
+                  Import X archive
+                  <span class="ms-2 text-muted">(recommended)</span>
+                </div>
+                <small class="info text-muted">
+                  Importing your X archive will work great, but you'll need to
+                  wait at least a day for X to send it to you if you don't
+                  already have it.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'buildFromScratch' }"
+            @click="buildDatabaseStrategy = 'buildFromScratch'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>Build database from scratch</div>
+                <small class="info text-muted">
+                  Having Cyd scroll through your profile is faster than
+                  importing your X archive, but it only works if you have less
+                  than about 2,000 tweets or likes. Building from scratch is a
+                  great way to backup your direct messages, though.
+                  <a
+                    href="#"
+                    @click="
+                      openURL(
+                        'https://docs.cyd.social/docs/x/local-database/build',
+                      )
+                    "
+                  >
+                    Read more</a
+                  >.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="option-card card mb-3"
+            :class="{ selected: buildDatabaseStrategy === 'archiveData' }"
+            @click="buildDatabaseStrategy = 'archiveData'"
+          >
+            <div class="card-body d-flex align-items-center">
+              <div>
+                <div>Save HTML tweets, direct messages, and/or bookmarks</div>
+                <small class="info text-muted">
+                  Cyd can save an HTML version of each tweet, and detailed
+                  backup of your direct messages, and your bookmarks.
+                </small>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+  </BaseWizardPage>
 </template>
 
 <style scoped></style>

@@ -19,8 +19,7 @@ import {
 
 import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
 import LoadingComponent from "../shared_components/LoadingComponent.vue";
-import BreadcrumbsComponent from "../shared_components/BreadcrumbsComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -211,247 +210,26 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <div class="wizard-content">
-    <BreadcrumbsComponent
-      :buttons="[
+  <BaseWizardPage
+    :breadcrumb-props="{
+      buttons: [
         {
           label: 'Dashboard',
           action: () => emit('setState', XState.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
-      ]"
-      label="Migrate to Bluesky Options"
-      :icon="getBreadcrumbIcon('bluesky')"
-    />
-
-    <div class="wizard-scroll-content">
-      <div class="mb-4">
-        <h2>
-          Migrate to Bluesky
-          <span
-            v-if="!userAuthenticated || !userPremium"
-            class="premium badge badge-primary"
-            >Premium</span
-          >
-        </h2>
-        <p class="text-muted">
-          Import your old tweets into a Bluesky account. You may want to make a
-          new Bluesky account just for your old tweets.
-        </p>
-
-        <div v-if="isArchiveOld && hasSomeData" class="alert alert-warning">
-          <p>
-            <strong>
-              We recommend that you reimport your local database of tweets, or
-              rebuild it from scratch,
-              <em>before</em> migrating to Bluesky.
-            </strong>
-          </p>
-          <p>
-            When you last built your local database of tweets, Cyd didn't keep
-            track of things like media, replies, and quote tweets. If you
-            migrate to Bluesky now, you may lose some of your data.
-          </p>
-        </div>
-
-        <XLastImportOrBuildComponent
-          :account-i-d="model.account.id"
-          :show-button="true"
-          :show-no-data-warning="true"
-          :archive-only="props.model.account?.xAccount?.archiveOnly"
-          @set-state="emit('setState', $event)"
-        />
-
-        <template v-if="state == State.Loading">
-          <LoadingComponent />
-        </template>
-        <template
-          v-if="state == State.NotConnected || state == State.Connecting"
-        >
-          <form @submit.prevent="connectClicked">
-            <p>To get started, connect your Bluesky account.</p>
-            <div class="form-group">
-              <label for="username" class="sr-only">Bluesky Handle</label>
-              <div class="input-group">
-                <input
-                  id="handle"
-                  v-model="blueskyHandle"
-                  type="text"
-                  class="form-control"
-                  placeholder="Bluesky Handle (for example, me.bsky.social)"
-                  required
-                  :disabled="state !== State.NotConnected"
-                />
-                <div class="input-group-append">
-                  <button
-                    class="btn btn-primary"
-                    type="submit"
-                    :disabled="state !== State.NotConnected"
-                  >
-                    {{ connectButtonText }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </form>
-        </template>
-        <template v-else-if="state == State.FinishInBrowser">
-          <div class="d-flex align-items-center">
-            <div class="flex-grow-1 fs-4">
-              Finish connecting to the Bluesky account
-              <strong>@{{ blueskyHandle }}</strong> in your web browser.
-            </div>
-            <div>
-              <button
-                class="btn btn-secondary"
-                type="button"
-                @click="disconnectClicked"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </template>
-        <template v-else-if="state == State.Connected">
-          <!-- Show the Bluesky account that is connected -->
-          <hr />
-          <p>You have connected to the following Bluesky account:</p>
-          <div class="d-flex align-items-center">
-            <div class="flex-grow-1">
-              <template v-if="blueskyProfile">
-                <template v-if="blueskyProfile.avatar">
-                  <img
-                    :src="blueskyProfile.avatar"
-                    class="rounded-circle me-2"
-                    width="32"
-                    height="32"
-                  />
-                </template>
-                <template v-if="blueskyProfile.displayName">
-                  <span class="fw-bold me-2">{{
-                    blueskyProfile.displayName
-                  }}</span>
-                  <small class="text-muted">@{{ blueskyProfile.handle }}</small>
-                </template>
-                <template v-else>
-                  <span class="fw-bold">@{{ blueskyProfile.handle }}</span>
-                </template>
-              </template>
-            </div>
-            <div>
-              <button
-                class="btn btn-secondary"
-                type="button"
-                @click="disconnectClicked"
-              >
-                Disconnect
-              </button>
-            </div>
-          </div>
-          <hr />
-
-          <!-- Connected: Show the preview of what will be migrated -->
-          <template v-if="state == State.Connected && tweetCounts !== null">
-            <div class="container">
-              <div class="row">
-                <div class="col col-60">
-                  <p v-if="tweetCounts.toMigrateTweets.length > 0">
-                    <strong
-                      >You can migrate
-                      {{ tweetCounts.toMigrateTweets.length.toLocaleString() }}
-                      tweets into Bluesky.</strong
-                    >
-                  </p>
-                  <p v-else>You don't have any tweets to migrate.</p>
-                  <ul class="small text-muted">
-                    <li>
-                      Your local database has a total of
-                      <strong>
-                        {{ tweetCounts.totalTweetsCount.toLocaleString() }}
-                        tweets</strong
-                      >.
-                    </li>
-                    <li>
-                      <strong>
-                        {{ tweetCounts.totalRetweetsCount.toLocaleString() }}
-                        tweets
-                      </strong>
-                      can't be migrated because they're retweets.
-                    </li>
-                    <li>
-                      <strong>
-                        {{ tweetCounts.cannotMigrateCount.toLocaleString() }}
-                        tweets
-                      </strong>
-                      can't be migrated because they're replies to users on X.
-                    </li>
-                    <li>
-                      <strong>
-                        {{
-                          tweetCounts.alreadyMigratedTweets.length.toLocaleString()
-                        }}
-                        tweets
-                      </strong>
-                      have already been migrated.
-                    </li>
-                  </ul>
-                </div>
-                <div class="col col-40">
-                  <Pie
-                    :data="{
-                      labels: [
-                        'Ready to Migrate',
-                        'Already Migrated',
-                        'Replies',
-                        'Retweets',
-                      ],
-                      datasets: [
-                        {
-                          backgroundColor: [
-                            '#377eb8',
-                            '#ff7f00',
-                            '#4daf4a',
-                            '#984ea3',
-                          ],
-                          data: [
-                            tweetCounts.toMigrateTweets.length,
-                            tweetCounts.alreadyMigratedTweets.length,
-                            tweetCounts.cannotMigrateCount,
-                            tweetCounts.totalRetweetsCount,
-                          ],
-                        },
-                      ],
-                    }"
-                    :options="{
-                      plugins: {
-                        legend: {
-                          display: true,
-                          position: 'bottom',
-                        },
-                        tooltip: {
-                          enabled: true,
-                        },
-                      },
-                      responsive: true,
-                      maintainAspectRatio: false,
-                    }"
-                  />
-                </div>
-              </div>
-            </div>
-          </template>
-        </template>
-      </div>
-    </div>
-
-    <ButtonsComponent
-      :back-buttons="[
+      ],
+      label: 'Migrate to Bluesky Options',
+      icon: getBreadcrumbIcon('bluesky'),
+    }"
+    :button-props="{
+      backButtons: [
         {
           label: 'Back to Dashboard',
           action: () => emit('setState', XState.WizardDashboard),
         },
-      ]"
-      :next-buttons="
+      ],
+      nextButtons:
         state == State.Connected
           ? [
               {
@@ -466,10 +244,235 @@ onUnmounted(async () => {
                 dangerStyle: true,
               },
             ]
-          : []
-      "
-    />
-  </div>
+          : [],
+    }"
+  >
+    <template #content>
+      <div class="wizard-scroll-content">
+        <div class="mb-4">
+          <h2>
+            Migrate to Bluesky
+            <span
+              v-if="!userAuthenticated || !userPremium"
+              class="premium badge badge-primary"
+              >Premium</span
+            >
+          </h2>
+          <p class="text-muted">
+            Import your old tweets into a Bluesky account. You may want to make
+            a new Bluesky account just for your old tweets.
+          </p>
+
+          <div v-if="isArchiveOld && hasSomeData" class="alert alert-warning">
+            <p>
+              <strong>
+                We recommend that you reimport your local database of tweets, or
+                rebuild it from scratch,
+                <em>before</em> migrating to Bluesky.
+              </strong>
+            </p>
+            <p>
+              When you last built your local database of tweets, Cyd didn't keep
+              track of things like media, replies, and quote tweets. If you
+              migrate to Bluesky now, you may lose some of your data.
+            </p>
+          </div>
+
+          <XLastImportOrBuildComponent
+            :account-i-d="model.account.id"
+            :show-button="true"
+            :show-no-data-warning="true"
+            :archive-only="props.model.account?.xAccount?.archiveOnly"
+            @set-state="emit('setState', $event)"
+          />
+
+          <template v-if="state == State.Loading">
+            <LoadingComponent />
+          </template>
+          <template
+            v-if="state == State.NotConnected || state == State.Connecting"
+          >
+            <form @submit.prevent="connectClicked">
+              <p>To get started, connect your Bluesky account.</p>
+              <div class="form-group">
+                <label for="username" class="sr-only">Bluesky Handle</label>
+                <div class="input-group">
+                  <input
+                    id="handle"
+                    v-model="blueskyHandle"
+                    type="text"
+                    class="form-control"
+                    placeholder="Bluesky Handle (for example, me.bsky.social)"
+                    required
+                    :disabled="state !== State.NotConnected"
+                  />
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-primary"
+                      type="submit"
+                      :disabled="state !== State.NotConnected"
+                    >
+                      {{ connectButtonText }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </template>
+          <template v-else-if="state == State.FinishInBrowser">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1 fs-4">
+                Finish connecting to the Bluesky account
+                <strong>@{{ blueskyHandle }}</strong> in your web browser.
+              </div>
+              <div>
+                <button
+                  class="btn btn-secondary"
+                  type="button"
+                  @click="disconnectClicked"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </template>
+          <template v-else-if="state == State.Connected">
+            <!-- Show the Bluesky account that is connected -->
+            <hr />
+            <p>You have connected to the following Bluesky account:</p>
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <template v-if="blueskyProfile">
+                  <template v-if="blueskyProfile.avatar">
+                    <img
+                      :src="blueskyProfile.avatar"
+                      class="rounded-circle me-2"
+                      width="32"
+                      height="32"
+                    />
+                  </template>
+                  <template v-if="blueskyProfile.displayName">
+                    <span class="fw-bold me-2">{{
+                      blueskyProfile.displayName
+                    }}</span>
+                    <small class="text-muted"
+                      >@{{ blueskyProfile.handle }}</small
+                    >
+                  </template>
+                  <template v-else>
+                    <span class="fw-bold">@{{ blueskyProfile.handle }}</span>
+                  </template>
+                </template>
+              </div>
+              <div>
+                <button
+                  class="btn btn-secondary"
+                  type="button"
+                  @click="disconnectClicked"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </div>
+            <hr />
+
+            <!-- Connected: Show the preview of what will be migrated -->
+            <template v-if="state == State.Connected && tweetCounts !== null">
+              <div class="container">
+                <div class="row">
+                  <div class="col col-60">
+                    <p v-if="tweetCounts.toMigrateTweets.length > 0">
+                      <strong
+                        >You can migrate
+                        {{
+                          tweetCounts.toMigrateTweets.length.toLocaleString()
+                        }}
+                        tweets into Bluesky.</strong
+                      >
+                    </p>
+                    <p v-else>You don't have any tweets to migrate.</p>
+                    <ul class="small text-muted">
+                      <li>
+                        Your local database has a total of
+                        <strong>
+                          {{ tweetCounts.totalTweetsCount.toLocaleString() }}
+                          tweets</strong
+                        >.
+                      </li>
+                      <li>
+                        <strong>
+                          {{ tweetCounts.totalRetweetsCount.toLocaleString() }}
+                          tweets
+                        </strong>
+                        can't be migrated because they're retweets.
+                      </li>
+                      <li>
+                        <strong>
+                          {{ tweetCounts.cannotMigrateCount.toLocaleString() }}
+                          tweets
+                        </strong>
+                        can't be migrated because they're replies to users on X.
+                      </li>
+                      <li>
+                        <strong>
+                          {{
+                            tweetCounts.alreadyMigratedTweets.length.toLocaleString()
+                          }}
+                          tweets
+                        </strong>
+                        have already been migrated.
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="col col-40">
+                    <Pie
+                      :data="{
+                        labels: [
+                          'Ready to Migrate',
+                          'Already Migrated',
+                          'Replies',
+                          'Retweets',
+                        ],
+                        datasets: [
+                          {
+                            backgroundColor: [
+                              '#377eb8',
+                              '#ff7f00',
+                              '#4daf4a',
+                              '#984ea3',
+                            ],
+                            data: [
+                              tweetCounts.toMigrateTweets.length,
+                              tweetCounts.alreadyMigratedTweets.length,
+                              tweetCounts.cannotMigrateCount,
+                              tweetCounts.totalRetweetsCount,
+                            ],
+                          },
+                        ],
+                      }"
+                      :options="{
+                        plugins: {
+                          legend: {
+                            display: true,
+                            position: 'bottom',
+                          },
+                          tooltip: {
+                            enabled: true,
+                          },
+                        },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                      }"
+                    />
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
+        </div>
+      </div>
+    </template>
+  </BaseWizardPage>
 </template>
 
 <style scoped>
