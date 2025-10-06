@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { XViewModel, State } from "../../view_models/XViewModel";
-import { xHasSomeData } from "../../util_x";
-import { getBreadcrumbIcon, openURL, setJobsType } from "../../util";
-import type { StandardWizardPageProps } from "../../types/WizardPage";
-import { useWizardPage } from "../../composables/useWizardPage";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
-import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
+import { XViewModel, State } from "../../../view_models/XViewModel";
+import { xHasSomeData } from "../../../util_x";
+import { getBreadcrumbIcon, openURL, setJobsType } from "../../../util";
+import type { StandardWizardPageProps } from "../../../types/WizardPage";
+import { useWizardPage } from "../../../composables/useWizardPage";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
 
 // Props
 interface Props extends StandardWizardPageProps {

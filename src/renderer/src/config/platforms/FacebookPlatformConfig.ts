@@ -2,13 +2,13 @@ import type { PlatformConfig } from "../../types/PlatformConfig";
 import { State } from "../../view_models/FacebookViewModel";
 
 // Import Facebook platform components
-import FacebookJobStatusComponent from "../../views/facebook/FacebookJobStatusComponent.vue";
-import FacebookWizardSidebar from "../../views/facebook/FacebookWizardSidebar.vue";
-import FacebookWizardBuildOptionsPage from "../../views/facebook/FacebookWizardBuildOptionsPage.vue";
-import FacebookWizardDeleteOptionsPage from "../../views/facebook/FacebookWizardDeleteOptionsPage.vue";
-import FacebookWizardReviewPage from "../../views/facebook/FacebookWizardReviewPage.vue";
-import FacebookFinishedRunningJobsPage from "../../views/facebook/FacebookFinishedRunningJobsPage.vue";
-import FacebookLastImportOrBuildComponent from "../../views/facebook/FacebookLastImportOrBuildComponent.vue";
+import FacebookJobStatusComponent from "../../views/facebook/components/FacebookJobStatusComponent.vue";
+import FacebookWizardSidebar from "../../views/facebook/wizard/FacebookWizardSidebar.vue";
+import FacebookWizardBuildOptionsPage from "../../views/facebook/wizard/FacebookWizardBuildOptionsPage.vue";
+import FacebookWizardDeleteOptionsPage from "../../views/facebook/wizard/FacebookWizardDeleteOptionsPage.vue";
+import FacebookWizardReviewPage from "../../views/facebook/wizard/FacebookWizardReviewPage.vue";
+import FacebookFinishedRunningJobsPage from "../../views/facebook/wizard/FacebookFinishedRunningJobsPage.vue";
+import FacebookLastImportOrBuildComponent from "../../views/facebook/components/FacebookLastImportOrBuildComponent.vue";
 
 /**
  * Facebook Platform Configuration

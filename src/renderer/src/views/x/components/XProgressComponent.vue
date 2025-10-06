@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import type { XProgress, XRateLimitInfo } from "../../../../shared_types";
+import type { XProgress, XRateLimitInfo } from "../../../../../shared_types";
 import XProgressErrorsOccuredComponent from "./XProgressErrorsOccuredComponent.vue";
 
 const intervalID = ref<number | null>(null);

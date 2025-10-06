@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, getCurrentInstance } from "vue";
-import { XViewModel, State, FailureState } from "../../view_models/XViewModel";
-import { openURL, getJobsType } from "../../util";
-import UpsellComponent from "../shared_components/UpsellComponent.vue";
-import ButtonsComponent from "../shared_components/ButtonsComponent.vue";
+import {
+  XViewModel,
+  State,
+  FailureState,
+} from "../../../view_models/XViewModel";
+import { openURL, getJobsType } from "../../../util";
+import UpsellComponent from "../../shared_components/UpsellComponent.vue";
+import ButtonsComponent from "../../shared_components/ButtonsComponent.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();

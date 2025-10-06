@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { FacebookViewModel, State } from "../../view_models/FacebookViewModel";
-import { getBreadcrumbIcon, getJobsType } from "../../util";
-import type { StandardWizardPageProps } from "../../types/WizardPage";
-import { useWizardPage } from "../../composables/useWizardPage";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
-import LoadingComponent from "../shared_components/LoadingComponent.vue";
-import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
+import {
+  FacebookViewModel,
+  State,
+} from "../../../view_models/FacebookViewModel";
+import { getBreadcrumbIcon, getJobsType } from "../../../util";
+import type { StandardWizardPageProps } from "../../../types/WizardPage";
+import { useWizardPage } from "../../../composables/useWizardPage";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+import LoadingComponent from "../../shared_components/LoadingComponent.vue";
+import AlertStayAwake from "../../shared_components/AlertStayAwake.vue";
 
 // Props
 interface Props extends StandardWizardPageProps {

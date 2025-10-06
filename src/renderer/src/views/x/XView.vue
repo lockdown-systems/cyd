@@ -48,7 +48,7 @@ import { xRequiresPremium, xPostProgress } from "../../util_x";
 import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
 import PlatformView from "../PlatformView.vue";
-import XProgressComponent from "./XProgressComponent.vue";
+import XProgressComponent from "./components/XProgressComponent.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();

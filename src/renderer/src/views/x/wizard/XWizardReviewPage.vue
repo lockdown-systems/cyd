@@ -4,26 +4,26 @@ import {
   XViewModel,
   State,
   tombstoneUpdateBioCreditCydText,
-} from "../../view_models/XViewModel";
-import { getBreadcrumbIcon, openURL, getJobsType } from "../../util";
+} from "../../../view_models/XViewModel";
+import { getBreadcrumbIcon, openURL, getJobsType } from "../../../util";
 import {
   XDeleteReviewStats,
   emptyXDeleteReviewStats,
   XMigrateTweetCounts,
   emptyXMigrateTweetCounts,
-} from "../../../../shared_types";
-import { xHasSomeData } from "../../util_x";
-import type { StandardWizardPageProps } from "../../types/WizardPage";
-import type { ButtonInfo } from "../../types";
-import { useWizardPage } from "../../composables/useWizardPage";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
-import LoadingComponent from "../shared_components/LoadingComponent.vue";
-import AlertStayAwake from "../shared_components/AlertStayAwake.vue";
-import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
+} from "../../../../../shared_types";
+import { xHasSomeData } from "../../../util_x";
+import type { StandardWizardPageProps } from "../../../types/WizardPage";
+import type { ButtonInfo } from "../../../types";
+import { useWizardPage } from "../../../composables/useWizardPage";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+import LoadingComponent from "../../shared_components/LoadingComponent.vue";
+import AlertStayAwake from "../../shared_components/AlertStayAwake.vue";
+import XTombstoneBannerComponent from "../components/XTombstoneBannerComponent.vue";
 import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
-} from "../../types_x";
+} from "../../../types_x";
 
 // Props
 interface Props extends StandardWizardPageProps {

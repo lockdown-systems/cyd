@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { State, FacebookViewModel } from "../../view_models/FacebookViewModel";
-import SidebarArchive from "../shared_components/SidebarArchive.vue";
+import {
+  State,
+  FacebookViewModel,
+} from "../../../view_models/FacebookViewModel";
+import SidebarArchive from "../../shared_components/SidebarArchive.vue";
 
 // Props
 defineProps<{

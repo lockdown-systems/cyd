@@ -5,21 +5,21 @@ import { ref, onMounted, onUnmounted, computed } from "vue";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Pie } from "vue-chartjs";
 
-import { XViewModel, State as XState } from "../../view_models/XViewModel";
+import { XViewModel, State as XState } from "../../../view_models/XViewModel";
 import {
   BlueskyMigrationProfile,
   XMigrateTweetCounts,
-} from "../../../../shared_types";
-import { getBreadcrumbIcon, setJobsType } from "../../util";
+} from "../../../../../shared_types";
+import { getBreadcrumbIcon, setJobsType } from "../../../util";
 import {
   xHasSomeData,
   xGetLastImportArchive,
   xGetLastBuildDatabase,
-} from "../../util_x";
+} from "../../../util_x";
 
-import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
-import LoadingComponent from "../shared_components/LoadingComponent.vue";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
+import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
+import LoadingComponent from "../../shared_components/LoadingComponent.vue";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 

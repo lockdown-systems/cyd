@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { getBreadcrumbIcon } from "../../util";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
+import { getBreadcrumbIcon } from "../../../util";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 
 const emit = defineEmits(["set-state", "update-account"]);
 

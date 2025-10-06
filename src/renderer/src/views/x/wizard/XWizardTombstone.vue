@@ -4,15 +4,15 @@ import {
   XViewModel,
   State,
   tombstoneUpdateBioCreditCydText,
-} from "../../view_models/XViewModel";
-import { setJobsType, getBreadcrumbIcon } from "../../util";
+} from "../../../view_models/XViewModel";
+import { setJobsType, getBreadcrumbIcon } from "../../../util";
 import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
-} from "../../types_x";
-import { useWizardPage } from "../../composables/useWizardPage";
-import XTombstoneBannerComponent from "./XTombstoneBannerComponent.vue";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
+} from "../../../types_x";
+import { useWizardPage } from "../../../composables/useWizardPage";
+import XTombstoneBannerComponent from "../components/XTombstoneBannerComponent.vue";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 
 // Props
 const props = defineProps<{

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, getCurrentInstance, onMounted } from "vue";
-import { XViewModel, State } from "../../view_models/XViewModel";
-import { XImportArchiveResponse } from "../../../../shared_types";
-import { getBreadcrumbIcon } from "../../util";
-import RunningIcon from "../shared_components/RunningIcon.vue";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
+import { XViewModel, State } from "../../../view_models/XViewModel";
+import { XImportArchiveResponse } from "../../../../../shared_types";
+import { getBreadcrumbIcon } from "../../../util";
+import RunningIcon from "../../shared_components/RunningIcon.vue";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();

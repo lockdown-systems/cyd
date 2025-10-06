@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { FacebookViewModel, State } from "../../view_models/FacebookViewModel";
-import { getJobsType } from "../../util";
-import UpsellComponent from "../shared_components/UpsellComponent.vue";
+import {
+  FacebookViewModel,
+  State,
+} from "../../../view_models/FacebookViewModel";
+import { getJobsType } from "../../../util";
+import UpsellComponent from "../../shared_components/UpsellComponent.vue";
 
 // Props
 const props = defineProps<{

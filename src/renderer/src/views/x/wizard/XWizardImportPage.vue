@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { XViewModel, State } from "../../view_models/XViewModel";
+import { XViewModel, State } from "../../../view_models/XViewModel";
 
-import { getBreadcrumbIcon, openURL } from "../../util";
+import { getBreadcrumbIcon, openURL } from "../../../util";
 
-import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
+import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 
 // Props
 const props = defineProps<{

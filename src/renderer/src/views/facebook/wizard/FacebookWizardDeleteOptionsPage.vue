@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { FacebookViewModel, State } from "../../view_models/FacebookViewModel";
-import { facebookHasSomeData } from "../../util_facebook";
-import { getBreadcrumbIcon, setJobsType } from "../../util";
-import type { StandardWizardPageProps } from "../../types/WizardPage";
-import { useWizardPage } from "../../composables/useWizardPage";
-import BaseWizardPage from "../shared_components/wizard/BaseWizardPage.vue";
-import FacebookLastImportOrBuildComponent from "./FacebookLastImportOrBuildComponent.vue";
+import {
+  FacebookViewModel,
+  State,
+} from "../../../view_models/FacebookViewModel";
+import { facebookHasSomeData } from "../../../util_facebook";
+import { getBreadcrumbIcon, setJobsType } from "../../../util";
+import type { StandardWizardPageProps } from "../../../types/WizardPage";
+import { useWizardPage } from "../../../composables/useWizardPage";
+import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+import FacebookLastImportOrBuildComponent from "../components/FacebookLastImportOrBuildComponent.vue";
 
 // Props
 interface Props extends StandardWizardPageProps {

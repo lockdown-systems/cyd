@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { formatDistanceToNow } from "date-fns";
-import { State } from "../../view_models/XViewModel";
-import { xGetLastImportArchive, xGetLastBuildDatabase } from "../../util_x";
+import { State } from "../../../view_models/XViewModel";
+import { xGetLastImportArchive, xGetLastBuildDatabase } from "../../../util_x";
 
 const props = defineProps<{
   accountID: number;

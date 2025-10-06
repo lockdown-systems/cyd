@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { XJob } from "../../../../shared_types";
-import RunningIcon from "../shared_components/RunningIcon.vue";
+import type { XJob } from "../../../../../shared_types";
+import RunningIcon from "../../shared_components/RunningIcon.vue";
 
 defineProps<{
   jobs: XJob[];

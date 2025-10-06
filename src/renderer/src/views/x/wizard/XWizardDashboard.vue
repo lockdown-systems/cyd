@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { XViewModel, State } from "../../view_models/XViewModel";
+import { XViewModel, State } from "../../../view_models/XViewModel";
 import {
   xHasSomeData,
   xGetLastImportArchive,
   xGetLastBuildDatabase,
   xGetLastDelete,
-} from "../../util_x";
+} from "../../../util_x";
 import { formatDistanceToNow } from "date-fns";
 
 // Props

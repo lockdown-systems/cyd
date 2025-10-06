@@ -2,7 +2,7 @@
 import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
-} from "../../types_x";
+} from "../../../types_x";
 defineProps<{
   updateBanner: boolean;
   updateBannerBackground: TombstoneBannerBackground;

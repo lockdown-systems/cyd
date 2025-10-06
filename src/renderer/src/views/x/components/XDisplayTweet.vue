@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { XViewModel, RunJobsState } from "../../view_models/XViewModel";
-import { formattedDatetime } from "../../util";
+import { XViewModel, RunJobsState } from "../../../view_models/XViewModel";
+import { formattedDatetime } from "../../../util";
 
-import { XTweetItem } from "../../../../shared_types";
+import { XTweetItem } from "../../../../../shared_types";
 
 // Props
 const props = defineProps<{

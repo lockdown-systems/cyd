@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, getCurrentInstance, onMounted } from "vue";
-import { XViewModel, State } from "../../view_models/XViewModel";
-import { getJobsType, getPremiumTasks, clearPremiumTasks } from "../../util";
+import { XViewModel, State } from "../../../view_models/XViewModel";
+import { getJobsType, getPremiumTasks, clearPremiumTasks } from "../../../util";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();

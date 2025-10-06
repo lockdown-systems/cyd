@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { formatDistanceToNow } from "date-fns";
-import { State } from "../../view_models/FacebookViewModel";
+import { State } from "../../../view_models/FacebookViewModel";
 
 const props = defineProps<{
   accountID: number;

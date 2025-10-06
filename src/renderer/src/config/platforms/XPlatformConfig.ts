@@ -2,23 +2,23 @@ import type { PlatformConfig } from "../../types/PlatformConfig";
 import { State } from "../../view_models/XViewModel";
 
 // Import X platform components
-import XJobStatusComponent from "../../views/x/XJobStatusComponent.vue";
-import XWizardSidebar from "../../views/x/XWizardSidebar.vue";
-import XWizardDashboard from "../../views/x/XWizardDashboard.vue";
-import XWizardDatabasePage from "../../views/x/XWizardDatabasePage.vue";
-import XWizardImportPage from "../../views/x/XWizardImportPage.vue";
-import XWizardImportingPage from "../../views/x/XWizardImportingPage.vue";
-import XWizardBuildOptionsPage from "../../views/x/XWizardBuildOptionsPage.vue";
-import XWizardArchiveOptionsPage from "../../views/x/XWizardArchiveOptionsPage.vue";
-import XWizardDeleteOptionsPage from "../../views/x/XWizardDeleteOptionsPage.vue";
-import XWizardReviewPage from "../../views/x/XWizardReviewPage.vue";
-import XWizardCheckPremium from "../../views/x/XWizardCheckPremium.vue";
-import XWizardMigrateBluesky from "../../views/x/XWizardMigrateBluesky.vue";
-import XWizardTombstone from "../../views/x/XWizardTombstone.vue";
-import XWizardFinished from "../../views/x/XWizardFinished.vue";
-import XWizardArchiveOnly from "../../views/x/XWizardArchiveOnly.vue";
-import XDisplayTweet from "../../views/x/XDisplayTweet.vue";
-import XLastImportOrBuildComponent from "../../views/x/XLastImportOrBuildComponent.vue";
+import XJobStatusComponent from "../../views/x/components/XJobStatusComponent.vue";
+import XWizardSidebar from "../../views/x/wizard/XWizardSidebar.vue";
+import XWizardDashboard from "../../views/x/wizard/XWizardDashboard.vue";
+import XWizardDatabasePage from "../../views/x/wizard/XWizardDatabasePage.vue";
+import XWizardImportPage from "../../views/x/wizard/XWizardImportPage.vue";
+import XWizardImportingPage from "../../views/x/wizard/XWizardImportingPage.vue";
+import XWizardBuildOptionsPage from "../../views/x/wizard/XWizardBuildOptionsPage.vue";
+import XWizardArchiveOptionsPage from "../../views/x/wizard/XWizardArchiveOptionsPage.vue";
+import XWizardDeleteOptionsPage from "../../views/x/wizard/XWizardDeleteOptionsPage.vue";
+import XWizardReviewPage from "../../views/x/wizard/XWizardReviewPage.vue";
+import XWizardCheckPremium from "../../views/x/wizard/XWizardCheckPremium.vue";
+import XWizardMigrateBluesky from "../../views/x/wizard/XWizardMigrateBluesky.vue";
+import XWizardTombstone from "../../views/x/wizard/XWizardTombstone.vue";
+import XWizardFinished from "../../views/x/wizard/XWizardFinished.vue";
+import XWizardArchiveOnly from "../../views/x/wizard/XWizardArchiveOnly.vue";
+import XDisplayTweet from "../../views/x/components/XDisplayTweet.vue";
+import XLastImportOrBuildComponent from "../../views/x/components/XLastImportOrBuildComponent.vue";
 
 /**
  * X Platform Configuration

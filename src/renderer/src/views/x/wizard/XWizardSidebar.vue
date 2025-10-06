@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, getCurrentInstance } from "vue";
-import { State, XViewModel } from "../../view_models/XViewModel";
-import { XDatabaseStats, emptyXDatabaseStats } from "../../../../shared_types";
-import SidebarArchive from "../shared_components/SidebarArchive.vue";
-import { xGetLastImportArchive } from "../../util_x";
+import { State, XViewModel } from "../../../view_models/XViewModel";
+import {
+  XDatabaseStats,
+  emptyXDatabaseStats,
+} from "../../../../../shared_types";
+import SidebarArchive from "../../shared_components/SidebarArchive.vue";
+import { xGetLastImportArchive } from "../../../util_x";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
