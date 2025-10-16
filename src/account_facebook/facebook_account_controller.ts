@@ -26,6 +26,7 @@ import {
   setConfig,
 } from "../database";
 import { IMITMController } from "../mitm";
+import { BaseAccountController } from "../shared/controllers/BaseAccountController";
 import {
   FacebookJobRow,
   FacebookStoryRow,
@@ -48,95 +49,57 @@ function getURLFileExtension(urlString: string) {
   return url.pathname.split(".").pop();
 }
 
-export class FacebookAccountController {
-  private accountUUID: string = "";
+export class FacebookAccountController extends BaseAccountController {
   // Making this public so it can be accessed in tests
   public account: FacebookAccount | null = null;
-  private accountID: number = 0;
-  private accountDataPath: string = "";
-  private thereIsMore: boolean = false;
-
-  // Making this public so it can be accessed in tests
-  public db: Database.Database | null = null;
-
-  public mitmController: IMITMController;
   private progress: FacebookProgress = emptyFacebookProgress();
 
-  private cookies: Record<string, string> = {};
-
   constructor(accountID: number, mitmController: IMITMController) {
-    this.mitmController = mitmController;
-
-    this.accountID = accountID;
-    this.refreshAccount();
-
-    // Monitor web request metadata
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    ses.webRequest.onCompleted((_details) => {
-      // TODO: Monitor for rate limits
-    });
-
-    ses.webRequest.onSendHeaders((details) => {
-      // Keep track of cookies
-      if (
-        details.url.startsWith("https://www.facebook.com/") &&
-        details.requestHeaders
-      ) {
-        this.cookies = {};
-
-        const cookieHeader = details.requestHeaders["Cookie"];
-        if (cookieHeader) {
-          const cookies = cookieHeader.split(";");
-          cookies.forEach((cookie) => {
-            const parts = cookie.split("=");
-            if (parts.length == 2) {
-              this.cookies[parts[0].trim()] = parts[1].trim();
-            }
-          });
-        }
-      }
-    });
+    super(accountID, mitmController);
   }
 
-  cleanup() {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
+  protected getAccountType(): string {
+    return "Facebook";
+  }
+
+  protected getAccountProperty(): any {
+    const account = getAccount(this.accountID);
+    return account?.facebookAccount;
+  }
+
+  protected getAccountDataPath(): string {
+    if (!this.account) {
+      return "";
+    }
+    return path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`), "data.sqlite3");
+  }
+
+  protected handleCookieTracking(details: any): void {
+    // Keep track of cookies
+    if (
+      details.url.startsWith("https://www.facebook.com/") &&
+      details.requestHeaders
+    ) {
+      this.cookies = {};
+
+      const cookieHeader = details.requestHeaders["Cookie"];
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";");
+        cookies.forEach((cookie: string) => {
+          const parts = cookie.split("=");
+          if (parts.length == 2) {
+            this.cookies[parts[0].trim()] = parts[1].trim();
+          }
+        });
+      }
     }
   }
 
   refreshAccount() {
-    // Load the account
+    super.refreshAccount();
+    // Load the Facebook account after base refresh
     const account = getAccount(this.accountID);
-    if (!account) {
-      log.error(
-        `FacebookAccountController.refreshAccount: account ${this.accountID} not found`,
-      );
-      return;
-    }
-
-    // Make sure it's a Facebook account
-    if (account.type != "Facebook") {
-      log.error(
-        `FacebookAccountController.refreshAccount: account ${this.accountID} is not a Facebook account`,
-      );
-      return;
-    }
-
-    // Get the account UUID
-    this.accountUUID = account.uuid;
-    log.debug(
-      `FacebookAccountController.refreshAccount: accountUUID=${this.accountUUID}`,
-    );
-
-    // Load the Facebook account
-    this.account = account.facebookAccount;
-    if (!this.account) {
-      log.error(
-        `FacebookAccountController.refreshAccount: xAccount ${this.accountID} not found`,
-      );
-      return;
-    }
+    this.account = account?.facebookAccount || null;
   }
 
   initDB() {
@@ -149,18 +112,18 @@ export class FacebookAccountController {
       return;
     }
 
-    // Make sure the account data folder exists
-    this.accountDataPath = getAccountDataPath(
-      "Facebook",
-      `${this.account.accountID} ${this.account.name}`,
-    );
+    // Set the account data path
+    this.accountDataPath = this.getAccountDataPath();
     log.info(
       `FacebookAccountController.initDB: accountDataPath=${this.accountDataPath}`,
     );
 
-    // Open the database
-    this.db = new Database(path.join(this.accountDataPath, "data.sqlite3"), {});
-    this.db.pragma("journal_mode = WAL");
+    // Call base class initDB
+    super.initDB();
+    if (!this.db) {
+      log.error("FacebookAccountController.initDB: database not initialized");
+      return;
+    }
     runMigrations(this.db, [
       // Create the tables
       {
@@ -335,10 +298,10 @@ export class FacebookAccountController {
       data.attachments &&
       data.attachments.length > 0 &&
       data.attachments[0].style_type_renderer.__typename ==
-        "StoryAttachmentLifeEventStyleRenderer" &&
+      "StoryAttachmentLifeEventStyleRenderer" &&
       data.attachments[0].style_type_renderer.attachment.style_infos &&
       data.attachments[0].style_type_renderer.attachment.style_infos.length >
-        0 &&
+      0 &&
       data.attachments[0].style_type_renderer.attachment.style_infos[0]
         .life_event_title
     ) {
