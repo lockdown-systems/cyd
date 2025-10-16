@@ -14,7 +14,7 @@ export abstract class BaseAccountController {
     public db: Database.Database | null = null;
     public mitmController: IMITMController;
 
-    protected cookies: Record<string, string> = {};
+    protected cookies: Record<string, any> = {};
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;

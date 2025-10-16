@@ -67,6 +67,7 @@ import {
   deleteConfigLike as globalDeleteConfigLike,
 } from "../database";
 import { IMITMController } from "../mitm";
+import { BaseAccountController } from "../shared/controllers/BaseAccountController";
 import {
   XJobRow,
   XTweetRow,
@@ -149,35 +150,24 @@ const getMediaURL = (media: XAPILegacyTweetMedia): string => {
   return mediaURL;
 };
 
-export class XAccountController {
-  private accountUUID: string = "";
+export class XAccountController extends BaseAccountController {
   // Making this public so it can be accessed in tests
   public account: XAccount | null = null;
-  private accountID: number = 0;
-  private accountDataPath: string = "";
   private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
-  private thereIsMore: boolean = false;
 
   // Temp variable for accurately counting message progress
   private messageIDsIndexed: string[] = [];
 
-  // Making this public so it can be accessed in tests
-  public db: Database.Database | null = null;
-
-  public mitmController: IMITMController;
   private progress: XProgress = emptyXProgress();
 
-  private cookies: Record<string, Record<string, string>> = {};
+  protected cookies: Record<string, Record<string, string>> = {};
 
   private blueskyClient: NodeOAuthClient | null = null;
 
   constructor(accountID: number, mitmController: IMITMController) {
-    this.mitmController = mitmController;
+    super(accountID, mitmController);
 
-    this.accountID = accountID;
-    this.refreshAccount();
-
-    // Monitor web request metadata
+    // Monitor web request metadata for X-specific functionality
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
     ses.webRequest.onCompleted((details) => {
       // Monitor for rate limits
@@ -206,68 +196,50 @@ export class XAccountController {
         this.deleteDMsMarkDeleted(conversationID);
       }
     });
-
-    ses.webRequest.onSendHeaders((details) => {
-      // Keep track of cookies
-      if (details.requestHeaders) {
-        const hostname = new URL(details.url).hostname;
-        const cookieHeader = details.requestHeaders["Cookie"];
-        if (cookieHeader) {
-          const cookies = cookieHeader.split(";");
-          cookies.forEach((cookie) => {
-            const parts = cookie.split("=");
-            if (parts.length == 2) {
-              if (!this.cookies[hostname]) {
-                this.cookies[hostname] = {};
-              }
-              this.cookies[hostname][parts[0].trim()] = parts[1].trim();
-            }
-          });
-        }
-      }
-    });
   }
 
-  cleanup() {
-    if (this.db) {
-      this.db.pragma("wal_checkpoint(FULL)");
-      this.db.close();
-      this.db = null;
+  protected getAccountType(): string {
+    return "X";
+  }
+
+  protected getAccountProperty(): any {
+    const account = getAccount(this.accountID);
+    return account?.xAccount;
+  }
+
+  protected getAccountDataPath(): string {
+    if (!this.account) {
+      return "";
+    }
+    return path.join(getAccountDataPath("X", this.account.username), "data.sqlite3");
+  }
+
+  protected handleCookieTracking(details: any): void {
+    // Keep track of cookies
+    if (details.requestHeaders) {
+      const hostname = new URL(details.url).hostname;
+      const cookieHeader = details.requestHeaders["Cookie"];
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";");
+        cookies.forEach((cookie: string) => {
+          const parts = cookie.split("=");
+          if (parts.length == 2) {
+            if (!this.cookies[hostname]) {
+              this.cookies[hostname] = {};
+            }
+            this.cookies[hostname][parts[0].trim()] = parts[1].trim();
+          }
+        });
+      }
     }
   }
+
 
   refreshAccount() {
-    // Load the account
+    super.refreshAccount();
+    // Load the X account after base refresh
     const account = getAccount(this.accountID);
-    if (!account) {
-      log.error(
-        `XAccountController.refreshAccount: account ${this.accountID} not found`,
-      );
-      return;
-    }
-
-    // Make sure it's an X account
-    if (account.type != "X") {
-      log.error(
-        `XAccountController.refreshAccount: account ${this.accountID} is not an X account`,
-      );
-      return;
-    }
-
-    // Get the account UUID
-    this.accountUUID = account.uuid;
-    log.debug(
-      `XAccountController.refreshAccount: accountUUID=${this.accountUUID}`,
-    );
-
-    // Load the X account
-    this.account = account.xAccount;
-    if (!this.account) {
-      log.error(
-        `XAccountController.refreshAccount: xAccount ${this.accountID} not found`,
-      );
-      return;
-    }
+    this.account = account?.xAccount || null;
   }
 
   initDB() {
@@ -278,15 +250,18 @@ export class XAccountController {
 
     log.info("XAccountController.initDB: account", this.account);
 
-    // Make sure the account data folder exists
-    this.accountDataPath = getAccountDataPath("X", this.account.username);
+    // Set the account data path
+    this.accountDataPath = this.getAccountDataPath();
     log.info(
       `XAccountController.initDB: accountDataPath=${this.accountDataPath}`,
     );
 
-    // Open the database
-    this.db = new Database(path.join(this.accountDataPath, "data.sqlite3"), {});
-    this.db.pragma("journal_mode = WAL");
+    // Call base class initDB
+    super.initDB();
+    if (!this.db) {
+      log.error("XAccountController.initDB: database not initialized");
+      return;
+    }
     runMigrations(this.db, [
       // Create the tables
       {
