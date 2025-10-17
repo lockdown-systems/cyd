@@ -8,7 +8,11 @@ import log from "electron-log/main";
 import Database from "better-sqlite3";
 import unzipper from "unzipper";
 
-import { getResourcesPath, getAccountDataPath } from "../util";
+import {
+  getResourcesPath,
+  getAccountDataPath,
+  getTimestampDaysAgo,
+} from "../util";
 import {
   FacebookAccount,
   FacebookJob,
@@ -16,6 +20,8 @@ import {
   emptyFacebookProgress,
   FacebookDatabaseStats,
   emptyFacebookDatabaseStats,
+  FacebookDeletePostsStartResponse,
+  FacebookPostItem,
 } from "../shared_types";
 import {
   runMigrations,
@@ -74,9 +80,15 @@ export class FacebookAccountController {
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
     ses.webRequest.onCompleted((_details) => {
       // TODO: Monitor for rate limits
+      // if (_details.url.startsWith("https://www.facebook.com/") && _details.url.includes('/api/graphql')) {
+      //     log.error("Details of webrequest on complete", _details)
+      // }
     });
 
     ses.webRequest.onSendHeaders((details) => {
+      // if (details.url.startsWith("https://www.facebook.com/") && details.url.includes('/api/graphql')) {
+      //     log.error("Details of webrequest on send headers", details)
+      // }
       // Keep track of cookies
       if (
         details.url.startsWith("https://www.facebook.com/") &&
@@ -216,7 +228,7 @@ export class FacebookAccountController {
     filename TEXT,
     isPlayable BOOLEAN,
     accessibilityCaption TEXT,
-                        title TEXT,
+    title TEXT,
     url TEXT,
     needsVideoDownload BOOLEAN DEFAULT 0
 );`,
@@ -244,6 +256,51 @@ export class FacebookAccountController {
     log.debug("FacebookAccountController.resetProgress");
     this.progress = emptyFacebookProgress();
     return this.progress;
+  }
+
+  // Helper function to fetch tweets with media and URLs
+  private fetchPostsWithMedia(
+    whereClause: string,
+    params: (string | number)[],
+  ): FacebookPostItem[] {
+    const query = `
+            SELECT
+                p.storyID, p.url, p.text, p.userID, p.createdAt,
+                pm.filename AS mediaFilename
+            FROM story p
+            LEFT JOIN media_story ms ON ms.storyID = p.storyID
+            LEFT JOIN media pm ON pm.mediaID = ms.mediaID
+            WHERE ${whereClause}
+            ORDER BY p.createdAt ASC
+        `;
+
+    const rows = exec(this.db, query, params, "all") as {
+      storyID: string;
+      url: string;
+      text: string;
+      userID: string;
+      createdAt: string;
+      mediaFilename: string | null;
+    }[];
+
+    // Group the results by tweetID
+    const postMap: Record<string, FacebookPostItem> = {};
+    for (const row of rows) {
+      if (!postMap[row.storyID]) {
+        postMap[row.storyID] = {
+          id: row.storyID,
+          u: row.url,
+          t: row.text ? row.text.replace(/(?:\r\n|\r|\n)/g, "<br>").trim() : "",
+          a: row.userID,
+          d: row.createdAt,
+          m: [],
+        };
+      }
+
+      postMap[row.storyID].m.push(row.mediaFilename!);
+    }
+
+    return Object.values(postMap);
   }
 
   createJobs(jobTypes: string[]): FacebookJob[] {
@@ -1010,6 +1067,56 @@ export class FacebookAccountController {
     );
     const archiveZip = await unzipper.Open.file(archiveZipPath);
     await archiveZip.extract({ path: accountPath });
+  }
+
+  // When you start deleting posts, return a list of posts to delete
+  async deletePostsStart(): Promise<FacebookDeletePostsStartResponse> {
+    log.info("FacebookAccountController.deletePostsStart");
+
+    if (!this.db) {
+      this.initDB();
+    }
+
+    if (!this.account) {
+      throw new Error("Account not found");
+    }
+
+    // Determine the timestamp for filtering posts
+    const daysOldTimestamp = this.account.deletePostsDaysOldEnabled
+      ? getTimestampDaysAgo(this.account.deletePostsDaysOld)
+      : getTimestampDaysAgo(0);
+
+    // Build the WHERE clause and parameters dynamically
+    const whereClause = `
+            p.deletedStoryAt IS NULL
+            AND p.userID = ?
+            AND p.createdAt <= ?
+        `;
+    const params: (string | number)[] = [
+      this.account.accountID,
+      daysOldTimestamp,
+    ];
+
+    // Fetch posts using the helper function
+    const posts = this.fetchPostsWithMedia(whereClause, params);
+
+    return { posts };
+  }
+
+  // Save the post's deleted*At timestamp
+  async deletePost(storyID: string, deleteType: string) {
+    if (!this.db) {
+      this.initDB();
+    }
+
+    if (deleteType == "post") {
+      exec(this.db, "UPDATE story SET deletedStoryAt = ? WHERE storyID = ?", [
+        new Date(),
+        storyID,
+      ]);
+    } else {
+      throw new Error("Invalid deleteType");
+    }
   }
 
   async syncProgress(progressJSON: string) {
