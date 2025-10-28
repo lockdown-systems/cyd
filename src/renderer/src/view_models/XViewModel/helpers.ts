@@ -2,6 +2,7 @@ import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { formatError } from "../../util";
+import * as AuthOps from "./auth";
 
 export async function syncProgress(vm: XViewModel): Promise<void> {
   await window.electron.X.syncProgress(
@@ -74,6 +75,25 @@ export async function getDatabaseStatsString(vm: XViewModel): Promise<string> {
     }
   }
   return statsString;
+}
+
+export async function runJobLogin(
+  vm: XViewModel,
+  jobIndex: number,
+): Promise<boolean> {
+  await window.electron.trackEvent(
+    PlausibleEvents.X_JOB_STARTED_LOGIN,
+    navigator.userAgent,
+  );
+
+  vm.showBrowser = true;
+  vm.instructions = `Checking to see if you're still logged in to your X account...`;
+
+  vm.showAutomationNotice = false;
+  await AuthOps.login(vm);
+
+  await finishJob(vm, jobIndex);
+  return true;
 }
 
 export async function runJobArchiveBuild(
