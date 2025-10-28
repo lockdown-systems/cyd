@@ -1,10 +1,5 @@
 import { WebviewTag } from "electron";
-import {
-  BaseViewModel,
-  TimeoutError,
-  URLChangedError,
-  InternetDownError,
-} from "../BaseViewModel";
+import { BaseViewModel, TimeoutError, URLChangedError } from "../BaseViewModel";
 import {
   ArchiveInfo,
   emptyArchiveInfo,
@@ -25,7 +20,7 @@ import {
   XMigrateTweetCounts,
   Account,
 } from "../../../../shared_types";
-import { XViewerResults, XUserInfo } from "../../types_x";
+import { XUserInfo } from "../../types_x";
 import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { getJobsType, formatError } from "../../util";
@@ -35,9 +30,11 @@ import {
   RunJobsState,
   FailureState,
   XViewModelState,
-  X_AUTHORIZATION_HEADER,
   tombstoneUpdateBioCreditCydText,
 } from "./types";
+import * as AuthOps from "./auth";
+import * as GraphQLOps from "./graphql";
+import * as RateLimitOps from "./rate_limit";
 
 export class XViewModel extends BaseViewModel {
   public progress: XProgress = emptyXProgress();
@@ -212,278 +209,29 @@ export class XViewModel extends BaseViewModel {
     referrer: string,
     body: string,
   ): Promise<number> {
-    this.log("graphqlDelete", [url, body]);
-    return await this.getWebview()?.executeJavaScript(`
-            (async () => {
-                const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
-                try {
-                    const response = await fetch('${url}', {
-                        "headers": {
-                            "authorization": "${X_AUTHORIZATION_HEADER}",
-                            "content-type": "application/json",
-                            "x-client-transaction-id": transactionID,
-                            "x-csrf-token": '${ct0}',
-                            "x-twitter-active-user": "yes",
-                            "x-twitter-auth-type": "OAuth2Session"
-                        },
-                        "referrer": '${referrer}',
-                        "referrerPolicy": "strict-origin-when-cross-origin",
-                        "body": '${body}',
-                        "method": "POST",
-                        "mode": "cors",
-                        "credentials": "include",
-                        "signal": AbortSignal.timeout(5000)
-                    })
-                    console.log(response.status);
-                    if (response.status == 200) {
-                        console.log(await response.text());
-                    }
-                    return response.status;
-                } catch (e) {
-                    return 0;
-                }
-            })();
-        `);
+    return GraphQLOps.graphqlDelete(this, ct0, url, referrer, body);
   }
 
   // Returns an XUserInfo object, or null on error
   async graphqlGetViewerUser(): Promise<XUserInfo | null> {
-    this.log("graphqlGetViewerUser");
-
-    const url =
-      "https://api.x.com/graphql/WBT8ommFCSHiy3z2_4k1Vg/Viewer?variables=%7B%22withCommunitiesMemberships%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%7D&fieldToggles=%7B%22isDelegate%22%3Afalse%2C%22withAuxiliaryUserLabels%22%3Afalse%7D";
-    const ct0 = await window.electron.X.getCookie(
-      this.account.id,
-      "api.x.com",
-      "ct0",
-    );
-
-    if (ct0 === null) {
-      this.log("graphqlGetViewerUser", "ct0 is null");
-      return null;
-    }
-
-    // Give it 3 tries
-    let tries = 0;
-    while (tries < 3) {
-      if (tries > 0) {
-        // Sleep 1s before trying again
-        this.sleep(1000);
-      }
-
-      this.log("graphqlGetViewerUser", `try #${tries}`);
-
-      // For reloading home
-      await this.loadURLWithRateLimit("https://x.com/home");
-
-      // Make the graphql request
-      const resp: string | null = await this.getWebview()?.executeJavaScript(`
-                (async () => {
-                    const transactionID = [...crypto.getRandomValues(new Uint8Array(95))].map((x, i) => (i = x / 255 * 61 | 0, String.fromCharCode(i + (i > 9 ? i > 35 ? 61 : 55 : 48)))).join('');
-                    try {
-                        const response = await fetch('${url}', {
-                            "headers": {
-                                "authorization": "${X_AUTHORIZATION_HEADER}",
-                                "content-type": "application/json",
-                                "x-client-transaction-id": transactionID,
-                                "x-csrf-token": '${ct0}',
-                                "x-twitter-client-language": "en",
-                                "x-twitter-active-user": "yes",
-                                "origin": 'https://x.com',
-                                "sec-fetch-site": "same-site",
-                                "sec-fetch-mode": "cors",
-                                "sec-fetch-dest": "empty"
-                            },
-                            "referrer": 'https://x.com/',
-                            "method": "GET",
-                            "mode": "cors",
-                            "credentials": "include",
-                            "signal": AbortSignal.timeout(5000)
-                        })
-                        if (response.status == 200) {
-                            return await response.text();
-                        }
-                        return null;
-                    } catch (e) {
-                        return null;
-                    }
-                })();
-            `);
-
-      if (resp === null) {
-        this.log("graphqlGetViewerUser", "response is null");
-        tries += 1;
-        continue;
-      } else {
-        try {
-          const viewerResults: XViewerResults = JSON.parse(resp);
-          const userInfo: XUserInfo = {
-            username:
-              viewerResults.data.viewer.user_results.result.legacy.screen_name,
-            userID: viewerResults.data.viewer.user_results.result.rest_id,
-            bio: viewerResults.data.viewer.user_results.result.legacy
-              .description,
-            profileImageDataURI: await window.electron.X.getImageDataURI(
-              this.account.id,
-              viewerResults.data.viewer.user_results.result.legacy
-                .profile_image_url_https,
-            ),
-            followingCount:
-              viewerResults.data.viewer.user_results.result.legacy
-                .friends_count,
-            followersCount:
-              viewerResults.data.viewer.user_results.result.legacy
-                .followers_count,
-            tweetsCount:
-              viewerResults.data.viewer.user_results.result.legacy
-                .statuses_count,
-            likesCount:
-              viewerResults.data.viewer.user_results.result.legacy
-                .favourites_count,
-          };
-          return userInfo;
-        } catch (e) {
-          this.log("graphqlGetViewerUser", [
-            "error parsing response:",
-            resp,
-            e,
-          ]);
-          tries += 1;
-          continue;
-        }
-      }
-    }
-
-    this.log("graphqlGetViewerUser", "failed to get userInfo after 3 tries");
-    return null;
+    return GraphQLOps.graphqlGetViewerUser(this);
   }
 
-  async waitForRateLimit() {
-    this.log("waitForRateLimit", this.rateLimitInfo);
-
-    let seconds = 0;
-    if (this.rateLimitInfo.rateLimitReset) {
-      seconds =
-        this.rateLimitInfo.rateLimitReset - Math.floor(Date.now() / 1000);
-    }
-    await this.sleep(seconds * 1000);
-    this.log("waitForRateLimit", "finished waiting for rate limit");
-
-    // Reset the rate limit checker
-    await window.electron.X.resetRateLimitInfo(this.account.id);
-    this.rateLimitInfo = emptyXRateLimitInfo();
-
-    // Wait for the user to unpause.
-    // This is important because if the computer sleeps and autopauses during a rate limit, this will
-    // continue to wait until after the computer wakes up.
-    await this.waitForPause();
-    this.log("waitForRateLimit", "finished waiting for pause");
+  async waitForRateLimit(): Promise<void> {
+    return RateLimitOps.waitForRateLimit(this);
   }
 
   async loadURLWithRateLimit(
     url: string,
     expectedURLs: (string | RegExp)[] = [],
     redirectOk: boolean = false,
-  ) {
-    this.log("loadURLWithRateLimit", [url, expectedURLs, redirectOk]);
-
-    while (true) {
-      // Reset the rate limit checker
-      await window.electron.X.resetRateLimitInfo(this.account.id);
-
-      // Load the URL
-      try {
-        await this.loadURL(url);
-        this.log("loadURLWithRateLimit", "URL loaded successfully");
-      } catch (e) {
-        if (e instanceof InternetDownError) {
-          this.log("loadURLWithRateLimit", "internet is down");
-          this.emitter?.emit(`cancel-automation-${this.account.id}`);
-        } else {
-          await this.error(
-            AutomationErrorType.x_loadURLError,
-            {
-              url: url,
-              error: formatError(e as Error),
-            },
-            {
-              currentURL: this.webview?.getURL(),
-            },
-          );
-        }
-        break;
-      }
-
-      // Did the URL change?
-      if (!redirectOk) {
-        this.log("loadURLWithRateLimit", "checking if URL changed");
-        const newURL = new URL(this.webview?.getURL() || "");
-        const originalURL = new URL(url);
-        // Check if the URL has changed, ignoring query strings
-        // e.g. a change from https://x.com/login to https://x.com/login?mx=2 is ok
-        if (
-          newURL.origin + newURL.pathname !==
-          originalURL.origin + originalURL.pathname
-        ) {
-          let changedToUnexpected = true;
-          for (const expectedURL of expectedURLs) {
-            if (
-              typeof expectedURL === "string" &&
-              newURL.toString().startsWith(expectedURL)
-            ) {
-              changedToUnexpected = false;
-              break;
-            } else if (
-              expectedURL instanceof RegExp &&
-              expectedURL.test(newURL.toString())
-            ) {
-              changedToUnexpected = false;
-              break;
-            }
-          }
-
-          if (changedToUnexpected) {
-            // Quit early if canceled
-            if (this.cancelWaitForURL) {
-              this.log(
-                "loadURLWithRateLimit",
-                `UNEXPECTED, URL change to ${this.webview?.getURL()}, but ignoring because canceled`,
-              );
-              break;
-            }
-
-            this.log(
-              "loadURLWithRateLimit",
-              `UNEXPECTED, URL change to ${this.webview?.getURL()}`,
-            );
-            throw new URLChangedError(url, this.webview?.getURL() || "");
-          } else {
-            this.log(
-              "loadURLWithRateLimit",
-              `expected, URL change to ${this.webview?.getURL()}`,
-            );
-          }
-        }
-      }
-
-      // Were we rate limited?
-      this.rateLimitInfo = await window.electron.X.isRateLimited(
-        this.account.id,
-      );
-      if (this.rateLimitInfo.isRateLimited) {
-        await this.waitForRateLimit();
-        this.log(
-          "loadURLWithRateLimit",
-          "waiting for rate limit finished, trying to load the URL again",
-        );
-        // Continue on the next iteration of the loop to try again
-        continue;
-      }
-
-      // Finished successfully so break out of the loop
-      this.log("loadURLWithRateLimit", "finished loading URL");
-      break;
-    }
+  ): Promise<void> {
+    return RateLimitOps.loadURLWithRateLimit(
+      this,
+      url,
+      expectedURLs,
+      redirectOk,
+    );
   }
 
   async syncProgress() {
@@ -701,132 +449,12 @@ export class XViewModel extends BaseViewModel {
     return false;
   }
 
-  async login() {
-    this.showBrowser = true;
-
-    this.log("login", "logging in");
-
-    // Load the login page and wait for it to redirect to home
-    await this.loadURLWithRateLimit("https://x.com/login", [
-      "https://x.com/home",
-      "https://x.com/i/flow/login",
-    ]);
-    if (this.cancelWaitForURL) {
-      // If the user clicks archive only before the page is done loading, we cancel the login
-      this.log("login", "Login cancelled");
-      return;
-    }
-    try {
-      await this.waitForURL("https://x.com/home");
-      if (this.cancelWaitForURL) {
-        // If the user clicks archive only after the page is done loading, while we're waiting for the URL to change
-        this.log("login", "Login cancelled");
-        return;
-      }
-    } catch (e) {
-      if (e instanceof URLChangedError) {
-        await this.error(
-          AutomationErrorType.X_login_URLChanged,
-          {
-            error: formatError(e as Error),
-          },
-          {
-            currentURL: this.webview?.getURL(),
-          },
-        );
-      } else {
-        await this.error(
-          AutomationErrorType.X_login_WaitingForURLFailed,
-          {
-            error: formatError(e as Error),
-          },
-          {
-            currentURL: this.webview?.getURL(),
-          },
-        );
-      }
-    }
-
-    // We're logged in
-    this.log("login", "login succeeded");
-    this.showAutomationNotice = true;
-    await this.sleep(1000);
-
-    // If this is the first time we're logging in, track it
-    if (this.state === State.Login) {
-      await window.electron.trackEvent(
-        PlausibleEvents.X_USER_SIGNED_IN,
-        navigator.userAgent,
-      );
-    }
-
-    await this.waitForPause();
-
-    // Load home
-    this.log("login", "getting username and userID and profile picture");
-    this.instructions = `I'm discovering your username and profile picture...`;
-
-    if (this.webview?.getURL() != "https://x.com/home") {
-      await this.loadURLWithRateLimit("https://x.com/home");
-    }
-
-    // See if cookie overlay is present, and if so click "Refuse non-essential cookies"
-    if (await this.doesSelectorExist('div[data-testid="BottomBar"]')) {
-      await this.scriptClickElementWithinElementLast(
-        'div[data-testid="BottomBar"]',
-        "button",
-      );
-      await this.sleep(500);
-      await this.scriptClickElementWithinElementLast(
-        'div[data-testid="BottomBar"]',
-        "button",
-      );
-    }
-
-    const userInfo: XUserInfo | null = await this.graphqlGetViewerUser();
-    if (userInfo === null) {
-      await this.error(AutomationErrorType.X_login_GetViewerUserFailed, {
-        error: "userInfo is null",
-      });
-      return;
-    }
-
-    // Save the user information
-    if (this.account && this.account.xAccount) {
-      this.account.xAccount.username = userInfo.username;
-      this.account.xAccount.userID = userInfo.userID;
-      this.account.xAccount.bio = userInfo.bio;
-      this.account.xAccount.profileImageDataURI = userInfo.profileImageDataURI;
-      this.account.xAccount.followersCount = userInfo.followersCount;
-      this.account.xAccount.followingCount = userInfo.followingCount;
-      this.account.xAccount.tweetsCount = userInfo.tweetsCount;
-      this.account.xAccount.likesCount = userInfo.likesCount;
-    }
-    await window.electron.database.saveAccount(JSON.stringify(this.account));
-    this.log("login", ["saved user information", userInfo]);
-
-    // Tell XView to reload mediaPath, now that we have a username
-    this.emitter?.emit(`x-reload-media-path-${this.account.id}`);
-
-    await this.waitForPause();
+  async login(): Promise<void> {
+    return AuthOps.login(this);
   }
 
-  async loadUserStats() {
-    this.log("loadUserStats", "loading user stats");
-    this.showBrowser = true;
-    this.showAutomationNotice = true;
-
-    this.log("login", "getting user stats");
-    this.instructions = `I'm trying to determine your total tweets and likes, according to X...`;
-
-    await this.login();
-    await window.electron.X.setConfig(
-      this.account.id,
-      "reloadUserStats",
-      "false",
-    );
-
-    await this.waitForPause();
+  async loadUserStats(): Promise<void> {
+    return AuthOps.loadUserStats(this);
   }
 
   async finishJob(jobIndex: number) {
