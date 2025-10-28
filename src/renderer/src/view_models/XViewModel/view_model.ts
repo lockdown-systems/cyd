@@ -35,6 +35,7 @@ import {
 import * as AuthOps from "./auth";
 import * as GraphQLOps from "./graphql";
 import * as RateLimitOps from "./rate_limit";
+import * as Helpers from "./helpers";
 
 export class XViewModel extends BaseViewModel {
   public progress: XProgress = emptyXProgress();
@@ -234,11 +235,8 @@ export class XViewModel extends BaseViewModel {
     );
   }
 
-  async syncProgress() {
-    await window.electron.X.syncProgress(
-      this.account.id,
-      JSON.stringify(this.progress),
-    );
+  async syncProgress(): Promise<void> {
+    return Helpers.syncProgress(this);
   }
 
   async indexTweetsHandleRateLimit(): Promise<boolean> {
@@ -457,32 +455,12 @@ export class XViewModel extends BaseViewModel {
     return AuthOps.loadUserStats(this);
   }
 
-  async finishJob(jobIndex: number) {
-    const finishedAt = new Date();
-    this.jobs[jobIndex].finishedAt = finishedAt;
-    this.jobs[jobIndex].status = "finished";
-    this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
-    await window.electron.X.updateJob(
-      this.account.id,
-      JSON.stringify(this.jobs[jobIndex]),
-    );
-    await window.electron.X.setConfig(
-      this.account.id,
-      `lastFinishedJob_${this.jobs[jobIndex].jobType}`,
-      finishedAt.toISOString(),
-    );
-    this.log("finishJob", this.jobs[jobIndex].jobType);
+  async finishJob(jobIndex: number): Promise<void> {
+    return Helpers.finishJob(this, jobIndex);
   }
 
-  async errorJob(jobIndex: number) {
-    this.jobs[jobIndex].finishedAt = new Date();
-    this.jobs[jobIndex].status = "error";
-    this.jobs[jobIndex].progressJSON = JSON.stringify(this.progress);
-    await window.electron.X.updateJob(
-      this.account.id,
-      JSON.stringify(this.jobs[jobIndex]),
-    );
-    this.log("errorJob", this.jobs[jobIndex].jobType);
+  async errorJob(jobIndex: number): Promise<void> {
+    return Helpers.errorJob(this, jobIndex);
   }
 
   // Load the DMs page, and return true if an error was triggered
@@ -740,35 +718,7 @@ export class XViewModel extends BaseViewModel {
   }
 
   async getDatabaseStatsString(): Promise<string> {
-    await this.refreshDatabaseStats();
-    const tweetsCount =
-      this.databaseStats.tweetsSaved - this.databaseStats.tweetsDeleted;
-    const retweetsCount =
-      this.databaseStats.retweetsSaved - this.databaseStats.retweetsDeleted;
-    const likesCount =
-      this.databaseStats.likesSaved - this.databaseStats.likesDeleted;
-
-    const statsComponents = [];
-    if (this.account.xAccount?.deleteTweets) {
-      statsComponents.push(`${tweetsCount.toLocaleString()} tweets`);
-    }
-    if (this.account.xAccount?.deleteRetweets) {
-      statsComponents.push(`${retweetsCount.toLocaleString()} retweets`);
-    }
-    if (this.account.xAccount?.deleteLikes) {
-      statsComponents.push(`${likesCount.toLocaleString()} likes`);
-    }
-
-    let statsString = "";
-    for (let i = 0; i < statsComponents.length; i++) {
-      statsString += statsComponents[i];
-      if (i < statsComponents.length - 2) {
-        statsString += ", ";
-      } else if (i < statsComponents.length - 1) {
-        statsString += " and ";
-      }
-    }
-    return statsString;
+    return Helpers.getDatabaseStatsString(this);
   }
 
   async runJobLogin(jobIndex: number): Promise<boolean> {
@@ -1449,34 +1399,7 @@ Please wait while I index all the messages from each conversation...`;
   }
 
   async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
-    await window.electron.trackEvent(
-      PlausibleEvents.X_JOB_STARTED_ARCHIVE_BUILD,
-      navigator.userAgent,
-    );
-
-    this.showBrowser = false;
-    this.instructions = `# I'm building a searchable archive web page in HTML.`;
-    this.showAutomationNotice = true;
-
-    // Build the archive
-    try {
-      await window.electron.X.archiveBuild(this.account.id);
-      this.emitter?.emit(`x-update-archive-info-${this.account.id}`);
-    } catch (e) {
-      await this.error(
-        AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError,
-        {
-          error: formatError(e as Error),
-        },
-      );
-      return false;
-    }
-
-    // Submit progress to the API
-    this.emitter?.emit(`x-submit-progress-${this.account.id}`);
-
-    await this.finishJob(jobIndex);
-    return true;
+    return Helpers.runJobArchiveBuild(this, jobIndex);
   }
 
   async runJobIndexLikes(jobIndex: number): Promise<boolean> {
