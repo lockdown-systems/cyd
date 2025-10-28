@@ -23,7 +23,10 @@
   "exclude": [
     "../../node_modules",
     "../../eslint.config.mjs",
-    "../../vitest.config.ts"
+    "../../vitest.config.ts",
+    "../../vite.*.config.ts",
+    "./**/*.test.ts",
+    "./vite.config.ts"
   ],
   "references": [
     {

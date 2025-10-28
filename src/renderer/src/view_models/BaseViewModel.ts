@@ -320,6 +320,14 @@ export class BaseViewModel {
     const startTime = Date.now();
     do {
       await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Check if operation was cancelled (e.g., user clicked archive-only)
+      if (this.cancelWaitForURL) {
+        this.log("waitForLoadingToFinish", "cancelled by user action");
+        this.getWebview()?.stop();
+        return;
+      }
+
       if (Date.now() - startTime >= timeout) {
         this.log(
           "waitForLoadingToFinish",
@@ -541,6 +549,12 @@ export class BaseViewModel {
           this.log("loadURL", "URL loaded successfully");
           break;
         } catch (error) {
+          // Check if this was a cancellation (user clicked archive-only, etc.)
+          if (this.cancelWaitForURL) {
+            this.log("loadURL", "Login cancelled");
+            return; // Exit gracefully instead of throwing
+          }
+
           this.log("loadURL", ["Failed to load URL", error]);
           tries++;
           if (tries >= 3) {
@@ -860,18 +874,6 @@ export class BaseViewModel {
       button: "left",
       clickCount: 1,
     });
-  }
-
-  // Pause and resume the jobs
-
-  pause() {
-    this.isPaused = true;
-    this.log("pause", "paused");
-  }
-
-  resume() {
-    this.isPaused = false;
-    this.log("resume", "resumed");
   }
 
   async waitForPause() {

@@ -98,7 +98,8 @@ export function logObj(obj: any) {
 export async function setAccountRunning(accountID: number, isRunning: boolean) {
   if (isRunning) {
     // Start power save blocker
-    const powerSaveBlockerID = await window.electron.startPowerSaveBlocker();
+    const powerSaveBlockerID =
+      await window.electron.startPowerSaveBlocker(accountID);
     localStorage.setItem(
       `account-${accountID}-power-save-blocker-id`,
       JSON.stringify(powerSaveBlockerID),
@@ -109,7 +110,10 @@ export async function setAccountRunning(accountID: number, isRunning: boolean) {
       `account-${accountID}-power-save-blocker-id`,
     );
     if (powerSaveBlockerID) {
-      window.electron.stopPowerSaveBlocker(JSON.parse(powerSaveBlockerID));
+      window.electron.stopPowerSaveBlocker(
+        accountID,
+        JSON.parse(powerSaveBlockerID),
+      );
       localStorage.removeItem(`account-${accountID}-power-save-blocker-id`);
     }
   }
@@ -200,3 +204,26 @@ export const clearJobsType = (accountID: number): void => {
 export const formatError = (error: Error): string => {
   return `${error.message}\n\n${error.stack}`;
 };
+
+// Breadcrumb helper functions for wizard pages
+// These create common breadcrumb button objects to reduce duplication
+
+export const createDashboardBreadcrumb = <T>(
+  setState: (state: T) => void,
+  dashboardState: T,
+) => ({
+  label: "Dashboard",
+  action: () => setState(dashboardState),
+  icon: getBreadcrumbIcon("dashboard"),
+});
+
+export const createBackBreadcrumb = <T>(
+  label: string,
+  setState: (state: T) => void,
+  targetState: T,
+  iconType?: string,
+) => ({
+  label,
+  action: () => setState(targetState),
+  icon: getBreadcrumbIcon(iconType || "back"),
+});
