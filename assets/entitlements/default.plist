@@ -12,7 +12,8 @@
 	<true/>
 	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
 	<array>
-		<string>/Documents/Semiphemeral/</string>
+		<string>/Documents/Cyd/</string>
+		<string>/Documents/Cyd Dev/</string>
 	</array>
 </dict>
 </plist>
