@@ -4,7 +4,7 @@ import { mount, VueWrapper } from "@vue/test-utils";
 
 import TabsView from "./TabsView.vue";
 import CydAPIClient from "../../../cyd-api-client";
-import { stubElectron } from "../test_util";
+import { mockElectronAPI } from "../test_util";
 import { Account } from "../../../shared_types";
 
 let accountID = 1;
@@ -45,10 +45,7 @@ describe("TabsView", () => {
     vi.clearAllMocks();
 
     // Setup global window.electron
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).window = {
-      electron: stubElectron(),
-    };
+    mockElectronAPI();
 
     window.electron.showQuestion = vi.fn().mockResolvedValue(true);
 
