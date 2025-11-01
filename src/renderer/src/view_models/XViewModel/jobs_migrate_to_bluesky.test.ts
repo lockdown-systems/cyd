@@ -184,4 +184,247 @@ describe("jobs_migrate_to_bluesky.ts", () => {
       expect(finishJob).toHaveBeenCalledWith(vm, 42);
     });
   });
+
+  describe("runJobMigrateBlueskyDelete", () => {
+    it("should track analytics event on start", async () => {
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
+        PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY_DELETE,
+        navigator.userAgent,
+      );
+    });
+
+    it("should set correct UI state", async () => {
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(vm.showBrowser).toBe(false);
+      expect(vm.showAutomationNotice).toBe(true);
+      expect(vm.instructions).toBe(
+        "# I'm deleting your posts from Bluesky that you migrated from X.",
+      );
+    });
+
+    it("should set runJobsState to MigrateBlueskyDelete", async () => {
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(vm.runJobsState).toBe(RunJobsState.MigrateBlueskyDelete);
+    });
+
+    it("should get migrated tweet counts from electron API", async () => {
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(mockElectron.X.blueskyGetTweetCounts).toHaveBeenCalledWith(1);
+    });
+
+    it("should initialize progress with correct values", async () => {
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+        createMockTweetItem({ id: "2", t: "Tweet 2" }),
+        createMockTweetItem({ id: "3", t: "Tweet 3" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(vm.progress.totalMigratedPostsToDelete).toBe(3);
+      expect(vm.progress.migrateDeletePostsCount).toBe(3);
+      expect(vm.progress.migrateDeleteSkippedPostsCount).toBe(0);
+      expect(vm.progress.migrateSkippedTweetsErrors).toEqual({});
+    });
+
+    it("should reset currentTweetItem to null", async () => {
+      vm.currentTweetItem = createMockTweetItem({ id: "old" });
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(vm.currentTweetItem).toBe(null);
+    });
+
+    it("should delete all migrated tweets successfully", async () => {
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+        createMockTweetItem({ id: "2", t: "Tweet 2" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(mockElectron.X.blueskyDeleteMigratedTweet).toHaveBeenCalledTimes(
+        2,
+      );
+      expect(mockElectron.X.blueskyDeleteMigratedTweet).toHaveBeenCalledWith(
+        1,
+        "1",
+      );
+      expect(mockElectron.X.blueskyDeleteMigratedTweet).toHaveBeenCalledWith(
+        1,
+        "2",
+      );
+      expect(vm.progress.migrateDeletePostsCount).toBe(2);
+    });
+
+    it("should handle empty migrated tweet list", async () => {
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue(
+        emptyXMigrateTweetCounts(),
+      );
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(mockElectron.X.blueskyDeleteMigratedTweet).not.toHaveBeenCalled();
+      expect(vm.progress.totalMigratedPostsToDelete).toBe(0);
+    });
+
+    it("should set currentTweetItem for each tweet during deletion", async () => {
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+        createMockTweetItem({ id: "2", t: "Tweet 2" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      let currentTweetDuringDeletion: XTweetItem | null = null;
+      mockElectron.X.blueskyDeleteMigratedTweet.mockImplementation(() => {
+        currentTweetDuringDeletion = vm.currentTweetItem;
+        return Promise.resolve(true);
+      });
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(currentTweetDuringDeletion).toBeTruthy();
+      expect(vm.currentTweetItem).toEqual(mockMigratedTweets[1]);
+    });
+
+    it("should handle deletion errors by tracking skipped posts", async () => {
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+        createMockTweetItem({ id: "2", t: "Tweet 2" }),
+        createMockTweetItem({ id: "3", t: "Tweet 3" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      mockElectron.X.blueskyDeleteMigratedTweet
+        .mockResolvedValueOnce(true) // Success
+        .mockResolvedValueOnce("Failed to delete") // Error (string)
+        .mockResolvedValueOnce(true); // Success
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(vm.progress.migrateDeletePostsCount).toBe(2);
+      expect(vm.progress.migrateDeleteSkippedPostsCount).toBe(1);
+      expect(vm.progress.migrateSkippedTweetsErrors["2"]).toBe(
+        "Failed to delete",
+      );
+    });
+
+    it("should handle rate limits and retry", async () => {
+      const { waitForRateLimit } = await import("./rate_limit");
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      // First attempt: rate limited, second attempt: success
+      mockElectron.X.blueskyDeleteMigratedTweet
+        .mockResolvedValueOnce("Rate limited") // Rate limit error
+        .mockResolvedValueOnce(true); // Success after retry
+
+      mockElectron.X.isRateLimited
+        .mockResolvedValueOnce({
+          isRateLimited: true,
+          rateLimitReset: Date.now() + 60000,
+        })
+        .mockResolvedValueOnce({
+          isRateLimited: false,
+          rateLimitReset: 0,
+        });
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(waitForRateLimit).toHaveBeenCalledWith(vm);
+      expect(mockElectron.X.resetRateLimitInfo).toHaveBeenCalled();
+      expect(vm.progress.migrateDeletePostsCount).toBe(1);
+      expect(vm.progress.migrateDeleteSkippedPostsCount).toBe(0);
+    });
+
+    it("should emit database stats update after each deletion", async () => {
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+        createMockTweetItem({ id: "2", t: "Tweet 2" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      const emitSpy = vi.spyOn(vm.emitter!, "emit");
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(emitSpy).toHaveBeenCalledWith("x-update-database-stats-1");
+      // Should be called for each tweet
+      expect(emitSpy).toHaveBeenCalledTimes(3); // 2 tweets + 1 submit-progress
+    });
+
+    it("should emit submit progress event at the end", async () => {
+      const emitSpy = vi.spyOn(vm.emitter!, "emit");
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(emitSpy).toHaveBeenCalledWith("x-submit-progress-1");
+    });
+
+    it("should wait for pause after each deletion", async () => {
+      const mockMigratedTweets = [
+        createMockTweetItem({ id: "1", t: "Tweet 1" }),
+        createMockTweetItem({ id: "2", t: "Tweet 2" }),
+      ];
+
+      mockElectron.X.blueskyGetTweetCounts.mockResolvedValue({
+        ...emptyXMigrateTweetCounts(),
+        alreadyMigratedTweets: mockMigratedTweets,
+      });
+
+      const waitForPauseSpy = vi.spyOn(vm, "waitForPause");
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      // Should be called for each tweet
+      expect(waitForPauseSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("should call finishJob with correct job ID", async () => {
+      const { finishJob } = await import("./helpers");
+
+      await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 42);
+
+      expect(finishJob).toHaveBeenCalledWith(vm, 42);
+    });
+
+    it("should return true when complete", async () => {
+      const result = await MigrateBluesky.runJobMigrateBlueskyDelete(vm, 0);
+
+      expect(result).toBe(true);
+    });
+  });
 });

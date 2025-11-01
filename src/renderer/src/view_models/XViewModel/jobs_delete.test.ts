@@ -32,10 +32,13 @@ describe("jobs_delete.ts", () => {
     vi.spyOn(vm, "sleep").mockResolvedValue(undefined);
     vi.spyOn(vm, "waitForLoadingToFinish").mockResolvedValue(undefined);
     vi.spyOn(vm, "waitForRateLimit").mockResolvedValue(undefined);
+    vi.spyOn(vm, "waitForPause").mockResolvedValue(undefined);
+    vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
     vi.spyOn(vm, "graphqlDelete").mockResolvedValue(200);
     vi.spyOn(vm, "syncProgress").mockResolvedValue(undefined);
     vi.spyOn(vm, "finishJob").mockResolvedValue(undefined);
     vi.spyOn(vm, "error").mockResolvedValue(undefined);
+    vi.spyOn(vm, "log").mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -465,6 +468,38 @@ describe("jobs_delete.ts", () => {
 
       expect(mockElectron.trackEvent).toHaveBeenCalledWith(
         PlausibleEvents.X_JOB_STARTED_DELETE_BOOKMARKS,
+        navigator.userAgent,
+      );
+    });
+  });
+
+  describe("runJobDeleteDMs", () => {
+    it("should track analytics event on start", async () => {
+      // Make waitForSelector throw for search field to mark DMs as finished
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new TimeoutError("test-selector"),
+      );
+
+      await DeleteJobs.runJobDeleteDMs(vm, 0);
+
+      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
+        PlausibleEvents.X_JOB_STARTED_DELETE_DMS,
+        navigator.userAgent,
+      );
+    });
+  });
+
+  describe("runJobUnfollowEveryone", () => {
+    it("should track analytics event on start", async () => {
+      // Make waitForSelector throw for following users to mark as finished
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new TimeoutError("test-selector"),
+      );
+
+      await DeleteJobs.runJobUnfollowEveryone(vm, 0);
+
+      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
+        PlausibleEvents.X_JOB_STARTED_UNFOLLOW_EVERYONE,
         navigator.userAgent,
       );
     });
