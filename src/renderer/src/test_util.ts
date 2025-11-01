@@ -249,6 +249,7 @@ export function mockElectronAPI() {
       blueskyMigrateTweet: vi.fn().mockResolvedValue(true),
       blueskyDeleteMigratedTweet: vi.fn().mockResolvedValue(true),
       initArchiveOnlyMode: vi.fn().mockResolvedValue(undefined),
+      getMediaPath: vi.fn().mockResolvedValue("/test/media/path"),
     },
 
     // Archive operations (used by multiple view models)
@@ -268,6 +269,8 @@ export function mockElectronAPI() {
     shouldOpenDevtools: vi.fn().mockResolvedValue(false),
     getAPIURL: vi.fn().mockResolvedValue("https://api.test.com"),
     getMode: vi.fn().mockResolvedValue("prod"),
+    getVersion: vi.fn().mockResolvedValue("1.0.0"),
+    isFeatureEnabled: vi.fn().mockResolvedValue(false),
     showQuestion: vi.fn().mockResolvedValue(true),
     showError: vi.fn(),
 
