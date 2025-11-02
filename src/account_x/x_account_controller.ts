@@ -107,6 +107,7 @@ import {
 
 // for building the static archive site
 import { saveArchive } from "./archive";
+import { indexUser as indexUserMethod } from "./controller/indexUser";
 
 const getMediaURL = (media: XAPILegacyTweetMedia): string => {
   // Get the HTTPS URL of the media -- this works for photos
@@ -1057,43 +1058,20 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async indexUser(user: XAPIUser) {
-    log.debug("XAccountController.indexUser", user);
     if (!this.db) {
       this.initDB();
     }
+    if (!this.db) {
+      log.error("XAccountController.indexUser: database not initialized");
+      return;
+    }
 
-    // Download the profile image
-    const profileImageDataURI = user.profile_image_url_https
-      ? await this.getImageDataURI(user.profile_image_url_https)
-      : "";
-
-    // Have we seen this user before?
-    const existing: XUserRow[] = exec(
+    await indexUserMethod(
       this.db,
-      "SELECT * FROM user WHERE userID = ?",
-      [user.id_str],
-      "all",
-    ) as XUserRow[];
-    if (existing.length > 0) {
-      // Update the user
-      exec(
-        this.db,
-        "UPDATE user SET name = ?, screenName = ?, profileImageDataURI = ? WHERE userID = ?",
-        [user.name, user.screen_name, profileImageDataURI, user.id_str],
-      );
-    } else {
-      // Add the user
-      exec(
-        this.db,
-        "INSERT INTO user (userID, name, screenName, profileImageDataURI) VALUES (?, ?, ?, ?)",
-        [user.id_str, user.name, user.screen_name, profileImageDataURI],
-      );
-    }
-
-    // Update progress
-    if (existing.length == 0) {
-      this.progress.usersIndexed++;
-    }
+      this.progress,
+      (url: string) => this.getImageDataURI(url),
+      user,
+    );
   }
 
   indexConversation(conversation: XAPIConversation) {
