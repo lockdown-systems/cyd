@@ -10,6 +10,7 @@ import mime from "mime-types";
 import { app, session, shell } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
+import Database from "better-sqlite3";
 import { glob } from "glob";
 
 import {
@@ -211,7 +212,8 @@ export class XAccountController extends BaseAccountController<XProgress> {
     if (!this.account) {
       return "";
     }
-    return path.join(getAccountDataPath("X", this.account.username), "data.sqlite3");
+    // Return the directory path (not the file path) since accountDataPath is also used for media directories
+    return getAccountDataPath("X", this.account.username);
   }
 
   protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
@@ -243,6 +245,11 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   initDB() {
+    // Ensure account is loaded before initializing database
+    if (!this.account) {
+      this.refreshAccount();
+    }
+
     if (!this.account) {
       log.error("XAccountController.initDB: account does not exist");
       return;
@@ -250,18 +257,24 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
     log.info("XAccountController.initDB: account", this.account);
 
-    // Set the account data path
+    // Set the account data path (directory, not file)
     this.accountDataPath = this.getAccountDataPath();
+    if (!this.accountDataPath) {
+      log.error("XAccountController.initDB: accountDataPath is empty");
+      return;
+    }
+
     log.info(
       `XAccountController.initDB: accountDataPath=${this.accountDataPath}`,
     );
 
-    // Call base class initDB
-    super.initDB();
-    if (!this.db) {
-      log.error("XAccountController.initDB: database not initialized");
-      return;
-    }
+    // Build the database file path
+    const dbPath = path.join(this.accountDataPath, "data.sqlite3");
+
+    // Initialize the database using the file path
+    log.info(`XAccountController.initDB: dbPath=${dbPath}`);
+    this.db = new Database(dbPath, {});
+    this.db.pragma("journal_mode = WAL");
     runMigrations(this.db, [
       // Create the tables
       {

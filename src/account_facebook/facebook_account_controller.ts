@@ -6,6 +6,7 @@ import fetch from "node-fetch";
 import { app, session } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
+import Database from "better-sqlite3";
 import unzipper from "unzipper";
 
 import { getResourcesPath, getAccountDataPath } from "../util";
@@ -75,7 +76,8 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     if (!this.account) {
       return "";
     }
-    return path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`), "data.sqlite3");
+    // Return the directory path (not the file path) since accountDataPath is also used for media directories
+    return getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`);
   }
 
   protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
@@ -107,6 +109,11 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
   }
 
   initDB() {
+    // Ensure account is loaded before initializing database
+    if (!this.account) {
+      this.refreshAccount();
+    }
+
     if (!this.account || !this.account.accountID) {
       log.error(
         "FacebookAccountController: cannot initialize the database because the account is not found, or the account Facebook ID is not found",
@@ -116,18 +123,24 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
       return;
     }
 
-    // Set the account data path
+    // Set the account data path (directory, not file)
     this.accountDataPath = this.getAccountDataPath();
+    if (!this.accountDataPath) {
+      log.error("FacebookAccountController.initDB: accountDataPath is empty");
+      return;
+    }
+
     log.info(
       `FacebookAccountController.initDB: accountDataPath=${this.accountDataPath}`,
     );
 
-    // Call base class initDB
-    super.initDB();
-    if (!this.db) {
-      log.error("FacebookAccountController.initDB: database not initialized");
-      return;
-    }
+    // Build the database file path
+    const dbPath = path.join(this.accountDataPath, "data.sqlite3");
+
+    // Initialize the database using the file path
+    log.info(`FacebookAccountController.initDB: dbPath=${dbPath}`);
+    this.db = new Database(dbPath, {});
+    this.db.pragma("journal_mode = WAL");
     runMigrations(this.db, [
       // Create the tables
       {
@@ -382,6 +395,14 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
   }
 
   async saveUser(actor: FBActor): Promise<string> {
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error("FacebookAccountController.saveUser: database not initialized");
+      return "";
+    }
+
     const userID = actor.id;
     const url = actor.url;
     const name = actor.name;
@@ -450,6 +471,13 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
   }
 
   async saveAttachedStory(attachedStory: FBAttachedStory): Promise<string> {
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error("FacebookAccountController.saveAttachedStory: database not initialized");
+      return "";
+    }
     const storyID = attachedStory.id;
     const text = attachedStory.comet_sections.message
       ? attachedStory.comet_sections.message.text
@@ -502,6 +530,13 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     media: FBMedia,
     title: string | null,
   ): Promise<string | null> {
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error("FacebookAccountController.saveMedia: database not initialized");
+      return null;
+    }
     console.log("FacebookAccountController.saveMedia: saving media", media);
     const mediaType = media.__typename;
     const mediaID = media.id;

@@ -86,6 +86,9 @@ export abstract class BaseAccountController<TProgress = unknown> {
     }
 
     initDB() {
+        // This method is overridden in subclasses
+        // Subclasses should set this.accountDataPath to the directory path
+        // and then initialize this.db with the full file path (directory + "data.sqlite3")
         if (!this.accountDataPath) {
             log.error(`${this.constructor.name}.initDB: accountDataPath not set`);
             return;
@@ -93,9 +96,8 @@ export abstract class BaseAccountController<TProgress = unknown> {
 
         log.info(`${this.constructor.name}.initDB: accountDataPath=${this.accountDataPath}`);
 
-        // Open the database
-        this.db = new Database(this.accountDataPath, {});
-        this.db.pragma("journal_mode = WAL");
+        // Note: Subclasses override this to set accountDataPath and initialize db
+        // Base class implementation is not called directly
     }
 
     async syncProgress(progressJSON: string): Promise<void> {
