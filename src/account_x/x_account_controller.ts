@@ -107,7 +107,8 @@ import {
 
 // for building the static archive site
 import { saveArchive } from "./archive";
-import { indexUser as indexUserMethod } from "./controller/indexUser";
+import { indexUserIntoDB } from "./controller/indexUser";
+import { indexConversationIntoDB } from "./controller/indexConversation";
 import { migrations } from "./controller/migrations";
 
 const getMediaURL = (media: XAPILegacyTweetMedia): string => {
@@ -878,7 +879,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
       return;
     }
 
-    await indexUserMethod(
+    await indexUserIntoDB(
       this.db,
       this.progress,
       (url: string) => this.getImageDataURI(url),
@@ -887,80 +888,21 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   indexConversation(conversation: XAPIConversation) {
-    log.debug("XAccountController.indexConversation", conversation);
     if (!this.db) {
       this.initDB();
     }
-
-    // Have we seen this conversation before?
-    const existing: XConversationRow[] = exec(
-      this.db,
-      "SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?",
-      [conversation.conversation_id],
-      "all",
-    ) as XConversationRow[];
-    if (existing.length > 0) {
-      log.debug(
-        "XAccountController.indexConversation: conversation already indexed, but needs to be updated",
-        {
-          oldMinEntryID: existing[0].minEntryID,
-          oldMaxEntryID: existing[0].maxEntryID,
-          newMinEntryID: conversation.min_entry_id,
-          newMaxEntryID: conversation.max_entry_id,
-        },
-      );
-
-      // Update the conversation
-      exec(
-        this.db,
-        "UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ?, updatedInDatabaseAt = ?, shouldIndexMessages = ?, deletedAt = NULL WHERE conversationID = ?",
-        [
-          conversation.sort_timestamp,
-          conversation.type,
-          conversation.min_entry_id,
-          conversation.max_entry_id,
-          conversation.trusted ? 1 : 0,
-          new Date(),
-          1,
-          conversation.conversation_id,
-        ],
-      );
-    } else {
-      // Add the conversation
-      exec(
-        this.db,
-        "INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted, addedToDatabaseAt, shouldIndexMessages) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-          conversation.conversation_id,
-          conversation.type,
-          conversation.sort_timestamp,
-          conversation.min_entry_id,
-          conversation.max_entry_id,
-          conversation.trusted ? 1 : 0,
-          new Date(),
-          1,
-        ],
-      );
+    if (!this.db) {
+      log.error("XAccountController.indexConversation: database not initialized");
+      return;
     }
 
-    // Delete participants
-    exec(
+    indexConversationIntoDB(
       this.db,
-      "DELETE FROM conversation_participant WHERE conversationID = ?",
-      [conversation.conversation_id],
+      () => {
+        this.progress.conversationsIndexed++;
+      },
+      conversation,
     );
-
-    // Add the participants
-    conversation.participants.forEach((participant) => {
-      exec(
-        this.db,
-        "INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)",
-        [conversation.conversation_id, participant.user_id],
-      );
-    });
-
-    // Update progress
-    this.progress.conversationsIndexed++;
   }
 
   async indexParseConversationsResponseData(responseIndex: number) {

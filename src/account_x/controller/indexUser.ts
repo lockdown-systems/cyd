@@ -8,7 +8,7 @@ import { XProgress } from "../../shared_types";
  * Index a user from the X API into the database.
  * This method handles both inserting new users and updating existing ones.
  */
-export async function indexUser(
+export async function indexUserIntoDB(
   db: Database.Database,
   progress: XProgress,
   getImageDataURI: (url: string) => Promise<string>,
