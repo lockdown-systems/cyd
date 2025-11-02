@@ -49,13 +49,14 @@ function getURLFileExtension(urlString: string) {
   return url.pathname.split(".").pop();
 }
 
-export class FacebookAccountController extends BaseAccountController {
+export class FacebookAccountController extends BaseAccountController<FacebookProgress> {
   // Making this public so it can be accessed in tests
   public account: FacebookAccount | null = null;
-  private progress: FacebookProgress = emptyFacebookProgress();
 
   constructor(accountID: number, mitmController: IMITMController) {
     super(accountID, mitmController);
+    // Initialize progress with Facebook-specific type
+    this.progress = emptyFacebookProgress();
   }
 
   protected getAccountType(): string {
@@ -973,14 +974,6 @@ export class FacebookAccountController extends BaseAccountController {
     );
     const archiveZip = await unzipper.Open.file(archiveZipPath);
     await archiveZip.extract({ path: accountPath });
-  }
-
-  async syncProgress(progressJSON: string) {
-    this.progress = JSON.parse(progressJSON);
-  }
-
-  async getProgress(): Promise<FacebookProgress> {
-    return this.progress;
   }
 
   async getCookie(name: string): Promise<string | null> {

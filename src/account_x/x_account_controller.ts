@@ -150,7 +150,7 @@ const getMediaURL = (media: XAPILegacyTweetMedia): string => {
   return mediaURL;
 };
 
-export class XAccountController extends BaseAccountController {
+export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
   public account: XAccount | null = null;
   private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
@@ -158,14 +158,14 @@ export class XAccountController extends BaseAccountController {
   // Temp variable for accurately counting message progress
   private messageIDsIndexed: string[] = [];
 
-  private progress: XProgress = emptyXProgress();
-
   protected cookies: Record<string, Record<string, string>> = {};
 
   private blueskyClient: NodeOAuthClient | null = null;
 
   constructor(accountID: number, mitmController: IMITMController) {
     super(accountID, mitmController);
+    // Initialize progress with X-specific type
+    this.progress = emptyXProgress();
 
     // Monitor web request metadata for X-specific functionality
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
@@ -1852,20 +1852,12 @@ export class XAccountController extends BaseAccountController {
     }
   }
 
-  async syncProgress(progressJSON: string) {
-    this.progress = JSON.parse(progressJSON);
-  }
-
   async resetRateLimitInfo(): Promise<void> {
     this.rateLimitInfo = emptyXRateLimitInfo();
   }
 
   async isRateLimited(): Promise<XRateLimitInfo> {
     return this.rateLimitInfo;
-  }
-
-  async getProgress(): Promise<XProgress> {
-    return this.progress;
   }
 
   async getProgressInfo(): Promise<XProgressInfo> {

@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 import { getAccount } from "../../database";
 import { IMITMController } from "../../mitm";
 
-export abstract class BaseAccountController {
+export abstract class BaseAccountController<TProgress = any> {
     protected accountUUID: string = "";
     protected accountID: number = 0;
     protected accountDataPath: string = "";
@@ -15,6 +15,9 @@ export abstract class BaseAccountController {
     public mitmController: IMITMController;
 
     protected cookies: Record<string, any> = {};
+
+    // Progress tracking - each subclass specifies its specific progress type
+    protected progress!: TProgress;
 
     constructor(accountID: number, mitmController: IMITMController) {
         this.mitmController = mitmController;
@@ -90,5 +93,13 @@ export abstract class BaseAccountController {
         // Open the database
         this.db = new Database(this.accountDataPath, {});
         this.db.pragma("journal_mode = WAL");
+    }
+
+    async syncProgress(progressJSON: string): Promise<void> {
+        this.progress = JSON.parse(progressJSON) as TProgress;
+    }
+
+    async getProgress(): Promise<TProgress> {
+        return this.progress;
     }
 }
