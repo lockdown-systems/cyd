@@ -4,8 +4,8 @@ import { URL } from "url";
 
 import fetch from "node-fetch";
 import { app, session } from "electron";
+import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
-import Database from "better-sqlite3";
 import unzipper from "unzipper";
 
 import { getResourcesPath, getAccountDataPath } from "../util";
@@ -53,6 +53,9 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
   // Making this public so it can be accessed in tests
   public account: FacebookAccount | null = null;
 
+  // Override cookies type for Facebook-specific flat structure
+  protected cookies: Record<string, string> = {};
+
   constructor(accountID: number, mitmController: IMITMController) {
     super(accountID, mitmController);
     // Initialize progress with Facebook-specific type
@@ -63,7 +66,7 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     return "Facebook";
   }
 
-  protected getAccountProperty(): any {
+  protected getAccountProperty(): unknown {
     const account = getAccount(this.accountID);
     return account?.facebookAccount;
   }
@@ -75,7 +78,7 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     return path.join(getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`), "data.sqlite3");
   }
 
-  protected handleCookieTracking(details: any): void {
+  protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
     // Keep track of cookies
     if (
       details.url.startsWith("https://www.facebook.com/") &&

@@ -8,8 +8,8 @@ import mime from "mime-types";
 
 
 import { app, session, shell } from "electron";
+import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
-import Database from "better-sqlite3";
 import { glob } from "glob";
 
 import {
@@ -202,7 +202,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return "X";
   }
 
-  protected getAccountProperty(): any {
+  protected getAccountProperty(): unknown {
     const account = getAccount(this.accountID);
     return account?.xAccount;
   }
@@ -214,7 +214,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return path.join(getAccountDataPath("X", this.account.username), "data.sqlite3");
   }
 
-  protected handleCookieTracking(details: any): void {
+  protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
     // Keep track of cookies
     if (details.requestHeaders) {
       const hostname = new URL(details.url).hostname;

@@ -1,10 +1,11 @@
 import { session } from "electron";
+import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
 import { getAccount } from "../../database";
 import { IMITMController } from "../../mitm";
 
-export abstract class BaseAccountController<TProgress = any> {
+export abstract class BaseAccountController<TProgress = unknown> {
     protected accountUUID: string = "";
     protected accountID: number = 0;
     protected accountDataPath: string = "";
@@ -14,7 +15,9 @@ export abstract class BaseAccountController<TProgress = any> {
     public db: Database.Database | null = null;
     public mitmController: IMITMController;
 
-    protected cookies: Record<string, any> = {};
+    // Cookies can be flat (Record<string, string>) or nested (Record<string, Record<string, string>>)
+    // depending on the subclass implementation
+    protected cookies: Record<string, unknown> = {};
 
     // Progress tracking - each subclass specifies its specific progress type
     protected progress!: TProgress;
@@ -44,9 +47,9 @@ export abstract class BaseAccountController<TProgress = any> {
     }
 
     protected abstract getAccountType(): string;
-    protected abstract getAccountProperty(): any;
+    protected abstract getAccountProperty(): unknown;
     protected abstract getAccountDataPath(): string;
-    protected abstract handleCookieTracking(details: any): void;
+    protected abstract handleCookieTracking(details: OnSendHeadersListenerDetails): void;
 
     refreshAccount() {
         // Load the account
