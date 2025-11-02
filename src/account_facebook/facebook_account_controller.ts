@@ -78,7 +78,10 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
       return "";
     }
     // Return the directory path (not the file path) since accountDataPath is also used for media directories
-    return getAccountDataPath("Facebook", `${this.account.accountID} ${this.account.name}`);
+    return getAccountDataPath(
+      "Facebook",
+      `${this.account.accountID} ${this.account.name}`,
+    );
   }
 
   protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
@@ -241,10 +244,10 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
       data.attachments &&
       data.attachments.length > 0 &&
       data.attachments[0].style_type_renderer.__typename ==
-      "StoryAttachmentLifeEventStyleRenderer" &&
+        "StoryAttachmentLifeEventStyleRenderer" &&
       data.attachments[0].style_type_renderer.attachment.style_infos &&
       data.attachments[0].style_type_renderer.attachment.style_infos.length >
-      0 &&
+        0 &&
       data.attachments[0].style_type_renderer.attachment.style_infos[0]
         .life_event_title
     ) {
@@ -401,7 +404,9 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
       this.initDB();
     }
     if (!this.db) {
-      log.error("FacebookAccountController.saveAttachedStory: database not initialized");
+      log.error(
+        "FacebookAccountController.saveAttachedStory: database not initialized",
+      );
       return "";
     }
     const storyID = attachedStory.id;
@@ -460,7 +465,9 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
       this.initDB();
     }
     if (!this.db) {
-      log.error("FacebookAccountController.saveMedia: database not initialized");
+      log.error(
+        "FacebookAccountController.saveMedia: database not initialized",
+      );
       return null;
     }
     console.log("FacebookAccountController.saveMedia: saving media", media);

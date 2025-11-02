@@ -6,7 +6,6 @@ import fetch from "node-fetch";
 import unzipper from "unzipper";
 import mime from "mime-types";
 
-
 import { app, session, shell } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
@@ -74,7 +73,6 @@ import {
   XTweetRow,
   XTweetMediaRow,
   XTweetURLRow,
-  XUserRow,
   XConversationRow,
   XTweetBlueskyMigrationRow,
   // X API types
@@ -241,7 +239,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
     }
   }
 
-
   refreshAccount() {
     super.refreshAccount();
     // Load the X account after base refresh
@@ -293,7 +290,9 @@ export class XAccountController extends BaseAccountController<XProgress> {
       this.initDB();
     }
     if (!this.db) {
-      log.error("XAccountController.fetchTweetsWithMediaAndURLs: database not initialized");
+      log.error(
+        "XAccountController.fetchTweetsWithMediaAndURLs: database not initialized",
+      );
       return [];
     }
 
@@ -580,10 +579,10 @@ export class XAccountController extends BaseAccountController<XProgress> {
         if (
           instructions.entries?.length == 2 &&
           instructions.entries[0].content.entryType ==
-          "TimelineTimelineCursor" &&
+            "TimelineTimelineCursor" &&
           instructions.entries[0].content.cursorType == "Top" &&
           instructions.entries[1].content.entryType ==
-          "TimelineTimelineCursor" &&
+            "TimelineTimelineCursor" &&
           instructions.entries[1].content.cursorType == "Bottom"
         ) {
           this.thereIsMore = false;
@@ -829,7 +828,9 @@ export class XAccountController extends BaseAccountController<XProgress> {
       this.initDB();
     }
     if (!this.db) {
-      log.error("XAccountController.indexConversation: database not initialized");
+      log.error(
+        "XAccountController.indexConversation: database not initialized",
+      );
       return;
     }
 

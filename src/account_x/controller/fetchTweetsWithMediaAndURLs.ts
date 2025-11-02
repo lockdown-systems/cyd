@@ -7,11 +7,11 @@ import { XTweetItem } from "../../shared_types";
  * Groups media and URLs by tweet ID and formats the results.
  */
 export function fetchTweetsWithMediaAndURLsFromDB(
-    db: Database.Database,
-    whereClause: string,
-    params: (string | number)[],
+  db: Database.Database,
+  whereClause: string,
+  params: (string | number)[],
 ): XTweetItem[] {
-    const query = `
+  const query = `
             SELECT
                 t.tweetID, t.text, t.likeCount, t.retweetCount, t.createdAt,
                 tm.mediaType, tm.filename AS mediaFilename,
@@ -23,47 +23,47 @@ export function fetchTweetsWithMediaAndURLsFromDB(
             ORDER BY t.createdAt ASC
         `;
 
-    const rows = exec(db, query, params, "all") as {
-        tweetID: string;
-        text: string;
-        likeCount: number;
-        retweetCount: number;
-        createdAt: string;
-        mediaType: string | null;
-        mediaFilename: string | null;
-        urlExpanded: string | null;
-    }[];
+  const rows = exec(db, query, params, "all") as {
+    tweetID: string;
+    text: string;
+    likeCount: number;
+    retweetCount: number;
+    createdAt: string;
+    mediaType: string | null;
+    mediaFilename: string | null;
+    urlExpanded: string | null;
+  }[];
 
-    // Group the results by tweetID
-    const tweetMap: Record<string, XTweetItem> = {};
-    for (const row of rows) {
-        if (!tweetMap[row.tweetID]) {
-            tweetMap[row.tweetID] = {
-                id: row.tweetID,
-                t: row.text ? row.text.replace(/(?:\r\n|\r|\n)/g, "<br>").trim() : "",
-                l: row.likeCount,
-                r: row.retweetCount,
-                d: row.createdAt,
-                i: [],
-                v: [],
-            };
-        }
-
-        // Add media files
-        if (row.mediaType === "photo") {
-            tweetMap[row.tweetID].i.push(row.mediaFilename!);
-        } else if (row.mediaType === "video") {
-            tweetMap[row.tweetID].v.push(row.mediaFilename!);
-        }
-
-        // Replace URLs in the text
-        if (row.urlExpanded) {
-            tweetMap[row.tweetID].t = tweetMap[row.tweetID].t.replace(
-                row.urlExpanded,
-                row.urlExpanded,
-            );
-        }
+  // Group the results by tweetID
+  const tweetMap: Record<string, XTweetItem> = {};
+  for (const row of rows) {
+    if (!tweetMap[row.tweetID]) {
+      tweetMap[row.tweetID] = {
+        id: row.tweetID,
+        t: row.text ? row.text.replace(/(?:\r\n|\r|\n)/g, "<br>").trim() : "",
+        l: row.likeCount,
+        r: row.retweetCount,
+        d: row.createdAt,
+        i: [],
+        v: [],
+      };
     }
 
-    return Object.values(tweetMap);
+    // Add media files
+    if (row.mediaType === "photo") {
+      tweetMap[row.tweetID].i.push(row.mediaFilename!);
+    } else if (row.mediaType === "video") {
+      tweetMap[row.tweetID].v.push(row.mediaFilename!);
+    }
+
+    // Replace URLs in the text
+    if (row.urlExpanded) {
+      tweetMap[row.tweetID].t = tweetMap[row.tweetID].t.replace(
+        row.urlExpanded,
+        row.urlExpanded,
+      );
+    }
+  }
+
+  return Object.values(tweetMap);
 }

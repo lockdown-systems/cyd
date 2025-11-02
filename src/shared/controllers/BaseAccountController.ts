@@ -6,91 +6,93 @@ import { getAccount } from "../../database";
 import { IMITMController } from "../../mitm";
 
 export abstract class BaseAccountController<TProgress = unknown> {
-    protected accountUUID: string = "";
-    protected accountID: number = 0;
-    protected accountDataPath: string = "";
-    protected thereIsMore: boolean = false;
+  protected accountUUID: string = "";
+  protected accountID: number = 0;
+  protected accountDataPath: string = "";
+  protected thereIsMore: boolean = false;
 
-    // Making this public so it can be accessed in tests
-    public db: Database.Database | null = null;
-    public mitmController: IMITMController;
+  // Making this public so it can be accessed in tests
+  public db: Database.Database | null = null;
+  public mitmController: IMITMController;
 
-    // Cookies can be flat (Record<string, string>) or nested (Record<string, Record<string, string>>)
-    // depending on the subclass implementation
-    protected cookies: Record<string, unknown> = {};
+  // Cookies can be flat (Record<string, string>) or nested (Record<string, Record<string, string>>)
+  // depending on the subclass implementation
+  protected cookies: Record<string, unknown> = {};
 
-    // Progress tracking - each subclass specifies its specific progress type
-    protected progress!: TProgress;
+  // Progress tracking - each subclass specifies its specific progress type
+  protected progress!: TProgress;
 
-    constructor(accountID: number, mitmController: IMITMController) {
-        this.mitmController = mitmController;
-        this.accountID = accountID;
-        this.refreshAccount();
+  constructor(accountID: number, mitmController: IMITMController) {
+    this.mitmController = mitmController;
+    this.accountID = accountID;
+    this.refreshAccount();
 
-        // Monitor web request metadata
-        const ses = session.fromPartition(`persist:account-${this.accountID}`);
-        ses.webRequest.onCompleted((_details) => {
-            // TODO: Monitor for rate limits
-        });
+    // Monitor web request metadata
+    const ses = session.fromPartition(`persist:account-${this.accountID}`);
+    ses.webRequest.onCompleted((_details) => {
+      // TODO: Monitor for rate limits
+    });
 
-        ses.webRequest.onSendHeaders((details) => {
-            this.handleCookieTracking(details);
-        });
+    ses.webRequest.onSendHeaders((details) => {
+      this.handleCookieTracking(details);
+    });
+  }
+
+  cleanup() {
+    if (this.db) {
+      this.db.pragma("wal_checkpoint(FULL)");
+      this.db.close();
+      this.db = null;
+    }
+  }
+
+  protected abstract getAccountType(): string;
+  protected abstract getAccountProperty(): unknown;
+  protected abstract getAccountDataPath(): string;
+  protected abstract handleCookieTracking(
+    details: OnSendHeadersListenerDetails,
+  ): void;
+  protected abstract initDB(): void;
+
+  refreshAccount() {
+    // Load the account
+    const account = getAccount(this.accountID);
+    if (!account) {
+      log.error(
+        `${this.constructor.name}.refreshAccount: account ${this.accountID} not found`,
+      );
+      return;
     }
 
-    cleanup() {
-        if (this.db) {
-            this.db.pragma("wal_checkpoint(FULL)");
-            this.db.close();
-            this.db = null;
-        }
+    // Make sure it's the correct account type
+    if (account.type !== this.getAccountType()) {
+      log.error(
+        `${this.constructor.name}.refreshAccount: account ${this.accountID} is not a ${this.getAccountType()} account`,
+      );
+      return;
     }
 
-    protected abstract getAccountType(): string;
-    protected abstract getAccountProperty(): unknown;
-    protected abstract getAccountDataPath(): string;
-    protected abstract handleCookieTracking(details: OnSendHeadersListenerDetails): void;
-    protected abstract initDB(): void;
+    // Get the account UUID
+    this.accountUUID = account.uuid;
+    log.debug(
+      `${this.constructor.name}.refreshAccount: accountUUID=${this.accountUUID}`,
+    );
 
-    refreshAccount() {
-        // Load the account
-        const account = getAccount(this.accountID);
-        if (!account) {
-            log.error(
-                `${this.constructor.name}.refreshAccount: account ${this.accountID} not found`,
-            );
-            return;
-        }
-
-        // Make sure it's the correct account type
-        if (account.type !== this.getAccountType()) {
-            log.error(
-                `${this.constructor.name}.refreshAccount: account ${this.accountID} is not a ${this.getAccountType()} account`,
-            );
-            return;
-        }
-
-        // Get the account UUID
-        this.accountUUID = account.uuid;
-        log.debug(
-            `${this.constructor.name}.refreshAccount: accountUUID=${this.accountUUID}`,
-        );
-
-        // Load the account-specific data
-        const accountData = this.getAccountProperty();
-        if (!accountData) {
-            log.error(
-                `${this.constructor.name}.refreshAccount: ${this.getAccountType()} account ${this.accountID} not found`,
-            );
-            return;
-        }
+    // Load the account-specific data
+    const accountData = this.getAccountProperty();
+    if (!accountData) {
+      log.error(
+        `${this.constructor.name}.refreshAccount: ${this.getAccountType()} account ${this.accountID} not found`,
+      );
+      return;
     }
+  }
 
-    async syncProgress(progressJSON: string): Promise<void> {
-        this.progress = JSON.parse(progressJSON) as TProgress;
-    }
+  async syncProgress(progressJSON: string): Promise<void> {
+    this.progress = JSON.parse(progressJSON) as TProgress;
+  }
 
-    async getProgress(): Promise<TProgress> {
-        return this.progress;
-    }
+  async getProgress(): Promise<TProgress> {
+    return this.progress;
+  }
 }
