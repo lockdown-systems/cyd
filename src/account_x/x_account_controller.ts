@@ -109,6 +109,7 @@ import {
 import { saveArchive } from "./archive";
 import { indexUserIntoDB } from "./controller/indexUser";
 import { indexConversationIntoDB } from "./controller/indexConversation";
+import { indexTweetURLsIntoDB } from "./controller/indexTweetURLs";
 import { migrations } from "./controller/migrations";
 
 const getMediaURL = (media: XAPILegacyTweetMedia): string => {
@@ -824,34 +825,15 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   indexTweetURLs(tweetLegacy: XAPILegacyTweet) {
-    log.debug("XAccountController.indexTweetURL");
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error("XAccountController.indexTweetURLs: database not initialized");
+      return;
+    }
 
-    // Loop over all URL items
-    tweetLegacy.entities?.urls.forEach((url: XAPILegacyURL) => {
-      // Make sure we have all of the URL information before importing
-      if (
-        !url["url"] ||
-        !url["display_url"] ||
-        !url["expanded_url"] ||
-        !url["indices"]
-      ) {
-        return;
-      }
-
-      // Index url information in tweet_url table
-      exec(
-        this.db,
-        "INSERT OR REPLACE INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)",
-        [
-          url["url"],
-          url["display_url"],
-          url["expanded_url"],
-          url["indices"]?.[0],
-          url["indices"]?.[1],
-          tweetLegacy["id_str"],
-        ],
-      );
-    });
+    indexTweetURLsIntoDB(this.db, tweetLegacy);
   }
 
   async getImageDataURI(url: string): Promise<string> {
