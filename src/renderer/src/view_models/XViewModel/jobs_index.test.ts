@@ -3,6 +3,7 @@ import * as IndexJobs from "./jobs_index";
 import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
 import { TimeoutError, URLChangedError } from "../BaseViewModel";
+import { AutomationErrorType } from "../../automation_errors";
 import type {
   XArchiveStartResponse,
   XIndexMessagesStartResponse,
@@ -281,7 +282,448 @@ describe("jobs_index.ts", () => {
     });
   });
 
-  describe.skip("runJobIndexTweets", () => {
+  // ============================================================================
+  // Shared Index Helper Functions Tests
+  // ============================================================================
+
+  describe("indexContentCheckIfEmpty", () => {
+    it("should return true and update progress when empty state selector exists", async () => {
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+
+      const result = await IndexJobs.indexContentCheckIfEmpty(
+        vm,
+        'div[data-testid="emptyState"]',
+        "article",
+        "isIndexTweetsFinished",
+        "tweetsIndexed",
+      );
+
+      expect(result).toBe(true);
+      expect(vm.progress.isIndexTweetsFinished).toBe(true);
+      expect(vm.progress.tweetsIndexed).toBe(0);
+      expect(vm.syncProgress).toHaveBeenCalled();
+    });
+
+    it("should return true when section exists but no articles found", async () => {
+      vi.spyOn(vm, "doesSelectorExist")
+        .mockResolvedValueOnce(false) // No empty state
+        .mockResolvedValueOnce(true); // Section exists
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+
+      const result = await IndexJobs.indexContentCheckIfEmpty(
+        vm,
+        'div[data-testid="emptyState"]',
+        "section article",
+        "isIndexLikesFinished",
+        "likesIndexed",
+      );
+
+      expect(result).toBe(true);
+      expect(vm.progress.isIndexLikesFinished).toBe(true);
+      expect(vm.progress.likesIndexed).toBe(0);
+    });
+
+    it("should return false when content exists", async () => {
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5);
+
+      const result = await IndexJobs.indexContentCheckIfEmpty(
+        vm,
+        null,
+        "section article",
+        "isIndexBookmarksFinished",
+        "bookmarksIndexed",
+      );
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("indexContentWaitForInitialLoad", () => {
+    it("should return success when selector appears", async () => {
+      vi.spyOn(vm, "waitForSelector").mockResolvedValue(undefined);
+
+      const result = await IndexJobs.indexContentWaitForInitialLoad(
+        vm,
+        "article",
+        "https://x.com/testuser/tweets",
+        "isIndexTweetsFinished",
+        "tweetsIndexed",
+        AutomationErrorType.x_runJob_indexTweets_URLChanged,
+        AutomationErrorType.x_runJob_indexTweets_OtherError,
+      );
+
+      expect(result).toEqual({ success: true, errorTriggered: false });
+    });
+
+    it("should handle rate limit timeout", async () => {
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new TimeoutError("article"),
+      );
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: Date.now() + 1000,
+      });
+
+      const result = await IndexJobs.indexContentWaitForInitialLoad(
+        vm,
+        "article",
+        "https://x.com/testuser/likes",
+        "isIndexLikesFinished",
+        "likesIndexed",
+        AutomationErrorType.x_runJob_indexLikes_URLChanged,
+        AutomationErrorType.x_runJob_indexLikes_OtherError,
+      );
+
+      expect(result).toEqual({ success: false, errorTriggered: false });
+      expect(vm.waitForRateLimit).toHaveBeenCalled();
+    });
+
+    it("should set finished state when no content and not rate limited", async () => {
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new TimeoutError("article"),
+      );
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: false,
+        rateLimitReset: 0,
+      });
+
+      const result = await IndexJobs.indexContentWaitForInitialLoad(
+        vm,
+        "article",
+        "https://x.com/testuser/bookmarks",
+        "isIndexBookmarksFinished",
+        "bookmarksIndexed",
+        AutomationErrorType.x_runJob_indexBookmarks_URLChanged,
+        AutomationErrorType.x_runJob_indexBookmarks_OtherError,
+      );
+
+      expect(result).toEqual({ success: false, errorTriggered: false });
+      expect(vm.progress.isIndexBookmarksFinished).toBe(true);
+      expect(vm.progress.bookmarksIndexed).toBe(0);
+      expect(vm.waitForLoadingToFinish).toHaveBeenCalled();
+    });
+
+    it("should trigger error on URL changed", async () => {
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new URLChangedError(
+          "https://x.com/testuser/tweets",
+          "https://x.com/other",
+        ),
+      );
+
+      const result = await IndexJobs.indexContentWaitForInitialLoad(
+        vm,
+        "article",
+        "https://x.com/testuser/tweets",
+        "isIndexTweetsFinished",
+        "tweetsIndexed",
+        AutomationErrorType.x_runJob_indexTweets_URLChanged,
+        AutomationErrorType.x_runJob_indexTweets_OtherError,
+      );
+
+      expect(result).toEqual({ success: false, errorTriggered: true });
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.x_runJob_indexTweets_URLChanged,
+        expect.objectContaining({ newURL: expect.any(String) }),
+        expect.any(Object),
+      );
+    });
+
+    it("should trigger error on other errors", async () => {
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new Error("Unknown error"),
+      );
+
+      const result = await IndexJobs.indexContentWaitForInitialLoad(
+        vm,
+        "article",
+        "https://x.com/testuser/tweets",
+        "isIndexTweetsFinished",
+        "tweetsIndexed",
+        AutomationErrorType.x_runJob_indexTweets_URLChanged,
+        AutomationErrorType.x_runJob_indexTweets_OtherError,
+      );
+
+      expect(result).toEqual({ success: false, errorTriggered: true });
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.x_runJob_indexTweets_OtherError,
+        expect.objectContaining({ error: expect.any(String) }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe("indexContentProcessRateLimit", () => {
+    it("should return shouldContinue=true when rate limit handled successfully", async () => {
+      // Set up mocks so indexTweetsHandleRateLimit returns true
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound")
+        .mockResolvedValueOnce(5) // Before scroll
+        .mockResolvedValueOnce(10); // After scroll - more loaded
+
+      const result = await IndexJobs.indexContentProcessRateLimit(
+        vm,
+        "someFailureState",
+      );
+
+      expect(result).toEqual({ shouldContinue: true, shouldBreak: false });
+      expect(vm.scrollToBottom).toHaveBeenCalled();
+      expect(vm.waitForRateLimit).toHaveBeenCalled();
+    });
+
+    it("should return shouldBreak=true when rate limit handling fails", async () => {
+      // Set up mocks so indexTweetsHandleRateLimit returns false
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5); // Same count (no progress)
+      vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No retry button
+
+      const result = await IndexJobs.indexContentProcessRateLimit(
+        vm,
+        "indexTweets_FailedToRetryAfterRateLimit",
+      );
+
+      expect(result).toEqual({ shouldContinue: false, shouldBreak: true });
+      expect(mockElectron.X.setConfig).toHaveBeenCalledWith(
+        1,
+        "indexTweets_FailedToRetryAfterRateLimit",
+        "true",
+      );
+    });
+  });
+
+  describe("indexContentParsePage", () => {
+    it("should successfully parse content and update job", async () => {
+      mockElectron.X.indexParseTweets.mockResolvedValue({
+        tweetsIndexed: 10,
+        isIndexTweetsFinished: false,
+      });
+      vm.jobs = [createMockJob("indexTweets")];
+
+      const result = await IndexJobs.indexContentParsePage(
+        vm,
+        0,
+        AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+      );
+
+      expect(result).toEqual({ success: true, errorTriggered: false });
+      expect(mockElectron.X.indexParseTweets).toHaveBeenCalled();
+      expect(vm.jobs[0].progressJSON).toBeTruthy();
+      expect(mockElectron.X.updateJob).toHaveBeenCalled();
+    });
+
+    it("should trigger error when parsing fails", async () => {
+      mockElectron.X.indexParseTweets.mockRejectedValue(
+        new Error("Parse error"),
+      );
+      mockElectron.X.getLatestResponseData.mockResolvedValue("{}");
+      vm.jobs = [createMockJob("indexTweets")];
+
+      const result = await IndexJobs.indexContentParsePage(
+        vm,
+        0,
+        AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+      );
+
+      expect(result).toEqual({ success: false, errorTriggered: true });
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+        expect.objectContaining({ error: expect.any(String) }),
+        expect.objectContaining({ latestResponseData: expect.any(String) }),
+      );
+    });
+  });
+
+  describe("indexContentCheckCompletion", () => {
+    beforeEach(() => {
+      vm.jobs = [createMockJob("indexTweets")];
+    });
+
+    it("should continue when there is more content", async () => {
+      mockElectron.X.indexIsThereMore.mockResolvedValue(true);
+
+      const result = await IndexJobs.indexContentCheckCompletion(
+        vm,
+        0,
+        true,
+        "isIndexTweetsFinished",
+        "indexTweets_FailedToRetryAfterRateLimit",
+        AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+      );
+
+      expect(result).toEqual({
+        isComplete: false,
+        errorTriggered: false,
+        shouldContinue: true,
+      });
+    });
+
+    it("should scroll up when there is more but no more to scroll", async () => {
+      mockElectron.X.indexIsThereMore.mockResolvedValue(true);
+
+      await IndexJobs.indexContentCheckCompletion(
+        vm,
+        0,
+        false, // moreToScroll = false
+        "isIndexTweetsFinished",
+        "indexTweets_FailedToRetryAfterRateLimit",
+        AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+      );
+
+      expect(vm.scrollUp).toHaveBeenCalledWith(2000);
+    });
+
+    it("should complete when verified as done", async () => {
+      mockElectron.X.indexIsThereMore.mockResolvedValue(false);
+      vi.spyOn(IndexJobs, "indexTweetsVerifyThereIsNoMore").mockResolvedValue(
+        true,
+      );
+
+      const result = await IndexJobs.indexContentCheckCompletion(
+        vm,
+        0,
+        true,
+        "isIndexLikesFinished",
+        "indexLikes_FailedToRetryAfterRateLimit",
+        AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError,
+      );
+
+      expect(result).toEqual({
+        isComplete: true,
+        errorTriggered: false,
+        shouldContinue: false,
+      });
+      expect(vm.progress.isIndexLikesFinished).toBe(true);
+      expect(mockElectron.X.setConfig).toHaveBeenCalledWith(
+        1,
+        "indexLikes_FailedToRetryAfterRateLimit",
+        "false",
+      );
+    });
+  });
+
+  describe("indexContentProcessIteration", () => {
+    beforeEach(() => {
+      vm.jobs = [createMockJob("indexTweets")];
+      mockElectron.X.resetRateLimitInfo.mockResolvedValue(undefined);
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: false,
+        rateLimitReset: 0,
+      });
+    });
+
+    it("should complete full iteration successfully", async () => {
+      vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
+      mockElectron.X.indexParseTweets.mockResolvedValue({
+        tweetsIndexed: 10,
+      });
+      mockElectron.X.indexIsThereMore.mockResolvedValue(true);
+
+      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+        failureStateKey: "test_failure",
+        parseErrorType:
+          AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+        verifyErrorType:
+          AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+        progressKey: "isIndexTweetsFinished",
+      });
+
+      expect(result).toEqual({ shouldContinue: true, errorTriggered: false });
+      expect(vm.waitForPause).toHaveBeenCalled();
+      expect(vm.scrollToBottom).toHaveBeenCalled();
+    });
+
+    it("should handle rate limit and continue", async () => {
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: Date.now() + 1000,
+      });
+      // Set up mocks so indexTweetsHandleRateLimit returns true (via indexContentProcessRateLimit)
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound")
+        .mockResolvedValueOnce(5) // Before scroll
+        .mockResolvedValueOnce(10); // After scroll - more loaded
+
+      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+        failureStateKey: "test_failure",
+        parseErrorType:
+          AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+        verifyErrorType:
+          AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+        progressKey: "isIndexTweetsFinished",
+      });
+
+      expect(result).toEqual({ shouldContinue: true, errorTriggered: false });
+    });
+
+    it("should stop when rate limit handling fails", async () => {
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: Date.now() + 1000,
+      });
+      // Set up mocks so indexTweetsHandleRateLimit returns false
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5); // Same count (no progress)
+      vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No retry button
+
+      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+        failureStateKey: "test_failure",
+        parseErrorType:
+          AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+        verifyErrorType:
+          AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+        progressKey: "isIndexTweetsFinished",
+      });
+
+      expect(result).toEqual({ shouldContinue: false, errorTriggered: false });
+    });
+
+    it("should stop when parsing fails", async () => {
+      mockElectron.X.indexParseTweets.mockRejectedValue(
+        new Error("Parse error"),
+      );
+      mockElectron.X.getLatestResponseData.mockResolvedValue("{}");
+
+      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+        failureStateKey: "test_failure",
+        parseErrorType:
+          AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+        verifyErrorType:
+          AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+        progressKey: "isIndexTweetsFinished",
+      });
+
+      expect(result).toEqual({ shouldContinue: false, errorTriggered: true });
+    });
+
+    it("should check for something wrong message", async () => {
+      vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
+      mockElectron.X.indexParseTweets.mockResolvedValue({
+        tweetsIndexed: 10,
+      });
+      mockElectron.X.indexIsThereMore.mockResolvedValue(true);
+
+      // Mock doesSelectorExist to ensure indexTweetsCheckForSomethingWrong gets called
+      const checkSpy = vi
+        .spyOn(vm, "doesSelectorExist")
+        .mockResolvedValue(false);
+
+      await IndexJobs.indexContentProcessIteration(vm, 0, {
+        failureStateKey: "test_failure",
+        parseErrorType:
+          AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+        verifyErrorType:
+          AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+        progressKey: "isIndexTweetsFinished",
+      });
+
+      // indexTweetsCheckForSomethingWrong calls doesSelectorExist
+      // We just need to verify the function runs, which it does when completion doesn't stop iteration
+      expect(checkSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("runJobIndexTweets", () => {
     beforeEach(() => {
       // Initialize jobs array for tests that modify jobs[jobIndex]
       vm.jobs = [
@@ -295,6 +737,10 @@ describe("jobs_index.ts", () => {
     });
 
     it("should track analytics event on start", async () => {
+      // Mock empty content to exit immediately after start
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+
       await IndexJobs.runJobIndexTweets(vm, 0);
 
       expect(mockElectron.trackEvent).toHaveBeenCalledWith(
@@ -304,8 +750,8 @@ describe("jobs_index.ts", () => {
     });
 
     it("should set correct UI state", async () => {
-      // Set up to exit the while loop immediately
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      // Mock empty content to exit immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
       await IndexJobs.runJobIndexTweets(vm, 0);
@@ -316,8 +762,8 @@ describe("jobs_index.ts", () => {
     });
 
     it("should start indexing", async () => {
-      // Set up to exit the while loop immediately
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      // Mock empty content to exit immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
       await IndexJobs.runJobIndexTweets(vm, 0);
@@ -326,7 +772,10 @@ describe("jobs_index.ts", () => {
     });
 
     it("should handle empty tweets list", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      // Mock section exists but no articles
+      vi.spyOn(vm, "doesSelectorExist")
+        .mockResolvedValueOnce(false) // No empty state selector
+        .mockResolvedValueOnce(true); // Section exists
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
       await IndexJobs.runJobIndexTweets(vm, 0);
@@ -334,10 +783,13 @@ describe("jobs_index.ts", () => {
       expect(vm.progress.isIndexTweetsFinished).toBe(true);
       expect(vm.progress.tweetsIndexed).toBe(0);
       expect(vm.syncProgress).toHaveBeenCalled();
+      expect(mockElectron.X.indexStop).toHaveBeenCalled();
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
     });
 
     it("should handle timeout waiting for tweets to appear", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      // Mock content exists but waitForSelector times out
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new TimeoutError("article"),
@@ -351,23 +803,29 @@ describe("jobs_index.ts", () => {
 
       expect(vm.progress.isIndexTweetsFinished).toBe(true);
       expect(vm.waitForLoadingToFinish).toHaveBeenCalled();
+      expect(mockElectron.X.indexStop).toHaveBeenCalled();
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
     });
 
     it("should handle URLChangedError when waiting for tweets", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new URLChangedError("https://x.com/test", "https://x.com/new"),
+        new URLChangedError(
+          "https://x.com/test/with_replies",
+          "https://x.com/new",
+        ),
       );
 
       const result = await IndexJobs.runJobIndexTweets(vm, 0);
 
       expect(result).toBe(false);
       expect(vm.error).toHaveBeenCalled();
+      expect(mockElectron.X.indexStop).toHaveBeenCalled();
     });
 
     it("should handle generic error when waiting for tweets", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new Error("Generic error"),
@@ -377,50 +835,39 @@ describe("jobs_index.ts", () => {
 
       expect(result).toBe(false);
       expect(vm.error).toHaveBeenCalled();
+      expect(mockElectron.X.indexStop).toHaveBeenCalled();
     });
 
     it("should handle rate limits during scrolling", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound")
+        .mockResolvedValueOnce(1) // Initial check
+        .mockResolvedValueOnce(5) // First iteration - before rate limit check
+        .mockResolvedValueOnce(10); // After rate limit handled - more loaded
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
-      mockElectron.X.isRateLimited
-        .mockResolvedValueOnce({ isRateLimited: false, rateLimitReset: 0 })
-        .mockResolvedValueOnce({
-          isRateLimited: true,
-          rateLimitReset: Date.now() + 1000,
-        })
-        .mockResolvedValueOnce({ isRateLimited: false, rateLimitReset: 0 });
+      mockElectron.X.isRateLimited.mockResolvedValueOnce({
+        isRateLimited: true,
+        rateLimitReset: Date.now() + 1000,
+      });
 
-      mockElectron.X.indexParseTweets
-        .mockResolvedValueOnce({
-          ...vm.progress,
-          tweetsIndexed: 5,
-          isIndexTweetsFinished: false,
-        })
-        .mockResolvedValueOnce({
-          ...vm.progress,
-          tweetsIndexed: 5,
-          isIndexTweetsFinished: true, // Exit the loop
-        });
+      mockElectron.X.indexParseTweets.mockResolvedValueOnce({
+        ...vm.progress,
+        tweetsIndexed: 5,
+        isIndexTweetsFinished: false,
+      });
 
-      mockElectron.X.indexIsThereMore
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
-
+      mockElectron.X.indexIsThereMore.mockResolvedValue(false);
       mockElectron.X.resetThereIsMore.mockResolvedValue(undefined);
-
-      // Mock indexTweetsHandleRateLimit to return true
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5);
 
       await IndexJobs.runJobIndexTweets(vm, 0);
 
       expect(vm.waitForRateLimit).toHaveBeenCalled();
+      expect(vm.progress.isIndexTweetsFinished).toBe(true);
     });
 
     it("should handle ParseTweetsError", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
@@ -438,10 +885,11 @@ describe("jobs_index.ts", () => {
 
       expect(result).toBe(false);
       expect(vm.error).toHaveBeenCalled();
+      expect(mockElectron.X.indexStop).toHaveBeenCalled();
     });
 
     it("should handle VerifyThereIsNoMoreError", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
@@ -456,10 +904,7 @@ describe("jobs_index.ts", () => {
       });
 
       mockElectron.X.indexIsThereMore.mockResolvedValue(false);
-      mockElectron.X.resetThereIsMore.mockResolvedValue(undefined);
-
-      // Make indexTweetsVerifyThereIsNoMore throw an error
-      mockElectron.X.indexIsThereMore.mockRejectedValue(
+      mockElectron.X.resetThereIsMore.mockRejectedValue(
         new Error("Verify error"),
       );
       mockElectron.X.getLatestResponseData.mockResolvedValue("response data");
@@ -468,6 +913,7 @@ describe("jobs_index.ts", () => {
 
       expect(result).toBe(false);
       expect(vm.error).toHaveBeenCalled();
+      expect(mockElectron.X.indexStop).toHaveBeenCalled();
     });
 
     it("should set failure state when handleRateLimit fails", async () => {
@@ -480,13 +926,11 @@ describe("jobs_index.ts", () => {
         rateLimitReset: Date.now() + 1000,
       });
 
-      mockElectron.X.indexParseTweets.mockResolvedValue({
-        ...vm.progress,
-        tweetsIndexed: 5,
-        isIndexTweetsFinished: false,
-      });
+      // indexTweetsHandleRateLimit will fail because countSelectorsFound stays same and no retry button
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5); // Same count
+      vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No button
 
-      // This will make the function break out of the while loop
       await IndexJobs.runJobIndexTweets(vm, 0);
 
       expect(mockElectron.X.setConfig).toHaveBeenCalledWith(
@@ -498,7 +942,7 @@ describe("jobs_index.ts", () => {
     });
 
     it("should clear failure state on successful completion", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
@@ -523,45 +967,41 @@ describe("jobs_index.ts", () => {
         "indexTweets_FailedToRetryAfterRateLimit",
         "false",
       );
+      expect(vm.progress.isIndexTweetsFinished).toBe(true);
     });
 
     it("should scroll up when at bottom but not finished", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom")
         .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
+        .mockResolvedValueOnce(false); // No more to scroll
 
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,
       });
 
-      mockElectron.X.indexParseTweets
-        .mockResolvedValueOnce({
-          ...vm.progress,
-          tweetsIndexed: 5,
-          isIndexTweetsFinished: false,
-        })
-        .mockResolvedValueOnce({
-          ...vm.progress,
-          tweetsIndexed: 5,
-          isIndexTweetsFinished: true, // Exit loop on second iteration
-        });
+      mockElectron.X.indexParseTweets.mockResolvedValue({
+        ...vm.progress,
+        tweetsIndexed: 5,
+        isIndexTweetsFinished: false,
+      });
 
       mockElectron.X.indexIsThereMore
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
+        .mockResolvedValueOnce(true) // There's more
+        .mockResolvedValueOnce(false); // No more after scroll up
       mockElectron.X.resetThereIsMore.mockResolvedValue(undefined);
 
       await IndexJobs.runJobIndexTweets(vm, 0);
 
       expect(vm.scrollUp).toHaveBeenCalledWith(2000);
+      expect(vm.progress.isIndexTweetsFinished).toBe(true);
     });
 
     it("should stop monitoring and finish job after completion", async () => {
-      // Set up to exit the while loop immediately
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      // Mock empty content to complete immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
       await IndexJobs.runJobIndexTweets(vm, 0);
@@ -571,7 +1011,7 @@ describe("jobs_index.ts", () => {
     });
   });
 
-  describe.skip("runJobArchiveTweets", () => {
+  describe("runJobArchiveTweets", () => {
     const mockArchiveData: XArchiveStartResponse = {
       outputPath: "/output/path",
       items: [
@@ -627,7 +1067,7 @@ describe("jobs_index.ts", () => {
     });
   });
 
-  describe.skip("runJobIndexConversations", () => {
+  describe("runJobIndexConversations", () => {
     beforeEach(() => {
       // Initialize jobs array for tests that modify jobs[jobIndex]
       vm.jobs = [
@@ -795,7 +1235,19 @@ describe("jobs_index.ts", () => {
     });
   });
 
-  describe.skip("runJobIndexMessages", () => {
+  describe("runJobIndexMessages", () => {
+    beforeEach(() => {
+      // Initialize jobs array for tests that modify jobs[jobIndex]
+      vm.jobs = [
+        createMockJob("indexTweets"),
+        createMockJob("indexLikes"),
+        createMockJob("indexBookmarks"),
+        createMockJob("indexConversations"),
+        createMockJob("indexMessages"),
+        createMockJob("archiveTweets"),
+      ];
+    });
+
     it("should track analytics event on start", async () => {
       const mockMessagesData: XIndexMessagesStartResponse = {
         conversationIDs: [],
@@ -954,7 +1406,7 @@ describe("jobs_index.ts", () => {
     });
   });
 
-  describe.skip("runJobIndexLikes", () => {
+  describe("runJobIndexLikes", () => {
     beforeEach(() => {
       // Initialize jobs array for tests that modify jobs[jobIndex]
       vm.jobs = [
@@ -968,6 +1420,10 @@ describe("jobs_index.ts", () => {
     });
 
     it("should track analytics event on start", async () => {
+      // Mock empty state to exit immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+
       await IndexJobs.runJobIndexLikes(vm, 0);
 
       expect(mockElectron.trackEvent).toHaveBeenCalledWith(
@@ -977,6 +1433,10 @@ describe("jobs_index.ts", () => {
     });
 
     it("should set correct UI state", async () => {
+      // Mock empty state to exit immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+
       await IndexJobs.runJobIndexLikes(vm, 0);
 
       expect(vm.instructions).toContain("I'm saving your likes");
@@ -984,6 +1444,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle empty likes (emptyState selector)", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
       await IndexJobs.runJobIndexLikes(vm, 0);
 
@@ -993,6 +1454,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle timeout when waiting for likes", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new TimeoutError("article"),
       );
@@ -1010,6 +1472,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle URLChangedError", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new URLChangedError("https://x.com/test/likes", "https://x.com/new"),
       );
@@ -1022,6 +1485,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle generic errors", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new Error("Generic error"),
       );
@@ -1034,45 +1498,34 @@ describe("jobs_index.ts", () => {
 
     it("should handle rate limits and retry", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound")
+        .mockResolvedValueOnce(1) // Initial check
+        .mockResolvedValueOnce(5) // First iteration - before rate limit check
+        .mockResolvedValueOnce(10); // After rate limit handled - more loaded
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
-      mockElectron.X.isRateLimited
-        .mockResolvedValueOnce({ isRateLimited: false, rateLimitReset: 0 })
-        .mockResolvedValueOnce({
-          isRateLimited: true,
-          rateLimitReset: Date.now() + 1000,
-        })
-        .mockResolvedValueOnce({ isRateLimited: false, rateLimitReset: 0 });
+      mockElectron.X.isRateLimited.mockResolvedValueOnce({
+        isRateLimited: true,
+        rateLimitReset: Date.now() + 1000,
+      });
 
-      mockElectron.X.indexParseTweets
-        .mockResolvedValueOnce({
-          ...vm.progress,
-          likesIndexed: 5,
-          isIndexLikesFinished: false,
-        })
-        .mockResolvedValueOnce({
-          ...vm.progress,
-          likesIndexed: 5,
-          isIndexLikesFinished: true, // Exit loop
-        });
+      mockElectron.X.indexParseTweets.mockResolvedValueOnce({
+        ...vm.progress,
+        likesIndexed: 5,
+        isIndexLikesFinished: false,
+      });
 
-      mockElectron.X.indexIsThereMore
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
-
+      mockElectron.X.indexIsThereMore.mockResolvedValue(false);
       mockElectron.X.resetThereIsMore.mockResolvedValue(undefined);
-
-      // Mock indexTweetsHandleRateLimit to succeed
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5);
 
       await IndexJobs.runJobIndexLikes(vm, 0);
 
       expect(vm.waitForRateLimit).toHaveBeenCalled();
+      expect(vm.progress.isIndexLikesFinished).toBe(true);
     });
   });
 
-  describe.skip("runJobIndexBookmarks", () => {
+  describe("runJobIndexBookmarks", () => {
     beforeEach(() => {
       // Initialize jobs array for tests that modify jobs[jobIndex]
       vm.jobs = [
@@ -1086,6 +1539,10 @@ describe("jobs_index.ts", () => {
     });
 
     it("should track analytics event on start", async () => {
+      // Mock empty state to exit immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+
       await IndexJobs.runJobIndexBookmarks(vm, 0);
 
       expect(mockElectron.trackEvent).toHaveBeenCalledWith(
@@ -1095,6 +1552,10 @@ describe("jobs_index.ts", () => {
     });
 
     it("should set correct UI state", async () => {
+      // Mock empty state to exit immediately
+      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+
       await IndexJobs.runJobIndexBookmarks(vm, 0);
 
       expect(vm.instructions).toContain("I'm saving your bookmarks");
@@ -1102,6 +1563,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle empty bookmarks (emptyState selector)", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
       await IndexJobs.runJobIndexBookmarks(vm, 0);
 
@@ -1111,6 +1573,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle timeout when waiting for bookmarks", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new TimeoutError("article"),
       );
@@ -1128,6 +1591,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle URLChangedError", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new URLChangedError("https://x.com/i/bookmarks", "https://x.com/new"),
       );
@@ -1141,6 +1605,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle generic errors", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new Error("Generic error"),
       );
@@ -1153,6 +1618,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle ParseTweetsError", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
       mockElectron.X.isRateLimited.mockResolvedValue({
@@ -1173,6 +1639,7 @@ describe("jobs_index.ts", () => {
 
     it("should handle VerifyThereIsNoMoreError", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
       mockElectron.X.isRateLimited.mockResolvedValue({
@@ -1200,7 +1667,12 @@ describe("jobs_index.ts", () => {
 
     it("should set failure state when handleRateLimit fails", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound")
+        .mockResolvedValueOnce(1) // Initial check
+        .mockResolvedValueOnce(5) // Same count - will trigger failure
+        .mockResolvedValueOnce(5); // Still same
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
+      vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No retry button
 
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: true,
@@ -1211,9 +1683,6 @@ describe("jobs_index.ts", () => {
         ...vm.progress,
         bookmarksIndexed: 5,
       });
-
-      // Mock indexTweetsHandleRateLimit to fail
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
 
       await IndexJobs.runJobIndexBookmarks(vm, 0);
 
@@ -1226,6 +1695,7 @@ describe("jobs_index.ts", () => {
 
     it("should clear failure state on successful completion", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       vi.spyOn(vm, "scrollToBottom").mockResolvedValue(true);
 
       mockElectron.X.isRateLimited.mockResolvedValue({
