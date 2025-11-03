@@ -25,8 +25,8 @@ import * as AuthOps from "./auth";
 import * as GraphQLOps from "./graphql";
 import * as RateLimitOps from "./rate_limit";
 import * as Helpers from "./helpers";
-import * as IndexJobs from "./jobs_index";
-import * as DeleteJobs from "./jobs_delete";
+import * as IndexJobs from "./jobs_index/index";
+import * as DeleteJobs from "./jobs_delete/index";
 import * as MigrateJobs from "./jobs_migrate_to_bluesky";
 import * as TombstoneJobs from "./jobs_tombstone";
 
