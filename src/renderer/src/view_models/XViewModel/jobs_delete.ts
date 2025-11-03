@@ -1,10 +1,22 @@
 import type { XViewModel } from "./view_model";
 import { TimeoutError, URLChangedError } from "../BaseViewModel";
-import { XDeleteTweetsStartResponse } from "../../../../shared_types";
 import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { formatError } from "../../util";
 import { RunJobsState } from "./types";
+import {
+  deleteContentGetCookie,
+  deleteContentRetryLoop,
+  deleteContentUpdateDatabase,
+  deleteContentHandleFailure,
+  deleteTweetsLoadList,
+  deleteTweetItem,
+  deleteRetweetItem,
+  deleteLikeItem,
+  deleteBookmarkItem,
+  deleteDMsProcessIteration,
+  unfollowEveryoneProcessIteration,
+} from "./jobs_delete/index";
 
 export async function deleteDMsLoadDMsPage(vm: XViewModel): Promise<boolean> {
   vm.log("deleteDMsLoadDMsPage", "loading DMs page");
@@ -170,22 +182,18 @@ export async function runJobDeleteTweets(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteTweets;
-  let tweetsToDelete: XDeleteTweetsStartResponse;
   vm.instructions = `# I'm deleting your tweets based on your criteria, starting with the earliest.`;
 
   // Load the tweets to delete
-  try {
-    tweetsToDelete = await window.electron.X.deleteTweetsStart(vm.account.id);
-  } catch (e) {
-    await vm.error(AutomationErrorType.x_runJob_deleteTweets_FailedToStart, {
-      error: formatError(e as Error),
-    });
+  const tweetsToDelete = await deleteTweetsLoadList(
+    vm,
+    window.electron.X.deleteTweetsStart,
+    AutomationErrorType.x_runJob_deleteTweets_FailedToStart,
+  );
+
+  if (!tweetsToDelete) {
     return;
   }
-  vm.log(
-    "runJobDeleteTweets",
-    `found ${tweetsToDelete.tweets.length} tweets to delete`,
-  );
 
   // Start the progress
   vm.progress.totalTweetsToDelete = tweetsToDelete.tweets.length;
@@ -198,103 +206,63 @@ export async function runJobDeleteTweets(
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    "https://x.com/" + vm.account.xAccount?.username + "/with_replies",
+    `https://x.com/${vm.account.xAccount?.username}/with_replies`,
   );
 
   // Hide the browser and start showing other progress instead
   vm.showBrowser = false;
 
   // Get the ct0 cookie
-  const ct0: string | null = await window.electron.X.getCookie(
-    vm.account.id,
-    "x.com",
-    "ct0",
+  const ct0 = await deleteContentGetCookie(
+    vm,
+    AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound,
   );
-  vm.log("runJobDeleteTweets", ["ct0", ct0]);
+
   if (!ct0) {
-    await vm.error(
-      AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound,
-      {},
-    );
     return;
   }
 
   for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
     vm.currentTweetItem = tweetsToDelete.tweets[i];
 
-    // Delete the tweet
-    let tweetDeleted = false;
-    let statusCode = 0;
-    for (let tries = 0; tries < 3; tries++) {
-      statusCode = await vm.graphqlDelete(
+    // Delete the tweet with retry logic
+    const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
+      deleteTweetItem(
+        vm,
         ct0,
-        "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet",
-        "https://x.com/" + vm.account.xAccount?.username + "/with_replies",
-        JSON.stringify({
-          variables: {
-            tweet_id: tweetsToDelete.tweets[i].id,
-            dark_request: false,
-          },
-          queryId: "VaenaVgh5q5ih7kvyVjgtg",
-        }),
-      );
-      if (statusCode == 200) {
-        // Update the tweet's deletedAt date
-        try {
-          await window.electron.X.deleteTweet(
+        tweetsToDelete.tweets[i].id,
+        vm.account.xAccount?.username || "",
+      ),
+    );
+
+    if (success) {
+      // Update the tweet's deletedAt date
+      const updated = await deleteContentUpdateDatabase(
+        vm,
+        () =>
+          window.electron.X.deleteTweet(
             vm.account.id,
             tweetsToDelete.tweets[i].id,
             "tweet",
-          );
-          tweetDeleted = true;
-          vm.progress.tweetsDeleted += 1;
-          await vm.syncProgress();
-        } catch (e) {
-          await vm.error(
-            AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp,
-            {
-              error: formatError(e as Error),
-            },
-            {
-              tweet: tweetsToDelete.tweets[i],
-              index: i,
-            },
-            true,
-          );
-        }
-        break;
-      } else if (statusCode == 429) {
-        // Rate limited
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        await vm.waitForRateLimit();
-        tries = 0;
-      } else {
-        // Sleep 1 second and try again
-        vm.log("runJobDeleteTweets", [
-          "statusCode",
-          statusCode,
-          "failed to delete tweet, try #",
-          tries,
-        ]);
-        await vm.sleep(1000);
-      }
-    }
-
-    if (!tweetDeleted) {
-      await vm.error(
-        AutomationErrorType.x_runJob_deleteTweets_FailedToDelete,
-        {
-          statusCode: statusCode,
-        },
-        {
-          tweet: tweetsToDelete.tweets[i],
-          index: i,
-        },
-        true,
+          ),
+        AutomationErrorType.x_runJob_deleteTweets_FailedToUpdateDeleteTimestamp,
+        tweetsToDelete.tweets[i],
+        i,
       );
 
-      vm.progress.errorsOccured += 1;
-      await vm.syncProgress();
+      if (updated) {
+        vm.progress.tweetsDeleted += 1;
+        await vm.syncProgress();
+      }
+    } else {
+      // Failed to delete
+      await deleteContentHandleFailure(
+        vm,
+        AutomationErrorType.x_runJob_deleteTweets_FailedToDelete,
+        statusCode,
+        tweetsToDelete.tweets[i],
+        i,
+      );
     }
 
     await vm.waitForPause();
@@ -316,23 +284,18 @@ export async function runJobDeleteRetweets(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteRetweets;
-  let tweetsToDelete: XDeleteTweetsStartResponse;
   vm.instructions = `# I'm deleting your retweets, starting with the earliest.`;
 
   // Load the retweets to delete
-  try {
-    tweetsToDelete = await window.electron.X.deleteRetweetsStart(vm.account.id);
-  } catch (e) {
-    await vm.error(AutomationErrorType.x_runJob_deleteRetweets_FailedToStart, {
-      error: formatError(e as Error),
-    });
+  const tweetsToDelete = await deleteTweetsLoadList(
+    vm,
+    window.electron.X.deleteRetweetsStart,
+    AutomationErrorType.x_runJob_deleteRetweets_FailedToStart,
+  );
+
+  if (!tweetsToDelete) {
     return;
   }
-  vm.log("runJob", [
-    "jobType=deleteRetweets",
-    "XDeleteTweetsStartResponse",
-    tweetsToDelete,
-  ]);
 
   // Start the progress
   vm.progress.totalRetweetsToDelete = tweetsToDelete.tweets.length;
@@ -343,108 +306,68 @@ export async function runJobDeleteRetweets(
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    "https://x.com/" + vm.account.xAccount?.username,
+    `https://x.com/${vm.account.xAccount?.username}`,
   );
 
   // Hide the browser and start showing other progress instead
   vm.showBrowser = false;
 
   // Get the ct0 cookie
-  const ct0: string | null = await window.electron.X.getCookie(
-    vm.account.id,
-    "x.com",
-    "ct0",
+  const ct0 = await deleteContentGetCookie(
+    vm,
+    AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound,
   );
-  vm.log("runJobDeleteRetweets", ["ct0", ct0]);
+
   if (!ct0) {
-    await vm.error(
-      AutomationErrorType.x_runJob_deleteTweets_Ct0CookieNotFound,
-      {},
-    );
     return;
   }
 
   for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
     vm.currentTweetItem = tweetsToDelete.tweets[i];
 
-    // Delete the retweet
-    let retweetDeleted = false;
-    let statusCode = 0;
-    for (let tries = 0; tries < 3; tries++) {
-      // Delete the retweet (which also uses the delete tweet API route)
-      statusCode = await vm.graphqlDelete(
+    // Delete the retweet with retry logic
+    const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
+      deleteRetweetItem(
+        vm,
         ct0,
-        "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet",
-        "https://x.com/" + vm.account.xAccount?.username + "/with_replies",
-        JSON.stringify({
-          variables: {
-            tweet_id: tweetsToDelete.tweets[i].id,
-            dark_request: false,
-          },
-          queryId: "VaenaVgh5q5ih7kvyVjgtg",
-        }),
-      );
-      if (statusCode == 200) {
-        vm.log("runJobDeleteRetweets", [
-          "deleted retweet",
-          tweetsToDelete.tweets[i].id,
-        ]);
-        // Update the tweet's deletedAt date
-        try {
-          await window.electron.X.deleteTweet(
+        tweetsToDelete.tweets[i].id,
+        vm.account.xAccount?.username || "",
+      ),
+    );
+
+    if (success) {
+      vm.log("runJobDeleteRetweets", [
+        "deleted retweet",
+        tweetsToDelete.tweets[i].id,
+      ]);
+
+      // Update the tweet's deletedAt date
+      const updated = await deleteContentUpdateDatabase(
+        vm,
+        () =>
+          window.electron.X.deleteTweet(
             vm.account.id,
             tweetsToDelete.tweets[i].id,
             "retweet",
-          );
-          retweetDeleted = true;
-          vm.progress.retweetsDeleted += 1;
-          await vm.syncProgress();
-        } catch (e) {
-          await vm.error(
-            AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp,
-            {
-              error: formatError(e as Error),
-            },
-            {
-              tweet: tweetsToDelete.tweets[i],
-              index: i,
-            },
-            true,
-          );
-        }
-        break;
-      } else if (statusCode == 429) {
-        // Rate limited
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        await vm.waitForRateLimit();
-        tries = 0;
-      } else {
-        // Sleep 1 second and try again
-        vm.log("runJobDeleteRetweets", [
-          "statusCode",
-          statusCode,
-          "failed to delete retweet, try #",
-          tries,
-        ]);
-        await vm.sleep(1000);
-      }
-    }
-
-    if (!retweetDeleted) {
-      await vm.error(
-        AutomationErrorType.x_runJob_deleteRetweets_FailedToDelete,
-        {
-          statusCode: statusCode,
-        },
-        {
-          tweet: tweetsToDelete.tweets[i],
-          index: i,
-        },
-        true,
+          ),
+        AutomationErrorType.x_runJob_deleteRetweets_FailedToUpdateDeleteTimestamp,
+        tweetsToDelete.tweets[i],
+        i,
       );
 
-      vm.progress.errorsOccured += 1;
-      await vm.syncProgress();
+      if (updated) {
+        vm.progress.retweetsDeleted += 1;
+        await vm.syncProgress();
+      }
+    } else {
+      // Failed to delete
+      await deleteContentHandleFailure(
+        vm,
+        AutomationErrorType.x_runJob_deleteRetweets_FailedToDelete,
+        statusCode,
+        tweetsToDelete.tweets[i],
+        i,
+      );
     }
 
     await vm.waitForPause();
@@ -466,22 +389,18 @@ export async function runJobDeleteLikes(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteLikes;
-  let tweetsToDelete: XDeleteTweetsStartResponse;
   vm.instructions = `# I'm deleting your likes, starting with the earliest.`;
 
   // Load the likes to delete
-  try {
-    tweetsToDelete = await window.electron.X.deleteLikesStart(vm.account.id);
-  } catch (e) {
-    await vm.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
-      error: formatError(e as Error),
-    });
+  const tweetsToDelete = await deleteTweetsLoadList(
+    vm,
+    window.electron.X.deleteLikesStart,
+    AutomationErrorType.x_runJob_deleteLikes_FailedToStart,
+  );
+
+  if (!tweetsToDelete) {
     return;
   }
-  vm.log(
-    "runJobDeleteLikes",
-    `found ${tweetsToDelete.tweets.length} likes to delete`,
-  );
 
   // Start the progress
   vm.progress.totalLikesToDelete = tweetsToDelete.tweets.length;
@@ -492,102 +411,63 @@ export async function runJobDeleteLikes(
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    "https://x.com/" + vm.account.xAccount?.username + "/likes",
+    `https://x.com/${vm.account.xAccount?.username}/likes`,
   );
 
   // Hide the browser and start showing other progress instead
   vm.showBrowser = false;
 
   // Get the ct0 cookie
-  const ct0: string | null = await window.electron.X.getCookie(
-    vm.account.id,
-    "x.com",
-    "ct0",
+  const ct0 = await deleteContentGetCookie(
+    vm,
+    AutomationErrorType.x_runJob_deleteLikes_Ct0CookieNotFound,
   );
-  vm.log("runJobDeleteLikes", ["ct0", ct0]);
+
   if (!ct0) {
-    await vm.error(
-      AutomationErrorType.x_runJob_deleteLikes_Ct0CookieNotFound,
-      {},
-    );
     return;
   }
 
   for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
     vm.currentTweetItem = tweetsToDelete.tweets[i];
 
-    // Delete the like
-    let likeDeleted = false;
-    let statusCode = 0;
-    for (let tries = 0; tries < 3; tries++) {
-      statusCode = await vm.graphqlDelete(
+    // Delete the like with retry logic
+    const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
+      deleteLikeItem(
+        vm,
         ct0,
-        "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet",
-        "https://x.com/" + vm.account.xAccount?.username + "/likes",
-        JSON.stringify({
-          variables: {
-            tweet_id: tweetsToDelete.tweets[i].id,
-          },
-          queryId: "ZYKSe-w7KEslx3JhSIk5LA",
-        }),
-      );
-      if (statusCode == 200) {
-        // Update the tweet's deletedAt date
-        try {
-          await window.electron.X.deleteTweet(
+        tweetsToDelete.tweets[i].id,
+        vm.account.xAccount?.username || "",
+      ),
+    );
+
+    if (success) {
+      // Update the tweet's deletedAt date
+      const updated = await deleteContentUpdateDatabase(
+        vm,
+        () =>
+          window.electron.X.deleteTweet(
             vm.account.id,
             tweetsToDelete.tweets[i].id,
             "like",
-          );
-          likeDeleted = true;
-          vm.progress.likesDeleted += 1;
-          await vm.syncProgress();
-        } catch (e) {
-          await vm.error(
-            AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp,
-            {
-              error: formatError(e as Error),
-            },
-            {
-              tweet: tweetsToDelete.tweets[i],
-              index: i,
-            },
-            true,
-          );
-        }
-        break;
-      } else if (statusCode == 429) {
-        // Rate limited
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        await vm.waitForRateLimit();
-        tries = 0;
-      } else {
-        // Sleep 1 second and try again
-        vm.log("runJobDeleteLikes", [
-          "statusCode",
-          statusCode,
-          "failed to delete like, try #",
-          tries,
-        ]);
-        await vm.sleep(1000);
-      }
-    }
-
-    if (!likeDeleted) {
-      await vm.error(
-        AutomationErrorType.x_runJob_deleteLikes_FailedToDelete,
-        {
-          statusCode: statusCode,
-        },
-        {
-          tweet: tweetsToDelete.tweets[i],
-          index: i,
-        },
-        true,
+          ),
+        AutomationErrorType.x_runJob_deleteLikes_FailedToUpdateDeleteTimestamp,
+        tweetsToDelete.tweets[i],
+        i,
       );
 
-      vm.progress.errorsOccured += 1;
-      await vm.syncProgress();
+      if (updated) {
+        vm.progress.likesDeleted += 1;
+        await vm.syncProgress();
+      }
+    } else {
+      // Failed to delete
+      await deleteContentHandleFailure(
+        vm,
+        AutomationErrorType.x_runJob_deleteLikes_FailedToDelete,
+        statusCode,
+        tweetsToDelete.tweets[i],
+        i,
+      );
     }
 
     await vm.waitForPause();
@@ -609,24 +489,18 @@ export async function runJobDeleteBookmarks(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteBookmarks;
-  let tweetsToDelete: XDeleteTweetsStartResponse;
   vm.instructions = `# I'm deleting your bookmarks, starting with the earliest.`;
 
   // Load the bookmarks to delete
-  try {
-    tweetsToDelete = await window.electron.X.deleteBookmarksStart(
-      vm.account.id,
-    );
-  } catch (e) {
-    await vm.error(AutomationErrorType.x_runJob_deleteLikes_FailedToStart, {
-      error: formatError(e as Error),
-    });
+  const tweetsToDelete = await deleteTweetsLoadList(
+    vm,
+    window.electron.X.deleteBookmarksStart,
+    AutomationErrorType.x_runJob_deleteLikes_FailedToStart,
+  );
+
+  if (!tweetsToDelete) {
     return;
   }
-  vm.log(
-    "runJobDeleteBookmarks",
-    `found ${tweetsToDelete.tweets.length} bookmarks to delete`,
-  );
 
   // Start the progress
   vm.progress.totalBookmarksToDelete = tweetsToDelete.tweets.length;
@@ -642,95 +516,51 @@ export async function runJobDeleteBookmarks(
   vm.showBrowser = false;
 
   // Get the ct0 cookie
-  const ct0: string | null = await window.electron.X.getCookie(
-    vm.account.id,
-    "x.com",
-    "ct0",
+  const ct0 = await deleteContentGetCookie(
+    vm,
+    AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound,
   );
-  vm.log("runJobDeleteBookmarks", ["ct0", ct0]);
+
   if (!ct0) {
-    await vm.error(
-      AutomationErrorType.x_runJob_deleteBookmarks_Ct0CookieNotFound,
-      {},
-    );
     return;
   }
 
   for (let i = 0; i < tweetsToDelete.tweets.length; i++) {
     vm.currentTweetItem = tweetsToDelete.tweets[i];
 
-    // Delete the bookmark
-    let bookmarkDeleted = false;
-    let statusCode = 0;
-    for (let tries = 0; tries < 3; tries++) {
-      statusCode = await vm.graphqlDelete(
-        ct0,
-        "https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark",
-        "https://x.com/i/bookmarks",
-        JSON.stringify({
-          variables: {
-            tweet_id: tweetsToDelete.tweets[i].id,
-          },
-          queryId: "Wlmlj2-xzyS1GN3a6cj-mQ",
-        }),
-      );
-      if (statusCode == 200) {
-        // Update the tweet's deletedAt date
-        try {
-          await window.electron.X.deleteTweet(
+    // Delete the bookmark with retry logic
+    const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
+      deleteBookmarkItem(vm, ct0, tweetsToDelete.tweets[i].id),
+    );
+
+    if (success) {
+      // Update the tweet's deletedAt date
+      const updated = await deleteContentUpdateDatabase(
+        vm,
+        () =>
+          window.electron.X.deleteTweet(
             vm.account.id,
             tweetsToDelete.tweets[i].id,
             "bookmark",
-          );
-          bookmarkDeleted = true;
-          vm.progress.bookmarksDeleted += 1;
-          await vm.syncProgress();
-        } catch (e) {
-          await vm.error(
-            AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp,
-            {
-              error: formatError(e as Error),
-            },
-            {
-              tweet: tweetsToDelete.tweets[i],
-              index: i,
-            },
-            true,
-          );
-        }
-        break;
-      } else if (statusCode == 429) {
-        // Rate limited
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        await vm.waitForRateLimit();
-        tries = 0;
-      } else {
-        // Sleep 1 second and try again
-        vm.log("runJobDeleteLikes", [
-          "statusCode",
-          statusCode,
-          "failed to delete like, try #",
-          tries,
-        ]);
-        await vm.sleep(1000);
-      }
-    }
-
-    if (!bookmarkDeleted) {
-      await vm.error(
-        AutomationErrorType.x_runJob_deleteBookmarks_FailedToDelete,
-        {
-          statusCode: statusCode,
-        },
-        {
-          tweet: tweetsToDelete.tweets[i],
-          index: i,
-        },
-        true,
+          ),
+        AutomationErrorType.x_runJob_deleteBookmarks_FailedToUpdateDeleteTimestamp,
+        tweetsToDelete.tweets[i],
+        i,
       );
 
-      vm.progress.errorsOccured += 1;
-      await vm.syncProgress();
+      if (updated) {
+        vm.progress.bookmarksDeleted += 1;
+        await vm.syncProgress();
+      }
+    } else {
+      // Failed to delete
+      await deleteContentHandleFailure(
+        vm,
+        AutomationErrorType.x_runJob_deleteBookmarks_FailedToDelete,
+        statusCode,
+        tweetsToDelete.tweets[i],
+        i,
+      );
     }
 
     await vm.waitForPause();
@@ -748,11 +578,7 @@ export async function runJobDeleteDMs(
     navigator.userAgent,
   );
 
-  let tries: number, success: boolean;
-  let error: Error | null = null;
-  let errorType: AutomationErrorType =
-    AutomationErrorType.x_runJob_deleteDMs_UnknownError;
-
+  let tries: number;
   let errorTriggered = false;
   let reloadDMsPage = true;
 
@@ -767,15 +593,10 @@ export async function runJobDeleteDMs(
 
   // Loop through all of the conversations, deleting them one at a time until they are gone
   while (true) {
-    error = null;
-    success = false;
-
     await vm.waitForPause();
 
     // Try 3 times, in case of rate limit or error
     for (tries = 0; tries < 3; tries++) {
-      errorTriggered = false;
-
       // Load the DMs page, if necessary
       if (reloadDMsPage) {
         if (await deleteDMsLoadDMsPage(vm)) {
@@ -784,176 +605,30 @@ export async function runJobDeleteDMs(
         reloadDMsPage = false;
       }
 
-      // When loading the DMs page in the previous step, if there are no conversations it sets isDeleteDMsFinished to true
-      if (vm.progress.isDeleteDMsFinished) {
-        vm.log("runJobDeleteDMs", [
-          "no more conversations, so ending deleteDMS",
-        ]);
-        await window.electron.X.deleteDMsMarkAllDeleted(vm.account.id);
-        success = true;
+      // Process one DM deletion iteration
+      const result = await deleteDMsProcessIteration(vm);
+
+      if (result.success) {
+        // Successfully deleted or no more conversations
+        await vm.sleep(500);
+        await vm.waitForLoadingToFinish();
+
+        if (vm.progress.isDeleteDMsFinished) {
+          // Submit progress to the API
+          vm.emitter?.emit(`x-submit-progress-${vm.account.id}`);
+          await vm.finishJob(jobIndex);
+          return true;
+        }
         break;
       }
 
-      // Wait for conversation selector
-      try {
-        await vm.waitForSelector('div[data-testid="conversation"]');
-      } catch (e) {
-        errorTriggered = true;
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        if (vm.rateLimitInfo.isRateLimited) {
-          await vm.waitForRateLimit();
-          reloadDMsPage = true;
-          tries--;
-          continue;
-        } else {
-          error = e as Error;
-          errorType =
-            AutomationErrorType.x_runJob_deleteDMs_WaitForConversationsFailed;
-          vm.log("runJobDeleteDMs", [
-            "wait for conversation selector failed, try #",
-            tries,
-          ]);
-          reloadDMsPage = true;
-          continue;
-        }
-      }
-
-      // Mouseover the first conversation
-      if (
-        !(await vm.scriptMouseoverElementFirst(
-          'div[data-testid="conversation"]',
-        ))
-      ) {
-        errorTriggered = true;
-        errorType = AutomationErrorType.x_runJob_deleteDMs_MouseoverFailed;
+      if (result.shouldReload) {
         reloadDMsPage = true;
-        continue;
       }
 
-      // Wait for menu button selector
-      try {
-        await vm.waitForSelectorWithinSelector(
-          'div[data-testid="conversation"]',
-          "button",
-        );
-      } catch (e) {
+      if (result.errorTriggered && result.errorType) {
+        await vm.error(result.errorType, {});
         errorTriggered = true;
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        if (vm.rateLimitInfo.isRateLimited) {
-          await vm.waitForRateLimit();
-          reloadDMsPage = true;
-          tries--;
-          continue;
-        } else {
-          error = e as Error;
-          errorType =
-            AutomationErrorType.x_runJob_deleteDMs_WaitForMenuButtonFailed;
-          vm.log("runJobDeleteDMs", [
-            "wait for menu button selector failed, try #",
-            tries,
-          ]);
-          reloadDMsPage = true;
-          continue;
-        }
-      }
-
-      // Click the menu button
-      if (
-        !(await vm.scriptClickElementWithinElementFirst(
-          'div[data-testid="conversation"]',
-          "button",
-        ))
-      ) {
-        errorTriggered = true;
-        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickMenuFailed;
-        reloadDMsPage = true;
-        continue;
-      }
-
-      // Wait for delete button selector
-      try {
-        await vm.waitForSelector(
-          'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
-        );
-      } catch (e) {
-        errorTriggered = true;
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        if (vm.rateLimitInfo.isRateLimited) {
-          await vm.waitForRateLimit();
-          reloadDMsPage = true;
-          tries--;
-          continue;
-        } else {
-          error = e as Error;
-          errorType =
-            AutomationErrorType.x_runJob_deleteDMs_WaitForDeleteButtonFailed;
-          vm.log("runJobDeleteDMs", [
-            "wait for delete button selector failed, try #",
-            tries,
-          ]);
-          reloadDMsPage = true;
-          continue;
-        }
-      }
-
-      // Click the delete button
-      if (
-        !(await vm.scriptClickElement(
-          'div[data-testid="Dropdown"] div[role="menuitem"]:last-of-type',
-        ))
-      ) {
-        errorTriggered = true;
-        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickDeleteFailed;
-        reloadDMsPage = true;
-        continue;
-      }
-
-      // Wait for delete confirm selector
-      try {
-        await vm.waitForSelector(
-          'button[data-testid="confirmationSheetConfirm"]',
-        );
-      } catch (e) {
-        errorTriggered = true;
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        if (vm.rateLimitInfo.isRateLimited) {
-          await vm.waitForRateLimit();
-          reloadDMsPage = true;
-          tries--;
-          continue;
-        } else {
-          error = e as Error;
-          errorType =
-            AutomationErrorType.x_runJob_deleteDMs_WaitForConfirmButtonFailed;
-          vm.log("runJobDeleteDMs", [
-            "wait for confirm button selector failed, try #",
-            tries,
-          ]);
-          reloadDMsPage = true;
-          continue;
-        }
-      }
-
-      // Click the confirm button
-      if (
-        !(await vm.scriptClickElement(
-          'button[data-testid="confirmationSheetConfirm"]',
-        ))
-      ) {
-        errorTriggered = true;
-        errorType = AutomationErrorType.x_runJob_deleteDMs_ClickConfirmFailed;
-        reloadDMsPage = true;
-        continue;
-      }
-
-      if (!errorTriggered) {
-        // Update progress
-        vm.progress.conversationsDeleted += 1;
-        await window.electron.X.setConfig(
-          vm.account.id,
-          "totalConversationsDeleted",
-          `${vm.progress.conversationsDeleted}`,
-        );
         break;
       }
     }
@@ -961,31 +636,12 @@ export async function runJobDeleteDMs(
     await vm.sleep(500);
     await vm.waitForLoadingToFinish();
 
-    if (success) {
-      break;
-    }
-
     if (errorTriggered) {
-      if (error) {
-        await vm.error(errorType, {
-          error: formatError(error as Error),
-        });
-      } else {
-        await vm.error(errorType, {});
-      }
-      break;
+      // Submit progress to the API
+      vm.emitter?.emit(`x-submit-progress-${vm.account.id}`);
+      return false;
     }
   }
-
-  // Submit progress to the API
-  vm.emitter?.emit(`x-submit-progress-${vm.account.id}`);
-
-  if (errorTriggered) {
-    return false;
-  }
-
-  await vm.finishJob(jobIndex);
-  return true;
 }
 
 export async function runJobUnfollowEveryone(
@@ -997,11 +653,7 @@ export async function runJobUnfollowEveryone(
     navigator.userAgent,
   );
 
-  let tries: number, success: boolean;
-  let error: Error | null = null;
-  let errorType: AutomationErrorType =
-    AutomationErrorType.x_runJob_unfollowEveryone_UnknownError;
-
+  let tries: number;
   let errorTriggered = false;
   let reloadFollowingPage = true;
   let numberOfAccountsToUnfollow = 0;
@@ -1017,15 +669,10 @@ export async function runJobUnfollowEveryone(
   vm.progress.accountsUnfollowed = 0;
 
   while (true) {
-    error = null;
-    success = false;
-
     await vm.waitForPause();
 
     // Try 3 times, in case of rate limit or error
     for (tries = 0; tries < 3; tries++) {
-      errorTriggered = false;
-
       // Load the following page, if necessary
       if (reloadFollowingPage) {
         if (await unfollowEveryoneLoadPage(vm)) {
@@ -1040,125 +687,43 @@ export async function runJobUnfollowEveryone(
         accountToUnfollowIndex = 0;
       }
 
-      // When loading the following page in the previous step, if there are following users it sets isUnfollowEveryoneFinished to true
-      if (vm.progress.isUnfollowEveryoneFinished) {
-        vm.log("runJobUnfollowEveryone", [
-          "no more following users, so ending unfollowEveryone",
-        ]);
-        success = true;
+      // Process one unfollow iteration
+      const result = await unfollowEveryoneProcessIteration(
+        vm,
+        accountToUnfollowIndex,
+        numberOfAccountsToUnfollow,
+      );
+
+      if (result.success) {
+        accountToUnfollowIndex = result.newAccountIndex;
+        reloadFollowingPage = result.shouldReload;
+
+        if (vm.progress.isUnfollowEveryoneFinished) {
+          // Submit progress to the API
+          vm.emitter?.emit(`x-submit-progress-${vm.account.id}`);
+          await vm.finishJob(jobIndex);
+          return true;
+        }
+        break;
+      }
+
+      if (result.errorTriggered && result.errorType) {
+        await vm.error(result.errorType, {});
+        errorTriggered = true;
         break;
       }
 
-      // Mouseover the "Following" button on the next user
-      if (
-        !(await vm.scriptMouseoverElementNth(
-          'div[data-testid="cellInnerDiv"] button button',
-          accountToUnfollowIndex,
-        ))
-      ) {
-        errorTriggered = true;
-        errorType =
-          AutomationErrorType.x_runJob_unfollowEveryone_MouseoverFailed;
+      if (result.shouldReload) {
         reloadFollowingPage = true;
-        continue;
-      }
-
-      // Click the unfollow button
-      if (
-        !(await vm.scriptClickElementNth(
-          'div[data-testid="cellInnerDiv"] button button',
-          accountToUnfollowIndex,
-        ))
-      ) {
-        errorTriggered = true;
-        errorType =
-          AutomationErrorType.x_runJob_unfollowEveryone_ClickUnfollowFailed;
-        reloadFollowingPage = true;
-        continue;
-      }
-
-      // Wait for confirm button
-      try {
-        await vm.waitForSelector(
-          'button[data-testid="confirmationSheetConfirm"]',
-        );
-      } catch (e) {
-        errorTriggered = true;
-        vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
-        if (vm.rateLimitInfo.isRateLimited) {
-          await vm.waitForRateLimit();
-          reloadFollowingPage = true;
-          tries--;
-          continue;
-        } else {
-          error = e as Error;
-          errorType =
-            AutomationErrorType.x_runJob_unfollowEveryone_WaitForConfirmButtonFailed;
-          vm.log("runJobUnfollowEveryone", [
-            "wait for confirm button selector failed, try #",
-            tries,
-          ]);
-          reloadFollowingPage = true;
-          continue;
-        }
-      }
-
-      // Click the confirm button
-      if (
-        !(await vm.scriptClickElement(
-          'button[data-testid="confirmationSheetConfirm"]',
-        ))
-      ) {
-        errorTriggered = true;
-        errorType =
-          AutomationErrorType.x_runJob_unfollowEveryone_ClickConfirmFailed;
-        reloadFollowingPage = true;
-        continue;
-      }
-
-      if (!errorTriggered) {
-        // Update progress
-        vm.progress.accountsUnfollowed += 1;
-        await window.electron.X.setConfig(
-          vm.account.id,
-          "totalAccountsUnfollowed",
-          `${vm.progress.accountsUnfollowed}`,
-        );
-
-        // Increment the account index
-        accountToUnfollowIndex++;
-        if (accountToUnfollowIndex >= numberOfAccountsToUnfollow) {
-          reloadFollowingPage = true;
-        }
-        break;
       }
     }
 
     await vm.sleep(500);
 
-    if (success) {
-      break;
-    }
-
     if (errorTriggered) {
-      if (error) {
-        await vm.error(errorType, {
-          error: formatError(error as Error),
-        });
-      } else {
-        await vm.error(errorType, {});
-      }
-      break;
+      // Submit progress to the API
+      vm.emitter?.emit(`x-submit-progress-${vm.account.id}`);
+      return false;
     }
   }
-
-  // Submit progress to the API
-  vm.emitter?.emit(`x-submit-progress-${vm.account.id}`);
-
-  if (errorTriggered) {
-    return false;
-  }
-
-  await vm.finishJob(jobIndex);
-  return true;
 }
