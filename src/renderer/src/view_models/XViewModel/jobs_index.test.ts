@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as IndexJobs from "./jobs_index";
+// Import helper functions from the new module structure
+import * as IndexHelpers from "./jobs_index/index";
 import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
 import { TimeoutError, URLChangedError } from "../BaseViewModel";
@@ -64,7 +66,7 @@ describe("jobs_index.ts", () => {
         .mockResolvedValueOnce(5) // Before scroll
         .mockResolvedValueOnce(10); // After scroll
 
-      const result = await IndexJobs.indexTweetsHandleRateLimit(vm);
+      const result = await IndexHelpers.indexTweetsHandleRateLimit(vm);
 
       expect(result).toBe(true);
       expect(vm.scrollUp).toHaveBeenCalled();
@@ -76,7 +78,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5); // Same count
       vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No button
 
-      const result = await IndexJobs.indexTweetsHandleRateLimit(vm);
+      const result = await IndexHelpers.indexTweetsHandleRateLimit(vm);
 
       expect(result).toBe(false);
     });
@@ -90,7 +92,7 @@ describe("jobs_index.ts", () => {
         .mockResolvedValueOnce(10); // After click
       vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(1); // Button exists
 
-      const result = await IndexJobs.indexTweetsHandleRateLimit(vm);
+      const result = await IndexHelpers.indexTweetsHandleRateLimit(vm);
 
       expect(vm.scriptClickElementWithinElementLast).toHaveBeenCalled();
       expect(result).toBe(true);
@@ -100,7 +102,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
-      const result = await IndexJobs.indexTweetsHandleRateLimit(vm);
+      const result = await IndexHelpers.indexTweetsHandleRateLimit(vm);
 
       expect(vm.scriptClickElement).toHaveBeenCalled();
       expect(result).toBe(false); // No tweets loaded
@@ -112,7 +114,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
       vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(1);
 
-      await IndexJobs.indexTweetsCheckForSomethingWrong(vm);
+      await IndexHelpers.indexTweetsCheckForSomethingWrong(vm);
 
       expect(vm.scriptClickElementWithinElementLast).toHaveBeenCalled();
       expect(vm.sleep).toHaveBeenCalledWith(2000);
@@ -121,7 +123,7 @@ describe("jobs_index.ts", () => {
     it("should do nothing when everything is fine", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
 
-      await IndexJobs.indexTweetsCheckForSomethingWrong(vm);
+      await IndexHelpers.indexTweetsCheckForSomethingWrong(vm);
 
       expect(vm.scriptClickElementWithinElementLast).not.toHaveBeenCalled();
     });
@@ -131,7 +133,7 @@ describe("jobs_index.ts", () => {
     it("should return true when final API response is received again", async () => {
       mockElectron.X.indexIsThereMore.mockResolvedValue(false);
 
-      const result = await IndexJobs.indexTweetsVerifyThereIsNoMore(vm);
+      const result = await IndexHelpers.indexTweetsVerifyThereIsNoMore(vm);
 
       expect(result).toBe(true);
       expect(mockElectron.X.resetThereIsMore).toHaveBeenCalled();
@@ -153,7 +155,7 @@ describe("jobs_index.ts", () => {
         unknownIndexed: 0,
       });
 
-      const result = await IndexJobs.indexTweetsVerifyThereIsNoMore(vm);
+      const result = await IndexHelpers.indexTweetsVerifyThereIsNoMore(vm);
 
       expect(result).toBe(true);
     });
@@ -169,7 +171,7 @@ describe("jobs_index.ts", () => {
         unknownIndexed: 0,
       });
 
-      const result = await IndexJobs.indexTweetsVerifyThereIsNoMore(vm);
+      const result = await IndexHelpers.indexTweetsVerifyThereIsNoMore(vm);
 
       expect(result).toBe(false);
     });
@@ -186,7 +188,7 @@ describe("jobs_index.ts", () => {
     it("should return true and skip if tweet is already archived", async () => {
       mockElectron.archive.isPageAlreadySaved.mockResolvedValue(true);
 
-      const result = await IndexJobs.archiveSaveTweet(
+      const result = await IndexHelpers.archiveSaveTweet(
         vm,
         "/output/path",
         mockTweetItem,
@@ -207,7 +209,7 @@ describe("jobs_index.ts", () => {
     it("should load URL and save page for new tweet", async () => {
       mockElectron.archive.isPageAlreadySaved.mockResolvedValue(false);
 
-      await IndexJobs.archiveSaveTweet(vm, "/output/path", mockTweetItem);
+      await IndexHelpers.archiveSaveTweet(vm, "/output/path", mockTweetItem);
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/test/status/123",
@@ -228,7 +230,7 @@ describe("jobs_index.ts", () => {
       mockElectron.archive.isPageAlreadySaved.mockResolvedValue(false);
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
 
-      await IndexJobs.archiveSaveTweet(vm, "/output/path", mockTweetItem);
+      await IndexHelpers.archiveSaveTweet(vm, "/output/path", mockTweetItem);
 
       expect(vm.doesSelectorExist).toHaveBeenCalledWith(
         'div[data-testid="primaryColumn"] div[data-testid="error-detail"]',
@@ -242,7 +244,7 @@ describe("jobs_index.ts", () => {
         new TimeoutError("test-selector"),
       );
 
-      await IndexJobs.archiveSaveTweet(vm, "/output/path", mockTweetItem);
+      await IndexHelpers.archiveSaveTweet(vm, "/output/path", mockTweetItem);
 
       // Should still save the page even if selector times out
       expect(mockElectron.archive.savePage).toHaveBeenCalled();
@@ -252,7 +254,7 @@ describe("jobs_index.ts", () => {
       mockElectron.archive.isPageAlreadySaved.mockResolvedValue(false);
       vm.webContentsID = null;
 
-      const result = await IndexJobs.archiveSaveTweet(
+      const result = await IndexHelpers.archiveSaveTweet(
         vm,
         "/output/path",
         mockTweetItem,
@@ -265,7 +267,7 @@ describe("jobs_index.ts", () => {
     it("should update archiveTweet in database", async () => {
       mockElectron.archive.isPageAlreadySaved.mockResolvedValue(false);
 
-      await IndexJobs.archiveSaveTweet(vm, "/output/path", mockTweetItem);
+      await IndexHelpers.archiveSaveTweet(vm, "/output/path", mockTweetItem);
 
       expect(mockElectron.X.archiveTweet).toHaveBeenCalledWith(1, "123");
     });
@@ -276,7 +278,7 @@ describe("jobs_index.ts", () => {
         new Error("Database error"),
       );
 
-      await IndexJobs.archiveSaveTweet(vm, "/output/path", mockTweetItem);
+      await IndexHelpers.archiveSaveTweet(vm, "/output/path", mockTweetItem);
 
       expect(vm.error).toHaveBeenCalled();
     });
@@ -290,7 +292,7 @@ describe("jobs_index.ts", () => {
     it("should return true and update progress when empty state selector exists", async () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
 
-      const result = await IndexJobs.indexContentCheckIfEmpty(
+      const result = await IndexHelpers.indexContentCheckIfEmpty(
         vm,
         'div[data-testid="emptyState"]',
         "article",
@@ -310,7 +312,7 @@ describe("jobs_index.ts", () => {
         .mockResolvedValueOnce(true); // Section exists
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
-      const result = await IndexJobs.indexContentCheckIfEmpty(
+      const result = await IndexHelpers.indexContentCheckIfEmpty(
         vm,
         'div[data-testid="emptyState"]',
         "section article",
@@ -327,7 +329,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5);
 
-      const result = await IndexJobs.indexContentCheckIfEmpty(
+      const result = await IndexHelpers.indexContentCheckIfEmpty(
         vm,
         null,
         "section article",
@@ -343,7 +345,7 @@ describe("jobs_index.ts", () => {
     it("should return success when selector appears", async () => {
       vi.spyOn(vm, "waitForSelector").mockResolvedValue(undefined);
 
-      const result = await IndexJobs.indexContentWaitForInitialLoad(
+      const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
         "https://x.com/testuser/tweets",
@@ -365,7 +367,7 @@ describe("jobs_index.ts", () => {
         rateLimitReset: Date.now() + 1000,
       });
 
-      const result = await IndexJobs.indexContentWaitForInitialLoad(
+      const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
         "https://x.com/testuser/likes",
@@ -388,7 +390,7 @@ describe("jobs_index.ts", () => {
         rateLimitReset: 0,
       });
 
-      const result = await IndexJobs.indexContentWaitForInitialLoad(
+      const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
         "https://x.com/testuser/bookmarks",
@@ -412,7 +414,7 @@ describe("jobs_index.ts", () => {
         ),
       );
 
-      const result = await IndexJobs.indexContentWaitForInitialLoad(
+      const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
         "https://x.com/testuser/tweets",
@@ -435,7 +437,7 @@ describe("jobs_index.ts", () => {
         new Error("Unknown error"),
       );
 
-      const result = await IndexJobs.indexContentWaitForInitialLoad(
+      const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
         "https://x.com/testuser/tweets",
@@ -462,7 +464,7 @@ describe("jobs_index.ts", () => {
         .mockResolvedValueOnce(5) // Before scroll
         .mockResolvedValueOnce(10); // After scroll - more loaded
 
-      const result = await IndexJobs.indexContentProcessRateLimit(
+      const result = await IndexHelpers.indexContentProcessRateLimit(
         vm,
         "someFailureState",
       );
@@ -478,7 +480,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5); // Same count (no progress)
       vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No retry button
 
-      const result = await IndexJobs.indexContentProcessRateLimit(
+      const result = await IndexHelpers.indexContentProcessRateLimit(
         vm,
         "indexTweets_FailedToRetryAfterRateLimit",
       );
@@ -500,7 +502,7 @@ describe("jobs_index.ts", () => {
       });
       vm.jobs = [createMockJob("indexTweets")];
 
-      const result = await IndexJobs.indexContentParsePage(
+      const result = await IndexHelpers.indexContentParsePage(
         vm,
         0,
         AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
@@ -519,7 +521,7 @@ describe("jobs_index.ts", () => {
       mockElectron.X.getLatestResponseData.mockResolvedValue("{}");
       vm.jobs = [createMockJob("indexTweets")];
 
-      const result = await IndexJobs.indexContentParsePage(
+      const result = await IndexHelpers.indexContentParsePage(
         vm,
         0,
         AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
@@ -542,7 +544,7 @@ describe("jobs_index.ts", () => {
     it("should continue when there is more content", async () => {
       mockElectron.X.indexIsThereMore.mockResolvedValue(true);
 
-      const result = await IndexJobs.indexContentCheckCompletion(
+      const result = await IndexHelpers.indexContentCheckCompletion(
         vm,
         0,
         true,
@@ -561,7 +563,7 @@ describe("jobs_index.ts", () => {
     it("should scroll up when there is more but no more to scroll", async () => {
       mockElectron.X.indexIsThereMore.mockResolvedValue(true);
 
-      await IndexJobs.indexContentCheckCompletion(
+      await IndexHelpers.indexContentCheckCompletion(
         vm,
         0,
         false, // moreToScroll = false
@@ -575,11 +577,12 @@ describe("jobs_index.ts", () => {
 
     it("should complete when verified as done", async () => {
       mockElectron.X.indexIsThereMore.mockResolvedValue(false);
-      vi.spyOn(IndexJobs, "indexTweetsVerifyThereIsNoMore").mockResolvedValue(
-        true,
-      );
+      vi.spyOn(
+        IndexHelpers,
+        "indexTweetsVerifyThereIsNoMore",
+      ).mockResolvedValue(true);
 
-      const result = await IndexJobs.indexContentCheckCompletion(
+      const result = await IndexHelpers.indexContentCheckCompletion(
         vm,
         0,
         true,
@@ -619,7 +622,7 @@ describe("jobs_index.ts", () => {
       });
       mockElectron.X.indexIsThereMore.mockResolvedValue(true);
 
-      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+      const result = await IndexHelpers.indexContentProcessIteration(vm, 0, {
         failureStateKey: "test_failure",
         parseErrorType:
           AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
@@ -644,7 +647,7 @@ describe("jobs_index.ts", () => {
         .mockResolvedValueOnce(5) // Before scroll
         .mockResolvedValueOnce(10); // After scroll - more loaded
 
-      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+      const result = await IndexHelpers.indexContentProcessIteration(vm, 0, {
         failureStateKey: "test_failure",
         parseErrorType:
           AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
@@ -666,7 +669,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5); // Same count (no progress)
       vi.spyOn(vm, "countSelectorsWithinElementLastFound").mockResolvedValue(0); // No retry button
 
-      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+      const result = await IndexHelpers.indexContentProcessIteration(vm, 0, {
         failureStateKey: "test_failure",
         parseErrorType:
           AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
@@ -684,7 +687,7 @@ describe("jobs_index.ts", () => {
       );
       mockElectron.X.getLatestResponseData.mockResolvedValue("{}");
 
-      const result = await IndexJobs.indexContentProcessIteration(vm, 0, {
+      const result = await IndexHelpers.indexContentProcessIteration(vm, 0, {
         failureStateKey: "test_failure",
         parseErrorType:
           AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
@@ -708,7 +711,7 @@ describe("jobs_index.ts", () => {
         .spyOn(vm, "doesSelectorExist")
         .mockResolvedValue(false);
 
-      await IndexJobs.indexContentProcessIteration(vm, 0, {
+      await IndexHelpers.indexContentProcessIteration(vm, 0, {
         failureStateKey: "test_failure",
         parseErrorType:
           AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
