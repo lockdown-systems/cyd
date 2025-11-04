@@ -286,82 +286,6 @@ export class XViewModel extends BaseViewModel {
     return Helpers.getDatabaseStatsString(this);
   }
 
-  async runJobLogin(jobIndex: number): Promise<boolean> {
-    return Helpers.runJobLogin(this, jobIndex);
-  }
-
-  async runJobIndexTweets(jobIndex: number): Promise<boolean> {
-    return IndexJobs.runJobIndexTweets(this, jobIndex);
-  }
-
-  async runJobArchiveTweets(jobIndex: number): Promise<boolean> {
-    return IndexJobs.runJobArchiveTweets(this, jobIndex);
-  }
-
-  async runJobIndexConversations(jobIndex: number): Promise<boolean> {
-    return IndexJobs.runJobIndexConversations(this, jobIndex);
-  }
-
-  async runJobIndexMessages(jobIndex: number) {
-    return IndexJobs.runJobIndexMessages(this, jobIndex);
-  }
-
-  async runJobArchiveBuild(jobIndex: number): Promise<boolean> {
-    return Helpers.runJobArchiveBuild(this, jobIndex);
-  }
-
-  async runJobIndexLikes(jobIndex: number): Promise<boolean> {
-    return IndexJobs.runJobIndexLikes(this, jobIndex);
-  }
-
-  async runJobIndexBookmarks(jobIndex: number): Promise<boolean> {
-    return IndexJobs.runJobIndexBookmarks(this, jobIndex);
-  }
-
-  async runJobDeleteTweets(jobIndex: number) {
-    return DeleteJobs.runJobDeleteTweets(this, jobIndex);
-  }
-
-  async runJobDeleteRetweets(jobIndex: number) {
-    return DeleteJobs.runJobDeleteRetweets(this, jobIndex);
-  }
-
-  async runJobDeleteLikes(jobIndex: number) {
-    return DeleteJobs.runJobDeleteLikes(this, jobIndex);
-  }
-
-  async runJobDeleteBookmarks(jobIndex: number) {
-    return DeleteJobs.runJobDeleteBookmarks(this, jobIndex);
-  }
-
-  async runJobDeleteDMs(jobIndex: number): Promise<boolean> {
-    return DeleteJobs.runJobDeleteDMs(this, jobIndex);
-  }
-
-  async runJobUnfollowEveryone(jobIndex: number): Promise<boolean> {
-    return DeleteJobs.runJobUnfollowEveryone(this, jobIndex);
-  }
-
-  async runJobMigrateBluesky(jobIndex: number): Promise<boolean> {
-    return MigrateJobs.runJobMigrateBluesky(this, jobIndex);
-  }
-
-  async runJobMigrateBlueskyDelete(jobIndex: number): Promise<boolean> {
-    return MigrateJobs.runJobMigrateBlueskyDelete(this, jobIndex);
-  }
-
-  async runJobTombstoneUpdateBanner(jobIndex: number): Promise<boolean> {
-    return TombstoneJobs.runJobTombstoneUpdateBanner(this, jobIndex);
-  }
-
-  async runJobTombstoneUpdateBio(jobIndex: number): Promise<boolean> {
-    return TombstoneJobs.runJobTombstoneUpdateBio(this, jobIndex);
-  }
-
-  async runJobTombstoneLockAccount(jobIndex: number): Promise<boolean> {
-    return TombstoneJobs.runJobTombstoneLockAccount(this, jobIndex);
-  }
-
   async runJob(jobIndex: number) {
     this.runJobsState = RunJobsState.Default;
 
@@ -386,79 +310,79 @@ export class XViewModel extends BaseViewModel {
     this.log("runJob", `running job ${this.jobs[jobIndex].jobType}`);
     switch (this.jobs[jobIndex].jobType) {
       case "login":
-        await this.runJobLogin(jobIndex);
+        await Helpers.runJobLogin(this, jobIndex);
         break;
 
       case "indexTweets":
-        await this.runJobIndexTweets(jobIndex);
+        await IndexJobs.runJobIndexTweets(this, jobIndex);
         break;
 
       case "archiveTweets":
-        await this.runJobArchiveTweets(jobIndex);
+        await IndexJobs.runJobArchiveTweets(this, jobIndex);
         break;
 
       case "indexConversations":
-        await this.runJobIndexConversations(jobIndex);
+        await IndexJobs.runJobIndexConversations(this, jobIndex);
         break;
 
       case "indexMessages":
-        await this.runJobIndexMessages(jobIndex);
+        await IndexJobs.runJobIndexMessages(this, jobIndex);
         break;
 
       case "archiveBuild":
-        await this.runJobArchiveBuild(jobIndex);
+        await Helpers.runJobArchiveBuild(this, jobIndex);
         break;
 
       case "indexLikes":
-        await this.runJobIndexLikes(jobIndex);
+        await IndexJobs.runJobIndexLikes(this, jobIndex);
         break;
 
       case "indexBookmarks":
-        await this.runJobIndexBookmarks(jobIndex);
+        await IndexJobs.runJobIndexBookmarks(this, jobIndex);
         break;
 
       case "deleteTweets":
-        await this.runJobDeleteTweets(jobIndex);
+        await DeleteJobs.runJobDeleteTweets(this, jobIndex);
         break;
 
       case "deleteRetweets":
-        await this.runJobDeleteRetweets(jobIndex);
+        await DeleteJobs.runJobDeleteRetweets(this, jobIndex);
         break;
 
       case "deleteLikes":
-        await this.runJobDeleteLikes(jobIndex);
+        await DeleteJobs.runJobDeleteLikes(this, jobIndex);
         break;
 
       case "deleteBookmarks":
-        await this.runJobDeleteBookmarks(jobIndex);
+        await DeleteJobs.runJobDeleteBookmarks(this, jobIndex);
         break;
 
       case "unfollowEveryone":
-        await this.runJobUnfollowEveryone(jobIndex);
+        await DeleteJobs.runJobUnfollowEveryone(this, jobIndex);
         break;
 
       case "deleteDMs":
-        await this.runJobDeleteDMs(jobIndex);
+        await DeleteJobs.runJobDeleteDMs(this, jobIndex);
         break;
 
       case "migrateBluesky":
-        await this.runJobMigrateBluesky(jobIndex);
+        await MigrateJobs.runJobMigrateBluesky(this, jobIndex);
         break;
 
       case "migrateBlueskyDelete":
-        await this.runJobMigrateBlueskyDelete(jobIndex);
+        await MigrateJobs.runJobMigrateBlueskyDelete(this, jobIndex);
         break;
 
       case "tombstoneUpdateBanner":
-        await this.runJobTombstoneUpdateBanner(jobIndex);
+        await TombstoneJobs.runJobTombstoneUpdateBanner(this, jobIndex);
         break;
 
       case "tombstoneUpdateBio":
-        await this.runJobTombstoneUpdateBio(jobIndex);
+        await TombstoneJobs.runJobTombstoneUpdateBio(this, jobIndex);
         break;
 
       case "tombstoneLockAccount":
-        await this.runJobTombstoneLockAccount(jobIndex);
+        await TombstoneJobs.runJobTombstoneLockAccount(this, jobIndex);
         break;
     }
   }
