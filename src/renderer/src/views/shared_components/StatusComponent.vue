@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { FacebookJob } from "../../../../shared_types";
+import type { XJob } from "../../../../shared_types";
 import RunningIcon from "./RunningIcon.vue";
 
-const props = defineProps<{
-  jobs: [];
+defineProps<{
+  jobs: FacebookJob[] | XJob[];
   isPaused: boolean;
   clickingEnabled: boolean;
   getJobTypeText: Function;

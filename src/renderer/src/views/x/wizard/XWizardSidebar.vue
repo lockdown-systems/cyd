@@ -35,14 +35,6 @@ const reloadUserStats = async () => {
   emit("setState", State.WizardPrestart);
 };
 
-// Util
-function formatStatsNumber(num: number): string {
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "k";
-  }
-  return num.toString();
-}
-
 // Keep databaseStats in sync
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
 emitter?.on(`x-update-database-stats-${props.model.account.id}`, async () => {
