@@ -17,6 +17,7 @@ function formatStatsNumber(num: number): string {
 <template>
   <div class="col-12">
     <div class="card text-center">
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <div class="card-header" v-html="header"></div>
       <div class="card-body">{{ formatStatsNumber(stat) }}</div>
     </div>
