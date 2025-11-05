@@ -6,6 +6,8 @@ import {
   emptyXDatabaseStats,
 } from "../../../../../shared_types";
 import SidebarArchive from "../../shared_components/SidebarArchive.vue";
+import SidebarCard from "../../shared_components/SidebarCard.vue";
+import DebugModeComponent from "../../shared_components/DebugModeComponent.vue";
 import { xGetLastImportArchive } from "../../../util_x";
 
 // Get the global emitter
@@ -49,18 +51,6 @@ emitter?.on(`x-update-database-stats-${props.model.account.id}`, async () => {
   );
 });
 
-// Debug
-const shouldOpenDevtools = ref(false);
-const debugAutopauseEndOfStep = ref(false);
-
-const debugAutopauseEndOfStepChanged = async () => {
-  emit("setDebugAutopauseEndOfStep", debugAutopauseEndOfStep.value);
-};
-
-const enableDebugMode = async () => {
-  emit("setState", State.Debug);
-};
-
 // Check if sidebar should be hidden
 const shouldHideSidebar = ref(false);
 
@@ -74,7 +64,6 @@ const updateSidebarVisibility = async () => {
 };
 
 onMounted(async () => {
-  shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
   databaseStats.value = await window.electron.X.getDatabaseStats(
     props.model.account.id,
   );
@@ -132,129 +121,68 @@ emitter?.on("account-updated", async () => {
 
     <div class="stats container mt-4">
       <div class="row g-2">
-        <div v-if="databaseStats.tweetsSaved > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Tweets Saved</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.tweetsSaved) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.tweetsDeleted > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Tweets Deleted</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.tweetsDeleted) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.tweetsSaved > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">
-              <div>
-                Migrated to
-                <i class="fa-brands fa-bluesky" />
-              </div>
-            </div>
-            <div class="card-body">
-              <h1>
-                {{ formatStatsNumber(databaseStats.tweetsMigratedToBluesky) }}
-              </h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.retweetsSaved > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Retweets Saved</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.retweetsSaved) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.retweetsDeleted > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Retweets Deleted</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.retweetsDeleted) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.likesSaved > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Likes Saved</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.likesSaved) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.likesDeleted > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Likes Deleted</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.likesDeleted) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.bookmarksSaved > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Bookmarks Saved</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.bookmarksSaved) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.bookmarksDeleted > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Bookmarks Deleted</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.bookmarksDeleted) }}</h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.conversationsDeleted > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Conversations Deleted</div>
-            <div class="card-body">
-              <h1>
-                {{ formatStatsNumber(databaseStats.conversationsDeleted) }}
-              </h1>
-            </div>
-          </div>
-        </div>
-        <div v-if="databaseStats.accountsUnfollowed > 0" class="col-12">
-          <div class="card text-center">
-            <div class="card-header">Accounts Unfollowed</div>
-            <div class="card-body">
-              <h1>{{ formatStatsNumber(databaseStats.accountsUnfollowed) }}</h1>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Debug mode -->
-    <div v-if="shouldOpenDevtools" class="p-3 small">
-      <hr />
-
-      <div class="mb-3">
-        <button class="btn btn-sm btn-danger" @click="enableDebugMode">
-          Debug Mode
-        </button>
-      </div>
-
-      <div class="form-check">
-        <input
-          id="debugAutopauseEndOfStep"
-          v-model="debugAutopauseEndOfStep"
-          type="checkbox"
-          class="form-check-input"
-          @change="debugAutopauseEndOfStepChanged"
+        <SidebarCard
+          v-if="databaseStats.tweetsSaved > 0"
+          header="Tweets Saved"
+          :stat="databaseStats.tweetsSaved"
         />
-        <label class="form-check-label" for="debugAutopauseEndOfStep">
-          Automatically pause before finishing each step
-        </label>
+        <SidebarCard
+          v-if="databaseStats.tweetsDeleted > 0"
+          header="Tweets Deleted"
+          :stat="databaseStats.tweetsDeleted"
+        />
+        <SidebarCard
+          v-if="databaseStats.tweetsMigratedToBluesky > 0"
+          header="<div>Migrated to <i class='fa-brands fa-bluesky' /></div>"
+          :stat="databaseStats.tweetsMigratedToBluesky"
+        />
+        <SidebarCard
+          v-if="databaseStats.retweetsSaved > 0"
+          header="Retweets Saved"
+          :stat="databaseStats.retweetsSaved"
+        />
+        <SidebarCard
+          v-if="databaseStats.retweetsDeleted > 0"
+          header="Retweets Deleted"
+          :stat="databaseStats.retweetsDeleted"
+        />
+        <SidebarCard
+          v-if="databaseStats.likesSaved > 0"
+          header="Likes Saved"
+          :stat="databaseStats.likesSaved"
+        />
+        <SidebarCard
+          v-if="databaseStats.likesDeleted > 0"
+          header="Likes Deleted"
+          :stat="databaseStats.likesDeleted"
+        />
+        <SidebarCard
+          v-if="databaseStats.bookmarksSaved > 0"
+          header="Bookmarks Saved"
+          :stat="databaseStats.bookmarksSaved"
+        />
+        <SidebarCard
+          v-if="databaseStats.bookmarksDeleted > 0"
+          header="Bookmarks Deleted"
+          :stat="databaseStats.bookmarksDeleted"
+        />
+        <SidebarCard
+          v-if="databaseStats.conversationsDeleted > 0"
+          header="Conversations Deleted"
+          :stat="databaseStats.conversationsDeleted"
+        />
+        <SidebarCard
+          v-if="databaseStats.accountsUnfollowed > 0"
+          header="Accounts Unfollowed"
+          :stat="databaseStats.accountsUnfollowed"
+        />
       </div>
     </div>
+
+    <DebugModeComponent
+      :emit="emit"
+      :debug-state="State.Debug"
+    />
   </div>
 </template>
 

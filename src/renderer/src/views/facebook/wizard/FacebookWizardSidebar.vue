@@ -5,6 +5,7 @@ import {
   FacebookViewModel,
 } from "../../../view_models/FacebookViewModel";
 import SidebarArchive from "../../shared_components/SidebarArchive.vue";
+import DebugModeComponent from "../../shared_components/DebugModeComponent.vue";
 
 // Props
 defineProps<{
@@ -17,21 +18,7 @@ const emit = defineEmits<{
   setDebugAutopauseEndOfStep: [value: boolean];
 }>();
 
-// Debug
-const shouldOpenDevtools = ref(false);
-const debugAutopauseEndOfStep = ref(false);
 
-const debugAutopauseEndOfStepChanged = async () => {
-  emit("setDebugAutopauseEndOfStep", debugAutopauseEndOfStep.value);
-};
-
-const enableDebugMode = async () => {
-  emit("setState", State.Debug);
-};
-
-onMounted(async () => {
-  shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
-});
 </script>
 
 <template>
@@ -62,29 +49,10 @@ onMounted(async () => {
       :account-type="model.account.type"
     />
 
-    <!-- Debug mode -->
-    <div v-if="shouldOpenDevtools" class="p-3 small">
-      <hr />
-
-      <div class="mb-3">
-        <button class="btn btn-sm btn-danger" @click="enableDebugMode">
-          Debug Mode
-        </button>
-      </div>
-
-      <div class="form-check">
-        <input
-          id="debugAutopauseEndOfStep"
-          v-model="debugAutopauseEndOfStep"
-          type="checkbox"
-          class="form-check-input"
-          @change="debugAutopauseEndOfStepChanged"
-        />
-        <label class="form-check-label" for="debugAutopauseEndOfStep">
-          Automatically pause before finishing each step
-        </label>
-      </div>
-    </div>
+    <DebugModeComponent
+      :emit="emit"
+      :debug-state="State.Debug"
+    />
   </div>
 </template>
 

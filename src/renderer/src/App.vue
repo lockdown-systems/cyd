@@ -613,13 +613,9 @@ body {
 }
 
 .wizard-sidebar .stats .card-body {
-  padding: 0.2rem;
-}
-
-.wizard-sidebar .stats .card-body h1 {
+  padding: 0.7rem 0.2rem;
   font-size: 1.5em;
   margin-bottom: 0;
-  padding: 0.5rem 0 0.5rem 0;
 }
 
 .wizard-review ul {
