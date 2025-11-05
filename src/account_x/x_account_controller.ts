@@ -28,7 +28,10 @@ import {
   getAccountDataPath,
   getTimestampDaysAgo,
 } from "../util";
-import { getImageDimensions } from "../shared/utils/image-utils";
+import {
+  getImageDimensions,
+  getImageDataURI,
+} from "../shared/utils/image-utils";
 import {
   XAccount,
   XJob,
@@ -579,10 +582,10 @@ export class XAccountController extends BaseAccountController<XProgress> {
         if (
           instructions.entries?.length == 2 &&
           instructions.entries[0].content.entryType ==
-            "TimelineTimelineCursor" &&
+          "TimelineTimelineCursor" &&
           instructions.entries[0].content.cursorType == "Top" &&
           instructions.entries[1].content.entryType ==
-            "TimelineTimelineCursor" &&
+          "TimelineTimelineCursor" &&
           instructions.entries[1].content.cursorType == "Bottom"
         ) {
           this.thereIsMore = false;
@@ -790,22 +793,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
     indexTweetURLsIntoDB(this.db, tweetLegacy);
   }
 
-  async getImageDataURI(url: string): Promise<string> {
-    if (!url) {
-      return "";
-    }
-    try {
-      const response = await fetch(url, {});
-      if (!response.ok) {
-        return "";
-      }
-      const buffer = await response.buffer();
-      return `data:${response.headers.get("content-type")};base64,${buffer.toString("base64")}`;
-    } catch {
-      return "";
-    }
-  }
-
   async indexUser(user: XAPIUser) {
     if (!this.db) {
       this.initDB();
@@ -815,12 +802,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
       return;
     }
 
-    await indexUserIntoDB(
-      this.db,
-      this.progress,
-      (url: string) => this.getImageDataURI(url),
-      user,
-    );
+    await indexUserIntoDB(this.db, this.progress, getImageDataURI, user);
   }
 
   indexConversation(conversation: XAPIConversation) {

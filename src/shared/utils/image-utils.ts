@@ -1,5 +1,26 @@
 import fs from "fs";
 import log from "electron-log/main";
+import fetch from "node-fetch";
+
+/**
+ * Fetch an image from a URL and convert it to a data URI.
+ * Returns an empty string if the URL is invalid or the fetch fails.
+ */
+export async function getImageDataURI(url: string): Promise<string> {
+  if (!url) {
+    return "";
+  }
+  try {
+    const response = await fetch(url, {});
+    if (!response.ok) {
+      return "";
+    }
+    const buffer = await response.buffer();
+    return `data:${response.headers.get("content-type")};base64,${buffer.toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
 
 // Simple image dimension reader for PNG and JPG
 export async function getImageDimensions(
