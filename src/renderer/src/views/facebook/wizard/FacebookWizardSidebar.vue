@@ -17,8 +17,6 @@ const emit = defineEmits<{
   setState: [value: State];
   setDebugAutopauseEndOfStep: [value: boolean];
 }>();
-
-
 </script>
 
 <template>
@@ -49,10 +47,7 @@ const emit = defineEmits<{
       :account-type="model.account.type"
     />
 
-    <DebugModeComponent
-      :emit="emit"
-      :debug-state="State.Debug"
-    />
+    <DebugModeComponent :emit="emit" :debug-state="State.Debug" />
   </div>
 </template>
 

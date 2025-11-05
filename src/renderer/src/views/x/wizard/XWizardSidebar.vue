@@ -179,10 +179,7 @@ emitter?.on("account-updated", async () => {
       </div>
     </div>
 
-    <DebugModeComponent
-      :emit="emit"
-      :debug-state="State.Debug"
-    />
+    <DebugModeComponent :emit="emit" :debug-state="State.Debug" />
   </div>
 </template>
 

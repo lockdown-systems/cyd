@@ -12,7 +12,6 @@ function formatStatsNumber(num: number): string {
   }
   return num.toString();
 }
-
 </script>
 
 <template>

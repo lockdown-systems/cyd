@@ -21,7 +21,6 @@ const enableDebugMode = async () => {
 onMounted(async () => {
   shouldOpenDevtools.value = await window.electron.shouldOpenDevtools();
 });
-
 </script>
 
 <template>

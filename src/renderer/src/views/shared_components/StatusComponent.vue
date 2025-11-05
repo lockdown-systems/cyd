@@ -25,8 +25,6 @@ const getStatusIcon = (status: string) => {
   };
   return statusIcons[status] || "";
 };
-console.error("Am I even loaded?")
-console.error(props.jobs);
 </script>
 
 <template>
