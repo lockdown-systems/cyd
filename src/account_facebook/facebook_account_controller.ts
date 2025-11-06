@@ -185,25 +185,6 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     return jobs.map(convertFacebookJobRowToFacebookJob);
   }
 
-  updateJob(job: FacebookJob) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    exec(
-      this.db,
-      "UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?",
-      [
-        job.status,
-        job.startedAt ? job.startedAt : null,
-        job.finishedAt ? job.finishedAt : null,
-        job.progressJSON,
-        job.error,
-        job.id,
-      ],
-    );
-  }
-
   async indexStart() {
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
     await ses.clearCache();

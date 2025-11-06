@@ -302,25 +302,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return null;
   }
 
-  updateJob(job: XJob) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    exec(
-      this.db,
-      "UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?",
-      [
-        job.status,
-        job.startedAt ? job.startedAt : null,
-        job.finishedAt ? job.finishedAt : null,
-        job.progressJSON,
-        job.error,
-        job.id,
-      ],
-    );
-  }
-
   // Converters
   convertXJobRowToXJob(row: XJobRow): XJob {
     return {

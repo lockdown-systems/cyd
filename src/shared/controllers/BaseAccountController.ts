@@ -2,8 +2,9 @@ import { session } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
-import { getAccount } from "../../database";
+import { getAccount, exec } from "../../database";
 import { IMITMController } from "../../mitm";
+import type { PlatformJob } from "../../shared_types/common";
 
 export abstract class BaseAccountController<TProgress = unknown> {
   protected accountUUID: string = "";
@@ -94,5 +95,24 @@ export abstract class BaseAccountController<TProgress = unknown> {
 
   async getProgress(): Promise<TProgress> {
     return this.progress;
+  }
+
+  updateJob(job: PlatformJob): void {
+    if (!this.db) {
+      this.initDB();
+    }
+
+    exec(
+      this.db,
+      "UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?",
+      [
+        job.status,
+        job.startedAt ? job.startedAt : null,
+        job.finishedAt ? job.finishedAt : null,
+        job.progressJSON,
+        job.error,
+        job.id,
+      ],
+    );
   }
 }
