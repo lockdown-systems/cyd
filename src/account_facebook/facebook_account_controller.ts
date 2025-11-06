@@ -18,14 +18,7 @@ import {
   FacebookDatabaseStats,
   emptyFacebookDatabaseStats,
 } from "../shared_types";
-import {
-  runMigrations,
-  Sqlite3Count,
-  getAccount,
-  exec,
-  getConfig,
-  setConfig,
-} from "../database";
+import { runMigrations, Sqlite3Count, getAccount, exec } from "../database";
 import { IMITMController } from "../mitm";
 import { BaseAccountController } from "../shared/controllers/BaseAccountController";
 import {
@@ -952,14 +945,6 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
       log.error("FacebookAccountController.getProfileImageDataURI: error", e);
       return "";
     }
-  }
-
-  async getConfig(key: string): Promise<string | null> {
-    return getConfig(key, this.db);
-  }
-
-  async setConfig(key: string, value: string) {
-    return setConfig(key, value, this.db);
   }
 
   async getDatabaseStats(): Promise<FacebookDatabaseStats> {

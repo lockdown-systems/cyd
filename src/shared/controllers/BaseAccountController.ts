@@ -2,7 +2,7 @@ import { session } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
-import { getAccount, exec } from "../../database";
+import { getAccount, exec, getConfig, setConfig } from "../../database";
 import { IMITMController } from "../../mitm";
 import type { PlatformJob } from "../../shared_types/common";
 
@@ -114,5 +114,13 @@ export abstract class BaseAccountController<TProgress = unknown> {
         job.id,
       ],
     );
+  }
+
+  async getConfig(key: string): Promise<string | null> {
+    return getConfig(key, this.db);
+  }
+
+  async setConfig(key: string, value: string): Promise<void> {
+    setConfig(key, value, this.db);
   }
 }

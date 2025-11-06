@@ -51,8 +51,6 @@ import {
   saveXAccount,
   exec,
   Sqlite3Count,
-  getConfig as globalGetConfig,
-  setConfig as globalSetConfig,
   deleteConfig as globalDeleteConfig,
   deleteConfigLike as globalDeleteConfigLike,
 } from "../database";
@@ -2403,14 +2401,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
       return null;
     }
     return this.cookies[hostname][name] || null;
-  }
-
-  async getConfig(key: string): Promise<string | null> {
-    return globalGetConfig(key, this.db);
-  }
-
-  async setConfig(key: string, value: string) {
-    return globalSetConfig(key, value, this.db);
   }
 
   async deleteConfig(key: string) {
