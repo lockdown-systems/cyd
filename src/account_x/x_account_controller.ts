@@ -331,22 +331,12 @@ export class XAccountController extends BaseAccountController<XProgress> {
     };
   }
 
-  async indexStart() {
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    await ses.clearCache();
-    await this.mitmController.startMonitoring();
-    await this.mitmController.startMITM(ses, [
+  protected getMITMURLs(): string[] {
+    return [
       "x.com/i/api/graphql",
       "x.com/i/api/1.1/dm",
       "x.com/i/api/2/notifications/all.json",
-    ]);
-    this.thereIsMore = true;
-  }
-
-  async indexStop() {
-    await this.mitmController.stopMonitoring();
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    await this.mitmController.stopMITM(ses);
+    ];
   }
 
   indexTweet(

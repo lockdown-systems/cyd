@@ -3,7 +3,7 @@ import fs from "fs";
 import { URL } from "url";
 
 import fetch from "node-fetch";
-import { app, session } from "electron";
+import { app } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
@@ -178,19 +178,8 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     return jobs.map(convertFacebookJobRowToFacebookJob);
   }
 
-  async indexStart() {
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    await ses.clearCache();
-    await this.mitmController.startMonitoring();
-    log.info(ses);
-    await this.mitmController.startMITM(ses, ["www.facebook.com/api/graphql/"]);
-    this.thereIsMore = true;
-  }
-
-  async indexStop() {
-    await this.mitmController.stopMonitoring();
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    await this.mitmController.stopMITM(ses);
+  protected getMITMURLs(): string[] {
+    return ["www.facebook.com/api/graphql/"];
   }
 
   async parseNode(data: FBNode) {

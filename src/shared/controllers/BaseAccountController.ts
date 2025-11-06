@@ -54,6 +54,11 @@ export abstract class BaseAccountController<TProgress = unknown> {
     details: OnSendHeadersListenerDetails,
   ): void;
   protected abstract initDB(): void;
+  /**
+   * Returns the list of URL patterns to monitor for MITM interception.
+   * Each platform has different API endpoints to intercept.
+   */
+  protected abstract getMITMURLs(): string[];
 
   refreshAccount() {
     // Load the account
@@ -122,5 +127,19 @@ export abstract class BaseAccountController<TProgress = unknown> {
 
   async setConfig(key: string, value: string): Promise<void> {
     setConfig(key, value, this.db);
+  }
+
+  async indexStart(): Promise<void> {
+    const ses = session.fromPartition(`persist:account-${this.accountID}`);
+    await ses.clearCache();
+    await this.mitmController.startMonitoring();
+    await this.mitmController.startMITM(ses, this.getMITMURLs());
+    this.thereIsMore = true;
+  }
+
+  async indexStop(): Promise<void> {
+    await this.mitmController.stopMonitoring();
+    const ses = session.fromPartition(`persist:account-${this.accountID}`);
+    await this.mitmController.stopMITM(ses);
   }
 }
