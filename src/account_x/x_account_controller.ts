@@ -98,6 +98,8 @@ import { migrations } from "./controller/migrations";
 import { getMediaURL } from "./utils";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
 import { saveProfileImage } from "./controller/actions/saveProfileImage";
+import { getLastFinishedJob } from "./controller/jobs/getLastFinishedJob";
+import { createJobs } from "./controller/jobs/createJobs";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -251,54 +253,11 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   createJobs(jobTypes: string[]): XJob[] {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    // Cancel pending jobs
-    exec(this.db, "UPDATE job SET status = ? WHERE status = ?", [
-      "canceled",
-      "pending",
-    ]);
-
-    // Create new pending jobs
-    jobTypes.forEach((jobType) => {
-      exec(
-        this.db,
-        "INSERT INTO job (jobType, status, scheduledAt) VALUES (?, ?, ?)",
-        [jobType, "pending", new Date()],
-      );
-    });
-
-    // Select pending jobs
-    const jobs: XJobRow[] = exec(
-      this.db,
-      "SELECT * FROM job WHERE status = ? ORDER BY id",
-      ["pending"],
-      "all",
-    ) as XJobRow[];
-    return jobs.map(this.convertXJobRowToXJob);
+    return createJobs(this, jobTypes);
   }
 
   async getLastFinishedJob(jobType: string): Promise<XJob | null> {
-    if (!this.account || !this.account.username) {
-      return null;
-    }
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    const job: XJobRow | null = exec(
-      this.db,
-      "SELECT * FROM job WHERE jobType = ? AND status = ? AND finishedAt IS NOT NULL ORDER BY finishedAt DESC LIMIT 1",
-      [jobType, "finished"],
-      "get",
-    ) as XJobRow | null;
-    if (job) {
-      return this.convertXJobRowToXJob(job);
-    }
-    return null;
+    return getLastFinishedJob(this, jobType);
   }
 
   // Converters
