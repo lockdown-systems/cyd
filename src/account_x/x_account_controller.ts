@@ -96,6 +96,9 @@ import { importXArchive } from "./controller/archive/importXArchive";
 import { importXArchiveMedia } from "./controller/archive/importXArchiveMedia";
 import { saveXArchiveMedia } from "./controller/archive/saveXArchiveMedia";
 import { importXArchiveURLs } from "./controller/archive/importXArchiveURLs";
+import { getProgressInfo } from "./controller/stats/getProgressInfo";
+import { getDatabaseStats } from "./controller/stats/getDatabaseStats";
+import { getDeleteReviewStats } from "./controller/stats/getDeleteReviewStats";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -1394,230 +1397,15 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async getProgressInfo(): Promise<XProgressInfo> {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    const totalTweetsIndexed: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ?",
-      [this.account?.username || "", "RT @%", 0],
-      "get",
-    ) as Sqlite3Count;
-    const totalTweetsArchived: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NOT NULL",
-      [],
-      "get",
-    ) as Sqlite3Count;
-    const totalRetweetsIndexed: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ?",
-      ["RT @%"],
-      "get",
-    ) as Sqlite3Count;
-    const totalLikesIndexed: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const totalBookmarksIndexed: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ?",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const totalUnknownIndexed: Sqlite3Count = exec(
-      this.db,
-      `SELECT COUNT(*) AS count FROM tweet
-             WHERE id NOT IN (
-                 SELECT id FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ?
-                 UNION
-                 SELECT id FROM tweet WHERE text LIKE ?
-                 UNION
-                 SELECT id FROM tweet WHERE isLiked = ?
-             )`,
-      [this.account?.username || "", "RT @%", 0, "RT @%", 1],
-      "get",
-    ) as Sqlite3Count;
-    const totalTweetsDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE username = ? AND text NOT LIKE ? AND isLiked = ? AND deletedTweetAt IS NOT NULL",
-      [this.account?.username || "", "RT @%", 0],
-      "get",
-    ) as Sqlite3Count;
-    const totalRetweetsDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedRetweetAt IS NOT NULL",
-      ["RT @%"],
-      "get",
-    ) as Sqlite3Count;
-    const totalLikesDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedLikeAt IS NOT NULL",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const totalBookmarksDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ? AND deletedBookmarkAt IS NOT NULL",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const totalTweetsMigratedToBluesky: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet_bsky_migration",
-      [],
-      "get",
-    ) as Sqlite3Count;
-
-    const totalConversationsDeletedConfig: string | null = await this.getConfig(
-      "totalConversationsDeleted",
-    );
-    let totalConversationsDeleted: number = 0;
-    if (totalConversationsDeletedConfig) {
-      totalConversationsDeleted = parseInt(totalConversationsDeletedConfig);
-    }
-
-    const totalAccountsUnfollowedConfig: string | null = await this.getConfig(
-      "totalAccountsUnfollowed",
-    );
-    let totalAccountsUnfollowed: number = 0;
-    if (totalAccountsUnfollowedConfig) {
-      totalAccountsUnfollowed = parseInt(totalAccountsUnfollowedConfig);
-    }
-
-    const progressInfo = emptyXProgressInfo();
-    progressInfo.accountUUID = this.accountUUID;
-    progressInfo.totalTweetsIndexed = totalTweetsIndexed.count;
-    progressInfo.totalTweetsArchived = totalTweetsArchived.count;
-    progressInfo.totalRetweetsIndexed = totalRetweetsIndexed.count;
-    progressInfo.totalLikesIndexed = totalLikesIndexed.count;
-    progressInfo.totalBookmarksIndexed = totalBookmarksIndexed.count;
-    progressInfo.totalUnknownIndexed = totalUnknownIndexed.count;
-    progressInfo.totalTweetsDeleted = totalTweetsDeleted.count;
-    progressInfo.totalRetweetsDeleted = totalRetweetsDeleted.count;
-    progressInfo.totalLikesDeleted = totalLikesDeleted.count;
-    progressInfo.totalBookmarksDeleted = totalBookmarksDeleted.count;
-    progressInfo.totalConversationsDeleted = totalConversationsDeleted;
-    progressInfo.totalAccountsUnfollowed = totalAccountsUnfollowed;
-    progressInfo.totalTweetsMigratedToBluesky =
-      totalTweetsMigratedToBluesky.count;
-    return progressInfo;
+    return getProgressInfo(this);
   }
 
   async getDatabaseStats(): Promise<XDatabaseStats> {
-    const databaseStats = emptyXDatabaseStats();
-    if (!this.account?.username) {
-      log.debug("XAccountController.getDatabaseStats: no account");
-      return databaseStats;
-    }
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    const username = this.account.username;
-
-    const tweetsSaved: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ?",
-      ["RT @%", 0, username],
-      "get",
-    ) as Sqlite3Count;
-    const tweetsDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE text NOT LIKE ? AND isLiked = ? AND username = ? AND deletedTweetAt IS NOT NULL",
-      ["RT @%", 0, username],
-      "get",
-    ) as Sqlite3Count;
-    const retweetsSaved: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ?",
-      ["RT @%"],
-      "get",
-    ) as Sqlite3Count;
-    const retweetsDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE text LIKE ? AND deletedRetweetAt IS NOT NULL",
-      ["RT @%"],
-      "get",
-    ) as Sqlite3Count;
-    const likesSaved: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ?",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const likesDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isLiked = ? AND deletedLikeAt IS NOT NULL",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const bookmarksSaved: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ?",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const bookmarksDeleted: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE isBookmarked = ? AND deletedBookmarkAt IS NOT NULL",
-      [1],
-      "get",
-    ) as Sqlite3Count;
-    const conversationsDeleted = parseInt(
-      (await this.getConfig("totalConversationsDeleted")) || "0",
-    );
-    const accountsUnfollowed = parseInt(
-      (await this.getConfig("totalAccountsUnfollowed")) || "0",
-    );
-    const tweetsMigratedToBluesky: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM tweet_bsky_migration",
-      [],
-      "get",
-    ) as Sqlite3Count;
-
-    databaseStats.tweetsSaved = tweetsSaved.count;
-    databaseStats.tweetsDeleted = tweetsDeleted.count;
-    databaseStats.retweetsSaved = retweetsSaved.count;
-    databaseStats.retweetsDeleted = retweetsDeleted.count;
-    databaseStats.likesSaved = likesSaved.count;
-    databaseStats.likesDeleted = likesDeleted.count;
-    databaseStats.bookmarksSaved = bookmarksSaved.count;
-    databaseStats.bookmarksDeleted = bookmarksDeleted.count;
-    databaseStats.conversationsDeleted = conversationsDeleted;
-    databaseStats.accountsUnfollowed = accountsUnfollowed;
-    databaseStats.tweetsMigratedToBluesky = tweetsMigratedToBluesky.count;
-    return databaseStats;
+    return getDatabaseStats(this);
   }
 
   async getDeleteReviewStats(): Promise<XDeleteReviewStats> {
-    const deleteReviewStats = emptyXDeleteReviewStats();
-    if (!this.account?.username) {
-      log.info("XAccountController.getDeleteReviewStats: no account");
-      return deleteReviewStats;
-    }
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    const deleteTweetsStartResponse = await this.deleteTweetsStart();
-    const deleteRetweetStartResponse = await this.deleteRetweetsStart();
-    const deleteLikesStartResponse = await this.deleteLikesStart();
-    const deleteBookmarksStartResponse = await this.deleteBookmarksStart();
-
-    deleteReviewStats.tweetsToDelete = deleteTweetsStartResponse.tweets.length;
-    deleteReviewStats.retweetsToDelete =
-      deleteRetweetStartResponse.tweets.length;
-    deleteReviewStats.likesToDelete = deleteLikesStartResponse.tweets.length;
-    deleteReviewStats.bookmarksToDelete =
-      deleteBookmarksStartResponse.tweets.length;
-    return deleteReviewStats;
+    return getDeleteReviewStats(this);
   }
 
   async saveProfileImage(url: string): Promise<void> {

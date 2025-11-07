@@ -7,7 +7,7 @@ import { IMITMController } from "../../mitm";
 import type { PlatformJob } from "../../shared_types/common";
 
 export abstract class BaseAccountController<TProgress = unknown> {
-  protected accountUUID: string = "";
+  accountUUID: string = "";
   protected accountID: number = 0;
   accountDataPath: string = "";
   protected thereIsMore: boolean = false;
