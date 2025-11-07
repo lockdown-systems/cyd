@@ -1,154 +1,358 @@
 import { vi } from "vitest";
-import type { ElectronAPI } from "../../preload";
+import type { WebviewTag } from "electron";
+import type { Emitter, EventType } from "mitt";
+import mitt from "mitt";
+import type { Account, XAccount } from "../../shared_types";
 
-export const stubElectron = (): ElectronAPI => {
+/**
+ * General test utilities for all view models
+ * These mocks can be used across X, Facebook, Bluesky, and other view models
+ */
+
+/**
+ * Creates a mock XAccount with default values that can be overridden
+ */
+export function createMockXAccount(overrides?: Partial<XAccount>): XAccount {
+  const now = new Date();
   return {
-    ipcRenderer: {
-      send: vi.fn(),
-      on: vi.fn(),
-      once: vi.fn(),
-      removeAllListeners: vi.fn(),
-    },
-    checkForUpdates: vi.fn(),
-    quitAndInstallUpdate: vi.fn(),
-    getVersion: vi.fn().mockResolvedValue("0.0.1"),
-    getMode: vi.fn().mockResolvedValue("prod"),
-    getPlatform: vi.fn().mockResolvedValue("win32"),
-    getAPIURL: vi.fn().mockResolvedValue("https://api.example.com"),
-    getDashURL: vi.fn().mockResolvedValue("https://dash.example.com"),
-    isFeatureEnabled: vi.fn().mockResolvedValue(false),
-    trackEvent: vi.fn().mockResolvedValue("tracked"),
-    shouldOpenDevtools: vi.fn().mockResolvedValue(false),
-    showMessage: vi.fn(),
-    showError: vi.fn(),
-    showQuestion: vi.fn().mockResolvedValue(true),
-    showOpenDialog: vi.fn().mockResolvedValue(null),
-    openURL: vi.fn(),
-    loadFileInWebview: vi.fn(),
-    getAccountDataPath: vi.fn().mockResolvedValue(null),
-    startPowerSaveBlocker: vi.fn().mockResolvedValue(1),
-    stopPowerSaveBlocker: vi.fn(),
-    deleteSettingsAndRestart: vi.fn(),
-    onPowerMonitorSuspend: vi.fn(),
-    onPowerMonitorResume: vi.fn(),
-    getImageDataURIFromFile: vi.fn().mockResolvedValue(""),
+    id: 1,
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    username: "testuser",
+    userID: "123456789",
+    bio: "Test bio",
+    profileImageDataURI: "data:image/png;base64,test",
+    importFromArchive: false,
+    saveMyData: false,
+    deleteMyData: false,
+    archiveOnly: false,
+    archiveMyData: false,
+    archiveTweets: false,
+    archiveTweetsHTML: false,
+    archiveLikes: false,
+    archiveBookmarks: false,
+    archiveDMs: false,
+    deleteTweets: false,
+    deleteTweetsDaysOldEnabled: false,
+    deleteTweetsDaysOld: 0,
+    deleteTweetsLikesThresholdEnabled: false,
+    deleteTweetsLikesThreshold: 0,
+    deleteTweetsRetweetsThresholdEnabled: false,
+    deleteTweetsRetweetsThreshold: 0,
+    deleteRetweets: false,
+    deleteRetweetsDaysOldEnabled: false,
+    deleteRetweetsDaysOld: 0,
+    deleteLikes: false,
+    deleteBookmarks: false,
+    deleteDMs: false,
+    unfollowEveryone: false,
+    followingCount: 100,
+    followersCount: 200,
+    tweetsCount: 500,
+    likesCount: 300,
+    tombstoneUpdateBanner: false,
+    tombstoneUpdateBannerBackground: "",
+    tombstoneUpdateBannerSocialIcons: "",
+    tombstoneUpdateBannerShowText: false,
+    tombstoneBannerDataURL: "",
+    tombstoneUpdateBio: false,
+    tombstoneUpdateBioText: "",
+    tombstoneUpdateBioCreditCyd: false,
+    tombstoneLockAccount: false,
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock Account with default values that can be overridden
+ * By default creates an X account, but can be customized for other types
+ */
+export function createMockAccount(overrides?: Partial<Account>): Account {
+  return {
+    id: 1,
+    type: "X",
+    sortOrder: 0,
+    xAccount: createMockXAccount(),
+    blueskyAccount: null,
+    facebookAccount: null,
+    uuid: "test-uuid-123",
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock WebviewTag for testing
+ * This can be used by any view model that uses Electron's WebviewTag
+ */
+export function createMockWebview(): WebviewTag {
+  const mockWebview = {
+    loadURL: vi.fn().mockResolvedValue(undefined),
+    getURL: vi.fn().mockReturnValue("about:blank"),
+    getWebContentsId: vi.fn().mockReturnValue(1),
+    executeJavaScript: vi.fn().mockResolvedValue(undefined),
+    isLoading: vi.fn().mockReturnValue(false),
+    stop: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    sendInputEvent: vi.fn(),
+    openDevTools: vi.fn(),
+    capturePage: vi.fn().mockReturnValue({
+      toDataURL: vi.fn().mockReturnValue("data:image/png;base64,test"),
+    }),
+  } as unknown as WebviewTag;
+
+  return mockWebview;
+}
+
+/**
+ * Creates a mock mitt emitter for testing
+ * Used by view models for event emission
+ */
+export function createMockEmitter(): Emitter<Record<EventType, unknown>> {
+  return mitt();
+}
+
+/**
+ * Mock the global window.electron API
+ * Call this in beforeEach() to set up the electron API
+ * This provides mocks for all electron IPC calls used across view models
+ */
+export function mockElectronAPI() {
+  const mockElectron = {
+    // Database operations (used by all view models)
     database: {
-      getConfig: vi.fn().mockResolvedValue(null),
-      setConfig: vi.fn(),
-      deleteConfig: vi.fn(),
-      deleteConfigLike: vi.fn(),
-      getErrorReport: vi.fn().mockResolvedValue(null),
-      getNewErrorReports: vi.fn().mockResolvedValue([]),
-      createErrorReport: vi.fn().mockResolvedValue(undefined),
-      updateErrorReportSubmitted: vi.fn(),
-      dismissNewErrorReports: vi.fn(),
-      getAccount: vi.fn().mockResolvedValue(null),
+      getAccount: vi.fn().mockResolvedValue(createMockAccount()),
       getAccounts: vi.fn().mockResolvedValue([]),
-      createAccount: vi.fn().mockResolvedValue({
-        id: 1,
-        type: "X",
-        sortOrder: 0,
-        xAccount: null,
-        blueskyAccount: null,
-        facebookAccount: null,
-        uuid: "uuid",
-      }),
-      selectAccountType: vi.fn().mockResolvedValue({
-        id: 1,
-        type: "X",
-        sortOrder: 0,
-        xAccount: null,
-        blueskyAccount: null,
-        facebookAccount: null,
-        uuid: "uuid",
-      }),
-      saveAccount: vi.fn(),
-      deleteAccount: vi.fn(),
+      createAccount: vi.fn().mockResolvedValue(createMockAccount()),
+      saveAccount: vi.fn().mockResolvedValue(undefined),
+      deleteAccount: vi.fn().mockResolvedValue(undefined),
+      selectAccountType: vi.fn().mockResolvedValue(createMockAccount()),
+      getConfig: vi.fn().mockResolvedValue(null),
+      setConfig: vi.fn().mockResolvedValue(undefined),
+      createErrorReport: vi.fn().mockResolvedValue(undefined),
+      dismissNewErrorReports: vi.fn().mockResolvedValue(undefined),
     },
-    archive: {
-      isPageAlreadySaved: vi.fn().mockResolvedValue(false),
-      savePage: vi.fn().mockResolvedValue(true),
-      openFolder: vi.fn(),
-      getInfo: vi.fn().mockResolvedValue({
-        folderEmpty: true,
-        indexHTMLExists: false,
-      }),
-    },
+
+    // X operations
     X: {
-      resetProgress: vi.fn().mockResolvedValue({ progress: 0 }),
+      getDatabaseStats: vi.fn().mockResolvedValue({
+        tweetsSaved: 0,
+        tweetsDeleted: 0,
+        retweetsSaved: 0,
+        retweetsDeleted: 0,
+        likesSaved: 0,
+        likesDeleted: 0,
+        bookmarksSaved: 0,
+        bookmarksDeleted: 0,
+        conversationsDeleted: 0,
+        accountsUnfollowed: 0,
+        tweetsMigratedToBluesky: 0,
+      }),
+      syncProgress: vi.fn().mockResolvedValue(undefined),
+      resetProgress: vi.fn().mockResolvedValue({
+        currentJob: "",
+        isIndexTweetsFinished: false,
+        isIndexConversationsFinished: false,
+        isIndexMessagesFinished: false,
+        isIndexLikesFinished: false,
+        isArchiveTweetsFinished: false,
+        isArchiveLikesFinished: false,
+        isIndexBookmarksFinished: false,
+        isDeleteDMsFinished: false,
+        isUnfollowEveryoneFinished: false,
+        tweetsIndexed: 0,
+        retweetsIndexed: 0,
+        usersIndexed: 0,
+        conversationsIndexed: 0,
+        messagesIndexed: 0,
+        likesIndexed: 0,
+        unknownIndexed: 0,
+        totalTweetsToArchive: 0,
+        tweetsArchived: 0,
+        newTweetsArchived: 0,
+        totalLikesToArchive: 0,
+        likesArchived: 0,
+        totalBookmarksToIndex: 0,
+        bookmarksIndexed: 0,
+        totalConversations: 0,
+        conversationMessagesIndexed: 0,
+        totalTweetsToDelete: 0,
+        tweetsDeleted: 0,
+        totalRetweetsToDelete: 0,
+        retweetsDeleted: 0,
+        totalLikesToDelete: 0,
+        likesDeleted: 0,
+        totalBookmarksToDelete: 0,
+        bookmarksDeleted: 0,
+        conversationsDeleted: 0,
+        accountsUnfollowed: 0,
+        totalTweetsToMigrate: 0,
+        migrateTweetsCount: 0,
+        migrateSkippedTweetsCount: 0,
+        migrateSkippedTweetsErrors: {},
+        totalMigratedPostsToDelete: 0,
+        migrateDeletePostsCount: 0,
+        migrateDeleteSkippedPostsCount: 0,
+        errorsOccured: 0,
+      }),
       createJobs: vi.fn().mockResolvedValue([]),
-      getLastFinishedJob: vi.fn().mockResolvedValue(null),
-      updateJob: vi.fn(),
-      indexStart: vi.fn(),
-      indexStop: vi.fn(),
-      indexParseTweets: vi.fn().mockResolvedValue({ progress: 0 }),
-      indexParseLikes: vi.fn().mockResolvedValue({ progress: 0 }),
-      indexParseBookmarks: vi.fn().mockResolvedValue({ progress: 0 }),
-      indexParseConversations: vi.fn().mockResolvedValue({ progress: 0 }),
-      indexIsThereMore: vi.fn().mockResolvedValue(false),
-      resetThereIsMore: vi.fn(),
-      indexMessagesStart: vi.fn().mockResolvedValue({ progress: 0 }),
-      indexParseMessages: vi.fn().mockResolvedValue({ progress: 0 }),
-      indexConversationFinished: vi.fn().mockResolvedValue(undefined),
-      archiveTweetsStart: vi.fn().mockResolvedValue({ progress: 0 }),
-      archiveTweetsOutputPath: vi.fn().mockResolvedValue("/path/to/output"),
-      archiveTweet: vi.fn().mockResolvedValue(undefined),
-      archiveTweetCheckDate: vi.fn().mockResolvedValue(undefined),
-      archiveBuild: vi.fn().mockResolvedValue(undefined),
-      syncProgress: vi.fn(),
+      updateJob: vi.fn().mockResolvedValue(undefined),
+      setConfig: vi.fn().mockResolvedValue(undefined),
+      getConfig: vi.fn().mockResolvedValue("false"),
+      getCookie: vi.fn().mockResolvedValue("test-cookie"),
+      getImageDataURI: vi.fn().mockResolvedValue("data:image/png;base64,test"),
       resetRateLimitInfo: vi.fn().mockResolvedValue(undefined),
       isRateLimited: vi
         .fn()
         .mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 }),
-      getProgress: vi.fn().mockResolvedValue({ progress: 0 }),
-      getProgressInfo: vi.fn().mockResolvedValue({}),
-      getDatabaseStats: vi.fn().mockResolvedValue({}),
-      getDeleteReviewStats: vi.fn().mockResolvedValue({}),
-      saveProfileImage: vi.fn().mockResolvedValue(undefined),
-      getLatestResponseData: vi.fn().mockResolvedValue(null),
-      deleteTweetsStart: vi.fn().mockResolvedValue({ progress: 0 }),
-      deleteTweetsCountNotArchived: vi.fn().mockResolvedValue(0),
-      deleteRetweetsStart: vi.fn().mockResolvedValue({ progress: 0 }),
-      deleteLikesStart: vi.fn().mockResolvedValue({ progress: 0 }),
-      deleteBookmarksStart: vi.fn().mockResolvedValue({ progress: 0 }),
+      indexStart: vi.fn().mockResolvedValue(undefined),
+      indexStop: vi.fn().mockResolvedValue(undefined),
+      indexParseTweets: vi.fn().mockResolvedValue({
+        currentJob: "",
+        tweetsIndexed: 0,
+        retweetsIndexed: 0,
+      }),
+      indexParseConversations: vi.fn().mockResolvedValue({
+        currentJob: "",
+        conversationsIndexed: 0,
+      }),
+      indexParseMessages: vi.fn().mockResolvedValue({
+        currentJob: "",
+        messagesIndexed: 0,
+      }),
+      indexIsThereMore: vi.fn().mockResolvedValue(false),
+      indexMessagesStart: vi.fn().mockResolvedValue({
+        conversationIDs: [],
+        totalConversations: 0,
+      }),
+      indexConversationFinished: vi.fn().mockResolvedValue(undefined),
+      resetThereIsMore: vi.fn().mockResolvedValue(undefined),
+      getLatestResponseData: vi.fn().mockResolvedValue(""),
+      archiveTweetsStart: vi.fn().mockResolvedValue({
+        outputPath: "/test/path",
+        items: [],
+      }),
+      archiveTweet: vi.fn().mockResolvedValue(undefined),
+      archiveTweetCheckDate: vi.fn().mockResolvedValue(undefined),
+      archiveBuild: vi.fn().mockResolvedValue(undefined),
+      deleteTweetsStart: vi.fn().mockResolvedValue({ tweets: [] }),
+      deleteRetweetsStart: vi.fn().mockResolvedValue({ tweets: [] }),
+      deleteLikesStart: vi.fn().mockResolvedValue({ tweets: [] }),
+      deleteBookmarksStart: vi.fn().mockResolvedValue({ tweets: [] }),
       deleteTweet: vi.fn().mockResolvedValue(undefined),
       deleteDMsMarkAllDeleted: vi.fn().mockResolvedValue(undefined),
-      deleteDMsScrollToBottom: vi.fn().mockResolvedValue(undefined),
-      unzipXArchive: vi.fn().mockResolvedValue(null),
-      deleteUnzippedXArchive: vi.fn().mockResolvedValue(null),
-      verifyXArchive: vi.fn().mockResolvedValue(null),
-      importXArchive: vi.fn().mockResolvedValue({}),
-      getCookie: vi.fn().mockResolvedValue(null),
-      getConfig: vi.fn().mockResolvedValue(null),
-      setConfig: vi.fn().mockResolvedValue(undefined),
-      deleteConfig: vi.fn().mockResolvedValue(undefined),
-      deleteConfigLike: vi.fn().mockResolvedValue(undefined),
-      getImageDataURI: vi.fn().mockResolvedValue(""),
-      blueskyGetProfile: vi.fn().mockResolvedValue(null),
-      blueskyAuthorize: vi.fn().mockResolvedValue(true),
-      blueskyCallback: vi.fn().mockResolvedValue(true),
-      blueskyDisconnect: vi.fn().mockResolvedValue(undefined),
-      blueskyGetTweetCounts: vi.fn().mockResolvedValue({}),
+      blueskyGetTweetCounts: vi.fn().mockResolvedValue({
+        toMigrateTweets: [],
+        alreadyMigratedTweets: [],
+      }),
       blueskyMigrateTweet: vi.fn().mockResolvedValue(true),
       blueskyDeleteMigratedTweet: vi.fn().mockResolvedValue(true),
-      getMediaPath: vi.fn().mockResolvedValue("/path/to/media"),
-      initArchiveOnlyMode: vi.fn().mockResolvedValue({}),
+      initArchiveOnlyMode: vi.fn().mockResolvedValue(undefined),
+      getMediaPath: vi.fn().mockResolvedValue("/test/media/path"),
     },
-    Facebook: {
-      resetProgress: vi.fn().mockResolvedValue({ progress: 0 }),
-      createJobs: vi.fn().mockResolvedValue([]),
-      updateJob: vi.fn(),
-      archiveBuild: vi.fn().mockResolvedValue(undefined),
-      syncProgress: vi.fn(),
-      getProgress: vi.fn().mockResolvedValue({ progress: 0 }),
-      getCookie: vi.fn().mockResolvedValue(null),
-      getProfileImageDataURI: vi.fn().mockResolvedValue(""),
-      getConfig: vi.fn().mockResolvedValue(null),
-      setConfig: vi.fn().mockResolvedValue(undefined),
-      indexStart: vi.fn(),
-      indexStop: vi.fn(),
-      savePosts: vi.fn().mockResolvedValue({ progress: 0 }),
-      getDatabaseStats: vi.fn().mockResolvedValue({}),
+
+    // Archive operations (used by multiple view models)
+    archive: {
+      getInfo: vi.fn().mockResolvedValue({
+        folderEmpty: true,
+        indexHTMLExists: false,
+      }),
+      isPageAlreadySaved: vi.fn().mockResolvedValue(false),
+      savePage: vi.fn().mockResolvedValue(undefined),
     },
+
+    // Analytics (used by all view models)
+    trackEvent: vi.fn().mockResolvedValue(undefined),
+
+    // Utility (used by all view models)
+    shouldOpenDevtools: vi.fn().mockResolvedValue(false),
+    getAPIURL: vi.fn().mockResolvedValue("https://api.test.com"),
+    getMode: vi.fn().mockResolvedValue("prod"),
+    getVersion: vi.fn().mockResolvedValue("1.0.0"),
+    isFeatureEnabled: vi.fn().mockResolvedValue(false),
+    showQuestion: vi.fn().mockResolvedValue(true),
+    showError: vi.fn(),
+
+    // Power monitor (used by all view models)
+    onPowerMonitorSuspend: vi.fn(),
+    onPowerMonitorResume: vi.fn(),
   };
-};
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).window = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(global as any).window,
+    electron: mockElectron,
+  };
+
+  return mockElectron;
+}
+
+/**
+ * Helper to spy on all electron API methods
+ * Returns an object with all spies for easy verification
+ * This is useful for verifying that view models call the correct electron methods
+ */
+export function spyOnElectronAPI() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const electron = (global as any).window.electron;
+  if (!electron) {
+    throw new Error(
+      "window.electron not found. Did you call mockElectronAPI()?",
+    );
+  }
+
+  return {
+    database: {
+      getAccount: vi.spyOn(electron.database, "getAccount"),
+      saveAccount: vi.spyOn(electron.database, "saveAccount"),
+      createErrorReport: vi.spyOn(electron.database, "createErrorReport"),
+    },
+    X: {
+      getDatabaseStats: vi.spyOn(electron.X, "getDatabaseStats"),
+      syncProgress: vi.spyOn(electron.X, "syncProgress"),
+      resetProgress: vi.spyOn(electron.X, "resetProgress"),
+      createJobs: vi.spyOn(electron.X, "createJobs"),
+      updateJob: vi.spyOn(electron.X, "updateJob"),
+      setConfig: vi.spyOn(electron.X, "setConfig"),
+      getConfig: vi.spyOn(electron.X, "getConfig"),
+      getCookie: vi.spyOn(electron.X, "getCookie"),
+      indexParseTweets: vi.spyOn(electron.X, "indexParseTweets"),
+      deleteTweet: vi.spyOn(electron.X, "deleteTweet"),
+    },
+    archive: {
+      getInfo: vi.spyOn(electron.archive, "getInfo"),
+      savePage: vi.spyOn(electron.archive, "savePage"),
+    },
+    trackEvent: vi.spyOn(electron, "trackEvent"),
+  };
+}
+
+/**
+ * Resets all mocks created by mockElectronAPI
+ * Call this in afterEach() to clean up between tests
+ */
+export function resetElectronAPIMocks() {
+  vi.clearAllMocks();
+}
+
+/**
+ * Helper to wait for async operations in tests
+ * Useful for testing async state changes
+ *
+ * @param fn Function that returns true when the condition is met
+ * @param timeout Maximum time to wait in milliseconds
+ */
+export async function waitForAsync(
+  fn: () => boolean,
+  timeout: number = 1000,
+): Promise<void> {
+  const startTime = Date.now();
+  while (!fn()) {
+    if (Date.now() - startTime > timeout) {
+      throw new Error("waitForAsync timeout");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}

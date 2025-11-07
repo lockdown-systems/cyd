@@ -4,7 +4,14 @@ import { mount, VueWrapper } from "@vue/test-utils";
 
 import SignInModal from "./SignInModal.vue";
 import CydAPIClient from "../../../cyd-api-client";
-import { stubElectron } from "../test_util";
+import { mockElectronAPI } from "../test_util";
+
+// Define a type for the component instance that includes the methods we need to access in tests
+type SignInModalInstance = InstanceType<typeof SignInModal> & {
+  authenticate: () => Promise<void>;
+  verificationCode: string;
+  goBack: () => Promise<void>;
+};
 
 describe("SignInModal", () => {
   let wrapper: VueWrapper<InstanceType<typeof SignInModal>>;
@@ -14,10 +21,7 @@ describe("SignInModal", () => {
     vi.clearAllMocks();
 
     // Setup global window.electron
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).window = {
-      electron: stubElectron(),
-    };
+    mockElectronAPI();
   });
 
   afterEach(() => {
@@ -79,7 +83,7 @@ describe("SignInModal", () => {
     expect((emailInput.element as HTMLInputElement).value).toBe("");
 
     // Call the authenticate method directly to avoid DOM event issues
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
@@ -112,7 +116,7 @@ describe("SignInModal", () => {
     expect((emailInput.element as HTMLInputElement).value).toBe(testEmail);
 
     // Call the authenticate method directly
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
@@ -152,7 +156,7 @@ describe("SignInModal", () => {
     expect((emailInput.element as HTMLInputElement).value).toBe(testEmail);
 
     // Call the authenticate method directly
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
@@ -196,7 +200,7 @@ describe("SignInModal", () => {
     });
 
     // Call the authenticate method directly
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
@@ -295,7 +299,7 @@ describe("SignInModal", () => {
     });
 
     // Call the authenticate method directly
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
@@ -363,7 +367,7 @@ describe("SignInModal", () => {
     });
 
     // Call the authenticate method directly
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
@@ -421,7 +425,7 @@ describe("SignInModal", () => {
     });
 
     // Call the authenticate method directly
-    const componentInstance = wrapper.vm;
+    const componentInstance = wrapper.vm as unknown as SignInModalInstance;
     await componentInstance.authenticate();
     await nextTick();
 
