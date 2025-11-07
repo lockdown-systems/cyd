@@ -15,7 +15,6 @@ import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsk
 import {
   getResourcesPath,
   getAccountDataPath,
-  getTimestampDaysAgo,
 } from "../util";
 import { getImageDataURI } from "../shared/utils/image-utils";
 import {
@@ -32,12 +31,9 @@ import {
   XIndexMessagesStartResponse,
   XDeleteTweetsStartResponse,
   XProgressInfo,
-  emptyXProgressInfo,
   ResponseData,
   XDatabaseStats,
-  emptyXDatabaseStats,
   XDeleteReviewStats,
-  emptyXDeleteReviewStats,
   XImportArchiveResponse,
   XMigrateTweetCounts,
   BlueskyMigrationProfile,
@@ -99,6 +95,14 @@ import { importXArchiveURLs } from "./controller/archive/importXArchiveURLs";
 import { getProgressInfo } from "./controller/stats/getProgressInfo";
 import { getDatabaseStats } from "./controller/stats/getDatabaseStats";
 import { getDeleteReviewStats } from "./controller/stats/getDeleteReviewStats";
+import { deleteTweetsStart } from "./controller/deletion/deleteTweetsStart";
+import { deleteTweetsCountNotArchived } from "./controller/deletion/deleteTweetsCountNotArchived";
+import { deleteRetweetsStart } from "./controller/deletion/deleteRetweetsStart";
+import { deleteLikesStart } from "./controller/deletion/deleteLikesStart";
+import { deleteBookmarksStart } from "./controller/deletion/deleteBookmarksStart";
+import { deleteTweet } from "./controller/deletion/deleteTweet";
+import { deleteDMsMarkDeleted } from "./controller/deletion/deleteDMsMarkDeleted";
+import { deleteDMsMarkAllDeleted } from "./controller/deletion/deleteDMsMarkAllDeleted";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -143,7 +147,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
       ) {
         const urlParts = details.url.split("/");
         const conversationID = urlParts[urlParts.length - 2];
-        this.deleteDMsMarkDeleted(conversationID);
+        deleteDMsMarkDeleted(this, conversationID);
       }
     });
   }
@@ -228,7 +232,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   // Helper function to fetch tweets with media and URLs
-  private fetchTweetsWithMediaAndURLs(
+  public fetchTweetsWithMediaAndURLs(
     whereClause: string,
     params: (string | number)[],
   ): XTweetItem[] {
@@ -453,10 +457,10 @@ export class XAccountController extends BaseAccountController<XProgress> {
         if (
           instructions.entries?.length == 2 &&
           instructions.entries[0].content.entryType ==
-            "TimelineTimelineCursor" &&
+          "TimelineTimelineCursor" &&
           instructions.entries[0].content.cursorType == "Top" &&
           instructions.entries[1].content.entryType ==
-            "TimelineTimelineCursor" &&
+          "TimelineTimelineCursor" &&
           instructions.entries[1].content.cursorType == "Bottom"
         ) {
           this.thereIsMore = false;
@@ -1110,282 +1114,35 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
   // When you start deleting tweets, return a list of tweets to delete
   async deleteTweetsStart(): Promise<XDeleteTweetsStartResponse> {
-    log.info("XAccountController.deleteTweetsStart");
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    // Determine the timestamp for filtering tweets
-    const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled
-      ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld)
-      : getTimestampDaysAgo(0);
-
-    // Build the WHERE clause and parameters dynamically
-    let whereClause = `
-            t.deletedTweetAt IS NULL
-            AND t.text NOT LIKE ?
-            AND t.username = ?
-            AND t.createdAt <= ?
-        `;
-    const params: (string | number)[] = [
-      "RT @%",
-      this.account.username,
-      daysOldTimestamp,
-    ];
-
-    if (this.account.deleteTweetsLikesThresholdEnabled) {
-      whereClause += " AND t.likeCount <= ?";
-      params.push(this.account.deleteTweetsLikesThreshold);
-    }
-    if (this.account.deleteTweetsRetweetsThresholdEnabled) {
-      whereClause += " AND t.retweetCount <= ?";
-      params.push(this.account.deleteTweetsRetweetsThreshold);
-    }
-
-    // Fetch tweets using the helper function
-    const tweets = this.fetchTweetsWithMediaAndURLs(whereClause, params);
-
-    return { tweets };
+    return deleteTweetsStart(this);
   }
 
-  // Returns the count of tweets that are not archived
-  // If total is true, return the total count of tweets not archived
-  // Otherwise, return the count of tweets not archived that will be deleted
   async deleteTweetsCountNotArchived(total: boolean): Promise<number> {
-    log.info("XAccountController.deleteTweetsCountNotArchived");
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    // Select just the tweets that need to be deleted based on the settings
-    let count: Sqlite3Count;
-
-    if (total) {
-      // Count all non-deleted, non-archived tweets, with no filters
-      count = exec(
-        this.db,
-        "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ?",
-        ["RT @%", this.account.username],
-        "get",
-      ) as Sqlite3Count;
-    } else {
-      const daysOldTimestamp = this.account.deleteTweetsDaysOldEnabled
-        ? getTimestampDaysAgo(this.account.deleteTweetsDaysOld)
-        : getTimestampDaysAgo(0);
-      if (
-        this.account.deleteTweetsLikesThresholdEnabled &&
-        this.account.deleteTweetsRetweetsThresholdEnabled
-      ) {
-        // Both likes and retweets thresholds
-        count = exec(
-          this.db,
-          "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ?",
-          [
-            "RT @%",
-            this.account.username,
-            daysOldTimestamp,
-            this.account.deleteTweetsLikesThreshold,
-            this.account.deleteTweetsRetweetsThreshold,
-          ],
-          "get",
-        ) as Sqlite3Count;
-      } else if (
-        this.account.deleteTweetsLikesThresholdEnabled &&
-        !this.account.deleteTweetsRetweetsThresholdEnabled
-      ) {
-        // Just likes threshold
-        count = exec(
-          this.db,
-          "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ?",
-          [
-            "RT @%",
-            this.account.username,
-            daysOldTimestamp,
-            this.account.deleteTweetsLikesThreshold,
-          ],
-          "get",
-        ) as Sqlite3Count;
-      } else if (
-        !this.account.deleteTweetsLikesThresholdEnabled &&
-        this.account.deleteTweetsRetweetsThresholdEnabled
-      ) {
-        // Just retweets threshold
-        count = exec(
-          this.db,
-          "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ?",
-          [
-            "RT @%",
-            this.account.username,
-            daysOldTimestamp,
-            this.account.deleteTweetsRetweetsThreshold,
-          ],
-          "get",
-        ) as Sqlite3Count;
-      } else {
-        // Neither likes nor retweets threshold
-        count = exec(
-          this.db,
-          "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ?",
-          ["RT @%", this.account.username, daysOldTimestamp],
-          "get",
-        ) as Sqlite3Count;
-      }
-    }
-
-    return count.count;
+    return deleteTweetsCountNotArchived(this, total);
   }
 
-  // When you start deleting retweets, return a list of tweets to delete
   async deleteRetweetsStart(): Promise<XDeleteTweetsStartResponse> {
-    log.info("XAccountController.deleteRetweetsStart");
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    const daysOldTimestamp = this.account.deleteRetweetsDaysOldEnabled
-      ? getTimestampDaysAgo(this.account.deleteRetweetsDaysOld)
-      : getTimestampDaysAgo(0);
-
-    const tweets = this.fetchTweetsWithMediaAndURLs(
-      "t.deletedRetweetAt IS NULL AND t.text LIKE ? AND t.createdAt <= ?",
-      ["RT @%", daysOldTimestamp],
-    );
-
-    return { tweets };
+    return deleteRetweetsStart(this);
   }
 
-  // When you start deleting likes, return a list of tweets to unlike
   async deleteLikesStart(): Promise<XDeleteTweetsStartResponse> {
-    log.info("XAccountController.deleteLikesStart");
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    const tweets = this.fetchTweetsWithMediaAndURLs(
-      "t.deletedLikeAt IS NULL AND t.isLiked = ?",
-      [1],
-    );
-
-    return { tweets };
+    return deleteLikesStart(this);
   }
 
-  // When you start deleting bookmarks, return a list of tweets to unbookmark
   async deleteBookmarksStart(): Promise<XDeleteTweetsStartResponse> {
-    log.info("XAccountController.deleteBookmarksStart");
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    const tweets = this.fetchTweetsWithMediaAndURLs(
-      "t.deletedBookmarkAt IS NULL AND t.isBookmarked = ?",
-      [1],
-    );
-
-    return { tweets };
+    return deleteBookmarksStart(this);
   }
 
-  // Save the tweet's deleted*At timestamp
-  async deleteTweet(tweetID: string, deleteType: string) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (deleteType == "tweet") {
-      exec(this.db, "UPDATE tweet SET deletedTweetAt = ? WHERE tweetID = ?", [
-        new Date(),
-        tweetID,
-      ]);
-    } else if (deleteType == "retweet") {
-      exec(this.db, "UPDATE tweet SET deletedRetweetAt = ? WHERE tweetID = ?", [
-        new Date(),
-        tweetID,
-      ]);
-    } else if (deleteType == "like") {
-      exec(this.db, "UPDATE tweet SET deletedLikeAt = ? WHERE tweetID = ?", [
-        new Date(),
-        tweetID,
-      ]);
-    } else if (deleteType == "bookmark") {
-      exec(
-        this.db,
-        "UPDATE tweet SET deletedBookmarkAt = ? WHERE tweetID = ?",
-        [new Date(), tweetID],
-      );
-    } else {
-      throw new Error("Invalid deleteType");
-    }
+  async deleteTweet(tweetID: string, deleteType: string): Promise<void> {
+    return deleteTweet(this, tweetID, deleteType);
   }
 
-  deleteDMsMarkDeleted(conversationID: string) {
-    log.info(
-      `XAccountController.deleteDMsMarkDeleted: conversationID=${conversationID}`,
-    );
-
-    if (!this.db) {
-      this.initDB();
-    }
-
-    // Mark the conversation as deleted
-    exec(
-      this.db,
-      "UPDATE conversation SET deletedAt = ? WHERE conversationID = ?",
-      [new Date(), conversationID],
-    );
-
-    // Mark all the messages as deleted
-    exec(
-      this.db,
-      "UPDATE message SET deletedAt = ? WHERE conversationID = ? AND deletedAt is NULL",
-      [new Date(), conversationID],
-    );
-
-    // Update the progress
-    this.progress.conversationsDeleted++;
+  deleteDMsMarkDeleted(conversationID: string): void {
+    return deleteDMsMarkDeleted(this, conversationID);
   }
 
   async deleteDMsMarkAllDeleted(): Promise<void> {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    const conversations = exec(
-      this.db,
-      "SELECT conversationID FROM conversation WHERE deletedAt IS NULL",
-      [],
-      "all",
-    ) as XConversationRow[];
-    log.info(
-      `XAccountController.deleteDMsMarkAllDeleted: marking ${conversations.length} conversations deleted`,
-    );
-
-    for (let i = 0; i < conversations.length; i++) {
-      this.deleteDMsMarkDeleted(conversations[i].conversationID);
-    }
+    return deleteDMsMarkAllDeleted(this);
   }
 
   async resetRateLimitInfo(): Promise<void> {
