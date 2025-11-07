@@ -10,7 +10,7 @@ export abstract class BaseAccountController<TProgress = unknown> {
   accountUUID: string = "";
   protected accountID: number = 0;
   accountDataPath: string = "";
-  protected thereIsMore: boolean = false;
+  thereIsMore: boolean = false;
 
   // Making this public so it can be accessed in tests
   public db: Database.Database | null = null;
@@ -21,7 +21,7 @@ export abstract class BaseAccountController<TProgress = unknown> {
   protected cookies: Record<string, unknown> = {};
 
   // Progress tracking - each subclass specifies its specific progress type
-  protected progress!: TProgress;
+  progress!: TProgress;
 
   constructor(accountID: number, mitmController: IMITMController) {
     this.mitmController = mitmController;

@@ -1,7 +1,7 @@
 import log from "electron-log/main";
 import Database from "better-sqlite3";
-import { exec } from "../../database";
-import { XAPILegacyTweet, XAPILegacyURL } from "../types";
+import { exec } from "../../../database";
+import type { XAPILegacyTweet, XAPILegacyURL } from "../../types";
 
 /**
  * Index URLs from a tweet into the database.

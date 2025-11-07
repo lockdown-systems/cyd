@@ -1,8 +1,8 @@
 import log from "electron-log/main";
 import Database from "better-sqlite3";
-import { exec } from "../../database";
-import { XAPIUser, XUserRow } from "../types";
-import { XProgress } from "../../shared_types";
+import { exec } from "../../../database";
+import type { XAPIUser, XUserRow } from "../../types";
+import type { XProgress } from "../../../shared_types";
 
 /**
  * Index a user from the X API into the database.

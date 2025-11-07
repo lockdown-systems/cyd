@@ -1,7 +1,11 @@
 import log from "electron-log/main";
 import Database from "better-sqlite3";
-import { exec } from "../../database";
-import { XAPIConversation, XConversationRow } from "../types";
+import { exec } from "../../../database";
+import type {
+  XAPIConversation,
+  XAPIConversationParticipant,
+  XConversationRow,
+} from "../../types";
 
 /**
  * Index a conversation from the X API into the database.
@@ -71,13 +75,15 @@ export function indexConversationIntoDB(
   ]);
 
   // Add the participants
-  conversation.participants.forEach((participant) => {
-    exec(
-      db,
-      "INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)",
-      [conversation.conversation_id, participant.user_id],
-    );
-  });
+  conversation.participants.forEach(
+    (participant: XAPIConversationParticipant) => {
+      exec(
+        db,
+        "INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)",
+        [conversation.conversation_id, participant.user_id],
+      );
+    },
+  );
 
   // Update progress
   incrementProgress();

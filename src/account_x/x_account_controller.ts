@@ -1,7 +1,6 @@
 import path from "path";
 import fs from "fs";
 
-import fetch from "node-fetch";
 import unzipper from "unzipper";
 
 import { app, session } from "electron";
@@ -12,10 +11,7 @@ import Database from "better-sqlite3";
 import { Agent } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
-import {
-  getResourcesPath,
-  getAccountDataPath,
-} from "../util";
+import { getResourcesPath, getAccountDataPath } from "../util";
 import { getImageDataURI } from "../shared/utils/image-utils";
 import {
   XAccount,
@@ -43,7 +39,6 @@ import {
   getAccount,
   saveXAccount,
   exec,
-  Sqlite3Count,
   deleteConfig as globalDeleteConfig,
   deleteConfigLike as globalDeleteConfigLike,
 } from "../database";
@@ -52,35 +47,23 @@ import { BaseAccountController } from "../shared/controllers/BaseAccountControll
 import {
   XJobRow,
   XTweetRow,
-  XConversationRow,
   // X API types
   XAPILegacyTweet,
   XAPILegacyTweetMedia,
   XAPIUserCore,
-  XAPIData,
-  XAPIBookmarksData,
-  XAPITimeline,
-  XAPIInboxTimeline,
-  XAPIInboxInitialState,
   XAPIConversation,
-  XAPIConversationTimeline,
   XAPIMessage,
   XAPIUser,
   XArchiveTweet,
-  isXAPIBookmarksData,
-  isXAPIError,
-  isXAPIData,
-  isXAPIData_v2,
 } from "./types";
 
 // for building the static archive site
 import { saveArchive } from "./archive";
-import { indexUserIntoDB } from "./controller/indexUser";
-import { indexConversationIntoDB } from "./controller/indexConversation";
-import { indexTweetURLsIntoDB } from "./controller/indexTweetURLs";
+import { indexUserIntoDB } from "./controller/index/indexUser";
+import { indexConversationIntoDB } from "./controller/index/indexConversation";
+import { indexTweetURLsIntoDB } from "./controller/index/indexTweetURLs";
 import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithMediaAndURLs";
 import { migrations } from "./controller/migrations";
-import { getMediaURL } from "./utils";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
 import { saveProfileImage } from "./controller/actions/saveProfileImage";
 import { getLastFinishedJob } from "./controller/jobs/getLastFinishedJob";
@@ -103,6 +86,20 @@ import { deleteBookmarksStart } from "./controller/deletion/deleteBookmarksStart
 import { deleteTweet } from "./controller/deletion/deleteTweet";
 import { deleteDMsMarkDeleted } from "./controller/deletion/deleteDMsMarkDeleted";
 import { deleteDMsMarkAllDeleted } from "./controller/deletion/deleteDMsMarkAllDeleted";
+import { indexTweet } from "./controller/index/indexTweet";
+import { indexTweetMedia } from "./controller/index/indexTweetMedia";
+import { indexParseTweetsResponseData } from "./controller/index/indexParseTweetsResponseData";
+import { indexParseTweets } from "./controller/index/indexParseTweets";
+import { indexParseConversationsResponseData } from "./controller/index/indexParseConversationsResponseData";
+import { indexParseConversations } from "./controller/index/indexParseConversations";
+import { indexIsThereMore } from "./controller/index/indexIsThereMore";
+import { resetThereIsMore } from "./controller/index/resetThereIsMore";
+import { indexMessagesStart } from "./controller/index/indexMessagesStart";
+import { indexMessage } from "./controller/index/indexMessage";
+import { indexParseMessagesResponseData } from "./controller/index/indexParseMessagesResponseData";
+import { indexParseMessages } from "./controller/index/indexParseMessages";
+import { indexConversationFinished } from "./controller/index/indexConversationFinished";
+import { saveTweetMedia } from "./controller/index/saveTweetMedia";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -110,7 +107,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
 
   // Temp variable for accurately counting message progress
-  private messageIDsIndexed: string[] = [];
+  public messageIDsIndexed: string[] = [];
 
   protected cookies: Record<string, Record<string, string>> = {};
 
@@ -306,357 +303,27 @@ export class XAccountController extends BaseAccountController<XProgress> {
     responseIndex: number,
     userCore: XAPIUserCore,
     tweetLegacy: XAPILegacyTweet,
-  ) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    // Check if tweet has media and call indexTweetMedia
-    let hasMedia: boolean = false;
-    if (
-      tweetLegacy.extended_entities?.media &&
-      tweetLegacy.extended_entities?.media.length
-    ) {
-      hasMedia = true;
-      this.indexTweetMedia(tweetLegacy);
-    }
-
-    // Check if tweet has URLs and index it
-    if (tweetLegacy.entities?.urls && tweetLegacy.entities?.urls.length) {
-      this.indexTweetURLs(tweetLegacy);
-    }
-
-    // Add the tweet
-    exec(
-      this.db,
-      "INSERT OR REPLACE INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [
-        userCore["screen_name"],
-        tweetLegacy["id_str"],
-        tweetLegacy["conversation_id_str"],
-        new Date(tweetLegacy["created_at"]),
-        tweetLegacy["favorite_count"],
-        tweetLegacy["quote_count"],
-        tweetLegacy["reply_count"],
-        tweetLegacy["retweet_count"],
-        tweetLegacy["favorited"] ? 1 : 0,
-        tweetLegacy["retweeted"] ? 1 : 0,
-        tweetLegacy["bookmarked"] ? 1 : 0,
-        tweetLegacy["full_text"],
-        `${userCore["screen_name"]}/status/${tweetLegacy["id_str"]}`,
-        hasMedia ? 1 : 0,
-        tweetLegacy["in_reply_to_status_id_str"] ? 1 : 0,
-        tweetLegacy["in_reply_to_status_id_str"],
-        tweetLegacy["in_reply_to_user_id_str"],
-        tweetLegacy["is_quote_status"] ? 1 : 0,
-        tweetLegacy["quoted_status_permalink"]
-          ? tweetLegacy["quoted_status_permalink"]["expanded"]
-          : null,
-        new Date(),
-      ],
-    );
-
-    log.debug(
-      "XAccountController.indexTweet: indexed tweet",
-      this.account?.username,
-      userCore,
-      tweetLegacy,
-    );
-
-    // Update progress
-    if (tweetLegacy["favorited"]) {
-      // console.log("DEBUG-### LIKE: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
-      this.progress.likesIndexed++;
-    }
-    if (tweetLegacy["bookmarked"]) {
-      this.progress.bookmarksIndexed++;
-    }
-    if (tweetLegacy["full_text"].startsWith("RT @")) {
-      // console.log("DEBUG-### RETWEET: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
-      this.progress.retweetsIndexed++;
-    }
-    if (
-      userCore["screen_name"] == this.account?.username &&
-      !tweetLegacy["full_text"].startsWith("RT @")
-    ) {
-      // console.log("DEBUG-### TWEET: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
-      this.progress.tweetsIndexed++;
-    }
-    if (
-      !tweetLegacy["favorited"] &&
-      !tweetLegacy["bookmarked"] &&
-      !tweetLegacy["full_text"].startsWith("RT @") &&
-      userCore["screen_name"] != this.account?.username
-    ) {
-      // console.log("DEBUG-### UNKNOWN: ", tweetLegacy["id_str"], userCore["screen_name"], tweetLegacy["full_text"]);
-      this.progress.unknownIndexed++;
-    }
+  ): void {
+    return indexTweet(this, responseIndex, userCore, tweetLegacy);
   }
 
-  // Returns false if the loop should stop
-  indexParseTweetsResponseData(responseIndex: number) {
-    const responseData = this.mitmController.responseData[responseIndex];
-
-    // Already processed?
-    if (responseData.processed) {
-      return true;
-    }
-
-    // Rate limited?
-    if (responseData.status == 429) {
-      log.warn("XAccountController.indexParseTweetsResponseData: RATE LIMITED");
-      this.mitmController.responseData[responseIndex].processed = true;
-      return false;
-    }
-
-    // Process the next response
-    if (
-      // Tweets
-      (responseData.url.includes("/UserTweetsAndReplies?") ||
-        // Likes
-        responseData.url.includes("/Likes?") ||
-        // Bookmarks
-        responseData.url.includes("/Bookmarks?")) &&
-      responseData.status == 200
-    ) {
-      // For likes and tweets, body is XAPIData
-      // For bookmarks, body is XAPIBookmarksData
-      const body: XAPIData | XAPIBookmarksData = JSON.parse(
-        responseData.responseBody,
-      );
-      let timeline: XAPITimeline;
-      if (isXAPIBookmarksData(body)) {
-        timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
-      } else if (isXAPIData(body)) {
-        timeline = (body as XAPIData).data.user.result.timeline as XAPITimeline;
-      } else if (isXAPIData_v2(body)) {
-        timeline = (body as XAPIData).data.user.result
-          .timeline_v2 as XAPITimeline;
-      } else if (isXAPIError(body)) {
-        log.error(
-          "XAccountController.indexParseTweetsResponseData: XAPIError",
-          body,
-        );
-        this.mitmController.responseData[responseIndex].processed = true;
-        return false;
-      } else {
-        log.error(
-          "XAccountController.indexParseTweetsResponseData: Invalid response data",
-          responseData.responseBody,
-        );
-        throw new Error("Invalid response data");
-      }
-
-      // Loop through instructions
-      timeline.timeline.instructions.forEach((instructions) => {
-        if (instructions["type"] != "TimelineAddEntries") {
-          return;
-        }
-
-        // If we only have two entries, they both have entryType of TimelineTimelineCursor (one cursorType of Top and the other of Bottom), this means there are no more tweets
-        if (
-          instructions.entries?.length == 2 &&
-          instructions.entries[0].content.entryType ==
-          "TimelineTimelineCursor" &&
-          instructions.entries[0].content.cursorType == "Top" &&
-          instructions.entries[1].content.entryType ==
-          "TimelineTimelineCursor" &&
-          instructions.entries[1].content.cursorType == "Bottom"
-        ) {
-          this.thereIsMore = false;
-          return;
-        }
-
-        // Loop through the entries
-        instructions.entries?.forEach((entries) => {
-          let userCore: XAPIUserCore | undefined;
-          let tweetLegacy: XAPILegacyTweet | undefined;
-
-          if (entries.content.entryType == "TimelineTimelineModule") {
-            entries.content.items?.forEach((item) => {
-              if (
-                item.item.itemContent.tweet_results &&
-                item.item.itemContent.tweet_results.result &&
-                item.item.itemContent.tweet_results.result.core &&
-                item.item.itemContent.tweet_results.result.core.user_results &&
-                item.item.itemContent.tweet_results.result.core.user_results
-                  .result &&
-                item.item.itemContent.tweet_results.result.core.user_results
-                  .result.core &&
-                item.item.itemContent.tweet_results.result.legacy
-              ) {
-                userCore =
-                  item.item.itemContent.tweet_results.result.core.user_results
-                    .result.core;
-                tweetLegacy = item.item.itemContent.tweet_results.result.legacy;
-              }
-
-              if (
-                item.item.itemContent.tweet_results &&
-                item.item.itemContent.tweet_results.result &&
-                item.item.itemContent.tweet_results.result.tweet &&
-                item.item.itemContent.tweet_results.result.tweet.core &&
-                item.item.itemContent.tweet_results.result.tweet.core
-                  .user_results &&
-                item.item.itemContent.tweet_results.result.tweet.core
-                  .user_results.result &&
-                item.item.itemContent.tweet_results.result.tweet.core
-                  .user_results.result.core &&
-                item.item.itemContent.tweet_results.result.tweet.legacy
-              ) {
-                userCore =
-                  item.item.itemContent.tweet_results.result.tweet.core
-                    .user_results.result.core;
-                tweetLegacy =
-                  item.item.itemContent.tweet_results.result.tweet.legacy;
-              }
-
-              if (userCore && tweetLegacy) {
-                this.indexTweet(responseIndex, userCore, tweetLegacy);
-              }
-            });
-          } else if (entries.content.entryType == "TimelineTimelineItem") {
-            if (
-              entries.content.itemContent &&
-              entries.content.itemContent.tweet_results &&
-              entries.content.itemContent.tweet_results.result &&
-              entries.content.itemContent.tweet_results.result.core &&
-              entries.content.itemContent.tweet_results.result.core
-                .user_results &&
-              entries.content.itemContent.tweet_results.result.core.user_results
-                .result &&
-              entries.content.itemContent.tweet_results.result.core.user_results
-                .result.legacy &&
-              entries.content.itemContent.tweet_results.result.core.user_results
-                .result.core &&
-              entries.content.itemContent.tweet_results.result.legacy
-            ) {
-              userCore =
-                entries.content.itemContent.tweet_results.result.core
-                  .user_results.result.core;
-              tweetLegacy =
-                entries.content.itemContent.tweet_results.result.legacy;
-            }
-
-            if (
-              entries.content.itemContent &&
-              entries.content.itemContent.tweet_results &&
-              entries.content.itemContent.tweet_results.result &&
-              entries.content.itemContent.tweet_results.result.tweet &&
-              entries.content.itemContent.tweet_results.result.tweet.core &&
-              entries.content.itemContent.tweet_results.result.tweet.core
-                .user_results &&
-              entries.content.itemContent.tweet_results.result.tweet.core
-                .user_results.result &&
-              entries.content.itemContent.tweet_results.result.tweet.core
-                .user_results.result.legacy &&
-              entries.content.itemContent.tweet_results.result.tweet.core
-                .user_results.result.core &&
-              entries.content.itemContent.tweet_results.result.tweet.legacy
-            ) {
-              userCore =
-                entries.content.itemContent.tweet_results.result.tweet.core
-                  .user_results.result.core;
-              tweetLegacy =
-                entries.content.itemContent.tweet_results.result.tweet.legacy;
-            }
-
-            if (userCore && tweetLegacy) {
-              this.indexTweet(responseIndex, userCore, tweetLegacy);
-            }
-          }
-        });
-      });
-
-      this.mitmController.responseData[responseIndex].processed = true;
-      log.debug(
-        "XAccountController.indexParseTweetsResponseData: processed",
-        responseIndex,
-      );
-    } else {
-      // Skip response
-      this.mitmController.responseData[responseIndex].processed = true;
-    }
+  indexParseTweetsResponseData(responseIndex: number): boolean {
+    return indexParseTweetsResponseData(this, responseIndex);
   }
 
-  // Parses the response data so far to index tweets that have been collected
-  // Returns the progress object
-  // This works for tweets, likes, and bookmarks
   async indexParseTweets(): Promise<XProgress> {
-    await this.mitmController.clearProcessed();
-    log.info(
-      `XAccountController.indexParseTweets: parsing ${this.mitmController.responseData.length} responses`,
-    );
-
-    for (let i = 0; i < this.mitmController.responseData.length; i++) {
-      this.indexParseTweetsResponseData(i);
-    }
-
-    return this.progress;
+    return indexParseTweets(this);
   }
 
-  async saveTweetMedia(mediaPath: string, filename: string) {
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    // Create path to store tweet media if it doesn't exist already
-    const outputPath = await this.getMediaPath();
-    if (!fs.existsSync(outputPath)) {
-      fs.mkdirSync(outputPath);
-    }
-
-    // Download and save media from the mediaPath
-    try {
-      const response = await fetch(mediaPath, {});
-      if (!response.ok) {
-        return "";
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const outputFileName = path.join(outputPath, filename);
-      fs.createWriteStream(outputFileName).write(buffer);
-      return outputFileName;
-    } catch {
-      return "";
-    }
+  async saveTweetMedia(mediaPath: string, filename: string): Promise<string> {
+    return saveTweetMedia(this, mediaPath, filename);
   }
 
-  indexTweetMedia(tweetLegacy: XAPILegacyTweet) {
-    log.debug("XAccountController.indexMedia");
-
-    // Loop over all media items
-    tweetLegacy.extended_entities?.media?.forEach(
-      (media: XAPILegacyTweetMedia) => {
-        const mediaURL = getMediaURL(media);
-        const mediaExtension = mediaURL.substring(
-          mediaURL.lastIndexOf(".") + 1,
-        );
-
-        // Download media locally
-        const filename = `${media["media_key"]}.${mediaExtension}`;
-        this.saveTweetMedia(mediaURL, filename);
-
-        // Index media information in tweet_media table
-        exec(
-          this.db,
-          "INSERT OR REPLACE INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [
-            media["media_key"],
-            media["type"],
-            media["url"],
-            filename,
-            media["indices"]?.[0],
-            media["indices"]?.[1],
-            tweetLegacy["id_str"],
-          ],
-        );
-      },
-    );
+  indexTweetMedia(tweetLegacy: XAPILegacyTweet): void {
+    return indexTweetMedia(this, tweetLegacy);
   }
 
-  indexTweetURLs(tweetLegacy: XAPILegacyTweet) {
+  indexTweetURLs(tweetLegacy: XAPILegacyTweet): void {
     if (!this.db) {
       this.initDB();
     }
@@ -668,7 +335,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     indexTweetURLsIntoDB(this.db, tweetLegacy);
   }
 
-  async indexUser(user: XAPIUser) {
+  async indexUser(user: XAPIUser): Promise<void> {
     if (!this.db) {
       this.initDB();
     }
@@ -680,7 +347,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     await indexUserIntoDB(this.db, this.progress, getImageDataURI, user);
   }
 
-  indexConversation(conversation: XAPIConversation) {
+  indexConversation(conversation: XAPIConversation): void {
     if (!this.db) {
       this.initDB();
     }
@@ -700,306 +367,44 @@ export class XAccountController extends BaseAccountController<XProgress> {
     );
   }
 
-  async indexParseConversationsResponseData(responseIndex: number) {
-    const responseData = this.mitmController.responseData[responseIndex];
-
-    // Already processed?
-    if (responseData.processed) {
-      return true;
-    }
-
-    // Rate limited?
-    if (responseData.status == 429) {
-      log.warn(
-        "XAccountController.indexParseConversationsResponseData: RATE LIMITED",
-      );
-      this.mitmController.responseData[responseIndex].processed = true;
-      return false;
-    }
-
-    // Process the response
-    if (
-      // XAPIInboxTimeline
-      (responseData.url.includes("/i/api/1.1/dm/inbox_timeline/trusted.json") ||
-        responseData.url.includes(
-          "/i/api/1.1/dm/inbox_timeline/untrusted.json",
-        ) ||
-        // XAPIInboxInitialState
-        responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-        responseData.url.includes("/i/api/1.1/dm/user_updates.json")) &&
-      responseData.status == 200
-    ) {
-      let users: Record<string, XAPIUser>;
-      let conversations: Record<string, XAPIConversation>;
-      if (
-        responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json") ||
-        responseData.url.includes("/i/api/1.1/dm/user_updates.json")
-      ) {
-        const inbox_initial_state: XAPIInboxInitialState = JSON.parse(
-          responseData.responseBody,
-        );
-        if (!inbox_initial_state.inbox_initial_state) {
-          // Skip this response
-          return true;
-        }
-        users = inbox_initial_state.inbox_initial_state.users;
-        conversations = inbox_initial_state.inbox_initial_state.conversations;
-        this.thereIsMore =
-          inbox_initial_state.inbox_initial_state.inbox_timelines.trusted
-            ?.status == "HAS_MORE";
-      } else {
-        const inbox_timeline: XAPIInboxTimeline = JSON.parse(
-          responseData.responseBody,
-        );
-        users = inbox_timeline.inbox_timeline.users;
-        conversations = inbox_timeline.inbox_timeline.conversations;
-        this.thereIsMore = inbox_timeline.inbox_timeline.status == "HAS_MORE";
-      }
-
-      // Add the users
-      if (users) {
-        log.info(
-          `XAccountController.indexParseConversationsResponseData: adding ${Object.keys(users).length} users`,
-        );
-        for (const userID in users) {
-          const user = users[userID];
-          await this.indexUser(user);
-        }
-      } else {
-        log.info(
-          "XAccountController.indexParseConversationsResponseData: no users",
-        );
-      }
-
-      // Add the conversations
-      if (conversations) {
-        log.info(
-          `XAccountController.indexParseConversationsResponseData: adding ${Object.keys(conversations).length} conversations`,
-        );
-        for (const conversationID in conversations) {
-          const conversation = conversations[conversationID];
-          this.indexConversation(conversation);
-        }
-      } else {
-        log.info(
-          "XAccountController.indexParseConversationsResponseData: no conversations",
-        );
-      }
-
-      this.mitmController.responseData[responseIndex].processed = true;
-      log.debug(
-        "XAccountController.indexParseConversationsResponseData: processed",
-        responseIndex,
-      );
-    } else {
-      // Skip response
-      this.mitmController.responseData[responseIndex].processed = true;
-    }
+  async indexParseConversationsResponseData(
+    responseIndex: number,
+  ): Promise<boolean> {
+    return indexParseConversationsResponseData(this, responseIndex);
   }
 
-  // Returns true if more data needs to be indexed
-  // Returns false if we are caught up
   async indexParseConversations(): Promise<XProgress> {
-    await this.mitmController.clearProcessed();
-    log.info(
-      `XAccountController.indexParseConversations: parsing ${this.mitmController.responseData.length} responses`,
-    );
-
-    this.progress.currentJob = "indexConversations";
-    this.progress.isIndexMessagesFinished = false;
-
-    for (let i = 0; i < this.mitmController.responseData.length; i++) {
-      await this.indexParseConversationsResponseData(i);
-    }
-
-    return this.progress;
+    return indexParseConversations(this);
   }
 
   async indexIsThereMore(): Promise<boolean> {
-    return this.thereIsMore;
+    return indexIsThereMore(this);
   }
 
   async resetThereIsMore(): Promise<void> {
-    this.thereIsMore = true;
+    return resetThereIsMore(this);
   }
 
-  // When you start indexing DMs, return a list of DM conversationIDs to index
   async indexMessagesStart(): Promise<XIndexMessagesStartResponse> {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    // Select just the conversations that need to be indexed
-    const conversationIDs: XConversationRow[] = exec(
-      this.db,
-      "SELECT conversationID FROM conversation WHERE shouldIndexMessages = ? AND deletedAt IS NULL",
-      [1],
-      "all",
-    ) as XConversationRow[];
-    const totalConversations: Sqlite3Count = exec(
-      this.db,
-      "SELECT COUNT(*) AS count FROM conversation WHERE deletedAt IS NULL",
-      [],
-      "get",
-    ) as Sqlite3Count;
-    log.debug(
-      "XAccountController.indexMessagesStart",
-      conversationIDs,
-      totalConversations,
-    );
-    return {
-      conversationIDs: conversationIDs.map((row) => row.conversationID),
-      totalConversations: totalConversations.count,
-    };
+    return indexMessagesStart(this);
   }
 
-  indexMessage(message: XAPIMessage) {
-    log.debug("XAccountController.indexMessage", message);
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (!message.message) {
-      // skip
-      return;
-    }
-
-    // Insert of replace message
-    exec(
-      this.db,
-      "INSERT OR REPLACE INTO message (messageID, conversationID, createdAt, senderID, text, deletedAt) VALUES (?, ?, ?, ?, ?, ?)",
-      [
-        message.message.id,
-        message.message.conversation_id,
-        new Date(Number(message.message.time)),
-        message.message.message_data.sender_id,
-        message.message.message_data.text,
-        null,
-      ],
-    );
-
-    // Update progress
-    const insertMessageID: string = message.message.id;
-    if (
-      !this.messageIDsIndexed.some((messageID) => messageID === insertMessageID)
-    ) {
-      this.messageIDsIndexed.push(insertMessageID);
-    }
-
-    this.progress.messagesIndexed = this.messageIDsIndexed.length;
+  indexMessage(message: XAPIMessage): void {
+    return indexMessage(this, message);
   }
 
-  async indexParseMessagesResponseData(responseIndex: number) {
-    const responseData = this.mitmController.responseData[responseIndex];
-
-    // Already processed?
-    if (responseData.processed) {
-      return true;
-    }
-
-    // Rate limited?
-    if (responseData.status == 429) {
-      log.warn(
-        "XAccountController.indexParseMessagesResponseData: RATE LIMITED",
-      );
-      this.mitmController.responseData[responseIndex].processed = true;
-      return false;
-    }
-
-    // Process the response
-    if (
-      // XAPIConversationTimeline
-      (responseData.url.includes("/i/api/1.1/dm/conversation/") ||
-        // XAPIInboxInitialState
-        responseData.url.includes("/i/api/1.1/dm/inbox_initial_state.json")) &&
-      responseData.status == 200
-    ) {
-      log.debug(
-        "XAccountController.indexParseMessagesResponseData",
-        responseIndex,
-      );
-      let entries: XAPIMessage[];
-
-      if (responseData.url.includes("/i/api/1.1/dm/conversation/")) {
-        // XAPIConversationTimeline
-        const conversationTimeline: XAPIConversationTimeline = JSON.parse(
-          responseData.responseBody,
-        );
-        if (!conversationTimeline.conversation_timeline.entries) {
-          // Skip this response
-          return true;
-        }
-        entries = conversationTimeline.conversation_timeline.entries;
-      } else {
-        // XAPIInboxInitialState
-        const inbox_initial_state: XAPIInboxInitialState = JSON.parse(
-          responseData.responseBody,
-        );
-        if (!inbox_initial_state.inbox_initial_state) {
-          // Skip this response
-          return true;
-        }
-        entries = inbox_initial_state.inbox_initial_state.entries;
-      }
-
-      // Add the messages
-      if (entries) {
-        log.info(
-          `XAccountController.indexParseMessagesResponseData: adding ${entries.length} messages`,
-        );
-        for (let i = 0; i < entries.length; i++) {
-          const message = entries[i];
-          this.indexMessage(message);
-        }
-      } else {
-        log.info(
-          "XAccountController.indexParseMessagesResponseData: no entries",
-        );
-      }
-
-      this.mitmController.responseData[responseIndex].processed = true;
-      log.debug(
-        "XAccountController.indexParseMessagesResponseData: processed",
-        responseIndex,
-      );
-    } else {
-      // Skip response
-      log.debug(
-        "XAccountController.indexParseMessagesResponseData: skipping response",
-        responseData.url,
-      );
-      this.mitmController.responseData[responseIndex].processed = true;
-    }
-
-    return true;
+  async indexParseMessagesResponseData(
+    responseIndex: number,
+  ): Promise<boolean> {
+    return indexParseMessagesResponseData(this, responseIndex);
   }
 
   async indexParseMessages(): Promise<XProgress> {
-    log.info(
-      `XAccountController.indexParseMessages: parsing ${this.mitmController.responseData.length} responses`,
-    );
-
-    this.progress.currentJob = "indexMessages";
-    this.progress.isIndexMessagesFinished = false;
-
-    for (let i = 0; i < this.mitmController.responseData.length; i++) {
-      await this.indexParseMessagesResponseData(i);
-    }
-
-    return this.progress;
+    return indexParseMessages(this);
   }
 
-  // Set the conversation's shouldIndexMessages to false
-  async indexConversationFinished(conversationID: string) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    exec(
-      this.db,
-      "UPDATE conversation SET shouldIndexMessages = ? WHERE conversationID = ?",
-      [0, conversationID],
-    );
+  async indexConversationFinished(conversationID: string): Promise<void> {
+    return indexConversationFinished(this, conversationID);
   }
 
   // When you start archiving tweets you:
