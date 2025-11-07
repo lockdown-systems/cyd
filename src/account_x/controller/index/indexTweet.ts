@@ -3,7 +3,7 @@ import { exec } from "../../../database";
 import type { XAccountController } from "../../x_account_controller";
 import type { XAPIUserCore, XAPILegacyTweet } from "../../types";
 import { indexTweetMedia } from "./indexTweetMedia";
-import { indexTweetURLsIntoDB } from "./indexTweetURLs";
+import { indexTweetURLs } from "./indexTweetURLs";
 
 export function indexTweet(
   controller: XAccountController,
@@ -27,7 +27,7 @@ export function indexTweet(
 
   // Check if tweet has URLs and index it
   if (tweetLegacy.entities?.urls && tweetLegacy.entities?.urls.length) {
-    indexTweetURLsIntoDB(controller.db!, tweetLegacy);
+    indexTweetURLs(controller, tweetLegacy);
   }
 
   // Add the tweet

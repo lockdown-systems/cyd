@@ -1,19 +1,21 @@
 import log from "electron-log/main";
-import Database from "better-sqlite3";
 import { exec } from "../../../database";
+import { getImageDataURI } from "../../../shared/utils/image-utils";
+import type { XAccountController } from "../../x_account_controller";
 import type { XAPIUser, XUserRow } from "../../types";
-import type { XProgress } from "../../../shared_types";
 
 /**
  * Index a user from the X API into the database.
  * This method handles both inserting new users and updating existing ones.
  */
-export async function indexUserIntoDB(
-  db: Database.Database,
-  progress: XProgress,
-  getImageDataURI: (url: string) => Promise<string>,
+export async function indexUser(
+  controller: XAccountController,
   user: XAPIUser,
 ): Promise<void> {
+  if (!controller.db) {
+    controller.initDB();
+  }
+
   log.debug("XAccountController.indexUser", user);
 
   // Download the profile image
@@ -23,7 +25,7 @@ export async function indexUserIntoDB(
 
   // Have we seen this user before?
   const existing: XUserRow[] = exec(
-    db,
+    controller.db!,
     "SELECT * FROM user WHERE userID = ?",
     [user.id_str],
     "all",
@@ -31,14 +33,14 @@ export async function indexUserIntoDB(
   if (existing.length > 0) {
     // Update the user
     exec(
-      db,
+      controller.db!,
       "UPDATE user SET name = ?, screenName = ?, profileImageDataURI = ? WHERE userID = ?",
       [user.name, user.screen_name, profileImageDataURI, user.id_str],
     );
   } else {
     // Add the user
     exec(
-      db,
+      controller.db!,
       "INSERT INTO user (userID, name, screenName, profileImageDataURI) VALUES (?, ?, ?, ?)",
       [user.id_str, user.name, user.screen_name, profileImageDataURI],
     );
@@ -46,6 +48,6 @@ export async function indexUserIntoDB(
 
   // Update progress
   if (existing.length == 0) {
-    progress.usersIndexed++;
+    controller.progress.usersIndexed++;
   }
 }

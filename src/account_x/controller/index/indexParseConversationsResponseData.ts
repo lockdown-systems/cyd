@@ -6,9 +6,8 @@ import type {
   XAPIUser,
   XAPIConversation,
 } from "../../types";
-import { indexUserIntoDB } from "./indexUser";
-import { indexConversationIntoDB } from "./indexConversation";
-import { getImageDataURI } from "../../../shared/utils/image-utils";
+import { indexUser } from "./indexUser";
+import { indexConversation } from "./indexConversation";
 
 export async function indexParseConversationsResponseData(
   controller: XAccountController,
@@ -77,12 +76,7 @@ export async function indexParseConversationsResponseData(
       );
       for (const userID in users) {
         const user = users[userID];
-        await indexUserIntoDB(
-          controller.db,
-          controller.progress,
-          getImageDataURI,
-          user,
-        );
+        await indexUser(controller, user);
       }
     } else {
       log.info(
@@ -97,13 +91,7 @@ export async function indexParseConversationsResponseData(
       );
       for (const conversationID in conversations) {
         const conversation = conversations[conversationID];
-        indexConversationIntoDB(
-          controller.db,
-          () => {
-            controller.progress.conversationsIndexed++;
-          },
-          conversation,
-        );
+        indexConversation(controller, conversation);
       }
     } else {
       log.info(

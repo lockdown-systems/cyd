@@ -1,6 +1,6 @@
 import log from "electron-log/main";
-import Database from "better-sqlite3";
 import { exec } from "../../../database";
+import type { XAccountController } from "../../x_account_controller";
 import type {
   XAPIConversation,
   XAPIConversationParticipant,
@@ -11,16 +11,19 @@ import type {
  * Index a conversation from the X API into the database.
  * This method handles both inserting new conversations and updating existing ones.
  */
-export function indexConversationIntoDB(
-  db: Database.Database,
-  incrementProgress: () => void,
+export function indexConversation(
+  controller: XAccountController,
   conversation: XAPIConversation,
 ): void {
+  if (!controller.db) {
+    controller.initDB();
+  }
+
   log.debug("XAccountController.indexConversation", conversation);
 
   // Have we seen this conversation before?
   const existing: XConversationRow[] = exec(
-    db,
+    controller.db!,
     "SELECT minEntryID, maxEntryID FROM conversation WHERE conversationID = ?",
     [conversation.conversation_id],
     "all",
@@ -38,7 +41,7 @@ export function indexConversationIntoDB(
 
     // Update the conversation
     exec(
-      db,
+      controller.db!,
       "UPDATE conversation SET sortTimestamp = ?, type = ?, minEntryID = ?, maxEntryID = ?, isTrusted = ?, updatedInDatabaseAt = ?, shouldIndexMessages = ?, deletedAt = NULL WHERE conversationID = ?",
       [
         conversation.sort_timestamp,
@@ -54,7 +57,7 @@ export function indexConversationIntoDB(
   } else {
     // Add the conversation
     exec(
-      db,
+      controller.db!,
       "INSERT INTO conversation (conversationID, type, sortTimestamp, minEntryID, maxEntryID, isTrusted, addedToDatabaseAt, shouldIndexMessages) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [
         conversation.conversation_id,
@@ -70,15 +73,17 @@ export function indexConversationIntoDB(
   }
 
   // Delete participants
-  exec(db, "DELETE FROM conversation_participant WHERE conversationID = ?", [
-    conversation.conversation_id,
-  ]);
+  exec(
+    controller.db!,
+    "DELETE FROM conversation_participant WHERE conversationID = ?",
+    [conversation.conversation_id],
+  );
 
   // Add the participants
   conversation.participants.forEach(
     (participant: XAPIConversationParticipant) => {
       exec(
-        db,
+        controller.db!,
         "INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)",
         [conversation.conversation_id, participant.user_id],
       );
@@ -86,5 +91,5 @@ export function indexConversationIntoDB(
   );
 
   // Update progress
-  incrementProgress();
+  controller.progress.conversationsIndexed++;
 }

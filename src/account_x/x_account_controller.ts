@@ -12,7 +12,6 @@ import { Agent } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
 import { getResourcesPath, getAccountDataPath } from "../util";
-import { getImageDataURI } from "../shared/utils/image-utils";
 import {
   XAccount,
   XJob,
@@ -59,9 +58,9 @@ import {
 
 // for building the static archive site
 import { saveArchive } from "./archive";
-import { indexUserIntoDB } from "./controller/index/indexUser";
-import { indexConversationIntoDB } from "./controller/index/indexConversation";
-import { indexTweetURLsIntoDB } from "./controller/index/indexTweetURLs";
+import { indexUser } from "./controller/index/indexUser";
+import { indexConversation } from "./controller/index/indexConversation";
+import { indexTweetURLs } from "./controller/index/indexTweetURLs";
 import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithMediaAndURLs";
 import { migrations } from "./controller/migrations";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
@@ -324,47 +323,15 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   indexTweetURLs(tweetLegacy: XAPILegacyTweet): void {
-    if (!this.db) {
-      this.initDB();
-    }
-    if (!this.db) {
-      log.error("XAccountController.indexTweetURLs: database not initialized");
-      return;
-    }
-
-    indexTweetURLsIntoDB(this.db, tweetLegacy);
+    return indexTweetURLs(this, tweetLegacy);
   }
 
   async indexUser(user: XAPIUser): Promise<void> {
-    if (!this.db) {
-      this.initDB();
-    }
-    if (!this.db) {
-      log.error("XAccountController.indexUser: database not initialized");
-      return;
-    }
-
-    await indexUserIntoDB(this.db, this.progress, getImageDataURI, user);
+    return indexUser(this, user);
   }
 
   indexConversation(conversation: XAPIConversation): void {
-    if (!this.db) {
-      this.initDB();
-    }
-    if (!this.db) {
-      log.error(
-        "XAccountController.indexConversation: database not initialized",
-      );
-      return;
-    }
-
-    indexConversationIntoDB(
-      this.db,
-      () => {
-        this.progress.conversationsIndexed++;
-      },
-      conversation,
-    );
+    return indexConversation(this, conversation);
   }
 
   async indexParseConversationsResponseData(
