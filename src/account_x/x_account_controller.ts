@@ -97,6 +97,7 @@ import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithM
 import { migrations } from "./controller/migrations";
 import { getMediaURL } from "./utils";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
+import { saveProfileImage } from "./controller/actions/saveProfileImage";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -494,10 +495,10 @@ export class XAccountController extends BaseAccountController<XProgress> {
         if (
           instructions.entries?.length == 2 &&
           instructions.entries[0].content.entryType ==
-            "TimelineTimelineCursor" &&
+          "TimelineTimelineCursor" &&
           instructions.entries[0].content.cursorType == "Top" &&
           instructions.entries[1].content.entryType ==
-            "TimelineTimelineCursor" &&
+          "TimelineTimelineCursor" &&
           instructions.entries[1].content.cursorType == "Bottom"
         ) {
           this.thereIsMore = false;
@@ -1665,26 +1666,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async saveProfileImage(url: string): Promise<void> {
-    try {
-      const response = await fetch(url, {});
-      if (!response.ok) {
-        log.warn(
-          "XAccountController.saveProfileImage: response not ok",
-          response.status,
-        );
-        return;
-      }
-      const buffer = await response.buffer();
-      const dataURI = `data:${response.headers.get("content-type")};base64,${buffer.toString("base64")}`;
-      log.info("XAccountController.saveProfileImage: got profile image!");
-
-      if (this.account) {
-        this.account.profileImageDataURI = dataURI;
-        saveXAccount(this.account);
-      }
-    } catch {
-      return;
-    }
+    return saveProfileImage(this, url);
   }
 
   async getLatestResponseData(): Promise<ResponseData | null> {
