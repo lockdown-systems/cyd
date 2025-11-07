@@ -9,7 +9,7 @@ import type { PlatformJob } from "../../shared_types/common";
 export abstract class BaseAccountController<TProgress = unknown> {
   protected accountUUID: string = "";
   protected accountID: number = 0;
-  protected accountDataPath: string = "";
+  accountDataPath: string = "";
   protected thereIsMore: boolean = false;
 
   // Making this public so it can be accessed in tests

@@ -1,6 +1,5 @@
 import path from "path";
 import fs from "fs";
-import os from "os";
 
 import fetch from "node-fetch";
 import unzipper from "unzipper";
@@ -9,14 +8,12 @@ import { app, session } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
-import { glob } from "glob";
 
 import { Agent } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
 import {
   getResourcesPath,
-  getDataPath,
   getAccountDataPath,
   getTimestampDaysAgo,
 } from "../util";
@@ -59,12 +56,10 @@ import { BaseAccountController } from "../shared/controllers/BaseAccountControll
 import {
   XJobRow,
   XTweetRow,
-  XTweetMediaRow,
   XConversationRow,
   // X API types
   XAPILegacyTweet,
   XAPILegacyTweetMedia,
-  XAPILegacyURL,
   XAPIUserCore,
   XAPIData,
   XAPIBookmarksData,
@@ -75,13 +70,7 @@ import {
   XAPIConversationTimeline,
   XAPIMessage,
   XAPIUser,
-  XArchiveAccount,
   XArchiveTweet,
-  XArchiveTweetContainer,
-  isXArchiveTweetContainer,
-  XArchiveLike,
-  XArchiveLikeContainer,
-  isXArchiveLikeContainer,
   isXAPIBookmarksData,
   isXAPIError,
   isXAPIData,
@@ -100,6 +89,13 @@ import { BlueskyService } from "./controller/bluesky/BlueskyService";
 import { saveProfileImage } from "./controller/actions/saveProfileImage";
 import { getLastFinishedJob } from "./controller/jobs/getLastFinishedJob";
 import { createJobs } from "./controller/jobs/createJobs";
+import { unzipXArchive } from "./controller/archive/unzipXArchive";
+import { deleteUnzippedXArchive } from "./controller/archive/deleteUnzippedXArchive";
+import { verifyXArchive } from "./controller/archive/verifyXArchive";
+import { importXArchive } from "./controller/archive/importXArchive";
+import { importXArchiveMedia } from "./controller/archive/importXArchiveMedia";
+import { saveXArchiveMedia } from "./controller/archive/saveXArchiveMedia";
+import { importXArchiveURLs } from "./controller/archive/importXArchiveURLs";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -454,10 +450,10 @@ export class XAccountController extends BaseAccountController<XProgress> {
         if (
           instructions.entries?.length == 2 &&
           instructions.entries[0].content.entryType ==
-          "TimelineTimelineCursor" &&
+            "TimelineTimelineCursor" &&
           instructions.entries[0].content.cursorType == "Top" &&
           instructions.entries[1].content.entryType ==
-          "TimelineTimelineCursor" &&
+            "TimelineTimelineCursor" &&
           instructions.entries[1].content.cursorType == "Bottom"
         ) {
           this.thereIsMore = false;
@@ -1640,597 +1636,27 @@ export class XAccountController extends BaseAccountController<XProgress> {
   // Unzip twitter archive to the account data folder using unzipper
   // Return unzipped path if success, else null.
   async unzipXArchive(archiveZipPath: string): Promise<string | null> {
-    if (!this.db) {
-      log.warn(`XAccountController.unzipXArchive: db does not exist, creating`);
-      this.initDB();
-    }
-
-    if (!this.account) {
-      log.warn(
-        `XAccountController.unzipXArchive: account does not exist, bailing`,
-      );
-      return null;
-    }
-
-    const unzippedPath = path.join(
-      getAccountDataPath("X", this.account.username),
-      "tmp",
-    );
-
-    const archiveZip = await unzipper.Open.file(archiveZipPath);
-    await archiveZip.extract({ path: unzippedPath });
-
-    log.info(`XAccountController.unzipXArchive: unzipped to ${unzippedPath}`);
-
-    return unzippedPath;
+    return unzipXArchive(this, archiveZipPath);
   }
 
-  // Delete the unzipped X archive once the build is completed
   async deleteUnzippedXArchive(archivePath: string): Promise<void> {
-    fs.rm(archivePath, { recursive: true, force: true }, (err) => {
-      if (err) {
-        log.error(
-          `XAccountController.deleteUnzippedXArchive: Error occured while deleting unzipped folder: ${err}`,
-        );
-      }
-    });
+    return deleteUnzippedXArchive(archivePath);
   }
 
   // Return null on success, and a string (error message) on error
   async verifyXArchive(archivePath: string): Promise<string | null> {
-    // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
-    const archiveContents = fs.readdirSync(archivePath);
-    if (
-      archiveContents.length === 1 &&
-      fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()
-    ) {
-      archivePath = path.join(archivePath, archiveContents[0]);
-    }
-
-    const foldersToCheck = [archivePath, path.join(archivePath, "data")];
-
-    // Make sure folders exist
-    for (let i = 0; i < foldersToCheck.length; i++) {
-      if (!fs.existsSync(foldersToCheck[i])) {
-        log.error(
-          `XAccountController.verifyXArchive: folder does not exist: ${foldersToCheck[i]}`,
-        );
-        return `The folder ${foldersToCheck[i]} doesn't exist.`;
-      }
-    }
-
-    // Make sure account.js exists and is readable
-    const accountPath = path.join(archivePath, "data", "account.js");
-    if (!fs.existsSync(accountPath)) {
-      log.error(
-        `XAccountController.verifyXArchive: file does not exist: ${accountPath}`,
-      );
-      return `The file ${accountPath} doesn't exist.`;
-    }
-    try {
-      fs.accessSync(accountPath, fs.constants.R_OK);
-    } catch {
-      log.error(
-        `XAccountController.verifyXArchive: file is not readable: ${accountPath}`,
-      );
-      return `The file ${accountPath} is not readable.`;
-    }
-
-    // Make sure the account.js file belongs to the right account
-    let username;
-    try {
-      const accountFile = fs.readFileSync(accountPath, "utf8");
-      const accountData: XArchiveAccount[] = JSON.parse(
-        accountFile.slice("window.YTD.account.part0 = ".length),
-      );
-      if (accountData.length !== 1) {
-        log.error(
-          `XAccountController.verifyXArchive: account.js has more than one account`,
-        );
-        return `The account.js file has more than one account.`;
-      }
-
-      // Store the username for later use
-      username = accountData[0].account.username;
-
-      // We run this check only if we're not in archive only mode
-      if (username !== this.account?.username && !this.account?.archiveOnly) {
-        log.info(
-          `XAccountController.verifyXArchive: username: ${this.account?.username}`,
-        );
-        log.error(
-          `XAccountController.verifyXArchive: account.js does not belong to the right account`,
-        );
-        return `This archive is for @${username}, not @${this.account?.username}.`;
-      }
-    } catch {
-      return "Error parsing JSON in account.js";
-    }
-
-    // If this is an archive-only account (which uses temporary usernames) and we now have the real username,
-    // check if we need to rename the account directory or if it already exists with the correct name
-    console.log(
-      `XAccountController.verifyXArchive: archiveOnly: ${this.account?.archiveOnly}`,
-    );
-    if (this.account?.archiveOnly) {
-      // Close the database before any directory operations
-      if (this.db) {
-        this.db.close();
-        this.db = null;
-      }
-
-      // `getAccountDataPath` creates the account data path if it doesn't exist
-      const oldAccountDataPath = getAccountDataPath("X", this.account.username);
-      // We manually build the path here so that we can check if the folder exists
-      const dataPath = getDataPath();
-      const xDataPath = path.join(dataPath, "X");
-      const newAccountDataPath = path.join(xDataPath, username);
-
-      log.info(
-        `XAccountController.verifyXArchive: oldAccountDataPath: ${oldAccountDataPath}`,
-      );
-      log.info(
-        `XAccountController.verifyXArchive: newAccountDataPath: ${newAccountDataPath}`,
-      );
-
-      // Check if the folder already exists with the correct username
-      if (fs.existsSync(newAccountDataPath)) {
-        log.info(
-          `XAccountController.verifyXArchive: Folder already exists with correct username, using existing folder: ${newAccountDataPath}`,
-        );
-
-        // Update the archivePath to point to the correct location in the existing folder
-        // If archivePath was pointing to a tmp directory, update it to the new tmp directory
-        const oldTmpPath = path.join(oldAccountDataPath, "tmp");
-
-        log.info(
-          `XAccountController.verifyXArchive: archivePath: ${archivePath}`,
-        );
-        log.info(
-          `XAccountController.verifyXArchive: oldTmpPath: ${oldTmpPath}`,
-        );
-        log.info(
-          `XAccountController.verifyXArchive: archivePath === oldTmpPath: ${archivePath === oldTmpPath}`,
-        );
-
-        // When using an existing folder, we need to copy the archive contents into the account's data directory
-        // Create a tmp directory to hold the archive contents temporarily
-        const tmpPath = path.join(newAccountDataPath, "tmp");
-        if (!fs.existsSync(tmpPath)) {
-          fs.mkdirSync(tmpPath, { recursive: true });
-        }
-
-        // Copy the archive contents to the tmp directory
-        const copyRecursive = (src: string, dest: string) => {
-          const items = fs.readdirSync(src);
-          for (const item of items) {
-            const srcPath = path.join(src, item);
-            const destPath = path.join(dest, item);
-
-            if (fs.lstatSync(srcPath).isDirectory()) {
-              if (!fs.existsSync(destPath)) {
-                fs.mkdirSync(destPath, { recursive: true });
-              }
-              copyRecursive(srcPath, destPath);
-            } else {
-              fs.copyFileSync(srcPath, destPath);
-            }
-          }
-        };
-
-        // Copy the original archive contents to the tmp directory
-        copyRecursive(archivePath, tmpPath);
-
-        // Update archivePath to point to the tmp directory where we copied the contents
-        archivePath = tmpPath;
-        log.info(
-          `XAccountController.verifyXArchive: Copied archive contents to tmp directory: ${archivePath}`,
-        );
-
-        // Update the account username in the database
-        this.account.username = username;
-        await this.updateAccountUsername(username);
-
-        // Use the existing path
-        this.accountDataPath = newAccountDataPath;
-        this.initDB();
-
-        this.refreshAccount();
-      } else {
-        // Only rename if the new folder doesn't already exist
-        // `getAccountDataPath` creates the account data path if it doesn't exist
-        const newAccountDataPath = getAccountDataPath("X", username);
-        try {
-          // Move all content recursively from old directory to new directory
-          if (fs.existsSync(oldAccountDataPath)) {
-            const moveAllContent = (src: string, dest: string) => {
-              const items = fs.readdirSync(src);
-              for (const item of items) {
-                const srcPath = path.join(src, item);
-                const destPath = path.join(dest, item);
-
-                if (fs.lstatSync(srcPath).isDirectory()) {
-                  if (!fs.existsSync(destPath)) {
-                    fs.mkdirSync(destPath, { recursive: true });
-                  }
-                  moveAllContent(srcPath, destPath);
-                  fs.rmdirSync(srcPath); // Remove empty directory
-                } else {
-                  fs.renameSync(srcPath, destPath);
-                }
-              }
-            };
-
-            moveAllContent(oldAccountDataPath, newAccountDataPath);
-            log.info(
-              `XAccountController.verifyXArchive: Moved all content from ${oldAccountDataPath} to ${newAccountDataPath}`,
-            );
-
-            // Update the archivePath to point to the new location
-            const oldTmpPath = path.join(oldAccountDataPath, "tmp");
-            const newTmpPath = path.join(newAccountDataPath, "tmp");
-            if (archivePath === oldTmpPath) {
-              archivePath = newTmpPath;
-              log.info(
-                `XAccountController.verifyXArchive: Updated archivePath from ${oldTmpPath} to ${newTmpPath}`,
-              );
-            }
-
-            // Delete the old deleted_account_ folder after successful migration
-            try {
-              if (fs.existsSync(oldAccountDataPath)) {
-                // Check if the directory is now empty (all content should have been moved)
-                const remainingItems = fs.readdirSync(oldAccountDataPath);
-                if (remainingItems.length === 0) {
-                  fs.rmdirSync(oldAccountDataPath);
-                  log.info(
-                    `XAccountController.verifyXArchive: Deleted empty old directory: ${oldAccountDataPath}`,
-                  );
-                } else {
-                  log.warn(
-                    `XAccountController.verifyXArchive: Old directory not empty, skipping deletion: ${oldAccountDataPath} (${remainingItems.length} items remaining)`,
-                  );
-                }
-              }
-            } catch (error) {
-              log.error(
-                `XAccountController.verifyXArchive: Failed to delete old directory ${oldAccountDataPath}: ${error}`,
-              );
-              // Don't fail the import if cleanup fails
-            }
-          }
-
-          log.info(
-            `XAccountController.verifyXArchive: Renamed account directory from ${this.account.username} to ${username}`,
-          );
-
-          // Update the account username in the database
-          this.account.username = username;
-          await this.updateAccountUsername(username);
-
-          // Reinitialize the database connection to point to the new path
-          this.accountDataPath = newAccountDataPath;
-          this.initDB();
-
-          this.refreshAccount();
-        } catch (error) {
-          log.error(
-            `XAccountController.verifyXArchive: Failed to rename account directory: ${error}`,
-          );
-          // Continue with import even if rename fails
-        }
-      }
-    }
-
-    return null;
+    return verifyXArchive(this, archivePath);
   }
 
-  // Return null on success, and a string (error message) on error
   async importXArchive(
     archivePath: string,
     dataType: string,
   ): Promise<XImportArchiveResponse> {
-    let importCount = 0;
-    let skipCount = 0;
-
-    // If archivePath contains just one folder and no files, update archivePath to point to that inner folder
-    const archiveContents = fs.readdirSync(archivePath);
-    if (
-      archiveContents.length === 1 &&
-      fs.lstatSync(path.join(archivePath, archiveContents[0])).isDirectory()
-    ) {
-      archivePath = path.join(archivePath, archiveContents[0]);
-    }
-
-    // Load the username
-    let username: string;
-    try {
-      const accountFile = fs.readFileSync(
-        path.join(archivePath, "data", "account.js"),
-        "utf8",
-      );
-      const accountData: XArchiveAccount[] = JSON.parse(
-        accountFile.slice("window.YTD.account.part0 = ".length),
-      );
-      username = accountData[0].account.username;
-    } catch {
-      return {
-        status: "error",
-        errorMessage: "Error parsing JSON in account.js",
-        importCount: importCount,
-        skipCount: skipCount,
-        updatedArchivePath: archivePath,
-      };
-    }
-
-    // Import tweets
-    if (dataType == "tweets") {
-      const tweetsFilenames = await glob(
-        [
-          path.join(archivePath, "data", "tweet.js"),
-          path.join(archivePath, "data", "tweets.js"),
-          path.join(archivePath, "data", "tweet-part*.js"),
-          path.join(archivePath, "data", "tweets-part*.js"),
-        ],
-        {
-          windowsPathsNoEscape: os.platform() == "win32",
-        },
-      );
-      if (tweetsFilenames.length === 0) {
-        return {
-          status: "error",
-          errorMessage: "No tweets files found",
-          importCount: importCount,
-          skipCount: skipCount,
-          updatedArchivePath: archivePath,
-        };
-      }
-
-      for (let i = 0; i < tweetsFilenames.length; i++) {
-        // Load the data
-        // New archives use XArchiveTweetContainer[], old archives use XArchiveTweet[]
-        let tweetsData: XArchiveTweet[] | XArchiveTweetContainer[];
-        try {
-          const tweetsFile = fs.readFileSync(tweetsFilenames[i], "utf8");
-          tweetsData = JSON.parse(tweetsFile.slice(tweetsFile.indexOf("[")));
-        } catch (e) {
-          log.error(
-            `XAccountController.importXArchive: Error parsing JSON in ${tweetsFilenames[i]}:`,
-            e,
-          );
-          return {
-            status: "error",
-            errorMessage: "Error parsing JSON in tweets.js",
-            importCount: importCount,
-            skipCount: skipCount,
-            updatedArchivePath: archivePath,
-          };
-        }
-
-        // Loop through the tweets and add them to the database
-        try {
-          tweetsData.forEach(async (tweetContainer) => {
-            let tweet: XArchiveTweet;
-            if (isXArchiveTweetContainer(tweetContainer)) {
-              tweet = tweetContainer.tweet;
-            } else {
-              tweet = tweetContainer;
-            }
-
-            // Check if tweet has media and call importXArchiveMedia
-            let hasMedia: boolean = false;
-            if (
-              tweet.extended_entities?.media &&
-              tweet.extended_entities?.media?.length
-            ) {
-              hasMedia = true;
-              await this.importXArchiveMedia(tweet, archivePath);
-            }
-
-            // Check if tweet has urls and call importXArchiveURLs
-            if (tweet.entities?.urls && tweet.entities?.urls?.length) {
-              this.importXArchiveURLs(tweet);
-            }
-
-            // Import it
-            exec(
-              this.db,
-              "INSERT OR REPLACE INTO tweet (username, tweetID, createdAt, likeCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              [
-                username,
-                tweet.id_str,
-                new Date(tweet.created_at),
-                tweet.favorite_count,
-                tweet.retweet_count,
-                tweet.favorited ? 1 : 0,
-                tweet.retweeted ? 1 : 0,
-                0,
-                tweet.full_text,
-                `${username}/status/${tweet.id_str}`,
-                hasMedia ? 1 : 0,
-                tweet.in_reply_to_status_id_str ? 1 : 0,
-                tweet.in_reply_to_status_id_str,
-                tweet.in_reply_to_user_id_str,
-                new Date(),
-              ],
-            );
-            importCount++;
-          });
-        } catch (e) {
-          return {
-            status: "error",
-            errorMessage: "Error importing tweets: " + e,
-            importCount: importCount,
-            skipCount: skipCount,
-            updatedArchivePath: archivePath,
-          };
-        }
-      }
-
-      return {
-        status: "success",
-        errorMessage: "",
-        importCount: importCount,
-        skipCount: skipCount,
-        updatedArchivePath: archivePath,
-      };
-    }
-
-    // Import likes
-    else if (dataType == "likes") {
-      const likesFilenames = await glob(
-        [
-          path.join(archivePath, "data", "like.js"),
-          path.join(archivePath, "data", "likes.js"),
-          path.join(archivePath, "data", "like-part*.js"),
-          path.join(archivePath, "data", "likes-part*.js"),
-        ],
-        {
-          windowsPathsNoEscape: os.platform() == "win32",
-        },
-      );
-      if (likesFilenames.length === 0) {
-        return {
-          status: "error",
-          errorMessage: "No likes files found",
-          importCount: importCount,
-          skipCount: skipCount,
-          updatedArchivePath: archivePath,
-        };
-      }
-
-      for (let i = 0; i < likesFilenames.length; i++) {
-        // Load the data
-        let likesData: XArchiveLike[] | XArchiveLikeContainer[];
-        try {
-          const likesFile = fs.readFileSync(likesFilenames[i], "utf8");
-          likesData = JSON.parse(likesFile.slice(likesFile.indexOf("[")));
-        } catch (e) {
-          log.error(
-            `XAccountController.importXArchive: Error parsing JSON in ${likesFilenames[i]}:`,
-            e,
-          );
-          return {
-            status: "error",
-            errorMessage: "Error parsing JSON in like.js",
-            importCount: importCount,
-            skipCount: skipCount,
-            updatedArchivePath: archivePath,
-          };
-        }
-
-        // Loop through the likes and add them to the database
-        try {
-          likesData.forEach((likeContainer) => {
-            let like: XArchiveLike;
-            if (isXArchiveLikeContainer(likeContainer)) {
-              like = likeContainer.like;
-            } else {
-              like = likeContainer;
-            }
-
-            // Is this like already there?
-            const existingTweet = exec(
-              this.db,
-              "SELECT * FROM tweet WHERE tweetID = ?",
-              [like.tweetId],
-              "get",
-            ) as XTweetRow;
-            if (existingTweet) {
-              if (existingTweet.isLiked) {
-                skipCount++;
-              } else {
-                // Set isLiked to true
-                exec(
-                  this.db,
-                  "UPDATE tweet SET isLiked = ? WHERE tweetID = ?",
-                  [1, like.tweetId],
-                );
-                importCount++;
-              }
-            } else {
-              // Import it
-              const url = new URL(like.expandedUrl);
-              let path = url.pathname + url.search + url.hash;
-              if (path.startsWith("/")) {
-                path = path.substring(1);
-              }
-              exec(
-                this.db,
-                "INSERT INTO tweet (tweetID, isLiked, text, path, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?)",
-                [like.tweetId, 1, like.fullText, path, new Date()],
-              );
-              importCount++;
-            }
-          });
-        } catch (e) {
-          return {
-            status: "error",
-            errorMessage: "Error importing tweets: " + e,
-            importCount: importCount,
-            skipCount: skipCount,
-            updatedArchivePath: archivePath,
-          };
-        }
-      }
-
-      return {
-        status: "success",
-        errorMessage: "",
-        importCount: importCount,
-        skipCount: skipCount,
-        updatedArchivePath: archivePath,
-      };
-    }
-
-    return {
-      status: "error",
-      errorMessage: "Invalid data type.",
-      importCount: importCount,
-      skipCount: skipCount,
-      updatedArchivePath: archivePath,
-    };
+    return importXArchive(this, archivePath, dataType);
   }
 
   async importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
-    // Loop over all media items
-    tweet.extended_entities?.media?.forEach(
-      async (media: XAPILegacyTweetMedia) => {
-        const existingMedia = exec(
-          this.db,
-          "SELECT * FROM tweet_media WHERE mediaID = ?",
-          [media.id_str],
-          "get",
-        ) as XTweetMediaRow;
-        if (existingMedia) {
-          log.debug(
-            `XAccountController.importXArchiveMedia: media already exists: ${media.id_str}`,
-          );
-          return;
-        }
-        const filename = await this.saveXArchiveMedia(
-          tweet.id_str,
-          media,
-          archivePath,
-        );
-        if (filename) {
-          // Index media information in tweet_media table
-          exec(
-            this.db,
-            "INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [
-              media.id_str,
-              media.type,
-              media.url,
-              filename,
-              media.indices?.[0],
-              media.indices?.[1],
-              tweet.id_str,
-            ],
-          );
-        }
-      },
-    );
+    return importXArchiveMedia(this, tweet, archivePath);
   }
 
   async saveXArchiveMedia(
@@ -2238,90 +1664,11 @@ export class XAccountController extends BaseAccountController<XProgress> {
     media: XAPILegacyTweetMedia,
     archivePath: string,
   ): Promise<string | null> {
-    if (!this.account) {
-      throw new Error("Account not found");
-    }
-
-    log.info(
-      `XAccountController.saveXArchiveMedia: saving media: ${JSON.stringify(media)}`,
-    );
-
-    const mediaURL = getMediaURL(media);
-    const mediaExtension = mediaURL.substring(mediaURL.lastIndexOf(".") + 1);
-    const filename = `${media["id_str"]}.${mediaExtension}`;
-
-    let archiveMediaFilename = null;
-    if (
-      (media.type === "video" || media.type === "animated_gif") &&
-      media.video_info?.variants
-    ) {
-      // For videos, find the highest quality MP4 variant
-      const mp4Variants = media.video_info.variants
-        .filter((v) => v.content_type === "video/mp4")
-        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-
-      if (mp4Variants.length > 0) {
-        const highestQualityVariant = mp4Variants[0];
-        const videoFilename = highestQualityVariant.url
-          .split("/")
-          .pop()
-          ?.split("?")[0];
-        if (videoFilename) {
-          archiveMediaFilename = path.join(
-            archivePath,
-            "data",
-            "tweets_media",
-            `${tweetID}-${videoFilename}`,
-          );
-        }
-      }
-    } else {
-      // For non-videos
-      archiveMediaFilename = path.join(
-        archivePath,
-        "data",
-        "tweets_media",
-        `${tweetID}-${mediaURL.substring(mediaURL.lastIndexOf("/") + 1)}`,
-      );
-    }
-
-    // If file doesn't exist in archive, don't save information in db
-    if (!archiveMediaFilename || !fs.existsSync(archiveMediaFilename)) {
-      log.info(
-        `XAccountController.saveXArchiveMedia: media file not found: ${archiveMediaFilename}`,
-      );
-      return null;
-    }
-
-    // Create path to store tweet media if it doesn't exist already
-    const outputPath = await this.getMediaPath();
-    if (!fs.existsSync(outputPath)) {
-      fs.mkdirSync(outputPath);
-    }
-
-    // Copy media from archive
-    fs.copyFileSync(archiveMediaFilename, path.join(outputPath, filename));
-
-    return filename;
+    return saveXArchiveMedia(this, tweetID, media, archivePath);
   }
 
   importXArchiveURLs(tweet: XArchiveTweet) {
-    // Loop over all URL items
-    tweet?.entities?.urls.forEach((url: XAPILegacyURL) => {
-      // Index url information in tweet_url table
-      exec(
-        this.db,
-        "INSERT OR REPLACE INTO tweet_url (url, displayURL, expandedURL, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?)",
-        [
-          url.url,
-          url.display_url,
-          url.expanded_url,
-          url.indices?.[0],
-          url.indices?.[1],
-          tweet.id_str,
-        ],
-      );
-    });
+    return importXArchiveURLs(this, tweet);
   }
 
   async getCookie(hostname: string, name: string): Promise<string | null> {
