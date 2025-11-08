@@ -31,7 +31,6 @@ import {
 import {
   runMigrations,
   getAccount,
-  saveXAccount,
   deleteConfig as globalDeleteConfig,
   deleteConfigLike as globalDeleteConfigLike,
 } from "../database";
@@ -56,7 +55,9 @@ import { indexTweetURLs } from "./controller/index/indexTweetURLs";
 import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithMediaAndURLs";
 import { migrations } from "./controller/migrations";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
-import { saveProfileImage } from "./controller/actions/saveProfileImage";
+import { saveProfileImage } from "./controller/account/saveProfileImage";
+import { updateAccountUsername } from "./controller/account/updateAccountUsername";
+import { initArchiveOnlyMode } from "./controller/account/initArchiveOnlyMode";
 import { getLastFinishedJob } from "./controller/jobs/getLastFinishedJob";
 import { createJobs } from "./controller/jobs/createJobs";
 import { unzipXArchive } from "./controller/x_archive/unzipXArchive";
@@ -551,11 +552,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async updateAccountUsername(newUsername: string): Promise<void> {
-    // Update the username in the main database
-    if (this.account) {
-      this.account.username = newUsername;
-      saveXAccount(this.account);
-    }
+    return updateAccountUsername(this, newUsername);
   }
   async getMediaPath(): Promise<string> {
     if (!this.account || !this.account.username) {
@@ -593,28 +590,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return this.blueskyService;
   }
 
-  // Set archiveOnly to true, and set a temporary username
   async initArchiveOnlyMode(): Promise<XAccount> {
-    if (!this.account) {
-      log.warn(
-        `XAccountController.initArchiveOnlyMode: account does not exist, bailing`,
-      );
-      throw new Error("Account not found");
-    }
-
-    if (!this.account.username) {
-      const uuid = crypto.randomUUID();
-      const tempUsername = `deleted_account_${uuid.slice(0, 8)}`;
-      this.account.username = tempUsername;
-      log.info(
-        "XAccountController.initArchiveOnlyMode: temporary username: ",
-        tempUsername,
-      );
-    }
-
-    this.account.archiveOnly = true;
-    saveXAccount(this.account);
-
-    return this.account;
+    return initArchiveOnlyMode(this);
   }
 }
