@@ -49,54 +49,17 @@ import {
 } from "./types";
 
 // for building the static archive site
-import { indexUser } from "./controller/index/indexUser";
-import { indexConversation } from "./controller/index/indexConversation";
-import { indexTweetURLs } from "./controller/index/indexTweetURLs";
+import * as Index from "./controller/index";
+import * as Deletion from "./controller/deletion";
+import * as Archive from "./controller/archive";
+import * as XArchive from "./controller/x_archive";
+import * as Stats from "./controller/stats";
+import * as Jobs from "./controller/jobs";
+import * as Account from "./controller/account";
 import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithMediaAndURLs";
 import { migrations } from "./controller/migrations";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
-import { saveProfileImage } from "./controller/account/saveProfileImage";
-import { updateAccountUsername } from "./controller/account/updateAccountUsername";
-import { initArchiveOnlyMode } from "./controller/account/initArchiveOnlyMode";
-import { getLastFinishedJob } from "./controller/jobs/getLastFinishedJob";
-import { createJobs } from "./controller/jobs/createJobs";
-import { unzipXArchive } from "./controller/x_archive/unzipXArchive";
-import { deleteUnzippedXArchive } from "./controller/x_archive/deleteUnzippedXArchive";
-import { verifyXArchive } from "./controller/x_archive/verifyXArchive";
-import { importXArchive } from "./controller/x_archive/importXArchive";
-import { importXArchiveMedia } from "./controller/x_archive/importXArchiveMedia";
-import { saveXArchiveMedia } from "./controller/x_archive/saveXArchiveMedia";
-import { importXArchiveURLs } from "./controller/x_archive/importXArchiveURLs";
-import { getProgressInfo } from "./controller/stats/getProgressInfo";
-import { getDatabaseStats } from "./controller/stats/getDatabaseStats";
-import { getDeleteReviewStats } from "./controller/stats/getDeleteReviewStats";
-import { deleteTweetsStart } from "./controller/deletion/deleteTweetsStart";
-import { deleteTweetsCountNotArchived } from "./controller/deletion/deleteTweetsCountNotArchived";
-import { deleteRetweetsStart } from "./controller/deletion/deleteRetweetsStart";
-import { deleteLikesStart } from "./controller/deletion/deleteLikesStart";
-import { deleteBookmarksStart } from "./controller/deletion/deleteBookmarksStart";
-import { deleteTweet } from "./controller/deletion/deleteTweet";
-import { deleteDMsMarkDeleted } from "./controller/deletion/deleteDMsMarkDeleted";
-import { deleteDMsMarkAllDeleted } from "./controller/deletion/deleteDMsMarkAllDeleted";
-import { indexTweet } from "./controller/index/indexTweet";
-import { indexTweetMedia } from "./controller/index/indexTweetMedia";
-import { indexParseTweetsResponseData } from "./controller/index/indexParseTweetsResponseData";
-import { indexParseTweets } from "./controller/index/indexParseTweets";
-import { indexParseConversationsResponseData } from "./controller/index/indexParseConversationsResponseData";
-import { indexParseConversations } from "./controller/index/indexParseConversations";
-import { indexIsThereMore } from "./controller/index/indexIsThereMore";
-import { resetThereIsMore } from "./controller/index/resetThereIsMore";
-import { indexMessagesStart } from "./controller/index/indexMessagesStart";
-import { indexMessage } from "./controller/index/indexMessage";
-import { indexParseMessagesResponseData } from "./controller/index/indexParseMessagesResponseData";
-import { indexParseMessages } from "./controller/index/indexParseMessages";
-import { indexConversationFinished } from "./controller/index/indexConversationFinished";
-import { saveTweetMedia } from "./controller/index/saveTweetMedia";
-import { archiveTweetsStart } from "./controller/archive/archiveTweetsStart";
-import { archiveTweetsOutputPath } from "./controller/archive/archiveTweetsOutputPath";
-import { archiveTweet } from "./controller/archive/archiveTweet";
-import { archiveTweetCheckDate } from "./controller/archive/archiveTweetCheckDate";
-import { archiveBuild } from "./controller/archive/archiveBuild";
+
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
   public account: XAccount | null = null;
@@ -140,7 +103,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
       ) {
         const urlParts = details.url.split("/");
         const conversationID = urlParts[urlParts.length - 2];
-        deleteDMsMarkDeleted(this, conversationID);
+        Deletion.deleteDMsMarkDeleted(this, conversationID);
       }
     });
   }
@@ -249,11 +212,11 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   createJobs(jobTypes: string[]): XJob[] {
-    return createJobs(this, jobTypes);
+    return Jobs.createJobs(this, jobTypes);
   }
 
   async getLastFinishedJob(jobType: string): Promise<XJob | null> {
-    return getLastFinishedJob(this, jobType);
+    return Jobs.getLastFinishedJob(this, jobType);
   }
 
   // Converters
@@ -283,130 +246,130 @@ export class XAccountController extends BaseAccountController<XProgress> {
     userCore: XAPIUserCore,
     tweetLegacy: XAPILegacyTweet,
   ): void {
-    return indexTweet(this, responseIndex, userCore, tweetLegacy);
+    return Index.indexTweet(this, responseIndex, userCore, tweetLegacy);
   }
 
   indexParseTweetsResponseData(responseIndex: number): boolean {
-    return indexParseTweetsResponseData(this, responseIndex);
+    return Index.indexParseTweetsResponseData(this, responseIndex);
   }
 
   async indexParseTweets(): Promise<XProgress> {
-    return indexParseTweets(this);
+    return Index.indexParseTweets(this);
   }
 
   async saveTweetMedia(mediaPath: string, filename: string): Promise<string> {
-    return saveTweetMedia(this, mediaPath, filename);
+    return Index.saveTweetMedia(this, mediaPath, filename);
   }
 
   indexTweetMedia(tweetLegacy: XAPILegacyTweet): void {
-    return indexTweetMedia(this, tweetLegacy);
+    return Index.indexTweetMedia(this, tweetLegacy);
   }
 
   indexTweetURLs(tweetLegacy: XAPILegacyTweet): void {
-    return indexTweetURLs(this, tweetLegacy);
+    return Index.indexTweetURLs(this, tweetLegacy);
   }
 
   async indexUser(user: XAPIUser): Promise<void> {
-    return indexUser(this, user);
+    return Index.indexUser(this, user);
   }
 
   indexConversation(conversation: XAPIConversation): void {
-    return indexConversation(this, conversation);
+    return Index.indexConversation(this, conversation);
   }
 
   async indexParseConversationsResponseData(
     responseIndex: number,
   ): Promise<boolean> {
-    return indexParseConversationsResponseData(this, responseIndex);
+    return Index.indexParseConversationsResponseData(this, responseIndex);
   }
 
   async indexParseConversations(): Promise<XProgress> {
-    return indexParseConversations(this);
+    return Index.indexParseConversations(this);
   }
 
   async indexIsThereMore(): Promise<boolean> {
-    return indexIsThereMore(this);
+    return Index.indexIsThereMore(this);
   }
 
   async resetThereIsMore(): Promise<void> {
-    return resetThereIsMore(this);
+    return Index.resetThereIsMore(this);
   }
 
   async indexMessagesStart(): Promise<XIndexMessagesStartResponse> {
-    return indexMessagesStart(this);
+    return Index.indexMessagesStart(this);
   }
 
   indexMessage(message: XAPIMessage): void {
-    return indexMessage(this, message);
+    return Index.indexMessage(this, message);
   }
 
   async indexParseMessagesResponseData(
     responseIndex: number,
   ): Promise<boolean> {
-    return indexParseMessagesResponseData(this, responseIndex);
+    return Index.indexParseMessagesResponseData(this, responseIndex);
   }
 
   async indexParseMessages(): Promise<XProgress> {
-    return indexParseMessages(this);
+    return Index.indexParseMessages(this);
   }
 
   async indexConversationFinished(conversationID: string): Promise<void> {
-    return indexConversationFinished(this, conversationID);
+    return Index.indexConversationFinished(this, conversationID);
   }
 
   // When you start archiving tweets you:
   // - Return the URLs path, output path, and all expected filenames
   async archiveTweetsStart(): Promise<XArchiveStartResponse> {
-    return archiveTweetsStart(this);
+    return Archive.archiveTweetsStart(this);
   }
 
   async archiveTweetsOutputPath(): Promise<string> {
-    return archiveTweetsOutputPath(this);
+    return Archive.archiveTweetsOutputPath(this);
   }
 
   async archiveTweet(tweetID: string): Promise<void> {
-    return archiveTweet(this, tweetID);
+    return Archive.archiveTweet(this, tweetID);
   }
 
   async archiveTweetCheckDate(tweetID: string): Promise<void> {
-    return archiveTweetCheckDate(this, tweetID);
+    return Archive.archiveTweetCheckDate(this, tweetID);
   }
 
   async archiveBuild(): Promise<boolean | void> {
-    return archiveBuild(this);
+    return Archive.archiveBuild(this);
   }
 
   // When you start deleting tweets, return a list of tweets to delete
   async deleteTweetsStart(): Promise<XDeleteTweetsStartResponse> {
-    return deleteTweetsStart(this);
+    return Deletion.deleteTweetsStart(this);
   }
 
   async deleteTweetsCountNotArchived(total: boolean): Promise<number> {
-    return deleteTweetsCountNotArchived(this, total);
+    return Deletion.deleteTweetsCountNotArchived(this, total);
   }
 
   async deleteRetweetsStart(): Promise<XDeleteTweetsStartResponse> {
-    return deleteRetweetsStart(this);
+    return Deletion.deleteRetweetsStart(this);
   }
 
   async deleteLikesStart(): Promise<XDeleteTweetsStartResponse> {
-    return deleteLikesStart(this);
+    return Deletion.deleteLikesStart(this);
   }
 
   async deleteBookmarksStart(): Promise<XDeleteTweetsStartResponse> {
-    return deleteBookmarksStart(this);
+    return Deletion.deleteBookmarksStart(this);
   }
 
   async deleteTweet(tweetID: string, deleteType: string): Promise<void> {
-    return deleteTweet(this, tweetID, deleteType);
+    return Deletion.deleteTweet(this, tweetID, deleteType);
   }
 
   deleteDMsMarkDeleted(conversationID: string): void {
-    return deleteDMsMarkDeleted(this, conversationID);
+    return Deletion.deleteDMsMarkDeleted(this, conversationID);
   }
 
   async deleteDMsMarkAllDeleted(): Promise<void> {
-    return deleteDMsMarkAllDeleted(this);
+    return Deletion.deleteDMsMarkAllDeleted(this);
   }
 
   async resetRateLimitInfo(): Promise<void> {
@@ -418,19 +381,19 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async getProgressInfo(): Promise<XProgressInfo> {
-    return getProgressInfo(this);
+    return Stats.getProgressInfo(this);
   }
 
   async getDatabaseStats(): Promise<XDatabaseStats> {
-    return getDatabaseStats(this);
+    return Stats.getDatabaseStats(this);
   }
 
   async getDeleteReviewStats(): Promise<XDeleteReviewStats> {
-    return getDeleteReviewStats(this);
+    return Stats.getDeleteReviewStats(this);
   }
 
   async saveProfileImage(url: string): Promise<void> {
-    return saveProfileImage(this, url);
+    return Account.saveProfileImage(this, url);
   }
 
   async getLatestResponseData(): Promise<ResponseData | null> {
@@ -445,27 +408,27 @@ export class XAccountController extends BaseAccountController<XProgress> {
   // Unzip twitter archive to the account data folder using unzipper
   // Return unzipped path if success, else null.
   async unzipXArchive(archiveZipPath: string): Promise<string | null> {
-    return unzipXArchive(this, archiveZipPath);
+    return XArchive.unzipXArchive(this, archiveZipPath);
   }
 
   async deleteUnzippedXArchive(archivePath: string): Promise<void> {
-    return deleteUnzippedXArchive(archivePath);
+    return XArchive.deleteUnzippedXArchive(archivePath);
   }
 
   // Return null on success, and a string (error message) on error
   async verifyXArchive(archivePath: string): Promise<string | null> {
-    return verifyXArchive(this, archivePath);
+    return XArchive.verifyXArchive(this, archivePath);
   }
 
   async importXArchive(
     archivePath: string,
     dataType: string,
   ): Promise<XImportArchiveResponse> {
-    return importXArchive(this, archivePath, dataType);
+    return XArchive.importXArchive(this, archivePath, dataType);
   }
 
   async importXArchiveMedia(tweet: XArchiveTweet, archivePath: string) {
-    return importXArchiveMedia(this, tweet, archivePath);
+    return XArchive.importXArchiveMedia(this, tweet, archivePath);
   }
 
   async saveXArchiveMedia(
@@ -473,11 +436,11 @@ export class XAccountController extends BaseAccountController<XProgress> {
     media: XAPILegacyTweetMedia,
     archivePath: string,
   ): Promise<string | null> {
-    return saveXArchiveMedia(this, tweetID, media, archivePath);
+    return XArchive.saveXArchiveMedia(this, tweetID, media, archivePath);
   }
 
   importXArchiveURLs(tweet: XArchiveTweet) {
-    return importXArchiveURLs(this, tweet);
+    return XArchive.importXArchiveURLs(this, tweet);
   }
 
   async getCookie(hostname: string, name: string): Promise<string | null> {
@@ -552,7 +515,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async updateAccountUsername(newUsername: string): Promise<void> {
-    return updateAccountUsername(this, newUsername);
+    return Account.updateAccountUsername(this, newUsername);
   }
   async getMediaPath(): Promise<string> {
     if (!this.account || !this.account.username) {
@@ -591,6 +554,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   async initArchiveOnlyMode(): Promise<XAccount> {
-    return initArchiveOnlyMode(this);
+    return Account.initArchiveOnlyMode(this);
   }
 }
