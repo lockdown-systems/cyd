@@ -19,8 +19,11 @@ export async function importXArchiveMedia(
   // Loop over all media items
   tweet.extended_entities?.media?.forEach(
     async (media: XAPILegacyTweetMedia) => {
+      if (!controller.db) {
+        controller.initDB();
+      }
       const existingMedia = exec(
-        controller.db,
+        controller.db!,
         "SELECT * FROM tweet_media WHERE mediaID = ?",
         [media.id_str],
         "get",
@@ -38,7 +41,7 @@ export async function importXArchiveMedia(
       if (filename) {
         // Index media information in tweet_media table
         exec(
-          controller.db,
+          controller.db!,
           "INSERT INTO tweet_media (mediaID, mediaType, url, filename, startIndex, endIndex, tweetID) VALUES (?, ?, ?, ?, ?, ?, ?)",
           [
             media.id_str,

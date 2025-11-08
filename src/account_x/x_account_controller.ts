@@ -1,9 +1,6 @@
 import path from "path";
-import fs from "fs";
 
-import unzipper from "unzipper";
-
-import { app, session } from "electron";
+import { session } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
@@ -11,16 +8,14 @@ import Database from "better-sqlite3";
 import { Agent } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
-import { getResourcesPath, getAccountDataPath } from "../util";
+import { getAccountDataPath } from "../util";
 import {
   XAccount,
   XJob,
   XProgress,
   emptyXProgress,
   XTweetItem,
-  XTweetItemArchive,
   XArchiveStartResponse,
-  emptyXArchiveStartResponse,
   XRateLimitInfo,
   emptyXRateLimitInfo,
   XIndexMessagesStartResponse,
@@ -37,7 +32,6 @@ import {
   runMigrations,
   getAccount,
   saveXAccount,
-  exec,
   deleteConfig as globalDeleteConfig,
   deleteConfigLike as globalDeleteConfigLike,
 } from "../database";
@@ -45,7 +39,6 @@ import { IMITMController } from "../mitm";
 import { BaseAccountController } from "../shared/controllers/BaseAccountController";
 import {
   XJobRow,
-  XTweetRow,
   // X API types
   XAPILegacyTweet,
   XAPILegacyTweetMedia,
@@ -57,7 +50,6 @@ import {
 } from "./types";
 
 // for building the static archive site
-import { saveArchive } from "./archive";
 import { indexUser } from "./controller/index/indexUser";
 import { indexConversation } from "./controller/index/indexConversation";
 import { indexTweetURLs } from "./controller/index/indexTweetURLs";
@@ -67,13 +59,13 @@ import { BlueskyService } from "./controller/bluesky/BlueskyService";
 import { saveProfileImage } from "./controller/actions/saveProfileImage";
 import { getLastFinishedJob } from "./controller/jobs/getLastFinishedJob";
 import { createJobs } from "./controller/jobs/createJobs";
-import { unzipXArchive } from "./controller/archive/unzipXArchive";
-import { deleteUnzippedXArchive } from "./controller/archive/deleteUnzippedXArchive";
-import { verifyXArchive } from "./controller/archive/verifyXArchive";
-import { importXArchive } from "./controller/archive/importXArchive";
-import { importXArchiveMedia } from "./controller/archive/importXArchiveMedia";
-import { saveXArchiveMedia } from "./controller/archive/saveXArchiveMedia";
-import { importXArchiveURLs } from "./controller/archive/importXArchiveURLs";
+import { unzipXArchive } from "./controller/x_archive/unzipXArchive";
+import { deleteUnzippedXArchive } from "./controller/x_archive/deleteUnzippedXArchive";
+import { verifyXArchive } from "./controller/x_archive/verifyXArchive";
+import { importXArchive } from "./controller/x_archive/importXArchive";
+import { importXArchiveMedia } from "./controller/x_archive/importXArchiveMedia";
+import { saveXArchiveMedia } from "./controller/x_archive/saveXArchiveMedia";
+import { importXArchiveURLs } from "./controller/x_archive/importXArchiveURLs";
 import { getProgressInfo } from "./controller/stats/getProgressInfo";
 import { getDatabaseStats } from "./controller/stats/getDatabaseStats";
 import { getDeleteReviewStats } from "./controller/stats/getDeleteReviewStats";
@@ -99,7 +91,11 @@ import { indexParseMessagesResponseData } from "./controller/index/indexParseMes
 import { indexParseMessages } from "./controller/index/indexParseMessages";
 import { indexConversationFinished } from "./controller/index/indexConversationFinished";
 import { saveTweetMedia } from "./controller/index/saveTweetMedia";
-
+import { archiveTweetsStart } from "./controller/archive/archiveTweetsStart";
+import { archiveTweetsOutputPath } from "./controller/archive/archiveTweetsOutputPath";
+import { archiveTweet } from "./controller/archive/archiveTweet";
+import { archiveTweetCheckDate } from "./controller/archive/archiveTweetCheckDate";
+import { archiveBuild } from "./controller/archive/archiveBuild";
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
   public account: XAccount | null = null;
@@ -273,23 +269,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
     };
   }
 
-  formatDateToYYYYMMDD(dateString: string): string {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are zero-based
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  convertTweetRowToXTweetItemArchive(row: XTweetRow): XTweetItemArchive {
-    return {
-      url: `https://x.com/${row.path}`,
-      tweetID: row.tweetID,
-      basename: `${this.formatDateToYYYYMMDD(row.createdAt)}_${row.tweetID}`,
-      username: row.username,
-    };
-  }
-
   protected getMITMURLs(): string[] {
     return [
       "x.com/i/api/graphql",
@@ -377,111 +356,23 @@ export class XAccountController extends BaseAccountController<XProgress> {
   // When you start archiving tweets you:
   // - Return the URLs path, output path, and all expected filenames
   async archiveTweetsStart(): Promise<XArchiveStartResponse> {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    if (this.account) {
-      const tweetsResp: XTweetRow[] = exec(
-        this.db,
-        "SELECT tweetID, text, likeCount, retweetCount, createdAt, path FROM tweet WHERE username = ? AND text NOT LIKE ? ORDER BY createdAt",
-        [this.account.username, "RT @%"],
-        "all",
-      ) as XTweetRow[];
-
-      const items: XTweetItemArchive[] = [];
-      for (let i = 0; i < tweetsResp.length; i++) {
-        items.push(this.convertTweetRowToXTweetItemArchive(tweetsResp[i]));
-      }
-
-      return {
-        outputPath: await this.archiveTweetsOutputPath(),
-        items: items,
-      };
-    }
-    return emptyXArchiveStartResponse();
+    return archiveTweetsStart(this);
   }
 
-  // Make sure the Archived Tweets folder exists and return its path
   async archiveTweetsOutputPath(): Promise<string> {
-    if (this.account) {
-      const accountDataPath = getAccountDataPath("X", this.account.username);
-      const outputPath = path.join(accountDataPath, "Archived Tweets");
-      if (!fs.existsSync(outputPath)) {
-        fs.mkdirSync(outputPath);
-      }
-      return outputPath;
-    }
-    throw new Error("Account not found");
+    return archiveTweetsOutputPath(this);
   }
 
-  // Save the tweet's archivedAt timestamp
-  async archiveTweet(tweetID: string) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    exec(this.db, "UPDATE tweet SET archivedAt = ? WHERE tweetID = ?", [
-      new Date(),
-      tweetID,
-    ]);
+  async archiveTweet(tweetID: string): Promise<void> {
+    return archiveTweet(this, tweetID);
   }
 
-  // If the tweet doesn't have an archivedAt timestamp, set one
-  async archiveTweetCheckDate(tweetID: string) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    const tweet: XTweetRow = exec(
-      this.db,
-      "SELECT * FROM tweet WHERE tweetID = ?",
-      [tweetID],
-      "get",
-    ) as XTweetRow;
-    if (!tweet.archivedAt) {
-      exec(this.db, "UPDATE tweet SET archivedAt = ? WHERE tweetID = ?", [
-        new Date(),
-        tweetID,
-      ]);
-    }
+  async archiveTweetCheckDate(tweetID: string): Promise<void> {
+    return archiveTweetCheckDate(this, tweetID);
   }
 
-  async archiveBuild() {
-    if (!this.account) {
-      console.error("XAccountController.archiveBuild: account not found");
-      return false;
-    }
-
-    if (!this.db) {
-      this.initDB();
-      if (!this.db) {
-        console.error(
-          "XAccountController.archiveBuild: database not initialized",
-        );
-        return;
-      }
-    }
-
-    log.info("XAccountController.archiveBuild: building archive");
-
-    // Build the archive
-    const assetsPath = path.join(
-      getAccountDataPath("X", this.account.username),
-      "assets",
-    );
-    if (!fs.existsSync(assetsPath)) {
-      fs.mkdirSync(assetsPath);
-    }
-    const archivePath = path.join(assetsPath, "archive.js");
-    saveArchive(this.db, app.getVersion(), this.account.username, archivePath);
-
-    // Unzip x-archive.zip to the account data folder using unzipper
-    const archiveZipPath = path.join(getResourcesPath(), "x-archive.zip");
-    const archiveZip = await unzipper.Open.file(archiveZipPath);
-    await archiveZip.extract({
-      path: getAccountDataPath("X", this.account.username),
-    });
+  async archiveBuild(): Promise<boolean | void> {
+    return archiveBuild(this);
   }
 
   // When you start deleting tweets, return a list of tweets to delete
