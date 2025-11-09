@@ -2,6 +2,7 @@ import { ipcMain } from "electron";
 import log from "electron-log/main";
 
 import { XAccountController } from "./x_account_controller";
+import { getImageDataURI } from "../shared/utils/image-utils";
 
 import {
   XJob,
@@ -575,8 +576,7 @@ export const defineIPCX = () => {
     "X:getImageDataURI",
     async (_, accountID: number, url: string): Promise<string> => {
       try {
-        const controller = getXAccountController(accountID);
-        return await controller.getImageDataURI(url);
+        return await getImageDataURI(url);
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }

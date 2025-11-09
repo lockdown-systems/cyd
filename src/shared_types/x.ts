@@ -1,14 +1,11 @@
 // X models
 
-export type XJob = {
-  id: number | null;
+import type { PlatformJob } from "./common";
+
+// status can be "pending", "running", "finished", "failed", "canceled"
+export type XJob = PlatformJob & {
   jobType: string; // "login", "index", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs", "downloadArchive"
-  status: string; // "pending", "running", "finished", "failed", "canceled"
   scheduledAt: Date;
-  startedAt: Date | null;
-  finishedAt: Date | null;
-  progressJSON: string;
-  error: string | null;
 };
 
 export type XTweet = {

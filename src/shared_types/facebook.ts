@@ -1,14 +1,11 @@
 // Facebook models
 
-export type FacebookJob = {
-  id: number | null;
+import type { PlatformJob } from "./common";
+
+// status can be "pending", "running", "finished", "failed", "canceled"
+export type FacebookJob = PlatformJob & {
   jobType: string; // "login", "...",
-  status: string; // "pending", "running", "finished", "failed", "canceled"
   scheduledAt: Date;
-  startedAt: Date | null;
-  finishedAt: Date | null;
-  progressJSON: string;
-  error: string | null;
 };
 
 // Other Facebook types

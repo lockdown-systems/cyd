@@ -1,3 +1,16 @@
+/**
+ * Common job structure shared across all platform account controllers.
+ * Both XJob and FacebookJob conform to this structure.
+ */
+export type PlatformJob = {
+  id: number | null;
+  status: string;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+  progressJSON: string;
+  error: string | null;
+};
+
 export type ResponseData = {
   host: string;
   url: string;

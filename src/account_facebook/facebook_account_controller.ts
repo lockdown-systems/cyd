@@ -3,7 +3,8 @@ import fs from "fs";
 import { URL } from "url";
 
 import fetch from "node-fetch";
-import { app, session } from "electron";
+import { app } from "electron";
+import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
 import unzipper from "unzipper";
@@ -17,15 +18,9 @@ import {
   FacebookDatabaseStats,
   emptyFacebookDatabaseStats,
 } from "../shared_types";
-import {
-  runMigrations,
-  Sqlite3Count,
-  getAccount,
-  exec,
-  getConfig,
-  setConfig,
-} from "../database";
+import { runMigrations, Sqlite3Count, getAccount, exec } from "../database";
 import { IMITMController } from "../mitm";
+import { BaseAccountController } from "../shared/controllers/BaseAccountController";
 import {
   FacebookJobRow,
   FacebookStoryRow,
@@ -42,104 +37,80 @@ import {
 
 // for building the static archive site
 import { saveArchive } from "./archive";
+import { migrations } from "./controller/migrations";
 
 function getURLFileExtension(urlString: string) {
   const url = new URL(urlString);
   return url.pathname.split(".").pop();
 }
 
-export class FacebookAccountController {
-  private accountUUID: string = "";
+export class FacebookAccountController extends BaseAccountController<FacebookProgress> {
   // Making this public so it can be accessed in tests
   public account: FacebookAccount | null = null;
-  private accountID: number = 0;
-  private accountDataPath: string = "";
-  private thereIsMore: boolean = false;
 
-  // Making this public so it can be accessed in tests
-  public db: Database.Database | null = null;
-
-  public mitmController: IMITMController;
-  private progress: FacebookProgress = emptyFacebookProgress();
-
-  private cookies: Record<string, string> = {};
+  // Override cookies type for Facebook-specific flat structure
+  protected cookies: Record<string, string> = {};
 
   constructor(accountID: number, mitmController: IMITMController) {
-    this.mitmController = mitmController;
-
-    this.accountID = accountID;
-    this.refreshAccount();
-
-    // Monitor web request metadata
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    ses.webRequest.onCompleted((_details) => {
-      // TODO: Monitor for rate limits
-    });
-
-    ses.webRequest.onSendHeaders((details) => {
-      // Keep track of cookies
-      if (
-        details.url.startsWith("https://www.facebook.com/") &&
-        details.requestHeaders
-      ) {
-        this.cookies = {};
-
-        const cookieHeader = details.requestHeaders["Cookie"];
-        if (cookieHeader) {
-          const cookies = cookieHeader.split(";");
-          cookies.forEach((cookie) => {
-            const parts = cookie.split("=");
-            if (parts.length == 2) {
-              this.cookies[parts[0].trim()] = parts[1].trim();
-            }
-          });
-        }
-      }
-    });
+    super(accountID, mitmController);
+    // Initialize progress with Facebook-specific type
+    this.progress = emptyFacebookProgress();
   }
 
-  cleanup() {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
+  protected getAccountType(): string {
+    return "Facebook";
+  }
+
+  protected getAccountProperty(): unknown {
+    const account = getAccount(this.accountID);
+    return account?.facebookAccount;
+  }
+
+  protected getAccountDataPath(): string {
+    if (!this.account) {
+      return "";
+    }
+    // Return the directory path (not the file path) since accountDataPath is also used for media directories
+    return getAccountDataPath(
+      "Facebook",
+      `${this.account.accountID} ${this.account.name}`,
+    );
+  }
+
+  protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
+    // Keep track of cookies
+    if (
+      details.url.startsWith("https://www.facebook.com/") &&
+      details.requestHeaders
+    ) {
+      this.cookies = {};
+
+      const cookieHeader = details.requestHeaders["Cookie"];
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(";");
+        cookies.forEach((cookie: string) => {
+          const parts = cookie.split("=");
+          if (parts.length == 2) {
+            this.cookies[parts[0].trim()] = parts[1].trim();
+          }
+        });
+      }
     }
   }
 
   refreshAccount() {
-    // Load the account
+    super.refreshAccount();
+    // Load the Facebook account after base refresh
     const account = getAccount(this.accountID);
-    if (!account) {
-      log.error(
-        `FacebookAccountController.refreshAccount: account ${this.accountID} not found`,
-      );
-      return;
-    }
-
-    // Make sure it's a Facebook account
-    if (account.type != "Facebook") {
-      log.error(
-        `FacebookAccountController.refreshAccount: account ${this.accountID} is not a Facebook account`,
-      );
-      return;
-    }
-
-    // Get the account UUID
-    this.accountUUID = account.uuid;
-    log.debug(
-      `FacebookAccountController.refreshAccount: accountUUID=${this.accountUUID}`,
-    );
-
-    // Load the Facebook account
-    this.account = account.facebookAccount;
-    if (!this.account) {
-      log.error(
-        `FacebookAccountController.refreshAccount: xAccount ${this.accountID} not found`,
-      );
-      return;
-    }
+    this.account = account?.facebookAccount || null;
   }
 
   initDB() {
+    // Ensure account is loaded before initializing database
+    if (!this.account) {
+      this.refreshAccount();
+    }
+
     if (!this.account || !this.account.accountID) {
       log.error(
         "FacebookAccountController: cannot initialize the database because the account is not found, or the account Facebook ID is not found",
@@ -149,94 +120,25 @@ export class FacebookAccountController {
       return;
     }
 
-    // Make sure the account data folder exists
-    this.accountDataPath = getAccountDataPath(
-      "Facebook",
-      `${this.account.accountID} ${this.account.name}`,
-    );
+    // Set the account data path (directory, not file)
+    this.accountDataPath = this.getAccountDataPath();
+    if (!this.accountDataPath) {
+      log.error("FacebookAccountController.initDB: accountDataPath is empty");
+      return;
+    }
+
     log.info(
       `FacebookAccountController.initDB: accountDataPath=${this.accountDataPath}`,
     );
 
-    // Open the database
-    this.db = new Database(path.join(this.accountDataPath, "data.sqlite3"), {});
+    // Build the database file path
+    const dbPath = path.join(this.accountDataPath, "data.sqlite3");
+
+    // Initialize the database using the file path
+    log.info(`FacebookAccountController.initDB: dbPath=${dbPath}`);
+    this.db = new Database(dbPath, {});
     this.db.pragma("journal_mode = WAL");
-    runMigrations(this.db, [
-      // Create the tables
-      {
-        name: "initial",
-        sql: [
-          `CREATE TABLE job (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    jobType TEXT NOT NULL,
-    status TEXT NOT NULL,
-    scheduledAt DATETIME NOT NULL,
-    startedAt DATETIME,
-    finishedAt DATETIME,
-    progressJSON TEXT,
-    error TEXT
-);`,
-          `CREATE TABLE config (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    key TEXT NOT NULL UNIQUE,
-    value TEXT NOT NULL
-);`,
-          `CREATE TABLE user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userID TEXT NOT NULL UNIQUE,
-    url TEXT NOT NULL,
-    name TEXT NOT NULL,
-    profilePictureFilename TEXT NOT NULL
-);`,
-          `CREATE TABLE story (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    storyID TEXT NOT NULL UNIQUE,
-    url TEXT NOT NULL,
-    createdAt DATETIME NOT NULL,
-    text TEXT,
-    title TEXT,
-    lifeEventTitle TEXT,
-    userID TEXT NOT NULL, -- Foreign key to user.userID
-    attachedStoryID INTEGER, -- Foreign key to attached_story.id
-    addedToDatabaseAt DATETIME NOT NULL,
-    archivedAt DATETIME,
-    deletedStoryAt DATETIME,
-    FOREIGN KEY(userID) REFERENCES user(userID),
-    FOREIGN KEY(attachedStoryID) REFERENCES attached_story(storyID)
-);`,
-          `CREATE TABLE attached_story (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    storyID TEXT NOT NULL UNIQUE,
-    text TEXT
-);`,
-          `CREATE TABLE media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    mediaType TEXT NOT NULL, -- "Photo", "Video", "GenericAttachmentMedia"
-    mediaID TEXT NOT NULL UNIQUE,
-    filename TEXT,
-    isPlayable BOOLEAN,
-    accessibilityCaption TEXT,
-                        title TEXT,
-    url TEXT,
-    needsVideoDownload BOOLEAN DEFAULT 0
-);`,
-          `CREATE TABLE media_story (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    storyID TEXT NOT NULL, -- Foreign key to story.storyID
-    mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
-    FOREIGN KEY(storyID) REFERENCES story(storyID),
-    FOREIGN KEY(mediaID) REFERENCES media(mediaID)
-);`,
-          `CREATE TABLE media_attached_story (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    storyID TEXT NOT NULL, -- Foreign key to attached_story.storyID
-    mediaID TEXT NOT NULL, -- Foreign key to media.mediaID
-    FOREIGN KEY(storyID) REFERENCES attached_story(storyID),
-    FOREIGN KEY(mediaID) REFERENCES media(mediaID)
-);`,
-        ],
-      },
-    ]);
+    runMigrations(this.db, migrations);
     log.info("FacebookAccountController.initDB: database initialized");
   }
 
@@ -276,38 +178,8 @@ export class FacebookAccountController {
     return jobs.map(convertFacebookJobRowToFacebookJob);
   }
 
-  updateJob(job: FacebookJob) {
-    if (!this.db) {
-      this.initDB();
-    }
-
-    exec(
-      this.db,
-      "UPDATE job SET status = ?, startedAt = ?, finishedAt = ?, progressJSON = ?, error = ? WHERE id = ?",
-      [
-        job.status,
-        job.startedAt ? job.startedAt : null,
-        job.finishedAt ? job.finishedAt : null,
-        job.progressJSON,
-        job.error,
-        job.id,
-      ],
-    );
-  }
-
-  async indexStart() {
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    await ses.clearCache();
-    await this.mitmController.startMonitoring();
-    log.info(ses);
-    await this.mitmController.startMITM(ses, ["www.facebook.com/api/graphql/"]);
-    this.thereIsMore = true;
-  }
-
-  async indexStop() {
-    await this.mitmController.stopMonitoring();
-    const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    await this.mitmController.stopMITM(ses);
+  protected getMITMURLs(): string[] {
+    return ["www.facebook.com/api/graphql/"];
   }
 
   async parseNode(data: FBNode) {
@@ -415,6 +287,14 @@ export class FacebookAccountController {
   }
 
   async saveUser(actor: FBActor): Promise<string> {
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error("FacebookAccountController.saveUser: database not initialized");
+      return "";
+    }
+
     const userID = actor.id;
     const url = actor.url;
     const name = actor.name;
@@ -483,6 +363,15 @@ export class FacebookAccountController {
   }
 
   async saveAttachedStory(attachedStory: FBAttachedStory): Promise<string> {
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error(
+        "FacebookAccountController.saveAttachedStory: database not initialized",
+      );
+      return "";
+    }
     const storyID = attachedStory.id;
     const text = attachedStory.comet_sections.message
       ? attachedStory.comet_sections.message.text
@@ -535,6 +424,15 @@ export class FacebookAccountController {
     media: FBMedia,
     title: string | null,
   ): Promise<string | null> {
+    if (!this.db) {
+      this.initDB();
+    }
+    if (!this.db) {
+      log.error(
+        "FacebookAccountController.saveMedia: database not initialized",
+      );
+      return null;
+    }
     console.log("FacebookAccountController.saveMedia: saving media", media);
     const mediaType = media.__typename;
     const mediaID = media.id;
@@ -1012,14 +910,6 @@ export class FacebookAccountController {
     await archiveZip.extract({ path: accountPath });
   }
 
-  async syncProgress(progressJSON: string) {
-    this.progress = JSON.parse(progressJSON);
-  }
-
-  async getProgress(): Promise<FacebookProgress> {
-    return this.progress;
-  }
-
   async getCookie(name: string): Promise<string | null> {
     return this.cookies[name] || null;
   }
@@ -1044,14 +934,6 @@ export class FacebookAccountController {
       log.error("FacebookAccountController.getProfileImageDataURI: error", e);
       return "";
     }
-  }
-
-  async getConfig(key: string): Promise<string | null> {
-    return getConfig(key, this.db);
-  }
-
-  async setConfig(key: string, value: string) {
-    return setConfig(key, value, this.db);
   }
 
   async getDatabaseStats(): Promise<FacebookDatabaseStats> {
