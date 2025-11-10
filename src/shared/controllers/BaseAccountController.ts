@@ -30,10 +30,6 @@ export abstract class BaseAccountController<TProgress = unknown> {
 
     // Monitor web request metadata
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
-    ses.webRequest.onCompleted((_details) => {
-      // TODO: Monitor for rate limits
-    });
-
     ses.webRequest.onSendHeaders((details) => {
       this.handleCookieTracking(details);
     });
