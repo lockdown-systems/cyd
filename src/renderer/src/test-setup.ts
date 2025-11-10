@@ -2,12 +2,19 @@ import { vi, beforeEach } from "vitest";
 
 // Mock Bootstrap Modal to avoid DOM compatibility issues in tests
 vi.mock("bootstrap/js/dist/modal", () => {
+  // Create a proper constructor mock
+  class MockModal {
+    show = vi.fn();
+    hide = vi.fn();
+    dispose = vi.fn();
+
+    constructor(_element: HTMLElement) {
+      // Store element if needed for tests
+    }
+  }
+
   return {
-    default: vi.fn().mockImplementation(() => ({
-      show: vi.fn(),
-      hide: vi.fn(),
-      dispose: vi.fn(),
-    })),
+    default: MockModal,
   };
 });
 
