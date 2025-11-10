@@ -214,7 +214,8 @@ const config: ForgeConfig = {
     ],
     protocols: protocols,
     osxSign: osxSign,
-    osxNotarize: osxNotarize,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    osxNotarize: osxNotarize as any,
   },
   rebuildConfig: {},
   makers: [
