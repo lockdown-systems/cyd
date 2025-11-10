@@ -63,6 +63,18 @@ export default tseslint.config(
       },
     },
   },
+  // forge.config.ts - special case for ESM-only @electron/fuses
+  {
+    files: ["forge.config.ts"],
+    rules: {
+      "import/no-unresolved": [
+        "error",
+        {
+          ignore: ["^@electron/fuses$"],
+        },
+      ],
+    },
+  },
   // Vue files
   {
     files: ["**/*.vue"],
