@@ -275,6 +275,8 @@ export function mockElectronAPI() {
     getAPIURL: vi.fn().mockResolvedValue("https://api.test.com"),
     getMode: vi.fn().mockResolvedValue("prod"),
     getVersion: vi.fn().mockResolvedValue("1.0.0"),
+    getPlatform: vi.fn().mockResolvedValue("darwin"),
+    openURL: vi.fn().mockResolvedValue(undefined),
     isFeatureEnabled: vi.fn().mockResolvedValue(false),
     showQuestion: vi.fn().mockResolvedValue(true),
     showError: vi.fn(),
