@@ -430,7 +430,8 @@ export function createMockApiClient(): CydAPIClient {
  * Helper function to mount Vue components with common providers
  * This ensures consistent setup across all component tests
  */
-export function mountWithProviders<T>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mountWithProviders<T = any>(
   component: T,
   options: {
     props?: Record<string, unknown>;
@@ -446,7 +447,8 @@ export function mountWithProviders<T>(
     emitter: createMockEmitter(),
   };
 
-  return mount(component as never, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return mount(component as any, {
     global: {
       provide: {
         ...defaultProvide,
@@ -454,6 +456,6 @@ export function mountWithProviders<T>(
       },
       ...options.global,
     },
-    ...(options.props ? { props: options.props } : {}),
+    props: options.props,
   });
 }
