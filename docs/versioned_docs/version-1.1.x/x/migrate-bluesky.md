@@ -82,6 +82,7 @@ When Cyd migrates your tweets to Bluesky, it does its best to keep everything th
 
 - **URL tracking is removed.** If your tweet includes links, those links are transferred over to Bluesky except without X's `t.co` URL tracking. The only exception is, if the URL you posted is exceptionally long and doesn't fit in a Bluesky post, Cyd will fallback to using the `t.co` link simply because it's shorter.
 - **Media is preserved.** If you post images or videos, those images and videos are re-posted to Bluesky. The only exception is if the original media is too large to upload to Bluesky. Bluesky has a limit of about 1 MB for images and about 50 MB for videos.
+- **Videos need time to process.** Videos on Bluesky might not work immediately after migrating them from tweets. If this happens, wait a few minutes for Bluesky to finish processing the video, and then they should play.
 - **Threads are preserved.** If you posted a Twitter thread (which is just posting replies to your own tweets), they will get migrated as replies to your own posts in Bluesky.
 - **Self-quote tweets are preserved.** If you quote tweet your own tweet, they will get migrated as quote posts of your original post in Bluesky.
 - **Other quote tweets are not preserved.** If you quote tweet someone else, the link to the tweet you're quoting will get added to the end of your Bluesky post as a URL.
