@@ -2,7 +2,12 @@ import { vi } from "vitest";
 import type { WebviewTag } from "electron";
 import type { Emitter, EventType } from "mitt";
 import mitt from "mitt";
-import type { Account, XAccount } from "../../shared_types";
+import type { Account, XAccount, FacebookAccount } from "../../shared_types";
+import type { VueWrapper } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
+import { ref } from "vue";
+import CydAPIClient from "../../cyd-api-client";
+import type { DeviceInfo } from "./types";
 
 /**
  * General test utilities for all view models
@@ -270,6 +275,8 @@ export function mockElectronAPI() {
     getAPIURL: vi.fn().mockResolvedValue("https://api.test.com"),
     getMode: vi.fn().mockResolvedValue("prod"),
     getVersion: vi.fn().mockResolvedValue("1.0.0"),
+    getPlatform: vi.fn().mockResolvedValue("darwin"),
+    openURL: vi.fn().mockResolvedValue(undefined),
     isFeatureEnabled: vi.fn().mockResolvedValue(false),
     showQuestion: vi.fn().mockResolvedValue(true),
     showError: vi.fn(),
@@ -355,4 +362,102 @@ export async function waitForAsync(
     }
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
+}
+
+/**
+ * Creates a mock FacebookAccount with default values that can be overridden
+ */
+export function createMockFacebookAccount(
+  overrides?: Partial<FacebookAccount>,
+): FacebookAccount {
+  const now = new Date();
+  return {
+    id: 1,
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    accountID: "100000000000000",
+    name: "Test User",
+    profileImageDataURI: "data:image/png;base64,test",
+    saveMyData: false,
+    deleteMyData: false,
+    archiveMyData: false,
+    savePosts: false,
+    savePostsHTML: false,
+    deletePosts: false,
+    deletePostsDaysOldEnabled: false,
+    deletePostsDaysOld: 0,
+    deletePostsReactsThresholdEnabled: false,
+    deletePostsReactsThreshold: 0,
+    deleteReposts: false,
+    deleteRepostsDaysOldEnabled: false,
+    deleteRepostsDaysOld: 0,
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock DeviceInfo object for testing
+ */
+export function createMockDeviceInfo(
+  overrides?: Partial<DeviceInfo>,
+): DeviceInfo {
+  return {
+    userEmail: "test@example.com",
+    deviceDescription: "Test Device",
+    deviceToken: "test-device-token",
+    deviceUUID: "test-device-uuid",
+    apiToken: "test-api-token",
+    valid: true,
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock CydAPIClient for testing
+ */
+export function createMockApiClient(): CydAPIClient {
+  const client = new CydAPIClient();
+
+  // Mock the authenticate method
+  vi.spyOn(client, "authenticate").mockResolvedValue({
+    success: true,
+    deviceInfo: createMockDeviceInfo(),
+  } as never);
+
+  return client;
+}
+
+/**
+ * Helper function to mount Vue components with common providers
+ * This ensures consistent setup across all component tests
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mountWithProviders<T = any>(
+  component: T,
+  options: {
+    props?: Record<string, unknown>;
+    provide?: Record<string, unknown>;
+    global?: Record<string, unknown>;
+  } = {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): VueWrapper<any> {
+  const defaultProvide = {
+    apiClient: ref(createMockApiClient()),
+    deviceInfo: ref(createMockDeviceInfo()),
+    userEmail: ref("test@example.com"),
+    emitter: createMockEmitter(),
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return mount(component as any, {
+    global: {
+      provide: {
+        ...defaultProvide,
+        ...options.provide,
+      },
+      ...options.global,
+    },
+    props: options.props,
+  });
 }
