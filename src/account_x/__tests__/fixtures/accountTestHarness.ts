@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { randomUUID } from "crypto";
 
 import { XAccountController } from "../../x_account_controller";
 import type { Account } from "../../../shared_types";
@@ -13,12 +14,14 @@ export interface XControllerTestContext {
 }
 
 export const createXControllerTestContext = (
-  username = "test",
+  username?: string,
 ): XControllerTestContext => {
+  // Generate unique username per test to avoid database conflicts
+  const testUsername = username || `test-${randomUUID()}`;
   const mitmController = new XMockMITMController();
   const { account, cleanup: cleanupAccount } = createTestAccount({
     type: "X",
-    username,
+    username: testUsername,
   });
 
   const controller = new XAccountController(account.id, mitmController);
