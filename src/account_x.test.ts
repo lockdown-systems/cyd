@@ -1,8 +1,10 @@
+import "./__tests__/platform-fixtures/electronMocks";
+import "./__tests__/platform-fixtures/network";
+
 import fs from "fs";
 import path from "path";
 
 import { beforeEach, afterEach, test, expect, vi } from "vitest";
-import { Proxy } from "http-mitm-proxy";
 
 import {
   XAPILegacyTweet,
@@ -23,368 +25,54 @@ import {
   XAccountController,
 } from "./account_x";
 
+import { createPlatformPathMocks } from "./__tests__/platform-fixtures/tempPaths";
+import { XMockMITMController } from "./account_x/__tests__/fixtures/mockMitmController";
+import {
+  createXControllerTestContext,
+  type XControllerTestContext,
+} from "./account_x/__tests__/fixtures/accountTestHarness";
+
+vi.mock("./account_x/controller/index/saveTweetMedia", () => {
+  return {
+    saveTweetMedia: vi.fn(async () => ""),
+  };
+});
+
 // Mock the util module
-vi.mock("./util", () => ({
-  ...vi.importActual("./util"), // Import and spread the actual implementations
-  getSettingsPath: vi.fn(() => {
-    const settingsPath = path.join(
-      __dirname,
-      "..",
-      "testdata",
-      "settingsPath-account_x",
-    );
-    if (!fs.existsSync(settingsPath)) {
-      fs.mkdirSync(settingsPath, { recursive: true });
-    }
-    return settingsPath;
-  }),
-  getAccountSettingsPath: vi.fn((accountID: number) => {
-    const settingsPath = path.join(
-      __dirname,
-      "..",
-      "testdata",
-      "settingsPath-account_x",
-    );
-    const accountSettingsPath = path.join(settingsPath, `account-${accountID}`);
-    if (!fs.existsSync(accountSettingsPath)) {
-      fs.mkdirSync(accountSettingsPath, { recursive: true });
-    }
-    return accountSettingsPath;
-  }),
-  getDataPath: vi.fn(() => {
-    const dataPath = path.join(
-      __dirname,
-      "..",
-      "testdata",
-      "dataPath-account_x",
-    );
-    if (!fs.existsSync(dataPath)) {
-      fs.mkdirSync(dataPath, { recursive: true });
-    }
-    return dataPath;
-  }),
-  getAccountDataPath: vi.fn((accountType: string, accountUsername: string) => {
-    const dataPath = path.join(__dirname, "..", "testdata", "dataPath");
-    const accountDataPath = path.join(dataPath, accountType, accountUsername);
-    if (!fs.existsSync(accountDataPath)) {
-      fs.mkdirSync(accountDataPath, { recursive: true });
-    }
-    return accountDataPath;
-  }),
-}));
-import { getSettingsPath, getAccountDataPath } from "./util";
+const pathMocks = createPlatformPathMocks("account_x");
 
-// Mock Electron
-vi.mock("electron", () => ({
-  session: {
-    fromPartition: vi.fn().mockReturnValue({
-      webRequest: {
-        onCompleted: vi.fn(),
-        onSendHeaders: vi.fn(),
-      },
-    }),
-  },
-  app: {
-    getPath: vi
-      .fn()
-      .mockReturnValue(path.join(__dirname, "..", "testdata", "tmp")),
-  },
-}));
-
-// Mock fetch
-const fetchMock = vi.fn();
-global.fetch = fetchMock;
+vi.mock("./util", async () => {
+  const actual = await vi.importActual<typeof import("./util")>("./util");
+  return {
+    ...actual,
+    getSettingsPath: () => pathMocks.getSettingsPath(),
+    getAccountSettingsPath: (accountID: number) =>
+      pathMocks.getAccountSettingsPath(accountID),
+    getDataPath: () => pathMocks.getDataPath(),
+    getAccountDataPath: (accountType: string, accountUsername: string) =>
+      pathMocks.getAccountDataPath(accountType, accountUsername),
+  };
+});
+import { getAccountDataPath } from "./util";
 
 // Import the local modules after stuff has been mocked
-import { Account, ResponseData, XProgress } from "./shared_types";
-import { IMITMController } from "./mitm";
+import { XProgress } from "./shared_types";
 import * as database from "./database";
 
-// Mock a MITMController
-class MockMITMController implements IMITMController {
-  public account: Account | null = null;
-  private proxy: Proxy | null = null;
-  private proxyPort: number = 0;
-  private proxySSLCADir: string = "";
-  private proxyFilter: string[] = [];
-  private isMonitoring: boolean = false;
-  public responseData: ResponseData[] = [];
-  constructor() {}
-  async startMITM(
-    _ses: Electron.Session,
-    _proxyFilter: string[],
-  ): Promise<boolean> {
-    return true;
-  }
-  async stopMITM(_ses: Electron.Session) {}
-  async startMonitoring() {}
-  async stopMonitoring() {}
-  async clearProcessed(): Promise<void> {}
-
-  // Just used in the tests
-  setTestdata(testdata: string | undefined) {
-    if (testdata == "indexTweets") {
-      this.responseData = [
-        {
-          host: "x.com",
-          url: "/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XUserTweetsAndReplies1.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-        {
-          host: "x.com",
-          url: "/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XUserTweetsAndReplies2.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-        {
-          host: "x.com",
-          url: "/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XUserTweetsAndReplies3.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-        {
-          host: "x.com",
-          url: "/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XUserTweetsAndReplies18.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-      ];
-    }
-    if (testdata == "indexTweetsMedia") {
-      this.responseData = [
-        {
-          host: "x.com",
-          url: "/i/api/graphql/xNb3huAac5mdP9GOm4VI1g/UserTweetsAndReplies?",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XUserTweetsAndRepliesMedia.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-      ];
-    }
-    if (testdata == "indexDMs") {
-      this.responseData = [
-        {
-          host: "x.com",
-          url: "/i/api/1.1/dm/inbox_timeline/trusted.json?filter_low_quality=false&include_quality=all&max_id=1737890608109486086&nsfw_filtering_enabled=false&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_ext_edit_control=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XAPIDMInboxTimeline1.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-        {
-          host: "x.com",
-          url: "/i/api/1.1/dm/inbox_initial_state.json?nsfw_filtering_enabled=false&filter_low_quality=false&include_quality=all&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=true&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XAPIDMInitialInboxState.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-        {
-          host: "x.com",
-          url: "/i/api/1.1/dm/conversation/96752784-1209344563589992448.json?context=FETCH_DM_CONVERSATION&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_conversation_info=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XAPIDMConversation1.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-        {
-          host: "x.com",
-          url: "/i/api/1.1/dm/conversation/96752784-1209344563589992448.json?context=FETCH_DM_CONVERSATION&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_conversation_info=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(
-              __dirname,
-              "..",
-              "testdata",
-              "x",
-              "XAPIDMConversation2.json",
-            ),
-            "utf8",
-          ),
-          processed: false,
-        },
-      ];
-    }
-    if (testdata == "indexBookmarks") {
-      this.responseData = [
-        {
-          host: "x.com",
-          url: "/i/api/graphql/Ds7FCVYEIivOKHsGcE84xQ/Bookmarks?",
-          status: 200,
-          requestBody: "",
-          responseHeaders: {},
-          responseBody: fs.readFileSync(
-            path.join(__dirname, "..", "testdata", "x", "XBookmarks.json"),
-            "utf8",
-          ),
-          processed: false,
-        },
-      ];
-    }
-  }
-  setTestdataFromFile(filename: string, url: string) {
-    this.responseData = [
-      {
-        host: "x.com",
-        url: url,
-        status: 200,
-        requestBody: "",
-        responseHeaders: {},
-        responseBody: fs.readFileSync(
-          path.join(__dirname, "..", "testdata", "x", filename),
-          "utf8",
-        ),
-        processed: false,
-      },
-    ];
-  }
-  setAutomationErrorReportTestdata(filename: string) {
-    const testData = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, "..", "testdata", "automation-errors", filename),
-        "utf8",
-      ),
-    );
-    this.responseData = [testData.latestResponseData];
-  }
-}
-
-let mitmController: MockMITMController;
+let controllerContext: XControllerTestContext | null = null;
+let mitmController: XMockMITMController;
 let controller: XAccountController;
 
 beforeEach(() => {
-  database.runMainMigrations();
-
-  // Create an X account, which should have an id of 1
-  let account = database.createAccount();
-  account = database.selectAccountType(account.id, "X");
-  if (account.xAccount) {
-    account.xAccount.username = "test";
-  }
-  database.saveAccount(account);
-
-  // Create an XAccountController
-  mitmController = new MockMITMController();
-  controller = new XAccountController(account.id, mitmController);
-
-  // Stub controller.saveTweetMedia, to avoid saving tweet media during the tests
-  controller.saveTweetMedia = vi.fn();
-
-  controller.initDB();
+  controllerContext = createXControllerTestContext("test");
+  controller = controllerContext.controller;
+  mitmController = controllerContext.mitmController;
 });
 
 afterEach(() => {
-  // Close the main database
-  database.closeMainDatabase();
-
-  // Close the account database
-  if (controller) {
-    controller.cleanup();
-  }
-
-  // Delete data from disk
-  const settingsPath = getSettingsPath();
-  const accountDataPath = getAccountDataPath("X", "test");
-
-  if (fs.existsSync(settingsPath)) {
-    fs.rmSync(settingsPath, { recursive: true, force: true });
-  }
-
-  if (fs.existsSync(accountDataPath)) {
-    fs.rmSync(accountDataPath, { recursive: true, force: true });
-  }
+  controllerContext?.cleanup();
+  controllerContext = null;
+  pathMocks.cleanup();
 });
 
 // Fixtures
