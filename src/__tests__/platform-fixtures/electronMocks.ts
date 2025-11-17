@@ -15,6 +15,10 @@ interface SessionStoreValue {
 
 const handlerStore: Record<string, SessionStoreValue> = {};
 
+const shellMockImpl = {
+  openExternal: vi.fn(async () => Promise.resolve()),
+};
+
 const createHandlerStore = (): HandlerStore => ({
   onCompleted: [],
   onSendHeaders: [],
@@ -84,6 +88,7 @@ vi.mock("electron", () => {
       handle: vi.fn(),
       on: vi.fn(),
     },
+    shell: shellMockImpl,
   };
 });
 
@@ -100,3 +105,5 @@ export const electronMockHelpers = {
   },
   getSessionMock: (partition: string) => handlerStore[partition]?.instance,
 };
+
+export const shellMock = shellMockImpl;
