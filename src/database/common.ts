@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 
 import log from "electron-log/main";
 import Database from "better-sqlite3";
@@ -77,14 +78,29 @@ export const runMigrations = (
 // Main database
 
 let mainDatabase: Database.Database | null = null;
+let mainDatabasePath: string | null = null;
 
 export const getMainDatabase = () => {
-  if (mainDatabase) {
+  const settingsPath = getSettingsPath();
+  const dbPath = path.join(settingsPath, "db.sqlite");
+
+  // Only reuse if database is open AND path matches AND file exists
+  if (
+    mainDatabase &&
+    mainDatabase.open &&
+    mainDatabasePath === dbPath &&
+    fs.existsSync(dbPath)
+  ) {
     return mainDatabase;
   }
 
-  const dbPath = path.join(getSettingsPath(), "db.sqlite");
+  // Ensure settings directory exists before creating database
+  if (!fs.existsSync(settingsPath)) {
+    fs.mkdirSync(settingsPath, { recursive: true });
+  }
+
   mainDatabase = new Database(dbPath, {});
+  mainDatabasePath = dbPath;
   mainDatabase.pragma("journal_mode = WAL");
   return mainDatabase;
 };
@@ -93,6 +109,7 @@ export const closeMainDatabase = () => {
   if (mainDatabase) {
     mainDatabase.close();
     mainDatabase = null;
+    mainDatabasePath = null;
   }
 };
 

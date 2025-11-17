@@ -1,3 +1,5 @@
+import fs from "fs";
+
 import {
   runMainMigrations,
   closeMainDatabase,
@@ -5,6 +7,7 @@ import {
   selectAccountType,
   saveAccount,
 } from "../../database";
+import { getSettingsPath } from "../../util";
 import type { Account } from "../../shared_types";
 
 export type PlatformAccountType = "X" | "Bluesky" | "Facebook";
@@ -59,6 +62,14 @@ export const createTestAccount = (
     account,
     cleanup: () => {
       closeMainDatabase();
+
+      // Delete database files to ensure clean state for next test
+      const settingsPath = getSettingsPath();
+      try {
+        fs.rmSync(settingsPath, { recursive: true, force: true });
+      } catch {
+        // Ignore errors - directory might not exist or files might be locked
+      }
     },
   };
 };

@@ -68,6 +68,10 @@ test("XAccountController.constructor() creates a database for the user", async (
 });
 
 test("test migration: 20241016_add_config", async () => {
+  // Clean up the beforeEach context first to avoid database conflicts
+  controllerContext?.cleanup();
+  controllerContext = null;
+
   // This test needs a fresh controller with static "test" username
   const migrationContext = createXControllerTestContext("test");
   const testController = migrationContext.controller;
@@ -110,6 +114,10 @@ test("test migration: 20241016_add_config", async () => {
 });
 
 test("test migration: 20241127_add_deletedAt_fields", async () => {
+  // Clean up the beforeEach context first to avoid database conflicts
+  controllerContext?.cleanup();
+  controllerContext = null;
+
   // This test needs a fresh controller with static "test" username
   const migrationContext = createXControllerTestContext("test");
   const testController = migrationContext.controller;
