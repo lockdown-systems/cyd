@@ -1,4 +1,25 @@
+import fs from "fs";
+import path from "path";
+import { randomUUID } from "crypto";
+
 import { vi, beforeEach } from "vitest";
+
+// Ensure every Vitest worker uses an isolated settings database so the
+// SQLite migrations do not clash when suites run in parallel.
+const repoRoot = path.resolve(__dirname, "../../..");
+const workerID = process.env.VITEST_WORKER_ID ?? randomUUID();
+const settingsPath = path.join(
+  repoRoot,
+  "testdata",
+  "settingsPath-database",
+  `worker-${workerID}`,
+);
+const dataPath = path.join(repoRoot, "testdata", "dataPath");
+fs.mkdirSync(settingsPath, { recursive: true });
+fs.mkdirSync(dataPath, { recursive: true });
+process.env.TEST_MODE = "1";
+process.env.TEST_SETTINGS_PATH = settingsPath;
+process.env.TEST_DATA_PATH = dataPath;
 
 // Mock Bootstrap Modal to avoid DOM compatibility issues in tests
 vi.mock("bootstrap/js/dist/modal", () => {

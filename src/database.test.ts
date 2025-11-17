@@ -41,8 +41,9 @@ beforeEach(() => {
 afterEach(() => {
   // Make sure we close the database and clean up
   database.closeMainDatabase();
-  fs.readdirSync(getSettingsPath()).forEach((file) => {
-    fs.unlinkSync(path.join(getSettingsPath(), file));
+  const settingsPath = getSettingsPath();
+  fs.readdirSync(settingsPath).forEach((file) => {
+    fs.rmSync(path.join(settingsPath, file), { recursive: true, force: true });
   });
 });
 
