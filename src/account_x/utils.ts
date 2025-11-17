@@ -35,8 +35,12 @@ export function getMediaURL(media: XAPILegacyTweetMedia): string {
   }
   // If it's a GIF, there is only one video variant with a bitrate of 0, so select the first item
   else if (media["type"] === "animated_gif") {
-    if (media["video_info"] && media["video_info"]["variants"]) {
-      mediaURL = media["video_info"]["variants"]?.[0]["url"];
+    if (
+      media["video_info"] &&
+      media["video_info"]["variants"] &&
+      media["video_info"]["variants"].length > 0
+    ) {
+      mediaURL = media["video_info"]["variants"][0]["url"];
 
       // Stripe query parameters from the URL.
       // For some reason video variants end with `?tag=12`, and when we try downloading with that

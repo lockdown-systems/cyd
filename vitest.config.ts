@@ -33,7 +33,6 @@ export default defineConfig({
         "dist/**",
         ".vite/**",
         "node_modules/**",
-        "*.ts",
         "**/*.d.ts",
         "archive-static-sites/**",
         "docs/**",
