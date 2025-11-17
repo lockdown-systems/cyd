@@ -1,0 +1,385 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { mount, VueWrapper } from "@vue/test-utils";
+import AccountView from "./AccountView.vue";
+import { mockElectronAPI, createMockAccount } from "../test_util";
+import type { Account } from "../../../shared_types";
+
+// Mock child components
+vi.mock("./shared_components/CydAvatarComponent.vue", () => ({
+  default: {
+    name: "CydAvatarComponent",
+    template: "<div></div>",
+    props: ["height"],
+  },
+}));
+
+vi.mock("./x/XView.vue", () => ({
+  default: {
+    name: "XView",
+    template: "<div>XView</div>",
+    props: ["account"],
+    emits: ["onRefreshClicked", "onRemoveClicked"],
+  },
+}));
+
+vi.mock("./facebook/FacebookView.vue", () => ({
+  default: {
+    name: "FacebookView",
+    template: "<div>FacebookView</div>",
+    props: ["account"],
+    emits: ["onRefreshClicked", "onRemoveClicked"],
+  },
+}));
+
+// Mock util functions
+vi.mock("../util", () => ({
+  getAccountIcon: vi.fn((type: string) => {
+    if (type === "X") return "fa fa-x";
+    if (type === "Facebook") return "fa fa-facebook";
+    if (type === "Bluesky") return "fa fa-bluesky";
+    return "fa fa-question";
+  }),
+  getAccountRunning: vi.fn().mockResolvedValue(false),
+  setAccountRunning: vi.fn().mockResolvedValue(undefined),
+}));
+
+describe("AccountView", () => {
+  let wrapper: VueWrapper;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockElectronAPI();
+
+    // Mock feature flags
+    window.electron.isFeatureEnabled = vi
+      .fn()
+      .mockImplementation((feature: string) => {
+        if (feature === "facebook") return Promise.resolve(false);
+        if (feature === "bluesky") return Promise.resolve(false);
+        return Promise.resolve(false);
+      });
+  });
+
+  afterEach(() => {
+    if (wrapper) {
+      wrapper.unmount();
+    }
+  });
+
+  describe("unknown account type", () => {
+    it("should render account selection when account type is unknown", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.text()).toContain("Ready to get started?");
+      expect(wrapper.text()).toContain("Add a new account");
+    });
+
+    it("should render CydAvatar for unknown account", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(
+        wrapper.findComponent({ name: "CydAvatarComponent" }).exists(),
+      ).toBe(true);
+    });
+
+    it("should display X account selection", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const xCard = wrapper.find(".select-account-x");
+      expect(xCard.exists()).toBe(true);
+      expect(xCard.text()).toContain("X");
+      expect(xCard.text()).toContain("Formerly Twitter");
+    });
+
+    it("should emit accountSelected when X card clicked", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const xCard = wrapper.find(".select-account-x");
+      (xCard.element as HTMLElement).click();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.emitted("accountSelected")).toBeTruthy();
+      expect(wrapper.emitted("accountSelected")?.[0]).toEqual([
+        unknownAccount,
+        "X",
+      ]);
+    });
+
+    it("should show Facebook option when feature flag enabled", async () => {
+      window.electron.isFeatureEnabled = vi
+        .fn()
+        .mockImplementation((feature: string) => {
+          if (feature === "facebook") return Promise.resolve(true);
+          return Promise.resolve(false);
+        });
+
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookCard = wrapper.find(".select-account-facebook");
+      expect(facebookCard.exists()).toBe(true);
+      expect(facebookCard.text()).toContain("Facebook");
+      expect(facebookCard.text()).toContain("Alpha");
+    });
+
+    it("should not show Facebook option when feature flag disabled", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookCard = wrapper.find(".select-account-facebook");
+      expect(facebookCard.exists()).toBe(false);
+    });
+
+    it("should emit accountSelected when Facebook card clicked", async () => {
+      window.electron.isFeatureEnabled = vi
+        .fn()
+        .mockImplementation((feature: string) => {
+          if (feature === "facebook") return Promise.resolve(true);
+          return Promise.resolve(false);
+        });
+
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookCard = wrapper.find(".select-account-facebook");
+      (facebookCard.element as HTMLElement).click();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.emitted("accountSelected")).toBeTruthy();
+      expect(wrapper.emitted("accountSelected")?.[0]).toEqual([
+        unknownAccount,
+        "Facebook",
+      ]);
+    });
+
+    it("should show Bluesky option when feature flag enabled", async () => {
+      window.electron.isFeatureEnabled = vi
+        .fn()
+        .mockImplementation((feature: string) => {
+          if (feature === "bluesky") return Promise.resolve(true);
+          return Promise.resolve(false);
+        });
+
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const blueskyCard = wrapper.find(".select-account-bluesky");
+      expect(blueskyCard.exists()).toBe(true);
+      expect(blueskyCard.text()).toContain("Bluesky");
+      expect(blueskyCard.text()).toContain("AT Protocol");
+    });
+
+    it("should display coming soon message", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.text()).toContain("More platforms coming soon");
+    });
+  });
+
+  describe("X account type", () => {
+    it("should render XView when account type is X", async () => {
+      const xAccount = createMockAccount({ type: "X" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: xAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.findComponent({ name: "XView" }).exists()).toBe(true);
+    });
+
+    it("should pass account prop to XView", async () => {
+      const xAccount = createMockAccount({ type: "X" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: xAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const xView = wrapper.findComponent({ name: "XView" });
+      expect(xView.props("account")).toEqual(xAccount);
+    });
+
+    it("should handle refresh from XView", async () => {
+      const xAccount = createMockAccount({ type: "X", id: 1 });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: xAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const xView = wrapper.findComponent({ name: "XView" });
+      await xView.vm.$emit("onRefreshClicked");
+
+      // Verify setAccountRunning was called
+      const { setAccountRunning } = await import("../util");
+      expect(setAccountRunning).toHaveBeenCalledWith(1, false);
+    });
+
+    it("should forward onRemoveClicked from XView", async () => {
+      const xAccount = createMockAccount({ type: "X" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: xAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const xView = wrapper.findComponent({ name: "XView" });
+      await xView.vm.$emit("onRemoveClicked");
+
+      expect(wrapper.emitted("onRemoveClicked")).toBeTruthy();
+    });
+  });
+
+  describe("Facebook account type", () => {
+    it("should render FacebookView when account type is Facebook", async () => {
+      const facebookAccount = createMockAccount({ type: "Facebook" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: facebookAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.findComponent({ name: "FacebookView" }).exists()).toBe(
+        true,
+      );
+    });
+
+    it("should pass account prop to FacebookView", async () => {
+      const facebookAccount = createMockAccount({ type: "Facebook" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: facebookAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookView = wrapper.findComponent({ name: "FacebookView" });
+      expect(facebookView.props("account")).toEqual(facebookAccount);
+    });
+  });
+
+  describe("account running state", () => {
+    it("should check for interrupted running account on mount", async () => {
+      const { getAccountRunning } = await import("../util");
+      vi.mocked(getAccountRunning).mockResolvedValue(true);
+
+      const xAccount = createMockAccount({ type: "X", id: 1 });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: xAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(getAccountRunning).toHaveBeenCalledWith(1);
+      const { setAccountRunning } = await import("../util");
+      expect(setAccountRunning).toHaveBeenCalledWith(1, false);
+    });
+  });
+
+  describe("error states", () => {
+    it("should show error message for unsupported account type", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const badAccount = createMockAccount({ type: "InvalidType" as any });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: badAccount as Account,
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.text()).toContain("Unknown account type");
+      expect(wrapper.text()).toContain("Something is wrong");
+    });
+  });
+});

@@ -27,6 +27,7 @@ vi.mock("bootstrap/js/dist/modal", () => {
     show = vi.fn();
     hide = vi.fn();
     dispose = vi.fn();
+    constructor(_element: HTMLElement) {}
   }
   return {
     default: MockModal,
