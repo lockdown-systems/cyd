@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, onBeforeUnmount, ref, computed } from "vue";
 
 defineProps({
   height: {
@@ -28,47 +28,75 @@ const imageUrl = computed(() => {
   }
 });
 
-onMounted(async () => {
-  // Change the stance every 3 to 8 seconds
-  setTimeout(async () => {
-    while (true) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.random() * 3000 + 5000),
-      );
-      const random = Math.floor(Math.random() * 5);
-      if (random == 0) {
-        stance.value = "plain";
-      } else if (random == 1) {
-        stance.value = "akimbo";
-      } else if (random == 2) {
-        stance.value = "wing";
-      } else if (random == 3) {
-        stance.value = "point";
-      } else {
-        stance.value = "shrug";
-      }
-    }
-  }, 1);
+const activeTimeouts = new Set<ReturnType<typeof setTimeout>>();
+const trackTimeout = (callback: () => void, delay: number) => {
+  const timeout = setTimeout(() => {
+    activeTimeouts.delete(timeout);
+    callback();
+  }, delay);
+  activeTimeouts.add(timeout);
+  return timeout;
+};
 
-  // Blink or look every 3 to 8 seconds
-  setTimeout(async () => {
-    while (true) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.random() * 3000 + 5000),
-      );
-      if (Math.floor(Math.random() * 2) == 0) {
-        isBlinking.value = true;
-        setTimeout(() => {
-          isBlinking.value = false;
-        }, 500);
-      } else {
-        setTimeout(() => {
-          isLooking.value = false;
-        }, 500);
-        isLooking.value = true;
-      }
+let destroyed = false;
+
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => {
+    trackTimeout(() => {
+      resolve();
+    }, ms);
+  });
+
+const runStanceLoop = async () => {
+  while (!destroyed) {
+    await wait(Math.random() * 3000 + 5000);
+    if (destroyed) {
+      break;
     }
-  }, 1);
+    const random = Math.floor(Math.random() * 5);
+    if (random === 0) {
+      stance.value = "plain";
+    } else if (random === 1) {
+      stance.value = "akimbo";
+    } else if (random === 2) {
+      stance.value = "wing";
+    } else if (random === 3) {
+      stance.value = "point";
+    } else {
+      stance.value = "shrug";
+    }
+  }
+};
+
+const runBlinkLoop = async () => {
+  while (!destroyed) {
+    await wait(Math.random() * 3000 + 5000);
+    if (destroyed) {
+      break;
+    }
+    if (Math.floor(Math.random() * 2) === 0) {
+      isBlinking.value = true;
+      trackTimeout(() => {
+        isBlinking.value = false;
+      }, 500);
+    } else {
+      isLooking.value = true;
+      trackTimeout(() => {
+        isLooking.value = false;
+      }, 500);
+    }
+  }
+};
+
+onMounted(async () => {
+  runStanceLoop();
+  runBlinkLoop();
+});
+
+onBeforeUnmount(() => {
+  destroyed = true;
+  activeTimeouts.forEach((timeout) => clearTimeout(timeout));
+  activeTimeouts.clear();
 });
 </script>
 

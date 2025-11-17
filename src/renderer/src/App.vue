@@ -280,6 +280,13 @@ onUnmounted(() => {
   // Cleanup check for updates interval
   if (checkForUpdatesInterval) {
     clearInterval(checkForUpdatesInterval);
+    checkForUpdatesInterval = null;
+  }
+
+  // Cleanup user activity interval started during mount
+  if (userActivityInterval) {
+    clearInterval(userActivityInterval);
+    userActivityInterval = null;
   }
 });
 </script>
