@@ -1,7 +1,6 @@
 import "../../../__tests__/platform-fixtures/electronMocks";
 import "../../../__tests__/platform-fixtures/network";
 
-import { randomUUID } from "crypto";
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
 
 import type { XAccountController } from "../../x_account_controller";
@@ -11,50 +10,11 @@ import {
   createXControllerTestContext,
   type XControllerTestContext,
 } from "../fixtures/accountTestHarness";
-
-type TweetSeed = {
-  tweetID?: string;
-  username?: string;
-  text?: string;
-  createdAt?: string;
-  likeCount?: number;
-  retweetCount?: number;
-  quoteCount?: number;
-  replyCount?: number;
-  isLiked?: number;
-  isRetweeted?: number;
-  isBookmarked?: number;
-  conversationID?: string;
-  path?: string;
-  addedToDatabaseAt?: string;
-  archivedAt?: string | null;
-  deletedTweetAt?: string | null;
-  deletedRetweetAt?: string | null;
-  deletedLikeAt?: string | null;
-  deletedBookmarkAt?: string | null;
-  hasMedia?: number;
-  isReply?: number;
-  replyTweetID?: string | null;
-  replyUserID?: string | null;
-  isQuote?: number;
-  quotedTweet?: string | null;
-};
-
-type ConversationSeed = {
-  conversationID: string;
-  type?: string;
-  addedToDatabaseAt?: string;
-  deletedAt?: string | null;
-};
-
-type MessageSeed = {
-  messageID: string;
-  conversationID: string;
-  createdAt?: string;
-  senderID?: string;
-  text?: string;
-  deletedAt?: string | null;
-};
+import {
+  seedTweet,
+  seedConversation,
+  seedMessage,
+} from "../fixtures/tweetFactory";
 
 describe("XAccountController - Deletion", () => {
   let controllerContext: XControllerTestContext | null = null;
@@ -377,165 +337,3 @@ describe("XAccountController - Deletion", () => {
     });
   });
 });
-
-function seedTweet(
-  controller: XAccountController,
-  overrides: TweetSeed = {},
-): string {
-  const tweetID = overrides.tweetID ?? randomUUID();
-  const now = new Date().toISOString();
-  const data = {
-    tweetID,
-    username: controller.account!.username,
-    text: "Test tweet",
-    createdAt: getTimestampDaysAgo(0),
-    likeCount: 0,
-    retweetCount: 0,
-    quoteCount: 0,
-    replyCount: 0,
-    isLiked: 0,
-    isRetweeted: 0,
-    isBookmarked: 0,
-    conversationID: randomUUID(),
-    path: `/tmp/${tweetID}`,
-    addedToDatabaseAt: now,
-    archivedAt: null,
-    deletedTweetAt: null,
-    deletedRetweetAt: null,
-    deletedLikeAt: null,
-    deletedBookmarkAt: null,
-    hasMedia: 0,
-    isReply: 0,
-    replyTweetID: null,
-    replyUserID: null,
-    isQuote: 0,
-    quotedTweet: null,
-    ...overrides,
-  };
-
-  exec(
-    controller.db!,
-    `INSERT INTO tweet (
-        tweetID,
-        username,
-        text,
-        createdAt,
-        likeCount,
-        retweetCount,
-        quoteCount,
-        replyCount,
-        isLiked,
-        isRetweeted,
-        isBookmarked,
-        conversationID,
-        path,
-        addedToDatabaseAt,
-        archivedAt,
-        deletedTweetAt,
-        deletedRetweetAt,
-        deletedLikeAt,
-        deletedBookmarkAt,
-        hasMedia,
-        isReply,
-        replyTweetID,
-        replyUserID,
-        isQuote,
-        quotedTweet
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      data.tweetID,
-      data.username,
-      data.text,
-      data.createdAt,
-      data.likeCount,
-      data.retweetCount,
-      data.quoteCount,
-      data.replyCount,
-      data.isLiked,
-      data.isRetweeted,
-      data.isBookmarked,
-      data.conversationID,
-      data.path,
-      data.addedToDatabaseAt,
-      data.archivedAt,
-      data.deletedTweetAt,
-      data.deletedRetweetAt,
-      data.deletedLikeAt,
-      data.deletedBookmarkAt,
-      data.hasMedia,
-      data.isReply,
-      data.replyTweetID,
-      data.replyUserID,
-      data.isQuote,
-      data.quotedTweet,
-    ],
-  );
-
-  return data.tweetID;
-}
-
-function seedConversation(
-  controller: XAccountController,
-  seed: ConversationSeed,
-): void {
-  const now = new Date().toISOString();
-  const data = {
-    type: "DM",
-    addedToDatabaseAt: now,
-    deletedAt: null,
-    ...seed,
-  };
-
-  exec(
-    controller.db!,
-    `INSERT INTO conversation (
-        conversationID,
-        type,
-        sortTimestamp,
-        minEntryID,
-        maxEntryID,
-        isTrusted,
-        shouldIndexMessages,
-        addedToDatabaseAt,
-        updatedInDatabaseAt,
-        deletedAt
-    ) VALUES (?, ?, NULL, NULL, NULL, 0, 0, ?, ?, ?)`,
-    [
-      data.conversationID,
-      data.type,
-      data.addedToDatabaseAt,
-      data.addedToDatabaseAt,
-      data.deletedAt,
-    ],
-  );
-}
-
-function seedMessage(controller: XAccountController, seed: MessageSeed): void {
-  const data = {
-    createdAt: new Date().toISOString(),
-    senderID: "sender",
-    text: "Hello",
-    deletedAt: null,
-    ...seed,
-  };
-
-  exec(
-    controller.db!,
-    `INSERT INTO message (
-        messageID,
-        conversationID,
-        createdAt,
-        senderID,
-        text,
-        deletedAt
-    ) VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      data.messageID,
-      data.conversationID,
-      data.createdAt,
-      data.senderID,
-      data.text,
-      data.deletedAt,
-    ],
-  );
-}

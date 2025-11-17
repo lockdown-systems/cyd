@@ -78,6 +78,7 @@ vi.mock("electron", () => {
     },
     app: {
       getPath: vi.fn(() => tmpDir),
+      getVersion: vi.fn(() => "test-version"),
     },
     ipcMain: {
       handle: vi.fn(),
