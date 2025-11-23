@@ -6,7 +6,9 @@
         "cancel": "Cancel",
         "save": "Save",
         "delete": "Delete",
-        "retry": "Retry"
+        "retry": "Retry",
+        "seconds": "{count} seconds",
+        "minutes": "{minutes} minutes, {seconds} seconds"
     },
     "jobs": {
         "login": "Logging in",
@@ -37,6 +39,26 @@
         "savedRetweets": "Saved {count} retweets",
         "savedOtherTweets": "Also saved {count} other tweets",
         "savedConversations": "Saved {count} conversations",
+        "savedTweetsAndRetweets": "Saved {tweets} tweets and {retweets} retweets.",
+        "savedLikes": "Saved {count} likes.",
+        "savedBookmarks": "Saved {count} bookmarks.",
+        "savedMessages": "Saved {messages} messages from {conversationsIndexed} of {totalConversations} conversations.",
+        "savedTweetsAsHTML": "Saved {archived} of {total} tweets as HTML.",
+        "finishedSavingTweetsAsHTML": "Finished saving tweets as HTML!",
+        "deletedTweets": "Deleted {deleted} of {total} tweets.",
+        "deletedRetweets": "Deleted {deleted} of {total} retweets.",
+        "deletedLikes": "Deleted {deleted} of {total} likes.",
+        "deletedBookmarks": "Deleted {deleted} of {total} bookmarks.",
+        "deletedConversations": "Deleted {count} conversations.",
+        "finishedDeletingDMs": "Finished deleting direct messages!",
+        "unfollowedAccounts": "Unfollowed {count} accounts.",
+        "finishedUnfollowing": "Finished unfollowing everyone!",
+        "buildingArchive": "Building archive website",
+        "migratedTweets": "Migrated {migrated} of {total} tweets.",
+        "deletedPosts": "Deleted {deleted} of {total} posts.",
+        "updatingBanner": "Updating the banner on your X profile",
+        "updatingBio": "Updating your bio on your X profile",
+        "lockingAccount": "Locking your X account",
         "rateLimitHit": "You have hit a rate limit!",
         "rateLimitWaiting": "Waiting {time} to retry."
     },
@@ -45,5 +67,25 @@
         "retweets": "{count} retweets",
         "likes": "{count} likes",
         "videoPlaceholder": "Video Placeholder"
+    },
+    "app": {
+        "error": {
+            "failedToGetDeviceInfo": "Failed to get saved device info.",
+            "failedToCheckUpdates": "Failed to check for updates"
+        },
+        "updates": {
+            "updateAvailable": "Cyd update available.",
+            "shouldUseLatestVersion": "You should always use the latest version of Cyd.",
+            "installViaPackageManager": "Install updates using your operating system's package manager.",
+            "loadingUpdateStatus": "Loading update status...",
+            "downloadingUpdate": "Downloading update...",
+            "restartToUpdate": "Restart to Update",
+            "errorWithAutomaticUpdate": "Error with automatic update. Install the latest version of Cyd",
+            "fromWebsite": "from the website",
+            "updateAvailableTitle": "An update is available",
+            "updateAvailableMessage": "You are running Cyd {currentVersion}. Cyd {latestVersion} is the latest version, and you should upgrade.",
+            "noUpdatesAvailableTitle": "No updates are available",
+            "noUpdatesAvailableMessage": "You are running Cyd {currentVersion}, which is the latest version."
+        }
     }
 }

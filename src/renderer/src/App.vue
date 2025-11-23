@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from "electron";
 import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue";
+import { useI18n } from "vue-i18n";
 import semver from "semver";
 
 import { DeviceInfo, PlausibleEvents } from "./types";
@@ -9,6 +10,8 @@ import CydAPIClient, {
   APIErrorResponse,
   GetVersionAPIResponse,
 } from "../../cyd-api-client";
+
+const { t } = useI18n();
 
 import SignInModal from "./modals/SignInModal.vue";
 import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue";
@@ -42,7 +45,7 @@ const refreshDeviceInfo = async () => {
       await apiClient.value.setDeviceToken(deviceInfo.value.deviceToken);
     }
   } catch {
-    window.electron.showError("Failed to get saved device info.");
+    window.electron.showError(t("app.error.failedToGetDeviceInfo"));
   }
 };
 provide("refreshDeviceInfo", refreshDeviceInfo);
@@ -151,8 +154,11 @@ const checkForUpdates = async (shouldAlert: boolean = false) => {
 
       if (shouldAlert) {
         await window.electron.showMessage(
-          "An update is available",
-          `You are running Cyd ${currentVersion}. Cyd ${latestVersion} is the latest version, and you should upgrade.`,
+          t("app.updates.updateAvailableTitle"),
+          t("app.updates.updateAvailableMessage", {
+            currentVersion,
+            latestVersion,
+          }),
         );
       }
     } else {
@@ -161,15 +167,17 @@ const checkForUpdates = async (shouldAlert: boolean = false) => {
 
       if (shouldAlert) {
         await window.electron.showMessage(
-          "No updates are available",
-          `You are running Cyd ${currentVersion}, which is the latest version.`,
+          t("app.updates.noUpdatesAvailableTitle"),
+          t("app.updates.noUpdatesAvailableMessage", {
+            currentVersion,
+          }),
         );
       }
     }
   } else {
     console.log("checkForUpdates", "error checking for updates", resp);
     if (shouldAlert) {
-      await window.electron.showError("Failed to check for updates");
+      await window.electron.showError(t("app.error.failedToCheckUpdates"));
     }
   }
 };
@@ -323,23 +331,22 @@ onUnmounted(() => {
 
       <div v-if="updatesAvailable" class="updates-bar">
         <p>
-          <strong>Cyd update available.</strong> You should always use the
-          latest version of Cyd.
+          <strong>{{ t('app.updates.updateAvailable') }}</strong> {{ t('app.updates.shouldUseLatestVersion') }}
         </p>
         <p class="text-muted">
           <template v-if="platform === 'linux'">
-            Install updates using your operating system's package manager.
+            {{ t('app.updates.installViaPackageManager') }}
           </template>
           <template v-else>
             <template v-if="updateStatus == UpdateStatus.Checking">
-              Loading update status...
+              {{ t('app.updates.loadingUpdateStatus') }}
             </template>
             <template v-else-if="updateStatus == UpdateStatus.Available">
-              Downloading update...
+              {{ t('app.updates.downloadingUpdate') }}
             </template>
             <template v-else-if="updateStatus == UpdateStatus.Downloaded">
               <button class="btn btn-primary" @click="restartToUpdateClicked">
-                Restart to Update
+                {{ t('app.updates.restartToUpdate') }}
               </button>
             </template>
             <template
@@ -348,9 +355,9 @@ onUnmounted(() => {
                 updateStatus == UpdateStatus.NotAvailable
               "
             >
-              Error with automatic update. Install the latest version of Cyd
+              {{ t('app.updates.errorWithAutomaticUpdate') }}
               <a href="#" @click="openURL('https://cyd.social/download/')"
-                >from the website</a
+                >{{ t('app.updates.fromWebsite') }}</a
               >.
             </template>
           </template>

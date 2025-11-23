@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { FacebookJob } from "../../../../../shared_types";
 import StatusComponent from "../../shared_components/StatusComponent.vue";
 
@@ -17,14 +18,13 @@ const emit = defineEmits([
   "onClickingEnabled",
 ]);
 
+const { t } = useI18n();
+
 const getJobTypeText = (jobType: string) => {
-  const jobTypeTexts: { [key: string]: string } = {
-    login: "Logging in",
-    savePosts: "Saving posts",
-    savePostsHTML: "Saving posts HTML",
-    archiveBuild: "Building archive",
-  };
-  return jobTypeTexts[jobType] || jobType;
+  const translationKey = `jobs.${jobType}`;
+  const translated = t(translationKey);
+  // If translation key doesn't exist, vue-i18n returns the key, so fallback to jobType
+  return translated !== translationKey ? translated : jobType;
 };
 </script>
 

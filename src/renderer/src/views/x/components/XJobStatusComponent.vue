@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { XJob } from "../../../../../shared_types";
 import StatusComponent from "../../shared_components/StatusComponent.vue";
 
@@ -17,29 +18,13 @@ const emit = defineEmits([
   "onClickingEnabled",
 ]);
 
+const { t } = useI18n();
+
 const getJobTypeText = (jobType: string) => {
-  const jobTypeTexts: { [key: string]: string } = {
-    login: "Logging in",
-    indexTweets: "Saving tweets",
-    indexLikes: "Saving likes",
-    indexBookmarks: "Saving bookmarks",
-    indexConversations: "Saving conversations",
-    indexMessages: "Saving messages",
-    archiveTweets: "Saving tweets HTML",
-    archiveBuild: "Building archive",
-    deleteTweets: "Deleting tweets",
-    deleteRetweets: "Deleting retweets",
-    deleteLikes: "Deleting likes",
-    deleteBookmarks: "Deleting bookmarks",
-    deleteDMs: "Deleting DMs",
-    unfollowEveryone: "Unfollowing everyone",
-    migrateBluesky: "Migrating to Bluesky",
-    migrateBlueskyDelete: "Deleting from Bluesky",
-    tombstoneUpdateBanner: "Updating banner",
-    tombstoneUpdateBio: "Updating bio",
-    tombstoneLockAccount: "Locking account",
-  };
-  return jobTypeTexts[jobType] || jobType;
+  const translationKey = `jobs.${jobType}`;
+  const translated = t(translationKey);
+  // If translation key doesn't exist, vue-i18n returns the key, so fallback to jobType
+  return translated !== translationKey ? translated : jobType;
 };
 </script>
 
