@@ -501,8 +501,8 @@ onMounted(async () => {
         <ButtonsComponent
           :back-buttons="[]"
           :next-buttons="[
-            { label: 'Run Again with Same Settings', action: runAgainClicked },
-            { label: 'Continue to Dashboard', action: nextClicked },
+            { label: t('finished.runAgainWithSameSettings'), action: runAgainClicked },
+            { label: t('finished.continueToDashboard'), action: nextClicked },
           ]"
         />
       </template>
@@ -510,7 +510,7 @@ onMounted(async () => {
         <ButtonsComponent
           :back-buttons="[]"
           :next-buttons="[
-            { label: 'Continue to Dashboard', action: nextClicked },
+            { label: t('finished.continueToDashboard'), action: nextClicked },
           ]"
         />
       </template>

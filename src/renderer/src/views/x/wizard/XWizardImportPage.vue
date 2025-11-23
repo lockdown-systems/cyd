@@ -34,25 +34,25 @@ const backClicked = async () => {
 const breadcrumbProps = computed(() => ({
   buttons: [
     {
-      label: "Dashboard",
+      label: t("wizard.dashboard"),
       action: () => emit("setState", State.WizardDashboard),
       icon: getBreadcrumbIcon("dashboard"),
     },
     {
-      label: "Local Database",
+      label: t("review.localDatabase"),
       action: backClicked,
       icon: getBreadcrumbIcon("database"),
     },
   ],
-  label: "Import X Archive",
+  label: t("import.importXArchive"),
   icon: getBreadcrumbIcon("import"),
 }));
 
 const buttonProps = computed(() => ({
-  backButtons: [{ label: "Back to Local Database", action: backClicked }],
+  backButtons: [{ label: t("wizard.backToLocalDatabase"), action: backClicked }],
   nextButtons: [
     {
-      label: "I've Downloaded My Archive from X",
+      label: t("wizard.iveDownloadedMyArchive"),
       action: importClicked,
       disabled: !(
         props.model.account?.xAccount?.archiveTweets ||

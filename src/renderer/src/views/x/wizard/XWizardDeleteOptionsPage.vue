@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import { xHasSomeData } from "../../../util_x";
 import { getBreadcrumbIcon, openURL, setJobsType } from "../../../util";
@@ -7,6 +8,8 @@ import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -43,7 +46,7 @@ const setProceedEnabled = (enabled: boolean) => {
 // Show more
 const deleteTweetsShowMore = ref(false);
 const deleteTweetsShowMoreButtonText = computed(() =>
-  deleteTweetsShowMore.value ? "Hide more options" : "Show more options",
+  deleteTweetsShowMore.value ? t("wizard.hideMoreOptions") : t("wizard.showMoreOptions"),
 );
 const deleteTweetsShowMoreClicked = () => {
   deleteTweetsShowMore.value = !deleteTweetsShowMore.value;
@@ -51,7 +54,7 @@ const deleteTweetsShowMoreClicked = () => {
 
 const deleteRetweetsShowMore = ref(false);
 const deleteRetweetsShowMoreButtonText = computed(() =>
-  deleteRetweetsShowMore.value ? "Hide more options" : "Show more options",
+  deleteRetweetsShowMore.value ? t("wizard.hideMoreOptions") : t("wizard.showMoreOptions"),
 );
 const deleteRetweetsShowMoreClicked = () => {
   deleteRetweetsShowMore.value = !deleteRetweetsShowMore.value;
@@ -225,25 +228,25 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: backClicked,
           icon: getBreadcrumbIcon('dashboard'),
         },
       ],
-      label: 'Delete Options',
+      label: t('review.deleteOptions'),
       icon: getBreadcrumbIcon('delete'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Dashboard',
+          label: t('wizard.backToDashboard'),
           action: backClicked,
           disabled: isLoading,
         },
       ],
       nextButtons: [
         {
-          label: 'Continue to Review',
+          label: t('wizard.continueToReview'),
           action: nextClicked,
           disabled: isLoading || !hasValidSelection,
         },
@@ -253,9 +256,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Delete from X</h2>
+          <h2>{{ t('wizard.deleteFromX') }}</h2>
           <p class="text-muted">
-            Delete your data from X, except for what you want to keep.
+            {{ t('wizard.deleteFromXDescription') }}
           </p>
         </div>
 

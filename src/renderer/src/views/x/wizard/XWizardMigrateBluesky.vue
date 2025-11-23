@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { IpcRendererEvent } from "electron";
 import { ref, onMounted, onUnmounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Pie } from "vue-chartjs";
@@ -21,6 +22,8 @@ import XLastImportOrBuildComponent from "../components/XLastImportOrBuildCompone
 import LoadingComponent from "../../shared_components/LoadingComponent.vue";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 
+const { t } = useI18n();
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 enum State {
@@ -37,7 +40,10 @@ const blueskyProfile = ref<BlueskyMigrationProfile | null>(null);
 const tweetCounts = ref<XMigrateTweetCounts | null>(null);
 
 const blueskyHandle = ref("");
-const connectButtonText = ref("Connect");
+const connectButtonText = computed(() => {
+  if (state.value === State.Connecting) return t("wizard.connecting");
+  return t("wizard.connect");
+});
 
 const hasSomeData = ref<boolean>(false);
 const lastImportArchive = ref<Date | null>(null);
@@ -56,7 +62,6 @@ const emit = defineEmits<{
 }>();
 
 const connectClicked = async () => {
-  connectButtonText.value = "Connecting...";
   state.value = State.Connecting;
 
   if (blueskyHandle.value.startsWith("@")) {
@@ -71,19 +76,16 @@ const connectClicked = async () => {
     if (ret !== true) {
       await window.electron.X.blueskyDisconnect(props.model.account.id);
       await window.electron.showMessage(
-        "Failed to connect to Bluesky.",
+        t("wizard.failedToConnectToBluesky"),
         `${ret}`,
       );
-      connectButtonText.value = "Connect";
       state.value = State.NotConnected;
     } else {
-      connectButtonText.value = "Connect";
       state.value = State.FinishInBrowser;
     }
   } catch (e) {
     await window.electron.X.blueskyDisconnect(props.model.account.id);
-    await window.electron.showMessage("Failed to connect to Bluesky", `${e}`);
-    connectButtonText.value = "Connect";
+    await window.electron.showMessage(t("wizard.failedToConnectToBluesky"), `${e}`);
     state.value = State.NotConnected;
   }
 };
@@ -105,7 +107,7 @@ const oauthCallback = async (queryString: string) => {
     if (ret !== true) {
       await window.electron.X.blueskyDisconnect(props.model.account.id);
       await window.electron.showMessage(
-        "Failed to connect to Bluesky.",
+        t("wizard.failedToConnectToBluesky"),
         `${ret}`,
       );
       state.value = State.NotConnected;
@@ -119,7 +121,7 @@ const oauthCallback = async (queryString: string) => {
     }
   } catch (e) {
     await window.electron.X.blueskyDisconnect(props.model.account.id);
-    await window.electron.showMessage("Failed to connect to Bluesky", `${e}`);
+    await window.electron.showMessage(t("wizard.failedToConnectToBluesky"), `${e}`);
     state.value = State.NotConnected;
   }
 };
@@ -180,7 +182,7 @@ onMounted(async () => {
       props.model.account.id,
     );
   } catch (e) {
-    await window.electron.showMessage("Failed to get Bluesky profile.", `${e}`);
+    await window.electron.showMessage(t("wizard.failedToGetBlueskyProfile"), `${e}`);
   }
   if (blueskyProfile.value) {
     state.value = State.Connected;
@@ -214,18 +216,18 @@ onUnmounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('setState', XState.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
       ],
-      label: 'Migrate to Bluesky Options',
+      label: t('review.migrateToBlueskyOptions'),
       icon: getBreadcrumbIcon('bluesky'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Dashboard',
+          label: t('wizard.backToDashboard'),
           action: () => emit('setState', XState.WizardDashboard),
         },
       ],
@@ -233,12 +235,12 @@ onUnmounted(async () => {
         state == State.Connected
           ? [
               {
-                label: 'Continue to Review',
+                label: t('wizard.continueToReview'),
                 action: migrateClicked,
                 disabled: tweetCounts?.toMigrateTweets.length == 0,
               },
               {
-                label: 'Delete Migrated Tweets from Bluesky',
+                label: t('wizard.deleteMigratedTweetsFromBluesky'),
                 action: deleteClicked,
                 hide: (tweetCounts?.alreadyMigratedTweets?.length ?? 0) == 0,
                 dangerStyle: true,
@@ -251,30 +253,23 @@ onUnmounted(async () => {
       <div class="wizard-scroll-content">
         <div class="mb-4">
           <h2>
-            Migrate to Bluesky
+            {{ t('wizard.migrateToBluesky') }}
             <span
               v-if="!userAuthenticated || !userPremium"
               class="premium badge badge-primary"
-              >Premium</span
+              >{{ t('premium.premium') }}</span
             >
           </h2>
           <p class="text-muted">
-            Import your old tweets into a Bluesky account. You may want to make
-            a new Bluesky account just for your old tweets.
+            {{ t('wizard.migrateToBlueskyDescription') }}
           </p>
 
           <div v-if="isArchiveOld && hasSomeData" class="alert alert-warning">
             <p>
-              <strong>
-                We recommend that you reimport your local database of tweets, or
-                rebuild it from scratch,
-                <em>before</em> migrating to Bluesky.
-              </strong>
+              <strong v-html="t('wizard.recommendReimport')"></strong>
             </p>
             <p>
-              When you last built your local database of tweets, Cyd didn't keep
-              track of things like media, replies, and quote tweets. If you
-              migrate to Bluesky now, you may lose some of your data.
+              {{ t('wizard.recommendReimportReason') }}
             </p>
           </div>
 
@@ -293,16 +288,16 @@ onUnmounted(async () => {
             v-if="state == State.NotConnected || state == State.Connecting"
           >
             <form @submit.prevent="connectClicked">
-              <p>To get started, connect your Bluesky account.</p>
+              <p>{{ t('wizard.connectBlueskyAccount') }}</p>
               <div class="form-group">
-                <label for="username" class="sr-only">Bluesky Handle</label>
+                <label for="username" class="sr-only">{{ t('wizard.blueskyHandle') }}</label>
                 <div class="input-group">
                   <input
                     id="handle"
                     v-model="blueskyHandle"
                     type="text"
                     class="form-control"
-                    placeholder="Bluesky Handle (for example, me.bsky.social)"
+                    :placeholder="t('wizard.blueskyHandlePlaceholder')"
                     required
                     :disabled="state !== State.NotConnected"
                   />
@@ -321,9 +316,7 @@ onUnmounted(async () => {
           </template>
           <template v-else-if="state == State.FinishInBrowser">
             <div class="d-flex align-items-center">
-              <div class="flex-grow-1 fs-4">
-                Finish connecting to the Bluesky account
-                <strong>@{{ blueskyHandle }}</strong> in your web browser.
+              <div class="flex-grow-1 fs-4" v-html="t('wizard.finishConnectingInBrowser', { handle: blueskyHandle })">
               </div>
               <div>
                 <button
@@ -331,7 +324,7 @@ onUnmounted(async () => {
                   type="button"
                   @click="disconnectClicked"
                 >
-                  Cancel
+                  {{ t('wizard.cancel') }}
                 </button>
               </div>
             </div>
@@ -339,7 +332,7 @@ onUnmounted(async () => {
           <template v-else-if="state == State.Connected">
             <!-- Show the Bluesky account that is connected -->
             <hr />
-            <p>You have connected to the following Bluesky account:</p>
+            <p>{{ t('wizard.connectedToBlueskyAccount') }}</p>
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
                 <template v-if="blueskyProfile">
