@@ -20,6 +20,7 @@
  */
 
 import { unref, computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import type { Account } from "../../../shared_types";
 import type { PlatformConfig } from "../types/PlatformConfig";
 import type { BasePlatformViewModel } from "../types/PlatformView";
@@ -28,6 +29,8 @@ import AccountHeader from "./shared_components/AccountHeader.vue";
 import SpeechBubble from "./shared_components/SpeechBubble.vue";
 import AutomationNotice from "./shared_components/AutomationNotice.vue";
 import LoadingComponent from "./shared_components/LoadingComponent.vue";
+
+const { t } = useI18n();
 import { openURL } from "../util";
 import { PlatformStates } from "../types/PlatformStates";
 
@@ -165,13 +168,12 @@ const currentJobsLength = computed(() => props.currentJobs.length);
         class="u2f-info text-center text-muted small ms-2"
       >
         <i class="fa-solid fa-circle-info me-2" />
-        If you use a U2F security key (like a Yubikey) for 2FA, press it when
-        you see a white screen.
+        {{ t('platform.u2fNotice') }}
         <a
           v-if="config.urls.u2fDocs"
           href="#"
           @click="openURL(config.urls.u2fDocs)"
-          >Read more</a
+          >{{ t('platform.readMore') }}</a
         >.
       </p>
 
@@ -184,7 +186,7 @@ const currentJobsLength = computed(() => props.currentJobs.length);
       >
         <slot name="archive-only-button">
           <button class="btn btn-secondary" @click="emit('archiveOnlyClicked')">
-            Import Archive Only (for deleted accounts with an archive)
+            {{ t('platform.importArchiveOnly') }}
           </button>
         </slot>
       </div>

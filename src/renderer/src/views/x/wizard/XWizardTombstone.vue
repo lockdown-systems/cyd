@@ -239,21 +239,21 @@ const bioCharactersLeft = computed(() => {
 // Dynamic button label based on selections
 const nextButtonLabel = computed(() => {
   if (updateBanner.value && updateBio.value && lockAccount.value) {
-    return "Update My Banner and Bio, and Lock My Account";
+    return t("wizard.updateMyBannerAndBioAndLock");
   } else if (updateBanner.value && updateBio.value) {
-    return "Update My Banner and Bio";
+    return t("wizard.updateMyBannerAndBio");
   } else if (updateBanner.value && lockAccount.value) {
-    return "Update My Banner and Lock My Account";
+    return t("wizard.updateMyBannerAndLock");
   } else if (updateBio.value && lockAccount.value) {
-    return "Update My Bio and Lock My Account";
+    return t("wizard.updateMyBioAndLock");
   } else if (updateBanner.value) {
-    return "Update My Banner";
+    return t("wizard.updateMyBanner");
   } else if (updateBio.value) {
-    return "Update My Bio";
+    return t("wizard.updateMyBio");
   } else if (lockAccount.value) {
-    return "Lock My Account";
+    return t("wizard.lockMyAccount");
   } else {
-    return "Select a Checkbox Above to Continue";
+    return t("wizard.selectCheckboxToContinue");
   }
 });
 
@@ -324,13 +324,12 @@ onMounted(async () => {
                   class="form-check-input"
                 />
                 <label class="form-check-label" for="updateBanner"
-                  >Update profile banner</label
+                  >{{ t('wizard.updateProfileBanner') }}</label
                 >
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  Customize the background, show Bluesky or Mastodon icons, and
-                  include text about how you escaped.
+                  {{ t('wizard.bannerDescription') }}
                 </small>
               </div>
             </div>
@@ -340,13 +339,13 @@ onMounted(async () => {
                   class="form-check-label me-2 text-nowrap"
                   for="updateBannerBackground"
                 >
-                  Background
+                  {{ t('wizard.background') }}
                 </label>
                 <select
                   id="updateBannerBackground"
                   v-model="updateBannerBackground"
                   class="form-select w-auto"
-                  aria-label="Background"
+                  :aria-label="t('wizard.background')"
                   :disabled="!updateBanner"
                 >
                   <option value="night">Night</option>
@@ -358,23 +357,23 @@ onMounted(async () => {
                   class="form-check-label me-2 text-nowrap"
                   for="updateBannerSocialIcons"
                 >
-                  Social icons
+                  {{ t('wizard.socialIcons') }}
                 </label>
                 <select
                   id="updateBannerSocialIcons"
                   v-model="updateBannerSocialIcons"
                   class="form-select w-auto"
-                  aria-label="Social icons"
+                  :aria-label="t('wizard.socialIcons')"
                   :disabled="!updateBanner"
                 >
-                  <option value="none">None</option>
-                  <option value="bluesky">Bluesky</option>
-                  <option value="mastodon">Mastodon</option>
+                  <option value="none">{{ t('wizard.none') }}</option>
+                  <option value="bluesky">{{ t('wizard.bluesky') }}</option>
+                  <option value="mastodon">{{ t('wizard.mastodon') }}</option>
                   <option value="bluesky-mastodon">
-                    Bluesky (left) and Mastodon (right)
+                    {{ t('wizard.blueskyMastodon') }}
                   </option>
                   <option value="mastodon-bluesky">
-                    Mastodon (left) and Bluesky (right)
+                    {{ t('wizard.mastodonBluesky') }}
                   </option>
                 </select>
               </div>
@@ -387,7 +386,7 @@ onMounted(async () => {
                   :disabled="!updateBanner"
                 />
                 <label class="form-check-label" for="updateBannerShowText">
-                  Include "I escaped from X/Twitter" text
+                  {{ t('wizard.includeEscapedText') }}
                 </label>
               </div>
             </div>
@@ -406,20 +405,19 @@ onMounted(async () => {
                   class="form-check-input"
                 />
                 <label class="form-check-label" for="updateBio"
-                  >Update bio text</label
+                  >{{ t('wizard.updateBioText') }}</label
                 >
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  Make sure your new bio text tells your followers that you are
-                  leaving X, and where to find you now.
+                  {{ t('wizard.bioDescription') }}
                 </small>
               </div>
             </div>
             <div class="indent">
               <div class="mb-1">
                 <label for="updateBioText" class="form-label visually-hidden"
-                  >Bio text</label
+                  >{{ t('wizard.bioText') }}</label
                 >
                 <textarea
                   id="updateBioText"
@@ -437,13 +435,13 @@ onMounted(async () => {
                   'text-muted': bioCharactersLeft >= 0,
                 }"
               >
-                {{ bioCharacters }} of 160 characters
+                {{ t('wizard.charactersOf', { current: bioCharacters, max: 160 }) }}
               </div>
               <p
                 v-if="updateBio && bioCharactersLeft < 0"
                 class="text-danger small"
               >
-                Your bio is {{ bioCharactersLeft * -1 }} characters too long
+                {{ t('wizard.bioTooLong', { count: bioCharactersLeft * -1 }) }}
               </p>
               <div class="mb-3">
                 <div class="form-check">

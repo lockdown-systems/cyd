@@ -198,6 +198,35 @@
         "saveTweetsHTML": "Save HTML versions of tweets",
         "saveLikes": "Save likes",
         "saveBookmarks": "Save bookmarks",
-        "saveDirectMessages": "Save direct messages"
+        "saveDirectMessages": "Save direct messages",
+        "archiveMyData": "Archive my data",
+        "updateProfileBanner": "Update profile banner",
+        "bannerDescription": "Customize the background, show Bluesky or Mastodon icons, and include text about how you escaped.",
+        "background": "Background",
+        "socialIcons": "Social icons",
+        "none": "None",
+        "bluesky": "Bluesky",
+        "mastodon": "Mastodon",
+        "blueskyMastodon": "Bluesky (left) and Mastodon (right)",
+        "mastodonBluesky": "Mastodon (left) and Bluesky (right)",
+        "includeEscapedText": "Include \"I escaped from X/Twitter\" text",
+        "updateBioText": "Update bio text",
+        "bioDescription": "Make sure your new bio text tells your followers that you are leaving X, and where to find you now.",
+        "bioText": "Bio text",
+        "charactersOf": "{current} of {max} characters",
+        "bioTooLong": "Your bio is {count} characters too long",
+        "updateMyBanner": "Update My Banner",
+        "updateMyBio": "Update My Bio",
+        "lockMyAccount": "Lock My Account",
+        "updateMyBannerAndBio": "Update My Banner and Bio",
+        "updateMyBannerAndLock": "Update My Banner and Lock My Account",
+        "updateMyBioAndLock": "Update My Bio and Lock My Account",
+        "updateMyBannerAndBioAndLock": "Update My Banner and Bio, and Lock My Account",
+        "selectCheckboxToContinue": "Select a Checkbox Above to Continue"
+    },
+    "platform": {
+        "u2fNotice": "If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white screen.",
+        "readMore": "Read more",
+        "importArchiveOnly": "Import Archive Only (for deleted accounts with an archive)"
     }
 }
