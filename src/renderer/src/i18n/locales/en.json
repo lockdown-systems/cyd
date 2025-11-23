@@ -228,5 +228,54 @@
         "u2fNotice": "If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white screen.",
         "readMore": "Read more",
         "importArchiveOnly": "Import Archive Only (for deleted accounts with an archive)"
+    },
+    "finished": {
+        "viewBlueskyProfile": "View Bluesky Profile",
+        "errorsOccurred": "Uh oh, Cyd encountered {count} errors.",
+        "submitErrorReportMessage": "Please submit an error report so we can fix the problems you encountered.",
+        "submitErrorReport": "Submit Error Report",
+        "failedToScrollTweetsAndLikes": "Cyd wasn't able to scroll through all of your tweets and likes this time.",
+        "failedToScrollTweets": "Cyd wasn't able to scroll through all of your tweets this time.",
+        "failedToScrollLikes": "Cyd wasn't able to scroll through all of your likes this time.",
+        "runAgainMessage": "Run Cyd again with the same settings to try again from the beginning.",
+        "noBlueskyProfile": "Something is wrong. No Bluesky profile found for this account."
+    },
+    "premium": {
+        "thanksForUpgrading": "Thanks for upgrading to Premium",
+        "featuresRequirePremium": "The following features require a Premium account:",
+        "manageAccountToUpgrade": "Manage your account to upgrade to Premium.",
+        "readyToDelete": "Ready to delete your data from X?",
+        "letsGo": "Let's go!",
+        "readyToMigrate": "Ready to migrate your tweets into Bluesky?",
+        "signIn": "Sign In",
+        "manageMyAccount": "Manage My Account",
+        "iveUpgraded": "I've Upgraded",
+        "haventUpgraded": "You haven't upgraded to Premium yet. Please try again.",
+        "deleteTweetsOlderThan": "Delete tweets older than a set number of days",
+        "deleteTweetsUnlessRetweets": "Delete tweets unless they have at least a certain number of retweets",
+        "deleteTweetsUnlessLikes": "Delete tweets unless they have at least a certain number of likes",
+        "deleteRetweetsOlderThan": "Delete retweets older than a set number of days",
+        "unfollowEveryone": "Unfollow everyone",
+        "deleteLikes": "Delete likes",
+        "deleteBookmarks": "Delete bookmarks",
+        "deleteDMs": "Delete DMs",
+        "migrateToBluesky": "Migrate to Bluesky"
+    },
+    "import": {
+        "importXArchive": "Import your X archive",
+        "beforeImportSteps": "Before you can import your X archive, you need to download it by following these steps:",
+        "visitDownloadPage": "Visit",
+        "mightNeedToSignIn": "You might need to sign in to X first.",
+        "proveYourIdentity": "Prove your identity.",
+        "proveIdentityDescription": "You'll probably need to type your X password. You might also need to get a verification code sent to your email, or do other things to verify your identity.",
+        "clickRequestArchive": "Click the \"Request archive\" button.",
+        "bePatient": "Be patient.",
+        "waitForArchive": "After requesting your archive, you'll need to wait at least a day, and maybe longer. Sorry!",
+        "downloadZipFile": "When it's ready, download the ZIP file from X.",
+        "afterFollowingSteps": "After you've followed these steps and you have your archive ZIP file, click the button below."
+    },
+    "account": {
+        "backToStart": "Back to start",
+        "removeAccount": "Remove account"
     }
 }

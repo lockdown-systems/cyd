@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { getAccountIcon } from "../../util";
 import type { Account } from "../../../../shared_types";
+
+const { t } = useI18n();
 
 defineProps<{
   account: Account;
@@ -57,7 +60,7 @@ const onRemoveClicked = () => {
           <i class="fa-solid fa-rotate" />
         </div>
         <div v-if="refreshBtnShowInfo" class="info-popup info-popup-refresh">
-          Back to start
+          {{ t('account.backToStart') }}
         </div>
       </div>
       <div class="btn-container">
@@ -70,7 +73,7 @@ const onRemoveClicked = () => {
           <i class="fa-solid fa-trash" />
         </div>
         <div v-if="removeBtnShowInfo" class="info-popup info-popup-remove">
-          Remove account
+          {{ t('account.removeAccount') }}
         </div>
       </div>
     </div>

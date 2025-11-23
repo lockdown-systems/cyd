@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 
 import { getBreadcrumbIcon, openURL } from "../../../util";
+
+const { t } = useI18n();
 
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
@@ -69,15 +72,14 @@ const buttonProps = computed(() => ({
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Import your X archive</h2>
+          <h2>{{ t('import.importXArchive') }}</h2>
           <p class="text-muted">
-            Before you can import your X archive, you need to download it by
-            following these steps:
+            {{ t('import.beforeImportSteps') }}
           </p>
           <ul class="x-archive-steps">
             <li>
               <strong
-                >Visit
+                >{{ t('import.visitDownloadPage') }}
                 <a
                   href="#"
                   @click="openURL('https://x.com/settings/download_your_data')"
@@ -86,33 +88,28 @@ const buttonProps = computed(() => ({
                 >.</strong
               ><br />
               <small class="text-muted"
-                >You might need to sign in to X first.</small
+                >{{ t('import.mightNeedToSignIn') }}</small
               >
             </li>
             <li>
-              <strong>Prove your identity.</strong><br />
+              <strong>{{ t('import.proveYourIdentity') }}</strong><br />
               <small class="text-muted"
-                >You'll probably need to type your X password. You might also
-                need to get a verification code sent to your email, or do other
-                things to verify your identity.</small
+                >{{ t('import.proveIdentityDescription') }}</small
               >
             </li>
             <li>
-              <strong>Click the "Request archive" button.</strong>
+              <strong>{{ t('import.clickRequestArchive') }}</strong>
             </li>
             <li>
-              <strong>Be patient.</strong><br />
+              <strong>{{ t('import.bePatient') }}</strong><br />
               <small class="text-muted"
-                >After requesting your archive, you'll need to wait
-                <strong>at least a day</strong>, and maybe longer. Sorry!</small
+                >{{ t('import.waitForArchive') }}</small
               >
             </li>
             <li>
-              <strong>When it's ready, download the ZIP file from X.</strong
-              ><br />
+              <strong>{{ t('import.downloadZipFile') }}</strong><br />
               <small class="text-muted"
-                >After you've followed these steps and you have your archive ZIP
-                file, click the button below.</small
+                >{{ t('import.afterFollowingSteps') }}</small
               >
             </li>
           </ul>
