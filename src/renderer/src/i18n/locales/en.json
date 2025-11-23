@@ -140,5 +140,41 @@
         "importXArchive": "Import X Archive",
         "rebuildDatabase": "Rebuild Your Local Database",
         "buildDatabase": "Build Your Local Database"
+    },
+    "upsell": {
+        "thanksForSupporting": "Thanks for supporting",
+        "openSource": "open source",
+        "collective": "worker-owned collective",
+        "thanksForPremium": "Thanks for using a Premium plan.",
+        "ifYouLikeToSupport": "If you'd like to support us even more, {donation}",
+        "donation": "we accept donations",
+        "premiumForTeamsQuestion": "Would Cyd would be useful for your team? Check out",
+        "teamsLink": "Cyd for Teams",
+        "andIfYouLikeToSupport": "And if you'd like to support us even more,",
+        "support": "Support",
+        "waysToSupport": "Here are ways to support us:",
+        "upgradeToPremium": "Upgrade to Premium",
+        "premiumDescription": "Unlock features like deleting DMs and migrating tweets to Bluesky",
+        "signInToStart": "Sign in to start",
+        "cydForTeams": "Cyd for Teams",
+        "teamsDescription": "Get Cyd Premium for everyone at your organization or company",
+        "startATeam": "Start a Team",
+        "donate": "Donate",
+        "donateDescription": "Show your support by making a donation!",
+        "clickToDonate": "Click to donate"
+    },
+    "dashboard": {
+        "startHere": "Start Here",
+        "localDatabase": "Local Database",
+        "localDatabaseDescription": "Make or update your local backup of X data. Cyd references this data when you delete from X or migrate to Bluesky.",
+        "lastRan": "Last ran {timeAgo}",
+        "deleteFromX": "Delete from X",
+        "deleteFromXDescription": "Delete your tweets, retweets, likes, bookmarks, or DMs from your X account, or unfollow everyone.",
+        "importXArchive": "Import X Archive",
+        "importXArchiveDescription": "Import data from an X archive file to create a backup without logging to X.",
+        "migrateToBluesky": "Migrate to Bluesky",
+        "migrateToBlueskyDescription": "Migrate your tweets from your X account to a Bluesky account.",
+        "tombstone": "Tombstone",
+        "tombstoneDescription": "Update your X profile to make it clear that you've moved on to better social media sites."
     }
 }
