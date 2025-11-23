@@ -210,13 +210,12 @@ onMounted(async () => {
               </small>
             </div>
             <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
-              <small
-                v-html="
-                  t('wizard.tweetsNotArchivedYet', {
-                    count: deleteTweetsCountNotArchived,
-                  })
-                "
-              >
+              <small>
+                <i18n-t keypath="wizard.tweetsNotArchivedYet">
+                  <template #strong>
+                    <strong>{{ deleteTweetsCountNotArchived }} tweets</strong>
+                  </template>
+                </i18n-t>
               </small>
             </div>
           </div>

@@ -272,7 +272,13 @@ onUnmounted(async () => {
 
           <div v-if="isArchiveOld && hasSomeData" class="alert alert-warning">
             <p>
-              <strong v-html="t('wizard.recommendReimport')"></strong>
+              <strong>
+                <i18n-t keypath="wizard.recommendReimport">
+                  <template #em>
+                    <em>before</em>
+                  </template>
+                </i18n-t>
+              </strong>
             </p>
             <p>
               {{ t("wizard.recommendReimportReason") }}
@@ -324,14 +330,13 @@ onUnmounted(async () => {
           </template>
           <template v-else-if="state == State.FinishInBrowser">
             <div class="d-flex align-items-center">
-              <div
-                class="flex-grow-1 fs-4"
-                v-html="
-                  t('wizard.finishConnectingInBrowser', {
-                    handle: blueskyHandle,
-                  })
-                "
-              ></div>
+              <div class="flex-grow-1 fs-4">
+                <i18n-t keypath="wizard.finishConnectingInBrowser">
+                  <template #strong>
+                    <strong>@{{ blueskyHandle }}</strong>
+                  </template>
+                </i18n-t>
+              </div>
               <div>
                 <button
                   class="btn btn-secondary"
