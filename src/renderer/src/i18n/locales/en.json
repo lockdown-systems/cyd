@@ -1,0 +1,49 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "success": "Success",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "retry": "Retry"
+    },
+    "jobs": {
+        "login": "Logging in",
+        "indexTweets": "Saving tweets",
+        "indexLikes": "Saving likes",
+        "indexBookmarks": "Saving bookmarks",
+        "indexConversations": "Saving conversations",
+        "indexMessages": "Saving messages",
+        "archiveTweets": "Saving tweets HTML",
+        "archiveBuild": "Building archive",
+        "deleteTweets": "Deleting tweets",
+        "deleteRetweets": "Deleting retweets",
+        "deleteLikes": "Deleting likes",
+        "deleteBookmarks": "Deleting bookmarks",
+        "deleteDMs": "Deleting DMs",
+        "unfollowEveryone": "Unfollowing everyone",
+        "migrateBluesky": "Migrating to Bluesky",
+        "migrateBlueskyDelete": "Deleting from Bluesky",
+        "tombstoneUpdateBanner": "Updating banner",
+        "tombstoneUpdateBio": "Updating bio",
+        "tombstoneLockAccount": "Locking account",
+        "savePosts": "Saving posts",
+        "savePostsHTML": "Saving posts HTML"
+    },
+    "progress": {
+        "savingComplete": "Saving complete!",
+        "savedTweets": "Saved {count} tweets",
+        "savedRetweets": "Saved {count} retweets",
+        "savedOtherTweets": "Also saved {count} other tweets",
+        "savedConversations": "Saved {count} conversations",
+        "rateLimitHit": "You have hit a rate limit!",
+        "rateLimitWaiting": "Waiting {time} to retry."
+    },
+    "ui": {
+        "tweetId": "Tweet ID: {id}",
+        "retweets": "{count} retweets",
+        "likes": "{count} likes",
+        "videoPlaceholder": "Video Placeholder"
+    }
+}
