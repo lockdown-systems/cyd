@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import type { FacebookJob } from "../../../../shared_types";
 import type { XJob } from "../../../../shared_types";
 import RunningIcon from "./RunningIcon.vue";
+
+const { t } = useI18n();
 
 defineProps<{
   jobs: FacebookJob[] | XJob[];
@@ -51,25 +54,25 @@ const getStatusIcon = (status: string) => {
         class="btn btn-outline-secondary btn-sm"
         @click="emit('onPause')"
       >
-        <i class="fa-solid fa-pause" /> Pause
+        <i class="fa-solid fa-pause" /> {{ t('status.pause') }}
       </button>
       <button
         v-if="isPaused"
         class="btn btn-primary btn-sm"
         @click="emit('onResume')"
       >
-        <i class="fa-solid fa-play" /> Resume
+        <i class="fa-solid fa-play" /> {{ t('status.resume') }}
       </button>
       <button
         class="btn btn-outline-danger btn-sm btn-cancel"
         @click="emit('onCancel')"
       >
-        <i class="fa-regular fa-circle-xmark" /> Cancel
+        <i class="fa-regular fa-circle-xmark" /> {{ t('status.cancel') }}
       </button>
     </div>
     <div class="d-flex justify-content-center">
       <button class="btn btn-link btn-sm" @click="emit('onReportBug')">
-        Report a Bug
+        {{ t('status.reportBug') }}
       </button>
     </div>
     <div class="d-flex justify-content-center">
@@ -81,7 +84,7 @@ const getStatusIcon = (status: string) => {
             : emit('onClickingEnabled')
         "
       >
-        {{ clickingEnabled ? "Disable" : "Enable" }} Clicking in Browser
+        {{ clickingEnabled ? t('status.disableClicking') : t('status.enableClicking') }}
       </button>
     </div>
   </div>

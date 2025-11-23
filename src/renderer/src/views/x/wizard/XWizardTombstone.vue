@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   XViewModel,
   State,
@@ -13,6 +14,8 @@ import {
 import { useWizardPage } from "../../../composables/useWizardPage";
 import XTombstoneBannerComponent from "../components/XTombstoneBannerComponent.vue";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+
+const { t } = useI18n();
 
 // Props
 const props = defineProps<{
@@ -278,18 +281,18 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
       ],
-      label: 'Tombstone',
+      label: t('wizard.tombstone'),
       icon: getBreadcrumbIcon('tombstone'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Dashboard',
+          label: t('wizard.backToDashboard'),
           action: backClicked,
           disabled: isLoading,
         },
@@ -306,9 +309,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Hello, darkness, my old friend</h2>
+          <h2>{{ t('wizard.helloDarkness') }}</h2>
           <p class="text-muted">
-            It's time to move on from X. How can I help you?
+            {{ t('wizard.timeToMoveOn') }}
           </p>
 
           <form @submit.prevent>

@@ -176,5 +176,28 @@
         "migrateToBlueskyDescription": "Migrate your tweets from your X account to a Bluesky account.",
         "tombstone": "Tombstone",
         "tombstoneDescription": "Update your X profile to make it clear that you've moved on to better social media sites."
+    },
+    "status": {
+        "pause": "Pause",
+        "resume": "Resume",
+        "cancel": "Cancel",
+        "reportBug": "Report a Bug",
+        "enableClicking": "Enable Clicking in Browser",
+        "disableClicking": "Disable Clicking in Browser"
+    },
+    "wizard": {
+        "dashboard": "Dashboard",
+        "review": "Review",
+        "tombstone": "Tombstone",
+        "backToDashboard": "Back to Dashboard",
+        "helloDarkness": "Hello, darkness, my old friend",
+        "timeToMoveOn": "It's time to move on from X. How can I help you?",
+        "reviewChoices": "Review your choices",
+        "buildLocalDatabase": "Build a local database",
+        "saveTweets": "Save tweets",
+        "saveTweetsHTML": "Save HTML versions of tweets",
+        "saveLikes": "Save likes",
+        "saveBookmarks": "Save bookmarks",
+        "saveDirectMessages": "Save direct messages"
     }
 }
