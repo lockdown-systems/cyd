@@ -87,5 +87,58 @@
             "noUpdatesAvailableTitle": "No updates are available",
             "noUpdatesAvailableMessage": "You are running Cyd {currentVersion}, which is the latest version."
         }
+    },
+    "signIn": {
+        "title": "Sign in to Cyd to access premium features",
+        "openSourceMode": "You're using Cyd in open source developer mode, which does not use a server.",
+        "supportProject": "If you're not contributing to Cyd, please support the project by paying for a Premium plan.",
+        "emailLabel": "Enter your email address",
+        "emailPlaceholder": "Email address",
+        "subscribeLabel": "Opt-in to occasional email updates from the Lockdown Systems collective, the developers of Cyd",
+        "continue": "Continue",
+        "emailPrivacy": "Your email address will be used to identify your account. We won't share it or send you unsolicited emails.",
+        "verificationCodeSent": "We've emailed you a verification code. Enter it below.",
+        "back": "Back",
+        "signingIn": "Signing in...",
+        "error": {
+            "enterEmail": "Please enter your email address.",
+            "signInRestricted": "At the moment, sign-ins are restricted to specific people. Sorry!",
+            "failedToGetDeviceInfo": "Failed to get device info. Please try again later.",
+            "invalidVerificationCode": "Invalid verification code.",
+            "failedToRegisterDevice": "Failed to register device. Please try again later.",
+            "failedToRegisterNewDevice": "Failed to register new device. Please try again later."
+        }
+    },
+    "errorReport": {
+        "title": "Submit an error report",
+        "errorsOccurred": "{count} errors occured",
+        "describePlaceholder": "Describe what happened (optional)",
+        "describeLabel": "Describe what happened",
+        "sendExtraDetails": "Send extra details.",
+        "sendExtraDetailsDescription": "This includes your username, a screenshot of the embedded browser, and other data that could help debug this problem.",
+        "moreInfoHelpful": "The more info you provide, the easier it will be for us to fix.",
+        "hideInformation": "Hide information included in report",
+        "showInformation": "Show information included in report",
+        "errorOf": "Error {current} of {total}",
+        "errorType": "Error type:",
+        "appVersion": "App version:",
+        "appVersionFor": "Cyd {version} for {platform}",
+        "accountType": "Account type:",
+        "username": "Username:",
+        "retryQuestion": "Do you want to try this step again, or cancel and go back to the dashboard?",
+        "retry": "Retry",
+        "error": {
+            "noDetails": "Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.",
+            "submissionError": "Well this is awkward. There's an error submitting your automation error report."
+        }
+    },
+    "import": {
+        "lastImportedArchive": "You last imported your X archive {timeAgo}.",
+        "lastBuiltDatabase": "You last built your local database from scratch {timeAgo}.",
+        "needImportForMigration": "You'll need to import your local database of tweets before you can migrate them to Bluesky.",
+        "needImportOrBuild": "You'll need to import your local database of tweets, or build it from scratch, before you can delete your tweets or likes, or migrate your tweets to Bluesky.",
+        "importXArchive": "Import X Archive",
+        "rebuildDatabase": "Rebuild Your Local Database",
+        "buildDatabase": "Build Your Local Database"
     }
 }

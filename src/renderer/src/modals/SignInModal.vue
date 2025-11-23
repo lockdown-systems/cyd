@@ -8,12 +8,15 @@ import {
   watch,
   getCurrentInstance,
 } from "vue";
+import { useI18n } from "vue-i18n";
 import type { DeviceInfo } from "../types";
 import { Account } from "../../../shared_types";
 import CydAPIClient, { APIErrorResponse } from "../../../cyd-api-client";
 import { xPostProgress } from "../util_x";
 
 import Modal from "bootstrap/js/dist/modal";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["hide"]);
 const hide = () => {
@@ -71,7 +74,7 @@ function enableStartFields() {
 
 async function authenticate() {
   if (!userEmail.value) {
-    window.electron.showError("Please enter your email address.");
+    window.electron.showError(t("signIn.error.enterEmail"));
     return;
   }
 
@@ -82,9 +85,7 @@ async function authenticate() {
   });
   if (typeof resp !== "boolean" && resp.error) {
     if (resp.status == 403) {
-      window.electron.showError(
-        "At the moment, sign-ins are restricted to specific people. Sorry!",
-      );
+      window.electron.showError(t("signIn.error.signInRestricted"));
     } else {
       window.electron.showError(resp.message);
     }
@@ -102,9 +103,7 @@ async function authenticate() {
 
 async function registerDevice() {
   if (!deviceInfo.value) {
-    window.electron.showError(
-      "Failed to get device info. Please try again later.",
-    );
+    window.electron.showError(t("signIn.error.failedToGetDeviceInfo"));
     await goBack();
     return;
   }
@@ -119,15 +118,13 @@ async function registerDevice() {
   if ("error" in registerDeviceResp) {
     verificationCode.value = "";
     verificationCodeInputEl.value?.focus();
-    window.electron.showError("Invalid verification code.");
+    window.electron.showError(t("signIn.error.invalidVerificationCode"));
     signInState.value = "registerDevice";
     verificationCode.value = "";
     return;
   }
   if (!registerDeviceResp.device_token) {
-    window.electron.showError(
-      "Failed to register device. Please try again later.",
-    );
+    window.electron.showError(t("signIn.error.failedToRegisterDevice"));
     await goBack();
     return;
   }
@@ -148,9 +145,7 @@ async function registerDevice() {
   // Get a new API token
   const pingResp = await apiClient.value.ping();
   if (!pingResp) {
-    window.electron.showError(
-      "Failed to register new device. Please try again later.",
-    );
+    window.electron.showError(t("signIn.error.failedToRegisterNewDevice"));
   }
 
   // Refresh the device info
@@ -234,7 +229,7 @@ onUnmounted(() => {
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title text-nowrap">
-            Sign in to Cyd to access premium features
+            {{ t('signIn.title') }}
           </h4>
           <button
             type="button"
@@ -247,12 +242,10 @@ onUnmounted(() => {
         <div class="modal-body">
           <div v-if="mode == 'open'">
             <p>
-              You're using Cyd in open source developer mode, which does not use
-              a server.
+              {{ t('signIn.openSourceMode') }}
             </p>
             <p>
-              If you're not contributing to Cyd, please support the project by
-              paying for a Premium plan.
+              {{ t('signIn.supportProject') }}
             </p>
           </div>
           <div v-else class="d-flex flex-column align-items-center">
@@ -261,7 +254,7 @@ onUnmounted(() => {
                 <div class="form-group d-flex flex-column mt-4">
                   <div>
                     <label for="email" class="sr-only">
-                      Enter your email address
+                      {{ t('signIn.emailLabel') }}
                     </label>
                     <input
                       id="email"
@@ -270,7 +263,7 @@ onUnmounted(() => {
                       type="email"
                       class="form-control"
                       data-testid="email-input"
-                      placeholder="Email address"
+                      :placeholder="t('signIn.emailPlaceholder')"
                     />
                   </div>
 
@@ -282,8 +275,7 @@ onUnmounted(() => {
                       class="form-check-input"
                     />
                     <label class="form-check-label small" for="subscribe">
-                      Opt-in to occasional email updates from the Lockdown
-                      Systems collective, the developers of Cyd
+                      {{ t('signIn.subscribeLabel') }}
                     </label>
                   </div>
 
@@ -295,18 +287,17 @@ onUnmounted(() => {
                       data-testid="continue-button"
                       @click="authenticate"
                     >
-                      Continue
+                      {{ t('signIn.continue') }}
                     </button>
                   </div>
                 </div>
                 <p class="text-muted small mt-5">
-                  Your email address will be used to identify your account. We
-                  won't share it or send you unsolicited emails.
+                  {{ t('signIn.emailPrivacy') }}
                 </p>
               </template>
               <template v-else-if="signInState == 'registerDevice'">
                 <div class="mt-4">
-                  <p>We've emailed you a verification code. Enter it below.</p>
+                  <p>{{ t('signIn.verificationCodeSent') }}</p>
                   <div class="verification-code-container">
                     <input
                       v-model="verificationCode"
@@ -325,13 +316,13 @@ onUnmounted(() => {
                       data-testid="back-button"
                       @click="goBack"
                     >
-                      Back
+                      {{ t('signIn.back') }}
                     </button>
                   </div>
                 </div>
               </template>
               <template v-else-if="signInState == 'token'">
-                <p>Signing in...</p>
+                <p>{{ t('signIn.signingIn') }}</p>
               </template>
             </form>
           </div>
