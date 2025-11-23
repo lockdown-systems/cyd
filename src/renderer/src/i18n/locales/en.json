@@ -438,7 +438,18 @@
         "databaseNoTweetsWarning": "Your local database doesn't have any tweets yet. You need to import your X archive or build your database from scratch before you can save HTML versions of your tweets.",
         "tweetsNotArchivedYet": "You have <strong>{count} tweets</strong> that haven't been archived yet",
         "backToDashboard": "Back to Dashboard",
-        "premium": "Premium"
+        "premium": "Premium",
+        "orAtLeast": "or at least",
+        "unlessTheyHaveAtLeast": "unless they have at least",
+        "likesDescription": "Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't delete <em>ghost likes</em>.",
+        "readMore": "Read more",
+        "bookmarksDescription": "Bookmarks are only visible to you on X.",
+        "dmsDescription": "This will only delete DMs from your account. The people you've sent messages to will still have them unless they delete their DMs as well.",
+        "saveHTMLTweetsDMsBookmarks": "Save HTML tweets, direct messages, and/or bookmarks",
+        "saveHTMLTweetsDMsBookmarksDescription": "Cyd can save an HTML version of each tweet, and detailed backup of your direct messages, and your bookmarks.",
+        "buildFromScratchRecommended": "You don't have a lot of data in your X account, so having Cyd scroll through your profile will be faster. Building from scratch is also a great way to backup your direct messages.",
+        "importArchiveDescription": "Importing your X archive will work great, but you'll need to wait at least a day for X to send it to you if you don't already have it.",
+        "importArchiveUnknown": "Importing your X archive is probably the best option, but you'll need to wait at least a day for X to send it to you if you don't already have it."
     },
     "facebook": {
         "buildYourLocalDatabase": "Build your local database",
@@ -452,5 +463,8 @@
     },
     "tabs": {
         "cannotSignOutWithoutDeviceInfo": "Cannot sign out without device info"
+    },
+    "premium": {
+        "premium": "Premium"
     }
 }
