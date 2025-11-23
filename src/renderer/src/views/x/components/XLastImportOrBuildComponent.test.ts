@@ -3,6 +3,7 @@ import { mount, VueWrapper } from "@vue/test-utils";
 import XLastImportOrBuildComponent from "./XLastImportOrBuildComponent.vue";
 import { State } from "../../../view_models/XViewModel";
 import * as utilX from "../../../util_x";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util_x", () => ({
   xGetLastImportArchive: vi.fn(),
@@ -37,6 +38,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -57,6 +61,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -73,6 +80,9 @@ describe("XLastImportOrBuildComponent", () => {
           accountID: 1,
           showButton: false,
           showNoDataWarning: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -93,6 +103,9 @@ describe("XLastImportOrBuildComponent", () => {
           accountID: 1,
           showButton: false,
           showNoDataWarning: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -117,6 +130,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -134,6 +150,9 @@ describe("XLastImportOrBuildComponent", () => {
           accountID: 1,
           showButton: false,
           showNoDataWarning: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -155,6 +174,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -174,6 +196,9 @@ describe("XLastImportOrBuildComponent", () => {
           accountID: 1,
           showButton: false,
           showNoDataWarning: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -195,6 +220,9 @@ describe("XLastImportOrBuildComponent", () => {
           accountID: 1,
           showButton: false,
           showNoDataWarning: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -219,6 +247,9 @@ describe("XLastImportOrBuildComponent", () => {
           showNoDataWarning: true,
           archiveOnly: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -238,6 +269,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: true,
           archiveOnly: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -259,6 +293,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -278,6 +315,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -295,6 +335,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: true,
           showNoDataWarning: true,
           archiveOnly: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -316,6 +359,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: true,
           showNoDataWarning: true,
           archiveOnly: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -342,6 +388,9 @@ describe("XLastImportOrBuildComponent", () => {
           showNoDataWarning: true,
           archiveOnly: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -363,6 +412,9 @@ describe("XLastImportOrBuildComponent", () => {
           showNoDataWarning: false,
           archiveOnly: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -382,6 +434,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: true,
           showNoDataWarning: true,
           archiveOnly: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -407,6 +462,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: true,
           showNoDataWarning: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -424,6 +482,9 @@ describe("XLastImportOrBuildComponent", () => {
           showButton: false,
           showNoDataWarning: true,
           archiveOnly: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

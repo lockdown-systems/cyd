@@ -3,6 +3,7 @@ import { mount, VueWrapper } from "@vue/test-utils";
 import { ref } from "vue";
 import AutomationErrorReportModal from "./AutomationErrorReportModal.vue";
 import { AutomationErrorType } from "../automation_errors";
+import i18n from "../i18n";
 
 // Mock Bootstrap Modal
 vi.mock("bootstrap/js/dist/modal", () => ({
@@ -101,6 +102,7 @@ describe("AutomationErrorReportModal", () => {
   it("should render the modal with title", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -110,7 +112,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -121,6 +123,7 @@ describe("AutomationErrorReportModal", () => {
   it("should load error reports on mount", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -130,7 +133,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -144,6 +147,7 @@ describe("AutomationErrorReportModal", () => {
   it("should display error type when single error", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -153,7 +157,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -173,6 +177,7 @@ describe("AutomationErrorReportModal", () => {
 
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -182,7 +187,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -196,6 +201,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have user description textarea", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -205,7 +211,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -220,6 +226,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have includeSensitiveData checkbox", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -229,7 +236,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -244,6 +251,7 @@ describe("AutomationErrorReportModal", () => {
 
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -253,7 +261,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -272,6 +280,7 @@ describe("AutomationErrorReportModal", () => {
 
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -281,7 +290,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -296,6 +305,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have toggle details link", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -305,7 +315,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -318,6 +328,7 @@ describe("AutomationErrorReportModal", () => {
   it("should toggle details when link clicked", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -327,7 +338,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -344,6 +355,7 @@ describe("AutomationErrorReportModal", () => {
   it("should show details when toggled", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -353,7 +365,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -374,6 +386,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have Submit Report button", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -383,7 +396,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -396,6 +409,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have Don't Submit Report button", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -405,7 +419,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -418,6 +432,7 @@ describe("AutomationErrorReportModal", () => {
   it("should track event and emit hide when Don't Submit Report clicked", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -427,7 +442,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -450,6 +465,7 @@ describe("AutomationErrorReportModal", () => {
   it("should submit error report when Submit Report clicked", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -459,7 +475,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -485,6 +501,7 @@ describe("AutomationErrorReportModal", () => {
 
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -494,7 +511,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -519,6 +536,7 @@ describe("AutomationErrorReportModal", () => {
 
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -528,7 +546,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -550,6 +568,7 @@ describe("AutomationErrorReportModal", () => {
   it("should emit resume for manual bug report", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -559,7 +578,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -581,6 +600,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have close button", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -590,7 +610,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });
@@ -602,6 +622,7 @@ describe("AutomationErrorReportModal", () => {
   it("should have correct modal structure", () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -611,7 +632,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          },
+          } as any,
         },
       },
     });

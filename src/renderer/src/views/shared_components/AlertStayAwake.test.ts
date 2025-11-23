@@ -3,10 +3,15 @@ import { mount } from "@vue/test-utils";
 import AlertStayAwake from "./AlertStayAwake.vue";
 import * as util from "../../util";
 import { mockElectronAPI } from "../../test_util";
+import i18n from "../../i18n";
 
 describe("AlertStayAwake", () => {
   it("renders the stay awake alert", () => {
-    const wrapper = mount(AlertStayAwake);
+    const wrapper = mount(AlertStayAwake, {
+      global: {
+        plugins: [i18n],
+      },
+    });
 
     expect(wrapper.find('[role="alert"]').exists()).toBe(true);
     expect(wrapper.text()).toContain(
@@ -18,7 +23,11 @@ describe("AlertStayAwake", () => {
   });
 
   it("displays learn more link", () => {
-    const wrapper = mount(AlertStayAwake);
+    const wrapper = mount(AlertStayAwake, {
+      global: {
+        plugins: [i18n],
+      },
+    });
 
     const link = wrapper.find("a");
     expect(link.exists()).toBe(true);
@@ -29,7 +38,11 @@ describe("AlertStayAwake", () => {
     mockElectronAPI();
     const openPreventSleepURLSpy = vi.spyOn(util, "openPreventSleepURL");
 
-    const wrapper = mount(AlertStayAwake);
+    const wrapper = mount(AlertStayAwake, {
+      global: {
+        plugins: [i18n],
+      },
+    });
     const link = wrapper.find("a");
 
     // Use createEvent for jsdom compatibility
@@ -42,7 +55,11 @@ describe("AlertStayAwake", () => {
   });
 
   it("applies correct CSS classes for bootstrap alert", () => {
-    const wrapper = mount(AlertStayAwake);
+    const wrapper = mount(AlertStayAwake, {
+      global: {
+        plugins: [i18n],
+      },
+    });
 
     const alert = wrapper.find(".alert");
     expect(alert.exists()).toBe(true);
@@ -51,7 +68,11 @@ describe("AlertStayAwake", () => {
   });
 
   it("has bold title text", () => {
-    const wrapper = mount(AlertStayAwake);
+    const wrapper = mount(AlertStayAwake, {
+      global: {
+        plugins: [i18n],
+      },
+    });
 
     const title = wrapper.find(".fw-bold");
     expect(title.exists()).toBe(true);
@@ -59,7 +80,11 @@ describe("AlertStayAwake", () => {
   });
 
   it("has alert details paragraph", () => {
-    const wrapper = mount(AlertStayAwake);
+    const wrapper = mount(AlertStayAwake, {
+      global: {
+        plugins: [i18n],
+      },
+    });
 
     const details = wrapper.find(".alert-details");
     expect(details.exists()).toBe(true);

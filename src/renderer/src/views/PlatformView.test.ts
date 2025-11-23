@@ -6,6 +6,7 @@ import { PlatformStates } from "../types/PlatformStates";
 import type { Account } from "../../../shared_types";
 import type { PlatformConfig } from "../types/PlatformConfig";
 import type { BasePlatformViewModel } from "../types/PlatformView";
+import i18n from "../i18n";
 
 // Mock child components
 vi.mock("./shared_components/AccountHeader.vue", () => ({
@@ -122,6 +123,9 @@ describe("PlatformView", () => {
           },
           webviewProps: {},
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.findComponent({ name: "LoadingComponent" }).exists()).toBe(
@@ -154,6 +158,9 @@ describe("PlatformView", () => {
             showAutomationNotice: false,
           },
           webviewProps: {},
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -195,6 +202,9 @@ describe("PlatformView", () => {
           },
           webviewProps: {},
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.findComponent({ name: "SpeechBubble" }).exists()).toBe(
@@ -232,6 +242,9 @@ describe("PlatformView", () => {
             showAutomationNotice: false,
           },
           webviewProps: {},
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -273,6 +286,9 @@ describe("PlatformView", () => {
           },
           webviewProps: {},
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const accountHeader = wrapper.findComponent({ name: "AccountHeader" });
@@ -312,6 +328,9 @@ describe("PlatformView", () => {
           },
           webviewProps: {},
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const accountHeader = wrapper.findComponent({ name: "AccountHeader" });
@@ -348,6 +367,9 @@ describe("PlatformView", () => {
           },
           webviewProps: {},
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find("webview").exists()).toBe(true);
@@ -380,6 +402,9 @@ describe("PlatformView", () => {
             showAutomationNotice: false,
           },
           webviewProps: {},
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

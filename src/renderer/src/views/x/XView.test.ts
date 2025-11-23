@@ -5,6 +5,7 @@ import XView from "./XView.vue";
 import { mockElectronAPI, createMockAccount } from "../../test_util";
 import type { Account } from "../../../../shared_types";
 import { State } from "../../view_models/XViewModel";
+import i18n from "../../i18n";
 
 // Mock child components
 vi.mock("../PlatformView.vue", () => ({
@@ -221,6 +222,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -240,6 +242,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -258,6 +261,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -276,6 +280,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -293,6 +298,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -310,6 +316,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -327,6 +334,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -346,6 +354,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -363,6 +372,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -379,6 +389,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -400,6 +411,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -425,6 +437,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -443,6 +456,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -464,6 +478,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,
@@ -491,6 +506,7 @@ describe("XView", () => {
       wrapper = mount(XView, {
         props: { account: mockAccount },
         global: {
+          plugins: [i18n],
           provide: {
             apiClient: mockApiClient,
             deviceInfo: mockDeviceInfo,

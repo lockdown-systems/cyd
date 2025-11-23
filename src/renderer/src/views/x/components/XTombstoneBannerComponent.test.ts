@@ -5,6 +5,7 @@ import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
 } from "../../../types_x";
+import i18n from "../../../i18n";
 
 describe("XTombstoneBannerComponent", () => {
   describe("conditional rendering", () => {
@@ -15,6 +16,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "night" as TombstoneBannerBackground,
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -29,6 +33,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-preview-wrapper").exists()).toBe(true);
@@ -41,6 +48,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "night" as TombstoneBannerBackground,
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -57,6 +67,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-bg-night").exists()).toBe(true);
@@ -70,6 +83,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "morning" as TombstoneBannerBackground,
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -87,6 +103,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-foreground").exists()).toBe(true);
@@ -102,6 +121,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-text").exists()).toBe(true);
@@ -114,6 +136,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "night" as TombstoneBannerBackground,
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -129,6 +154,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "night" as TombstoneBannerBackground,
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -150,6 +178,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "bluesky" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-social-bluesky").exists()).toBe(true);
@@ -163,6 +194,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "night" as TombstoneBannerBackground,
           updateBannerSocialIcons: "mastodon" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -178,6 +212,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons:
             "bluesky-mastodon" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -197,6 +234,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons:
             "mastodon-bluesky" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -219,6 +259,9 @@ describe("XTombstoneBannerComponent", () => {
             "bluesky-mastodon" as TombstoneBannerSocialIcons,
           updateBannerShowText: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-preview-wrapper").exists()).toBe(true);
@@ -238,6 +281,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".banner-bg-night").exists()).toBe(true);
@@ -256,6 +302,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerSocialIcons: "none" as TombstoneBannerSocialIcons,
           updateBannerShowText: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const wrapperEl = wrapper.find(".banner-preview-wrapper");
@@ -270,6 +319,9 @@ describe("XTombstoneBannerComponent", () => {
           updateBannerBackground: "morning" as TombstoneBannerBackground,
           updateBannerSocialIcons: "bluesky" as TombstoneBannerSocialIcons,
           updateBannerShowText: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

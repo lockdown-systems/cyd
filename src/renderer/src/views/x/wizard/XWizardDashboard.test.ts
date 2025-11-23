@@ -5,6 +5,7 @@ import XWizardDashboard from "./XWizardDashboard.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { mockElectronAPI, createMockAccount } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util_x", () => ({
   xHasSomeData: vi.fn(),
@@ -61,6 +62,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await nextTick();
@@ -80,6 +84,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -98,6 +105,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -114,6 +124,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -129,6 +142,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -143,6 +159,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -161,6 +180,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -177,6 +199,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -195,6 +220,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -210,6 +238,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -224,6 +255,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -242,6 +276,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -256,6 +293,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -273,6 +313,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -297,6 +340,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -323,6 +369,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -352,6 +401,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -375,6 +427,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -408,6 +463,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -426,6 +484,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -450,6 +511,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -470,6 +534,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -487,6 +554,9 @@ describe("XWizardDashboard", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -502,6 +572,9 @@ describe("XWizardDashboard", () => {
       wrapper = mount(XWizardDashboard, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

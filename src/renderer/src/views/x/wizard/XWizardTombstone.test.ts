@@ -4,6 +4,7 @@ import XWizardTombstone from "./XWizardTombstone.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { createMockAccount, mockElectronAPI } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   getBreadcrumbIcon: vi.fn(() => "icon"),
@@ -84,6 +85,9 @@ describe("XWizardTombstone", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -97,6 +101,9 @@ describe("XWizardTombstone", () => {
       wrapper = mount(XWizardTombstone, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -115,6 +122,9 @@ describe("XWizardTombstone", () => {
       wrapper = mount(XWizardTombstone, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -143,6 +153,9 @@ describe("XWizardTombstone", () => {
       wrapper = mount(XWizardTombstone, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

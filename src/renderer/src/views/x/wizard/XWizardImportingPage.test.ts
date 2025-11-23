@@ -4,6 +4,7 @@ import XWizardImportingPage from "./XWizardImportingPage.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { createMockAccount, mockElectronAPI } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   getBreadcrumbIcon: vi.fn(() => "icon"),
@@ -85,6 +86,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -104,6 +106,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -127,6 +130,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -160,6 +164,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -195,6 +200,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -228,6 +234,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -251,6 +258,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
@@ -294,6 +302,7 @@ describe("XWizardImportingPage", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,

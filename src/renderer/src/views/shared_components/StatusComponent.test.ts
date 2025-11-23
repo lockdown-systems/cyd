@@ -4,6 +4,7 @@ import { nextTick } from "vue";
 import StatusComponent from "./StatusComponent.vue";
 import RunningIcon from "./RunningIcon.vue";
 import type { XJob } from "../../../../shared_types";
+import i18n from "../../i18n";
 
 describe("StatusComponent", () => {
   const mockJobs: XJob[] = [
@@ -50,6 +51,9 @@ describe("StatusComponent", () => {
 
   it("should render all jobs", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -64,6 +68,9 @@ describe("StatusComponent", () => {
 
   it("should display correct job text", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -80,6 +87,9 @@ describe("StatusComponent", () => {
 
   it("should show correct status icons", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -101,6 +111,9 @@ describe("StatusComponent", () => {
 
   it("should show RunningIcon for running job when not paused", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -115,6 +128,9 @@ describe("StatusComponent", () => {
 
   it("should show pause icon for running job when paused", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: true,
@@ -130,6 +146,9 @@ describe("StatusComponent", () => {
 
   it("should show pause button when not paused", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -145,6 +164,9 @@ describe("StatusComponent", () => {
 
   it("should show resume button when paused", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: true,
@@ -160,6 +182,9 @@ describe("StatusComponent", () => {
 
   it("should emit onPause when pause button clicked", async () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -178,6 +203,9 @@ describe("StatusComponent", () => {
 
   it("should emit onResume when resume button clicked", async () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: true,
@@ -196,6 +224,9 @@ describe("StatusComponent", () => {
 
   it("should emit onCancel when cancel button clicked", async () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -214,6 +245,9 @@ describe("StatusComponent", () => {
 
   it("should emit onReportBug when report button clicked", async () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -236,6 +270,9 @@ describe("StatusComponent", () => {
 
   it("should show Enable Clicking button when clicking disabled", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -254,6 +291,9 @@ describe("StatusComponent", () => {
 
   it("should show Disable Clicking button when clicking enabled", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -272,6 +312,9 @@ describe("StatusComponent", () => {
 
   it("should emit onClickingEnabled when enable button clicked", async () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -292,6 +335,9 @@ describe("StatusComponent", () => {
 
   it("should emit onClickingDisabled when disable button clicked", async () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: mockJobs,
         isPaused: false,
@@ -312,6 +358,9 @@ describe("StatusComponent", () => {
 
   it("should handle empty jobs array", () => {
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: [],
         isPaused: false,
@@ -343,6 +392,9 @@ describe("StatusComponent", () => {
     ];
 
     const wrapper = mount(StatusComponent, {
+      global: {
+        plugins: [i18n],
+      },
       props: {
         jobs: canceledJobs,
         isPaused: false,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import XDisplayTweet from "./XDisplayTweet.vue";
+import i18n from "../../../i18n";
 
 interface MockModel {
   currentTweetItem: null;
@@ -17,6 +18,9 @@ describe("XDisplayTweet", () => {
         props: {
           model: mockModel as never,
           mediaPath: "/path/to/media",
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -37,6 +41,9 @@ describe("XDisplayTweet", () => {
           model: mockModel as never,
           mediaPath: "/path/to/media",
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".tweet-container").exists()).toBe(false);
@@ -53,6 +60,9 @@ describe("XDisplayTweet", () => {
         props: {
           model: mockModel as never,
           mediaPath: "/path/to/media",
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -72,6 +82,9 @@ describe("XDisplayTweet", () => {
         props: {
           model: mockModel as never,
           mediaPath: "/path/to/media",
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -94,6 +107,9 @@ describe("XDisplayTweet", () => {
         props: {
           model: mockModel as never,
           mediaPath: "/path/to/media",
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -118,6 +134,9 @@ describe("XDisplayTweet", () => {
           model: mockModel as never,
           mediaPath: "/path/to/media",
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,6 +160,9 @@ describe("XDisplayTweet", () => {
         props: {
           model: mockModel as never,
           mediaPath: "/path/to/media",
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

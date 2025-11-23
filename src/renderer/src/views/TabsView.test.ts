@@ -6,6 +6,7 @@ import TabsView from "./TabsView.vue";
 import CydAPIClient from "../../../cyd-api-client";
 import { mockElectronAPI } from "../test_util";
 import { Account } from "../../../shared_types";
+import i18n from "../i18n";
 
 let accountID = 1;
 const testDatabase = {
@@ -128,6 +129,7 @@ describe("TabsView", () => {
         updatesAvailable: false,
       },
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref(new CydAPIClient()),
           deviceInfo: ref({
