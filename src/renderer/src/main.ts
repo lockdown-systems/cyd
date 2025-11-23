@@ -7,6 +7,7 @@ import mitt from "mitt";
 import { createApp } from "vue";
 import type { ElectronAPI } from "../../preload";
 import App from "./App.vue";
+import i18n from "./i18n";
 
 declare global {
   interface Window {
@@ -18,4 +19,5 @@ const emitter = mitt();
 const app = createApp(App);
 
 app.config.globalProperties.emitter = emitter;
+app.use(i18n);
 app.mount("#app");
