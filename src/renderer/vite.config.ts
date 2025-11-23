@@ -4,6 +4,7 @@ import type { ConfigEnv, UserConfig } from "vite";
 import { defineConfig } from "vite";
 import { pluginExposeRenderer } from "../../vite.base.config";
 import vue from "@vitejs/plugin-vue";
+import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 
 // https://vitejs.dev/config
 export default defineConfig((env) => {
@@ -31,6 +32,10 @@ export default defineConfig((env) => {
             isCustomElement: (tag) => tag.includes("webview"),
           },
         },
+      }),
+      VueI18nPlugin({
+        include: [join(__dirname, "./src/i18n/locales/**/*.json")],
+        strictMessage: false, // Allow HTML in messages (we use v-html for rendering)
       }),
     ],
     resolve: {

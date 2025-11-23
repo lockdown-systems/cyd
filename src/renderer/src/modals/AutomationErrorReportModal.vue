@@ -81,8 +81,6 @@ const onUserDescriptionChange = (_event: Event) => {
   }
 };
 
-const { t } = useI18n();
-
 const showDetailsLabel = ref(t("errorReport.showInformation"));
 const showDetails = ref(false);
 
