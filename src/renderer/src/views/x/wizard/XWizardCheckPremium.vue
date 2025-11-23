@@ -73,10 +73,10 @@ onMounted(async () => {
 <template>
   <div class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
     <h2 v-if="userAuthenticated && userPremium">
-      {{ t('premium.thanksForUpgrading') }}
+      {{ t("premium.thanksForUpgrading") }}
       <i class="fa-solid fa-heart" />
     </h2>
-    <h2 v-else>{{ t('premium.featuresRequirePremium') }}</h2>
+    <h2 v-else>{{ t("premium.featuresRequirePremium") }}</h2>
     <ul v-if="!userAuthenticated || !userPremium" class="features-list">
       <!-- X tasks -->
       <li
@@ -90,7 +90,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-calendar-alt me-2" />
-            {{ t('premium.deleteTweetsOlderThan') }}
+            {{ t("premium.deleteTweetsOlderThan") }}
           </small>
         </div>
       </li>
@@ -105,7 +105,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-retweet me-2" />
-            {{ t('premium.deleteTweetsUnlessRetweets') }}
+            {{ t("premium.deleteTweetsUnlessRetweets") }}
           </small>
         </div>
       </li>
@@ -120,7 +120,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-heart me-2" />
-            {{ t('premium.deleteTweetsUnlessLikes') }}
+            {{ t("premium.deleteTweetsUnlessLikes") }}
           </small>
         </div>
       </li>
@@ -135,7 +135,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-calendar-alt me-2" />
-            {{ t('premium.deleteRetweetsOlderThan') }}
+            {{ t("premium.deleteRetweetsOlderThan") }}
           </small>
         </div>
       </li>
@@ -146,7 +146,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-user-minus me-2" />
-            {{ t('premium.unfollowEveryone') }}
+            {{ t("premium.unfollowEveryone") }}
           </small>
         </div>
       </li>
@@ -157,7 +157,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-heart-broken me-2" />
-            {{ t('premium.deleteLikes') }}
+            {{ t("premium.deleteLikes") }}
           </small>
         </div>
       </li>
@@ -168,7 +168,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-bookmark me-2" />
-            {{ t('premium.deleteBookmarks') }}
+            {{ t("premium.deleteBookmarks") }}
           </small>
         </div>
       </li>
@@ -179,7 +179,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-envelope me-2" />
-            {{ t('premium.deleteDMs') }}
+            {{ t("premium.deleteDMs") }}
           </small>
         </div>
       </li>
@@ -195,17 +195,17 @@ onMounted(async () => {
     </ul>
 
     <template v-if="!userAuthenticated">
-      <p>{{ t('premium.signInToGetStarted') }}</p>
+      <p>{{ t("premium.signInToGetStarted") }}</p>
     </template>
     <template v-else-if="userAuthenticated && !userPremium">
-      <p>{{ t('premium.manageAccountToUpgrade') }}</p>
+      <p>{{ t("premium.manageAccountToUpgrade") }}</p>
     </template>
     <template v-else>
       <p v-if="jobsType == 'delete'">
-        {{ t('premium.readyToDelete') }} <em>{{ t('premium.letsGo') }}</em>
+        {{ t("premium.readyToDelete") }} <em>{{ t("premium.letsGo") }}</em>
       </p>
       <p v-if="jobsType == 'migrateBluesky'">
-        {{ t('premium.readyToMigrate') }} <em>{{ t('premium.letsGo') }}</em>
+        {{ t("premium.readyToMigrate") }} <em>{{ t("premium.letsGo") }}</em>
       </p>
     </template>
 
@@ -218,7 +218,7 @@ onMounted(async () => {
           @click="signInClicked"
         >
           <i class="fa-solid fa-user-ninja" />
-          {{ t('premium.signIn') }}
+          {{ t("premium.signIn") }}
         </button>
 
         <div v-else-if="userAuthenticated && !userPremium">
@@ -228,7 +228,7 @@ onMounted(async () => {
             @click="manageAccountClicked"
           >
             <i class="fa-solid fa-user-ninja" />
-            {{ t('premium.manageMyAccount') }}
+            {{ t("premium.manageMyAccount") }}
           </button>
 
           <button
@@ -237,7 +237,7 @@ onMounted(async () => {
             @click="iveUpgradedClicked"
           >
             <i class="fa-solid fa-star" />
-            {{ t('premium.iveUpgraded') }}
+            {{ t("premium.iveUpgraded") }}
           </button>
 
           <div
@@ -245,7 +245,7 @@ onMounted(async () => {
             class="alert alert-warning mt-4"
             role="alert"
           >
-            {{ t('premium.haventUpgraded') }}
+            {{ t("premium.haventUpgraded") }}
           </div>
         </div>
 
@@ -257,7 +257,7 @@ onMounted(async () => {
             @click="backClicked"
           >
             <i class="fa-solid fa-user-ninja" />
-            {{ t('wizard.reviewChoices') }}
+            {{ t("wizard.reviewChoices") }}
           </button>
           <button
             v-if="jobsType == 'migrateBluesky'"
@@ -266,7 +266,7 @@ onMounted(async () => {
             @click="backClicked"
           >
             <i class="fa-solid fa-user-ninja" />
-            {{ t('premium.migrateToBluesky') }}
+            {{ t("premium.migrateToBluesky") }}
           </button>
         </div>
       </div>

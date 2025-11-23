@@ -331,22 +331,23 @@ onUnmounted(() => {
 
       <div v-if="updatesAvailable" class="updates-bar">
         <p>
-          <strong>{{ t('app.updates.updateAvailable') }}</strong> {{ t('app.updates.shouldUseLatestVersion') }}
+          <strong>{{ t("app.updates.updateAvailable") }}</strong>
+          {{ t("app.updates.shouldUseLatestVersion") }}
         </p>
         <p class="text-muted">
           <template v-if="platform === 'linux'">
-            {{ t('app.updates.installViaPackageManager') }}
+            {{ t("app.updates.installViaPackageManager") }}
           </template>
           <template v-else>
             <template v-if="updateStatus == UpdateStatus.Checking">
-              {{ t('app.updates.loadingUpdateStatus') }}
+              {{ t("app.updates.loadingUpdateStatus") }}
             </template>
             <template v-else-if="updateStatus == UpdateStatus.Available">
-              {{ t('app.updates.downloadingUpdate') }}
+              {{ t("app.updates.downloadingUpdate") }}
             </template>
             <template v-else-if="updateStatus == UpdateStatus.Downloaded">
               <button class="btn btn-primary" @click="restartToUpdateClicked">
-                {{ t('app.updates.restartToUpdate') }}
+                {{ t("app.updates.restartToUpdate") }}
               </button>
             </template>
             <template
@@ -355,9 +356,10 @@ onUnmounted(() => {
                 updateStatus == UpdateStatus.NotAvailable
               "
             >
-              {{ t('app.updates.errorWithAutomaticUpdate') }}
-              <a href="#" @click="openURL('https://cyd.social/download/')"
-                >{{ t('app.updates.fromWebsite') }}</a
+              {{ t("app.updates.errorWithAutomaticUpdate") }}
+              <a href="#" @click="openURL('https://cyd.social/download/')">{{
+                t("app.updates.fromWebsite")
+              }}</a
               >.
             </template>
           </template>

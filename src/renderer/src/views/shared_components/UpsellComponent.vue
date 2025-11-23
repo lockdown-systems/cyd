@@ -109,26 +109,41 @@ onUnmounted(async () => {
   <div v-if="!isLoading" class="upsell">
     <div v-if="userPremium">
       <h1 class="text-center">
-        {{ t('upsell.thanksForSupporting') }}
-        <img src="/assets/wordmark.svg" class="cyd-wordmark" :alt="t('common.cyd')" />!
+        {{ t("upsell.thanksForSupporting") }}
+        <img
+          src="/assets/wordmark.svg"
+          class="cyd-wordmark"
+          :alt="t('common.cyd')"
+        />!
       </h1>
       <p class="text-center text-muted small mb-0">
         <template v-if="userHasBusinessSubscription">
-          Cyd is <a href="#" @click="openSourceClicked">{{ t('upsell.openSource') }}</a> and made by a
-          <a href="#" @click="collectiveClicked">{{ t('upsell.collective') }}</a>.
-          {{ t('upsell.thanksForPremium') }} If you'd like to support us even more,
-          <a href="#" @click="donateClicked">{{ t('upsell.donation') }}</a>.
+          Cyd is
+          <a href="#" @click="openSourceClicked">{{
+            t("upsell.openSource")
+          }}</a>
+          and made by a
+          <a href="#" @click="collectiveClicked">{{ t("upsell.collective") }}</a
+          >. {{ t("upsell.thanksForPremium") }} If you'd like to support us even
+          more, <a href="#" @click="donateClicked">{{ t("upsell.donation") }}</a
+          >.
         </template>
         <template v-else>
-          Cyd is <a href="#" @click="openSourceClicked">{{ t('upsell.openSource') }}</a> and made by a
-          <a href="#" @click="collectiveClicked">{{ t('upsell.collective') }}</a>.
-          {{ t('upsell.thanksForPremium') }} {{ t('upsell.premiumForTeamsQuestion') }}
+          Cyd is
+          <a href="#" @click="openSourceClicked">{{
+            t("upsell.openSource")
+          }}</a>
+          and made by a
+          <a href="#" @click="collectiveClicked">{{ t("upsell.collective") }}</a
+          >. {{ t("upsell.thanksForPremium") }}
+          {{ t("upsell.premiumForTeamsQuestion") }}
           <a
             href="#"
             @click="openURL('https://docs.cyd.social/docs/cyd-for-teams/intro')"
-            >{{ t('upsell.teamsLink') }}</a
-          >. {{ t('upsell.andIfYouLikeToSupport') }}
-          <a href="#" @click="donateClicked">{{ t('upsell.donation') }}</a>.
+            >{{ t("upsell.teamsLink") }}</a
+          >. {{ t("upsell.andIfYouLikeToSupport") }}
+          <a href="#" @click="donateClicked">{{ t("upsell.donation") }}</a
+          >.
         </template>
       </p>
     </div>
@@ -137,16 +152,25 @@ onUnmounted(async () => {
         <div class="row">
           <div class="col-md-4 flex justify-between items-center">
             <h1 class="text-center text-nowrap">
-              {{ t('upsell.support') }}
-              <img src="/assets/wordmark.svg" class="cyd-wordmark" :alt="t('common.cyd')" />!
+              {{ t("upsell.support") }}
+              <img
+                src="/assets/wordmark.svg"
+                class="cyd-wordmark"
+                :alt="t('common.cyd')"
+              />!
             </h1>
           </div>
           <div class="col-md-8 flex align-items-start">
             <p class="text-start text-muted small">
-              Cyd is <a href="#" @click="openSourceClicked">{{ t('upsell.openSource') }}</a> and
-              made by a
-              <a href="#" @click="collectiveClicked">{{ t('upsell.collective') }}</a
-              >. {{ t('upsell.waysToSupport') }}
+              Cyd is
+              <a href="#" @click="openSourceClicked">{{
+                t("upsell.openSource")
+              }}</a>
+              and made by a
+              <a href="#" @click="collectiveClicked">{{
+                t("upsell.collective")
+              }}</a
+              >. {{ t("upsell.waysToSupport") }}
             </p>
           </div>
         </div>
@@ -159,43 +183,45 @@ onUnmounted(async () => {
               class="card premium-card text-center"
               @click="premiumClicked"
             >
-              <div class="card-header">{{ t('upsell.upgradeToPremium') }}</div>
+              <div class="card-header">{{ t("upsell.upgradeToPremium") }}</div>
               <div class="card-body small">
                 <p>
-                  {{ t('upsell.premiumDescription') }}
+                  {{ t("upsell.premiumDescription") }}
                 </p>
                 <p class="fw-bold text-center mb-0 action-text">
                   <template v-if="!userAuthenticated">
-                    {{ t('upsell.signInToStart') }}
+                    {{ t("upsell.signInToStart") }}
                   </template>
-                  <template v-else> {{ t('upsell.upgradeToPremium') }} </template>
+                  <template v-else>
+                    {{ t("upsell.upgradeToPremium") }}
+                  </template>
                 </p>
               </div>
             </button>
           </div>
           <div class="col-md-5 upsell-col">
             <button class="card text-center" @click="teamsClicked">
-              <div class="card-header">{{ t('upsell.cydForTeams') }}</div>
+              <div class="card-header">{{ t("upsell.cydForTeams") }}</div>
               <div class="card-body small">
                 <p>
-                  {{ t('upsell.teamsDescription') }}
+                  {{ t("upsell.teamsDescription") }}
                 </p>
                 <p class="fw-bold text-center mb-0 action-text">
                   <template v-if="!userAuthenticated">
-                    {{ t('upsell.signInToStart') }}
+                    {{ t("upsell.signInToStart") }}
                   </template>
-                  <template v-else> {{ t('upsell.startATeam') }} </template>
+                  <template v-else> {{ t("upsell.startATeam") }} </template>
                 </p>
               </div>
             </button>
           </div>
           <div class="col-md-5 upsell-col">
             <button class="card text-center" @click="donateClicked">
-              <div class="card-header">{{ t('upsell.donate') }}</div>
+              <div class="card-header">{{ t("upsell.donate") }}</div>
               <div class="card-body small">
-                <p>{{ t('upsell.donateDescription') }}</p>
+                <p>{{ t("upsell.donateDescription") }}</p>
                 <p class="fw-bold text-center mb-0 action-text">
-                  {{ t('upsell.clickToDonate') }}
+                  {{ t("upsell.clickToDonate") }}
                 </p>
               </div>
             </button>

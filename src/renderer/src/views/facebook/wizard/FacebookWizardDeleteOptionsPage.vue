@@ -49,7 +49,9 @@ const setProceedEnabled = (enabled: boolean) => {
 // Show more
 const deletePostsShowMore = ref(false);
 const deletePostsShowMoreButtonText = computed(() =>
-  deletePostsShowMore.value ? t("wizard.hideMoreOptions") : t("wizard.showMoreOptions"),
+  deletePostsShowMore.value
+    ? t("wizard.hideMoreOptions")
+    : t("wizard.showMoreOptions"),
 );
 const deletePostsShowMoreClicked = () => {
   deletePostsShowMore.value = !deletePostsShowMore.value;
@@ -57,7 +59,9 @@ const deletePostsShowMoreClicked = () => {
 
 const deleteRepostsShowMore = ref(false);
 const deleteRepostsShowMoreButtonText = computed(() =>
-  deleteRepostsShowMore.value ? t("wizard.hideMoreOptions") : t("wizard.showMoreOptions"),
+  deleteRepostsShowMore.value
+    ? t("wizard.hideMoreOptions")
+    : t("wizard.showMoreOptions"),
 );
 const deleteRepostsShowMoreClicked = () => {
   deleteRepostsShowMore.value = !deleteRepostsShowMore.value;
@@ -206,9 +210,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('facebook.deleteFromFacebook') }}</h2>
+          <h2>{{ t("facebook.deleteFromFacebook") }}</h2>
           <p class="text-muted">
-            {{ t('facebook.deleteFromFacebookDescription') }}
+            {{ t("facebook.deleteFromFacebookDescription") }}
           </p>
         </div>
 
@@ -239,9 +243,11 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deletePosts"
                 >
-                  {{ t('facebook.deleteMyPosts') }}
+                  {{ t("facebook.deleteMyPosts") }}
                 </label>
-                <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deletePostsShowMoreClicked"
@@ -265,7 +271,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deletePostsDaysOldEnabled"
                     >
-                      {{ t('wizard.olderThan') }}
+                      {{ t("wizard.olderThan") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -273,7 +279,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deletePostsDaysOld"
                     >
-                      {{ t('wizard.days') }}
+                      {{ t("wizard.days") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -288,7 +294,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">{{ t('wizard.days') }}</span>
+                        <span class="input-group-text small">{{
+                          t("wizard.days")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -296,7 +304,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >{{ t('wizard.premium') }}</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>
@@ -318,9 +326,11 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteReposts"
                 >
-                  {{ t('facebook.deleteMyReposts') }}
+                  {{ t("facebook.deleteMyReposts") }}
                 </label>
-                <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deleteRepostsShowMoreClicked"
@@ -344,7 +354,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteRepostsDaysOldEnabled"
                     >
-                      {{ t('wizard.olderThan') }}
+                      {{ t("wizard.olderThan") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -352,7 +362,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteRepostsDaysOld"
                     >
-                      {{ t('wizard.days') }}
+                      {{ t("wizard.days") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -365,7 +375,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">{{ t('wizard.days') }}</span>
+                        <span class="input-group-text small">{{
+                          t("wizard.days")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -373,7 +385,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >{{ t('wizard.premium') }}</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>

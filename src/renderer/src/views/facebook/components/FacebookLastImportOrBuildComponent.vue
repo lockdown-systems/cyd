@@ -82,10 +82,10 @@ onMounted(async () => {
       }}.
     </div>
     <div v-if="!lastImportArchive && !lastBuildDatabase">
-      <div>{{ t('facebook.cydCanUnfriendEveryone') }}</div>
+      <div>{{ t("facebook.cydCanUnfriendEveryone") }}</div>
       <div>
         <i class="fa-solid fa-triangle-exclamation" />
-        {{ t('facebook.needImportOrBuildToDelete') }}
+        {{ t("facebook.needImportOrBuildToDelete") }}
       </div>
     </div>
     <button

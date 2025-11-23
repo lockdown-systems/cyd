@@ -46,9 +46,7 @@ const viewBlueskyProfileClicked = async () => {
     props.model.account.id,
   );
   if (!blueskyProfile) {
-    await window.electron.showError(
-      t("finished.noBlueskyProfile"),
-    );
+    await window.electron.showError(t("finished.noBlueskyProfile"));
     return;
   }
   await openURL(`https://bsky.app/profile/${blueskyProfile.handle}`);
@@ -135,7 +133,7 @@ onMounted(async () => {
       <div class="finished">
         <div v-if="jobsType == 'save'" class="container mt-3">
           <div class="finished">
-            <h2>{{ t('finished.youJustSaved') }}</h2>
+            <h2>{{ t("finished.youJustSaved") }}</h2>
             <ul>
               <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
                 <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -238,7 +236,7 @@ onMounted(async () => {
         </div>
         <div v-if="jobsType == 'archive'" class="container mt-3">
           <div class="finished">
-            <h2>{{ t('finished.youJustArchived') }}</h2>
+            <h2>{{ t("finished.youJustArchived") }}</h2>
             <ul>
               <li v-if="model.account.xAccount?.archiveTweetsHTML">
                 <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -275,7 +273,7 @@ onMounted(async () => {
         </div>
         <div v-if="jobsType == 'delete'" class="container mt-3">
           <div class="finished">
-            <h2>{{ t('finished.youJustDeleted') }}</h2>
+            <h2>{{ t("finished.youJustDeleted") }}</h2>
             <ul>
               <li
                 v-if="
@@ -346,7 +344,7 @@ onMounted(async () => {
 
         <div v-if="jobsType == 'migrateBluesky'" class="container mt-3">
           <div class="finished">
-            <h2>{{ t('finished.youJustMigrated') }}</h2>
+            <h2>{{ t("finished.youJustMigrated") }}</h2>
             <ul>
               <li>
                 <i class="fa-brands fa-bluesky bluesky-bullet" />
@@ -390,7 +388,7 @@ onMounted(async () => {
                 @click="viewBlueskyProfileClicked"
               >
                 <i class="fa-brands fa-bluesky" />
-                {{ t('finished.viewBlueskyProfile') }}
+                {{ t("finished.viewBlueskyProfile") }}
               </button>
             </div>
           </div>
@@ -398,7 +396,7 @@ onMounted(async () => {
 
         <div v-if="jobsType == 'migrateBlueskyDelete'" class="container mt-3">
           <div class="finished">
-            <h2>{{ t('finished.youJustDeleted') }}</h2>
+            <h2>{{ t("finished.youJustDeleted") }}</h2>
             <ul>
               <li>
                 <i class="fa-brands fa-bluesky bluesky-bullet" />
@@ -442,7 +440,7 @@ onMounted(async () => {
                 @click="viewBlueskyProfileClicked"
               >
                 <i class="fa-brands fa-bluesky" />
-                {{ t('finished.viewBlueskyProfile') }}
+                {{ t("finished.viewBlueskyProfile") }}
               </button>
             </div>
           </div>
@@ -454,13 +452,15 @@ onMounted(async () => {
           role="alert"
         >
           <p>
-            <strong
-              >{{ t('finished.errorsOccurred', { count: model.progress.errorsOccured.toLocaleString() }) }}</strong
-            >
-            {{ t('finished.submitErrorReportMessage') }}
+            <strong>{{
+              t("finished.errorsOccurred", {
+                count: model.progress.errorsOccured.toLocaleString(),
+              })
+            }}</strong>
+            {{ t("finished.submitErrorReportMessage") }}
           </p>
           <button class="btn btn-primary" @click="submitErrorReportClicked">
-            {{ t('finished.submitErrorReport') }}
+            {{ t("finished.submitErrorReport") }}
           </button>
         </div>
 
@@ -470,16 +470,16 @@ onMounted(async () => {
           role="alert"
         >
           <p v-if="showFailureBoth" class="fw-bold mb-0">
-            {{ t('finished.failedToScrollTweetsAndLikes') }}
+            {{ t("finished.failedToScrollTweetsAndLikes") }}
           </p>
           <p v-if="showFailureTweets" class="fw-bold mb-0">
-            {{ t('finished.failedToScrollTweets') }}
+            {{ t("finished.failedToScrollTweets") }}
           </p>
           <p v-if="showFailureLikes" class="fw-bold mb-0">
-            {{ t('finished.failedToScrollLikes') }}
+            {{ t("finished.failedToScrollLikes") }}
           </p>
           <p class="alert-details mb-0">
-            {{ t('finished.runAgainMessage') }}
+            {{ t("finished.runAgainMessage") }}
           </p>
         </div>
 
@@ -501,7 +501,10 @@ onMounted(async () => {
         <ButtonsComponent
           :back-buttons="[]"
           :next-buttons="[
-            { label: t('finished.runAgainWithSameSettings'), action: runAgainClicked },
+            {
+              label: t('finished.runAgainWithSameSettings'),
+              action: runAgainClicked,
+            },
             { label: t('finished.continueToDashboard'), action: nextClicked },
           ]"
         />

@@ -176,9 +176,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('wizard.archiveOptions') }}</h2>
+          <h2>{{ t("wizard.archiveOptions") }}</h2>
           <p class="text-muted">
-            {{ t('wizard.archiveOptionsDescription') }}
+            {{ t("wizard.archiveOptionsDescription") }}
           </p>
         </div>
 
@@ -192,9 +192,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveTweetsHTML"
-                >{{ t('wizard.saveHTMLVersionOfEachTweet') }}</label
-              >
+              <label class="form-check-label" for="archiveTweetsHTML">{{
+                t("wizard.saveHTMLVersionOfEachTweet")
+              }}</label>
             </div>
             <div class="indent">
               <small
@@ -202,15 +202,21 @@ onMounted(async () => {
                 class="form-text text-muted"
               >
                 <i class="fa-solid fa-triangle-exclamation" />
-                {{ t('wizard.databaseNoTweetsWarning') }}
+                {{ t("wizard.databaseNoTweetsWarning") }}
               </small>
               <small v-else class="form-text text-muted">
-                {{ t('wizard.saveHTMLVersionDescription') }}
-                <em>{{ t('wizard.takesMuchLonger') }}</em>
+                {{ t("wizard.saveHTMLVersionDescription") }}
+                <em>{{ t("wizard.takesMuchLonger") }}</em>
               </small>
             </div>
             <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
-              <small v-html="t('wizard.tweetsNotArchivedYet', { count: deleteTweetsCountNotArchived })">
+              <small
+                v-html="
+                  t('wizard.tweetsNotArchivedYet', {
+                    count: deleteTweetsCountNotArchived,
+                  })
+                "
+              >
               </small>
             </div>
           </div>
@@ -223,9 +229,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveBookmarks"
-                >{{ t('wizard.saveMyBookmarks') }}</label
-              >
+              <label class="form-check-label" for="archiveBookmarks">{{
+                t("wizard.saveMyBookmarks")
+              }}</label>
             </div>
           </div>
           <div class="mb-3">
@@ -237,9 +243,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveDMs"
-                >{{ t('wizard.saveMyDMs') }}</label
-              >
+              <label class="form-check-label" for="archiveDMs">{{
+                t("wizard.saveMyDMs")
+              }}</label>
             </div>
           </div>
         </form>

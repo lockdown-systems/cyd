@@ -133,9 +133,7 @@ const submitReport = async () => {
       navigator.userAgent,
     );
 
-    await window.electron.showError(
-      t("errorReport.error.noDetails"),
-    );
+    await window.electron.showError(t("errorReport.error.noDetails"));
     hide();
     await shouldRetry();
     return;
@@ -188,9 +186,7 @@ const submitReport = async () => {
         "Error posting automation error report:",
         postAutomationErrorReportResp.message,
       );
-      await window.electron.showError(
-        t("errorReport.error.submissionError"),
-      );
+      await window.electron.showError(t("errorReport.error.submissionError"));
     } else {
       await window.electron.trackEvent(
         PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED,
@@ -296,7 +292,7 @@ onUnmounted(() => {
     >
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title">{{ t('errorReport.title') }}</h4>
+          <h4 class="modal-title">{{ t("errorReport.title") }}</h4>
           <button
             type="button"
             class="btn-close"
@@ -312,7 +308,11 @@ onUnmounted(() => {
                 {{ errorReportType(0) }}
               </h5>
               <h5 v-else>
-                {{ t('errorReport.errorsOccurred', { count: errorReports.length.toLocaleString() }) }}
+                {{
+                  t("errorReport.errorsOccurred", {
+                    count: errorReports.length.toLocaleString(),
+                  })
+                }}
               </h5>
               <div class="mb-3">
                 <textarea
@@ -331,11 +331,12 @@ onUnmounted(() => {
                   class="form-check-input"
                 />
                 <label class="form-check-label" for="includeSensitiveData">
-                  <strong>{{ t('errorReport.sendExtraDetails') }}</strong> {{ t('errorReport.sendExtraDetailsDescription') }}
+                  <strong>{{ t("errorReport.sendExtraDetails") }}</strong>
+                  {{ t("errorReport.sendExtraDetailsDescription") }}
                 </label>
               </div>
               <p>
-                {{ t('errorReport.moreInfoHelpful') }}
+                {{ t("errorReport.moreInfoHelpful") }}
               </p>
               <div>
                 <p>
@@ -358,25 +359,35 @@ onUnmounted(() => {
                       v-if="errorReports.length > 1"
                       class="text-center fw-bold"
                     >
-                      {{ t('errorReport.errorOf', { current: i + 1, total: errorReports.length }) }}
+                      {{
+                        t("errorReport.errorOf", {
+                          current: i + 1,
+                          total: errorReports.length,
+                        })
+                      }}
                     </div>
                     <ul class="details">
                       <li>
-                        <label>{{ t('errorReport.errorType') }}</label>
+                        <label>{{ t("errorReport.errorType") }}</label>
                         <span>{{ errorReportType(i) }}</span>
                       </li>
                       <li>
-                        <label>{{ t('errorReport.appVersion') }}</label>
+                        <label>{{ t("errorReport.appVersion") }}</label>
                         <span>
-                          {{ t('errorReport.appVersionFor', { version: errorReport.appVersion, platform: errorReport.clientPlatform }) }}
+                          {{
+                            t("errorReport.appVersionFor", {
+                              version: errorReport.appVersion,
+                              platform: errorReport.clientPlatform,
+                            })
+                          }}
                         </span>
                       </li>
                       <li>
-                        <label>{{ t('errorReport.accountType') }}</label>
+                        <label>{{ t("errorReport.accountType") }}</label>
                         <span>{{ errorReport.accountType }}</span>
                       </li>
                       <li v-if="includeSensitiveData && errorReport !== null">
-                        <label>{{ t('errorReport.username') }}</label>
+                        <label>{{ t("errorReport.username") }}</label>
                         <span>{{ errorReport.accountUsername }}</span>
                       </li>
                       <li v-if="errorReportData(i) != ''">

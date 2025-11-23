@@ -229,7 +229,7 @@ onUnmounted(() => {
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title text-nowrap">
-            {{ t('signIn.title') }}
+            {{ t("signIn.title") }}
           </h4>
           <button
             type="button"
@@ -242,10 +242,10 @@ onUnmounted(() => {
         <div class="modal-body">
           <div v-if="mode == 'open'">
             <p>
-              {{ t('signIn.openSourceMode') }}
+              {{ t("signIn.openSourceMode") }}
             </p>
             <p>
-              {{ t('signIn.supportProject') }}
+              {{ t("signIn.supportProject") }}
             </p>
           </div>
           <div v-else class="d-flex flex-column align-items-center">
@@ -254,7 +254,7 @@ onUnmounted(() => {
                 <div class="form-group d-flex flex-column mt-4">
                   <div>
                     <label for="email" class="sr-only">
-                      {{ t('signIn.emailLabel') }}
+                      {{ t("signIn.emailLabel") }}
                     </label>
                     <input
                       id="email"
@@ -275,7 +275,7 @@ onUnmounted(() => {
                       class="form-check-input"
                     />
                     <label class="form-check-label small" for="subscribe">
-                      {{ t('signIn.subscribeLabel') }}
+                      {{ t("signIn.subscribeLabel") }}
                     </label>
                   </div>
 
@@ -287,17 +287,17 @@ onUnmounted(() => {
                       data-testid="continue-button"
                       @click="authenticate"
                     >
-                      {{ t('signIn.continue') }}
+                      {{ t("signIn.continue") }}
                     </button>
                   </div>
                 </div>
                 <p class="text-muted small mt-5">
-                  {{ t('signIn.emailPrivacy') }}
+                  {{ t("signIn.emailPrivacy") }}
                 </p>
               </template>
               <template v-else-if="signInState == 'registerDevice'">
                 <div class="mt-4">
-                  <p>{{ t('signIn.verificationCodeSent') }}</p>
+                  <p>{{ t("signIn.verificationCodeSent") }}</p>
                   <div class="verification-code-container">
                     <input
                       v-model="verificationCode"
@@ -316,13 +316,13 @@ onUnmounted(() => {
                       data-testid="back-button"
                       @click="goBack"
                     >
-                      {{ t('signIn.back') }}
+                      {{ t("signIn.back") }}
                     </button>
                   </div>
                 </div>
               </template>
               <template v-else-if="signInState == 'token'">
-                <p>{{ t('signIn.signingIn') }}</p>
+                <p>{{ t("signIn.signingIn") }}</p>
               </template>
             </form>
           </div>

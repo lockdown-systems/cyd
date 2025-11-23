@@ -52,7 +52,7 @@ onMounted(async () => {
   <div class="finished">
     <div v-if="jobsType == 'save'" class="container mt-3">
       <div class="finished">
-        <h2>{{ t('facebook.youJustSaved') }}</h2>
+        <h2>{{ t("facebook.youJustSaved") }}</h2>
         <ul>
           <li v-if="(model.progress.storiesSaved ?? 0) > 0">
             <i class="fa-solid fa-floppy-disk archive-bullet" />

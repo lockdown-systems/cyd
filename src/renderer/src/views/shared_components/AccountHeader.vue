@@ -60,7 +60,7 @@ const onRemoveClicked = () => {
           <i class="fa-solid fa-rotate" />
         </div>
         <div v-if="refreshBtnShowInfo" class="info-popup info-popup-refresh">
-          {{ t('account.backToStart') }}
+          {{ t("account.backToStart") }}
         </div>
       </div>
       <div class="btn-container">
@@ -73,7 +73,7 @@ const onRemoveClicked = () => {
           <i class="fa-solid fa-trash" />
         </div>
         <div v-if="removeBtnShowInfo" class="info-popup info-popup-remove">
-          {{ t('account.removeAccount') }}
+          {{ t("account.removeAccount") }}
         </div>
       </div>
     </div>

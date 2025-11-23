@@ -7,7 +7,7 @@ const { t } = useI18n();
 <template>
   <div class="loading text-center">
     <img src="/assets/cyd-loading.gif" :alt="t('common.loadingAlt')" />
-    <p class="text-muted">{{ t('common.loading') }}</p>
+    <p class="text-muted">{{ t("common.loading") }}</p>
   </div>
 </template>
 

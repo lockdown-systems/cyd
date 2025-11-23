@@ -85,7 +85,10 @@ const connectClicked = async () => {
     }
   } catch (e) {
     await window.electron.X.blueskyDisconnect(props.model.account.id);
-    await window.electron.showMessage(t("wizard.failedToConnectToBluesky"), `${e}`);
+    await window.electron.showMessage(
+      t("wizard.failedToConnectToBluesky"),
+      `${e}`,
+    );
     state.value = State.NotConnected;
   }
 };
@@ -121,7 +124,10 @@ const oauthCallback = async (queryString: string) => {
     }
   } catch (e) {
     await window.electron.X.blueskyDisconnect(props.model.account.id);
-    await window.electron.showMessage(t("wizard.failedToConnectToBluesky"), `${e}`);
+    await window.electron.showMessage(
+      t("wizard.failedToConnectToBluesky"),
+      `${e}`,
+    );
     state.value = State.NotConnected;
   }
 };
@@ -138,10 +144,7 @@ const migrateClicked = async () => {
 
 const deleteClicked = async () => {
   if (tweetCounts.value === null) {
-    await window.electron.showMessage(
-      t("wizard.noTweetsToDelete"),
-      "",
-    );
+    await window.electron.showMessage(t("wizard.noTweetsToDelete"), "");
     return;
   }
 
@@ -182,7 +185,10 @@ onMounted(async () => {
       props.model.account.id,
     );
   } catch (e) {
-    await window.electron.showMessage(t("wizard.failedToGetBlueskyProfile"), `${e}`);
+    await window.electron.showMessage(
+      t("wizard.failedToGetBlueskyProfile"),
+      `${e}`,
+    );
   }
   if (blueskyProfile.value) {
     state.value = State.Connected;
@@ -253,15 +259,15 @@ onUnmounted(async () => {
       <div class="wizard-scroll-content">
         <div class="mb-4">
           <h2>
-            {{ t('wizard.migrateToBluesky') }}
+            {{ t("wizard.migrateToBluesky") }}
             <span
               v-if="!userAuthenticated || !userPremium"
               class="premium badge badge-primary"
-              >{{ t('premium.premium') }}</span
+              >{{ t("premium.premium") }}</span
             >
           </h2>
           <p class="text-muted">
-            {{ t('wizard.migrateToBlueskyDescription') }}
+            {{ t("wizard.migrateToBlueskyDescription") }}
           </p>
 
           <div v-if="isArchiveOld && hasSomeData" class="alert alert-warning">
@@ -269,7 +275,7 @@ onUnmounted(async () => {
               <strong v-html="t('wizard.recommendReimport')"></strong>
             </p>
             <p>
-              {{ t('wizard.recommendReimportReason') }}
+              {{ t("wizard.recommendReimportReason") }}
             </p>
           </div>
 
@@ -288,9 +294,11 @@ onUnmounted(async () => {
             v-if="state == State.NotConnected || state == State.Connecting"
           >
             <form @submit.prevent="connectClicked">
-              <p>{{ t('wizard.connectBlueskyAccount') }}</p>
+              <p>{{ t("wizard.connectBlueskyAccount") }}</p>
               <div class="form-group">
-                <label for="username" class="sr-only">{{ t('wizard.blueskyHandle') }}</label>
+                <label for="username" class="sr-only">{{
+                  t("wizard.blueskyHandle")
+                }}</label>
                 <div class="input-group">
                   <input
                     id="handle"
@@ -316,15 +324,21 @@ onUnmounted(async () => {
           </template>
           <template v-else-if="state == State.FinishInBrowser">
             <div class="d-flex align-items-center">
-              <div class="flex-grow-1 fs-4" v-html="t('wizard.finishConnectingInBrowser', { handle: blueskyHandle })">
-              </div>
+              <div
+                class="flex-grow-1 fs-4"
+                v-html="
+                  t('wizard.finishConnectingInBrowser', {
+                    handle: blueskyHandle,
+                  })
+                "
+              ></div>
               <div>
                 <button
                   class="btn btn-secondary"
                   type="button"
                   @click="disconnectClicked"
                 >
-                  {{ t('wizard.cancel') }}
+                  {{ t("wizard.cancel") }}
                 </button>
               </div>
             </div>
@@ -332,7 +346,7 @@ onUnmounted(async () => {
           <template v-else-if="state == State.Connected">
             <!-- Show the Bluesky account that is connected -->
             <hr />
-            <p>{{ t('wizard.connectedToBlueskyAccount') }}</p>
+            <p>{{ t("wizard.connectedToBlueskyAccount") }}</p>
             <div class="d-flex align-items-center">
               <div class="flex-grow-1">
                 <template v-if="blueskyProfile">
@@ -375,11 +389,14 @@ onUnmounted(async () => {
                 <div class="row">
                   <div class="col col-60">
                     <p v-if="tweetCounts.toMigrateTweets.length > 0">
-                      <strong
-                        >{{ t('migrateBluesky.youCanMigrate', { count: tweetCounts.toMigrateTweets.length.toLocaleString() }) }}</strong
-                      >
+                      <strong>{{
+                        t("migrateBluesky.youCanMigrate", {
+                          count:
+                            tweetCounts.toMigrateTweets.length.toLocaleString(),
+                        })
+                      }}</strong>
                     </p>
-                    <p v-else>{{ t('migrateBluesky.noTweetsToMigrate') }}</p>
+                    <p v-else>{{ t("migrateBluesky.noTweetsToMigrate") }}</p>
                     <ul class="small text-muted">
                       <li>
                         Your local database has a total of

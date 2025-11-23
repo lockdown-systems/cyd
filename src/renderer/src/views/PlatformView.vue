@@ -168,12 +168,12 @@ const currentJobsLength = computed(() => props.currentJobs.length);
         class="u2f-info text-center text-muted small ms-2"
       >
         <i class="fa-solid fa-circle-info me-2" />
-        {{ t('platform.u2fNotice') }}
+        {{ t("platform.u2fNotice") }}
         <a
           v-if="config.urls.u2fDocs"
           href="#"
           @click="openURL(config.urls.u2fDocs)"
-          >{{ t('platform.readMore') }}</a
+          >{{ t("platform.readMore") }}</a
         >.
       </p>
 
@@ -186,7 +186,7 @@ const currentJobsLength = computed(() => props.currentJobs.length);
       >
         <slot name="archive-only-button">
           <button class="btn btn-secondary" @click="emit('archiveOnlyClicked')">
-            {{ t('platform.importArchiveOnly') }}
+            {{ t("platform.importArchiveOnly") }}
           </button>
         </slot>
       </div>

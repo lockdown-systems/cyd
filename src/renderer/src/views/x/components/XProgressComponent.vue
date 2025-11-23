@@ -57,24 +57,30 @@ onUnmounted(() => {
     <div class="progress-wrapper">
       <!-- Login -->
       <template v-if="progress.currentJob == 'login'">
-        <p>{{ t('jobs.login') }}</p>
+        <p>{{ t("jobs.login") }}</p>
       </template>
 
       <!-- Index tweets -->
       <template v-if="progress.currentJob == 'indexTweets'">
         <p>
-          {{ t('progress.savedTweetsAndRetweets', {
-            tweets: progress.tweetsIndexed.toLocaleString(),
-            retweets: progress.retweetsIndexed.toLocaleString()
-          }) }}
+          {{
+            t("progress.savedTweetsAndRetweets", {
+              tweets: progress.tweetsIndexed.toLocaleString(),
+              retweets: progress.retweetsIndexed.toLocaleString(),
+            })
+          }}
           <span v-if="progress.unknownIndexed > 0" class="text-muted">
-            {{ t('progress.savedOtherTweets', { count: progress.unknownIndexed.toLocaleString() }) }}
+            {{
+              t("progress.savedOtherTweets", {
+                count: progress.unknownIndexed.toLocaleString(),
+              })
+            }}
           </span>
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isIndexTweetsFinished">
-            {{ t('progress.savingComplete') }}
+            {{ t("progress.savingComplete") }}
           </template>
         </p>
       </template>
@@ -82,12 +88,16 @@ onUnmounted(() => {
       <!-- Index conversations -->
       <template v-if="progress.currentJob == 'indexConversations'">
         <p>
-          {{ t('progress.savedConversations', { count: progress.conversationsIndexed.toLocaleString() }) }}
+          {{
+            t("progress.savedConversations", {
+              count: progress.conversationsIndexed.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isIndexConversationsFinished">
-            {{ t('progress.savingComplete') }}
+            {{ t("progress.savingComplete") }}
           </template>
         </p>
       </template>
@@ -95,16 +105,19 @@ onUnmounted(() => {
       <!-- Index messages -->
       <template v-if="progress.currentJob == 'indexMessages'">
         <p v-if="progress.totalConversations">
-          {{ t('progress.savedMessages', {
-            messages: progress.messagesIndexed.toLocaleString(),
-            conversationsIndexed: progress.conversationMessagesIndexed.toLocaleString(),
-            totalConversations: progress.totalConversations.toLocaleString()
-          }) }}
+          {{
+            t("progress.savedMessages", {
+              messages: progress.messagesIndexed.toLocaleString(),
+              conversationsIndexed:
+                progress.conversationMessagesIndexed.toLocaleString(),
+              totalConversations: progress.totalConversations.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isIndexMessagesFinished">
-            {{ t('progress.savingComplete') }}
+            {{ t("progress.savingComplete") }}
           </template>
         </p>
         <div
@@ -141,15 +154,23 @@ onUnmounted(() => {
       <!-- Index likes -->
       <template v-if="progress.currentJob == 'indexLikes'">
         <p>
-          {{ t('progress.savedLikes', { count: progress.likesIndexed.toLocaleString() }) }}
+          {{
+            t("progress.savedLikes", {
+              count: progress.likesIndexed.toLocaleString(),
+            })
+          }}
           <span v-if="progress.unknownIndexed > 0" class="text-muted">
-            {{ t('progress.savedOtherTweets', { count: progress.unknownIndexed.toLocaleString() }) }}
+            {{
+              t("progress.savedOtherTweets", {
+                count: progress.unknownIndexed.toLocaleString(),
+              })
+            }}
           </span>
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isIndexLikesFinished">
-            {{ t('progress.savingComplete') }}
+            {{ t("progress.savingComplete") }}
           </template>
         </p>
       </template>
@@ -157,12 +178,16 @@ onUnmounted(() => {
       <!-- Index bookmarks -->
       <template v-if="progress.currentJob == 'indexBookmarks'">
         <p>
-          {{ t('progress.savedBookmarks', { count: progress.bookmarksIndexed.toLocaleString() }) }}
+          {{
+            t("progress.savedBookmarks", {
+              count: progress.bookmarksIndexed.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isIndexBookmarksFinished">
-            {{ t('progress.savingComplete') }}
+            {{ t("progress.savingComplete") }}
           </template>
         </p>
       </template>
@@ -170,15 +195,17 @@ onUnmounted(() => {
       <!-- Archive Tweets -->
       <template v-if="progress.currentJob == 'archiveTweets'">
         <p>
-          {{ t('progress.savedTweetsAsHTML', {
-            archived: progress.tweetsArchived.toLocaleString(),
-            total: progress.totalTweetsToArchive.toLocaleString()
-          }) }}
+          {{
+            t("progress.savedTweetsAsHTML", {
+              archived: progress.tweetsArchived.toLocaleString(),
+              total: progress.totalTweetsToArchive.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isArchiveTweetsFinished">
-            {{ t('progress.finishedSavingTweetsAsHTML') }}
+            {{ t("progress.finishedSavingTweetsAsHTML") }}
           </template>
         </p>
         <div
@@ -212,10 +239,12 @@ onUnmounted(() => {
       <!-- Delete Tweets -->
       <template v-if="progress.currentJob == 'deleteTweets'">
         <p>
-          {{ t('progress.deletedTweets', {
-            deleted: progress.tweetsDeleted.toLocaleString(),
-            total: progress.totalTweetsToDelete.toLocaleString()
-          }) }}
+          {{
+            t("progress.deletedTweets", {
+              deleted: progress.tweetsDeleted.toLocaleString(),
+              total: progress.totalTweetsToDelete.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
@@ -250,10 +279,12 @@ onUnmounted(() => {
       <!-- Delete Retweets -->
       <template v-if="progress.currentJob == 'deleteRetweets'">
         <p>
-          {{ t('progress.deletedRetweets', {
-            deleted: progress.retweetsDeleted.toLocaleString(),
-            total: progress.totalRetweetsToDelete.toLocaleString()
-          }) }}
+          {{
+            t("progress.deletedRetweets", {
+              deleted: progress.retweetsDeleted.toLocaleString(),
+              total: progress.totalRetweetsToDelete.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
@@ -290,10 +321,12 @@ onUnmounted(() => {
       <!-- Delete Likes -->
       <template v-if="progress.currentJob == 'deleteLikes'">
         <p>
-          {{ t('progress.deletedLikes', {
-            deleted: progress.likesDeleted.toLocaleString(),
-            total: progress.totalLikesToDelete.toLocaleString()
-          }) }}
+          {{
+            t("progress.deletedLikes", {
+              deleted: progress.likesDeleted.toLocaleString(),
+              total: progress.totalLikesToDelete.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
@@ -328,10 +361,12 @@ onUnmounted(() => {
       <!-- Delete Bookmarks -->
       <template v-if="progress.currentJob == 'deleteBookmarks'">
         <p>
-          {{ t('progress.deletedBookmarks', {
-            deleted: progress.bookmarksDeleted.toLocaleString(),
-            total: progress.totalBookmarksToDelete.toLocaleString()
-          }) }}
+          {{
+            t("progress.deletedBookmarks", {
+              deleted: progress.bookmarksDeleted.toLocaleString(),
+              total: progress.totalBookmarksToDelete.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
@@ -369,12 +404,16 @@ onUnmounted(() => {
       <!-- Delete DMs -->
       <template v-if="progress.currentJob == 'deleteDMs'">
         <p>
-          {{ t('progress.deletedConversations', { count: progress.conversationsDeleted.toLocaleString() }) }}
+          {{
+            t("progress.deletedConversations", {
+              count: progress.conversationsDeleted.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isDeleteDMsFinished">
-            {{ t('progress.finishedDeletingDMs') }}
+            {{ t("progress.finishedDeletingDMs") }}
           </template>
         </p>
       </template>
@@ -382,28 +421,34 @@ onUnmounted(() => {
       <!-- Unfollow everyone -->
       <template v-if="progress.currentJob == 'unfollowEveryone'">
         <p>
-          {{ t('progress.unfollowedAccounts', { count: progress.accountsUnfollowed.toLocaleString() }) }}
+          {{
+            t("progress.unfollowedAccounts", {
+              count: progress.accountsUnfollowed.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="progress.errorsOccured"
           />
           <template v-if="progress.isUnfollowEveryoneFinished">
-            {{ t('progress.finishedUnfollowing') }}
+            {{ t("progress.finishedUnfollowing") }}
           </template>
         </p>
       </template>
 
       <!-- Build archive -->
       <template v-if="progress.currentJob == 'archiveBuild'">
-        <p>{{ t('progress.buildingArchive') }}</p>
+        <p>{{ t("progress.buildingArchive") }}</p>
       </template>
 
       <!-- Migrate to Bluesky -->
       <template v-if="progress.currentJob == 'migrateBluesky'">
         <p>
-          {{ t('progress.migratedTweets', {
-            migrated: progress.migrateTweetsCount.toLocaleString(),
-            total: progress.totalTweetsToMigrate.toLocaleString()
-          }) }}
+          {{
+            t("progress.migratedTweets", {
+              migrated: progress.migrateTweetsCount.toLocaleString(),
+              total: progress.totalTweetsToMigrate.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="
               Object.keys(progress.migrateSkippedTweetsErrors).length
@@ -446,10 +491,12 @@ onUnmounted(() => {
       <!-- Migrate to Bluesky (delete posts) -->
       <template v-if="progress.currentJob == 'migrateBlueskyDelete'">
         <p>
-          {{ t('progress.deletedPosts', {
-            deleted: progress.migrateDeletePostsCount.toLocaleString(),
-            total: progress.totalMigratedPostsToDelete.toLocaleString()
-          }) }}
+          {{
+            t("progress.deletedPosts", {
+              deleted: progress.migrateDeletePostsCount.toLocaleString(),
+              total: progress.totalMigratedPostsToDelete.toLocaleString(),
+            })
+          }}
           <XProgressErrorsOccuredComponent
             :errors-occured="
               Object.keys(progress.migrateSkippedTweetsErrors).length
@@ -491,23 +538,27 @@ onUnmounted(() => {
 
       <!-- Tombstone update banner -->
       <template v-if="progress.currentJob == 'tombstoneUpdateBanner'">
-        <p>{{ t('progress.updatingBanner') }}</p>
+        <p>{{ t("progress.updatingBanner") }}</p>
       </template>
 
       <!-- Tombstone update bio -->
       <template v-if="progress.currentJob == 'tombstoneUpdateBio'">
-        <p>{{ t('progress.updatingBio') }}</p>
+        <p>{{ t("progress.updatingBio") }}</p>
       </template>
 
       <!-- Tombstone lock account -->
       <template v-if="progress.currentJob == 'tombstoneLockAccount'">
-        <p>{{ t('progress.lockingAccount') }}</p>
+        <p>{{ t("progress.lockingAccount") }}</p>
       </template>
 
       <!-- Rate Limit -->
       <p v-if="rateLimitInfo?.isRateLimited" class="rate-limit">
-        {{ t('progress.rateLimitHit') }}
-        <b>{{ t('progress.rateLimitWaiting', { time: formatSeconds(rateLimitSecondsLeft) }) }}</b>
+        {{ t("progress.rateLimitHit") }}
+        <b>{{
+          t("progress.rateLimitWaiting", {
+            time: formatSeconds(rateLimitSecondsLeft),
+          })
+        }}</b>
       </p>
     </div>
   </template>

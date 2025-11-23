@@ -51,19 +51,31 @@ onMounted(async () => {
       </div>
     </div>
     <div class="text-center">
-      <p>{{ t('common.findBugOrNeedHelp') }}</p>
+      <p>{{ t("common.findBugOrNeedHelp") }}</p>
       <p class="text-muted">
-        <img src="/assets/wordmark.svg" class="cyd-wordmark mr-2" :alt="t('common.cyd')" />
+        <img
+          src="/assets/wordmark.svg"
+          class="cyd-wordmark mr-2"
+          :alt="t('common.cyd')"
+        />
         {{ mode != "prod" ? "Dev" : "" }}
         version {{ appVersion }}
       </p>
       <p class="text-muted">
         Copyright © Lockdown Systems LLC {{ currentYear }}, licensed under
         GPLv3<br />
-        <span class="btn btn-link" @click="sourceClicked">{{ t('about.sourceCode') }}</span>
-        <span class="btn btn-link" @click="privacyClicked">{{ t('about.privacyPolicy') }}</span>
-        <span class="btn btn-link" @click="termsClicked">{{ t('about.termsOfUse') }}</span>
-        <span class="btn btn-link" @click="creditsClicked">{{ t('about.credits') }}</span>
+        <span class="btn btn-link" @click="sourceClicked">{{
+          t("about.sourceCode")
+        }}</span>
+        <span class="btn btn-link" @click="privacyClicked">{{
+          t("about.privacyPolicy")
+        }}</span>
+        <span class="btn btn-link" @click="termsClicked">{{
+          t("about.termsOfUse")
+        }}</span>
+        <span class="btn btn-link" @click="creditsClicked">{{
+          t("about.credits")
+        }}</span>
       </p>
     </div>
   </div>

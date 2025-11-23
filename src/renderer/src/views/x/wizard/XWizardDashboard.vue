@@ -69,17 +69,22 @@ onMounted(async () => {
             class="card h-100"
             @click="emit('setState', State.WizardDatabase)"
           >
-            <span v-if="!hasSomeData" class="start-here-badge badge bg-primary"
-              >{{ t('dashboard.startHere') }}</span
+            <span
+              v-if="!hasSomeData"
+              class="start-here-badge badge bg-primary"
+              >{{ t("dashboard.startHere") }}</span
             >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-database.png" :alt="t('dashboard.localDatabase')" />
-              <h2>{{ t('dashboard.localDatabase') }}</h2>
+              <img
+                src="/assets/icon-database.png"
+                :alt="t('dashboard.localDatabase')"
+              />
+              <h2>{{ t("dashboard.localDatabase") }}</h2>
               <p class="small mt-3">
-                {{ t('dashboard.localDatabaseDescription') }}
+                {{ t("dashboard.localDatabaseDescription") }}
               </p>
               <p v-if="lastDatabase" class="mt-3 small text-muted text-center">
-                {{ t('dashboard.lastRan', { timeAgo: lastDatabaseTimeAgo }) }}
+                {{ t("dashboard.lastRan", { timeAgo: lastDatabaseTimeAgo }) }}
               </p>
             </div>
           </div>
@@ -93,13 +98,16 @@ onMounted(async () => {
             @click="emit('setState', State.WizardDeleteOptions)"
           >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-delete.png" :alt="t('dashboard.deleteFromX')" />
-              <h2>{{ t('dashboard.deleteFromX') }}</h2>
+              <img
+                src="/assets/icon-delete.png"
+                :alt="t('dashboard.deleteFromX')"
+              />
+              <h2>{{ t("dashboard.deleteFromX") }}</h2>
               <p class="small mt-3">
-                {{ t('dashboard.deleteFromXDescription') }}
+                {{ t("dashboard.deleteFromXDescription") }}
               </p>
               <p v-if="lastDelete" class="mt-3 small text-muted text-center">
-                {{ t('dashboard.lastRan', { timeAgo: lastDeleteTimeAgo }) }}
+                {{ t("dashboard.lastRan", { timeAgo: lastDeleteTimeAgo }) }}
               </p>
             </div>
           </div>
@@ -112,14 +120,19 @@ onMounted(async () => {
             class="card h-100"
             @click="emit('setState', State.WizardArchiveOnly)"
           >
-            <span v-if="!hasSomeData" class="start-here-badge badge bg-primary"
-              >{{ t('dashboard.startHere') }}</span
+            <span
+              v-if="!hasSomeData"
+              class="start-here-badge badge bg-primary"
+              >{{ t("dashboard.startHere") }}</span
             >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-import.png" :alt="t('dashboard.importXArchive')" />
-              <h2>{{ t('dashboard.importXArchive') }}</h2>
+              <img
+                src="/assets/icon-import.png"
+                :alt="t('dashboard.importXArchive')"
+              />
+              <h2>{{ t("dashboard.importXArchive") }}</h2>
               <p class="small mt-3">
-                {{ t('dashboard.importXArchiveDescription') }}
+                {{ t("dashboard.importXArchiveDescription") }}
               </p>
             </div>
           </div>
@@ -130,10 +143,13 @@ onMounted(async () => {
             @click="emit('setState', State.WizardMigrateToBluesky)"
           >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-bluesky.png" :alt="t('dashboard.migrateToBluesky')" />
-              <h2>{{ t('dashboard.migrateToBluesky') }}</h2>
+              <img
+                src="/assets/icon-bluesky.png"
+                :alt="t('dashboard.migrateToBluesky')"
+              />
+              <h2>{{ t("dashboard.migrateToBluesky") }}</h2>
               <p class="small mt-3">
-                {{ t('dashboard.migrateToBlueskyDescription') }}
+                {{ t("dashboard.migrateToBlueskyDescription") }}
               </p>
             </div>
           </div>
@@ -149,10 +165,13 @@ onMounted(async () => {
             @click="emit('setState', State.WizardTombstone)"
           >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-tombstone.png" :alt="t('dashboard.tombstone')" />
-              <h2>{{ t('dashboard.tombstone') }}</h2>
+              <img
+                src="/assets/icon-tombstone.png"
+                :alt="t('dashboard.tombstone')"
+              />
+              <h2>{{ t("dashboard.tombstone") }}</h2>
               <p class="small mt-3">
-                {{ t('dashboard.tombstoneDescription') }}
+                {{ t("dashboard.tombstoneDescription") }}
               </p>
             </div>
           </div>

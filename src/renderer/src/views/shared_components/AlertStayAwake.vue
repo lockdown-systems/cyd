@@ -7,10 +7,12 @@ const { t } = useI18n();
 
 <template>
   <div class="alert alert-info mt-4" role="alert">
-    <p class="fw-bold mb-0">{{ t('alertStayAwake.title') }}</p>
+    <p class="fw-bold mb-0">{{ t("alertStayAwake.title") }}</p>
     <p class="alert-details mb-0">
-      {{ t('alertStayAwake.description') }}
-      <a href="#" @click="openPreventSleepURL">{{ t('alertStayAwake.learnMore') }}</a>
+      {{ t("alertStayAwake.description") }}
+      <a href="#" @click="openPreventSleepURL">{{
+        t("alertStayAwake.learnMore")
+      }}</a>
     </p>
   </div>
 </template>

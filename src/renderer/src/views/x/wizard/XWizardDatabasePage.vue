@@ -109,9 +109,9 @@ onMounted(async () => {
   >
     <template #content>
       <div class="wizard-scroll-content">
-        <h2>{{ t('wizard.buildYourLocalDatabase') }}</h2>
+        <h2>{{ t("wizard.buildYourLocalDatabase") }}</h2>
         <p class="text-muted">
-          {{ t('wizard.buildYourLocalDatabaseDescription') }}
+          {{ t("wizard.buildYourLocalDatabaseDescription") }}
         </p>
 
         <XLastImportOrBuildComponent
@@ -131,11 +131,13 @@ onMounted(async () => {
             <div class="card-body d-flex align-items-center">
               <div>
                 <div>
-                  {{ t('wizard.importXArchiveRecommended') }}
-                  <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
+                  {{ t("wizard.importXArchiveRecommended") }}
+                  <span class="ms-2 text-muted">{{
+                    t("wizard.recommended")
+                  }}</span>
                 </div>
                 <small class="info text-muted">
-                  {{ t('wizard.importXArchiveRecommendedDescription') }}
+                  {{ t("wizard.importXArchiveRecommendedDescription") }}
                 </small>
               </div>
             </div>
@@ -148,9 +150,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t('wizard.buildFromScratch') }}</div>
+                <div>{{ t("wizard.buildFromScratch") }}</div>
                 <small class="info text-muted">
-                  {{ t('wizard.buildFromScratchDescription') }}
+                  {{ t("wizard.buildFromScratchDescription") }}
                   <a
                     href="#"
                     @click="
@@ -159,7 +161,7 @@ onMounted(async () => {
                       )
                     "
                   >
-                    {{ t('wizard.readMore') }}</a
+                    {{ t("wizard.readMore") }}</a
                   >.
                 </small>
               </div>
@@ -173,9 +175,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t('wizard.saveHTMLTweetsDMsBookmarks') }}</div>
+                <div>{{ t("wizard.saveHTMLTweetsDMsBookmarks") }}</div>
                 <small class="info text-muted">
-                  {{ t('wizard.saveHTMLTweetsDMsBookmarksDescription') }}
+                  {{ t("wizard.saveHTMLTweetsDMsBookmarksDescription") }}
                 </small>
               </div>
             </div>
@@ -194,11 +196,13 @@ onMounted(async () => {
             <div class="card-body d-flex align-items-center">
               <div>
                 <div>
-                  {{ t('wizard.buildFromScratch') }}
-                  <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
+                  {{ t("wizard.buildFromScratch") }}
+                  <span class="ms-2 text-muted">{{
+                    t("wizard.recommended")
+                  }}</span>
                 </div>
                 <small class="info text-muted">
-                  {{ t('wizard.buildFromScratchRecommended') }}
+                  {{ t("wizard.buildFromScratchRecommended") }}
                   <a
                     href="#"
                     @click="
@@ -207,7 +211,7 @@ onMounted(async () => {
                       )
                     "
                   >
-                    {{ t('wizard.readMore') }}</a
+                    {{ t("wizard.readMore") }}</a
                   >.
                 </small>
               </div>
@@ -221,9 +225,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t('wizard.importXArchiveRecommended') }}</div>
+                <div>{{ t("wizard.importXArchiveRecommended") }}</div>
                 <small class="info text-muted">
-                  {{ t('wizard.importArchiveDescription') }}
+                  {{ t("wizard.importArchiveDescription") }}
                 </small>
               </div>
             </div>
@@ -236,9 +240,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t('wizard.saveHTMLTweetsDMsBookmarks') }}</div>
+                <div>{{ t("wizard.saveHTMLTweetsDMsBookmarks") }}</div>
                 <small class="info text-muted">
-                  {{ t('wizard.saveHTMLTweetsDMsBookmarksDescription') }}
+                  {{ t("wizard.saveHTMLTweetsDMsBookmarksDescription") }}
                 </small>
               </div>
             </div>
@@ -255,11 +259,13 @@ onMounted(async () => {
             <div class="card-body d-flex align-items-center">
               <div>
                 <div>
-                  {{ t('wizard.importXArchiveRecommended') }}
-                  <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
+                  {{ t("wizard.importXArchiveRecommended") }}
+                  <span class="ms-2 text-muted">{{
+                    t("wizard.recommended")
+                  }}</span>
                 </div>
                 <small class="info text-muted">
-                  {{ t('wizard.importArchiveUnknown') }}
+                  {{ t("wizard.importArchiveUnknown") }}
                 </small>
               </div>
             </div>
@@ -272,9 +278,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t('wizard.buildFromScratch') }}</div>
+                <div>{{ t("wizard.buildFromScratch") }}</div>
                 <small class="info text-muted">
-                  {{ t('wizard.buildFromScratchDescription') }}
+                  {{ t("wizard.buildFromScratchDescription") }}
                   <a
                     href="#"
                     @click="
@@ -283,7 +289,7 @@ onMounted(async () => {
                       )
                     "
                   >
-                    {{ t('wizard.readMore') }}</a
+                    {{ t("wizard.readMore") }}</a
                   >.
                 </small>
               </div>
@@ -297,9 +303,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t('wizard.saveHTMLTweetsDMsBookmarks') }}</div>
+                <div>{{ t("wizard.saveHTMLTweetsDMsBookmarks") }}</div>
                 <small class="info text-muted">
-                  {{ t('wizard.saveHTMLTweetsDMsBookmarksDescription') }}
+                  {{ t("wizard.saveHTMLTweetsDMsBookmarksDescription") }}
                 </small>
               </div>
             </div>

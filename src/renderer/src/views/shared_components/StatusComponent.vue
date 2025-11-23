@@ -54,25 +54,25 @@ const getStatusIcon = (status: string) => {
         class="btn btn-outline-secondary btn-sm"
         @click="emit('onPause')"
       >
-        <i class="fa-solid fa-pause" /> {{ t('status.pause') }}
+        <i class="fa-solid fa-pause" /> {{ t("status.pause") }}
       </button>
       <button
         v-if="isPaused"
         class="btn btn-primary btn-sm"
         @click="emit('onResume')"
       >
-        <i class="fa-solid fa-play" /> {{ t('status.resume') }}
+        <i class="fa-solid fa-play" /> {{ t("status.resume") }}
       </button>
       <button
         class="btn btn-outline-danger btn-sm btn-cancel"
         @click="emit('onCancel')"
       >
-        <i class="fa-regular fa-circle-xmark" /> {{ t('status.cancel') }}
+        <i class="fa-regular fa-circle-xmark" /> {{ t("status.cancel") }}
       </button>
     </div>
     <div class="d-flex justify-content-center">
       <button class="btn btn-link btn-sm" @click="emit('onReportBug')">
-        {{ t('status.reportBug') }}
+        {{ t("status.reportBug") }}
       </button>
     </div>
     <div class="d-flex justify-content-center">
@@ -84,7 +84,11 @@ const getStatusIcon = (status: string) => {
             : emit('onClickingEnabled')
         "
       >
-        {{ clickingEnabled ? t('status.disableClicking') : t('status.enableClicking') }}
+        {{
+          clickingEnabled
+            ? t("status.disableClicking")
+            : t("status.enableClicking")
+        }}
       </button>
     </div>
   </div>

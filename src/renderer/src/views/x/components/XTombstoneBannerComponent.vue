@@ -17,7 +17,9 @@ defineProps<{
 
 <template>
   <div v-if="updateBanner" class="banner-preview-wrapper mb-3">
-    <p class="text-center text-muted small mb-1">{{ t('tombstoneBanner.bannerPreview') }}</p>
+    <p class="text-center text-muted small mb-1">
+      {{ t("tombstoneBanner.bannerPreview") }}
+    </p>
     <div class="banner-preview">
       <!-- background -->
       <div

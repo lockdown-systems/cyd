@@ -136,8 +136,10 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('facebook.buildYourLocalDatabase') }}</h2>
-          <p class="text-muted">{{ t('facebook.buildYourLocalDatabaseDescription') }}</p>
+          <h2>{{ t("facebook.buildYourLocalDatabase") }}</h2>
+          <p class="text-muted">
+            {{ t("facebook.buildYourLocalDatabaseDescription") }}
+          </p>
         </div>
 
         <form @submit.prevent>
@@ -150,9 +152,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="savePosts"
-                >{{ t('facebook.saveMyPosts') }}</label
-              >
+              <label class="form-check-label" for="savePosts">{{
+                t("facebook.saveMyPosts")
+              }}</label>
             </div>
           </div>
           <div class="indent">
@@ -166,13 +168,13 @@ onMounted(async () => {
                   :disabled="!savePosts"
                 />
                 <label class="form-check-label" for="savePostsHTML">
-                  {{ t('facebook.saveHTMLVersionOfEachPost') }}
+                  {{ t("facebook.saveHTMLVersionOfEachPost") }}
                 </label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  {{ t('facebook.saveHTMLVersionOfEachPostDescription') }}
-                  <em>{{ t('wizard.takesLonger') }}</em>
+                  {{ t("facebook.saveHTMLVersionOfEachPostDescription") }}
+                  <em>{{ t("wizard.takesLonger") }}</em>
                 </small>
               </div>
             </div>

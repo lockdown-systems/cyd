@@ -325,19 +325,19 @@ onUnmounted(async () => {
                     <hr />
                   </li>
                   <li class="menu-btn" @click="manageAccountClicked">
-                    {{ t('tabs.manageMyAccount') }}
+                    {{ t("tabs.manageMyAccount") }}
                   </li>
                   <li class="menu-btn" @click="signOutClicked">
-                    {{ t('tabs.signOutOfAccount') }}
+                    {{ t("tabs.signOutOfAccount") }}
                   </li>
                 </template>
                 <template v-else>
-                  <li class="menu-text">{{ t('tabs.notSignedIn') }}</li>
+                  <li class="menu-text">{{ t("tabs.notSignedIn") }}</li>
                   <li class="menu-line">
                     <hr />
                   </li>
                   <li class="menu-btn" @click="signInClicked">
-                    {{ t('tabs.signInToAccessPremium') }}
+                    {{ t("tabs.signInToAccessPremium") }}
                   </li>
                 </template>
                 <li class="menu-line">
@@ -349,7 +349,9 @@ onUnmounted(async () => {
                 <li class="menu-btn" @click="advancedSettingsClicked">
                   Advanced settings
                 </li>
-                <li class="menu-btn" @click="aboutClicked">{{ t('tabs.about') }}</li>
+                <li class="menu-btn" @click="aboutClicked">
+                  {{ t("tabs.about") }}
+                </li>
               </ul>
             </div>
           </div>

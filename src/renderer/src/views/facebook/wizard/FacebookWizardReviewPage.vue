@@ -54,9 +54,7 @@ const backClicked = async () => {
     emit("setState", State.WizardBuildOptions);
   } else {
     console.error("Unknown review type:", jobsType.value);
-    await window.electron.showError(
-      t("facebook.unknownReviewType"),
-    );
+    await window.electron.showError(t("facebook.unknownReviewType"));
   }
 };
 
@@ -123,7 +121,7 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('facebook.reviewChoices') }}</h2>
+          <h2>{{ t("facebook.reviewChoices") }}</h2>
         </div>
 
         <template v-if="isLoading">
@@ -134,14 +132,14 @@ onMounted(async () => {
             <div v-if="jobsType == 'save'">
               <h3>
                 <i class="fa-solid fa-floppy-disk me-1" />
-                {{ t('facebook.buildLocalDatabase') }}
+                {{ t("facebook.buildLocalDatabase") }}
               </h3>
               <ul>
                 <li v-if="model.account?.facebookAccount?.savePosts">
-                  {{ t('facebook.savePosts') }}
+                  {{ t("facebook.savePosts") }}
                   <ul>
                     <li v-if="model.account?.facebookAccount?.savePostsHTML">
-                      {{ t('facebook.savePostsHTML') }}
+                      {{ t("facebook.savePostsHTML") }}
                     </li>
                   </ul>
                 </li>

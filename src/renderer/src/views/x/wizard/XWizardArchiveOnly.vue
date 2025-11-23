@@ -47,9 +47,9 @@ const goBack = () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2 class="mb-3">{{ t('wizard.archiveOnly.title') }}</h2>
+          <h2 class="mb-3">{{ t("wizard.archiveOnly.title") }}</h2>
           <p class="lead text-muted">
-            {{ t('wizard.archiveOnly.description') }}
+            {{ t("wizard.archiveOnly.description") }}
           </p>
         </div>
 
@@ -57,24 +57,28 @@ const goBack = () => {
           <div class="col-md-6">
             <div class="info-card">
               <div class="card-header">
-                <h4 class="mb-0">{{ t('wizard.archiveOnly.whatYoullNeed') }}</h4>
+                <h4 class="mb-0">
+                  {{ t("wizard.archiveOnly.whatYoullNeed") }}
+                </h4>
               </div>
               <div class="card-body">
                 <div class="card-item">
                   <i class="fa-solid fa-file-archive text-primary me-3" />
                   <div>
-                    <strong>{{ t('wizard.archiveOnly.xArchiveFile') }}</strong>
+                    <strong>{{ t("wizard.archiveOnly.xArchiveFile") }}</strong>
                     <p class="mb-0 small text-muted">
-                      {{ t('wizard.archiveOnly.xArchiveFileDescription') }}
+                      {{ t("wizard.archiveOnly.xArchiveFileDescription") }}
                     </p>
                   </div>
                 </div>
                 <div class="card-item">
                   <i class="fa-solid fa-crown text-warning me-3" />
                   <div>
-                    <strong>{{ t('wizard.archiveOnly.cydPremiumPlan') }}</strong>
+                    <strong>{{
+                      t("wizard.archiveOnly.cydPremiumPlan")
+                    }}</strong>
                     <p class="mb-0 small text-muted">
-                      {{ t('wizard.archiveOnly.cydPremiumPlanDescription') }}
+                      {{ t("wizard.archiveOnly.cydPremiumPlanDescription") }}
                     </p>
                   </div>
                 </div>
@@ -85,24 +89,30 @@ const goBack = () => {
           <div class="col-md-6">
             <div class="info-card">
               <div class="card-header">
-                <h4 class="mb-0">{{ t('wizard.archiveOnly.unavailableFeatures') }}</h4>
+                <h4 class="mb-0">
+                  {{ t("wizard.archiveOnly.unavailableFeatures") }}
+                </h4>
               </div>
               <div class="card-body">
                 <div class="card-item">
                   <i class="fa-solid fa-fire text-muted me-3" />
                   <div>
-                    <strong>{{ t('wizard.archiveOnly.cantDeleteData') }}</strong>
+                    <strong>{{
+                      t("wizard.archiveOnly.cantDeleteData")
+                    }}</strong>
                     <p class="mb-0 small text-muted">
-                      {{ t('wizard.archiveOnly.cantDeleteDataDescription') }}
+                      {{ t("wizard.archiveOnly.cantDeleteDataDescription") }}
                     </p>
                   </div>
                 </div>
                 <div class="card-item">
                   <i class="fa-solid fa-floppy-disk text-muted me-3" />
                   <div>
-                    <strong>{{ t('wizard.archiveOnly.cantSaveExtraData') }}</strong>
+                    <strong>{{
+                      t("wizard.archiveOnly.cantSaveExtraData")
+                    }}</strong>
                     <p class="mb-0 small text-muted">
-                      {{ t('wizard.archiveOnly.cantSaveExtraDataDescription') }}
+                      {{ t("wizard.archiveOnly.cantSaveExtraDataDescription") }}
                     </p>
                   </div>
                 </div>

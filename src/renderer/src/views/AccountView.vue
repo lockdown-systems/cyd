@@ -60,11 +60,15 @@ onMounted(async () => {
           <CydAvatarComponent :height="200" />
         </div>
         <p class="lead">
-          {{ t('common.withCydDescription') }}
-          <img src="/assets/wordmark.svg" class="cyd-wordmark" :alt="t('common.cyd')" />,
-          {{ t('common.withCydDescriptionRest') }}
+          {{ t("common.withCydDescription") }}
+          <img
+            src="/assets/wordmark.svg"
+            class="cyd-wordmark"
+            :alt="t('common.cyd')"
+          />,
+          {{ t("common.withCydDescriptionRest") }}
         </p>
-        <p class="lead fw-bold">{{ t('wizard.readyToGetStarted') }}</p>
+        <p class="lead fw-bold">{{ t("wizard.readyToGetStarted") }}</p>
 
         <div class="select-account row">
           <div class="col-12 col-md-6">
@@ -76,7 +80,7 @@ onMounted(async () => {
                 <div class="description">
                   <div class="name">X</div>
                   <small class="info text-muted">
-                    {{ t('account.xDescription') }}
+                    {{ t("account.xDescription") }}
                   </small>
                 </div>
               </div>
@@ -95,10 +99,12 @@ onMounted(async () => {
                 <div class="description">
                   <div class="name">
                     Facebook
-                    <span class="alpha badge badge-primary">{{ t('common.alpha') }}</span>
+                    <span class="alpha badge badge-primary">{{
+                      t("common.alpha")
+                    }}</span>
                   </div>
                   <small class="info text-muted">
-                    {{ t('account.facebookDescription') }}
+                    {{ t("account.facebookDescription") }}
                   </small>
                 </div>
               </div>
@@ -117,10 +123,12 @@ onMounted(async () => {
                 <div class="description">
                   <div class="name">
                     Bluesky
-                    <span class="alpha badge badge-primary">{{ t('common.alpha') }}</span>
+                    <span class="alpha badge badge-primary">{{
+                      t("common.alpha")
+                    }}</span>
                   </div>
                   <small class="info text-muted">
-                    {{ t('account.blueskyDescription') }}
+                    {{ t("account.blueskyDescription") }}
                   </small>
                 </div>
               </div>
@@ -128,7 +136,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <p class="text-muted mt-3">{{ t('common.morePlatformsComingSoon') }}</p>
+        <p class="text-muted mt-3">{{ t("common.morePlatformsComingSoon") }}</p>
       </div>
     </template>
 
@@ -149,7 +157,7 @@ onMounted(async () => {
     </template>
 
     <template v-else>
-      <p>{{ t('common.unknownAccountType') }}</p>
+      <p>{{ t("common.unknownAccountType") }}</p>
     </template>
   </div>
 </template>

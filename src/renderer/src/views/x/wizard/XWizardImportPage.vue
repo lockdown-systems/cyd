@@ -49,7 +49,9 @@ const breadcrumbProps = computed(() => ({
 }));
 
 const buttonProps = computed(() => ({
-  backButtons: [{ label: t("wizard.backToLocalDatabase"), action: backClicked }],
+  backButtons: [
+    { label: t("wizard.backToLocalDatabase"), action: backClicked },
+  ],
   nextButtons: [
     {
       label: t("wizard.iveDownloadedMyArchive"),
@@ -72,14 +74,14 @@ const buttonProps = computed(() => ({
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('import.importXArchive') }}</h2>
+          <h2>{{ t("import.importXArchive") }}</h2>
           <p class="text-muted">
-            {{ t('import.beforeImportSteps') }}
+            {{ t("import.beforeImportSteps") }}
           </p>
           <ul class="x-archive-steps">
             <li>
               <strong
-                >{{ t('import.visitDownloadPage') }}
+                >{{ t("import.visitDownloadPage") }}
                 <a
                   href="#"
                   @click="openURL('https://x.com/settings/download_your_data')"
@@ -87,30 +89,31 @@ const buttonProps = computed(() => ({
                   https://x.com/settings/download_your_data</a
                 >.</strong
               ><br />
-              <small class="text-muted"
-                >{{ t('import.mightNeedToSignIn') }}</small
-              >
+              <small class="text-muted">{{
+                t("import.mightNeedToSignIn")
+              }}</small>
             </li>
             <li>
-              <strong>{{ t('import.proveYourIdentity') }}</strong><br />
-              <small class="text-muted"
-                >{{ t('import.proveIdentityDescription') }}</small
-              >
+              <strong>{{ t("import.proveYourIdentity") }}</strong
+              ><br />
+              <small class="text-muted">{{
+                t("import.proveIdentityDescription")
+              }}</small>
             </li>
             <li>
-              <strong>{{ t('import.clickRequestArchive') }}</strong>
+              <strong>{{ t("import.clickRequestArchive") }}</strong>
             </li>
             <li>
-              <strong>{{ t('import.bePatient') }}</strong><br />
-              <small class="text-muted"
-                >{{ t('import.waitForArchive') }}</small
-              >
+              <strong>{{ t("import.bePatient") }}</strong
+              ><br />
+              <small class="text-muted">{{ t("import.waitForArchive") }}</small>
             </li>
             <li>
-              <strong>{{ t('import.downloadZipFile') }}</strong><br />
-              <small class="text-muted"
-                >{{ t('import.afterFollowingSteps') }}</small
-              >
+              <strong>{{ t("import.downloadZipFile") }}</strong
+              ><br />
+              <small class="text-muted">{{
+                t("import.afterFollowingSteps")
+              }}</small>
             </li>
           </ul>
 

@@ -171,9 +171,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('wizard.buildOptions') }}</h2>
+          <h2>{{ t("wizard.buildOptions") }}</h2>
           <p class="text-muted">
-            {{ t('wizard.buildOptionsDescription') }}
+            {{ t("wizard.buildOptionsDescription") }}
           </p>
         </div>
 
@@ -195,7 +195,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveTweets">
-                {{ t('wizard.saveMyTweets') }}
+                {{ t("wizard.saveMyTweets") }}
               </label>
             </div>
           </div>
@@ -210,13 +210,13 @@ onMounted(async () => {
                   :disabled="!archiveTweets"
                 />
                 <label class="form-check-label" for="archiveTweetsHTML">
-                  {{ t('wizard.saveHTMLVersionOfEachTweet') }}
+                  {{ t("wizard.saveHTMLVersionOfEachTweet") }}
                 </label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  {{ t('wizard.saveHTMLVersionDescription') }}
-                  <em>{{ t('wizard.takesLonger') }}</em>
+                  {{ t("wizard.saveHTMLVersionDescription") }}
+                  <em>{{ t("wizard.takesLonger") }}</em>
                 </small>
               </div>
             </div>
@@ -231,7 +231,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveLikes">
-                {{ t('wizard.saveMyLikes') }}
+                {{ t("wizard.saveMyLikes") }}
               </label>
             </div>
           </div>
@@ -245,7 +245,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveBookmarks">
-                {{ t('wizard.saveMyBookmarks') }}
+                {{ t("wizard.saveMyBookmarks") }}
               </label>
             </div>
           </div>
@@ -259,7 +259,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveDMs">
-                {{ t('wizard.saveMyDMs') }}
+                {{ t("wizard.saveMyDMs") }}
               </label>
             </div>
           </div>

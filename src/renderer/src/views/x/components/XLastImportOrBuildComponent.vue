@@ -56,20 +56,22 @@ onMounted(async () => {
     }"
   >
     <div v-if="lastImportArchive">
-      {{ t('import.lastImportedArchive', { timeAgo: lastImportArchiveTimeAgo }) }}
+      {{
+        t("import.lastImportedArchive", { timeAgo: lastImportArchiveTimeAgo })
+      }}
     </div>
     <div v-if="lastBuildDatabase">
-      {{ t('import.lastBuiltDatabase', { timeAgo: lastBuildDatabaseTimeAgo }) }}
+      {{ t("import.lastBuiltDatabase", { timeAgo: lastBuildDatabaseTimeAgo }) }}
     </div>
     <div v-if="showNoDataWarning && !lastImportArchive && !lastBuildDatabase">
       <div class="d-flex align-items-center">
         <i class="fa-solid fa-triangle-exclamation fa-2x me-3" />
         <div>
           <template v-if="archiveOnly">
-            {{ t('import.needImportForMigration') }}
+            {{ t("import.needImportForMigration") }}
           </template>
           <template v-else>
-            {{ t('import.needImportOrBuild') }}
+            {{ t("import.needImportOrBuild") }}
           </template>
         </div>
       </div>
@@ -81,7 +83,7 @@ onMounted(async () => {
           class="btn btn-sm btn-primary mt-2"
           @click="emit('setState', State.WizardArchiveOnly)"
         >
-          {{ t('import.importXArchive') }}
+          {{ t("import.importXArchive") }}
         </button>
       </template>
       <template v-else>
@@ -91,9 +93,9 @@ onMounted(async () => {
           @click="emit('setState', State.WizardDatabase)"
         >
           <template v-if="lastImportArchive || lastBuildDatabase">
-            {{ t('import.rebuildDatabase') }}
+            {{ t("import.rebuildDatabase") }}
           </template>
-          <template v-else> {{ t('import.buildDatabase') }} </template>
+          <template v-else> {{ t("import.buildDatabase") }} </template>
         </button>
       </template>
     </div>

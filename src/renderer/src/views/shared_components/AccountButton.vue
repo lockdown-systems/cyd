@@ -106,7 +106,9 @@ onUnmounted(async () => {
     </div>
     <div v-if="showMenu" ref="menuPopupEl" class="menu-popup">
       <ul>
-        <li class="menu-btn remove-button" @click="removeClicked">{{ t('accountButton.remove') }}</li>
+        <li class="menu-btn remove-button" @click="removeClicked">
+          {{ t("accountButton.remove") }}
+        </li>
       </ul>
     </div>
   </div>

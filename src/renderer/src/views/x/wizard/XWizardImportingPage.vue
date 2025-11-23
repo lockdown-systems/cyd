@@ -46,7 +46,9 @@ const createCountString = (importCount: number, skipCount: number) => {
   } else if (importCount > 0 && skipCount == 0) {
     return t("importing.imported", { count: importCount.toLocaleString() });
   } else if (importCount == 0 && skipCount > 0) {
-    return t("importing.alreadyImported", { count: skipCount.toLocaleString() });
+    return t("importing.alreadyImported", {
+      count: skipCount.toLocaleString(),
+    });
   } else {
     return t("importing.nothingImported");
   }
@@ -128,9 +130,7 @@ const startClicked = async () => {
     );
     if (!unzippedPath) {
       statusValidating.value = ImportStatus.Failed;
-      errorMessages.value.push(
-        t("importing.failedToGetAccountDataPath"),
-      );
+      errorMessages.value.push(t("importing.failedToGetAccountDataPath"));
       importFailed.value = true;
       return;
     }
@@ -322,7 +322,10 @@ onMounted(async () => {
       !importStarted
         ? {
             backButtons: [
-              { label: t('importing.backToImportXArchive'), action: backClicked },
+              {
+                label: t('importing.backToImportXArchive'),
+                action: backClicked,
+              },
             ],
             nextButtons: [
               {
@@ -370,12 +373,12 @@ onMounted(async () => {
   >
     <template #content>
       <div class="wizard-scroll-content">
-        <h2>{{ t('importing.importXArchive') }}</h2>
+        <h2>{{ t("importing.importXArchive") }}</h2>
         <p class="text-muted">
           <template v-if="!importStarted">
-            {{ t('importing.browseForArchive') }}
+            {{ t("importing.browseForArchive") }}
           </template>
-          <template v-else> {{ t('importing.importingArchive') }} </template>
+          <template v-else> {{ t("importing.importingArchive") }} </template>
         </p>
 
         <template v-if="!importStarted">
@@ -392,7 +395,7 @@ onMounted(async () => {
                 class="btn btn-secondary"
                 @click="importFromArchiveBrowseClicked"
               >
-                {{ t('importing.browseForArchiveButton') }}
+                {{ t("importing.browseForArchiveButton") }}
               </button>
             </template>
             <template v-else>
@@ -400,13 +403,13 @@ onMounted(async () => {
                 class="btn btn-secondary me-1"
                 @click="importFromArchiveBrowseZipClicked"
               >
-                {{ t('importing.browseForZIP') }}
+                {{ t("importing.browseForZIP") }}
               </button>
               <button
                 class="btn btn-secondary"
                 @click="importFromArchiveBrowseFolderClicked"
               >
-                {{ t('importing.browseForUnzippedFolder') }}
+                {{ t("importing.browseForUnzippedFolder") }}
               </button>
             </template>
           </div>
@@ -425,7 +428,7 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              {{ t('importing.validatingArchive') }}
+              {{ t("importing.validatingArchive") }}
             </li>
             <li
               :class="
@@ -441,7 +444,7 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              {{ t('importing.importingTweets') }}
+              {{ t("importing.importingTweets") }}
               <span v-if="tweetCountString != ''" class="text-muted">
                 ({{ tweetCountString }})
               </span>
@@ -458,7 +461,7 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              {{ t('importing.importingLikes') }}
+              {{ t("importing.importingLikes") }}
               <span v-if="likeCountString != ''" class="text-muted">
                 ({{ likeCountString }})
               </span>
@@ -477,26 +480,26 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              {{ t('importing.buildCydArchive') }}
+              {{ t("importing.buildCydArchive") }}
             </li>
           </ul>
 
           <template v-if="importFinished">
             <div class="alert alert-success mt-3">
               <i class="fa-solid fa-check" />
-              {{ t('importing.importFinished') }}
+              {{ t("importing.importFinished") }}
             </div>
             <p
               v-if="!props.model.account?.xAccount?.archiveOnly"
               class="small text-muted"
             >
-              {{ t('importing.cydCanBackupMore') }}
+              {{ t("importing.cydCanBackupMore") }}
             </p>
             <p
               v-if="props.model.account?.xAccount?.archiveOnly"
               class="small text-muted"
             >
-              {{ t('importing.readyToMigrate') }}
+              {{ t("importing.readyToMigrate") }}
             </p>
           </template>
           <template v-if="importFailed">
@@ -505,7 +508,8 @@ onMounted(async () => {
               :key="errorMessage"
               class="alert alert-danger mt-3 text-break"
             >
-              <strong>{{ t('importing.importFailed') }}</strong> {{ errorMessage }}
+              <strong>{{ t("importing.importFailed") }}</strong>
+              {{ errorMessage }}
             </div>
           </template>
         </template>

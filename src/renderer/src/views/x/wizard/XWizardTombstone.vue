@@ -309,9 +309,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t('wizard.helloDarkness') }}</h2>
+          <h2>{{ t("wizard.helloDarkness") }}</h2>
           <p class="text-muted">
-            {{ t('wizard.timeToMoveOn') }}
+            {{ t("wizard.timeToMoveOn") }}
           </p>
 
           <form @submit.prevent>
@@ -323,13 +323,13 @@ onMounted(async () => {
                   type="checkbox"
                   class="form-check-input"
                 />
-                <label class="form-check-label" for="updateBanner"
-                  >{{ t('wizard.updateProfileBanner') }}</label
-                >
+                <label class="form-check-label" for="updateBanner">{{
+                  t("wizard.updateProfileBanner")
+                }}</label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  {{ t('wizard.bannerDescription') }}
+                  {{ t("wizard.bannerDescription") }}
                 </small>
               </div>
             </div>
@@ -339,7 +339,7 @@ onMounted(async () => {
                   class="form-check-label me-2 text-nowrap"
                   for="updateBannerBackground"
                 >
-                  {{ t('wizard.background') }}
+                  {{ t("wizard.background") }}
                 </label>
                 <select
                   id="updateBannerBackground"
@@ -357,7 +357,7 @@ onMounted(async () => {
                   class="form-check-label me-2 text-nowrap"
                   for="updateBannerSocialIcons"
                 >
-                  {{ t('wizard.socialIcons') }}
+                  {{ t("wizard.socialIcons") }}
                 </label>
                 <select
                   id="updateBannerSocialIcons"
@@ -366,14 +366,14 @@ onMounted(async () => {
                   :aria-label="t('wizard.socialIcons')"
                   :disabled="!updateBanner"
                 >
-                  <option value="none">{{ t('wizard.none') }}</option>
-                  <option value="bluesky">{{ t('wizard.bluesky') }}</option>
-                  <option value="mastodon">{{ t('wizard.mastodon') }}</option>
+                  <option value="none">{{ t("wizard.none") }}</option>
+                  <option value="bluesky">{{ t("wizard.bluesky") }}</option>
+                  <option value="mastodon">{{ t("wizard.mastodon") }}</option>
                   <option value="bluesky-mastodon">
-                    {{ t('wizard.blueskyMastodon') }}
+                    {{ t("wizard.blueskyMastodon") }}
                   </option>
                   <option value="mastodon-bluesky">
-                    {{ t('wizard.mastodonBluesky') }}
+                    {{ t("wizard.mastodonBluesky") }}
                   </option>
                 </select>
               </div>
@@ -386,7 +386,7 @@ onMounted(async () => {
                   :disabled="!updateBanner"
                 />
                 <label class="form-check-label" for="updateBannerShowText">
-                  {{ t('wizard.includeEscapedText') }}
+                  {{ t("wizard.includeEscapedText") }}
                 </label>
               </div>
             </div>
@@ -404,21 +404,21 @@ onMounted(async () => {
                   type="checkbox"
                   class="form-check-input"
                 />
-                <label class="form-check-label" for="updateBio"
-                  >{{ t('wizard.updateBioText') }}</label
-                >
+                <label class="form-check-label" for="updateBio">{{
+                  t("wizard.updateBioText")
+                }}</label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  {{ t('wizard.bioDescription') }}
+                  {{ t("wizard.bioDescription") }}
                 </small>
               </div>
             </div>
             <div class="indent">
               <div class="mb-1">
-                <label for="updateBioText" class="form-label visually-hidden"
-                  >{{ t('wizard.bioText') }}</label
-                >
+                <label for="updateBioText" class="form-label visually-hidden">{{
+                  t("wizard.bioText")
+                }}</label>
                 <textarea
                   id="updateBioText"
                   v-model="updateBioText"
@@ -435,13 +435,15 @@ onMounted(async () => {
                   'text-muted': bioCharactersLeft >= 0,
                 }"
               >
-                {{ t('wizard.charactersOf', { current: bioCharacters, max: 160 }) }}
+                {{
+                  t("wizard.charactersOf", { current: bioCharacters, max: 160 })
+                }}
               </div>
               <p
                 v-if="updateBio && bioCharactersLeft < 0"
                 class="text-danger small"
               >
-                {{ t('wizard.bioTooLong', { count: bioCharactersLeft * -1 }) }}
+                {{ t("wizard.bioTooLong", { count: bioCharactersLeft * -1 }) }}
               </p>
               <div class="mb-3">
                 <div class="form-check">
@@ -474,13 +476,13 @@ onMounted(async () => {
                   type="checkbox"
                   class="form-check-input"
                 />
-                <label class="form-check-label" for="lockAccount"
-                  >{{ t('wizard.lockAccountLabel') }}</label
-                >
+                <label class="form-check-label" for="lockAccount">{{
+                  t("wizard.lockAccountLabel")
+                }}</label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  {{ t('wizard.lockAccountEnableProtect') }}
+                  {{ t("wizard.lockAccountEnableProtect") }}
                 </small>
               </div>
             </div>

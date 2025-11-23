@@ -69,7 +69,7 @@ const getImageClass = (_index: number) => {
         <p class="tweet-text" v-html="tweetItem.t" />
       </div>
       <div v-else class="mt-4 fs-3">
-        <p>{{ t('ui.tweetId', { id: tweetItem.id }) }}</p>
+        <p>{{ t("ui.tweetId", { id: tweetItem.id }) }}</p>
       </div>
       <div v-if="imageDataURIs.length > 0" class="mt-1 row images-container">
         <div
@@ -85,7 +85,7 @@ const getImageClass = (_index: number) => {
           <div
             class="video-placeholder d-flex justify-content-center align-items-center"
           >
-            <span>{{ t('ui.videoPlaceholder') }}</span>
+            <span>{{ t("ui.videoPlaceholder") }}</span>
           </div>
         </div>
       </div>
@@ -95,11 +95,11 @@ const getImageClass = (_index: number) => {
       >
         <div v-if="tweetItem.r">
           <i class="fa-solid fa-retweet" />
-          {{ t('ui.retweets', { count: tweetItem.r.toLocaleString() }) }}
+          {{ t("ui.retweets", { count: tweetItem.r.toLocaleString() }) }}
         </div>
         <div v-if="tweetItem.l">
           <i class="fa-solid fa-heart" />
-          {{ t('ui.likes', { count: tweetItem.l.toLocaleString() }) }}
+          {{ t("ui.likes", { count: tweetItem.l.toLocaleString() }) }}
         </div>
       </div>
     </div>
