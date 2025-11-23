@@ -195,7 +195,7 @@ onMounted(async () => {
     </ul>
 
     <template v-if="!userAuthenticated">
-      <p>To get started, sign in to your Cyd account.</p>
+      <p>{{ t('premium.signInToGetStarted') }}</p>
     </template>
     <template v-else-if="userAuthenticated && !userPremium">
       <p>{{ t('premium.manageAccountToUpgrade') }}</p>

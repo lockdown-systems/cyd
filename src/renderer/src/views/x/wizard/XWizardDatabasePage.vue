@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import { getBreadcrumbIcon, openURL } from "../../../util";
 import { xHasSomeData } from "../../../util_x";
 
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+
+const { t } = useI18n();
 
 // Props
 const props = defineProps<{
@@ -76,18 +79,18 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
       ],
-      label: 'Local Database',
+      label: t('review.localDatabase'),
       icon: getBreadcrumbIcon('database'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Dashboard',
+          label: t('wizard.backToDashboard'),
           action: () => emit('setState', State.WizardDashboard),
         },
       ],
@@ -95,10 +98,10 @@ onMounted(async () => {
         {
           label:
             buildDatabaseStrategy == 'importArchive'
-              ? 'Continue to Import Archive'
+              ? t('wizard.continueToImportArchive')
               : buildDatabaseStrategy == 'buildFromScratch'
-                ? 'Continue to Build Options'
-                : 'Continue to Archive Options',
+                ? t('wizard.continueToBuildOptions')
+                : t('wizard.continueToArchiveOptions'),
           action: nextClicked,
         },
       ],
@@ -106,10 +109,9 @@ onMounted(async () => {
   >
     <template #content>
       <div class="wizard-scroll-content">
-        <h2>Build your local database</h2>
+        <h2>{{ t('wizard.buildYourLocalDatabase') }}</h2>
         <p class="text-muted">
-          There are different ways to get data from your X account. How would
-          you like to proceed?
+          {{ t('wizard.buildYourLocalDatabaseDescription') }}
         </p>
 
         <XLastImportOrBuildComponent
@@ -129,12 +131,11 @@ onMounted(async () => {
             <div class="card-body d-flex align-items-center">
               <div>
                 <div>
-                  Import X archive
-                  <span class="ms-2 text-muted">(recommended)</span>
+                  {{ t('wizard.importXArchiveRecommended') }}
+                  <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
                 </div>
                 <small class="info text-muted">
-                  You have a lot of data so importing your X archive is
-                  definitely the way to go.
+                  {{ t('wizard.importXArchiveRecommendedDescription') }}
                 </small>
               </div>
             </div>
@@ -147,12 +148,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>Build database from scratch</div>
+                <div>{{ t('wizard.buildFromScratch') }}</div>
                 <small class="info text-muted">
-                  X restricts how much of your data you can access. You likely
-                  won't get all of your data if you have Cyd build it from
-                  scratch. Building from scratch is a great way to backup your
-                  direct messages, though.
+                  {{ t('wizard.buildFromScratchDescription') }}
                   <a
                     href="#"
                     @click="
@@ -161,7 +159,7 @@ onMounted(async () => {
                       )
                     "
                   >
-                    Read more</a
+                    {{ t('wizard.readMore') }}</a
                   >.
                 </small>
               </div>
@@ -175,10 +173,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>Save HTML tweets, direct messages, and/or bookmarks</div>
+                <div>{{ t('wizard.saveHTMLTweetsDMsBookmarks') }}</div>
                 <small class="info text-muted">
-                  Cyd can save an HTML version of each tweet, and detailed
-                  backup of your direct messages, and your bookmarks.
+                  {{ t('wizard.saveHTMLTweetsDMsBookmarksDescription') }}
                 </small>
               </div>
             </div>
@@ -197,13 +194,11 @@ onMounted(async () => {
             <div class="card-body d-flex align-items-center">
               <div>
                 <div>
-                  Build database from scratch
-                  <span class="ms-2 text-muted">(recommended)</span>
+                  {{ t('wizard.buildFromScratch') }}
+                  <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
                 </div>
                 <small class="info text-muted">
-                  You don't have a lot of data in your X account, so having Cyd
-                  scroll through your profile will be faster. Building from
-                  scratch is also a great way to backup your direct messages.
+                  {{ t('wizard.buildFromScratchRecommended') }}
                   <a
                     href="#"
                     @click="
@@ -212,7 +207,7 @@ onMounted(async () => {
                       )
                     "
                   >
-                    Read more</a
+                    {{ t('wizard.readMore') }}</a
                   >.
                 </small>
               </div>
@@ -226,11 +221,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>Import X archive</div>
+                <div>{{ t('wizard.importXArchiveRecommended') }}</div>
                 <small class="info text-muted">
-                  Importing your X archive will work great, but you'll need to
-                  wait at least a day for X to send it to you if you don't
-                  already have it.
+                  {{ t('wizard.importArchiveDescription') }}
                 </small>
               </div>
             </div>
@@ -243,10 +236,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>Save HTML tweets, direct messages, and/or bookmarks</div>
+                <div>{{ t('wizard.saveHTMLTweetsDMsBookmarks') }}</div>
                 <small class="info text-muted">
-                  Cyd can save an HTML version of each tweet, and detailed
-                  backup of your direct messages, and your bookmarks.
+                  {{ t('wizard.saveHTMLTweetsDMsBookmarksDescription') }}
                 </small>
               </div>
             </div>
@@ -263,13 +255,11 @@ onMounted(async () => {
             <div class="card-body d-flex align-items-center">
               <div>
                 <div>
-                  Import X archive
-                  <span class="ms-2 text-muted">(recommended)</span>
+                  {{ t('wizard.importXArchiveRecommended') }}
+                  <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
                 </div>
                 <small class="info text-muted">
-                  Importing your X archive will work great, but you'll need to
-                  wait at least a day for X to send it to you if you don't
-                  already have it.
+                  {{ t('wizard.importArchiveUnknown') }}
                 </small>
               </div>
             </div>
@@ -282,12 +272,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>Build database from scratch</div>
+                <div>{{ t('wizard.buildFromScratch') }}</div>
                 <small class="info text-muted">
-                  Having Cyd scroll through your profile is faster than
-                  importing your X archive, but it only works if you have less
-                  than about 2,000 tweets or likes. Building from scratch is a
-                  great way to backup your direct messages, though.
+                  {{ t('wizard.buildFromScratchDescription') }}
                   <a
                     href="#"
                     @click="
@@ -296,7 +283,7 @@ onMounted(async () => {
                       )
                     "
                   >
-                    Read more</a
+                    {{ t('wizard.readMore') }}</a
                   >.
                 </small>
               </div>
@@ -310,10 +297,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>Save HTML tweets, direct messages, and/or bookmarks</div>
+                <div>{{ t('wizard.saveHTMLTweetsDMsBookmarks') }}</div>
                 <small class="info text-muted">
-                  Cyd can save an HTML version of each tweet, and detailed
-                  backup of your direct messages, and your bookmarks.
+                  {{ t('wizard.saveHTMLTweetsDMsBookmarksDescription') }}
                 </small>
               </div>
             </div>

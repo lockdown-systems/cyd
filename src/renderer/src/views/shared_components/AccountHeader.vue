@@ -36,7 +36,7 @@ const onRemoveClicked = () => {
         >
           <span class="profile-image">
             <img
-              alt="Profile Image"
+              :alt="t('common.profileImage')"
               :src="account.xAccount?.profileImageDataURI"
             />
           </span>

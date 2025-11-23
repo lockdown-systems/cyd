@@ -7,6 +7,7 @@ import {
   onUnmounted,
   getCurrentInstance,
 } from "vue";
+import { useI18n } from "vue-i18n";
 import AccountButton from "./shared_components/AccountButton.vue";
 import AccountView from "./AccountView.vue";
 import CydAPIClient from "../../../cyd-api-client";
@@ -14,6 +15,8 @@ import type { DeviceInfo } from "../types";
 import type { Account } from "../../../shared_types";
 import AboutView from "./AboutView.vue";
 import { openURL } from "../util";
+
+const { t } = useI18n();
 
 defineProps<{
   updatesAvailable: boolean;
@@ -83,9 +86,9 @@ const addAccountClicked = async () => {
 const removeAccount = async (accountID: number) => {
   if (
     await window.electron.showQuestion(
-      "Are you sure you want to remove this account from Cyd?",
-      "Yes, remove it",
-      "No, keep it",
+      t("tabs.removeAccountConfirm"),
+      t("tabs.yesRemoveIt"),
+      t("tabs.noKeepIt"),
     )
   ) {
     console.log(`Removing account ${accountID}`);
@@ -197,7 +200,7 @@ const signInClicked = async () => {
 
 const signOutClicked = async () => {
   if (deviceInfo.value === null) {
-    window.electron.showError("Cannot sign out without device info");
+    window.electron.showError(t("tabs.cannotSignOutWithoutDeviceInfo"));
     return;
   }
 
@@ -322,19 +325,19 @@ onUnmounted(async () => {
                     <hr />
                   </li>
                   <li class="menu-btn" @click="manageAccountClicked">
-                    Manage my Cyd account
+                    {{ t('tabs.manageMyAccount') }}
                   </li>
                   <li class="menu-btn" @click="signOutClicked">
-                    Sign out of my Cyd account
+                    {{ t('tabs.signOutOfAccount') }}
                   </li>
                 </template>
                 <template v-else>
-                  <li class="menu-text">Not signed in to Cyd</li>
+                  <li class="menu-text">{{ t('tabs.notSignedIn') }}</li>
                   <li class="menu-line">
                     <hr />
                   </li>
                   <li class="menu-btn" @click="signInClicked">
-                    Sign in to Cyd to access premium features
+                    {{ t('tabs.signInToAccessPremium') }}
                   </li>
                 </template>
                 <li class="menu-line">
@@ -346,7 +349,7 @@ onUnmounted(async () => {
                 <li class="menu-btn" @click="advancedSettingsClicked">
                   Advanced settings
                 </li>
-                <li class="menu-btn" @click="aboutClicked">About</li>
+                <li class="menu-btn" @click="aboutClicked">{{ t('tabs.about') }}</li>
               </ul>
             </div>
           </div>

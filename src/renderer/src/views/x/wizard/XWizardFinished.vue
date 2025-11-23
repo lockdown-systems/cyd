@@ -135,7 +135,7 @@ onMounted(async () => {
       <div class="finished">
         <div v-if="jobsType == 'save'" class="container mt-3">
           <div class="finished">
-            <h2>You just saved:</h2>
+            <h2>{{ t('finished.youJustSaved') }}</h2>
             <ul>
               <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
                 <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -238,7 +238,7 @@ onMounted(async () => {
         </div>
         <div v-if="jobsType == 'archive'" class="container mt-3">
           <div class="finished">
-            <h2>You just archived:</h2>
+            <h2>{{ t('finished.youJustArchived') }}</h2>
             <ul>
               <li v-if="model.account.xAccount?.archiveTweetsHTML">
                 <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -275,7 +275,7 @@ onMounted(async () => {
         </div>
         <div v-if="jobsType == 'delete'" class="container mt-3">
           <div class="finished">
-            <h2>You just deleted:</h2>
+            <h2>{{ t('finished.youJustDeleted') }}</h2>
             <ul>
               <li
                 v-if="
@@ -346,7 +346,7 @@ onMounted(async () => {
 
         <div v-if="jobsType == 'migrateBluesky'" class="container mt-3">
           <div class="finished">
-            <h2>You just migrated:</h2>
+            <h2>{{ t('finished.youJustMigrated') }}</h2>
             <ul>
               <li>
                 <i class="fa-brands fa-bluesky bluesky-bullet" />
@@ -398,7 +398,7 @@ onMounted(async () => {
 
         <div v-if="jobsType == 'migrateBlueskyDelete'" class="container mt-3">
           <div class="finished">
-            <h2>You just deleted:</h2>
+            <h2>{{ t('finished.youJustDeleted') }}</h2>
             <ul>
               <li>
                 <i class="fa-brands fa-bluesky bluesky-bullet" />

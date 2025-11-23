@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import { setJobsType, getBreadcrumbIcon } from "../../../util";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -135,30 +138,30 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
         {
-          label: 'Local Database',
+          label: t('review.localDatabase'),
           action: backClicked,
           icon: getBreadcrumbIcon('database'),
         },
       ],
-      label: 'Build Options',
+      label: t('review.buildOptions'),
       icon: getBreadcrumbIcon('build'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Local Database',
+          label: t('wizard.backToLocalDatabase'),
           action: backClicked,
           disabled: isLoading,
         },
       ],
       nextButtons: [
         {
-          label: 'Continue to Review',
+          label: t('wizard.continueToReview'),
           action: nextClicked,
           disabled: isLoading || !hasValidSelection,
         },
@@ -168,9 +171,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Build options</h2>
+          <h2>{{ t('wizard.buildOptions') }}</h2>
           <p class="text-muted">
-            You can save tweets, likes, and direct messages.
+            {{ t('wizard.buildOptionsDescription') }}
           </p>
         </div>
 
@@ -192,7 +195,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveTweets">
-                Save my tweets
+                {{ t('wizard.saveMyTweets') }}
               </label>
             </div>
           </div>
@@ -207,14 +210,13 @@ onMounted(async () => {
                   :disabled="!archiveTweets"
                 />
                 <label class="form-check-label" for="archiveTweetsHTML">
-                  Save an HTML version of each tweet
+                  {{ t('wizard.saveHTMLVersionOfEachTweet') }}
                 </label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  Make an HTML archive of each tweet, including its replies,
-                  which is good for taking screenshots
-                  <em>(takes longer)</em>
+                  {{ t('wizard.saveHTMLVersionDescription') }}
+                  <em>{{ t('wizard.takesLonger') }}</em>
                 </small>
               </div>
             </div>
@@ -229,7 +231,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveLikes">
-                Save my likes
+                {{ t('wizard.saveMyLikes') }}
               </label>
             </div>
           </div>
@@ -243,7 +245,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveBookmarks">
-                Save my bookmarks
+                {{ t('wizard.saveMyBookmarks') }}
               </label>
             </div>
           </div>
@@ -257,7 +259,7 @@ onMounted(async () => {
                 @change="updateProceedState"
               />
               <label class="form-check-label" for="archiveDMs">
-                Save my direct messages
+                {{ t('wizard.saveMyDMs') }}
               </label>
             </div>
           </div>

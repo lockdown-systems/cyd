@@ -110,7 +110,7 @@ onUnmounted(async () => {
     <div v-if="userPremium">
       <h1 class="text-center">
         {{ t('upsell.thanksForSupporting') }}
-        <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd" />!
+        <img src="/assets/wordmark.svg" class="cyd-wordmark" :alt="t('common.cyd')" />!
       </h1>
       <p class="text-center text-muted small mb-0">
         <template v-if="userHasBusinessSubscription">
@@ -138,7 +138,7 @@ onUnmounted(async () => {
           <div class="col-md-4 flex justify-between items-center">
             <h1 class="text-center text-nowrap">
               {{ t('upsell.support') }}
-              <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd" />!
+              <img src="/assets/wordmark.svg" class="cyd-wordmark" :alt="t('common.cyd')" />!
             </h1>
           </div>
           <div class="col-md-8 flex align-items-start">

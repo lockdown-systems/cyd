@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { getAccountIcon } from "../../util";
 import type { Account } from "../../../../shared_types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   account: Account;
@@ -103,7 +106,7 @@ onUnmounted(async () => {
     </div>
     <div v-if="showMenu" ref="menuPopupEl" class="menu-popup">
       <ul>
-        <li class="menu-btn remove-button" @click="removeClicked">Remove</li>
+        <li class="menu-btn remove-button" @click="removeClicked">{{ t('accountButton.remove') }}</li>
       </ul>
     </div>
   </div>

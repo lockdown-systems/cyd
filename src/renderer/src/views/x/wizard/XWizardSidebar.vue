@@ -125,7 +125,7 @@ emitter?.on("account-updated", async () => {
         />
         <SidebarCard
           v-if="databaseStats.tweetsMigratedToBluesky > 0"
-          header="<div>Migrated to <i class='fa-brands fa-bluesky' /></div>"
+          :header="`<div>${t('sidebar.migratedTo')} <i class='fa-brands fa-bluesky' /></div>`"
           :stat="databaseStats.tweetsMigratedToBluesky"
         />
         <SidebarCard

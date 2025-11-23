@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   FacebookViewModel,
   State,
 } from "../../../view_models/FacebookViewModel";
+
+const { t } = useI18n();
 import { getJobsType } from "../../../util";
 import UpsellComponent from "../../shared_components/UpsellComponent.vue";
 
@@ -49,7 +52,7 @@ onMounted(async () => {
   <div class="finished">
     <div v-if="jobsType == 'save'" class="container mt-3">
       <div class="finished">
-        <h2>You just saved:</h2>
+        <h2>{{ t('facebook.youJustSaved') }}</h2>
         <ul>
           <li v-if="(model.progress.storiesSaved ?? 0) > 0">
             <i class="fa-solid fa-floppy-disk archive-bullet" />

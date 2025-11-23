@@ -139,7 +139,7 @@ const migrateClicked = async () => {
 const deleteClicked = async () => {
   if (tweetCounts.value === null) {
     await window.electron.showMessage(
-      "You don't have any tweets to delete.",
+      t("wizard.noTweetsToDelete"),
       "",
     );
     return;
@@ -147,9 +147,9 @@ const deleteClicked = async () => {
 
   if (
     !(await window.electron.showQuestion(
-      "Are you sure you want to delete all migrated tweets from Bluesky?",
-      "Yes, delete them all",
-      "No, keep them",
+      t("wizard.confirmDeleteMigratedTweets"),
+      t("wizard.yesDeleteThemAll"),
+      t("wizard.noKeepThem"),
     ))
   ) {
     return;
@@ -376,14 +376,10 @@ onUnmounted(async () => {
                   <div class="col col-60">
                     <p v-if="tweetCounts.toMigrateTweets.length > 0">
                       <strong
-                        >You can migrate
-                        {{
-                          tweetCounts.toMigrateTweets.length.toLocaleString()
-                        }}
-                        tweets into Bluesky.</strong
+                        >{{ t('migrateBluesky.youCanMigrate', { count: tweetCounts.toMigrateTweets.length.toLocaleString() }) }}</strong
                       >
                     </p>
-                    <p v-else>You don't have any tweets to migrate.</p>
+                    <p v-else>{{ t('migrateBluesky.noTweetsToMigrate') }}</p>
                     <ul class="small text-muted">
                       <li>
                         Your local database has a total of
@@ -421,10 +417,10 @@ onUnmounted(async () => {
                     <Pie
                       :data="{
                         labels: [
-                          'Ready to Migrate',
-                          'Already Migrated',
-                          'Replies',
-                          'Retweets',
+                          t('wizard.readyToMigrate'),
+                          t('wizard.alreadyMigrated'),
+                          t('wizard.replies'),
+                          t('wizard.retweets'),
                         ],
                         datasets: [
                           {

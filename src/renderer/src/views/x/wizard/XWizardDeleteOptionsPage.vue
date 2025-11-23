@@ -266,7 +266,7 @@ onMounted(async () => {
           :account-i-d="model.account.id"
           :show-button="true"
           :show-no-data-warning="true"
-          :button-text="'Build Your Local Database'"
+          :button-text="t('facebook.buildYourLocalDatabaseButton')"
           :button-state="State.WizardDatabase"
           @set-state="emit('setState', $event)"
         />
@@ -461,9 +461,9 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteRetweets"
                 >
-                  Delete my retweets
+                  {{ t('wizard.deleteMyRetweets') }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deleteRetweetsShowMoreClicked"
@@ -487,7 +487,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteRetweetsDaysOldEnabled"
                     >
-                      older than
+                      {{ t('wizard.olderThan') }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -495,7 +495,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteRetweetsDaysOld"
                     >
-                      days
+                      {{ t('wizard.days') }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -508,7 +508,7 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">days</span>
+                        <span class="input-group-text small">{{ t('wizard.days') }}</span>
                       </div>
                     </div>
                   </div>
@@ -516,7 +516,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t('wizard.premium') }}</span
                 >
               </div>
             </div>
@@ -537,14 +537,14 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="unfollowEveryone"
                 >
-                  Unfollow everyone
+                  {{ t('premium.unfollowEveryone') }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{ t('wizard.recommended') }}</span>
               </div>
               <span
                 v-if="!userAuthenticated || !userPremium"
                 class="premium badge badge-primary"
-                >Premium</span
+                >{{ t('wizard.premium') }}</span
               >
             </div>
           </div>
@@ -565,29 +565,25 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteLikes"
                 >
-                  Delete my likes
+                  {{ t('wizard.deleteMyLikes') }}
                 </label>
               </div>
               <div class="d-flex align-items-center flex-nowrap">
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t('wizard.premium') }}</span
                 >
               </div>
             </div>
             <div class="indent">
               <small class="form-text text-muted">
-                Likes are only visible to you on X. Cyd will delete all of the
-                likes it can, but it can't delete
-                <em>ghost likes</em>.
+                {{ t('wizard.likesDescription') }}
                 <a
                   href="#"
-                  @click="
-                    openURL('https://docs.cyd.social/docs/x/tips/ghost-likes')
-                  "
+                  @click="openURL('https://docs.cyd.social/docs/x/tips/ghost-likes')"
                 >
-                  Read more</a
+                  {{ t('wizard.readMore') }}</a
                 >.
               </small>
             </div>
@@ -608,20 +604,20 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteBookmarks"
                 >
-                  Delete my bookmarks
+                  {{ t('wizard.deleteMyBookmarks') }}
                 </label>
               </div>
               <div class="d-flex align-items-center flex-nowrap">
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t('wizard.premium') }}</span
                 >
               </div>
             </div>
             <div class="indent">
               <small class="form-text text-muted">
-                Bookmarks are only visible to you on X.
+                {{ t('wizard.bookmarksDescription') }}
               </small>
             </div>
           </div>
@@ -642,21 +638,19 @@ onMounted(async () => {
                     class="form-check-label mr-1 text-nowrap"
                     for="deleteDMs"
                   >
-                    Delete my direct messages
+                    {{ t('wizard.deleteMyDMs') }}
                   </label>
                 </div>
               </div>
               <span
                 v-if="!userAuthenticated || !userPremium"
                 class="premium badge badge-primary"
-                >Premium</span
+                >{{ t('wizard.premium') }}</span
               >
             </div>
             <div class="indent">
               <small class="form-text text-muted">
-                This will only delete DMs from your account. The people you've
-                sent messages to will still have them unless they delete their
-                DMs as well.
+                {{ t('wizard.dmsDescription') }}
               </small>
             </div>
           </div>

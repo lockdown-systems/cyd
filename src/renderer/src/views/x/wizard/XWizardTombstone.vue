@@ -475,13 +475,12 @@ onMounted(async () => {
                   class="form-check-input"
                 />
                 <label class="form-check-label" for="lockAccount"
-                  >Lock account</label
+                  >{{ t('wizard.lockAccountLabel') }}</label
                 >
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  Enable the "Protect your posts" feature, so only your
-                  followers can see your posts.
+                  {{ t('wizard.lockAccountEnableProtect') }}
                 </small>
               </div>
             </div>

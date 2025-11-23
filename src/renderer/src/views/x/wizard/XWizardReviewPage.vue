@@ -92,7 +92,7 @@ const backClicked = async () => {
   } else {
     console.error("Unknown review type:", jobsType.value);
     await window.electron.showError(
-      "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
+      t("facebook.unknownReviewType"),
     );
   }
 };
@@ -558,7 +558,7 @@ onMounted(async () => {
                     'https://docs.bsky.app/docs/advanced-guides/rate-limits',
                   )
                 "
-                >Learn more.</a
+                >{{ t('review.learnMore') }}</a
               >
             </p>
           </div>
