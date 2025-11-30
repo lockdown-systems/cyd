@@ -16,7 +16,6 @@ import {
   getCurrentInstance,
   nextTick,
 } from "vue";
-import { useI18n } from "vue-i18n";
 
 import CydAPIClient from "../../../../cyd-api-client";
 

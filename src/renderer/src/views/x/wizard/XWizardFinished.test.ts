@@ -108,7 +108,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -138,7 +138,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -163,7 +163,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -195,7 +195,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -227,7 +227,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -260,7 +260,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -297,7 +297,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -325,7 +325,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -359,7 +359,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -397,7 +397,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -422,7 +422,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -460,7 +460,7 @@ describe("XWizardFinished", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });

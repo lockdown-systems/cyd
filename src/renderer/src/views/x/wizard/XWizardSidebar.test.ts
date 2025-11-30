@@ -70,7 +70,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -105,7 +105,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -140,7 +140,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -173,7 +173,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -206,7 +206,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -242,7 +242,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -277,7 +277,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -302,7 +302,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -334,7 +334,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -380,7 +380,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });
@@ -415,7 +415,7 @@ describe("XWizardSidebar", () => {
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            } as any,
+            } as Record<string, unknown>,
           },
         },
       });

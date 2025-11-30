@@ -112,7 +112,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -133,7 +133,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -157,7 +157,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -187,7 +187,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -211,7 +211,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -236,7 +236,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -261,7 +261,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -290,7 +290,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -315,7 +315,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -338,7 +338,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -365,7 +365,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -396,7 +396,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -419,7 +419,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -442,7 +442,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -475,7 +475,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -511,7 +511,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -546,7 +546,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -578,7 +578,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -610,7 +610,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });
@@ -632,7 +632,7 @@ describe("AutomationErrorReportModal", () => {
         config: {
           globalProperties: {
             emitter: mockEmitter,
-          } as any,
+          } as Record<string, unknown>,
         },
       },
     });

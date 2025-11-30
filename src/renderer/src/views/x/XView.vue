@@ -20,7 +20,6 @@ import {
   computed,
   nextTick,
 } from "vue";
-import { useI18n } from "vue-i18n";
 
 import CydAPIClient from "../../../../cyd-api-client";
 
@@ -54,8 +53,6 @@ import XProgressComponent from "./components/XProgressComponent.vue";
 // Get the global emitter
 const vueInstance = getCurrentInstance();
 const emitter = vueInstance?.appContext.config.globalProperties.emitter;
-
-const { t } = useI18n();
 
 const props = defineProps<{
   account: Account;

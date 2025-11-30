@@ -193,7 +193,7 @@
     "deleteFromX": "Delete from X",
     "deleteFromXDescription": "Delete your tweets, retweets, likes, bookmarks, or DMs from your X account, or unfollow everyone.",
     "importXArchive": "Import X Archive",
-    "importXArchiveDescription": "Import data from an X archive file to create a backup without logging to X.",
+    "importXArchiveDescription": "Import data from an X archive file to create a backup without logging into X.",
     "migrateToBluesky": "Migrate to Bluesky",
     "migrateToBlueskyDescription": "Migrate your tweets from your X account to a Bluesky account.",
     "tombstone": "Tombstone",
