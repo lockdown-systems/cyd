@@ -74,7 +74,7 @@ const buttonProps = computed(() => ({
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t("import.importXArchive") }}</h2>
+          <h2>{{ t("import.importXArchiveTitle") }}</h2>
           <p class="text-muted">
             {{ t("import.beforeImportSteps") }}
           </p>

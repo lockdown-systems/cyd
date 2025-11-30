@@ -176,7 +176,7 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>{{ t("wizard.archiveOptions") }}</h2>
+          <h2>{{ t("wizard.archiveOptionsTitle") }}</h2>
           <p class="text-muted">
             {{ t("wizard.archiveOptionsDescription") }}
           </p>

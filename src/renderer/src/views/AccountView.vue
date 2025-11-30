@@ -68,7 +68,7 @@ onMounted(async () => {
           />,
           {{ t("common.withCydDescriptionRest") }}
         </p>
-        <p class="lead fw-bold">{{ t("wizard.readyToGetStarted") }}</p>
+        <p class="lead fw-bold">{{ t("common.readyToGetStarted") }}</p>
 
         <div class="select-account row">
           <div class="col-12 col-md-6">
