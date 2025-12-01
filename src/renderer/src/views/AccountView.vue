@@ -128,8 +128,6 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-
-        <p class="text-muted mt-3">{{ t("common.morePlatformsComingSoon") }}</p>
       </div>
     </template>
 

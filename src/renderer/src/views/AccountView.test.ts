@@ -222,23 +222,6 @@ describe("AccountView", () => {
         "Facebook",
       ]);
     });
-
-    it("should display coming soon message", async () => {
-      const unknownAccount = createMockAccount({ type: "unknown" });
-
-      wrapper = mount(AccountView, {
-        props: {
-          account: unknownAccount as Account,
-        },
-        global: {
-          plugins: [i18n],
-        },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      expect(wrapper.text()).toContain("More platforms coming soon");
-    });
   });
 
   describe("X account type", () => {
