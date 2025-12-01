@@ -3,12 +3,14 @@ import type {
   PlatformConfigRegistry,
 } from "../../types/PlatformConfig";
 import { XPlatformConfig } from "./XPlatformConfig";
+import { FacebookPlatformConfig } from "./FacebookPlatformConfig";
 
 /**
  * Central registry of all platform configurations
  */
 export const platformRegistry: PlatformConfigRegistry = {
   X: XPlatformConfig,
+  Facebook: FacebookPlatformConfig,
 };
 
 /**

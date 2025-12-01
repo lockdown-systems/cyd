@@ -124,4 +124,13 @@ export const PlatformStates = {
 
   /** X: Display archive only wizard page */
   WizardArchiveOnlyDisplay: "WizardArchiveOnlyDisplay",
+
+  // ==========================================================================
+  // FACEBOOK-SPECIFIC STATES
+  // ==========================================================================
+  /** Facebook: Dashboard wizard page */
+  FacebookWizardDashboard: "FacebookWizardDashboard",
+
+  /** Facebook: Display dashboard wizard page */
+  FacebookWizardDashboardDisplay: "FacebookWizardDashboardDisplay",
 } as const;

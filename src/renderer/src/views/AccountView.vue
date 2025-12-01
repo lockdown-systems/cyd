@@ -9,6 +9,7 @@ import { getAccountRunning, setAccountRunning } from "../util";
 import CydAvatarComponent from "./shared_components/CydAvatarComponent.vue";
 
 import XView from "./x/XView.vue";
+import FacebookView from "./facebook/FacebookView.vue";
 
 const { t } = useI18n();
 
@@ -107,6 +108,25 @@ onMounted(async () => {
               </div>
             </div>
           </div>
+
+          <div class="col-12 col-md-6">
+            <div
+              class="card m-2 select-account-facebook"
+              @click="accountClicked('Facebook')"
+            >
+              <div class="card-body d-flex align-items-center">
+                <div class="logo mr-3">
+                  <i :class="getAccountIcon('Facebook')" />
+                </div>
+                <div class="description">
+                  <div class="name">Facebook</div>
+                  <small class="info text-muted">
+                    {{ t("account.facebookDescription") }}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <p class="text-muted mt-3">{{ t("common.morePlatformsComingSoon") }}</p>
@@ -115,6 +135,14 @@ onMounted(async () => {
 
     <template v-else-if="account.type == 'X'">
       <XView
+        :account="account"
+        @on-refresh-clicked="refresh"
+        @on-remove-clicked="emit('onRemoveClicked')"
+      />
+    </template>
+
+    <template v-else-if="account.type == 'Facebook'">
+      <FacebookView
         :account="account"
         @on-refresh-clicked="refresh"
         @on-remove-clicked="emit('onRemoveClicked')"

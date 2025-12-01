@@ -60,6 +60,8 @@ export function getAccountIcon(accountType: string): string {
       return "fa-brands fa-x-twitter";
     case "Bluesky":
       return "fa-brands fa-bluesky";
+    case "Facebook":
+      return "fa-brands fa-facebook";
     default:
       return "fa-solid fa-gears";
   }

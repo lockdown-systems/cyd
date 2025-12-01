@@ -45,6 +45,13 @@ const onRemoveClicked = () => {
           <span class="label-text">@{{ account.xAccount?.username }}</span>
         </template>
       </template>
+      <template v-else-if="account.type == 'Facebook'">
+        <template v-if="account.facebookAccount?.username">
+          <span class="label-text">{{
+            account.facebookAccount?.username
+          }}</span>
+        </template>
+      </template>
       <span class="logo">
         <i :class="getAccountIcon(account.type)" />
       </span>

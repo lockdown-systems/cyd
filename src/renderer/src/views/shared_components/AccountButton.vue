@@ -69,6 +69,16 @@ onUnmounted(async () => {
         />
         <i v-else :class="getAccountIcon(account.type)" />
       </template>
+      <template v-else-if="props.account.type == 'Facebook'">
+        <img
+          v-if="
+            props.account.facebookAccount?.profileImageDataURI != '' &&
+            props.account.facebookAccount?.profileImageDataURI != null
+          "
+          :src="props.account.facebookAccount?.profileImageDataURI"
+        />
+        <i v-else :class="getAccountIcon(account.type)" />
+      </template>
       <i v-else :class="getAccountIcon(account.type)" />
     </div>
     <div v-if="showInfo" class="info-popup">
@@ -82,6 +92,15 @@ onUnmounted(async () => {
         <template v-else>
           <i :class="getAccountIcon(account.type)" />
           @{{ props.account.xAccount?.username }}
+        </template>
+      </template>
+      <template v-else-if="props.account.type == 'Facebook'">
+        <template v-if="props.account.facebookAccount?.username == null">
+          Connect your Facebook account
+        </template>
+        <template v-else>
+          <i :class="getAccountIcon(account.type)" />
+          {{ props.account.facebookAccount?.username }}
         </template>
       </template>
     </div>

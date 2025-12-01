@@ -4,6 +4,7 @@ export type Account = {
   sortOrder: number;
   xAccount: XAccount | null;
   blueskyAccount: BlueskyAccount | null;
+  facebookAccount: FacebookAccount | null;
   uuid: string;
 };
 
@@ -84,4 +85,13 @@ export type BlueskyAccount = {
   followersCount: number;
   postsCount: number;
   likesCount: number;
+};
+
+export type FacebookAccount = {
+  id: number;
+  createdAt: Date;
+  updatedAt: Date;
+  accessedAt: Date;
+  username: string;
+  profileImageDataURI: string;
 };

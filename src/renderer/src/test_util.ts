@@ -2,7 +2,7 @@ import { vi } from "vitest";
 import type { WebviewTag } from "electron";
 import type { Emitter, EventType } from "mitt";
 import mitt from "mitt";
-import type { Account, XAccount } from "../../shared_types";
+import type { Account, XAccount, FacebookAccount } from "../../shared_types";
 import type { VueWrapper } from "@vue/test-utils";
 import { mount } from "@vue/test-utils";
 import { ref } from "vue";
@@ -69,6 +69,21 @@ export function createMockXAccount(overrides?: Partial<XAccount>): XAccount {
   };
 }
 
+export function createMockFacebookAccount(
+  overrides?: Partial<FacebookAccount>,
+): FacebookAccount {
+  const now = new Date();
+  return {
+    id: 1,
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    username: "facebook-user",
+    profileImageDataURI: "",
+    ...overrides,
+  };
+}
+
 /**
  * Creates a mock Account with default values that can be overridden
  * By default creates an X account, but can be customized for other types
@@ -80,6 +95,7 @@ export function createMockAccount(overrides?: Partial<Account>): Account {
     sortOrder: 0,
     xAccount: createMockXAccount(),
     blueskyAccount: null,
+    facebookAccount: null,
     uuid: "test-uuid-123",
     ...overrides,
   };

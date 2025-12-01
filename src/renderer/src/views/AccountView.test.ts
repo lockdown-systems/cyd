@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
 import AccountView from "./AccountView.vue";
-import { mockElectronAPI, createMockAccount } from "../test_util";
+import {
+  mockElectronAPI,
+  createMockAccount,
+  createMockFacebookAccount,
+} from "../test_util";
 import type { Account } from "../../../shared_types";
 import i18n from "../i18n";
 
@@ -18,6 +22,15 @@ vi.mock("./x/XView.vue", () => ({
   default: {
     name: "XView",
     template: "<div>XView</div>",
+    props: ["account"],
+    emits: ["onRefreshClicked", "onRemoveClicked"],
+  },
+}));
+
+vi.mock("./facebook/FacebookView.vue", () => ({
+  default: {
+    name: "FacebookView",
+    template: "<div>FacebookView</div>",
     props: ["account"],
     emits: ["onRefreshClicked", "onRemoveClicked"],
   },
@@ -166,6 +179,50 @@ describe("AccountView", () => {
       expect(blueskyCard.text()).toContain("AT Protocol");
     });
 
+    it("should show Facebook option", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookCard = wrapper.find(".select-account-facebook");
+      expect(facebookCard.exists()).toBe(true);
+      expect(facebookCard.text()).toContain("Facebook");
+    });
+
+    it("should emit accountSelected when Facebook card clicked", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: unknownAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookCard = wrapper.find(".select-account-facebook");
+      (facebookCard.element as HTMLElement).click();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.emitted("accountSelected")).toBeTruthy();
+      expect(wrapper.emitted("accountSelected")?.[0]).toEqual([
+        unknownAccount,
+        "Facebook",
+      ]);
+    });
+
     it("should display coming soon message", async () => {
       const unknownAccount = createMockAccount({ type: "unknown" });
 
@@ -258,6 +315,55 @@ describe("AccountView", () => {
 
       const xView = wrapper.findComponent({ name: "XView" });
       await xView.vm.$emit("onRemoveClicked");
+
+      expect(wrapper.emitted("onRemoveClicked")).toBeTruthy();
+    });
+  });
+
+  describe("Facebook account type", () => {
+    it("should render FacebookView when account type is Facebook", async () => {
+      const facebookAccount = createMockAccount({
+        type: "Facebook",
+        xAccount: null,
+        facebookAccount: createMockFacebookAccount(),
+      });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: facebookAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.findComponent({ name: "FacebookView" }).exists()).toBe(
+        true,
+      );
+    });
+
+    it("should forward onRemoveClicked from FacebookView", async () => {
+      const facebookAccount = createMockAccount({
+        type: "Facebook",
+        xAccount: null,
+        facebookAccount: createMockFacebookAccount(),
+      });
+
+      wrapper = mount(AccountView, {
+        props: {
+          account: facebookAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const facebookView = wrapper.findComponent({ name: "FacebookView" });
+      await facebookView.vm.$emit("onRemoveClicked");
 
       expect(wrapper.emitted("onRemoveClicked")).toBeTruthy();
     });

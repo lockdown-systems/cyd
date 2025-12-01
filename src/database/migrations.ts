@@ -169,5 +169,20 @@ export const runMainMigrations = () => {
         `ALTER TABLE xAccount ADD COLUMN tombstoneLockAccount BOOLEAN DEFAULT 1;`,
       ],
     },
+    // Add Facebook table, and facebookAccountID to account
+    {
+      name: "add Facebook table, and facebookAccountID to account",
+      sql: [
+        `CREATE TABLE facebookAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    profileImageDataURI TEXT
+);`,
+        `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
+      ],
+    },
   ]);
 };

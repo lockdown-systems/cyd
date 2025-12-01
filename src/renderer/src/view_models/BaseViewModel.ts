@@ -255,6 +255,11 @@ export class BaseViewModel {
           ? this.account?.xAccount.username
           : "";
         break;
+      case "Facebook":
+        username = this.account?.facebookAccount?.username
+          ? this.account?.facebookAccount.username
+          : "";
+        break;
       default:
         break;
     }
