@@ -5,6 +5,7 @@ import XWizardSidebar from "./XWizardSidebar.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { Account, XAccount } from "../../../../../shared_types";
 import { mockElectronAPI, createMockAccount } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util_x", () => ({
   xGetLastImportArchive: vi.fn(),
@@ -65,10 +66,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -99,10 +101,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -133,10 +136,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -165,10 +169,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -197,10 +202,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -232,10 +238,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -266,10 +273,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -290,10 +298,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -321,10 +330,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -366,10 +376,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -400,10 +411,11 @@ describe("XWizardSidebar", () => {
           model: mockModel as XViewModel,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });

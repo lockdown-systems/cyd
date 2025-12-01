@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   FacebookViewModel,
   State,
@@ -8,6 +9,8 @@ import { setJobsType, getBreadcrumbIcon } from "../../../util";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -116,14 +119,14 @@ onMounted(async () => {
   <BaseWizardPage
     :breadcrumb-props="{
       buttons: [],
-      label: 'Build Options',
+      label: t('facebook.buildOptions'),
       icon: getBreadcrumbIcon('build'),
     }"
     :button-props="{
       backButtons: [],
       nextButtons: [
         {
-          label: 'Continue to Review',
+          label: t('wizard.continueToReview'),
           action: nextClicked,
           disabled: isLoading || !hasValidSelection,
         },
@@ -133,8 +136,10 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Build your local database</h2>
-          <p class="text-muted">You can save posts.</p>
+          <h2>{{ t("facebook.buildYourLocalDatabase") }}</h2>
+          <p class="text-muted">
+            {{ t("facebook.buildYourLocalDatabaseDescription") }}
+          </p>
         </div>
 
         <form @submit.prevent>
@@ -147,9 +152,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="savePosts"
-                >Save my posts</label
-              >
+              <label class="form-check-label" for="savePosts">{{
+                t("facebook.saveMyPosts")
+              }}</label>
             </div>
           </div>
           <div class="indent">
@@ -163,14 +168,13 @@ onMounted(async () => {
                   :disabled="!savePosts"
                 />
                 <label class="form-check-label" for="savePostsHTML">
-                  Save an HTML version of each post
+                  {{ t("facebook.saveHTMLVersionOfEachPost") }}
                 </label>
               </div>
               <div class="indent">
                 <small class="form-text text-muted">
-                  Make an HTML archive of each post, including its comments,
-                  which is good for taking screenshots
-                  <em>(takes longer)</em>
+                  {{ t("facebook.saveHTMLVersionOfEachPostDescription") }}
+                  <em>{{ t("wizard.takesLonger") }}</em>
                 </small>
               </div>
             </div>

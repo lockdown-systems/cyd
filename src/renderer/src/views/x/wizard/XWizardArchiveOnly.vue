@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { getBreadcrumbIcon } from "../../../util";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["set-state", "update-account"]);
 
@@ -18,24 +21,24 @@ const goBack = () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('set-state', 'WizardDashboard'),
           icon: getBreadcrumbIcon('dashboard'),
         },
       ],
-      label: 'Import X Archive',
+      label: t('import.importXArchive'),
       icon: getBreadcrumbIcon('import'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Dashboard',
+          label: t('wizard.backToDashboard'),
           action: goBack,
         },
       ],
       nextButtons: [
         {
-          label: 'Continue to Import X Archive',
+          label: t('wizard.continueToImportXArchiveButton'),
           action: importArchive,
         },
       ],
@@ -44,11 +47,9 @@ const goBack = () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2 class="mb-3">Import X Archive</h2>
+          <h2 class="mb-3">{{ t("wizard.archiveOnly.title") }}</h2>
           <p class="lead text-muted">
-            Can't access your X account? No problem! You can still migrate your
-            tweets to Bluesky using an archive file that you previously
-            downloaded from X.
+            {{ t("wizard.archiveOnly.description") }}
           </p>
         </div>
 
@@ -56,24 +57,28 @@ const goBack = () => {
           <div class="col-md-6">
             <div class="info-card">
               <div class="card-header">
-                <h4 class="mb-0">What You'll Need</h4>
+                <h4 class="mb-0">
+                  {{ t("wizard.archiveOnly.whatYoullNeed") }}
+                </h4>
               </div>
               <div class="card-body">
                 <div class="card-item">
                   <i class="fa-solid fa-file-archive text-primary me-3" />
                   <div>
-                    <strong>X Archive File</strong>
+                    <strong>{{ t("wizard.archiveOnly.xArchiveFile") }}</strong>
                     <p class="mb-0 small text-muted">
-                      A copy of your X archive that you downloaded earlier
+                      {{ t("wizard.archiveOnly.xArchiveFileDescription") }}
                     </p>
                   </div>
                 </div>
                 <div class="card-item">
                   <i class="fa-solid fa-crown text-warning me-3" />
                   <div>
-                    <strong>Cyd Premium Plan</strong>
+                    <strong>{{
+                      t("wizard.archiveOnly.cydPremiumPlan")
+                    }}</strong>
                     <p class="mb-0 small text-muted">
-                      Required for migrating to Bluesky
+                      {{ t("wizard.archiveOnly.cydPremiumPlanDescription") }}
                     </p>
                   </div>
                 </div>
@@ -84,26 +89,30 @@ const goBack = () => {
           <div class="col-md-6">
             <div class="info-card">
               <div class="card-header">
-                <h4 class="mb-0">Unavailable Features</h4>
+                <h4 class="mb-0">
+                  {{ t("wizard.archiveOnly.unavailableFeatures") }}
+                </h4>
               </div>
               <div class="card-body">
                 <div class="card-item">
                   <i class="fa-solid fa-fire text-muted me-3" />
                   <div>
-                    <strong>Can't Delete Data</strong>
+                    <strong>{{
+                      t("wizard.archiveOnly.cantDeleteData")
+                    }}</strong>
                     <p class="mb-0 small text-muted">
-                      Cyd can't delete data from your account if you're not
-                      logged in
+                      {{ t("wizard.archiveOnly.cantDeleteDataDescription") }}
                     </p>
                   </div>
                 </div>
                 <div class="card-item">
                   <i class="fa-solid fa-floppy-disk text-muted me-3" />
                   <div>
-                    <strong>Can't Save Extra Data</strong>
+                    <strong>{{
+                      t("wizard.archiveOnly.cantSaveExtraData")
+                    }}</strong>
                     <p class="mb-0 small text-muted">
-                      Cyd can't save extra data from your account, like HTML
-                      versions of your tweets
+                      {{ t("wizard.archiveOnly.cantSaveExtraDataDescription") }}
                     </p>
                   </div>
                 </div>

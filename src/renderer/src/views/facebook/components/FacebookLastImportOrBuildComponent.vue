@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { formatDistanceToNow } from "date-fns";
 import { State } from "../../../view_models/FacebookViewModel";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   accountID: number;
@@ -79,11 +82,10 @@ onMounted(async () => {
       }}.
     </div>
     <div v-if="!lastImportArchive && !lastBuildDatabase">
-      <div>Cyd can unfriend everyone right away</div>
+      <div>{{ t("facebook.cydCanUnfriendEveryone") }}</div>
       <div>
         <i class="fa-solid fa-triangle-exclamation" />
-        You'll need to import or build your database to delete your Facebook
-        posts
+        {{ t("facebook.needImportOrBuildToDelete") }}
       </div>
     </div>
     <button

@@ -4,6 +4,7 @@ import XWizardDeleteOptionsPage from "./XWizardDeleteOptionsPage.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { createMockAccount, mockElectronAPI } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   getBreadcrumbIcon: vi.fn(() => "icon"),
@@ -60,6 +61,9 @@ describe("XWizardDeleteOptionsPage", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.exists()).toBe(true);
@@ -71,6 +75,9 @@ describe("XWizardDeleteOptionsPage", () => {
       wrapper = mount(XWizardDeleteOptionsPage, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -87,6 +94,9 @@ describe("XWizardDeleteOptionsPage", () => {
       wrapper = mount(XWizardDeleteOptionsPage, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -117,6 +127,9 @@ describe("XWizardDeleteOptionsPage", () => {
       wrapper = mount(XWizardDeleteOptionsPage, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

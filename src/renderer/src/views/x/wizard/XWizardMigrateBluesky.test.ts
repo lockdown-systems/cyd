@@ -4,6 +4,7 @@ import XWizardMigrateBluesky from "./XWizardMigrateBluesky.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { createMockAccount, mockElectronAPI } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   getBreadcrumbIcon: vi.fn(() => "icon"),
@@ -97,6 +98,9 @@ describe("XWizardMigrateBluesky", () => {
           userAuthenticated: false,
           userPremium: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -112,6 +116,9 @@ describe("XWizardMigrateBluesky", () => {
           model: mockModel as XViewModel,
           userAuthenticated: false,
           userPremium: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -132,6 +139,9 @@ describe("XWizardMigrateBluesky", () => {
           model: mockModel as XViewModel,
           userAuthenticated: false,
           userPremium: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -163,6 +173,9 @@ describe("XWizardMigrateBluesky", () => {
           userAuthenticated: false,
           userPremium: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -193,6 +206,9 @@ describe("XWizardMigrateBluesky", () => {
           userAuthenticated: false,
           userPremium: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -212,6 +228,9 @@ describe("XWizardMigrateBluesky", () => {
           model: mockModel as XViewModel,
           userAuthenticated: false,
           userPremium: false,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

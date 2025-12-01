@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, getCurrentInstance, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import { XImportArchiveResponse } from "../../../../../shared_types";
 import { getBreadcrumbIcon } from "../../../util";
 import RunningIcon from "../../shared_components/RunningIcon.vue";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+
+const { t } = useI18n();
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -36,13 +39,18 @@ const backClicked = async () => {
 
 const createCountString = (importCount: number, skipCount: number) => {
   if (importCount > 0 && skipCount > 0) {
-    return `${importCount.toLocaleString()} imported, ${skipCount.toLocaleString()} already imported`;
+    return t("importing.importedAndSkipped", {
+      imported: importCount.toLocaleString(),
+      skipped: skipCount.toLocaleString(),
+    });
   } else if (importCount > 0 && skipCount == 0) {
-    return `${importCount.toLocaleString()} imported`;
+    return t("importing.imported", { count: importCount.toLocaleString() });
   } else if (importCount == 0 && skipCount > 0) {
-    return `${skipCount.toLocaleString()} already imported`;
+    return t("importing.alreadyImported", {
+      count: skipCount.toLocaleString(),
+    });
   } else {
-    return "nothing imported";
+    return t("importing.nothingImported");
   }
 };
 
@@ -122,9 +130,7 @@ const startClicked = async () => {
     );
     if (!unzippedPath) {
       statusValidating.value = ImportStatus.Failed;
-      errorMessages.value.push(
-        "Failed to get account data path for archive-only account",
-      );
+      errorMessages.value.push(t("importing.failedToGetAccountDataPath"));
       importFailed.value = true;
       return;
     }
@@ -290,7 +296,7 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
@@ -298,29 +304,32 @@ onMounted(async () => {
           ? []
           : [
               {
-                label: 'Local Database',
+                label: t('review.localDatabase'),
                 action: backClicked,
                 icon: getBreadcrumbIcon('database'),
               },
             ]),
         {
-          label: 'Import X Archive',
+          label: t('import.importXArchive'),
           action: backClicked,
           icon: getBreadcrumbIcon('import'),
         },
       ],
-      label: 'Importing',
+      label: t('importing.importing'),
       icon: getBreadcrumbIcon('import'),
     }"
     :button-props="
       !importStarted
         ? {
             backButtons: [
-              { label: 'Back to Import X Archive', action: backClicked },
+              {
+                label: t('importing.backToImportXArchive'),
+                action: backClicked,
+              },
             ],
             nextButtons: [
               {
-                label: 'Start Import',
+                label: t('importing.startImport'),
                 action: startClicked,
                 disabled: importFromArchivePath == '',
               },
@@ -332,8 +341,8 @@ onMounted(async () => {
               backButtons: [
                 {
                   label: props.model.account?.xAccount?.archiveOnly
-                    ? 'Back to Import X Archive'
-                    : 'Back to Import from X',
+                    ? t('importing.backToImportXArchive')
+                    : t('importing.backToImportFromX'),
                   action: () =>
                     emit(
                       'setState',
@@ -345,13 +354,13 @@ onMounted(async () => {
               ],
               nextButtons: [
                 {
-                  label: 'Backup More Data from X',
+                  label: t('importing.backupMoreData'),
                   action: () => emit('setState', State.WizardArchiveOptions),
                   hide:
                     props.model.account?.xAccount?.archiveOnly || importFailed,
                 },
                 {
-                  label: 'Go to Dashboard',
+                  label: t('importing.goToDashboard'),
                   action: () => emit('setState', State.WizardDashboard),
                 },
               ],
@@ -364,13 +373,12 @@ onMounted(async () => {
   >
     <template #content>
       <div class="wizard-scroll-content">
-        <h2>Import your X archive</h2>
+        <h2>{{ t("importing.importXArchive") }}</h2>
         <p class="text-muted">
           <template v-if="!importStarted">
-            Browse for the ZIP file of the X archive you downloaded, or the
-            folder where you have already extracted it.
+            {{ t("importing.browseForArchive") }}
           </template>
-          <template v-else> Importing your archive... </template>
+          <template v-else> {{ t("importing.importingArchive") }} </template>
         </p>
 
         <template v-if="!importStarted">
@@ -379,7 +387,7 @@ onMounted(async () => {
               v-model="importFromArchivePath"
               type="text"
               class="form-control"
-              placeholder="Import your X archive"
+              :placeholder="t('importing.placeholder')"
               readonly
             />
             <template v-if="platform == 'darwin'">
@@ -387,7 +395,7 @@ onMounted(async () => {
                 class="btn btn-secondary"
                 @click="importFromArchiveBrowseClicked"
               >
-                Browse for Archive
+                {{ t("importing.browseForArchiveButton") }}
               </button>
             </template>
             <template v-else>
@@ -395,13 +403,13 @@ onMounted(async () => {
                 class="btn btn-secondary me-1"
                 @click="importFromArchiveBrowseZipClicked"
               >
-                Browse for ZIP
+                {{ t("importing.browseForZIP") }}
               </button>
               <button
                 class="btn btn-secondary"
                 @click="importFromArchiveBrowseFolderClicked"
               >
-                Browse for Unzipped Folder
+                {{ t("importing.browseForUnzippedFolder") }}
               </button>
             </template>
           </div>
@@ -420,7 +428,7 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              Validating X archive
+              {{ t("importing.validatingArchive") }}
             </li>
             <li
               :class="
@@ -436,7 +444,7 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              Importing tweets
+              {{ t("importing.importingTweets") }}
               <span v-if="tweetCountString != ''" class="text-muted">
                 ({{ tweetCountString }})
               </span>
@@ -453,7 +461,7 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              Importing likes
+              {{ t("importing.importingLikes") }}
               <span v-if="likeCountString != ''" class="text-muted">
                 ({{ likeCountString }})
               </span>
@@ -472,28 +480,26 @@ onMounted(async () => {
               <i v-else>
                 <RunningIcon />
               </i>
-              Build Cyd archive
+              {{ t("importing.buildCydArchive") }}
             </li>
           </ul>
 
           <template v-if="importFinished">
             <div class="alert alert-success mt-3">
               <i class="fa-solid fa-check" />
-              Import finished successfully!
+              {{ t("importing.importFinished") }}
             </div>
             <p
               v-if="!props.model.account?.xAccount?.archiveOnly"
               class="small text-muted"
             >
-              Cyd can backup even more data from your X account that isn't
-              included in your archive. If you don't care about this, you're
-              ready to delete or migrate your data now.
+              {{ t("importing.cydCanBackupMore") }}
             </p>
             <p
               v-if="props.model.account?.xAccount?.archiveOnly"
               class="small text-muted"
             >
-              You're ready to migrate your data now.
+              {{ t("importing.readyToMigrate") }}
             </p>
           </template>
           <template v-if="importFailed">
@@ -502,7 +508,8 @@ onMounted(async () => {
               :key="errorMessage"
               class="alert alert-danger mt-3 text-break"
             >
-              <strong>Import failed.</strong> {{ errorMessage }}
+              <strong>{{ t("importing.importFailed") }}</strong>
+              {{ errorMessage }}
             </div>
           </template>
         </template>

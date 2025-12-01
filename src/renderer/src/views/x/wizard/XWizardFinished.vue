@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, getCurrentInstance } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   XViewModel,
   State,
@@ -8,6 +9,8 @@ import {
 import { openURL, getJobsType } from "../../../util";
 import UpsellComponent from "../../shared_components/UpsellComponent.vue";
 import ButtonsComponent from "../../shared_components/ButtonsComponent.vue";
+
+const { t } = useI18n();
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -43,9 +46,7 @@ const viewBlueskyProfileClicked = async () => {
     props.model.account.id,
   );
   if (!blueskyProfile) {
-    await window.electron.showError(
-      "Something is wrong. No Bluesky profile found for this account.",
-    );
+    await window.electron.showError(t("finished.noBlueskyProfile"));
     return;
   }
   await openURL(`https://bsky.app/profile/${blueskyProfile.handle}`);
@@ -132,7 +133,7 @@ onMounted(async () => {
       <div class="finished">
         <div v-if="jobsType == 'save'" class="container mt-3">
           <div class="finished">
-            <h2>You just saved:</h2>
+            <h2>{{ t("finished.youJustSaved") }}</h2>
             <ul>
               <li v-if="(model.progress.newTweetsArchived ?? 0) > 0">
                 <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -235,7 +236,7 @@ onMounted(async () => {
         </div>
         <div v-if="jobsType == 'archive'" class="container mt-3">
           <div class="finished">
-            <h2>You just archived:</h2>
+            <h2>{{ t("finished.youJustArchived") }}</h2>
             <ul>
               <li v-if="model.account.xAccount?.archiveTweetsHTML">
                 <i class="fa-solid fa-floppy-disk archive-bullet" />
@@ -272,7 +273,7 @@ onMounted(async () => {
         </div>
         <div v-if="jobsType == 'delete'" class="container mt-3">
           <div class="finished">
-            <h2>You just deleted:</h2>
+            <h2>{{ t("finished.youJustDeleted") }}</h2>
             <ul>
               <li
                 v-if="
@@ -343,7 +344,7 @@ onMounted(async () => {
 
         <div v-if="jobsType == 'migrateBluesky'" class="container mt-3">
           <div class="finished">
-            <h2>You just migrated:</h2>
+            <h2>{{ t("finished.youJustMigrated") }}</h2>
             <ul>
               <li>
                 <i class="fa-brands fa-bluesky bluesky-bullet" />
@@ -387,7 +388,7 @@ onMounted(async () => {
                 @click="viewBlueskyProfileClicked"
               >
                 <i class="fa-brands fa-bluesky" />
-                View Bluesky Profile
+                {{ t("finished.viewBlueskyProfile") }}
               </button>
             </div>
           </div>
@@ -395,7 +396,7 @@ onMounted(async () => {
 
         <div v-if="jobsType == 'migrateBlueskyDelete'" class="container mt-3">
           <div class="finished">
-            <h2>You just deleted:</h2>
+            <h2>{{ t("finished.youJustDeleted") }}</h2>
             <ul>
               <li>
                 <i class="fa-brands fa-bluesky bluesky-bullet" />
@@ -439,7 +440,7 @@ onMounted(async () => {
                 @click="viewBlueskyProfileClicked"
               >
                 <i class="fa-brands fa-bluesky" />
-                View Bluesky Profile
+                {{ t("finished.viewBlueskyProfile") }}
               </button>
             </div>
           </div>
@@ -451,16 +452,15 @@ onMounted(async () => {
           role="alert"
         >
           <p>
-            <strong
-              >Uh oh, Cyd encountered
-              {{ model.progress.errorsOccured.toLocaleString() }}
-              errors.</strong
-            >
-            Please submit an error report so we can fix the problems you
-            encountered.
+            <strong>{{
+              t("finished.errorsOccurred", {
+                count: model.progress.errorsOccured.toLocaleString(),
+              })
+            }}</strong>
+            {{ t("finished.submitErrorReportMessage") }}
           </p>
           <button class="btn btn-primary" @click="submitErrorReportClicked">
-            Submit Error Report
+            {{ t("finished.submitErrorReport") }}
           </button>
         </div>
 
@@ -470,18 +470,16 @@ onMounted(async () => {
           role="alert"
         >
           <p v-if="showFailureBoth" class="fw-bold mb-0">
-            Cyd wasn't able to scroll through all of your tweets and likes this
-            time.
+            {{ t("finished.failedToScrollTweetsAndLikes") }}
           </p>
           <p v-if="showFailureTweets" class="fw-bold mb-0">
-            Cyd wasn't able to scroll through all of your tweets this time.
+            {{ t("finished.failedToScrollTweets") }}
           </p>
           <p v-if="showFailureLikes" class="fw-bold mb-0">
-            Cyd wasn't able to scroll through all of your likes this time.
+            {{ t("finished.failedToScrollLikes") }}
           </p>
           <p class="alert-details mb-0">
-            Run Cyd again with the same settings to try again from the
-            beginning.
+            {{ t("finished.runAgainMessage") }}
           </p>
         </div>
 
@@ -503,8 +501,11 @@ onMounted(async () => {
         <ButtonsComponent
           :back-buttons="[]"
           :next-buttons="[
-            { label: 'Run Again with Same Settings', action: runAgainClicked },
-            { label: 'Continue to Dashboard', action: nextClicked },
+            {
+              label: t('finished.runAgainWithSameSettings'),
+              action: runAgainClicked,
+            },
+            { label: t('finished.continueToDashboard'), action: nextClicked },
           ]"
         />
       </template>
@@ -512,7 +513,7 @@ onMounted(async () => {
         <ButtonsComponent
           :back-buttons="[]"
           :next-buttons="[
-            { label: 'Continue to Dashboard', action: nextClicked },
+            { label: t('finished.continueToDashboard'), action: nextClicked },
           ]"
         />
       </template>

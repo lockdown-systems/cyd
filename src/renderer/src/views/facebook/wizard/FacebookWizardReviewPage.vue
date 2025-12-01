@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   FacebookViewModel,
   State,
@@ -10,6 +11,8 @@ import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 import LoadingComponent from "../../shared_components/LoadingComponent.vue";
 import AlertStayAwake from "../../shared_components/AlertStayAwake.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -51,20 +54,18 @@ const backClicked = async () => {
     emit("setState", State.WizardBuildOptions);
   } else {
     console.error("Unknown review type:", jobsType.value);
-    await window.electron.showError(
-      "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
-    );
+    await window.electron.showError(t("facebook.unknownReviewType"));
   }
 };
 
 // Dynamic button labels
 const backButtonLabel = computed(() => {
-  if (jobsType.value == "save") return "Back to Build Options";
+  if (jobsType.value == "save") return t("facebook.backToBuildOptions");
   return "";
 });
 
 const nextButtonLabel = computed(() => {
-  if (jobsType.value == "save") return "Build Database";
+  if (jobsType.value == "save") return t("facebook.buildDatabase");
   return "";
 });
 
@@ -73,7 +74,7 @@ const breadcrumbButtons = computed(() => {
   const buttons = [];
   if (jobsType.value == "save") {
     buttons.push({
-      label: "Build Options",
+      label: t("facebook.buildOptions"),
       action: () => emit("setState", State.WizardBuildOptions),
       icon: getBreadcrumbIcon("build"),
     });
@@ -97,7 +98,7 @@ onMounted(async () => {
   <BaseWizardPage
     :breadcrumb-props="{
       buttons: breadcrumbButtons,
-      label: 'Review',
+      label: t('wizard.review'),
       icon: getBreadcrumbIcon('review'),
     }"
     :button-props="{
@@ -120,7 +121,7 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Review your choices</h2>
+          <h2>{{ t("facebook.reviewChoices") }}</h2>
         </div>
 
         <template v-if="isLoading">
@@ -131,14 +132,14 @@ onMounted(async () => {
             <div v-if="jobsType == 'save'">
               <h3>
                 <i class="fa-solid fa-floppy-disk me-1" />
-                Build a local database
+                {{ t("facebook.buildLocalDatabase") }}
               </h3>
               <ul>
                 <li v-if="model.account?.facebookAccount?.savePosts">
-                  Save posts
+                  {{ t("facebook.savePosts") }}
                   <ul>
                     <li v-if="model.account?.facebookAccount?.savePostsHTML">
-                      Save HTML versions of posts
+                      {{ t("facebook.savePostsHTML") }}
                     </li>
                   </ul>
                 </li>

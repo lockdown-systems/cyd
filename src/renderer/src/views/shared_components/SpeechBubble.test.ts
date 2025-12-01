@@ -3,12 +3,16 @@ import { mount } from "@vue/test-utils";
 import SpeechBubble from "./SpeechBubble.vue";
 import CydAvatarComponent from "./CydAvatarComponent.vue";
 import RunningIcon from "./RunningIcon.vue";
+import i18n from "../../i18n";
 
 describe("SpeechBubble", () => {
   it("should render CydAvatar component", () => {
     const wrapper = mount(SpeechBubble, {
       props: {
         message: "Test message",
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -21,6 +25,9 @@ describe("SpeechBubble", () => {
     const wrapper = mount(SpeechBubble, {
       props: {
         message: "**Bold text** and *italic*",
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -35,6 +42,9 @@ describe("SpeechBubble", () => {
       props: {
         message: "Simple plain text",
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const bubble = wrapper.find(".bubble-inner");
@@ -46,6 +56,9 @@ describe("SpeechBubble", () => {
     const wrapper = mount(SpeechBubble, {
       props: {
         message: "",
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -61,6 +74,9 @@ describe("SpeechBubble", () => {
       props: {
         message: "Test",
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const bubble = wrapper.find(".bubble");
@@ -74,6 +90,9 @@ describe("SpeechBubble", () => {
       props: {
         message: "[Click here](https://example.com)",
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const bubble = wrapper.find(".bubble-inner");
@@ -84,7 +103,7 @@ describe("SpeechBubble", () => {
 
   it("should handle multiline markdown", () => {
     const message = `# Heading
-    
+
 This is a paragraph.
 
 - List item 1
@@ -93,6 +112,9 @@ This is a paragraph.
     const wrapper = mount(SpeechBubble, {
       props: {
         message,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 

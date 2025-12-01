@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, getCurrentInstance } from "vue";
+import { useI18n } from "vue-i18n";
 import { State, XViewModel } from "../../../view_models/XViewModel";
 import {
   XDatabaseStats,
@@ -9,6 +10,8 @@ import SidebarArchive from "../../shared_components/SidebarArchive.vue";
 import SidebarCard from "../../shared_components/SidebarCard.vue";
 import DebugModeComponent from "../../shared_components/DebugModeComponent.vue";
 import { xGetLastImportArchive } from "../../../util_x";
+
+const { t } = useI18n();
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -125,7 +128,7 @@ emitter?.on("account-updated", async () => {
         />
         <SidebarCard
           v-if="databaseStats.tweetsMigratedToBluesky > 0"
-          header="<div>Migrated to <i class='fa-brands fa-bluesky' /></div>"
+          :header="`<div>${t('sidebar.migratedTo')} <i class='fa-brands fa-bluesky' /></div>`"
           :stat="databaseStats.tweetsMigratedToBluesky"
         />
         <SidebarCard

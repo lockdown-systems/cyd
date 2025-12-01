@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, getCurrentInstance, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import { getJobsType, getPremiumTasks, clearPremiumTasks } from "../../../util";
+
+const { t } = useI18n();
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -70,10 +73,10 @@ onMounted(async () => {
 <template>
   <div class="wizard-content container mb-4 mt-3 mx-auto wizard-review">
     <h2 v-if="userAuthenticated && userPremium">
-      Thanks for upgrading to Premium
+      {{ t("premium.thanksForUpgrading") }}
       <i class="fa-solid fa-heart" />
     </h2>
-    <h2 v-else>The following features require a Premium account:</h2>
+    <h2 v-else>{{ t("premium.featuresRequirePremium") }}</h2>
     <ul v-if="!userAuthenticated || !userPremium" class="features-list">
       <!-- X tasks -->
       <li
@@ -87,7 +90,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-calendar-alt me-2" />
-            Delete tweets older than a set number of days
+            {{ t("premium.deleteTweetsOlderThan") }}
           </small>
         </div>
       </li>
@@ -102,7 +105,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-retweet me-2" />
-            Delete tweets unless they have at least a certain number of retweets
+            {{ t("premium.deleteTweetsUnlessRetweets") }}
           </small>
         </div>
       </li>
@@ -117,7 +120,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-heart me-2" />
-            Delete tweets unless they have at least a certain number of likes
+            {{ t("premium.deleteTweetsUnlessLikes") }}
           </small>
         </div>
       </li>
@@ -132,7 +135,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-calendar-alt me-2" />
-            Delete retweets older than a set number of days
+            {{ t("premium.deleteRetweetsOlderThan") }}
           </small>
         </div>
       </li>
@@ -143,7 +146,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-user-minus me-2" />
-            Unfollow everyone
+            {{ t("premium.unfollowEveryone") }}
           </small>
         </div>
       </li>
@@ -154,7 +157,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-heart-broken me-2" />
-            Delete likes
+            {{ t("premium.deleteLikes") }}
           </small>
         </div>
       </li>
@@ -165,7 +168,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-bookmark me-2" />
-            Delete bookmarks
+            {{ t("premium.deleteBookmarks") }}
           </small>
         </div>
       </li>
@@ -176,7 +179,7 @@ onMounted(async () => {
         <div class="card">
           <small class="card-body">
             <i class="fa-solid fa-envelope me-2" />
-            Delete direct messages
+            {{ t("premium.deleteDMs") }}
           </small>
         </div>
       </li>
@@ -192,17 +195,17 @@ onMounted(async () => {
     </ul>
 
     <template v-if="!userAuthenticated">
-      <p>To get started, sign in to your Cyd account.</p>
+      <p>{{ t("premium.signInToGetStarted") }}</p>
     </template>
     <template v-else-if="userAuthenticated && !userPremium">
-      <p>Manage your account to upgrade to Premium.</p>
+      <p>{{ t("premium.manageAccountToUpgrade") }}</p>
     </template>
     <template v-else>
       <p v-if="jobsType == 'delete'">
-        Ready to delete your data from X? <em>Let's go!</em>
+        {{ t("premium.readyToDelete") }} <em>{{ t("premium.letsGo") }}</em>
       </p>
       <p v-if="jobsType == 'migrateBluesky'">
-        Ready to migrate your tweets into Bluesky? <em>Let's go!</em>
+        {{ t("premium.readyToMigrate") }} <em>{{ t("premium.letsGo") }}</em>
       </p>
     </template>
 
@@ -215,7 +218,7 @@ onMounted(async () => {
           @click="signInClicked"
         >
           <i class="fa-solid fa-user-ninja" />
-          Sign In
+          {{ t("premium.signIn") }}
         </button>
 
         <div v-else-if="userAuthenticated && !userPremium">
@@ -225,7 +228,7 @@ onMounted(async () => {
             @click="manageAccountClicked"
           >
             <i class="fa-solid fa-user-ninja" />
-            Manage My Account
+            {{ t("premium.manageMyAccount") }}
           </button>
 
           <button
@@ -234,7 +237,7 @@ onMounted(async () => {
             @click="iveUpgradedClicked"
           >
             <i class="fa-solid fa-star" />
-            I've Upgraded
+            {{ t("premium.iveUpgraded") }}
           </button>
 
           <div
@@ -242,7 +245,7 @@ onMounted(async () => {
             class="alert alert-warning mt-4"
             role="alert"
           >
-            You haven't upgraded to Premium yet. Please try again.
+            {{ t("premium.haventUpgraded") }}
           </div>
         </div>
 
@@ -254,7 +257,7 @@ onMounted(async () => {
             @click="backClicked"
           >
             <i class="fa-solid fa-user-ninja" />
-            Review Your Choices
+            {{ t("wizard.reviewChoices") }}
           </button>
           <button
             v-if="jobsType == 'migrateBluesky'"
@@ -263,7 +266,7 @@ onMounted(async () => {
             @click="backClicked"
           >
             <i class="fa-solid fa-user-ninja" />
-            Migrate to Bluesky
+            {{ t("premium.migrateToBluesky") }}
           </button>
         </div>
       </div>

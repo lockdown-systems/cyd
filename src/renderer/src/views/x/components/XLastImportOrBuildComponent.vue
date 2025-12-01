@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { formatDistanceToNow } from "date-fns";
 import { State } from "../../../view_models/XViewModel";
 import { xGetLastImportArchive, xGetLastBuildDatabase } from "../../../util_x";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   accountID: number;
@@ -17,6 +20,16 @@ const emit = defineEmits<{
 
 const lastImportArchive = ref<Date | null>(null);
 const lastBuildDatabase = ref<Date | null>(null);
+
+const lastImportArchiveTimeAgo = computed(() => {
+  if (!lastImportArchive.value) return "";
+  return formatDistanceToNow(lastImportArchive.value, { addSuffix: true });
+});
+
+const lastBuildDatabaseTimeAgo = computed(() => {
+  if (!lastBuildDatabase.value) return "";
+  return formatDistanceToNow(lastBuildDatabase.value, { addSuffix: true });
+});
 
 onMounted(async () => {
   lastImportArchive.value = await xGetLastImportArchive(props.accountID);
@@ -43,33 +56,22 @@ onMounted(async () => {
     }"
   >
     <div v-if="lastImportArchive">
-      You last imported your X archive
       {{
-        formatDistanceToNow(lastImportArchive, {
-          addSuffix: true,
-        })
-      }}.
+        t("import.lastImportedArchive", { timeAgo: lastImportArchiveTimeAgo })
+      }}
     </div>
     <div v-if="lastBuildDatabase">
-      You last built your local database from scratch
-      {{
-        formatDistanceToNow(lastBuildDatabase, {
-          addSuffix: true,
-        })
-      }}.
+      {{ t("import.lastBuiltDatabase", { timeAgo: lastBuildDatabaseTimeAgo }) }}
     </div>
     <div v-if="showNoDataWarning && !lastImportArchive && !lastBuildDatabase">
       <div class="d-flex align-items-center">
         <i class="fa-solid fa-triangle-exclamation fa-2x me-3" />
         <div>
           <template v-if="archiveOnly">
-            You'll need to import your local database of tweets before you can
-            migrate them to Bluesky.
+            {{ t("import.needImportForMigration") }}
           </template>
           <template v-else>
-            You'll need to import your local database of tweets, or build it
-            from scratch, before you can delete your tweets or likes, or migrate
-            your tweets to Bluesky.
+            {{ t("import.needImportOrBuild") }}
           </template>
         </div>
       </div>
@@ -81,7 +83,7 @@ onMounted(async () => {
           class="btn btn-sm btn-primary mt-2"
           @click="emit('setState', State.WizardArchiveOnly)"
         >
-          Import X Archive
+          {{ t("import.importXArchive") }}
         </button>
       </template>
       <template v-else>
@@ -91,9 +93,9 @@ onMounted(async () => {
           @click="emit('setState', State.WizardDatabase)"
         >
           <template v-if="lastImportArchive || lastBuildDatabase">
-            Rebuild Your Local Database
+            {{ t("import.rebuildDatabase") }}
           </template>
-          <template v-else> Build Your Local Database </template>
+          <template v-else> {{ t("import.buildDatabase") }} </template>
         </button>
       </template>
     </div>

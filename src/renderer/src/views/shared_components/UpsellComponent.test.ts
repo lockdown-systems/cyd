@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import UpsellComponent from "./UpsellComponent.vue";
 import { ref } from "vue";
+import i18n from "../../i18n";
 
 // Mock openURL
 vi.mock("../../util", () => ({
@@ -59,6 +60,7 @@ describe("UpsellComponent", () => {
   it("should show non-premium content when user is not premium", async () => {
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -93,6 +95,7 @@ describe("UpsellComponent", () => {
 
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -126,6 +129,7 @@ describe("UpsellComponent", () => {
 
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -155,6 +159,7 @@ describe("UpsellComponent", () => {
 
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -186,6 +191,7 @@ describe("UpsellComponent", () => {
   it("should emit show-manage-account when premium button clicked while authenticated", async () => {
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -219,6 +225,7 @@ describe("UpsellComponent", () => {
 
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -251,6 +258,7 @@ describe("UpsellComponent", () => {
   it("should emit show-manage-account-teams when teams button clicked while authenticated", async () => {
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -285,6 +293,7 @@ describe("UpsellComponent", () => {
 
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -319,6 +328,7 @@ describe("UpsellComponent", () => {
   it("should register emitter listeners on mount", async () => {
     mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -344,6 +354,7 @@ describe("UpsellComponent", () => {
   it("should register IPC listener on mount", async () => {
     mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -371,6 +382,7 @@ describe("UpsellComponent", () => {
   it("should clean up IPC listeners on unmount", async () => {
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -400,6 +412,7 @@ describe("UpsellComponent", () => {
 
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -425,6 +438,7 @@ describe("UpsellComponent", () => {
   it("should display correct button text when authenticated", async () => {
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,
@@ -451,6 +465,7 @@ describe("UpsellComponent", () => {
   it("should have correct CSS classes", async () => {
     const wrapper = mount(UpsellComponent, {
       global: {
+        plugins: [i18n],
         provide: {
           apiClient: ref({
             ping: mockPing,

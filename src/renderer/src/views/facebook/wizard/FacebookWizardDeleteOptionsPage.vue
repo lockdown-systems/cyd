@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   FacebookViewModel,
   State,
@@ -10,6 +11,8 @@ import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 import FacebookLastImportOrBuildComponent from "../components/FacebookLastImportOrBuildComponent.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -46,7 +49,9 @@ const setProceedEnabled = (enabled: boolean) => {
 // Show more
 const deletePostsShowMore = ref(false);
 const deletePostsShowMoreButtonText = computed(() =>
-  deletePostsShowMore.value ? "Hide more options" : "Show more options",
+  deletePostsShowMore.value
+    ? t("wizard.hideMoreOptions")
+    : t("wizard.showMoreOptions"),
 );
 const deletePostsShowMoreClicked = () => {
   deletePostsShowMore.value = !deletePostsShowMore.value;
@@ -54,7 +59,9 @@ const deletePostsShowMoreClicked = () => {
 
 const deleteRepostsShowMore = ref(false);
 const deleteRepostsShowMoreButtonText = computed(() =>
-  deleteRepostsShowMore.value ? "Hide more options" : "Show more options",
+  deleteRepostsShowMore.value
+    ? t("wizard.hideMoreOptions")
+    : t("wizard.showMoreOptions"),
 );
 const deleteRepostsShowMoreClicked = () => {
   deleteRepostsShowMore.value = !deleteRepostsShowMore.value;
@@ -180,20 +187,20 @@ onMounted(async () => {
   <BaseWizardPage
     :breadcrumb-props="{
       buttons: [],
-      label: 'Delete Options',
+      label: t('facebook.deleteOptions'),
       icon: getBreadcrumbIcon('delete'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Import or Build Database',
+          label: t('facebook.backToImportOrBuild'),
           action: backClicked,
           disabled: isLoading,
         },
       ],
       nextButtons: [
         {
-          label: 'Continue to Review (NOT IMPL YET)',
+          label: t('facebook.continueToReview'),
           action: nextClicked,
           disabled: isLoading || !hasValidSelection,
         },
@@ -203,9 +210,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Delete from Facebook</h2>
+          <h2>{{ t("facebook.deleteFromFacebook") }}</h2>
           <p class="text-muted">
-            Delete your data from Facebook, except for what you want to keep.
+            {{ t("facebook.deleteFromFacebookDescription") }}
           </p>
         </div>
 
@@ -213,8 +220,8 @@ onMounted(async () => {
           :account-i-d="model.account.id"
           :show-button="true"
           :show-no-data-warning="true"
-          :button-text="'Build Your Local Database'"
-          :button-text-no-data="'Build Your Local Database'"
+          :button-text="t('facebook.buildYourLocalDatabaseButton')"
+          :button-text-no-data="t('facebook.buildYourLocalDatabaseButton')"
           :button-state="State.WizardBuildOptions"
           @set-state="emit('setState', $event)"
         />
@@ -236,9 +243,11 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deletePosts"
                 >
-                  Delete my posts
+                  {{ t("facebook.deleteMyPosts") }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deletePostsShowMoreClicked"
@@ -262,7 +271,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deletePostsDaysOldEnabled"
                     >
-                      older than
+                      {{ t("wizard.olderThan") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -270,7 +279,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deletePostsDaysOld"
                     >
-                      days
+                      {{ t("wizard.days") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -285,7 +294,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">days</span>
+                        <span class="input-group-text small">{{
+                          t("wizard.days")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -293,7 +304,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>
@@ -315,9 +326,11 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteReposts"
                 >
-                  Delete my reposts
+                  {{ t("facebook.deleteMyReposts") }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deleteRepostsShowMoreClicked"
@@ -341,7 +354,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteRepostsDaysOldEnabled"
                     >
-                      older than
+                      {{ t("wizard.olderThan") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -349,7 +362,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteRepostsDaysOld"
                     >
-                      days
+                      {{ t("wizard.days") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -362,7 +375,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">days</span>
+                        <span class="input-group-text small">{{
+                          t("wizard.days")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -370,7 +385,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>

@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 
 import { getBreadcrumbIcon, openURL } from "../../../util";
+
+const { t } = useI18n();
 
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
@@ -31,25 +34,27 @@ const backClicked = async () => {
 const breadcrumbProps = computed(() => ({
   buttons: [
     {
-      label: "Dashboard",
+      label: t("wizard.dashboard"),
       action: () => emit("setState", State.WizardDashboard),
       icon: getBreadcrumbIcon("dashboard"),
     },
     {
-      label: "Local Database",
+      label: t("review.localDatabase"),
       action: backClicked,
       icon: getBreadcrumbIcon("database"),
     },
   ],
-  label: "Import X Archive",
+  label: t("import.importXArchive"),
   icon: getBreadcrumbIcon("import"),
 }));
 
 const buttonProps = computed(() => ({
-  backButtons: [{ label: "Back to Local Database", action: backClicked }],
+  backButtons: [
+    { label: t("wizard.backToLocalDatabase"), action: backClicked },
+  ],
   nextButtons: [
     {
-      label: "I've Downloaded My Archive from X",
+      label: t("wizard.iveDownloadedMyArchive"),
       action: importClicked,
       disabled: !(
         props.model.account?.xAccount?.archiveTweets ||
@@ -69,15 +74,14 @@ const buttonProps = computed(() => ({
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Import your X archive</h2>
+          <h2>{{ t("import.importXArchiveTitle") }}</h2>
           <p class="text-muted">
-            Before you can import your X archive, you need to download it by
-            following these steps:
+            {{ t("import.beforeImportSteps") }}
           </p>
           <ul class="x-archive-steps">
             <li>
               <strong
-                >Visit
+                >{{ t("import.visitDownloadPage") }}
                 <a
                   href="#"
                   @click="openURL('https://x.com/settings/download_your_data')"
@@ -85,35 +89,31 @@ const buttonProps = computed(() => ({
                   https://x.com/settings/download_your_data</a
                 >.</strong
               ><br />
-              <small class="text-muted"
-                >You might need to sign in to X first.</small
-              >
+              <small class="text-muted">{{
+                t("import.mightNeedToSignIn")
+              }}</small>
             </li>
             <li>
-              <strong>Prove your identity.</strong><br />
-              <small class="text-muted"
-                >You'll probably need to type your X password. You might also
-                need to get a verification code sent to your email, or do other
-                things to verify your identity.</small
-              >
-            </li>
-            <li>
-              <strong>Click the "Request archive" button.</strong>
-            </li>
-            <li>
-              <strong>Be patient.</strong><br />
-              <small class="text-muted"
-                >After requesting your archive, you'll need to wait
-                <strong>at least a day</strong>, and maybe longer. Sorry!</small
-              >
-            </li>
-            <li>
-              <strong>When it's ready, download the ZIP file from X.</strong
+              <strong>{{ t("import.proveYourIdentity") }}</strong
               ><br />
-              <small class="text-muted"
-                >After you've followed these steps and you have your archive ZIP
-                file, click the button below.</small
-              >
+              <small class="text-muted">{{
+                t("import.proveIdentityDescription")
+              }}</small>
+            </li>
+            <li>
+              <strong>{{ t("import.clickRequestArchive") }}</strong>
+            </li>
+            <li>
+              <strong>{{ t("import.bePatient") }}</strong
+              ><br />
+              <small class="text-muted">{{ t("import.waitForArchive") }}</small>
+            </li>
+            <li>
+              <strong>{{ t("import.downloadZipFile") }}</strong
+              ><br />
+              <small class="text-muted">{{
+                t("import.afterFollowingSteps")
+              }}</small>
             </li>
           </ul>
 

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   XViewModel,
   State,
   tombstoneUpdateBioCreditCydText,
 } from "../../../view_models/XViewModel";
 import { getBreadcrumbIcon, openURL, getJobsType } from "../../../util";
+
+const { t } = useI18n();
 import {
   XDeleteReviewStats,
   emptyXDeleteReviewStats,
@@ -88,9 +91,7 @@ const backClicked = async () => {
     emit("setState", State.WizardTombstone);
   } else {
     console.error("Unknown review type:", jobsType.value);
-    await window.electron.showError(
-      "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
-    );
+    await window.electron.showError(t("facebook.unknownReviewType"));
   }
 };
 
@@ -100,25 +101,25 @@ const archiveClicked = async () => {
 
 // Dynamic button labels
 const backButtonLabel = computed(() => {
-  if (jobsType.value == "delete") return "Back to Delete Options";
-  if (jobsType.value == "save") return "Back to Build Options";
-  if (jobsType.value == "archive") return "Back to Archive Options";
+  if (jobsType.value == "delete") return t("review.backToDeleteOptions");
+  if (jobsType.value == "save") return t("review.backToBuildOptions");
+  if (jobsType.value == "archive") return t("review.backToArchiveOptions");
   if (
     jobsType.value == "migrateBluesky" ||
     jobsType.value == "migrateBlueskyDelete"
   )
-    return "Back to Migrate to Bluesky Options";
-  if (jobsType.value == "tombstone") return "Back to Tombstone Options";
+    return t("review.backToMigrateOptions");
+  if (jobsType.value == "tombstone") return t("review.backToTombstoneOptions");
   return "";
 });
 
 const nextButtonLabel = computed(() => {
-  if (jobsType.value == "save") return "Build Database";
-  if (jobsType.value == "archive") return "Start Archiving";
+  if (jobsType.value == "save") return t("review.buildDatabase");
+  if (jobsType.value == "archive") return t("review.startArchiving");
   if (jobsType.value == "delete" || jobsType.value == "migrateBlueskyDelete")
-    return "Start Deleting";
-  if (jobsType.value == "migrateBluesky") return "Start Migrating";
-  if (jobsType.value == "tombstone") return "Update Profile";
+    return t("review.startDeleting");
+  if (jobsType.value == "migrateBluesky") return t("review.startMigrating");
+  if (jobsType.value == "tombstone") return t("review.updateProfile");
   return "";
 });
 
@@ -126,35 +127,35 @@ const nextButtonLabel = computed(() => {
 const breadcrumbButtons = computed(() => {
   const buttons: ButtonInfo[] = [
     {
-      label: "Dashboard",
+      label: t("wizard.dashboard"),
       action: () => emit("setState", State.WizardDashboard),
       icon: "fa-solid fa-house",
     },
   ];
 
   const localDatabaseButton: ButtonInfo = {
-    label: "Local Database",
+    label: t("review.localDatabase"),
     action: () => emit("setState", State.WizardDatabase),
     icon: getBreadcrumbIcon("database"),
   };
 
   if (jobsType.value == "delete") {
     buttons.push({
-      label: "Delete Options",
+      label: t("review.deleteOptions"),
       action: () => emit("setState", State.WizardDeleteOptions),
       icon: getBreadcrumbIcon("delete"),
     });
   } else if (jobsType.value == "save") {
     buttons.push(localDatabaseButton);
     buttons.push({
-      label: "Build Options",
+      label: t("review.buildOptions"),
       action: () => emit("setState", State.WizardBuildOptions),
       icon: getBreadcrumbIcon("build"),
     });
   } else if (jobsType.value == "archive") {
     buttons.push(localDatabaseButton);
     buttons.push({
-      label: "Archive Options",
+      label: t("review.archiveOptions"),
       action: () => emit("setState", State.WizardArchiveOptions),
       icon: getBreadcrumbIcon("build"),
     });
@@ -163,13 +164,13 @@ const breadcrumbButtons = computed(() => {
     jobsType.value == "migrateBlueskyDelete"
   ) {
     buttons.push({
-      label: "Migrate to Bluesky Options",
+      label: t("review.migrateToBlueskyOptions"),
       action: () => emit("setState", State.WizardMigrateToBluesky),
       icon: getBreadcrumbIcon("bluesky"),
     });
   } else if (jobsType.value == "tombstone") {
     buttons.push({
-      label: "Tombstone Options",
+      label: t("review.tombstoneOptions"),
       action: () => emit("setState", State.WizardTombstone),
       icon: getBreadcrumbIcon("tombstone"),
     });
@@ -264,7 +265,7 @@ onMounted(async () => {
   <BaseWizardPage
     :breadcrumb-props="{
       buttons: breadcrumbButtons,
-      label: 'Review',
+      label: t('wizard.review'),
       icon: getBreadcrumbIcon('review'),
     }"
     :button-props="{
@@ -287,7 +288,7 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Review your choices</h2>
+          <h2>{{ t("wizard.reviewChoices") }}</h2>
         </div>
 
         <template v-if="isLoading">
@@ -298,23 +299,25 @@ onMounted(async () => {
             <div v-if="jobsType == 'save'">
               <h3>
                 <i class="fa-solid fa-floppy-disk me-1" />
-                Build a local database
+                {{ t("wizard.buildLocalDatabase") }}
               </h3>
               <ul>
                 <li v-if="model.account?.xAccount?.archiveTweets">
-                  Save tweets
+                  {{ t("wizard.saveTweets") }}
                   <ul>
                     <li v-if="model.account?.xAccount?.archiveTweetsHTML">
-                      Save HTML versions of tweets
+                      {{ t("wizard.saveTweetsHTML") }}
                     </li>
                   </ul>
                 </li>
-                <li v-if="model.account?.xAccount?.archiveLikes">Save likes</li>
+                <li v-if="model.account?.xAccount?.archiveLikes">
+                  {{ t("wizard.saveLikes") }}
+                </li>
                 <li v-if="model.account?.xAccount?.archiveBookmarks">
-                  Save bookmarks
+                  {{ t("wizard.saveBookmarks") }}
                 </li>
                 <li v-if="model.account?.xAccount?.archiveDMs">
-                  Save direct messages
+                  {{ t("wizard.saveDirectMessages") }}
                 </li>
               </ul>
             </div>
@@ -322,17 +325,17 @@ onMounted(async () => {
             <div v-if="jobsType == 'archive'">
               <h3>
                 <i class="fa-solid fa-floppy-disk me-1" />
-                Archive my data
+                {{ t("wizard.archiveMyData") }}
               </h3>
               <ul>
                 <li v-if="model.account?.xAccount?.archiveTweetsHTML">
-                  Save HTML versions of tweets
+                  {{ t("wizard.saveTweetsHTML") }}
                 </li>
                 <li v-if="model.account?.xAccount?.archiveBookmarks">
-                  Save bookmarks
+                  {{ t("wizard.saveBookmarks") }}
                 </li>
                 <li v-if="model.account?.xAccount?.archiveDMs">
-                  Save direct messages
+                  {{ t("wizard.saveDirectMessages") }}
                 </li>
               </ul>
             </div>
@@ -340,21 +343,22 @@ onMounted(async () => {
             <div v-if="jobsType == 'delete'">
               <h3>
                 <i class="fa-solid fa-fire me-1" />
-                Delete my data
+                {{ t("review.deleteMyData") }}
               </h3>
               <ul>
                 <li v-if="hasSomeData && model.account?.xAccount?.deleteTweets">
                   <b
-                    >{{
-                      deleteReviewStats.tweetsToDelete.toLocaleString()
-                    }}
-                    tweets</b
+                    >{{ deleteReviewStats.tweetsToDelete.toLocaleString() }}
+                    {{ t("review.tweets") }}</b
                   >
                   <span
                     v-if="model.account?.xAccount?.deleteTweetsDaysOldEnabled"
                   >
-                    that are older than
-                    {{ model.account?.xAccount?.deleteTweetsDaysOld }} days
+                    {{
+                      t("review.thatAreOlderThan", {
+                        days: model.account?.xAccount?.deleteTweetsDaysOld,
+                      })
+                    }}
                   </span>
                   <span
                     v-if="
@@ -364,9 +368,14 @@ onMounted(async () => {
                         ?.deleteTweetsLikesThresholdEnabled
                     "
                   >
-                    unless they have at least
-                    {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }}
-                    retweets
+                    {{
+                      t("review.unlessTheyHaveAtLeast", {
+                        count:
+                          model.account?.xAccount
+                            ?.deleteTweetsRetweetsThreshold,
+                        type: t("review.retweets"),
+                      })
+                    }}
                   </span>
                   <span
                     v-if="
@@ -375,9 +384,13 @@ onMounted(async () => {
                       model.account?.xAccount?.deleteTweetsLikesThresholdEnabled
                     "
                   >
-                    unless they have at least
-                    {{ model.account?.xAccount?.deleteTweetsLikesThreshold }}
-                    likes
+                    {{
+                      t("review.unlessTheyHaveAtLeast", {
+                        count:
+                          model.account?.xAccount?.deleteTweetsLikesThreshold,
+                        type: t("review.likes"),
+                      })
+                    }}
                   </span>
                   <span
                     v-if="
@@ -386,11 +399,15 @@ onMounted(async () => {
                       model.account?.xAccount?.deleteTweetsLikesThresholdEnabled
                     "
                   >
-                    unless they have at least
-                    {{ model.account?.xAccount?.deleteTweetsRetweetsThreshold }}
-                    retweets or
-                    {{ model.account?.xAccount?.deleteTweetsLikesThreshold }}
-                    likes
+                    {{
+                      t("review.unlessTheyHaveAtLeastOr", {
+                        retweets:
+                          model.account?.xAccount
+                            ?.deleteTweetsRetweetsThreshold,
+                        likes:
+                          model.account?.xAccount?.deleteTweetsLikesThreshold,
+                      })
+                    }}
                   </span>
                   <div v-if="deleteTweetsCountNotArchived > 0">
                     <small class="text-form">
@@ -402,21 +419,23 @@ onMounted(async () => {
                             deleteReviewStats.tweetsToDelete
                           "
                         >
-                          You haven't saved HTML versions of any of these
-                          tweets.
+                          {{ t("review.haventSavedHTML") }}
                         </span>
                         <span v-else>
-                          You haven't saved HTML versions of
-                          {{ deleteTweetsCountNotArchived.toLocaleString() }}
-                          of these tweets.
+                          {{
+                            t("review.haventSavedHTMLSome", {
+                              count:
+                                deleteTweetsCountNotArchived.toLocaleString(),
+                            })
+                          }}
                         </span>
                       </em>
                       <span>
-                        If you care,
-                        <a href="#" @click="archiveClicked"
-                          >archive your tweets</a
-                        >
-                        before you delete them. Otherwise, just delete them.
+                        {{ t("review.ifYouCare", { archiveLink: "" }) }}
+                        <a href="#" @click="archiveClicked">{{
+                          t("review.archiveYourTweets")
+                        }}</a>
+                        {{ t("review.beforeDeleteThem") }}
                       </span>
                     </small>
                   </div>
@@ -425,41 +444,38 @@ onMounted(async () => {
                   v-if="hasSomeData && model.account?.xAccount?.deleteRetweets"
                 >
                   <b
-                    >{{
-                      deleteReviewStats.retweetsToDelete.toLocaleString()
-                    }}
-                    retweets</b
+                    >{{ deleteReviewStats.retweetsToDelete.toLocaleString() }}
+                    {{ t("review.retweets") }}</b
                   >
                   <span
                     v-if="model.account?.xAccount?.deleteRetweetsDaysOldEnabled"
                   >
-                    that are older than
-                    {{ model.account?.xAccount?.deleteRetweetsDaysOld }} days
+                    {{
+                      t("review.thatAreOlderThan", {
+                        days: model.account?.xAccount?.deleteRetweetsDaysOld,
+                      })
+                    }}
                   </span>
                 </li>
                 <li v-if="hasSomeData && model.account?.xAccount?.deleteLikes">
                   <b
-                    >{{
-                      deleteReviewStats.likesToDelete.toLocaleString()
-                    }}
-                    likes</b
+                    >{{ deleteReviewStats.likesToDelete.toLocaleString() }}
+                    {{ t("review.likes") }}</b
                   >
                 </li>
                 <li
                   v-if="hasSomeData && model.account?.xAccount?.deleteBookmarks"
                 >
                   <b
-                    >{{
-                      deleteReviewStats.bookmarksToDelete.toLocaleString()
-                    }}
-                    bookmarks</b
+                    >{{ deleteReviewStats.bookmarksToDelete.toLocaleString() }}
+                    {{ t("review.bookmarks") }}</b
                   >
                 </li>
                 <li v-if="model.account?.xAccount?.unfollowEveryone">
-                  <b>Unfollow everyone</b>
+                  <b>{{ t("premium.unfollowEveryone") }}</b>
                 </li>
                 <li v-if="model.account?.xAccount?.deleteDMs">
-                  <b>All of your direct messages</b>
+                  <b>{{ t("review.allOfYourDirectMessages") }}</b>
                 </li>
               </ul>
             </div>
@@ -467,18 +483,16 @@ onMounted(async () => {
             <div v-if="jobsType == 'migrateBluesky'">
               <h3>
                 <i class="fa-brands fa-bluesky me-1" />
-                Migrate to Bluesky
+                {{ t("review.migrateToBluesky") }}
               </h3>
               <ul>
                 <li>
-                  Migrate
-                  <b
-                    >{{
-                      tweetCounts.toMigrateTweets.length.toLocaleString()
-                    }}
-                    tweets</b
-                  >
-                  to Bluesky
+                  {{
+                    t("review.migrateTweets", {
+                      count:
+                        tweetCounts.toMigrateTweets.length.toLocaleString(),
+                    })
+                  }}
                 </li>
               </ul>
             </div>
@@ -486,18 +500,16 @@ onMounted(async () => {
             <div v-if="jobsType == 'migrateBlueskyDelete'">
               <h3>
                 <i class="fa-brands fa-bluesky me-1" />
-                Delete Migrated Bluesky Posts
+                {{ t("review.deleteMigratedBlueskyPosts") }}
               </h3>
               <ul>
                 <li>
-                  Delete
-                  <b
-                    >{{
-                      tweetCounts.alreadyMigratedTweets.length.toLocaleString()
-                    }}
-                    posts</b
-                  >
-                  from Bluesky
+                  {{
+                    t("review.deletePostsFromBluesky", {
+                      count:
+                        tweetCounts.alreadyMigratedTweets.length.toLocaleString(),
+                    })
+                  }}
                 </li>
               </ul>
             </div>
@@ -505,11 +517,11 @@ onMounted(async () => {
             <div v-if="jobsType == 'tombstone'">
               <h3>
                 <i class="fa-solid fa-skull me-1" />
-                Tombstone
+                {{ t("wizard.tombstone") }}
               </h3>
               <ul>
                 <li v-if="model.account?.xAccount?.tombstoneUpdateBanner">
-                  <div>Update your banner</div>
+                  <div>{{ t("review.updateYourBanner") }}</div>
                   <XTombstoneBannerComponent
                     :update-banner="
                       model.account?.xAccount?.tombstoneUpdateBanner
@@ -524,8 +536,10 @@ onMounted(async () => {
                   />
                 </li>
                 <li v-if="model.account?.xAccount?.tombstoneUpdateBio">
-                  <div>Update your bio</div>
-                  <p class="text-center text-muted small mb-1">Bio Preview</p>
+                  <div>{{ t("review.updateYourBio") }}</div>
+                  <p class="text-center text-muted small mb-1">
+                    {{ t("review.bioPreview") }}
+                  </p>
                   <p class="small">
                     {{ model.account?.xAccount?.tombstoneUpdateBioText }}
                     <span
@@ -538,7 +552,7 @@ onMounted(async () => {
                   </p>
                 </li>
                 <li v-if="model.account?.xAccount?.tombstoneLockAccount">
-                  Lock your account
+                  {{ t("review.lockYourAccount") }}
                 </li>
               </ul>
             </div>
@@ -584,7 +598,7 @@ onMounted(async () => {
                     'https://docs.bsky.app/docs/advanced-guides/rate-limits',
                   )
                 "
-                >Learn more.</a
+                >{{ t("review.learnMore") }}</a
               >
             </p>
           </div>

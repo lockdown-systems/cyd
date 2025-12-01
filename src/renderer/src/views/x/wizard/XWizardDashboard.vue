@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import {
   xHasSomeData,
@@ -8,6 +9,8 @@ import {
   xGetLastDelete,
 } from "../../../util_x";
 import { formatDistanceToNow } from "date-fns";
+
+const { t } = useI18n();
 
 // Props
 const props = defineProps<{
@@ -25,6 +28,16 @@ const featureXTombstone = ref(false);
 const hasSomeData = ref(false);
 const lastDatabase = ref<Date | null>(null);
 const lastDelete = ref<Date | null>(null);
+
+const lastDatabaseTimeAgo = computed(() => {
+  if (!lastDatabase.value) return "";
+  return formatDistanceToNow(lastDatabase.value, { addSuffix: true });
+});
+
+const lastDeleteTimeAgo = computed(() => {
+  if (!lastDelete.value) return "";
+  return formatDistanceToNow(lastDelete.value, { addSuffix: true });
+});
 
 onMounted(async () => {
   featureXTombstone.value =
@@ -56,19 +69,22 @@ onMounted(async () => {
             class="card h-100"
             @click="emit('setState', State.WizardDatabase)"
           >
-            <span v-if="!hasSomeData" class="start-here-badge badge bg-primary"
-              >Start Here</span
+            <span
+              v-if="!hasSomeData"
+              class="start-here-badge badge bg-primary"
+              >{{ t("dashboard.startHere") }}</span
             >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-database.png" alt="Local Database" />
-              <h2>Local Database</h2>
+              <img
+                src="/assets/icon-database.png"
+                :alt="t('dashboard.localDatabase')"
+              />
+              <h2>{{ t("dashboard.localDatabase") }}</h2>
               <p class="small mt-3">
-                Make or update your local backup of X data. Cyd references this
-                data when you delete from X or migrate to Bluesky.
+                {{ t("dashboard.localDatabaseDescription") }}
               </p>
               <p v-if="lastDatabase" class="mt-3 small text-muted text-center">
-                Last ran
-                {{ formatDistanceToNow(lastDatabase, { addSuffix: true }) }}
+                {{ t("dashboard.lastRan", { timeAgo: lastDatabaseTimeAgo }) }}
               </p>
             </div>
           </div>
@@ -82,15 +98,16 @@ onMounted(async () => {
             @click="emit('setState', State.WizardDeleteOptions)"
           >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-delete.png" alt="Delete from X" />
-              <h2>Delete from X</h2>
+              <img
+                src="/assets/icon-delete.png"
+                :alt="t('dashboard.deleteFromX')"
+              />
+              <h2>{{ t("dashboard.deleteFromX") }}</h2>
               <p class="small mt-3">
-                Delete your tweets, retweets, likes, bookmarks, or DMs from your
-                X account, or unfollow everyone.
+                {{ t("dashboard.deleteFromXDescription") }}
               </p>
               <p v-if="lastDelete" class="mt-3 small text-muted text-center">
-                Last ran
-                {{ formatDistanceToNow(lastDelete, { addSuffix: true }) }}
+                {{ t("dashboard.lastRan", { timeAgo: lastDeleteTimeAgo }) }}
               </p>
             </div>
           </div>
@@ -103,15 +120,19 @@ onMounted(async () => {
             class="card h-100"
             @click="emit('setState', State.WizardArchiveOnly)"
           >
-            <span v-if="!hasSomeData" class="start-here-badge badge bg-primary"
-              >Start Here</span
+            <span
+              v-if="!hasSomeData"
+              class="start-here-badge badge bg-primary"
+              >{{ t("dashboard.startHere") }}</span
             >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-import.png" alt="Import X Archive" />
-              <h2>Import X Archive</h2>
+              <img
+                src="/assets/icon-import.png"
+                :alt="t('dashboard.importXArchive')"
+              />
+              <h2>{{ t("dashboard.importXArchive") }}</h2>
               <p class="small mt-3">
-                Import data from an X archive file to create a backup without
-                logging to X.
+                {{ t("dashboard.importXArchiveDescription") }}
               </p>
             </div>
           </div>
@@ -122,10 +143,13 @@ onMounted(async () => {
             @click="emit('setState', State.WizardMigrateToBluesky)"
           >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-bluesky.png" alt="Migrate to Bluesky" />
-              <h2>Migrate to Bluesky</h2>
+              <img
+                src="/assets/icon-bluesky.png"
+                :alt="t('dashboard.migrateToBluesky')"
+              />
+              <h2>{{ t("dashboard.migrateToBluesky") }}</h2>
               <p class="small mt-3">
-                Migrate your tweets from your X account to a Bluesky account.
+                {{ t("dashboard.migrateToBlueskyDescription") }}
               </p>
             </div>
           </div>
@@ -141,11 +165,13 @@ onMounted(async () => {
             @click="emit('setState', State.WizardTombstone)"
           >
             <div class="card-body align-items-center">
-              <img src="/assets/icon-tombstone.png" alt="Tombstone" />
-              <h2>Tombstone</h2>
+              <img
+                src="/assets/icon-tombstone.png"
+                :alt="t('dashboard.tombstone')"
+              />
+              <h2>{{ t("dashboard.tombstone") }}</h2>
               <p class="small mt-3">
-                Update your X profile to make it clear that you've moved on to
-                better social media sites.
+                {{ t("dashboard.tombstoneDescription") }}
               </p>
             </div>
           </div>

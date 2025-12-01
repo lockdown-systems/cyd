@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import {
   TombstoneBannerBackground,
   TombstoneBannerSocialIcons,
 } from "../../../types_x";
+
+const { t } = useI18n();
+
 defineProps<{
   updateBanner: boolean;
   updateBannerBackground: TombstoneBannerBackground;
@@ -13,7 +17,9 @@ defineProps<{
 
 <template>
   <div v-if="updateBanner" class="banner-preview-wrapper mb-3">
-    <p class="text-center text-muted small mb-1">Banner Preview</p>
+    <p class="text-center text-muted small mb-1">
+      {{ t("tombstoneBanner.bannerPreview") }}
+    </p>
     <div class="banner-preview">
       <!-- background -->
       <div

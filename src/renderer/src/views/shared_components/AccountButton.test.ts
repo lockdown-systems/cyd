@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import AccountButton from "./AccountButton.vue";
 import { createMockAccount, createMockXAccount } from "../../test_util";
+import i18n from "../../i18n";
 
 describe("AccountButton", () => {
   beforeEach(() => {
@@ -20,6 +21,9 @@ describe("AccountButton", () => {
         account,
         active: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".account-btn").exists()).toBe(true);
@@ -32,6 +36,9 @@ describe("AccountButton", () => {
         account,
         active: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".btn-container.active").exists()).toBe(true);
@@ -43,6 +50,9 @@ describe("AccountButton", () => {
       props: {
         account,
         active: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -60,6 +70,9 @@ describe("AccountButton", () => {
       props: {
         account,
         active: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -80,6 +93,9 @@ describe("AccountButton", () => {
         account,
         active: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".account-btn i").exists()).toBe(true);
@@ -94,6 +110,9 @@ describe("AccountButton", () => {
       props: {
         account,
         active: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -117,6 +136,9 @@ describe("AccountButton", () => {
       props: {
         account,
         active: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -145,6 +167,9 @@ describe("AccountButton", () => {
         account,
         active: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const mouseoverEvent = document.createEvent("MouseEvents");
@@ -164,6 +189,9 @@ describe("AccountButton", () => {
         account,
         active: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const mouseoverEvent = document.createEvent("MouseEvents");
@@ -180,6 +208,9 @@ describe("AccountButton", () => {
       props: {
         account,
         active: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -209,6 +240,9 @@ describe("AccountButton", () => {
         account,
         active: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     // Open menu first
@@ -231,6 +265,9 @@ describe("AccountButton", () => {
       props: {
         account,
         active: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -258,6 +295,9 @@ describe("AccountButton", () => {
         active: false,
       },
       attachTo: document.body,
+      global: {
+        plugins: [i18n],
+      },
     });
 
     // Open menu

@@ -4,6 +4,7 @@ import XWizardArchiveOptionsPage from "./XWizardArchiveOptionsPage.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { createMockAccount, mockElectronAPI } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   setJobsType: vi.fn(),
@@ -73,6 +74,9 @@ describe("XWizardArchiveOptionsPage", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.text()).toContain("Archive options");
@@ -88,6 +92,9 @@ describe("XWizardArchiveOptionsPage", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const text = wrapper.text();
@@ -102,6 +109,9 @@ describe("XWizardArchiveOptionsPage", () => {
       wrapper = mount(XWizardArchiveOptionsPage, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -123,6 +133,9 @@ describe("XWizardArchiveOptionsPage", () => {
       wrapper = mount(XWizardArchiveOptionsPage, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -146,6 +159,9 @@ describe("XWizardArchiveOptionsPage", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const dashboardBreadcrumb = wrapper
@@ -168,6 +184,9 @@ describe("XWizardArchiveOptionsPage", () => {
         props: {
           model: mockModel as XViewModel,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -181,6 +200,9 @@ describe("XWizardArchiveOptionsPage", () => {
       wrapper = mount(XWizardArchiveOptionsPage, {
         props: {
           model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

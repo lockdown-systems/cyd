@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
 import XWizardArchiveOnly from "./XWizardArchiveOnly.vue";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   getBreadcrumbIcon: vi.fn(() => "icon"),
@@ -23,12 +24,20 @@ describe("XWizardArchiveOnly", () => {
 
   describe("basic rendering", () => {
     it("should mount archive only page component", () => {
-      wrapper = mount(XWizardArchiveOnly);
+      wrapper = mount(XWizardArchiveOnly, {
+        global: {
+          plugins: [i18n],
+        },
+      });
       expect(wrapper.exists()).toBe(true);
     });
 
     it("should render BaseWizardPage wrapper", () => {
-      wrapper = mount(XWizardArchiveOnly);
+      wrapper = mount(XWizardArchiveOnly, {
+        global: {
+          plugins: [i18n],
+        },
+      });
       expect(wrapper.findComponent({ name: "BaseWizardPage" }).exists()).toBe(
         true,
       );
@@ -37,7 +46,11 @@ describe("XWizardArchiveOnly", () => {
 
   describe("navigation", () => {
     it("should emit set-state with WizardDashboard when Back clicked", async () => {
-      wrapper = mount(XWizardArchiveOnly);
+      wrapper = mount(XWizardArchiveOnly, {
+        global: {
+          plugins: [i18n],
+        },
+      });
 
       const backButton = wrapper
         .findAll("button")
@@ -53,7 +66,11 @@ describe("XWizardArchiveOnly", () => {
     });
 
     it("should emit set-state with WizardImporting when Continue clicked", async () => {
-      wrapper = mount(XWizardArchiveOnly);
+      wrapper = mount(XWizardArchiveOnly, {
+        global: {
+          plugins: [i18n],
+        },
+      });
 
       const nextButton = wrapper
         .findAll("button")

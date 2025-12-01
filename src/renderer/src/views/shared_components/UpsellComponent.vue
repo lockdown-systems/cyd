@@ -8,10 +8,13 @@ import {
   onUnmounted,
   getCurrentInstance,
 } from "vue";
+import { useI18n } from "vue-i18n";
 import { openURL } from "../../util";
 import type { DeviceInfo } from "../../types";
 import CydAPIClient from "../../../../cyd-api-client";
 import { UserPremiumAPIResponse } from "../../../../cyd-api-client";
+
+const { t } = useI18n();
 
 const apiClient = inject("apiClient") as Ref<CydAPIClient>;
 const deviceInfo = inject("deviceInfo") as Ref<DeviceInfo | null>;
@@ -106,29 +109,41 @@ onUnmounted(async () => {
   <div v-if="!isLoading" class="upsell">
     <div v-if="userPremium">
       <h1 class="text-center">
-        Thanks for supporting
-        <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd" />!
+        {{ t("upsell.thanksForSupporting") }}
+        <img
+          src="/assets/wordmark.svg"
+          class="cyd-wordmark"
+          :alt="t('common.cyd')"
+        />!
       </h1>
       <p class="text-center text-muted small mb-0">
         <template v-if="userHasBusinessSubscription">
-          Cyd is <a href="#" @click="openSourceClicked">open source</a> and made
-          by a
-          <a href="#" @click="collectiveClicked">worker-owned collective</a>.
-          Thanks for using a Premium plan. If you'd like to support us even
-          more, <a href="#" @click="donateClicked">we accept donations</a>.
+          Cyd is
+          <a href="#" @click="openSourceClicked">{{
+            t("upsell.openSource")
+          }}</a>
+          and made by a
+          <a href="#" @click="collectiveClicked">{{ t("upsell.collective") }}</a
+          >. {{ t("upsell.thanksForPremium") }} If you'd like to support us even
+          more, <a href="#" @click="donateClicked">{{ t("upsell.donation") }}</a
+          >.
         </template>
         <template v-else>
-          Cyd is <a href="#" @click="openSourceClicked">open source</a> and made
-          by a
-          <a href="#" @click="collectiveClicked">worker-owned collective</a>.
-          Thanks for using a Premium plan! Would Cyd would be useful for your
-          team? Check out
+          Cyd is
+          <a href="#" @click="openSourceClicked">{{
+            t("upsell.openSource")
+          }}</a>
+          and made by a
+          <a href="#" @click="collectiveClicked">{{ t("upsell.collective") }}</a
+          >. {{ t("upsell.thanksForPremium") }}
+          {{ t("upsell.premiumForTeamsQuestion") }}
           <a
             href="#"
             @click="openURL('https://docs.cyd.social/docs/cyd-for-teams/intro')"
-            >Cyd for Teams</a
-          >. And if you'd like to support us even more,
-          <a href="#" @click="donateClicked">we accept donations</a>.
+            >{{ t("upsell.teamsLink") }}</a
+          >. {{ t("upsell.andIfYouLikeToSupport") }}
+          <a href="#" @click="donateClicked">{{ t("upsell.donation") }}</a
+          >.
         </template>
       </p>
     </div>
@@ -137,16 +152,25 @@ onUnmounted(async () => {
         <div class="row">
           <div class="col-md-4 flex justify-between items-center">
             <h1 class="text-center text-nowrap">
-              Support
-              <img src="/assets/wordmark.svg" class="cyd-wordmark" alt="Cyd" />!
+              {{ t("upsell.support") }}
+              <img
+                src="/assets/wordmark.svg"
+                class="cyd-wordmark"
+                :alt="t('common.cyd')"
+              />!
             </h1>
           </div>
           <div class="col-md-8 flex align-items-start">
             <p class="text-start text-muted small">
-              Cyd is <a href="#" @click="openSourceClicked">open source</a> and
-              made by a
-              <a href="#" @click="collectiveClicked">worker-owned collective</a
-              >. Here are ways to support us:
+              Cyd is
+              <a href="#" @click="openSourceClicked">{{
+                t("upsell.openSource")
+              }}</a>
+              and made by a
+              <a href="#" @click="collectiveClicked">{{
+                t("upsell.collective")
+              }}</a
+              >. {{ t("upsell.waysToSupport") }}
             </p>
           </div>
         </div>
@@ -159,44 +183,45 @@ onUnmounted(async () => {
               class="card premium-card text-center"
               @click="premiumClicked"
             >
-              <div class="card-header">Upgrade to Premium</div>
+              <div class="card-header">{{ t("upsell.upgradeToPremium") }}</div>
               <div class="card-body small">
                 <p>
-                  Unlock features like deleting DMs and migrating tweets to
-                  Bluesky
+                  {{ t("upsell.premiumDescription") }}
                 </p>
                 <p class="fw-bold text-center mb-0 action-text">
                   <template v-if="!userAuthenticated">
-                    Sign in to start
+                    {{ t("upsell.signInToStart") }}
                   </template>
-                  <template v-else> Upgrade to Premium </template>
+                  <template v-else>
+                    {{ t("upsell.upgradeToPremium") }}
+                  </template>
                 </p>
               </div>
             </button>
           </div>
           <div class="col-md-5 upsell-col">
             <button class="card text-center" @click="teamsClicked">
-              <div class="card-header">Cyd for Teams</div>
+              <div class="card-header">{{ t("upsell.cydForTeams") }}</div>
               <div class="card-body small">
                 <p>
-                  Get Cyd Premium for everyone at your organization or company
+                  {{ t("upsell.teamsDescription") }}
                 </p>
                 <p class="fw-bold text-center mb-0 action-text">
                   <template v-if="!userAuthenticated">
-                    Sign in to start
+                    {{ t("upsell.signInToStart") }}
                   </template>
-                  <template v-else> Start a Team </template>
+                  <template v-else> {{ t("upsell.startATeam") }} </template>
                 </p>
               </div>
             </button>
           </div>
           <div class="col-md-5 upsell-col">
             <button class="card text-center" @click="donateClicked">
-              <div class="card-header">Donate</div>
+              <div class="card-header">{{ t("upsell.donate") }}</div>
               <div class="card-body small">
-                <p>Show your support by making a donation!</p>
+                <p>{{ t("upsell.donateDescription") }}</p>
                 <p class="fw-bold text-center mb-0 action-text">
-                  Click to donate
+                  {{ t("upsell.clickToDonate") }}
                 </p>
               </div>
             </button>

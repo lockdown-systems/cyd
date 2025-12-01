@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import XJobStatusComponent from "./XJobStatusComponent.vue";
 import StatusComponent from "../../shared_components/StatusComponent.vue";
 import type { XJob } from "../../../../../shared_types";
+import i18n from "../../../i18n";
 
 describe("XJobStatusComponent", () => {
   beforeEach(() => {
@@ -31,6 +32,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.findComponent(StatusComponent).exists()).toBe(true);
@@ -47,6 +51,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -60,6 +67,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: true,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -75,6 +85,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -88,6 +101,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: false,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -105,6 +121,9 @@ describe("XJobStatusComponent", () => {
         isPaused: true,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -120,6 +139,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: false,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -137,6 +159,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -152,6 +177,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: false,
         clickingEnabled: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -169,6 +197,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -185,6 +216,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -198,6 +232,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: false,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -214,6 +251,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -228,6 +268,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: false,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -244,6 +287,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -259,6 +305,9 @@ describe("XJobStatusComponent", () => {
         isPaused: false,
         clickingEnabled: true,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const statusComponent = wrapper.findComponent(StatusComponent);
@@ -272,6 +321,9 @@ describe("XJobStatusComponent", () => {
         jobs: [],
         isPaused: false,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -290,6 +342,9 @@ describe("XJobStatusComponent", () => {
         jobs,
         isPaused: false,
         clickingEnabled: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XDatabaseStats } from "../../../../../shared_types";
 import { emptyXDatabaseStats } from "../../../../../shared_types";
@@ -7,6 +8,8 @@ import { getBreadcrumbIcon, setJobsType } from "../../../util";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -140,30 +143,30 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: () => emit('setState', State.WizardDashboard),
           icon: getBreadcrumbIcon('dashboard'),
         },
         {
-          label: 'Local Database',
+          label: t('review.localDatabase'),
           action: backClicked,
           icon: getBreadcrumbIcon('database'),
         },
       ],
-      label: 'Archive Options',
+      label: t('wizard.archiveOptions'),
       icon: getBreadcrumbIcon('build'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Local Database',
+          label: t('wizard.backToLocalDatabase'),
           action: backClicked,
           disabled: isLoading,
         },
       ],
       nextButtons: [
         {
-          label: 'Continue to Review',
+          label: t('wizard.continueToReview'),
           action: nextClicked,
           disabled: isLoading || !hasValidSelection,
         },
@@ -173,10 +176,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Archive options</h2>
+          <h2>{{ t("wizard.archiveOptionsTitle") }}</h2>
           <p class="text-muted">
-            You can save an HTML version of each tweet, and you can save your
-            bookmarks and your direct messages.
+            {{ t("wizard.archiveOptionsDescription") }}
           </p>
         </div>
 
@@ -190,9 +192,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveTweetsHTML"
-                >Save an HTML version of each tweet</label
-              >
+              <label class="form-check-label" for="archiveTweetsHTML">{{
+                t("wizard.saveHTMLVersionOfEachTweet")
+              }}</label>
             </div>
             <div class="indent">
               <small
@@ -200,22 +202,20 @@ onMounted(async () => {
                 class="form-text text-muted"
               >
                 <i class="fa-solid fa-triangle-exclamation" />
-                Your local database doesn't have any tweets yet. You need to
-                import your X archive or build your database from scratch before
-                you can save HTML versions of your tweets.
+                {{ t("wizard.databaseNoTweetsWarning") }}
               </small>
               <small v-else class="form-text text-muted">
-                Make an HTML archive of each tweet, including its replies, which
-                is good for taking screenshots
-                <em>(takes much longer than just deleting them)</em>
+                {{ t("wizard.saveHTMLVersionDescription") }}
+                <em>{{ t("wizard.takesMuchLonger") }}</em>
               </small>
             </div>
             <div v-if="deleteTweetsCountNotArchived > 0" class="indent">
               <small>
-                <i class="fa-solid fa-circle-info" />
-                You have
-                <strong>{{ deleteTweetsCountNotArchived }} tweets</strong> that
-                haven't been archived yet
+                <i18n-t keypath="wizard.tweetsNotArchivedYet">
+                  <template #strong>
+                    <strong>{{ deleteTweetsCountNotArchived }} tweets</strong>
+                  </template>
+                </i18n-t>
               </small>
             </div>
           </div>
@@ -228,9 +228,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveBookmarks"
-                >Save my bookmarks</label
-              >
+              <label class="form-check-label" for="archiveBookmarks">{{
+                t("wizard.saveMyBookmarks")
+              }}</label>
             </div>
           </div>
           <div class="mb-3">
@@ -242,9 +242,9 @@ onMounted(async () => {
                 class="form-check-input"
                 @change="updateProceedState"
               />
-              <label class="form-check-label" for="archiveDMs"
-                >Save my direct messages</label
-              >
+              <label class="form-check-label" for="archiveDMs">{{
+                t("wizard.saveMyDMs")
+              }}</label>
             </div>
           </div>
         </form>

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, RunJobsState } from "../../../view_models/XViewModel";
 import { formattedDatetime } from "../../../util";
 
 import { XTweetItem } from "../../../../../shared_types";
+
+const { t } = useI18n();
 
 // Props
 const props = defineProps<{
@@ -66,7 +69,7 @@ const getImageClass = (_index: number) => {
         <p class="tweet-text" v-html="tweetItem.t" />
       </div>
       <div v-else class="mt-4 fs-3">
-        <p>Tweet ID: {{ tweetItem.id }}</p>
+        <p>{{ t("ui.tweetId", { id: tweetItem.id }) }}</p>
       </div>
       <div v-if="imageDataURIs.length > 0" class="mt-1 row images-container">
         <div
@@ -82,7 +85,7 @@ const getImageClass = (_index: number) => {
           <div
             class="video-placeholder d-flex justify-content-center align-items-center"
           >
-            <span>Video Placeholder</span>
+            <span>{{ t("ui.videoPlaceholder") }}</span>
           </div>
         </div>
       </div>
@@ -92,11 +95,11 @@ const getImageClass = (_index: number) => {
       >
         <div v-if="tweetItem.r">
           <i class="fa-solid fa-retweet" />
-          {{ tweetItem.r.toLocaleString() }} retweets
+          {{ t("ui.retweets", { count: tweetItem.r.toLocaleString() }) }}
         </div>
         <div v-if="tweetItem.l">
           <i class="fa-solid fa-heart" />
-          {{ tweetItem.l.toLocaleString() }} likes
+          {{ t("ui.likes", { count: tweetItem.l.toLocaleString() }) }}
         </div>
       </div>
     </div>

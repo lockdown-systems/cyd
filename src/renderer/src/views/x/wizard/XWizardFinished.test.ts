@@ -4,6 +4,7 @@ import XWizardFinished from "./XWizardFinished.vue";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import type { XAccount } from "../../../../../shared_types";
 import { createMockAccount, mockElectronAPI } from "../../../test_util";
+import i18n from "../../../i18n";
 
 vi.mock("../../../util", () => ({
   openURL: vi.fn(),
@@ -103,10 +104,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -132,10 +134,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -156,10 +159,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -187,10 +191,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -218,10 +223,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -250,10 +256,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -286,10 +293,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -313,10 +321,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -346,10 +355,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -383,10 +393,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -407,10 +418,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });
@@ -444,10 +456,11 @@ describe("XWizardFinished", () => {
           failureStateIndexLikes_FailedToRetryAfterRateLimit: true,
         },
         global: {
+          plugins: [i18n],
           config: {
             globalProperties: {
               emitter: mockEmitter,
-            },
+            } as Record<string, unknown>,
           },
         },
       });

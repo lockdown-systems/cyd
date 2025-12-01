@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import AccountHeader from "./AccountHeader.vue";
 import { createMockAccount, createMockXAccount } from "../../test_util";
+import i18n from "../../i18n";
 
 describe("AccountHeader", () => {
   beforeEach(() => {
@@ -15,6 +16,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -29,6 +33,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -46,6 +53,9 @@ describe("AccountHeader", () => {
         account,
         showRefreshButton: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const img = wrapper.find(".profile-image img");
@@ -61,6 +71,9 @@ describe("AccountHeader", () => {
         account,
         showRefreshButton: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".logo i").exists()).toBe(true);
@@ -72,6 +85,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -85,6 +101,9 @@ describe("AccountHeader", () => {
         account,
         showRefreshButton: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".refresh-btn").exists()).toBe(false);
@@ -97,6 +116,9 @@ describe("AccountHeader", () => {
         account,
         showRefreshButton: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".remove-btn").exists()).toBe(true);
@@ -108,6 +130,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -126,6 +151,9 @@ describe("AccountHeader", () => {
         account,
         showRefreshButton: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     const removeBtn = wrapper.find(".remove-btn");
@@ -142,6 +170,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -162,6 +193,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: true,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 
@@ -187,6 +221,9 @@ describe("AccountHeader", () => {
         account,
         showRefreshButton: false,
       },
+      global: {
+        plugins: [i18n],
+      },
     });
 
     expect(wrapper.find(".info-popup-remove").exists()).toBe(false);
@@ -206,6 +243,9 @@ describe("AccountHeader", () => {
       props: {
         account,
         showRefreshButton: false,
+      },
+      global: {
+        plugins: [i18n],
       },
     });
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 defineProps({
   height: {
@@ -102,7 +105,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div>
-    <img :src="imageUrl" :height="height" alt="Cyd" />
+    <img :src="imageUrl" :height="height" :alt="t('common.cyd')" />
   </div>
 </template>
 

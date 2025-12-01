@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import XProgressComponent from "./XProgressComponent.vue";
 import type { XProgress } from "../../../../../shared_types";
+import i18n from "../../../i18n";
 
 interface MockProgress extends Partial<XProgress> {
   currentJob: string;
@@ -15,6 +16,9 @@ describe("XProgressComponent", () => {
           progress: null,
           rateLimitInfo: null,
           accountID: 1,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -30,6 +34,9 @@ describe("XProgressComponent", () => {
           rateLimitInfo: null,
           accountID: 1,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,6 +50,9 @@ describe("XProgressComponent", () => {
           progress: null,
           rateLimitInfo: null,
           accountID: 1,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -58,6 +68,9 @@ describe("XProgressComponent", () => {
           rateLimitInfo: null,
           accountID: 1,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +84,9 @@ describe("XProgressComponent", () => {
           progress: null,
           rateLimitInfo: null,
           accountID: 1,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -88,6 +104,9 @@ describe("XProgressComponent", () => {
           rateLimitInfo: null,
           accountID: 1,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".progress-wrapper").exists()).toBe(false);
@@ -103,6 +122,9 @@ describe("XProgressComponent", () => {
           progress: mockProgress as XProgress,
           rateLimitInfo: null,
           accountID: 1,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -126,6 +148,9 @@ describe("XProgressComponent", () => {
           rateLimitInfo: null,
           accountID: 1,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.text()).toContain("1,234 tweets");
@@ -147,6 +172,9 @@ describe("XProgressComponent", () => {
           progress: mockProgress as XProgress,
           rateLimitInfo: null,
           accountID: 1,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

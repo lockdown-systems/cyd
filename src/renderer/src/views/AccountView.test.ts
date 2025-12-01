@@ -3,6 +3,7 @@ import { mount, VueWrapper } from "@vue/test-utils";
 import AccountView from "./AccountView.vue";
 import { mockElectronAPI, createMockAccount } from "../test_util";
 import type { Account } from "../../../shared_types";
+import i18n from "../i18n";
 
 // Mock child components
 vi.mock("./shared_components/CydAvatarComponent.vue", () => ({
@@ -74,6 +75,9 @@ describe("AccountView", () => {
         props: {
           account: unknownAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -88,6 +92,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: unknownAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -105,6 +112,9 @@ describe("AccountView", () => {
         props: {
           account: unknownAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -121,6 +131,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: unknownAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -151,6 +164,9 @@ describe("AccountView", () => {
         props: {
           account: unknownAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -167,6 +183,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: unknownAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -189,6 +208,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: unknownAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -219,6 +241,9 @@ describe("AccountView", () => {
         props: {
           account: unknownAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -236,6 +261,9 @@ describe("AccountView", () => {
         props: {
           account: unknownAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -252,6 +280,9 @@ describe("AccountView", () => {
         props: {
           account: xAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -265,6 +296,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: xAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -280,6 +314,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: xAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -300,6 +337,9 @@ describe("AccountView", () => {
         props: {
           account: xAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -319,6 +359,9 @@ describe("AccountView", () => {
         props: {
           account: facebookAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -334,6 +377,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: facebookAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -355,6 +401,9 @@ describe("AccountView", () => {
         props: {
           account: xAccount as Account,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -373,6 +422,9 @@ describe("AccountView", () => {
       wrapper = mount(AccountView, {
         props: {
           account: badAccount as Account,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

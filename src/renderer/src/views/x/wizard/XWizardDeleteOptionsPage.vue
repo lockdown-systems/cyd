@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { XViewModel, State } from "../../../view_models/XViewModel";
 import { xHasSomeData } from "../../../util_x";
 import { getBreadcrumbIcon, openURL, setJobsType } from "../../../util";
@@ -7,6 +8,8 @@ import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
+
+const { t } = useI18n();
 
 // Props
 interface Props extends StandardWizardPageProps {
@@ -43,7 +46,9 @@ const setProceedEnabled = (enabled: boolean) => {
 // Show more
 const deleteTweetsShowMore = ref(false);
 const deleteTweetsShowMoreButtonText = computed(() =>
-  deleteTweetsShowMore.value ? "Hide more options" : "Show more options",
+  deleteTweetsShowMore.value
+    ? t("wizard.hideMoreOptions")
+    : t("wizard.showMoreOptions"),
 );
 const deleteTweetsShowMoreClicked = () => {
   deleteTweetsShowMore.value = !deleteTweetsShowMore.value;
@@ -51,7 +56,9 @@ const deleteTweetsShowMoreClicked = () => {
 
 const deleteRetweetsShowMore = ref(false);
 const deleteRetweetsShowMoreButtonText = computed(() =>
-  deleteRetweetsShowMore.value ? "Hide more options" : "Show more options",
+  deleteRetweetsShowMore.value
+    ? t("wizard.hideMoreOptions")
+    : t("wizard.showMoreOptions"),
 );
 const deleteRetweetsShowMoreClicked = () => {
   deleteRetweetsShowMore.value = !deleteRetweetsShowMore.value;
@@ -225,25 +232,25 @@ onMounted(async () => {
     :breadcrumb-props="{
       buttons: [
         {
-          label: 'Dashboard',
+          label: t('wizard.dashboard'),
           action: backClicked,
           icon: getBreadcrumbIcon('dashboard'),
         },
       ],
-      label: 'Delete Options',
+      label: t('review.deleteOptions'),
       icon: getBreadcrumbIcon('delete'),
     }"
     :button-props="{
       backButtons: [
         {
-          label: 'Back to Dashboard',
+          label: t('wizard.backToDashboard'),
           action: backClicked,
           disabled: isLoading,
         },
       ],
       nextButtons: [
         {
-          label: 'Continue to Review',
+          label: t('wizard.continueToReview'),
           action: nextClicked,
           disabled: isLoading || !hasValidSelection,
         },
@@ -253,9 +260,9 @@ onMounted(async () => {
     <template #content>
       <div class="wizard-scroll-content">
         <div class="mb-4">
-          <h2>Delete from X</h2>
+          <h2>{{ t("wizard.deleteFromX") }}</h2>
           <p class="text-muted">
-            Delete your data from X, except for what you want to keep.
+            {{ t("wizard.deleteFromXDescription") }}
           </p>
         </div>
 
@@ -263,7 +270,7 @@ onMounted(async () => {
           :account-i-d="model.account.id"
           :show-button="true"
           :show-no-data-warning="true"
-          :button-text="'Build Your Local Database'"
+          :button-text="t('facebook.buildYourLocalDatabaseButton')"
           :button-state="State.WizardDatabase"
           @set-state="emit('setState', $event)"
         />
@@ -285,9 +292,11 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteTweets"
                 >
-                  Delete my tweets
+                  {{ t("wizard.deleteMyTweets") }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deleteTweetsShowMoreClicked"
@@ -311,7 +320,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteTweetsDaysOldEnabled"
                     >
-                      older than
+                      {{ t("wizard.olderThan") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -319,7 +328,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteTweetsDaysOld"
                     >
-                      days
+                      {{ t("wizard.days") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -334,7 +343,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">days</span>
+                        <span class="input-group-text small">{{
+                          t("wizard.days")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -342,7 +353,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
               <div class="d-flex align-items-center justify-content-between">
@@ -359,7 +370,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteTweetsRetweetsThresholdEnabled"
                     >
-                      unless they have at least
+                      {{ t("wizard.unlessTheyHaveAtLeast") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -367,7 +378,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteTweetsRetweetsThreshold"
                     >
-                      retweets
+                      {{ t("review.retweets") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -382,7 +393,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">retweets</span>
+                        <span class="input-group-text small">{{
+                          t("review.retweets")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -390,7 +403,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
               <div class="d-flex align-items-center justify-content-between">
@@ -407,7 +420,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteTweetsLikesThresholdEnabled"
                     >
-                      or at least
+                      {{ t("wizard.orAtLeast") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -415,7 +428,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteTweetsLikesThreshold"
                     >
-                      likes
+                      {{ t("review.likes") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -428,7 +441,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">likes</span>
+                        <span class="input-group-text small">{{
+                          t("review.likes")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -436,7 +451,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>
@@ -458,9 +473,11 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteRetweets"
                 >
-                  Delete my retweets
+                  {{ t("wizard.deleteMyRetweets") }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
                 <button
                   class="btn btn-sm btn-link"
                   @click="deleteRetweetsShowMoreClicked"
@@ -484,7 +501,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 text-nowrap"
                       for="deleteRetweetsDaysOldEnabled"
                     >
-                      older than
+                      {{ t("wizard.olderThan") }}
                     </label>
                   </div>
                   <div class="d-flex align-items-center">
@@ -492,7 +509,7 @@ onMounted(async () => {
                       class="form-check-label mr-1 sr-only"
                       for="deleteRetweetsDaysOld"
                     >
-                      days
+                      {{ t("wizard.days") }}
                     </label>
                     <div class="input-group flex-nowrap">
                       <input
@@ -505,7 +522,9 @@ onMounted(async () => {
                         "
                       />
                       <div class="input-group-append">
-                        <span class="input-group-text small">days</span>
+                        <span class="input-group-text small">{{
+                          t("wizard.days")
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -513,7 +532,7 @@ onMounted(async () => {
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>
@@ -534,14 +553,16 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="unfollowEveryone"
                 >
-                  Unfollow everyone
+                  {{ t("premium.unfollowEveryone") }}
                 </label>
-                <span class="ms-2 text-muted">(recommended)</span>
+                <span class="ms-2 text-muted">{{
+                  t("wizard.recommended")
+                }}</span>
               </div>
               <span
                 v-if="!userAuthenticated || !userPremium"
                 class="premium badge badge-primary"
-                >Premium</span
+                >{{ t("wizard.premium") }}</span
               >
             </div>
           </div>
@@ -562,29 +583,27 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteLikes"
                 >
-                  Delete my likes
+                  {{ t("wizard.deleteMyLikes") }}
                 </label>
               </div>
               <div class="d-flex align-items-center flex-nowrap">
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>
             <div class="indent">
               <small class="form-text text-muted">
-                Likes are only visible to you on X. Cyd will delete all of the
-                likes it can, but it can't delete
-                <em>ghost likes</em>.
+                {{ t("wizard.likesDescription") }}
                 <a
                   href="#"
                   @click="
                     openURL('https://docs.cyd.social/docs/x/tips/ghost-likes')
                   "
                 >
-                  Read more</a
+                  {{ t("wizard.readMore") }}</a
                 >.
               </small>
             </div>
@@ -605,20 +624,20 @@ onMounted(async () => {
                   class="form-check-label mr-1 text-nowrap"
                   for="deleteBookmarks"
                 >
-                  Delete my bookmarks
+                  {{ t("wizard.deleteMyBookmarks") }}
                 </label>
               </div>
               <div class="d-flex align-items-center flex-nowrap">
                 <span
                   v-if="!userAuthenticated || !userPremium"
                   class="premium badge badge-primary"
-                  >Premium</span
+                  >{{ t("wizard.premium") }}</span
                 >
               </div>
             </div>
             <div class="indent">
               <small class="form-text text-muted">
-                Bookmarks are only visible to you on X.
+                {{ t("wizard.bookmarksDescription") }}
               </small>
             </div>
           </div>
@@ -639,21 +658,19 @@ onMounted(async () => {
                     class="form-check-label mr-1 text-nowrap"
                     for="deleteDMs"
                   >
-                    Delete my direct messages
+                    {{ t("wizard.deleteMyDMs") }}
                   </label>
                 </div>
               </div>
               <span
                 v-if="!userAuthenticated || !userPremium"
                 class="premium badge badge-primary"
-                >Premium</span
+                >{{ t("wizard.premium") }}</span
               >
             </div>
             <div class="indent">
               <small class="form-text text-muted">
-                This will only delete DMs from your account. The people you've
-                sent messages to will still have them unless they delete their
-                DMs as well.
+                {{ t("wizard.dmsDescription") }}
               </small>
             </div>
           </div>

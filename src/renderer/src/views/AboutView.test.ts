@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
 import AboutView from "./AboutView.vue";
 import { mockElectronAPI } from "../test_util";
+import i18n from "../i18n";
 
 describe("AboutView", () => {
   let wrapper: VueWrapper;
@@ -28,6 +29,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -41,6 +45,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: false,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.find(".d-flex.flex-column").exists()).toBe(false);
@@ -50,6 +57,9 @@ describe("AboutView", () => {
       wrapper = mount(AboutView, {
         props: {
           shouldShow: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -67,6 +77,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -79,6 +92,9 @@ describe("AboutView", () => {
       wrapper = mount(AboutView, {
         props: {
           shouldShow: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -96,6 +112,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -108,6 +127,9 @@ describe("AboutView", () => {
       wrapper = mount(AboutView, {
         props: {
           shouldShow: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -124,6 +146,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -139,6 +164,9 @@ describe("AboutView", () => {
       wrapper = mount(AboutView, {
         props: {
           shouldShow: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -162,6 +190,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -184,6 +215,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -205,6 +239,9 @@ describe("AboutView", () => {
       wrapper = mount(AboutView, {
         props: {
           shouldShow: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -230,6 +267,9 @@ describe("AboutView", () => {
         props: {
           shouldShow: true,
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -242,6 +282,9 @@ describe("AboutView", () => {
       wrapper = mount(AboutView, {
         props: {
           shouldShow: true,
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 

@@ -5,6 +5,7 @@ import { mount, VueWrapper } from "@vue/test-utils";
 import SignInModal from "./SignInModal.vue";
 import CydAPIClient from "../../../cyd-api-client";
 import { mockElectronAPI } from "../test_util";
+import i18n from "../i18n";
 
 // Define a type for the component instance that includes the methods we need to access in tests
 type SignInModalInstance = InstanceType<typeof SignInModal> & {
@@ -39,6 +40,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -58,6 +60,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -75,6 +78,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -108,6 +112,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -148,6 +153,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -196,6 +202,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -295,6 +302,7 @@ describe("SignInModal", () => {
             },
           },
         },
+        plugins: [i18n],
       },
     });
 
@@ -363,6 +371,7 @@ describe("SignInModal", () => {
           }),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 
@@ -421,6 +430,7 @@ describe("SignInModal", () => {
           deviceInfo: ref(null),
           refreshDeviceInfo: vi.fn(),
         },
+        plugins: [i18n],
       },
     });
 

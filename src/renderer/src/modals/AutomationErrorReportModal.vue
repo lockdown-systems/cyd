@@ -7,6 +7,7 @@ import {
   Ref,
   getCurrentInstance,
 } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   AutomationErrorTypeToMessage,
   AutomationErrorType,
@@ -16,6 +17,8 @@ import CydAPIClient from "../../../cyd-api-client";
 import { PostAutomationErrorReportAPIRequest } from "../../../cyd-api-client";
 import Modal from "bootstrap/js/dist/modal";
 import { ErrorReport } from "../../../shared_types";
+
+const { t } = useI18n();
 
 const emit = defineEmits(["hide"]);
 const hide = () => {
@@ -78,17 +81,15 @@ const onUserDescriptionChange = (_event: Event) => {
   }
 };
 
-const showDetailsYesText = "Hide information included in report";
-const showDetailsNoText = "Show information included in report";
-const showDetailsLabel = ref(showDetailsNoText);
+const showDetailsLabel = ref(t("errorReport.showInformation"));
 const showDetails = ref(false);
 
 const toggleShowDetails = () => {
   showDetails.value = !showDetails.value;
   if (showDetails.value) {
-    showDetailsLabel.value = showDetailsYesText;
+    showDetailsLabel.value = t("errorReport.hideInformation");
   } else {
-    showDetailsLabel.value = showDetailsNoText;
+    showDetailsLabel.value = t("errorReport.showInformation");
   }
 };
 
@@ -110,9 +111,9 @@ const shouldRetry = async () => {
 
   if (
     await window.electron.showQuestion(
-      "Do you want to try this step again, or cancel and go back to the dashboard?",
-      "Retry",
-      "Cancel",
+      t("errorReport.retryQuestion"),
+      t("errorReport.retry"),
+      t("common.cancel"),
     )
   ) {
     console.log("emitting:", `automation-error-${accountID}-retry`);
@@ -130,9 +131,7 @@ const submitReport = async () => {
       navigator.userAgent,
     );
 
-    await window.electron.showError(
-      "Well this is awkward. I don't seem to have details about your error report. This shouldn't happen.",
-    );
+    await window.electron.showError(t("errorReport.error.noDetails"));
     hide();
     await shouldRetry();
     return;
@@ -185,9 +184,7 @@ const submitReport = async () => {
         "Error posting automation error report:",
         postAutomationErrorReportResp.message,
       );
-      await window.electron.showError(
-        "Well this is awkward. There's an error submitting your automation error report.",
-      );
+      await window.electron.showError(t("errorReport.error.submissionError"));
     } else {
       await window.electron.trackEvent(
         PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED,
@@ -293,7 +290,7 @@ onUnmounted(() => {
     >
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title">Submit an error report</h4>
+          <h4 class="modal-title">{{ t("errorReport.title") }}</h4>
           <button
             type="button"
             class="btn-close"
@@ -309,14 +306,18 @@ onUnmounted(() => {
                 {{ errorReportType(0) }}
               </h5>
               <h5 v-else>
-                {{ errorReports.length.toLocaleString() }} errors occured
+                {{
+                  t("errorReport.errorsOccurred", {
+                    count: errorReports.length.toLocaleString(),
+                  })
+                }}
               </h5>
               <div class="mb-3">
                 <textarea
                   v-model="userDescription"
                   class="form-control w-100"
-                  placeholder="Describe what happened (optional)"
-                  aria-label="Describe what happened"
+                  :placeholder="t('errorReport.describePlaceholder')"
+                  :aria-label="t('errorReport.describeLabel')"
                   @input="onUserDescriptionChange"
                 />
               </div>
@@ -328,13 +329,12 @@ onUnmounted(() => {
                   class="form-check-input"
                 />
                 <label class="form-check-label" for="includeSensitiveData">
-                  <strong>Send extra details.</strong> This includes your
-                  username, a screenshot of the embedded browser, and other data
-                  that could help debug this problem.
+                  <strong>{{ t("errorReport.sendExtraDetails") }}</strong>
+                  {{ t("errorReport.sendExtraDetailsDescription") }}
                 </label>
               </div>
               <p>
-                The more info you provide, the easier it will be for us to fix.
+                {{ t("errorReport.moreInfoHelpful") }}
               </p>
               <div>
                 <p>
@@ -357,26 +357,35 @@ onUnmounted(() => {
                       v-if="errorReports.length > 1"
                       class="text-center fw-bold"
                     >
-                      Error {{ i + 1 }} of {{ errorReports.length }}
+                      {{
+                        t("errorReport.errorOf", {
+                          current: i + 1,
+                          total: errorReports.length,
+                        })
+                      }}
                     </div>
                     <ul class="details">
                       <li>
-                        <label>Error type:</label>
+                        <label>{{ t("errorReport.errorType") }}</label>
                         <span>{{ errorReportType(i) }}</span>
                       </li>
                       <li>
-                        <label>App version:</label>
+                        <label>{{ t("errorReport.appVersion") }}</label>
                         <span>
-                          Cyd {{ errorReport.appVersion }} for
-                          {{ errorReport.clientPlatform }}
+                          {{
+                            t("errorReport.appVersionFor", {
+                              version: errorReport.appVersion,
+                              platform: errorReport.clientPlatform,
+                            })
+                          }}
                         </span>
                       </li>
                       <li>
-                        <label>Account type:</label>
+                        <label>{{ t("errorReport.accountType") }}</label>
                         <span>{{ errorReport.accountType }}</span>
                       </li>
                       <li v-if="includeSensitiveData && errorReport !== null">
-                        <label>Username:</label>
+                        <label>{{ t("errorReport.username") }}</label>
                         <span>{{ errorReport.accountUsername }}</span>
                       </li>
                       <li v-if="errorReportData(i) != ''">
