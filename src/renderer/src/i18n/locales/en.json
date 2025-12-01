@@ -247,6 +247,7 @@
     "backToLocalDatabase": "Back to Local Database",
     "backToDashboard": "Back to Dashboard",
     "continueToReview": "Continue to Review",
+    "unknownReviewType": "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
     "continueToImportArchive": "Continue to Import Archive",
     "continueToImportXArchiveButton": "Continue to Import X Archive",
     "continueToBuildOptions": "Continue to Build Options",
@@ -386,7 +387,6 @@
     "backToStart": "Back to start",
     "removeAccount": "Remove account",
     "xDescription": "Formerly Twitter, owned by billionaire Elon Musk",
-    "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg",
     "blueskyDescription": "Open source social media platform based on AT Protocol"
   },
   "review": {
@@ -457,32 +457,6 @@
     "backupMoreData": "Backup More Data from X",
     "goToDashboard": "Go to Dashboard",
     "failedToGetAccountDataPath": "Failed to get account data path for archive-only account"
-  },
-  "facebook": {
-    "deleteFromFacebook": "Delete from Facebook",
-    "deleteFromFacebookDescription": "Delete your data from Facebook, except for what you want to keep.",
-    "deleteOptions": "Delete Options",
-    "backToImportOrBuild": "Back to Import or Build Database",
-    "continueToReview": "Continue to Review (NOT IMPL YET)",
-    "reviewChoices": "Review your choices",
-    "buildLocalDatabase": "Build a local database",
-    "savePosts": "Save posts",
-    "savePostsHTML": "Save HTML versions of posts",
-    "backToBuildOptions": "Back to Build Options",
-    "buildDatabase": "Build Database",
-    "buildOptions": "Build Options",
-    "unknownReviewType": "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
-    "buildYourLocalDatabase": "Build your local database",
-    "buildYourLocalDatabaseDescription": "You can save posts.",
-    "saveMyPosts": "Save my posts",
-    "saveHTMLVersionOfEachPost": "Save an HTML version of each post",
-    "saveHTMLVersionOfEachPostDescription": "Make an HTML archive of each post, including its comments, which is good for taking screenshots",
-    "deleteMyPosts": "Delete my posts",
-    "deleteMyReposts": "Delete my reposts",
-    "buildYourLocalDatabaseButton": "Build Your Local Database",
-    "youJustSaved": "You just saved:",
-    "cydCanUnfriendEveryone": "Cyd can unfriend everyone right away",
-    "needImportOrBuildToDelete": "You'll need to import or build your database to delete your Facebook posts"
   },
   "tabs": {
     "cannotSignOutWithoutDeviceInfo": "Cannot sign out without device info",

@@ -17,10 +17,6 @@ import {
   XDeleteReviewStats,
   XImportArchiveResponse,
   XMigrateTweetCounts,
-  // Facebook
-  FacebookJob,
-  FacebookProgress,
-  FacebookDatabaseStats,
   XAccount,
 } from "./shared_types";
 
@@ -484,64 +480,6 @@ const electronAPI = {
     },
     initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
       return ipcRenderer.invoke("X:initArchiveOnlyMode", accountID);
-    },
-  },
-  Facebook: {
-    resetProgress: (accountID: number): Promise<FacebookProgress> => {
-      return ipcRenderer.invoke("Facebook:resetProgress", accountID);
-    },
-    createJobs: (
-      accountID: number,
-      jobTypes: string[],
-    ): Promise<FacebookJob[]> => {
-      return ipcRenderer.invoke("Facebook:createJobs", accountID, jobTypes);
-    },
-    updateJob: (accountID: number, jobJSON: string) => {
-      ipcRenderer.invoke("Facebook:updateJob", accountID, jobJSON);
-    },
-    archiveBuild: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("Facebook:archiveBuild", accountID);
-    },
-    syncProgress: (accountID: number, progressJSON: string) => {
-      ipcRenderer.invoke("Facebook:syncProgress", accountID, progressJSON);
-    },
-    getProgress: (accountID: number): Promise<FacebookProgress> => {
-      return ipcRenderer.invoke("Facebook:getProgress", accountID);
-    },
-    getCookie: (accountID: number, name: string): Promise<string | null> => {
-      return ipcRenderer.invoke("Facebook:getCookie", accountID, name);
-    },
-    getProfileImageDataURI: (
-      accountID: number,
-      profilePictureURI: string,
-    ): Promise<string> => {
-      return ipcRenderer.invoke(
-        "Facebook:getProfileImageDataURI",
-        accountID,
-        profilePictureURI,
-      );
-    },
-    getConfig: (accountID: number, key: string): Promise<string | null> => {
-      return ipcRenderer.invoke("Facebook:getConfig", accountID, key);
-    },
-    setConfig: (
-      accountID: number,
-      key: string,
-      value: string,
-    ): Promise<void> => {
-      return ipcRenderer.invoke("Facebook:setConfig", accountID, key, value);
-    },
-    indexStart: (accountID: number) => {
-      ipcRenderer.invoke("Facebook:indexStart", accountID);
-    },
-    indexStop: (accountID: number) => {
-      ipcRenderer.invoke("Facebook:indexStop", accountID);
-    },
-    savePosts: (accountID: number): Promise<FacebookProgress> => {
-      return ipcRenderer.invoke("Facebook:savePosts", accountID);
-    },
-    getDatabaseStats: (accountID: number): Promise<FacebookDatabaseStats> => {
-      return ipcRenderer.invoke("Facebook:getDatabaseStats", accountID);
     },
   },
 };

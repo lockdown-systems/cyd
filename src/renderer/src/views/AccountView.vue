@@ -9,7 +9,6 @@ import { getAccountRunning, setAccountRunning } from "../util";
 import CydAvatarComponent from "./shared_components/CydAvatarComponent.vue";
 
 import XView from "./x/XView.vue";
-import FacebookView from "./facebook/FacebookView.vue";
 
 const { t } = useI18n();
 
@@ -23,7 +22,6 @@ const emit = defineEmits<{
 }>();
 
 // Feature flags
-const featureFacebook = ref(false);
 const blueskyFeature = ref(false);
 
 const isRefreshing = ref(false);
@@ -41,7 +39,6 @@ const accountClicked = (accountType: string) => {
 };
 
 onMounted(async () => {
-  featureFacebook.value = await window.electron.isFeatureEnabled("facebook");
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
 
   // Check if this account was already running and got interrupted
@@ -87,30 +84,6 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div v-if="featureFacebook" class="col-12 col-md-6">
-            <div
-              class="card m-2 select-account-facebook"
-              @click="accountClicked('Facebook')"
-            >
-              <div class="card-body d-flex align-items-center">
-                <div class="logo mr-3">
-                  <i :class="getAccountIcon('Facebook')" />
-                </div>
-                <div class="description">
-                  <div class="name">
-                    Facebook
-                    <span class="alpha badge badge-primary">{{
-                      t("common.alpha")
-                    }}</span>
-                  </div>
-                  <small class="info text-muted">
-                    {{ t("account.facebookDescription") }}
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div v-if="blueskyFeature" class="col-12 col-md-6">
             <div
               class="card m-2 select-account-bluesky"
@@ -142,14 +115,6 @@ onMounted(async () => {
 
     <template v-else-if="account.type == 'X'">
       <XView
-        :account="account"
-        @on-refresh-clicked="refresh"
-        @on-remove-clicked="emit('onRemoveClicked')"
-      />
-    </template>
-
-    <template v-else-if="account.type == 'Facebook'">
-      <FacebookView
         :account="account"
         @on-refresh-clicked="refresh"
         @on-remove-clicked="emit('onRemoveClicked')"

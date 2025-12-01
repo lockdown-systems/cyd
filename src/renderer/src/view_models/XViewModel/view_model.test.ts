@@ -170,7 +170,6 @@ describe("XViewModel", () => {
         tombstoneLockAccount: false,
       },
       blueskyAccount: null,
-      facebookAccount: null,
       uuid: "test-uuid-123",
     };
 

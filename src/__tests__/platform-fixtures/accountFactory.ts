@@ -10,7 +10,7 @@ import {
 import { getSettingsPath } from "../../util";
 import type { Account } from "../../shared_types";
 
-export type PlatformAccountType = "X" | "Bluesky" | "Facebook";
+export type PlatformAccountType = "X" | "Bluesky";
 
 export interface TestAccountOptions {
   type: PlatformAccountType;
@@ -46,12 +46,6 @@ export const createTestAccount = (
       if (account.blueskyAccount) {
         account.blueskyAccount.username =
           options.username ?? account.blueskyAccount.username ?? "test";
-      }
-      break;
-    case "Facebook":
-      if (account.facebookAccount) {
-        account.facebookAccount.name =
-          options.username ?? account.facebookAccount.name ?? "test";
       }
       break;
   }

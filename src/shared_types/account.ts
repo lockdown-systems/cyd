@@ -4,7 +4,6 @@ export type Account = {
   sortOrder: number;
   xAccount: XAccount | null;
   blueskyAccount: BlueskyAccount | null;
-  facebookAccount: FacebookAccount | null;
   uuid: string;
 };
 
@@ -85,27 +84,4 @@ export type BlueskyAccount = {
   followersCount: number;
   postsCount: number;
   likesCount: number;
-};
-
-export type FacebookAccount = {
-  id: number;
-  createdAt: Date;
-  updatedAt: Date;
-  accessedAt: Date;
-  accountID: string;
-  name: string;
-  profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  archiveMyData: boolean;
-  savePosts: boolean;
-  savePostsHTML: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsReactsThresholdEnabled: boolean;
-  deletePostsReactsThreshold: number;
-  deleteReposts: boolean;
-  deleteRepostsDaysOldEnabled: boolean;
-  deleteRepostsDaysOld: number;
 };

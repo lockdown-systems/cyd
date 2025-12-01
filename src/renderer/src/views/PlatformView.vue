@@ -2,13 +2,13 @@
 /**
  * PlatformView.vue - Generic Platform View Component
  *
- * This is a generic, reusable component that works for any platform (X, Facebook, etc.).
+ * This is a generic, reusable component that works for any platform (X, etc.).
  * It uses the 3-piece architecture:
  * 1. usePlatformView composable - handles shared logic
  * 2. PlatformConfig - provides platform-specific configuration
  * 3. PlatformView (this component) - renders the generic template
  *
- * Platform-specific views (XView, FacebookView) are thin wrappers that:
+ * Platform-specific views (like XView) are thin wrappers that:
  * - Instantiate the platform ViewModel
  * - Handle platform-specific state and events
  * - Render this component with platform config

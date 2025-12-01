@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { FacebookJob } from "../../../../shared_types";
 import type { XJob } from "../../../../shared_types";
 import RunningIcon from "./RunningIcon.vue";
 
 const { t } = useI18n();
 
 defineProps<{
-  jobs: FacebookJob[] | XJob[];
+  jobs: XJob[];
   isPaused: boolean;
   clickingEnabled: boolean;
   getJobTypeText: Function;
