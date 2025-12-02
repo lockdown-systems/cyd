@@ -7,7 +7,7 @@ const { t } = useI18n();
 <template>
   <div class="facebook-dashboard card">
     <div class="card-body text-center text-muted">
-      {{ t("common.morePlatformsComingSoon") }}
+      {{ t("debug.debugMessage") }}
     </div>
   </div>
 </template>
