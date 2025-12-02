@@ -196,6 +196,7 @@ test("createFacebookAccount should create a new FacebookAccount", () => {
   expect(facebookAccount).toHaveProperty("accessedAt");
   expect(facebookAccount).toHaveProperty("username");
   expect(facebookAccount).toHaveProperty("profileImageDataURI");
+  expect(facebookAccount).toHaveProperty("accountID");
 });
 
 test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
@@ -216,6 +217,7 @@ test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
 test("saveFacebookAccount should update an existing FacebookAccount", () => {
   const facebookAccount = database.createFacebookAccount();
   facebookAccount.username = "updatedFacebook";
+  facebookAccount.accountID = "fb-123";
   database.saveFacebookAccount(facebookAccount);
 
   const db = database.getMainDatabase();
@@ -226,7 +228,10 @@ test("saveFacebookAccount should update an existing FacebookAccount", () => {
     "get",
   );
   expect(result).toEqual(
-    expect.objectContaining({ username: "updatedFacebook" }),
+    expect.objectContaining({
+      username: "updatedFacebook",
+      accountID: "fb-123",
+    }),
   );
 });
 

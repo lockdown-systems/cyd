@@ -389,6 +389,20 @@
     "blueskyDescription": "Open source social media platform based on AT Protocol",
     "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg"
   },
+  "facebook": {
+    "loginTitle": "Sign in to Facebook",
+    "loginDescription": "Use the embedded browser to sign in to Facebook or Meta. Once you're logged in, Cyd will continue automatically.",
+    "loginStepOpen": "Open facebook.com and enter your email, phone number, or username.",
+    "loginStepComplete": "Complete any security prompts, including 2-factor codes or trusted device confirmations.",
+    "loginStepReturn": "When you see your Facebook home feed, return to Cyd to continue.",
+    "loginHelpText": "If you closed the browser window, click Refresh to start over.",
+    "dashboard": {
+      "getArchiveTitle": "Get Archive from Meta",
+      "getArchiveDescription": "Download a copy of your Facebook data from Meta so Cyd can work locally.",
+      "deleteWallTitle": "Delete My Wall",
+      "deleteWallDescription": "Coming soon: remove posts, reactions, and more from your wall."
+    }
+  },
   "review": {
     "backToDeleteOptions": "Back to Delete Options",
     "backToBuildOptions": "Back to Build Options",

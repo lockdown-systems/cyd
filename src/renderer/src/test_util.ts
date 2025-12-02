@@ -80,6 +80,7 @@ export function createMockFacebookAccount(
     accessedAt: now,
     username: "facebook-user",
     profileImageDataURI: "",
+    accountID: null,
     ...overrides,
   };
 }

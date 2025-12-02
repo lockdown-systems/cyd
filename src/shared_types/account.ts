@@ -94,4 +94,5 @@ export type FacebookAccount = {
   accessedAt: Date;
   username: string;
   profileImageDataURI: string;
+  accountID: string | null;
 };

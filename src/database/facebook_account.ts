@@ -8,6 +8,7 @@ interface FacebookAccountRow {
   accessedAt: string;
   username: string;
   profileImageDataURI: string;
+  accountID: string | null;
 }
 
 function facebookAccountRowToFacebookAccount(
@@ -20,6 +21,7 @@ function facebookAccountRowToFacebookAccount(
     accessedAt: new Date(row.accessedAt),
     username: row.username,
     profileImageDataURI: row.profileImageDataURI,
+    accountID: row.accountID,
   };
 }
 
@@ -72,9 +74,15 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
             updatedAt = CURRENT_TIMESTAMP,
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
-            profileImageDataURI = ?
+            profileImageDataURI = ?,
+            accountID = ?
         WHERE id = ?
     `,
-    [account.username, account.profileImageDataURI, account.id],
+    [
+      account.username,
+      account.profileImageDataURI,
+      account.accountID,
+      account.id,
+    ],
   );
 };

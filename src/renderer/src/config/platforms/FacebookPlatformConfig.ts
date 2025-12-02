@@ -3,6 +3,7 @@ import { PlatformStates } from "../../types/PlatformStates";
 import FacebookJobStatusComponent from "../../views/facebook/components/FacebookJobStatusComponent.vue";
 import FacebookWizardSidebar from "../../views/facebook/wizard/FacebookWizardSidebar.vue";
 import FacebookWizardDashboard from "../../views/facebook/wizard/FacebookWizardDashboard.vue";
+import FacebookLoginPage from "../../views/facebook/wizard/FacebookLoginPage.vue";
 
 export const FacebookPlatformConfig: PlatformConfig = {
   name: "Facebook",
@@ -11,7 +12,7 @@ export const FacebookPlatformConfig: PlatformConfig = {
     hasPremiumGating: false,
     hasComplexImport: false,
     hasMigration: false,
-    hasU2FSupport: false,
+    hasU2FSupport: true,
   },
   urls: {
     helpDocs: "https://docs.cyd.social/docs/facebook",
@@ -20,6 +21,7 @@ export const FacebookPlatformConfig: PlatformConfig = {
     jobStatus: FacebookJobStatusComponent,
     wizardSidebar: FacebookWizardSidebar,
     wizardPages: {
+      [PlatformStates.Login]: FacebookLoginPage,
       [PlatformStates.FacebookWizardDashboardDisplay]: FacebookWizardDashboard,
     },
   },
