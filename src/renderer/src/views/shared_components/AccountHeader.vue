@@ -46,6 +46,19 @@ const onRemoveClicked = () => {
         </template>
       </template>
       <template v-else-if="account.type == 'Facebook'">
+        <template
+          v-if="
+            account.facebookAccount?.profileImageDataURI != '' &&
+            account.facebookAccount?.profileImageDataURI != null
+          "
+        >
+          <span class="profile-image">
+            <img
+              :alt="t('common.profileImage')"
+              :src="account.facebookAccount?.profileImageDataURI"
+            />
+          </span>
+        </template>
         <template v-if="account.facebookAccount?.username">
           <span class="label-text">{{
             account.facebookAccount?.username
