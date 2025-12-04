@@ -32,7 +32,8 @@ describe("translator", () => {
     const key = "viewModels.x.wizard.login.action";
     const englishValue = translate(key);
 
-    i18n.global.locale.value = "fr";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    i18n.global.locale.value = "fr" as any;
 
     expect(translate(key)).toBe(englishValue);
   });
