@@ -5,6 +5,7 @@ import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import * as AuthOps from "./auth";
 import type { Account, XAccount } from "../../../../shared_types";
+import { createTestTranslator } from "../../test_util";
 
 // Mock the auth module
 vi.mock("./auth", () => ({
@@ -40,6 +41,7 @@ describe("helpers.ts", () => {
     };
 
     // Create mock view model
+    const translator = createTestTranslator();
     mockVM = {
       account: {
         id: 1,
@@ -80,6 +82,7 @@ describe("helpers.ts", () => {
       emitter: {
         emit: vi.fn(),
       } as Partial<XViewModel["emitter"]> as XViewModel["emitter"],
+      t: vi.fn(translator),
     };
   });
 

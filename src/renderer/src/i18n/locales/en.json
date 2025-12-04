@@ -525,5 +525,68 @@
     "trigger3Errors": "Trigger 3 Errors",
     "cancelDebugMode": "Cancel Debug Mode",
     "userManuallyReportingBug": "User is manually reporting a bug"
+  },
+  "viewModels": {
+    "x": {
+      "wizard": {
+        "login": {
+          "action": "Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.",
+          "instructions": "{action}\n\n# To get started, log in to your X account below."
+        },
+        "dashboard": "\n# It's _your_ data. What do you want to do with it?",
+        "database": "\n# I need a local database of the data in your X account before I can delete it.\n\nYou can either import an X archive, or I can build it from scratch by scrolling through your profile.",
+        "importStart": "\n# Before you can import your X archive, you need to download it from X. Here's how.",
+        "importing": "\n# I'll help you import your X archive into your local database.",
+        "buildOptions": "\nI'll help you build a private local database of your X data to the `Documents` folder on your computer.\nYou'll be able to access it even after you delete it from X.\n\n# Which data do you want to save?",
+        "archiveOptions": "\n- I can save an HTML version of each of your tweets.\n- I can backup a copy of your bookmarks, which isn't included in the official X archive.\n- And I can also save a more detailed backup of your direct messages than is available in the official X archive.\n\n# Which data do you want to save?",
+        "deleteOptions": "\n# Which data do you want to delete?",
+        "review": "I'm almost ready to start helping you claw back your data from X!\n\n# Here's what I'm planning on doing.",
+        "deleteReview": {
+          "base": "I've finished saving the data I need before I can start deleting.",
+          "withStats": "I've finished saving the data I need before I can start deleting.\n\nI've saved: **{stats}**."
+        },
+        "migrateToBluesky": "\n# Just because you're quitting X doesn't mean your posts need to disappear.\n\nAfter you build a local database of your tweets, I can help you migrate them into a Bluesky account.",
+        "tombstone": "\n**Quitting X? Good riddance.**\nUsing my Tombstone feature, I can help you update your profile to tell your followers where to find you next. I can also help you lock your account.",
+        "archiveOnly": "\n# You've chosen to use a pre-existing X archive.\n\nI'll help you import your X data so you can view it locally or migrate your tweets to Bluesky.",
+        "finishedJobs": "\nAll done!\n\n# Here's what I did.",
+        "checkPremium": "# I'm almost ready to delete your data from X!\n\nYou can save all your data for free, but you need a Premium plan to delete your data.",
+        "debug": "I'm in my debug state."
+      },
+      "helpers": {
+        "checkingLogin": "Checking to see if you're still logged in to your X account...",
+        "buildingArchive": "# I'm building a searchable archive web page in HTML."
+      },
+      "auth": {
+        "discoveringProfile": "I'm discovering your username and profile picture...",
+        "loadingStats": "I'm trying to determine your total tweets and likes, according to X..."
+      },
+      "jobs": {
+        "index": {
+          "tweets": "# I'm saving your tweets.\n\nHang on while I scroll down to your earliest tweets.",
+          "archiveTweets": "# I'm downloading HTML copies of your tweets, starting with the oldest.\n\nThis may take a while...",
+          "conversations": "# I'm saving your direct message conversations.\n\nHang on while I scroll down to your earliest direct message conversations...",
+          "messages": "# I'm saving your direct messages.\n\nPlease wait while I index all the messages from each conversation...",
+          "likes": "# I'm saving your likes.\n\nHang on while I scroll down to your earliest likes.",
+          "bookmarks": "# I'm saving your bookmarks.\n\nHang on while I scroll down to your earliest bookmarks."
+        },
+        "delete": {
+          "tweets": "# I'm deleting your tweets based on your criteria, starting with the earliest.",
+          "retweets": "# I'm deleting your retweets, starting with the earliest.",
+          "likes": "# I'm deleting your likes, starting with the earliest.",
+          "bookmarks": "# I'm deleting your bookmarks, starting with the earliest.",
+          "dms": "# I'm deleting all your direct message conversations, starting with the most recent.",
+          "unfollowEveryone": "# I'm unfollowing everyone on X for you."
+        },
+        "migrate": {
+          "migrating": "# I'm migrating your tweets to Bluesky.",
+          "deleting": "# I'm deleting your posts from Bluesky that you migrated from X."
+        },
+        "tombstone": {
+          "updateBanner": "**I'm updating your banner.**",
+          "updateBio": "**I'm updating your bio.**",
+          "lockAccount": "**I'm locking your account.**"
+        }
+      }
+    }
   }
 }
