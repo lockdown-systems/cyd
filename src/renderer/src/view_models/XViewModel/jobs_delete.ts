@@ -31,7 +31,7 @@ export async function runJobDeleteTweets(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteTweets;
-  vm.instructions = `# I'm deleting your tweets based on your criteria, starting with the earliest.`;
+  vm.instructions = vm.t("viewModels.x.jobs.delete.tweets");
 
   // Load the tweets to delete
   const tweetsToDelete = await deleteTweetsLoadList(
@@ -133,7 +133,7 @@ export async function runJobDeleteRetweets(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteRetweets;
-  vm.instructions = `# I'm deleting your retweets, starting with the earliest.`;
+  vm.instructions = vm.t("viewModels.x.jobs.delete.retweets");
 
   // Load the retweets to delete
   const tweetsToDelete = await deleteTweetsLoadList(
@@ -238,7 +238,7 @@ export async function runJobDeleteLikes(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteLikes;
-  vm.instructions = `# I'm deleting your likes, starting with the earliest.`;
+  vm.instructions = vm.t("viewModels.x.jobs.delete.likes");
 
   // Load the likes to delete
   const tweetsToDelete = await deleteTweetsLoadList(
@@ -338,7 +338,7 @@ export async function runJobDeleteBookmarks(
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
   vm.runJobsState = RunJobsState.DeleteBookmarks;
-  vm.instructions = `# I'm deleting your bookmarks, starting with the earliest.`;
+  vm.instructions = vm.t("viewModels.x.jobs.delete.bookmarks");
 
   // Load the bookmarks to delete
   const tweetsToDelete = await deleteTweetsLoadList(
@@ -432,7 +432,7 @@ export async function runJobDeleteDMs(
   let reloadDMsPage = true;
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm deleting all your direct message conversations, starting with the most recent.`;
+  vm.instructions = vm.t("viewModels.x.jobs.delete.dms");
   vm.showAutomationNotice = true;
 
   // Start the progress
@@ -509,7 +509,7 @@ export async function runJobUnfollowEveryone(
   let accountToUnfollowIndex = 0;
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm unfollowing everyone on X for you.`;
+  vm.instructions = vm.t("viewModels.x.jobs.delete.unfollowEveryone");
   vm.showAutomationNotice = true;
 
   // Start the progress

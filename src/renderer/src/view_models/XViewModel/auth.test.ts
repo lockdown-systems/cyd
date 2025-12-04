@@ -7,6 +7,7 @@ import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import type { XUserInfo } from "../../types_x";
 import type { Account, XAccount } from "../../../../shared_types";
+import { createTestTranslator } from "../../test_util";
 
 interface MockElectron {
   trackEvent: ReturnType<typeof vi.fn>;
@@ -40,6 +41,7 @@ describe("auth.ts", () => {
     };
 
     // Create mock view model
+    const translator = createTestTranslator();
     mockVM = {
       account: {
         id: 1,
@@ -84,6 +86,7 @@ describe("auth.ts", () => {
         emit: vi.fn(),
       } as Partial<XViewModel["emitter"]> as XViewModel["emitter"],
       login: vi.fn(),
+      t: vi.fn(translator),
     };
   });
 
