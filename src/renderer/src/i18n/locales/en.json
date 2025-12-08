@@ -575,6 +575,11 @@
           "lockAccount": "**I'm locking your account.**"
         }
       }
+    },
+    "facebook": {
+      "wizard": {
+        "dashboard": "\n# It's _your_ data. What do you want to do with it?"
+      }
     }
   }
 }

@@ -3,14 +3,12 @@ import type { Emitter, EventType } from "mitt";
 import type { Account } from "../../../../shared_types";
 import { BaseViewModel } from "../BaseViewModel";
 import { PlatformStates } from "../../types/PlatformStates";
+import { openURL } from "../../util";
 
 const FACEBOOK_LOGIN_STATE = PlatformStates.Login;
 const FACEBOOK_WIZARD_DASHBOARD = PlatformStates.FacebookWizardDashboard;
 const FACEBOOK_WIZARD_DASHBOARD_DISPLAY =
   PlatformStates.FacebookWizardDashboardDisplay;
-const FACEBOOK_WIZARD_GET_ARCHIVE = PlatformStates.FacebookWizardGetArchive;
-const FACEBOOK_WIZARD_GET_ARCHIVE_DISPLAY =
-  PlatformStates.FacebookWizardGetArchiveDisplay;
 const FACEBOOK_HOME_URL = "https://www.facebook.com/";
 
 interface CurrentUserInitialData {
@@ -112,15 +110,7 @@ export class FacebookViewModel extends BaseViewModel {
         await this.showDashboard();
         break;
       case FACEBOOK_WIZARD_DASHBOARD_DISPLAY:
-        this.showBrowser = false;
-        await this.sleep(500);
-        break;
-      case FACEBOOK_WIZARD_GET_ARCHIVE:
-        await this.showGetArchive();
-        break;
-      case FACEBOOK_WIZARD_GET_ARCHIVE_DISPLAY:
-        this.showBrowser = false;
-        await this.sleep(500);
+        await this.handleGetArchive();
         break;
       default:
         this.state = this.hasStoredIdentity()
@@ -226,15 +216,18 @@ export class FacebookViewModel extends BaseViewModel {
 
   private async showDashboard() {
     this.showBrowser = false;
-    this.instructions = `# It's _your_ data. What do you want to do with it?`;
+    this.instructions = this.t("viewModels.facebook.wizard.dashboard");
     await this.loadBlank();
     this.state = FACEBOOK_WIZARD_DASHBOARD_DISPLAY;
   }
 
   private async showGetArchive() {
-    this.showBrowser = false;
-    this.instructions = `# Loading Facebook archive instructions`;
-    await this.loadBlank();
-    this.state = FACEBOOK_WIZARD_GET_ARCHIVE_DISPLAY;
+    // Open external documentation link
+    await openURL("https://docs.cyd.social/docs/facebook/get-archive");
+  }
+
+  private async handleGetArchive() {
+    await this.showGetArchive();
+    await this.sleep(500);
   }
 }

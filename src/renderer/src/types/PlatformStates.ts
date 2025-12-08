@@ -133,10 +133,4 @@ export const PlatformStates = {
 
   /** Facebook: Display dashboard wizard page */
   FacebookWizardDashboardDisplay: "FacebookWizardDashboardDisplay",
-
-  /** Facebook: Get archive from Meta wizard page */
-  FacebookWizardGetArchive: "FacebookWizardGetArchive",
-
-  /** Facebook: Display get archive wizard page */
-  FacebookWizardGetArchiveDisplay: "FacebookWizardGetArchiveDisplay",
 } as const;

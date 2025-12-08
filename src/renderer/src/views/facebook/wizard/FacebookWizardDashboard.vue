@@ -15,7 +15,7 @@ const cards = computed(() => [
     icon: "/assets/icon-database.png",
     title: t("facebook.dashboard.getArchiveTitle"),
     description: t("facebook.dashboard.getArchiveDescription"),
-    state: PlatformStates.FacebookWizardGetArchive,
+    state: PlatformStates.FacebookWizardDashboardDisplay,
     disabled: false,
     startHere: true,
   },
