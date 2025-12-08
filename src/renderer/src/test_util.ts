@@ -8,10 +8,12 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import CydAPIClient from "../../cyd-api-client";
 import type { DeviceInfo } from "./types";
+import type { TranslatorFn, TranslatorParams } from "./i18n/translator";
+import en from "./i18n/locales/en.json";
 
 /**
  * General test utilities for all view models
- * These mocks can be used across X, Facebook, Bluesky, and other view models
+ * These mocks can be used across X, Bluesky, and other view models
  */
 
 /**
@@ -65,6 +67,22 @@ export function createMockXAccount(overrides?: Partial<XAccount>): XAccount {
     tombstoneUpdateBioText: "",
     tombstoneUpdateBioCreditCyd: false,
     tombstoneLockAccount: false,
+    ...overrides,
+  };
+}
+
+export function createMockFacebookAccount(
+  overrides?: Partial<FacebookAccount>,
+): FacebookAccount {
+  const now = new Date();
+  return {
+    id: 1,
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    username: "facebook-user",
+    profileImageDataURI: "",
+    accountID: null,
     ...overrides,
   };
 }
@@ -365,38 +383,6 @@ export async function waitForAsync(
 }
 
 /**
- * Creates a mock FacebookAccount with default values that can be overridden
- */
-export function createMockFacebookAccount(
-  overrides?: Partial<FacebookAccount>,
-): FacebookAccount {
-  const now = new Date();
-  return {
-    id: 1,
-    createdAt: now,
-    updatedAt: now,
-    accessedAt: now,
-    accountID: "100000000000000",
-    name: "Test User",
-    profileImageDataURI: "data:image/png;base64,test",
-    saveMyData: false,
-    deleteMyData: false,
-    archiveMyData: false,
-    savePosts: false,
-    savePostsHTML: false,
-    deletePosts: false,
-    deletePostsDaysOldEnabled: false,
-    deletePostsDaysOld: 0,
-    deletePostsReactsThresholdEnabled: false,
-    deletePostsReactsThreshold: 0,
-    deleteReposts: false,
-    deleteRepostsDaysOldEnabled: false,
-    deleteRepostsDaysOld: 0,
-    ...overrides,
-  };
-}
-
-/**
  * Creates a mock DeviceInfo object for testing
  */
 export function createMockDeviceInfo(
@@ -460,4 +446,35 @@ export function mountWithProviders<T = any>(
     },
     props: options.props,
   });
+}
+
+function lookupTranslation(key: string): string | undefined {
+  return key.split(".").reduce<unknown>((current, segment) => {
+    if (current && typeof current === "object") {
+      return (current as Record<string, unknown>)[segment];
+    }
+    return undefined;
+  }, en) as string | undefined;
+}
+
+function interpolateParams(template: string, params: TranslatorParams): string {
+  return Object.entries(params).reduce((result, [paramKey, value]) => {
+    return result.split(`{${paramKey}}`).join(String(value));
+  }, template);
+}
+
+export function createTestTranslator(): TranslatorFn {
+  return (key, params: TranslatorParams = {}) => {
+    const message = lookupTranslation(key);
+    const template = typeof message === "string" ? message : key;
+    return interpolateParams(template, params);
+  };
+}
+
+export function createTestTranslatorModule() {
+  const translator = createTestTranslator();
+  return {
+    translate: translator,
+    getTranslator: () => translator,
+  };
 }

@@ -4,7 +4,7 @@ import type { Component } from "vue";
  * Platform feature flags that define what capabilities each platform supports
  */
 export interface PlatformFeatures {
-  /** Can user skip login and just archive data? (X: true, Facebook: false) */
+  /** Can user skip login and just archive data? */
   hasArchiveOnly: boolean;
 
   /** Does platform require premium subscription for certain features? */
@@ -62,7 +62,7 @@ export interface PlatformComponents {
  * This defines everything needed to configure a platform view
  */
 export interface PlatformConfig {
-  /** Platform identifier (e.g., 'X', 'Facebook') */
+  /** Platform identifier (e.g., 'X') */
   name: string;
 
   /** Platform feature flags */

@@ -270,7 +270,7 @@ onMounted(async () => {
           :account-i-d="model.account.id"
           :show-button="true"
           :show-no-data-warning="true"
-          :button-text="t('facebook.buildYourLocalDatabaseButton')"
+          :button-text="t('wizard.buildYourLocalDatabase')"
           :button-state="State.WizardDatabase"
           @set-state="emit('setState', $event)"
         />

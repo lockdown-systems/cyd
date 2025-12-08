@@ -30,9 +30,7 @@ export async function runJobIndexTweets(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm saving your tweets.
-
-Hang on while I scroll down to your earliest tweets.`;
+  vm.instructions = vm.t("viewModels.x.jobs.index.tweets");
   vm.showAutomationNotice = true;
 
   // Start monitoring network requests
@@ -131,9 +129,7 @@ export async function runJobArchiveTweets(
   let archiveStartResponse: XArchiveStartResponse;
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm downloading HTML copies of your tweets, starting with the oldest.
-
-This may take a while...`;
+  vm.instructions = vm.t("viewModels.x.jobs.index.archiveTweets");
   vm.showAutomationNotice = true;
 
   // Initialize archiving of tweets
@@ -192,9 +188,7 @@ export async function runJobIndexConversations(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm saving your direct message conversations.
-
-Hang on while I scroll down to your earliest direct message conversations...`;
+  vm.instructions = vm.t("viewModels.x.jobs.index.conversations");
   vm.showAutomationNotice = true;
 
   // Start monitoring network requests
@@ -370,9 +364,7 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
   let url = "";
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm saving your direct messages.
-
-Please wait while I index all the messages from each conversation...`;
+  vm.instructions = vm.t("viewModels.x.jobs.index.messages");
   vm.showAutomationNotice = true;
 
   // Start monitoring network requests
@@ -547,9 +539,7 @@ export async function runJobIndexLikes(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm saving your likes.
-
-Hang on while I scroll down to your earliest likes.`;
+  vm.instructions = vm.t("viewModels.x.jobs.index.likes");
   vm.showAutomationNotice = true;
 
   // Start monitoring network requests
@@ -647,9 +637,7 @@ export async function runJobIndexBookmarks(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `# I'm saving your bookmarks.
-
-Hang on while I scroll down to your earliest bookmarks.`;
+  vm.instructions = vm.t("viewModels.x.jobs.index.bookmarks");
   vm.showAutomationNotice = true;
 
   // Start monitoring network requests

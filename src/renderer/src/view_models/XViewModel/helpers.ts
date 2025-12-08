@@ -87,7 +87,7 @@ export async function runJobLogin(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `Checking to see if you're still logged in to your X account...`;
+  vm.instructions = vm.t("viewModels.x.helpers.checkingLogin");
 
   vm.showAutomationNotice = false;
   await AuthOps.login(vm);
@@ -106,7 +106,7 @@ export async function runJobArchiveBuild(
   );
 
   vm.showBrowser = false;
-  vm.instructions = `# I'm building a searchable archive web page in HTML.`;
+  vm.instructions = vm.t("viewModels.x.helpers.buildingArchive");
   vm.showAutomationNotice = true;
 
   // Build the archive

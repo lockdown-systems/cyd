@@ -75,7 +75,6 @@ describe("TabsView", () => {
           sortOrder: 0,
           xAccount: null,
           blueskyAccount: null,
-          facebookAccount: null,
           uuid: accountUUID,
         };
         testDatabase.accounts.push(newAccount);

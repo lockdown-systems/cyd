@@ -76,16 +76,6 @@ export enum AutomationErrorType {
   x_unknownError = "x_unknown",
   x_loadURLError = "x_loadURLError",
   x_loadURLURLChanged = "x_loadURLURLChanged",
-
-  // Facebook
-  facebook_manualBugReport = "facebook_manualBugReport",
-  facebook_unknownError = "facebook_unknown",
-  facebook_loadURLError = "facebook_loadURLError",
-  facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
-  facebook_runJob_savePosts_Timeout = "facebook_runJob_savePosts_Timeout",
-  facebook_runJob_savePosts_URLChanged = "facebook_runJob_savePosts_URLChanged",
-  facebook_runJob_savePosts_OtherError = "facebook_runJob_savePosts_OtherError",
-  facebook_runJob_archiveBuild_ArchiveBuildError = "facebook_runJob_archiveBuild_ArchiveBuildError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -235,20 +225,4 @@ export const AutomationErrorTypeToMessage = {
   [AutomationErrorType.x_unknownError]: "An unknown error occurred",
   [AutomationErrorType.x_loadURLError]: "Error while loading URL",
   [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
-
-  // Facebook
-  [AutomationErrorType.facebook_manualBugReport]:
-    "You're manually reporting a bug",
-  [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
-  [AutomationErrorType.facebook_loadURLError]: "Error while loading URL",
-  [AutomationErrorType.facebook_runJob_UnknownError]:
-    "An unknown error occurred",
-  [AutomationErrorType.facebook_runJob_savePosts_Timeout]:
-    "Timeout while saving posts",
-  [AutomationErrorType.facebook_runJob_savePosts_URLChanged]:
-    "URL changed while saving posts",
-  [AutomationErrorType.facebook_runJob_savePosts_OtherError]:
-    "Error while saving posts",
-  [AutomationErrorType.facebook_runJob_archiveBuild_ArchiveBuildError]:
-    "Failed to archive build",
 };

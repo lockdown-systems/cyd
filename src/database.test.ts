@@ -49,7 +49,7 @@ afterEach(() => {
 
 // database tests
 
-test("config, account, and xAccount, blueskyAccount tables should be created", async () => {
+test("config, account, xAccount, blueskyAccount, facebookAccount tables should be created", async () => {
   const db = database.getMainDatabase();
   const tables = await database.exec(
     db,
@@ -63,6 +63,7 @@ test("config, account, and xAccount, blueskyAccount tables should be created", a
       expect.objectContaining({ name: "account" }),
       expect.objectContaining({ name: "xAccount" }),
       expect.objectContaining({ name: "blueskyAccount" }),
+      expect.objectContaining({ name: "facebookAccount" }),
     ]),
   );
 });
@@ -187,6 +188,17 @@ test("createBlueskyAccount should create a new BlueskyAccount", () => {
   expect(blueskyAccount).toHaveProperty("likesCount");
 });
 
+test("createFacebookAccount should create a new FacebookAccount", () => {
+  const facebookAccount = database.createFacebookAccount();
+  expect(facebookAccount).toHaveProperty("id");
+  expect(facebookAccount).toHaveProperty("createdAt");
+  expect(facebookAccount).toHaveProperty("updatedAt");
+  expect(facebookAccount).toHaveProperty("accessedAt");
+  expect(facebookAccount).toHaveProperty("username");
+  expect(facebookAccount).toHaveProperty("profileImageDataURI");
+  expect(facebookAccount).toHaveProperty("accountID");
+});
+
 test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
   const blueskyAccount = database.createBlueskyAccount();
   blueskyAccount.username = "newUsername";
@@ -200,6 +212,27 @@ test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
     "get",
   );
   expect(result).toEqual(expect.objectContaining({ username: "newUsername" }));
+});
+
+test("saveFacebookAccount should update an existing FacebookAccount", () => {
+  const facebookAccount = database.createFacebookAccount();
+  facebookAccount.username = "updatedFacebook";
+  facebookAccount.accountID = "fb-123";
+  database.saveFacebookAccount(facebookAccount);
+
+  const db = database.getMainDatabase();
+  const result = database.exec(
+    db,
+    "SELECT * FROM facebookAccount WHERE id = ?",
+    [facebookAccount.id],
+    "get",
+  );
+  expect(result).toEqual(
+    expect.objectContaining({
+      username: "updatedFacebook",
+      accountID: "fb-123",
+    }),
+  );
 });
 
 test("getBlueskyAccount should retrieve the correct BlueskyAccount", () => {
@@ -219,6 +252,26 @@ test("getBlueskyAccounts should retrieve all BlueskyAccounts", () => {
   const accounts = database.getBlueskyAccounts();
   expect(accounts).toEqual(
     expect.arrayContaining([blueskyAccount1, blueskyAccount2]),
+  );
+});
+
+test("getFacebookAccount should retrieve the correct FacebookAccount", () => {
+  const facebookAccount = database.createFacebookAccount();
+  database.saveFacebookAccount(facebookAccount);
+
+  const retrievedAccount = database.getFacebookAccount(facebookAccount.id);
+  expect(retrievedAccount).toEqual(facebookAccount);
+});
+
+test("getFacebookAccounts should retrieve all FacebookAccounts", () => {
+  const facebookAccount1 = database.createFacebookAccount();
+  const facebookAccount2 = database.createFacebookAccount();
+  database.saveFacebookAccount(facebookAccount1);
+  database.saveFacebookAccount(facebookAccount2);
+
+  const accounts = database.getFacebookAccounts();
+  expect(accounts).toEqual(
+    expect.arrayContaining([facebookAccount1, facebookAccount2]),
   );
 });
 

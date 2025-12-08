@@ -208,7 +208,6 @@ const config: ForgeConfig = {
     ],
     extraResource: [
       path.join(buildPath, "x-archive.zip"),
-      path.join(buildPath, "facebook-archive.zip"),
       path.join(buildPath, "config.json"),
       path.join(assetsPath, "icon.png"),
     ],

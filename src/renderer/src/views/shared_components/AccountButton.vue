@@ -95,12 +95,12 @@ onUnmounted(async () => {
         </template>
       </template>
       <template v-else-if="props.account.type == 'Facebook'">
-        <template v-if="props.account.facebookAccount?.accountID == null">
-          Login to your Facebook account
+        <template v-if="props.account.facebookAccount?.username == null">
+          Connect your Facebook account
         </template>
         <template v-else>
           <i :class="getAccountIcon(account.type)" />
-          {{ props.account.facebookAccount?.name }}
+          {{ props.account.facebookAccount?.username }}
         </template>
       </template>
     </div>

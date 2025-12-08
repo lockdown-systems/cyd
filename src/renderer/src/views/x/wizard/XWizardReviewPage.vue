@@ -91,7 +91,7 @@ const backClicked = async () => {
     emit("setState", State.WizardTombstone);
   } else {
     console.error("Unknown review type:", jobsType.value);
-    await window.electron.showError(t("facebook.unknownReviewType"));
+    await window.electron.showError(t("wizard.unknownReviewType"));
   }
 };
 
