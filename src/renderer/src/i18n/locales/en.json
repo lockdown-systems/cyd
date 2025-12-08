@@ -398,9 +398,9 @@
     "loginHelpText": "If you closed the browser window, click Refresh to start over.",
     "dashboard": {
       "getArchiveTitle": "Get Archive from Meta",
-      "getArchiveDescription": "Download a copy of your Facebook data from Meta so Cyd can work locally.",
+      "getArchiveDescription": "If you want, export your Facebook archive BEFORE you delete all your posts.",
       "deleteWallTitle": "Delete My Wall",
-      "deleteWallDescription": "Coming soon: remove posts, reactions, and more from your wall."
+      "deleteWallDescription": "Delete all posts from your Facebook wall."
     }
   },
   "review": {

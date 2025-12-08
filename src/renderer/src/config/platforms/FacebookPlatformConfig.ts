@@ -4,6 +4,7 @@ import FacebookJobStatusComponent from "../../views/facebook/components/Facebook
 import FacebookWizardSidebar from "../../views/facebook/wizard/FacebookWizardSidebar.vue";
 import FacebookWizardDashboard from "../../views/facebook/wizard/FacebookWizardDashboard.vue";
 import FacebookLoginPage from "../../views/facebook/wizard/FacebookLoginPage.vue";
+import FacebookWizardGetArchivePage from "../../views/facebook/wizard/FacebookWizardGetArchivePage.vue";
 
 export const FacebookPlatformConfig: PlatformConfig = {
   name: "Facebook",
@@ -23,6 +24,8 @@ export const FacebookPlatformConfig: PlatformConfig = {
     wizardPages: {
       [PlatformStates.Login]: FacebookLoginPage,
       [PlatformStates.FacebookWizardDashboardDisplay]: FacebookWizardDashboard,
+      [PlatformStates.FacebookWizardGetArchiveDisplay]:
+        FacebookWizardGetArchivePage,
     },
   },
 };

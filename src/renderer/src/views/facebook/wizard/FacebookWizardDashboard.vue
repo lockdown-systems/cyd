@@ -1,24 +1,31 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-// import type { FacebookViewModel } from "../../../view_models/FacebookViewModel";
+import { PlatformStates } from "../../../types/PlatformStates";
 
 const { t } = useI18n();
 
-// const props = defineProps<{
-//   model: FacebookViewModel;
-// }>();
+// Emits
+const emit = defineEmits<{
+  setState: [value: string];
+}>();
 
 const cards = computed(() => [
   {
     icon: "/assets/icon-database.png",
     title: t("facebook.dashboard.getArchiveTitle"),
     description: t("facebook.dashboard.getArchiveDescription"),
+    state: PlatformStates.FacebookWizardGetArchive,
+    disabled: false,
+    startHere: true,
   },
   {
     icon: "/assets/icon-delete.png",
     title: t("facebook.dashboard.deleteWallTitle"),
     description: t("facebook.dashboard.deleteWallDescription"),
+    state: null,
+    disabled: true,
+    startHere: false,
   },
 ]);
 </script>
@@ -32,7 +39,18 @@ const cards = computed(() => [
           :key="card.title"
           class="col-12 col-md-6 col-lg-5"
         >
-          <div class="card h-100 disabled-card">
+          <div
+            class="card h-100"
+            :class="{ 'disabled-card': card.disabled }"
+            @click="
+              !card.disabled && card.state && emit('setState', card.state)
+            "
+          >
+            <span
+              v-if="card.startHere"
+              class="start-here-badge badge bg-primary"
+              >{{ t("dashboard.startHere") }}</span
+            >
             <div class="card-body align-items-center">
               <img :src="card.icon" :alt="card.title" />
               <h2>{{ card.title }}</h2>

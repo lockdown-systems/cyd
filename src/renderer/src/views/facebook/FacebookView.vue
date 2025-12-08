@@ -39,6 +39,7 @@ const {
   setupProviders,
   initializePlatformView,
   canStateLoopRun,
+  setState,
 } = usePlatformView(props.account, model, getPlatformConfig("Facebook")!);
 
 const automationHandlers = createAutomationHandlers(() =>
@@ -88,5 +89,6 @@ onUnmounted(async () => {
     :webview-props="webviewProps"
     @on-refresh-clicked="emit('onRefreshClicked')"
     @on-remove-clicked="emit('onRemoveClicked')"
+    @set-state="setState($event)"
   />
 </template>
