@@ -6,7 +6,7 @@ sidebar_position: 3
 
 If you don't want to lose your historical Facebook data, export your Facebook archive _before_ deleting your Facebook posts! If you don't care about your old posts, skip this step.
 
-To get your Facebook archive from Meta, visit the [**Export your information**](https://accountscenter.facebook.com/info_and_permissions/dyi) page on Meta's Account Center site at https://accountscenter.facebook.com/info_and_permissions/dyi.
+To get your Facebook archive from Meta, visit the [**Export your information**](https://accountscenter.facebook.com/info_and_permissions/dyi) page on Meta's Account Center.
 
 ![Export Your Information screen](./img/meta-export1.png)
 
