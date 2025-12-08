@@ -12,6 +12,7 @@ import * as MigrateJobs from "./jobs_migrate_to_bluesky";
 import { xHasSomeData } from "../../util_x";
 import { getJobsType } from "../../util";
 import type { Account, XJob } from "../../../../shared_types";
+import { createTestTranslator } from "../../test_util";
 
 // Mock all helper modules
 vi.mock("./auth");
@@ -24,6 +25,8 @@ vi.mock("./jobs_migrate_to_bluesky");
 vi.mock("./jobs_tombstone");
 vi.mock("../../util_x");
 vi.mock("../../util");
+
+const translate = createTestTranslator();
 
 describe("XViewModel", () => {
   let vm: XViewModel;
@@ -174,7 +177,7 @@ describe("XViewModel", () => {
     };
 
     // Create view model instance
-    vm = new XViewModel(mockAccount, null);
+    vm = new XViewModel(mockAccount, null, translate);
 
     // Mock the base methods
     vm.log = vi.fn();
@@ -644,7 +647,11 @@ describe("XViewModel", () => {
 
       await vm.run();
 
-      expect(vm.instructions).toContain("log in to your X account");
+      expect(vm.instructions).toBe(
+        translate("viewModels.x.wizard.login.instructions", {
+          action: translate("viewModels.x.wizard.login.action"),
+        }),
+      );
       expect(vm.showBrowser).toBe(true);
       expect(vm.showAutomationNotice).toBe(false);
       expect(AuthOps.login).toHaveBeenCalledWith(vm);
@@ -703,7 +710,9 @@ describe("XViewModel", () => {
       expect(mockElectronDatabase.getAccount).toHaveBeenCalledWith(1);
       expect(vm.account.xAccount!.archiveOnly).toBe(true);
       expect(vm.showBrowser).toBe(false);
-      expect(vm.instructions).toContain("pre-existing X archive");
+      expect(vm.instructions).toBe(
+        translate("viewModels.x.wizard.archiveOnly"),
+      );
       expect(vm.loadBlank).toHaveBeenCalled();
       expect(vm.state).toBe(State.WizardArchiveOnlyDisplay);
     });
@@ -778,7 +787,7 @@ describe("XViewModel", () => {
 
       expect(vm.showBrowser).toBe(false);
       expect(vm.loadBlank).toHaveBeenCalled();
-      expect(vm.instructions).toContain("debug state");
+      expect(vm.instructions).toBe(translate("viewModels.x.wizard.debug"));
       expect(vm.sleep).toHaveBeenCalledWith(1000);
       expect(sleepCallCount).toBeGreaterThanOrEqual(3);
     });
@@ -789,8 +798,7 @@ describe("XViewModel", () => {
       await vm.run();
 
       expect(vm.showBrowser).toBe(false);
-      expect(vm.instructions.toLowerCase()).toContain("your");
-      expect(vm.instructions.toLowerCase()).toContain("data");
+      expect(vm.instructions).toBe(translate("viewModels.x.wizard.dashboard"));
       expect(vm.state).toBe(State.WizardDashboardDisplay);
       expect(vm.loadBlank).toHaveBeenCalled();
     });
@@ -804,8 +812,11 @@ describe("XViewModel", () => {
       await vm.run();
 
       expect(vm.showBrowser).toBe(false);
-      expect(vm.instructions).toContain("finished saving");
-      expect(vm.instructions).toContain("100 tweets, 50 likes");
+      expect(vm.instructions).toBe(
+        translate("viewModels.x.wizard.deleteReview.withStats", {
+          stats: "100 tweets, 50 likes",
+        }),
+      );
       expect(vm.state).toBe(State.WizardDeleteReviewDisplay);
       expect(vm.loadBlank).toHaveBeenCalled();
     });

@@ -15,7 +15,7 @@ export async function runJobMigrateBluesky(
   );
 
   vm.showBrowser = false;
-  vm.instructions = `# I'm migrating your tweets to Bluesky.`;
+  vm.instructions = vm.t("viewModels.x.jobs.migrate.migrating");
   vm.showAutomationNotice = true;
 
   vm.runJobsState = RunJobsState.MigrateBluesky;
@@ -90,7 +90,7 @@ export async function runJobMigrateBlueskyDelete(
   );
 
   vm.showBrowser = false;
-  vm.instructions = `# I'm deleting your posts from Bluesky that you migrated from X.`;
+  vm.instructions = vm.t("viewModels.x.jobs.migrate.deleting");
   vm.showAutomationNotice = true;
 
   vm.runJobsState = RunJobsState.MigrateBlueskyDelete;

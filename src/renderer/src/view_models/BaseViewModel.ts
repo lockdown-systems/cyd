@@ -4,6 +4,7 @@ import type { Account } from "../../../shared_types";
 import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from "../automation_errors";
 import { logObj } from "../util";
+import { TranslatorFn, TranslatorParams, translate } from "../i18n/translator";
 
 const DEFAULT_TIMEOUT = 30000;
 
@@ -70,10 +71,12 @@ export class BaseViewModel {
   public emitter: Emitter<Record<EventType, unknown>> | null;
 
   public domReadyHandler: () => void;
+  protected translator: TranslatorFn;
 
   constructor(
     account: Account,
     emitter: Emitter<Record<EventType, unknown>> | null,
+    translator: TranslatorFn = translate,
   ) {
     this.account = account;
     this.webview = null;
@@ -96,6 +99,7 @@ export class BaseViewModel {
     this.suspendLock = false;
 
     this.emitter = emitter;
+    this.translator = translator;
 
     this.resetLogs();
 
@@ -104,6 +108,10 @@ export class BaseViewModel {
     // Suspend and resume
     window.electron.onPowerMonitorSuspend(() => this.powerMonitorSuspend());
     window.electron.onPowerMonitorResume(() => this.powerMonitorResume());
+  }
+
+  public t(key: string, params?: TranslatorParams): string {
+    return this.translator(key, params);
   }
 
   cleanup() {

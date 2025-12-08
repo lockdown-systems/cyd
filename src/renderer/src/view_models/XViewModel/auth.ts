@@ -69,7 +69,7 @@ export async function login(vm: XViewModel): Promise<void> {
 
   // Load home
   vm.log("login", "getting username and userID and profile picture");
-  vm.instructions = `I'm discovering your username and profile picture...`;
+  vm.instructions = vm.t("viewModels.x.auth.discoveringProfile");
 
   if (vm.webview?.getURL() != "https://x.com/home") {
     await vm.loadURLWithRateLimit("https://x.com/home");
@@ -122,7 +122,7 @@ export async function loadUserStats(vm: XViewModel): Promise<void> {
   vm.showAutomationNotice = true;
 
   vm.log("login", "getting user stats");
-  vm.instructions = `I'm trying to determine your total tweets and likes, according to X...`;
+  vm.instructions = vm.t("viewModels.x.auth.loadingStats");
 
   await vm.login();
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "false");

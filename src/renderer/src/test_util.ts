@@ -8,6 +8,8 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import CydAPIClient from "../../cyd-api-client";
 import type { DeviceInfo } from "./types";
+import type { TranslatorFn, TranslatorParams } from "./i18n/translator";
+import en from "./i18n/locales/en.json";
 
 /**
  * General test utilities for all view models
@@ -444,4 +446,35 @@ export function mountWithProviders<T = any>(
     },
     props: options.props,
   });
+}
+
+function lookupTranslation(key: string): string | undefined {
+  return key.split(".").reduce<unknown>((current, segment) => {
+    if (current && typeof current === "object") {
+      return (current as Record<string, unknown>)[segment];
+    }
+    return undefined;
+  }, en) as string | undefined;
+}
+
+function interpolateParams(template: string, params: TranslatorParams): string {
+  return Object.entries(params).reduce((result, [paramKey, value]) => {
+    return result.split(`{${paramKey}}`).join(String(value));
+  }, template);
+}
+
+export function createTestTranslator(): TranslatorFn {
+  return (key, params: TranslatorParams = {}) => {
+    const message = lookupTranslation(key);
+    const template = typeof message === "string" ? message : key;
+    return interpolateParams(template, params);
+  };
+}
+
+export function createTestTranslatorModule() {
+  const translator = createTestTranslator();
+  return {
+    translate: translator,
+    getTranslator: () => translator,
+  };
 }

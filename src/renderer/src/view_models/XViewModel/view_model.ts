@@ -399,10 +399,10 @@ export class XViewModel extends BaseViewModel {
     try {
       switch (this.state) {
         case State.Login:
-          this.actionString = `Hello, friend! My name is **Cyd**. I can help you save and delete your tweets, likes, and direct messages from X.`;
-          this.instructions = `${this.actionString}
-
-# To get started, log in to your X account below.`;
+          this.actionString = this.t("viewModels.x.wizard.login.action");
+          this.instructions = this.t("viewModels.x.wizard.login.instructions", {
+            action: this.actionString,
+          });
           this.showBrowser = true;
           this.showAutomationNotice = false;
           await this.login();
@@ -435,74 +435,56 @@ export class XViewModel extends BaseViewModel {
 
         case State.WizardDashboard:
           this.showBrowser = false;
-          this.instructions = `
-# It's _your_ data. What do you want to do with it?`;
+          this.instructions = this.t("viewModels.x.wizard.dashboard");
           this.state = State.WizardDashboardDisplay;
           await this.loadBlank();
           break;
 
         case State.WizardDatabase:
           this.showBrowser = false;
-          this.instructions = `
-# I need a local database of the data in your X account before I can delete it.
-
-You can either import an X archive, or I can build it from scratch by scrolling through your profile.`;
+          this.instructions = this.t("viewModels.x.wizard.database");
           this.state = State.WizardDatabaseDisplay;
           await this.loadBlank();
           break;
 
         case State.WizardImportStart:
           this.showBrowser = false;
-          this.instructions = `
-# Before you can import your X archive, you need to download it from X. Here's how.`;
+          this.instructions = this.t("viewModels.x.wizard.importStart");
           await this.loadBlank();
           this.state = State.WizardImportStartDisplay;
           break;
 
         case State.WizardImporting:
           this.showBrowser = false;
-          this.instructions = `
-# I'll help you import your X archive into your local database.`;
+          this.instructions = this.t("viewModels.x.wizard.importing");
           await this.loadBlank();
           this.state = State.WizardImportingDisplay;
           break;
 
         case State.WizardBuildOptions:
           this.showBrowser = false;
-          this.instructions = `
-I'll help you build a private local database of your X data to the \`Documents\` folder on your computer.
-You'll be able to access it even after you delete it from X.
-
-# Which data do you want to save?`;
+          this.instructions = this.t("viewModels.x.wizard.buildOptions");
           await this.loadBlank();
           this.state = State.WizardBuildOptionsDisplay;
           break;
 
         case State.WizardArchiveOptions:
           this.showBrowser = false;
-          this.instructions = `
-- I can save an HTML version of each of your tweets.
-- I can backup a copy of your bookmarks, which isn't included in the official X archive.
-- And I can also save a more detailed backup of your direct messages than is available in the official X archive.
-
-# Which data do you want to save?`;
+          this.instructions = this.t("viewModels.x.wizard.archiveOptions");
           await this.loadBlank();
           this.state = State.WizardArchiveOptionsDisplay;
           break;
 
         case State.WizardDeleteOptions:
           this.showBrowser = false;
-          this.instructions = `
-# Which data do you want to delete?`;
+          this.instructions = this.t("viewModels.x.wizard.deleteOptions");
           await this.loadBlank();
           this.state = State.WizardDeleteOptionsDisplay;
           break;
 
         case State.WizardReview:
           this.showBrowser = false;
-          this.instructions = `I'm almost ready to start helping you claw back your data from X!
-
-# Here's what I'm planning on doing.`;
+          this.instructions = this.t("viewModels.x.wizard.review");
           await this.loadBlank();
           this.state = State.WizardReviewDisplay;
           break;
@@ -511,10 +493,11 @@ You'll be able to access it even after you delete it from X.
           this.showBrowser = false;
           databaseStatsString = await this.getDatabaseStatsString();
           this.instructions =
-            "I've finished saving the data I need before I can start deleting.";
-          if (databaseStatsString != "") {
-            this.instructions += `\n\nI've saved: **${await this.getDatabaseStatsString()}**.`;
-          }
+            databaseStatsString !== ""
+              ? this.t("viewModels.x.wizard.deleteReview.withStats", {
+                  stats: databaseStatsString,
+                })
+              : this.t("viewModels.x.wizard.deleteReview.base");
           await this.loadBlank();
           this.state = State.WizardDeleteReviewDisplay;
           break;
@@ -522,19 +505,14 @@ You'll be able to access it even after you delete it from X.
         case State.WizardMigrateToBluesky:
           this.showBrowser = false;
           await this.loadBlank();
-          this.instructions = `
-# Just because you're quitting X doesn't mean your posts need to disappear.
-
-After you build a local database of your tweets, I can help you migrate them into a Bluesky account.`;
+          this.instructions = this.t("viewModels.x.wizard.migrateToBluesky");
           this.state = State.WizardMigrateToBlueskyDisplay;
           break;
 
         case State.WizardTombstone:
           this.showBrowser = false;
           await this.loadURL("about:blank");
-          this.instructions = `
-**Quitting X? Good riddance.**
-Using my Tombstone feature, I can help you update your profile to tell your followers where to find you next. I can also help you lock your account.`;
+          this.instructions = this.t("viewModels.x.wizard.tombstone");
           this.state = State.WizardTombstoneDisplay;
           break;
 
@@ -549,29 +527,21 @@ Using my Tombstone feature, I can help you update your profile to tell your foll
           }
 
           this.showBrowser = false;
-          this.instructions = `
-# You've chosen to use a pre-existing X archive.
-
-I'll help you import your X data so you can view it locally or migrate your tweets to Bluesky.`;
+          this.instructions = this.t("viewModels.x.wizard.archiveOnly");
           await this.loadBlank();
           this.state = State.WizardArchiveOnlyDisplay;
           break;
 
         case State.FinishedRunningJobs:
           this.showBrowser = false;
-          this.instructions = `
-All done!
-
-# Here's what I did.`;
+          this.instructions = this.t("viewModels.x.wizard.finishedJobs");
           await this.loadBlank();
           this.state = State.FinishedRunningJobsDisplay;
           break;
 
         case State.WizardCheckPremium:
           this.showBrowser = false;
-          this.instructions = `# I'm almost ready to delete your data from X!
-
-You can save all your data for free, but you need a Premium plan to delete your data.`;
+          this.instructions = this.t("viewModels.x.wizard.checkPremium");
           await this.loadBlank();
           this.state = State.WizardCheckPremiumDisplay;
           break;
@@ -617,7 +587,7 @@ You can save all your data for free, but you need a Premium plan to delete your 
           // Stay in this state until the user cancels it
           this.showBrowser = false;
           await this.loadBlank();
-          this.instructions = `I'm in my debug state.`;
+          this.instructions = this.t("viewModels.x.wizard.debug");
           while (this.state === State.Debug) {
             await this.sleep(1000);
           }

@@ -12,7 +12,7 @@ export async function runJobTombstoneUpdateBanner(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `**I'm updating your banner.**`;
+  vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBanner");
   vm.showAutomationNotice = true;
 
   // Load the profile page
@@ -35,7 +35,7 @@ export async function runJobTombstoneUpdateBio(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `**I'm updating your bio.**`;
+  vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBio");
   vm.showAutomationNotice = true;
 
   // When submitting the profile form, it doesn't seem to get the bio text value from
@@ -222,7 +222,7 @@ export async function runJobTombstoneLockAccount(
   );
 
   vm.showBrowser = true;
-  vm.instructions = `**I'm locking your account.**`;
+  vm.instructions = vm.t("viewModels.x.jobs.tombstone.lockAccount");
   vm.showAutomationNotice = true;
 
   // Load the audience, media and tagging settings page
