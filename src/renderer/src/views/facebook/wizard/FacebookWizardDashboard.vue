@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { FacebookViewModel } from "../../../view_models/FacebookViewModel";
+// import type { FacebookViewModel } from "../../../view_models/FacebookViewModel";
 
 const { t } = useI18n();
 
-const props = defineProps<{
-  model: FacebookViewModel;
-}>();
+// const props = defineProps<{
+//   model: FacebookViewModel;
+// }>();
 
 const cards = computed(() => [
   {
@@ -25,7 +25,7 @@ const cards = computed(() => [
 
 <template>
   <div class="wizard-content">
-    <div class="wizard-scroll-content">
+    <div class="wizard-scroll-content dashboard-center">
       <div class="dashboard row align-items-stretch g-3 justify-content-center">
         <div
           v-for="card in cards"

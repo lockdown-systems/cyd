@@ -59,7 +59,7 @@ onMounted(async () => {
 
 <template>
   <div class="wizard-content">
-    <div class="wizard-scroll-content">
+    <div class="wizard-scroll-content dashboard-center">
       <div class="dashboard row align-items-stretch g-3 justify-content-center">
         <div
           v-if="!props.model.account?.xAccount?.archiveOnly"
