@@ -10,6 +10,7 @@ interface FacebookAccountRow {
   profileImageDataURI: string;
   accountID: string | null;
   deleteWallPosts: number;
+  userLang: string;
 }
 
 function facebookAccountRowToFacebookAccount(
@@ -24,6 +25,7 @@ function facebookAccountRowToFacebookAccount(
     profileImageDataURI: row.profileImageDataURI,
     accountID: row.accountID,
     deleteWallPosts: row.deleteWallPosts === 1,
+    userLang: row.userLang || "English (US)",
   };
 }
 
@@ -78,7 +80,8 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
             username = ?,
             profileImageDataURI = ?,
             accountID = ?,
-            deleteWallPosts = ?
+            deleteWallPosts = ?,
+            userLang = ?
         WHERE id = ?
     `,
     [
@@ -86,6 +89,7 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
       account.profileImageDataURI,
       account.accountID,
       account.deleteWallPosts ? 1 : 0,
+      account.userLang || "English (US)",
       account.id,
     ],
   );

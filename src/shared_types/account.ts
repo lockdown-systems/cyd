@@ -96,4 +96,5 @@ export type FacebookAccount = {
   profileImageDataURI: string;
   accountID: string | null;
   deleteWallPosts: boolean;
+  userLang: string;
 };

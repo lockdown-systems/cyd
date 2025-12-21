@@ -137,7 +137,15 @@ export class FacebookViewModel extends BaseViewModel {
 
     // Add delete jobs if enabled
     if (this.account.facebookAccount?.deleteWallPosts) {
+      // Language jobs wrap around delete jobs:
+      // 1. Save user's current language
+      // 2. Set language to English (needed for automation)
+      // 3. Delete wall posts
+      // 4. Restore user's original language
+      jobTypes.push("saveUserLang");
+      jobTypes.push("setLangToEnglish");
       jobTypes.push("deleteWallPosts");
+      jobTypes.push("restoreUserLang");
     }
 
     // Create jobs array
@@ -256,8 +264,20 @@ export class FacebookViewModel extends BaseViewModel {
         await AuthOps.runJobLogin(this, jobIndex);
         break;
 
+      case "saveUserLang":
+        await DeleteJobs.runJobSaveUserLang(this, jobIndex);
+        break;
+
+      case "setLangToEnglish":
+        await DeleteJobs.runJobSetLangToEnglish(this, jobIndex);
+        break;
+
       case "deleteWallPosts":
         await DeleteJobs.runJobDeleteWallPosts(this, jobIndex);
+        break;
+
+      case "restoreUserLang":
+        await DeleteJobs.runJobRestoreUserLang(this, jobIndex);
         break;
     }
   }

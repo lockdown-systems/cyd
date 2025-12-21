@@ -603,6 +603,9 @@
         "checkingLogin": "Checking to see if you're still logged in to your Facebook account..."
       },
       "jobs": {
+        "savingLanguage": "# I'm checking your language settings.",
+        "settingLanguageToEnglish": "# I'm temporarily changing your language to English for automation.",
+        "restoringLanguage": "# I'm restoring your original language setting.",
         "deletingWallPosts": "# I'm deleting all posts from your Facebook wall."
       }
     }

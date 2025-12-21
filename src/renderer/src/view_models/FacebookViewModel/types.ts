@@ -6,11 +6,19 @@ export const State = PlatformStates;
 // When state is RunJobs, this tracks which job is currently running
 export enum RunJobsState {
   Default = "",
+  SaveUserLang = "SaveUserLang",
+  SetLangToEnglish = "SetLangToEnglish",
   DeleteWallPosts = "DeleteWallPosts",
+  RestoreUserLang = "RestoreUserLang",
 }
 
 // Facebook job types
-export type FacebookJobType = "login" | "deleteWallPosts";
+export type FacebookJobType =
+  | "login"
+  | "saveUserLang"
+  | "setLangToEnglish"
+  | "deleteWallPosts"
+  | "restoreUserLang";
 
 // Facebook job
 export type FacebookJob = {

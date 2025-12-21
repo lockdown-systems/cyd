@@ -196,5 +196,12 @@ export const runMainMigrations = () => {
         `ALTER TABLE facebookAccount ADD COLUMN deleteWallPosts INTEGER DEFAULT 1;`,
       ],
     },
+    // Add userLang to facebookAccount table
+    {
+      name: "add userLang to facebookAccount table",
+      sql: [
+        `ALTER TABLE facebookAccount ADD COLUMN userLang TEXT DEFAULT 'English (US)';`,
+      ],
+    },
   ]);
 };
