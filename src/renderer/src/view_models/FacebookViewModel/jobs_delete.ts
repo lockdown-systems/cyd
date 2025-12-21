@@ -56,24 +56,28 @@ async function waitForLanguageDialog(vm: FacebookViewModel): Promise<boolean> {
 
   // Wait up to 10 seconds for dialog to appear
   for (let i = 0; i < 20; i++) {
-    const dialogExists = await webview.executeJavaScript(`
-      (() => {
-        const result = document.evaluate(
-          '${XPATH_LANGUAGE_DIALOG}',
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        );
-        const element = result.singleNodeValue;
-        return element && element.getAttribute('role') === 'dialog';
-      })()
-    `);
+    try {
+      const dialogExists = await webview.executeJavaScript(`
+        (() => {
+          const result = document.evaluate(
+            '${XPATH_LANGUAGE_DIALOG}',
+            document,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          );
+          const element = result.singleNodeValue;
+          return element && element.getAttribute('role') === 'dialog';
+        })()
+      `);
 
-    if (dialogExists) {
-      // Give it a moment for content to load
-      await vm.sleep(500);
-      return true;
+      if (dialogExists) {
+        // Give it a moment for content to load
+        await vm.sleep(500);
+        return true;
+      }
+    } catch (error) {
+      vm.log("waitForLanguageDialog", `Error checking dialog: ${error}`);
     }
     await vm.sleep(500);
   }
@@ -87,17 +91,18 @@ async function findCurrentLanguage(vm: FacebookViewModel): Promise<string> {
   const webview = vm.getWebview();
   if (!webview) return DEFAULT_LANGUAGE;
 
-  const language = await webview.executeJavaScript(`
-    (() => {
-      const result = document.evaluate(
-        '${XPATH_LANGUAGE_LIST}',
-        document,
-        null,
-        XPathResult.FIRST_ORDERED_NODE_TYPE,
-        null
-      );
-      const languageList = result.singleNodeValue;
-      if (!languageList) return null;
+  try {
+    const language = await webview.executeJavaScript(`
+      (() => {
+        const result = document.evaluate(
+          '${XPATH_LANGUAGE_LIST}',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        );
+        const languageList = result.singleNodeValue;
+        if (!languageList) return null;
 
       // Loop through child divs looking for the active language
       const children = languageList.children;
@@ -119,7 +124,11 @@ async function findCurrentLanguage(vm: FacebookViewModel): Promise<string> {
     })()
   `);
 
-  return language || DEFAULT_LANGUAGE;
+    return language || DEFAULT_LANGUAGE;
+  } catch (error) {
+    vm.log("findCurrentLanguage", `Error finding language: ${error}`);
+    return DEFAULT_LANGUAGE;
+  }
 }
 
 /**
@@ -147,58 +156,68 @@ async function selectLanguage(
   // Type the search query (use first part of language name for search)
   // For "English (US)", search for "English US"
   const searchQuery = language.replace(/[()]/g, "");
-  await webview.executeJavaScript(`
-    (() => {
-      const result = document.evaluate(
-        '${XPATH_LANGUAGE_SEARCH_INPUT}',
-        document,
-        null,
-        XPathResult.FIRST_ORDERED_NODE_TYPE,
-        null
-      );
-      const input = result.singleNodeValue;
-      if (input) {
-        input.value = '${searchQuery}';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    })()
-  `);
+  try {
+    await webview.executeJavaScript(`
+      (() => {
+        const result = document.evaluate(
+          '${XPATH_LANGUAGE_SEARCH_INPUT}',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        );
+        const input = result.singleNodeValue;
+        if (input) {
+          input.value = '${searchQuery}';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      })()
+    `);
+  } catch (error) {
+    vm.log("selectLanguage", `Error setting input value: ${error}`);
+    return false;
+  }
 
   // Wait for search results to filter
   await vm.sleep(1000);
 
   // Find and click the first radio button in the language list
-  const clicked = await webview.executeJavaScript(`
-    (() => {
-      const result = document.evaluate(
-        '${XPATH_LANGUAGE_LIST}',
-        document,
-        null,
-        XPathResult.FIRST_ORDERED_NODE_TYPE,
-        null
-      );
-      const languageList = result.singleNodeValue;
-      if (!languageList) return false;
+  try {
+    const clicked = await webview.executeJavaScript(`
+      (() => {
+        const result = document.evaluate(
+          '${XPATH_LANGUAGE_LIST}',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        );
+        const languageList = result.singleNodeValue;
+        if (!languageList) return false;
 
-      // Loop through child divs looking for language fields
-      const children = languageList.children;
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i];
-        if (child.tagName !== 'DIV') continue;
+        // Loop through child divs looking for language fields
+        const children = languageList.children;
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          if (child.tagName !== 'DIV') continue;
 
-        // Check if this child has a div with role="radio"
-        const radioDiv = child.querySelector('div[role="radio"]');
-        if (radioDiv) {
-          radioDiv.click();
-          return true;
+          // Check if this child has a div with role="radio"
+          const radioDiv = child.querySelector('div[role="radio"]');
+          if (radioDiv) {
+            radioDiv.click();
+            return true;
+          }
         }
-      }
-      return false;
-    })()
-  `);
+        return false;
+      })()
+    `);
 
-  return clicked;
+    return clicked;
+  } catch (error) {
+    vm.log("selectLanguage", `Error clicking radio button: ${error}`);
+    return false;
+  }
 }
 
 /**
@@ -242,6 +261,8 @@ export async function runJobSaveUserLang(
 
   vm.log("runJobSaveUserLang", "Opening language settings");
 
+  await vm.waitForPause();
+
   // Open the language dialog
   const dialogOpened = await openLanguageDialog(vm);
   if (!dialogOpened) {
@@ -254,18 +275,34 @@ export async function runJobSaveUserLang(
       await window.electron.database.saveAccount(JSON.stringify(vm.account));
     }
     await Helpers.finishJob(vm, jobIndex);
+
+    await vm.pause();
+    await vm.waitForPause();
     return;
   }
+
+  await vm.waitForPause();
+
+  // Dev pause: wait to inspect the dialog
+  await vm.sleep(2000);
 
   // Find the current language
   const currentLanguage = await findCurrentLanguage(vm);
   vm.log("runJobSaveUserLang", `Found current language: ${currentLanguage}`);
+
+  await vm.waitForPause();
+
+  // Dev pause: wait before saving
+  await vm.sleep(2000);
 
   // Save to account
   if (vm.account.facebookAccount) {
     vm.account.facebookAccount.userLang = currentLanguage;
     await window.electron.database.saveAccount(JSON.stringify(vm.account));
   }
+
+  await vm.pause();
+  await vm.waitForPause();
 
   await Helpers.finishJob(vm, jobIndex);
 }
@@ -294,6 +331,8 @@ export async function runJobSetLangToEnglish(
 
   vm.log("runJobSetLangToEnglish", "Setting language to English (US)");
 
+  await vm.waitForPause();
+
   // Open the language dialog
   const dialogOpened = await openLanguageDialog(vm);
   if (!dialogOpened) {
@@ -301,6 +340,11 @@ export async function runJobSetLangToEnglish(
     await Helpers.finishJob(vm, jobIndex);
     return;
   }
+
+  await vm.waitForPause();
+
+  // Dev pause: wait to inspect the dialog
+  await vm.sleep(2000);
 
   // Select English (US)
   const selected = await selectLanguage(vm, DEFAULT_LANGUAGE);
@@ -310,8 +354,13 @@ export async function runJobSetLangToEnglish(
     vm.log("runJobSetLangToEnglish", "Successfully selected English (US)");
   }
 
+  await vm.waitForPause();
+
   // Wait for the change to take effect
   await vm.sleep(2000);
+
+  await vm.pause();
+  await vm.waitForPause();
 
   await Helpers.finishJob(vm, jobIndex);
 }
@@ -343,6 +392,8 @@ export async function runJobRestoreUserLang(
 
   vm.log("runJobRestoreUserLang", `Restoring language to ${userLang}`);
 
+  await vm.waitForPause();
+
   // Open the language dialog
   const dialogOpened = await openLanguageDialog(vm);
   if (!dialogOpened) {
@@ -350,6 +401,11 @@ export async function runJobRestoreUserLang(
     await Helpers.finishJob(vm, jobIndex);
     return;
   }
+
+  await vm.waitForPause();
+
+  // Dev pause: wait to inspect the dialog
+  await vm.sleep(2000);
 
   // Select the user's original language
   const selected = await selectLanguage(vm, userLang);
@@ -359,8 +415,13 @@ export async function runJobRestoreUserLang(
     vm.log("runJobRestoreUserLang", `Successfully restored to ${userLang}`);
   }
 
+  await vm.waitForPause();
+
   // Wait for the change to take effect
   await vm.sleep(2000);
+
+  await vm.pause();
+  await vm.waitForPause();
 
   await Helpers.finishJob(vm, jobIndex);
 }
@@ -377,16 +438,23 @@ export async function runJobDeleteWallPosts(
 
   vm.log("runJobDeleteWallPosts", "Loading profile page");
 
+  await vm.waitForPause();
+
   // Load the user's profile page
   await vm.loadURL(FACEBOOK_PROFILE_URL);
   await vm.waitForLoadingToFinish();
+
+  await vm.waitForPause();
+
+  // Dev pause: wait to inspect the page
+  await vm.sleep(2000);
 
   // For now, just log that we've loaded the page
   // The user will implement the actual deletion logic from here
   vm.log("runJobDeleteWallPosts", "Profile page loaded, ready for deletion");
 
-  // Sleep for 20 seconds
-  await vm.sleep(20000);
+  await vm.pause();
+  await vm.waitForPause();
 
   await Helpers.finishJob(vm, jobIndex);
 }
