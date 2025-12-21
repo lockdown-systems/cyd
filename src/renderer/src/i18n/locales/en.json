@@ -22,6 +22,8 @@
   },
   "jobs": {
     "login": "Logging in",
+    "saveUserLang": "Saving language",
+    "setLangToEnglish": "Using English",
     "indexTweets": "Saving tweets",
     "indexLikes": "Saving likes",
     "indexBookmarks": "Saving bookmarks",
@@ -42,7 +44,8 @@
     "tombstoneLockAccount": "Locking account",
     "savePosts": "Saving posts",
     "savePostsHTML": "Saving posts HTML",
-    "deleteWallPosts": "Deleting wall posts"
+    "deleteWallPosts": "Deleting wall posts",
+    "restoreUserLang": "Restoring language"
   },
   "progress": {
     "savingComplete": "Saving complete!",
