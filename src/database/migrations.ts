@@ -189,5 +189,12 @@ export const runMainMigrations = () => {
       name: "add accountID to facebookAccount table",
       sql: [`ALTER TABLE facebookAccount ADD COLUMN accountID TEXT;`],
     },
+    // Add deleteWallPosts to facebookAccount table
+    {
+      name: "add deleteWallPosts to facebookAccount table",
+      sql: [
+        `ALTER TABLE facebookAccount ADD COLUMN deleteWallPosts INTEGER DEFAULT 1;`,
+      ],
+    },
   ]);
 };

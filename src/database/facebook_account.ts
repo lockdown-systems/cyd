@@ -9,6 +9,7 @@ interface FacebookAccountRow {
   username: string;
   profileImageDataURI: string;
   accountID: string | null;
+  deleteWallPosts: number;
 }
 
 function facebookAccountRowToFacebookAccount(
@@ -22,6 +23,7 @@ function facebookAccountRowToFacebookAccount(
     username: row.username,
     profileImageDataURI: row.profileImageDataURI,
     accountID: row.accountID,
+    deleteWallPosts: row.deleteWallPosts === 1,
   };
 }
 
@@ -75,13 +77,15 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
             accessedAt = CURRENT_TIMESTAMP,
             username = ?,
             profileImageDataURI = ?,
-            accountID = ?
+            accountID = ?,
+            deleteWallPosts = ?
         WHERE id = ?
     `,
     [
       account.username,
       account.profileImageDataURI,
       account.accountID,
+      account.deleteWallPosts ? 1 : 0,
       account.id,
     ],
   );

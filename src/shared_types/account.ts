@@ -95,4 +95,5 @@ export type FacebookAccount = {
   username: string;
   profileImageDataURI: string;
   accountID: string | null;
+  deleteWallPosts: boolean;
 };
