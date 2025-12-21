@@ -83,6 +83,7 @@ export function createMockFacebookAccount(
     username: "facebook-user",
     profileImageDataURI: "",
     accountID: null,
+    deleteWallPosts: false,
     ...overrides,
   };
 }

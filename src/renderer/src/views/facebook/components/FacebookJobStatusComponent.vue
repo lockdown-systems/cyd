@@ -1,9 +1,44 @@
 <script setup lang="ts">
-defineProps<{ jobs?: unknown[] }>();
+import { useI18n } from "vue-i18n";
+import type { FacebookJob } from "../../../view_models/FacebookViewModel";
+import StatusComponent from "../../shared_components/StatusComponent.vue";
+
+defineProps<{
+  jobs: FacebookJob[];
+  isPaused: boolean;
+  clickingEnabled: boolean;
+}>();
+
+const emit = defineEmits([
+  "onPause",
+  "onResume",
+  "onCancel",
+  "onReportBug",
+  "onClickingDisabled",
+  "onClickingEnabled",
+]);
+
+const { t } = useI18n();
+
+const getJobTypeText = (jobType: string) => {
+  const translationKey = `jobs.${jobType}`;
+  const translated = t(translationKey);
+  // If translation key doesn't exist, vue-i18n returns the key, so fallback to jobType
+  return translated !== translationKey ? translated : jobType;
+};
 </script>
 
 <template>
-  <div v-if="jobs && jobs.length > 0" class="facebook-job-status text-muted">
-    <!-- Placeholder for future Facebook job status details -->
-  </div>
+  <StatusComponent
+    :jobs="jobs"
+    :get-job-type-text="getJobTypeText"
+    :is-paused="isPaused"
+    :clicking-enabled="clickingEnabled"
+    @on-pause="emit('onPause')"
+    @on-resume="emit('onResume')"
+    @on-cancel="emit('onCancel')"
+    @on-report-bug="emit('onReportBug')"
+    @on-clicking-enabled="emit('onClickingEnabled')"
+    @on-clicking-disabled="emit('onClickingDisabled')"
+  />
 </template>

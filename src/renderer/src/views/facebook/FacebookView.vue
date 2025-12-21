@@ -6,6 +6,7 @@ import PlatformView from "../PlatformView.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
 import { FacebookViewModel } from "../../view_models/FacebookViewModel";
+import { PlatformStates } from "../../types/PlatformStates";
 
 const props = defineProps<{
   account: Account;
@@ -45,6 +46,18 @@ const {
 const automationHandlers = createAutomationHandlers(() =>
   emit("onRefreshClicked"),
 );
+
+const startJobs = async () => {
+  if (model.value.account.facebookAccount == null) {
+    console.error("startJobs", "Account is null");
+    return;
+  }
+
+  console.log("Starting Facebook jobs");
+  await model.value.defineJobs();
+  model.value.state = PlatformStates.RunJobs;
+  await startStateLoop();
+};
 
 onMounted(async () => {
   setupAuthListeners();
@@ -90,5 +103,6 @@ onUnmounted(async () => {
     @on-refresh-clicked="emit('onRefreshClicked')"
     @on-remove-clicked="emit('onRemoveClicked')"
     @set-state="setState($event)"
+    @start-jobs="startJobs"
   />
 </template>

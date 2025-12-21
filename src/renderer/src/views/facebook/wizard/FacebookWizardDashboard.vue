@@ -23,8 +23,8 @@ const cards = computed(() => [
     icon: "/assets/icon-delete.png",
     title: t("facebook.dashboard.deleteWallTitle"),
     description: t("facebook.dashboard.deleteWallDescription"),
-    state: null,
-    disabled: true,
+    state: PlatformStates.WizardDeleteOptions,
+    disabled: false,
     startHere: false,
   },
 ]);

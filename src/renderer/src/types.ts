@@ -35,6 +35,11 @@ export const PlausibleEvents = Object.freeze({
   X_JOB_STARTED_TOMBSTONE_UPDATE_BANNER: "X Job Started: tombstoneUpdateBanner",
   X_JOB_STARTED_TOMBSTONE_UPDATE_BIO: "X Job Started: tombstoneUpdateBio",
   X_JOB_STARTED_TOMBSTONE_LOCK_ACCOUNT: "X Job Started: tombstoneLockAccount",
+
+  FACEBOOK_USER_SIGNED_IN: "Facebook User Signed In",
+  FACEBOOK_JOB_STARTED_LOGIN: "Facebook Job Started: login",
+  FACEBOOK_JOB_STARTED_DELETE_WALL_POSTS:
+    "Facebook Job Started: deleteWallPosts",
 });
 
 export type ButtonInfo = {

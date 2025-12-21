@@ -76,6 +76,11 @@ export enum AutomationErrorType {
   x_unknownError = "x_unknown",
   x_loadURLError = "x_loadURLError",
   x_loadURLURLChanged = "x_loadURLURLChanged",
+
+  // Facebook
+  facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
+  facebook_runError = "facebook_runError",
+  facebook_unknownError = "facebook_unknown",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -225,4 +230,11 @@ export const AutomationErrorTypeToMessage = {
   [AutomationErrorType.x_unknownError]: "An unknown error occurred",
   [AutomationErrorType.x_loadURLError]: "Error while loading URL",
   [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
+
+  // Facebook
+  [AutomationErrorType.facebook_runJob_UnknownError]:
+    "An unknown error occurred",
+  [AutomationErrorType.facebook_runError]:
+    "Error while in Facebook run function",
+  [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
 };

@@ -41,7 +41,8 @@
     "tombstoneUpdateBio": "Updating bio",
     "tombstoneLockAccount": "Locking account",
     "savePosts": "Saving posts",
-    "savePostsHTML": "Saving posts HTML"
+    "savePostsHTML": "Saving posts HTML",
+    "deleteWallPosts": "Deleting wall posts"
   },
   "progress": {
     "savingComplete": "Saving complete!",
@@ -401,6 +402,18 @@
       "getArchiveDescription": "If you want, export your Facebook archive BEFORE you delete all your posts.",
       "deleteWallTitle": "Delete My Wall",
       "deleteWallDescription": "Delete all posts from your Facebook wall."
+    },
+    "deleteOptions": {
+      "title": "Delete My Wall",
+      "description": "Select the data you want to delete from your Facebook wall.",
+      "deleteWallPosts": "Delete all posts from my wall"
+    },
+    "review": {
+      "deleteWallPosts": "All posts from your Facebook wall"
+    },
+    "finished": {
+      "title": "Jobs Completed",
+      "description": "Cyd has finished running all jobs. You can return to the dashboard to run more tasks."
     }
   },
   "review": {
@@ -578,7 +591,19 @@
     },
     "facebook": {
       "wizard": {
-        "dashboard": "\n# It's _your_ data. What do you want to do with it?"
+        "dashboard": "\n# It's _your_ data. What do you want to do with it?",
+        "login": {
+          "instructions": "Hello, friend! My name is **Cyd**. I can help you delete all of the posts from your Facebook wall.\n\n# To get started, log in to your Facebook account below."
+        },
+        "deleteOptions": "\n# Which data do you want to delete?",
+        "review": "I'm almost ready to start helping you delete your data from Facebook!\n\n# Here's what I'm planning on doing.",
+        "finishedJobs": "\nAll done!\n\n# Here's what I did."
+      },
+      "auth": {
+        "checkingLogin": "Checking to see if you're still logged in to your Facebook account..."
+      },
+      "jobs": {
+        "deletingWallPosts": "# I'm deleting all posts from your Facebook wall."
       }
     }
   }
