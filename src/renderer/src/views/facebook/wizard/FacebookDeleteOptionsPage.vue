@@ -138,6 +138,7 @@ onMounted(async () => {
                   v-model="deleteWallPosts"
                   type="checkbox"
                   class="form-check-input"
+                  @change="saveSettings"
                 />
                 <label
                   class="form-check-label mr-1 text-nowrap"

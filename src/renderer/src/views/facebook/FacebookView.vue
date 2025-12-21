@@ -54,6 +54,15 @@ const startJobs = async () => {
   }
 
   console.log("Starting Facebook jobs");
+
+  // Refresh the account from the database to get latest settings
+  const freshAccount = await window.electron.database.getAccount(
+    model.value.account.id,
+  );
+  if (freshAccount) {
+    model.value.account = freshAccount;
+  }
+
   await model.value.defineJobs();
   model.value.state = PlatformStates.RunJobs;
   await startStateLoop();
