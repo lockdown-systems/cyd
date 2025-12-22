@@ -267,6 +267,31 @@ export class FacebookViewModel extends BaseViewModel {
 
       case "saveUserLang":
         await LangJobs.runJobSaveUserLang(this, jobIndex);
+
+        // After saving the user's language, check if it's already English (US).
+        // If so, we can skip the setLangToEnglish and restoreUserLang jobs entirely
+        // since there's no need to change the language.
+        //
+        // How this works with the job loop:
+        // The loop in run() iterates: for (let i = this.currentJobIndex; i < this.jobs.length; i++)
+        // After this job completes (e.g., at index 1), the loop increments i to 2.
+        // By removing setLangToEnglish (was index 2) and restoreUserLang (was index 4),
+        // the jobs array shrinks and the next job (deleteWallPosts) shifts to index 2.
+        // So when the loop continues with i=2, it correctly runs deleteWallPosts.
+        //
+        // Before removal: [login, saveUserLang, setLangToEnglish, deleteWallPosts, restoreUserLang]
+        // After removal:  [login, saveUserLang(done), deleteWallPosts]
+        if (this.account.facebookAccount?.userLang === LangJobs.DEFAULT_LANGUAGE) {
+          this.log(
+            "runJob",
+            "User language is already English (US), removing setLangToEnglish and restoreUserLang jobs",
+          );
+          this.jobs = this.jobs.filter(
+            (job) =>
+              job.jobType !== "setLangToEnglish" &&
+              job.jobType !== "restoreUserLang",
+          );
+        }
         break;
 
       case "setLangToEnglish":

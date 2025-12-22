@@ -22,7 +22,7 @@
   },
   "jobs": {
     "login": "Logging in",
-    "saveUserLang": "Saving language",
+    "saveUserLang": "Checking language",
     "setLangToEnglish": "Using English",
     "indexTweets": "Saving tweets",
     "indexLikes": "Saving likes",
