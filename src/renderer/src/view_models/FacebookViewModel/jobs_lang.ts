@@ -28,33 +28,31 @@ export const XPATHS = {
 export async function waitForLanguageDialog(
   vm: FacebookViewModel,
 ): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
-
   // Wait up to 10 seconds for dialog to appear
   for (let i = 0; i < 20; i++) {
-    try {
-      const dialogExists = await webview.executeJavaScript(`
-        (() => {
-          const result = document.evaluate(
-            '${XPATH_LANGUAGE_DIALOG}',
-            document,
-            null,
-            XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
-          );
-          const element = result.singleNodeValue;
-          return element && element.getAttribute('role') === 'dialog';
-        })()
-      `);
+    const result = await vm.safeExecuteJavaScript<boolean>(
+      `(() => {
+        const result = document.evaluate(
+          '${XPATH_LANGUAGE_DIALOG}',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        );
+        const element = result.singleNodeValue;
+        return element && element.getAttribute('role') === 'dialog';
+      })()`,
+      "waitForLanguageDialog",
+    );
 
-      if (dialogExists) {
-        // Give it a moment for content to load
-        await vm.sleep(500);
-        return true;
-      }
-    } catch (error) {
-      vm.log("waitForLanguageDialog", `Error checking dialog: ${error}`);
+    if (!result.success) {
+      return false;
+    }
+
+    if (result.value) {
+      // Give it a moment for content to load
+      await vm.sleep(500);
+      return true;
     }
     await vm.sleep(500);
   }
@@ -67,21 +65,17 @@ export async function waitForLanguageDialog(
 export async function findCurrentLanguage(
   vm: FacebookViewModel,
 ): Promise<string> {
-  const webview = vm.getWebview();
-  if (!webview) return DEFAULT_LANGUAGE;
-
-  try {
-    const language = await webview.executeJavaScript(`
-      (() => {
-        const result = document.evaluate(
-          '${XPATH_LANGUAGE_LIST}',
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        );
-        const languageList = result.singleNodeValue;
-        if (!languageList) return null;
+  const result = await vm.safeExecuteJavaScript<string | null>(
+    `(() => {
+      const result = document.evaluate(
+        '${XPATH_LANGUAGE_LIST}',
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      );
+      const languageList = result.singleNodeValue;
+      if (!languageList) return null;
 
       // Loop through child divs looking for the active language
       const children = languageList.children;
@@ -100,14 +94,11 @@ export async function findCurrentLanguage(
         }
       }
       return null;
-    })()
-  `);
+    })()`,
+    "findCurrentLanguage",
+  );
 
-    return language || DEFAULT_LANGUAGE;
-  } catch (error) {
-    vm.log("findCurrentLanguage", `Error finding language: ${error}`);
-    return DEFAULT_LANGUAGE;
-  }
+  return result.success && result.value ? result.value : DEFAULT_LANGUAGE;
 }
 
 /**
@@ -117,64 +108,57 @@ export async function selectLanguage(
   vm: FacebookViewModel,
   language: string,
 ): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
-
-  try {
-    const clicked = await webview.executeJavaScript(`
-      (() => {
-        const targetLanguage = '${language}';
-        
-        const result = document.evaluate(
-          '${XPATH_LANGUAGE_LIST}',
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        );
-        const languageList = result.singleNodeValue;
-        if (!languageList) {
-          console.log('selectLanguage: Language list not found');
-          return false;
-        }
-
-        // Loop through child divs looking for the target language
-        const children = languageList.children;
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i];
-          if (child.tagName !== 'DIV') continue;
-
-          // Check if this child has a div with role="radio" (indicating it's a language option)
-          const radioDiv = child.querySelector('div[role="radio"]');
-          if (!radioDiv) continue;
-
-          // Look for the first span which contains the language name in its native language
-          const span = child.querySelector('span');
-          if (!span) continue;
-
-          const languageText = span.textContent.trim();
-          console.log('selectLanguage: Found language option:', languageText);
-
-          if (languageText === targetLanguage) {
-            console.log('selectLanguage: Clicking radio button for:', targetLanguage);
-            radioDiv.click();
-            return true;
-          }
-        }
-
-        console.log('selectLanguage: Target language not found:', targetLanguage);
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const targetLanguage = '${language}';
+      
+      const result = document.evaluate(
+        '${XPATH_LANGUAGE_LIST}',
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      );
+      const languageList = result.singleNodeValue;
+      if (!languageList) {
+        console.log('selectLanguage: Language list not found');
         return false;
-      })()
-    `);
+      }
 
-    if (!clicked) {
-      vm.log("selectLanguage", `Language not found in list: ${language}`);
-    }
-    return clicked;
-  } catch (error) {
-    vm.log("selectLanguage", `Error selecting language: ${error}`);
-    return false;
+      // Loop through child divs looking for the target language
+      const children = languageList.children;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        if (child.tagName !== 'DIV') continue;
+
+        // Check if this child has a div with role="radio" (indicating it's a language option)
+        const radioDiv = child.querySelector('div[role="radio"]');
+        if (!radioDiv) continue;
+
+        // Look for the first span which contains the language name in its native language
+        const span = child.querySelector('span');
+        if (!span) continue;
+
+        const languageText = span.textContent.trim();
+        console.log('selectLanguage: Found language option:', languageText);
+
+        if (languageText === targetLanguage) {
+          console.log('selectLanguage: Clicking radio button for:', targetLanguage);
+          radioDiv.click();
+          return true;
+        }
+      }
+
+      console.log('selectLanguage: Target language not found:', targetLanguage);
+      return false;
+    })()`,
+    "selectLanguage",
+  );
+
+  if (result.success && !result.value) {
+    vm.log("selectLanguage", `Language not found in list: ${language}`);
   }
+  return result.success && result.value;
 }
 
 /**

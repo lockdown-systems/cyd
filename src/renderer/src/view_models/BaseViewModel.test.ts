@@ -120,4 +120,126 @@ describe("BaseViewModel", () => {
       expect(executeCall).toContain("//button[@class='submit']");
     });
   });
+
+  describe("safeExecuteJavaScript", () => {
+    it("returns success with value when JavaScript executes successfully", async () => {
+      const vm = createMockBaseViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue({
+        foo: "bar",
+      });
+
+      const result = await vm.safeExecuteJavaScript<{ foo: string }>(
+        "(() => ({ foo: 'bar' }))()",
+        "testContext",
+      );
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value).toEqual({ foo: "bar" });
+      }
+    });
+
+    it("returns success false when webview is not available", async () => {
+      const vm = createMockBaseViewModel();
+      vm.webview = null;
+
+      const result = await vm.safeExecuteJavaScript<boolean>(
+        "(() => true)()",
+        "testContext",
+      );
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Webview is not available");
+      }
+      expect(vm.log).toHaveBeenCalledWith(
+        "testContext",
+        "Webview is not available",
+      );
+    });
+
+    it("returns success false when JavaScript execution throws", async () => {
+      const vm = createMockBaseViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      vi.mocked(mockWebview.executeJavaScript).mockRejectedValue(
+        new Error("JS execution failed"),
+      );
+
+      const result = await vm.safeExecuteJavaScript<boolean>(
+        "(() => { throw new Error('test'); })()",
+        "testContext",
+      );
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("JS execution failed");
+      }
+      expect(vm.log).toHaveBeenCalledWith(
+        "testContext",
+        expect.stringContaining("Error:"),
+      );
+    });
+
+    it("does not log when no logContext is provided", async () => {
+      const vm = createMockBaseViewModel();
+      vm.webview = null;
+
+      await vm.safeExecuteJavaScript<boolean>("(() => true)()");
+
+      // Should not have logged anything since no context was provided
+      expect(vm.log).not.toHaveBeenCalled();
+    });
+
+    it("returns success false when webview is destroyed", async () => {
+      const vm = createMockBaseViewModel();
+      vm.isWebviewDestroyed = true;
+
+      const result = await vm.safeExecuteJavaScript<boolean>(
+        "(() => true)()",
+        "testContext",
+      );
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Webview is not available");
+      }
+    });
+
+    it("handles primitive return values correctly", async () => {
+      const vm = createMockBaseViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(42);
+
+      const result = await vm.safeExecuteJavaScript<number>(
+        "(() => 42)()",
+        "testContext",
+      );
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value).toBe(42);
+      }
+    });
+
+    it("handles array return values correctly", async () => {
+      const vm = createMockBaseViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue([1, 2, 3]);
+
+      const result = await vm.safeExecuteJavaScript<number[]>(
+        "(() => [1, 2, 3])()",
+        "testContext",
+      );
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value).toEqual([1, 2, 3]);
+      }
+    });
+  });
 });

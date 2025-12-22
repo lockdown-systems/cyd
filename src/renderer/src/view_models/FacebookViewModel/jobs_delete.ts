@@ -8,25 +8,18 @@ const FACEBOOK_PROFILE_URL = "https://www.facebook.com/me/";
  * Click the "Manage posts" button on the profile page
  */
 async function clickManagePostsButton(vm: FacebookViewModel): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
-
-  try {
-    const clicked = await webview.executeJavaScript(`
-      (() => {
-        const buttons = document.querySelectorAll('div[aria-label="Manage posts"][role="button"]');
-        if (buttons.length > 0) {
-          buttons[0].click();
-          return true;
-        }
-        return false;
-      })()
-    `);
-    return clicked;
-  } catch (error) {
-    vm.log("clickManagePostsButton", `Error: ${error}`);
-    return false;
-  }
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const buttons = document.querySelectorAll('div[aria-label="Manage posts"][role="button"]');
+      if (buttons.length > 0) {
+        buttons[0].click();
+        return true;
+      }
+      return false;
+    })()`,
+    "clickManagePostsButton",
+  );
+  return result.success && result.value;
 }
 
 /**
@@ -35,26 +28,24 @@ async function clickManagePostsButton(vm: FacebookViewModel): Promise<boolean> {
 async function waitForManagePostsDialog(
   vm: FacebookViewModel,
 ): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
-
   // Wait up to 10 seconds for dialog to appear
   for (let i = 0; i < 20; i++) {
-    try {
-      const dialogExists = await webview.executeJavaScript(`
-        (() => {
-          const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-          return !!dialog;
-        })()
-      `);
+    const result = await vm.safeExecuteJavaScript<boolean>(
+      `(() => {
+        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+        return !!dialog;
+      })()`,
+      "waitForManagePostsDialog",
+    );
 
-      if (dialogExists) {
-        // Give it a moment for content to load
-        await vm.sleep(500);
-        return true;
-      }
-    } catch (error) {
-      vm.log("waitForManagePostsDialog", `Error checking dialog: ${error}`);
+    if (!result.success) {
+      return false;
+    }
+
+    if (result.value) {
+      // Give it a moment for content to load
+      await vm.sleep(500);
+      return true;
     }
     await vm.sleep(500);
   }
@@ -68,28 +59,23 @@ async function waitForManagePostsDialog(
 async function waitForManagePostsDialogToDisappear(
   vm: FacebookViewModel,
 ): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
-
   // Wait up to 60 seconds for dialog to disappear (deletion might take a while)
   for (let i = 0; i < 120; i++) {
-    try {
-      const dialogExists = await webview.executeJavaScript(`
-        (() => {
-          const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-          return !!dialog;
-        })()
-      `);
+    const result = await vm.safeExecuteJavaScript<boolean>(
+      `(() => {
+        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+        return !!dialog;
+      })()`,
+      "waitForManagePostsDialogToDisappear",
+    );
 
-      if (!dialogExists) {
-        vm.log("waitForManagePostsDialogToDisappear", "Dialog has disappeared");
-        return true;
-      }
-    } catch (error) {
-      vm.log(
-        "waitForManagePostsDialogToDisappear",
-        `Error checking dialog: ${error}`,
-      );
+    if (!result.success) {
+      return false;
+    }
+
+    if (!result.value) {
+      vm.log("waitForManagePostsDialogToDisappear", "Dialog has disappeared");
+      return true;
     }
     await vm.sleep(500);
   }
@@ -106,33 +92,26 @@ async function waitForManagePostsDialogToDisappear(
  * Returns text like "You can hide or delete the posts selected." or empty string
  */
 async function getActionDescription(vm: FacebookViewModel): Promise<string> {
-  const webview = vm.getWebview();
-  if (!webview) return "";
+  const result = await vm.safeExecuteJavaScript<string>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return "";
 
-  try {
-    const text = await webview.executeJavaScript(`
-      (() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return "";
-
-        // Find the actions description span
-        // It's nested in the structure described by the user
-        // We'll search for spans that contain text about deletion/hiding
-        const spans = dialog.querySelectorAll('span');
-        for (const span of spans) {
-          const text = span.textContent?.trim() || "";
-          if (text.startsWith("You can")) {
-            return text;
-          }
+      // Find the actions description span
+      // It's nested in the structure described by the user
+      // We'll search for spans that contain text about deletion/hiding
+      const spans = dialog.querySelectorAll('span');
+      for (const span of spans) {
+        const text = span.textContent?.trim() || "";
+        if (text.startsWith("You can")) {
+          return text;
         }
-        return "";
-      })()
-    `);
-    return text || "";
-  } catch (error) {
-    vm.log("getActionDescription", `Error: ${error}`);
-    return "";
-  }
+      }
+      return "";
+    })()`,
+    "getActionDescription",
+  );
+  return result.success ? result.value || "" : "";
 }
 
 /**
@@ -154,42 +133,35 @@ async function toggleCheckbox(
   itemIndex: number,
   shouldCheck: boolean,
 ): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return false;
 
-  try {
-    const toggled = await webview.executeJavaScript(`
-      (() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return false;
+      const lists = dialog.querySelectorAll('div[role="list"]');
+      if (${listIndex} >= lists.length) return false;
 
-        const lists = dialog.querySelectorAll('div[role="list"]');
-        if (${listIndex} >= lists.length) return false;
+      const list = lists[${listIndex}];
+      const items = list.querySelectorAll('div[role="listitem"]');
+      if (${itemIndex} >= items.length) return false;
 
-        const list = lists[${listIndex}];
-        const items = list.querySelectorAll('div[role="listitem"]');
-        if (${itemIndex} >= items.length) return false;
+      const item = items[${itemIndex}];
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      if (!checkbox) return false;
 
-        const item = items[${itemIndex}];
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (!checkbox) return false;
+      const isChecked = checkbox.getAttribute('aria-checked') === 'true';
+      const shouldCheck = ${shouldCheck};
 
-        const isChecked = checkbox.getAttribute('aria-checked') === 'true';
-        const shouldCheck = ${shouldCheck};
-
-        // Only click if we need to change the state
-        if (isChecked !== shouldCheck) {
-          checkbox.click();
-          return true;
-        }
-        return false;
-      })()
-    `);
-    return toggled;
-  } catch (error) {
-    vm.log("toggleCheckbox", `Error: ${error}`);
-    return false;
-  }
+      // Only click if we need to change the state
+      if (isChecked !== shouldCheck) {
+        checkbox.click();
+        return true;
+      }
+      return false;
+    })()`,
+    "toggleCheckbox",
+  );
+  return result.success && result.value;
 }
 
 /**
@@ -198,67 +170,55 @@ async function toggleCheckbox(
 async function getListsAndItems(
   vm: FacebookViewModel,
 ): Promise<{ listIndex: number; itemIndex: number }[]> {
-  const webview = vm.getWebview();
-  if (!webview) return [];
+  const result = await vm.safeExecuteJavaScript<
+    { listIndex: number; itemIndex: number }[]
+  >(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return [];
 
-  try {
-    const items = await webview.executeJavaScript(`
-      (() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return [];
+      const lists = dialog.querySelectorAll('div[role="list"]');
+      const result = [];
 
-        const lists = dialog.querySelectorAll('div[role="list"]');
-        const result = [];
+      for (let listIndex = 0; listIndex < lists.length; listIndex++) {
+        const list = lists[listIndex];
+        const listItems = list.querySelectorAll('div[role="listitem"]');
 
-        for (let listIndex = 0; listIndex < lists.length; listIndex++) {
-          const list = lists[listIndex];
-          const listItems = list.querySelectorAll('div[role="listitem"]');
-
-          for (let itemIndex = 0; itemIndex < listItems.length; itemIndex++) {
-            const item = listItems[itemIndex];
-            const checkbox = item.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-              result.push({ listIndex, itemIndex });
-            }
+        for (let itemIndex = 0; itemIndex < listItems.length; itemIndex++) {
+          const item = listItems[itemIndex];
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          if (checkbox) {
+            result.push({ listIndex, itemIndex });
           }
         }
+      }
 
-        return result;
-      })()
-    `);
-    return items;
-  } catch (error) {
-    vm.log("getListsAndItems", `Error: ${error}`);
-    return [];
-  }
+      return result;
+    })()`,
+    "getListsAndItems",
+  );
+  return result.success ? result.value : [];
 }
 
 /**
  * Click the Next button in the dialog
  */
 async function clickNextButton(vm: FacebookViewModel): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return false;
 
-  try {
-    const clicked = await webview.executeJavaScript(`
-      (() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return false;
-
-        const nextButton = dialog.querySelector('div[aria-label="Next"][role="button"]');
-        if (nextButton) {
-          nextButton.click();
-          return true;
-        }
-        return false;
-      })()
-    `);
-    return clicked;
-  } catch (error) {
-    vm.log("clickNextButton", `Error: ${error}`);
-    return false;
-  }
+      const nextButton = dialog.querySelector('div[aria-label="Next"][role="button"]');
+      if (nextButton) {
+        nextButton.click();
+        return true;
+      }
+      return false;
+    })()`,
+    "clickNextButton",
+  );
+  return result.success && result.value;
 }
 
 /**
@@ -269,74 +229,60 @@ async function clickNextButton(vm: FacebookViewModel): Promise<boolean> {
 async function selectDeletePostsOption(
   vm: FacebookViewModel,
 ): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return false;
 
-  try {
-    const clicked = await webview.executeJavaScript(`
-      (() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return false;
-
-        // Find all divs that might contain the delete posts option
-        const divs = dialog.querySelectorAll('div[aria-disabled]');
-        
-        for (const div of divs) {
-          // Check if this div or its children contain text about deleting posts
-          const text = div.textContent?.toLowerCase() || '';
-          if (text.includes('delete posts')) {
-            // Check that it's not disabled
-            if (div.getAttribute('aria-disabled') === 'false') {
-              // Find the radio button (i tag) inside this div
-              const radioButton = div.querySelector('i');
-              if (radioButton) {
-                radioButton.click();
-                return true;
-              }
-            } else {
-              console.log('Delete posts option is disabled');
-              return false;
+      // Find all divs that might contain the delete posts option
+      const divs = dialog.querySelectorAll('div[aria-disabled]');
+      
+      for (const div of divs) {
+        // Check if this div or its children contain text about deleting posts
+        const text = div.textContent?.toLowerCase() || '';
+        if (text.includes('delete posts')) {
+          // Check that it's not disabled
+          if (div.getAttribute('aria-disabled') === 'false') {
+            // Find the radio button (i tag) inside this div
+            const radioButton = div.querySelector('i');
+            if (radioButton) {
+              radioButton.click();
+              return true;
             }
+          } else {
+            console.log('Delete posts option is disabled');
+            return false;
           }
         }
-        
-        console.log('Could not find delete posts option');
-        return false;
-      })()
-    `);
-    return clicked;
-  } catch (error) {
-    vm.log("selectDeletePostsOption", `Error: ${error}`);
-    return false;
-  }
+      }
+      
+      console.log('Could not find delete posts option');
+      return false;
+    })()`,
+    "selectDeletePostsOption",
+  );
+  return result.success && result.value;
 }
 
 /**
  * Click the Done button in the dialog
  */
 async function clickDoneButton(vm: FacebookViewModel): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return false;
 
-  try {
-    const clicked = await webview.executeJavaScript(`
-      (() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return false;
-
-        const doneButton = dialog.querySelector('div[aria-label="Done"][role="button"]');
-        if (doneButton) {
-          doneButton.click();
-          return true;
-        }
-        return false;
-      })()
-    `);
-    return clicked;
-  } catch (error) {
-    vm.log("clickDoneButton", `Error: ${error}`);
-    return false;
-  }
+      const doneButton = dialog.querySelector('div[aria-label="Done"][role="button"]');
+      if (doneButton) {
+        doneButton.click();
+        return true;
+      }
+      return false;
+    })()`,
+    "clickDoneButton",
+  );
+  return result.success && result.value;
 }
 
 export async function runJobDeleteWallPosts(
@@ -371,6 +317,7 @@ export async function runJobDeleteWallPosts(
     vm.log("runJobDeleteWallPosts", "Clicking Manage posts button");
 
     // Click the Manage posts button
+    // safeExecuteJavaScript handles webview validation and errors
     const buttonClicked = await clickManagePostsButton(vm);
     if (!buttonClicked) {
       vm.log("runJobDeleteWallPosts", "Failed to click Manage posts button");
