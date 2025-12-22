@@ -308,7 +308,7 @@ export async function runJobDeleteWallPosts(
   // Keep deleting posts until there are no more to delete
   let totalDeleted = 0;
   let batchNumber = 0;
-  const maxToCheck = 2;
+  const maxToCheck = 50;
 
   while (true) {
     batchNumber++;
@@ -410,9 +410,6 @@ export async function runJobDeleteWallPosts(
       break;
     }
 
-    await vm.waitForPause();
-
-    await vm.pause();
     await vm.waitForPause();
 
     // Click the Next button
