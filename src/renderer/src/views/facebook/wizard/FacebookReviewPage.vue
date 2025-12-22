@@ -118,6 +118,13 @@ onMounted(async () => {
               </ul>
             </div>
 
+            <div class="alert alert-info mt-4" role="alert">
+              <p class="fw-bold mb-0">{{t("facebook.review.languageSettingsMightChange")}}</p>
+              <p class="alert-details mb-0">
+                {{ t("facebook.review.languageSettingsDescription") }}
+              </p>
+            </div>
+
             <AlertStayAwake />
           </form>
         </template>

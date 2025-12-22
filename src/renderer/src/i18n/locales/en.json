@@ -412,7 +412,9 @@
       "deleteWallPosts": "Delete all posts from my wall"
     },
     "review": {
-      "deleteWallPosts": "All posts from your Facebook wall"
+      "deleteWallPosts": "All posts from your Facebook wall",
+      "languageSettingsMightChange": "Your Facebook language settings might temporarily change.",
+      "languageSettingsDescription": "If your Facebook account isn't already set to English, Cyd will set it to English, delete your data, and then change it back to your preferred language."
     },
     "finished": {
       "title": "Jobs Completed",

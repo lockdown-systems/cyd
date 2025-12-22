@@ -113,5 +113,8 @@ onUnmounted(async () => {
     @on-remove-clicked="emit('onRemoveClicked')"
     @set-state="setState($event)"
     @start-jobs="startJobs"
+    @on-pause="model.pause()"
+    @on-resume="model.resume()"
+    @on-cancel="emit('onRefreshClicked')"
   />
 </template>

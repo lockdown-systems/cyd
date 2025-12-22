@@ -8,13 +8,11 @@ const FACEBOOK_LANGUAGE_SETTINGS_URL =
 
 // XPaths for language settings
 const XPATH_ACCOUNT_LANGUAGE_BUTTON =
-  "/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div[2]/div/div/div/div/div/div/div/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div";
+  "/html/body/div[1]/div/div[1]/div/div[3]/div/div/div[1]/div[1]/div[2]/div/div/div/div/div/div/div/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div/div[1]/div/div[2]/i";
 const XPATH_LANGUAGE_DIALOG =
   "/html/body/div[1]/div/div[1]/div/div[4]/div/div/div[1]/div/div[2]/div/div/div/div";
 const XPATH_LANGUAGE_LIST =
   "/html/body/div[1]/div/div[1]/div/div[4]/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div/div[2]/div[2]/div/div/div[2]";
-const XPATH_LANGUAGE_SEARCH_INPUT =
-  "/html/body/div[1]/div/div[1]/div/div[4]/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[1]/div/label/input";
 
 const DEFAULT_LANGUAGE = "English (US)";
 
@@ -132,7 +130,7 @@ async function findCurrentLanguage(vm: FacebookViewModel): Promise<string> {
 }
 
 /**
- * Select a language by searching and clicking
+ * Select a language by finding it in the list and clicking its radio button
  */
 async function selectLanguage(
   vm: FacebookViewModel,
@@ -141,51 +139,11 @@ async function selectLanguage(
   const webview = vm.getWebview();
   if (!webview) return false;
 
-  // Click the search input
-  const clickedInput = await clickElementByXPath(
-    vm,
-    XPATH_LANGUAGE_SEARCH_INPUT,
-  );
-  if (!clickedInput) {
-    vm.log("selectLanguage", "Failed to click search input");
-    return false;
-  }
-
-  await vm.sleep(300);
-
-  // Type the search query (use first part of language name for search)
-  // For "English (US)", search for "English US"
-  const searchQuery = language.replace(/[()]/g, "");
-  try {
-    await webview.executeJavaScript(`
-      (() => {
-        const result = document.evaluate(
-          '${XPATH_LANGUAGE_SEARCH_INPUT}',
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        );
-        const input = result.singleNodeValue;
-        if (input) {
-          input.value = '${searchQuery}';
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      })()
-    `);
-  } catch (error) {
-    vm.log("selectLanguage", `Error setting input value: ${error}`);
-    return false;
-  }
-
-  // Wait for search results to filter
-  await vm.sleep(1000);
-
-  // Find and click the first radio button in the language list
   try {
     const clicked = await webview.executeJavaScript(`
       (() => {
+        const targetLanguage = '${language}';
+        
         const result = document.evaluate(
           '${XPATH_LANGUAGE_LIST}',
           document,
@@ -194,28 +152,46 @@ async function selectLanguage(
           null
         );
         const languageList = result.singleNodeValue;
-        if (!languageList) return false;
+        if (!languageList) {
+          console.log('selectLanguage: Language list not found');
+          return false;
+        }
 
-        // Loop through child divs looking for language fields
+        // Loop through child divs looking for the target language
         const children = languageList.children;
         for (let i = 0; i < children.length; i++) {
           const child = children[i];
           if (child.tagName !== 'DIV') continue;
 
-          // Check if this child has a div with role="radio"
+          // Check if this child has a div with role="radio" (indicating it's a language option)
           const radioDiv = child.querySelector('div[role="radio"]');
-          if (radioDiv) {
+          if (!radioDiv) continue;
+
+          // Look for the first span which contains the language name in its native language
+          const span = child.querySelector('span');
+          if (!span) continue;
+
+          const languageText = span.textContent.trim();
+          console.log('selectLanguage: Found language option:', languageText);
+
+          if (languageText === targetLanguage) {
+            console.log('selectLanguage: Clicking radio button for:', targetLanguage);
             radioDiv.click();
             return true;
           }
         }
+
+        console.log('selectLanguage: Target language not found:', targetLanguage);
         return false;
       })()
     `);
 
+    if (!clicked) {
+      vm.log("selectLanguage", `Language not found in list: ${language}`);
+    }
     return clicked;
   } catch (error) {
-    vm.log("selectLanguage", `Error clicking radio button: ${error}`);
+    vm.log("selectLanguage", `Error selecting language: ${error}`);
     return false;
   }
 }
