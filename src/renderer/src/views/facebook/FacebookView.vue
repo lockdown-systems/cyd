@@ -7,6 +7,7 @@ import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
 import { FacebookViewModel } from "../../view_models/FacebookViewModel";
 import { PlatformStates } from "../../types/PlatformStates";
+import { AutomationErrorType } from "../../automation_errors";
 
 const props = defineProps<{
   account: Account;
@@ -46,6 +47,21 @@ const {
 const automationHandlers = createAutomationHandlers(() =>
   emit("onRefreshClicked"),
 );
+
+const onReportBug = async () => {
+  console.log("Report bug clicked");
+  model.value.pause();
+  await model.value.error(
+    AutomationErrorType.facebook_manualBugReport,
+    {
+      message: "User is manually reporting a bug",
+      state: model.value.saveState(),
+    },
+    {
+      currentURL: model.value.webview?.getURL(),
+    },
+  );
+};
 
 const startJobs = async () => {
   if (model.value.account.facebookAccount == null) {
@@ -116,5 +132,8 @@ onUnmounted(async () => {
     @on-pause="model.pause()"
     @on-resume="model.resume()"
     @on-cancel="emit('onRefreshClicked')"
+    @on-report-bug="onReportBug"
+    @on-clicking-enabled="clickingEnabled = true"
+    @on-clicking-disabled="clickingEnabled = false"
   />
 </template>
