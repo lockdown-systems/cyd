@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, getCurrentInstance, nextTick, computed } from "vue";
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  getCurrentInstance,
+  nextTick,
+  computed,
+} from "vue";
 import type { WebviewTag } from "electron";
 import type { Account } from "../../../../shared_types";
 import PlatformView from "../PlatformView.vue";
@@ -142,7 +149,10 @@ onUnmounted(async () => {
   >
     <!-- Facebook-specific progress extra -->
     <template #progress-extra>
-      <FacebookProgressComponent v-if="typedProgress" :progress="typedProgress" />
+      <FacebookProgressComponent
+        v-if="typedProgress"
+        :progress="typedProgress"
+      />
     </template>
   </PlatformView>
 </template>

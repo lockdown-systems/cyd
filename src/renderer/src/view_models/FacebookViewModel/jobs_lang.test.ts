@@ -218,9 +218,10 @@ describe("FacebookViewModel Language Jobs", () => {
       const result = await LangJobs.selectLanguage(vm, "English (US)");
 
       expect(result).toBe(false);
+      // safeExecuteJavaScript logs the error with format "Error: {errorMsg}"
       expect(vm.log).toHaveBeenCalledWith(
         "selectLanguage",
-        expect.stringContaining("Error selecting language"),
+        expect.stringContaining("Error:"),
       );
     });
   });
