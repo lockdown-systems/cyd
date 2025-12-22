@@ -359,160 +359,181 @@ export async function runJobDeleteWallPosts(
 
   await vm.waitForPause();
 
-  vm.log("runJobDeleteWallPosts", "Clicking Manage posts button");
-
-  // Click the Manage posts button
-  const buttonClicked = await clickManagePostsButton(vm);
-  if (!buttonClicked) {
-    vm.log("runJobDeleteWallPosts", "Failed to click Manage posts button");
-    await Helpers.finishJob(vm, jobIndex);
-    return;
-  }
-
-  await vm.waitForPause();
-
-  // Wait for the dialog to open
-  const dialogOpened = await waitForManagePostsDialog(vm);
-  if (!dialogOpened) {
-    vm.log("runJobDeleteWallPosts", "Manage posts dialog did not appear");
-    await Helpers.finishJob(vm, jobIndex);
-    return;
-  }
-
-  // Wait a moment for the UI to update
-  await vm.sleep(2000);
-
-  vm.log("runJobDeleteWallPosts", "Dialog opened, finding posts to delete");
-
-  await vm.waitForPause();
-
-  // Get all available list items with checkboxes
-  const allItems = await getListsAndItems(vm);
-  vm.log(
-    "runJobDeleteWallPosts",
-    `Found ${allItems.length} items with checkboxes`,
-  );
-
-  let checkedCount = 0;
+  // Keep deleting posts until there are no more to delete
+  let totalDeleted = 0;
+  let batchNumber = 0;
   const maxToCheck = 2;
 
-  // Loop through items and check those that can be deleted
-  for (const { listIndex, itemIndex } of allItems) {
-    if (checkedCount >= maxToCheck) {
-      vm.log("runJobDeleteWallPosts", `Reached maximum of ${maxToCheck} items`);
+  while (true) {
+    batchNumber++;
+    vm.log("runJobDeleteWallPosts", `Starting batch ${batchNumber}`);
+
+    vm.log("runJobDeleteWallPosts", "Clicking Manage posts button");
+
+    // Click the Manage posts button
+    const buttonClicked = await clickManagePostsButton(vm);
+    if (!buttonClicked) {
+      vm.log("runJobDeleteWallPosts", "Failed to click Manage posts button");
       break;
     }
 
     await vm.waitForPause();
 
-    // Check this checkbox
-    const toggled = await toggleCheckbox(vm, listIndex, itemIndex, true);
-    if (!toggled) {
-      vm.log(
-        "runJobDeleteWallPosts",
-        `Failed to check item [${listIndex}][${itemIndex}]`,
-      );
-      continue;
+    // Wait for the dialog to open
+    const dialogOpened = await waitForManagePostsDialog(vm);
+    if (!dialogOpened) {
+      vm.log("runJobDeleteWallPosts", "Manage posts dialog did not appear");
+      break;
     }
 
     // Wait a moment for the UI to update
-    await vm.sleep(300);
+    await vm.sleep(2000);
 
-    // Check the action description
-    const actionDescription = await getActionDescription(vm);
+    vm.log("runJobDeleteWallPosts", "Dialog opened, finding posts to delete");
+
+    await vm.waitForPause();
+
+    // Get all available list items with checkboxes
+    const allItems = await getListsAndItems(vm);
     vm.log(
       "runJobDeleteWallPosts",
-      `Action description: "${actionDescription}"`,
+      `Found ${allItems.length} items with checkboxes`,
     );
 
-    if (canDelete(actionDescription)) {
-      // This item can be deleted, keep it checked
-      checkedCount++;
-      vm.log(
-        "runJobDeleteWallPosts",
-        `Checked deletable item ${checkedCount}/${maxToCheck}`,
-      );
-    } else {
-      // This item cannot be deleted, uncheck it
-      vm.log(
-        "runJobDeleteWallPosts",
-        `Item [${listIndex}][${itemIndex}] cannot be deleted, unchecking`,
-      );
-      await toggleCheckbox(vm, listIndex, itemIndex, false);
+    let checkedCount = 0;
+
+    // Loop through items and check those that can be deleted
+    for (const { listIndex, itemIndex } of allItems) {
+      if (checkedCount >= maxToCheck) {
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Reached maximum of ${maxToCheck} items`,
+        );
+        break;
+      }
+
+      await vm.waitForPause();
+
+      // Check this checkbox
+      const toggled = await toggleCheckbox(vm, listIndex, itemIndex, true);
+      if (!toggled) {
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Failed to check item [${listIndex}][${itemIndex}]`,
+        );
+        continue;
+      }
+
+      // Wait a moment for the UI to update
       await vm.sleep(300);
+
+      // Check the action description
+      const actionDescription = await getActionDescription(vm);
+      vm.log(
+        "runJobDeleteWallPosts",
+        `Action description: "${actionDescription}"`,
+      );
+
+      if (canDelete(actionDescription)) {
+        // This item can be deleted, keep it checked
+        checkedCount++;
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Checked deletable item ${checkedCount}/${maxToCheck}`,
+        );
+      } else {
+        // This item cannot be deleted, uncheck it
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Item [${listIndex}][${itemIndex}] cannot be deleted, unchecking`,
+        );
+        await toggleCheckbox(vm, listIndex, itemIndex, false);
+        await vm.sleep(300);
+      }
     }
+
+    vm.log(
+      "runJobDeleteWallPosts",
+      `Selected ${checkedCount} items for deletion`,
+    );
+
+    // If nothing was checked, we're done
+    if (checkedCount === 0) {
+      vm.log("runJobDeleteWallPosts", "No deletable items found, finishing");
+      break;
+    }
+
+    await vm.waitForPause();
+
+    await vm.pause();
+    await vm.waitForPause();
+
+    // Click the Next button
+    vm.log("runJobDeleteWallPosts", "Clicking Next button");
+    const nextClicked = await clickNextButton(vm);
+    if (!nextClicked) {
+      vm.log("runJobDeleteWallPosts", "Failed to click Next button");
+      break;
+    }
+
+    // Wait for the dialog to update with the action options
+    await vm.sleep(1000);
+
+    await vm.waitForPause();
+
+    // Click the "Delete posts" radio button
+    vm.log("runJobDeleteWallPosts", "Selecting delete posts option");
+    const deleteSelected = await selectDeletePostsOption(vm);
+    if (!deleteSelected) {
+      vm.log("runJobDeleteWallPosts", "Failed to select delete posts option");
+      break;
+    }
+
+    vm.log("runJobDeleteWallPosts", "Delete posts option selected");
+
+    await vm.waitForPause();
+
+    // Click the Done button
+    vm.log("runJobDeleteWallPosts", "Clicking Done button");
+    const doneClicked = await clickDoneButton(vm);
+    if (!doneClicked) {
+      vm.log("runJobDeleteWallPosts", "Failed to click Done button");
+      break;
+    }
+
+    vm.log("runJobDeleteWallPosts", "Done button clicked");
+
+    await vm.waitForPause();
+
+    // Wait for the dialog to disappear (indicates deletion is complete)
+    vm.log("runJobDeleteWallPosts", "Waiting for deletion to complete...");
+    const dialogDisappeared = await waitForManagePostsDialogToDisappear(vm);
+    if (!dialogDisappeared) {
+      vm.log(
+        "runJobDeleteWallPosts",
+        "Timeout waiting for dialog to disappear",
+      );
+      // Continue anyway - the deletion might have worked
+    } else {
+      vm.log("runJobDeleteWallPosts", "Deletion completed successfully");
+    }
+
+    // Update progress
+    totalDeleted += checkedCount;
+    vm.progress.wallPostsDeleted = totalDeleted;
+    vm.log(
+      "runJobDeleteWallPosts",
+      `Batch ${batchNumber} complete: deleted ${checkedCount} posts, total: ${totalDeleted}`,
+    );
+
+    await vm.waitForPause();
   }
 
   vm.log(
     "runJobDeleteWallPosts",
-    `Selected ${checkedCount} items for deletion`,
+    `All done! Total posts deleted: ${totalDeleted}`,
   );
 
-  if (checkedCount === 0) {
-    vm.log("runJobDeleteWallPosts", "No deletable items found");
-    await Helpers.finishJob(vm, jobIndex);
-    return;
-  }
-
-  await vm.waitForPause();
-
-  await vm.pause();
-  await vm.waitForPause();
-
-  // Click the Next button
-  vm.log("runJobDeleteWallPosts", "Clicking Next button");
-  const nextClicked = await clickNextButton(vm);
-  if (!nextClicked) {
-    vm.log("runJobDeleteWallPosts", "Failed to click Next button");
-    await Helpers.finishJob(vm, jobIndex);
-    return;
-  }
-
-  // Wait for the dialog to update with the action options
-  await vm.sleep(1000);
-
-  await vm.waitForPause();
-
-  // Click the "Delete posts" radio button
-  vm.log("runJobDeleteWallPosts", "Selecting delete posts option");
-  const deleteSelected = await selectDeletePostsOption(vm);
-  if (!deleteSelected) {
-    vm.log("runJobDeleteWallPosts", "Failed to select delete posts option");
-    await Helpers.finishJob(vm, jobIndex);
-    return;
-  }
-
-  vm.log("runJobDeleteWallPosts", "Delete posts option selected");
-
-  await vm.waitForPause();
-
-  await vm.pause();
-  await vm.waitForPause();
-
-  // Click the Done button
-  vm.log("runJobDeleteWallPosts", "Clicking Done button");
-  const doneClicked = await clickDoneButton(vm);
-  if (!doneClicked) {
-    vm.log("runJobDeleteWallPosts", "Failed to click Done button");
-    await Helpers.finishJob(vm, jobIndex);
-    return;
-  }
-
-  vm.log("runJobDeleteWallPosts", "Done button clicked");
-
-  await vm.waitForPause();
-
-  // Wait for the dialog to disappear (indicates deletion is complete)
-  vm.log("runJobDeleteWallPosts", "Waiting for deletion to complete...");
-  const dialogDisappeared = await waitForManagePostsDialogToDisappear(vm);
-  if (!dialogDisappeared) {
-    vm.log("runJobDeleteWallPosts", "Timeout waiting for deletion to complete");
-    // Continue anyway - the deletion might have worked
-  } else {
-    vm.log("runJobDeleteWallPosts", "Deletion completed successfully");
-  }
-
-  await vm.pause();
   await vm.waitForPause();
 
   await Helpers.finishJob(vm, jobIndex);

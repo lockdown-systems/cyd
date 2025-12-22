@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, getCurrentInstance, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, getCurrentInstance, nextTick, computed } from "vue";
 import type { WebviewTag } from "electron";
 import type { Account } from "../../../../shared_types";
 import PlatformView from "../PlatformView.vue";
+import FacebookProgressComponent from "./components/FacebookProgressComponent.vue";
 import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
 import { FacebookViewModel } from "../../view_models/FacebookViewModel";
+import type { FacebookProgress } from "../../view_models/FacebookViewModel/types";
 import { PlatformStates } from "../../types/PlatformStates";
 import { AutomationErrorType } from "../../automation_errors";
 
@@ -62,6 +64,8 @@ const onReportBug = async () => {
     },
   );
 };
+
+const typedProgress = computed(() => progress.value as FacebookProgress | null);
 
 const startJobs = async () => {
   if (model.value.account.facebookAccount == null) {
@@ -135,5 +139,10 @@ onUnmounted(async () => {
     @on-report-bug="onReportBug"
     @on-clicking-enabled="clickingEnabled = true"
     @on-clicking-disabled="clickingEnabled = false"
-  />
+  >
+    <!-- Facebook-specific progress extra -->
+    <template #progress-extra>
+      <FacebookProgressComponent v-if="typedProgress" :progress="typedProgress" />
+    </template>
+  </PlatformView>
 </template>

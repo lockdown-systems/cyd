@@ -612,6 +612,9 @@
         "settingLanguageToEnglish": "# I'm temporarily changing your language to English for automation.",
         "restoringLanguage": "# I'm restoring your original language setting.",
         "deletingWallPosts": "# I'm deleting all posts from your Facebook wall."
+      },
+      "progress": {
+        "wallPostsDeleted": "Deleted {count} wall posts."
       }
     }
   }
