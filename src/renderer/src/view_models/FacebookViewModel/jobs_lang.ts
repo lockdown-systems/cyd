@@ -234,16 +234,10 @@ export async function runJobSaveUserLang(
       await window.electron.database.saveAccount(JSON.stringify(vm.account));
     }
     await Helpers.finishJob(vm, jobIndex);
-
-    await vm.pause();
-    await vm.waitForPause();
     return;
   }
 
   await vm.waitForPause();
-
-  // Dev pause: wait to inspect the dialog
-  await vm.sleep(2000);
 
   // Find the current language
   const currentLanguage = await findCurrentLanguage(vm);
@@ -251,17 +245,11 @@ export async function runJobSaveUserLang(
 
   await vm.waitForPause();
 
-  // Dev pause: wait before saving
-  await vm.sleep(2000);
-
   // Save to account
   if (vm.account.facebookAccount) {
     vm.account.facebookAccount.userLang = currentLanguage;
     await window.electron.database.saveAccount(JSON.stringify(vm.account));
   }
-
-  await vm.pause();
-  await vm.waitForPause();
 
   await Helpers.finishJob(vm, jobIndex);
 }
@@ -302,9 +290,6 @@ export async function runJobSetLangToEnglish(
 
   await vm.waitForPause();
 
-  // Dev pause: wait to inspect the dialog
-  await vm.sleep(2000);
-
   // Select English (US)
   const selected = await selectLanguage(vm, DEFAULT_LANGUAGE);
   if (!selected) {
@@ -316,10 +301,7 @@ export async function runJobSetLangToEnglish(
   await vm.waitForPause();
 
   // Wait for the change to take effect
-  await vm.sleep(2000);
-
-  await vm.pause();
-  await vm.waitForPause();
+  await vm.sleep(1000);
 
   await Helpers.finishJob(vm, jobIndex);
 }
@@ -363,9 +345,6 @@ export async function runJobRestoreUserLang(
 
   await vm.waitForPause();
 
-  // Dev pause: wait to inspect the dialog
-  await vm.sleep(2000);
-
   // Select the user's original language
   const selected = await selectLanguage(vm, userLang);
   if (!selected) {
@@ -377,10 +356,7 @@ export async function runJobRestoreUserLang(
   await vm.waitForPause();
 
   // Wait for the change to take effect
-  await vm.sleep(2000);
-
-  await vm.pause();
-  await vm.waitForPause();
+  await vm.sleep(1000);
 
   await Helpers.finishJob(vm, jobIndex);
 }
