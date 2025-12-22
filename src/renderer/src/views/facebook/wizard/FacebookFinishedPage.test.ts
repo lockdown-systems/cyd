@@ -160,7 +160,8 @@ describe("FacebookFinishedPage", () => {
       const buttonProps = baseWizardPage.props("buttonProps");
 
       // Call the action for the next button
-      buttonProps.nextButtons[0].action();
+      expect(buttonProps).toBeDefined();
+      buttonProps!.nextButtons[0].action();
 
       expect(wrapper.emitted("setState")).toBeTruthy();
       expect(wrapper.emitted("setState")![0]).toEqual([
@@ -186,7 +187,8 @@ describe("FacebookFinishedPage", () => {
       const breadcrumbProps = baseWizardPage.props("breadcrumbProps");
 
       // Should use delete icon, not finished
-      expect(breadcrumbProps.icon).toBeDefined();
+      expect(breadcrumbProps).toBeDefined();
+      expect(breadcrumbProps!.icon).toBeDefined();
     });
   });
 });

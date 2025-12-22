@@ -210,15 +210,18 @@ describe("FacebookViewModel Delete Jobs", () => {
         // 4. toggleCheckbox for item 0
         if (callCount === 4) return true;
         // 5. getActionDescription for item 0
-        if (callCount === 5) return "You can hide or delete the posts selected.";
+        if (callCount === 5)
+          return "You can hide or delete the posts selected.";
         // 6. toggleCheckbox for item 1
         if (callCount === 6) return true;
         // 7. getActionDescription for item 1
-        if (callCount === 7) return "You can hide or delete the posts selected.";
+        if (callCount === 7)
+          return "You can hide or delete the posts selected.";
         // 8. toggleCheckbox for item 2
         if (callCount === 8) return true;
         // 9. getActionDescription for item 2
-        if (callCount === 9) return "You can hide or delete the posts selected.";
+        if (callCount === 9)
+          return "You can hide or delete the posts selected.";
         // 10. clickNextButton
         if (callCount === 10) return true;
         // 11. selectDeletePostsOption

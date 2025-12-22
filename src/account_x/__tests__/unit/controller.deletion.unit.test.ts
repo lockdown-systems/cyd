@@ -1,7 +1,7 @@
 import "../../../__tests__/platform-fixtures/electronMocks";
 import "../../../__tests__/platform-fixtures/network";
 
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
 import type { XAccountController } from "../../x_account_controller";
 import { exec } from "../../../database";
@@ -15,6 +15,24 @@ import {
   seedConversation,
   seedMessage,
 } from "../fixtures/tweetFactory";
+import { createPlatformPathMocks } from "../../../__tests__/platform-fixtures/tempPaths";
+
+// Mock the util module with unique paths per test run
+const pathMocks = createPlatformPathMocks("deletion");
+
+vi.mock("../../../util", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../../util")>("../../../util");
+  return {
+    ...actual,
+    getSettingsPath: () => pathMocks.getSettingsPath(),
+    getAccountSettingsPath: (accountID: number) =>
+      pathMocks.getAccountSettingsPath(accountID),
+    getDataPath: () => pathMocks.getDataPath(),
+    getAccountDataPath: (accountType: string, accountUsername: string) =>
+      pathMocks.getAccountDataPath(accountType, accountUsername),
+  };
+});
 
 describe("XAccountController - Deletion", () => {
   let controllerContext: XControllerTestContext | null = null;
@@ -28,6 +46,7 @@ describe("XAccountController - Deletion", () => {
   afterEach(async () => {
     await controllerContext?.cleanup();
     controllerContext = null;
+    pathMocks.cleanup();
   });
 
   describe("deleteTweetsStart", () => {

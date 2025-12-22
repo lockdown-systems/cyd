@@ -7,7 +7,7 @@ import {
   emptyFacebookProgress,
 } from "./types";
 import { PlatformStates } from "../../types/PlatformStates";
-import type { Account } from "../../../../shared_types";
+import type { FacebookAccount } from "../../../../shared_types";
 import {
   createMockAccount,
   createMockWebview,
@@ -36,19 +36,26 @@ function createMockJob(
 }
 
 /**
+ * Overrides for creating mock Facebook ViewModels
+ * Allows partial facebookAccount for convenience
+ */
+interface MockFacebookViewModelOverrides {
+  facebookAccount?: Partial<FacebookAccount>;
+}
+
+/**
  * Creates a mock FacebookViewModel with mocked dependencies for testing
  */
 function createMockFacebookViewModel(
-  accountOverrides?: Partial<Account>,
+  overrides?: MockFacebookViewModelOverrides,
 ): FacebookViewModel {
   const mockFacebookAccount = createMockFacebookAccount(
-    accountOverrides?.facebookAccount || {},
+    overrides?.facebookAccount || {},
   );
   const mockAccount = createMockAccount({
     type: "Facebook",
     xAccount: null,
     facebookAccount: mockFacebookAccount,
-    ...accountOverrides,
   });
   const mockEmitter = createMockEmitter();
   const mockWebview = createMockWebview();
