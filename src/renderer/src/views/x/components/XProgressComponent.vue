@@ -564,25 +564,4 @@ onUnmounted(() => {
   </template>
 </template>
 
-<style scoped>
-.progress-wrapper {
-  text-align: center;
-  font-size: 0.8em;
-  border-top: 1px solid #d0d0d0;
-  margin-top: 5px;
-  padding-top: 8px;
-  margin-bottom: 10px;
-}
-
-.progress-wrapper p {
-  margin: 0;
-}
-
-.progress {
-  height: 20px;
-}
-
-.rate-limit {
-  color: red;
-}
-</style>
+<style scoped src="../../shared_components/progress-styles.css"></style>
