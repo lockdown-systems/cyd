@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { FacebookViewModel } from "./view_model";
-import { State, RunJobsState, FacebookJob, emptyFacebookProgress } from "./types";
+import {
+  State,
+  RunJobsState,
+  FacebookJob,
+  emptyFacebookProgress,
+} from "./types";
 import type { Account } from "../../../../shared_types";
 import {
   createMockAccount,
@@ -99,7 +104,9 @@ describe("FacebookViewModel Language Jobs", () => {
       const mockWebview = vm.getWebview()!;
 
       // Mock executeJavaScript to return English (US) as the selected language
-      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue("English (US)");
+      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(
+        "English (US)",
+      );
 
       const language = await LangJobs.findCurrentLanguage(vm);
 
@@ -292,7 +299,9 @@ describe("FacebookViewModel Language Jobs", () => {
   describe("runJobSetLangToEnglish", () => {
     it("skips when language is already English (US)", async () => {
       const vm = createMockFacebookViewModel({
-        facebookAccount: createMockFacebookAccount({ userLang: "English (US)" }),
+        facebookAccount: createMockFacebookAccount({
+          userLang: "English (US)",
+        }),
       });
 
       await LangJobs.runJobSetLangToEnglish(vm, 0);
@@ -369,7 +378,9 @@ describe("FacebookViewModel Language Jobs", () => {
   describe("runJobRestoreUserLang", () => {
     it("skips when user language is English (US)", async () => {
       const vm = createMockFacebookViewModel({
-        facebookAccount: createMockFacebookAccount({ userLang: "English (US)" }),
+        facebookAccount: createMockFacebookAccount({
+          userLang: "English (US)",
+        }),
       });
 
       await LangJobs.runJobRestoreUserLang(vm, 0);
@@ -448,7 +459,9 @@ describe("FacebookViewModel Language Jobs", () => {
 
     it("logs failure when language restoration fails", async () => {
       const vm = createMockFacebookViewModel({
-        facebookAccount: createMockFacebookAccount({ userLang: "Français (France)" }),
+        facebookAccount: createMockFacebookAccount({
+          userLang: "Français (France)",
+        }),
       });
       const mockWebview = vm.getWebview()!;
 

@@ -233,7 +233,8 @@ export const AutomationErrorTypeToMessage = {
   [AutomationErrorType.x_loadURLURLChanged]: "URL changed after loading",
 
   // Facebook
-  [AutomationErrorType.facebook_manualBugReport]: "You're manually reporting a bug",
+  [AutomationErrorType.facebook_manualBugReport]:
+    "You're manually reporting a bug",
   [AutomationErrorType.facebook_runJob_UnknownError]:
     "An unknown error occurred",
   [AutomationErrorType.facebook_runError]:

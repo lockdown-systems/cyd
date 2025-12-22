@@ -62,6 +62,46 @@ async function waitForManagePostsDialog(
 }
 
 /**
+ * Wait for the "Manage posts" dialog to disappear
+ * This indicates the deletion process has completed
+ */
+async function waitForManagePostsDialogToDisappear(
+  vm: FacebookViewModel,
+): Promise<boolean> {
+  const webview = vm.getWebview();
+  if (!webview) return false;
+
+  // Wait up to 60 seconds for dialog to disappear (deletion might take a while)
+  for (let i = 0; i < 120; i++) {
+    try {
+      const dialogExists = await webview.executeJavaScript(`
+        (() => {
+          const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+          return !!dialog;
+        })()
+      `);
+
+      if (!dialogExists) {
+        vm.log("waitForManagePostsDialogToDisappear", "Dialog has disappeared");
+        return true;
+      }
+    } catch (error) {
+      vm.log(
+        "waitForManagePostsDialogToDisappear",
+        `Error checking dialog: ${error}`,
+      );
+    }
+    await vm.sleep(500);
+  }
+
+  vm.log(
+    "waitForManagePostsDialogToDisappear",
+    "Timeout waiting for dialog to disappear",
+  );
+  return false;
+}
+
+/**
  * Get the action description text from the dialog
  * Returns text like "You can hide or delete the posts selected." or empty string
  */
@@ -221,6 +261,84 @@ async function clickNextButton(vm: FacebookViewModel): Promise<boolean> {
   }
 }
 
+/**
+ * Select the "Delete posts" radio button in the action selection dialog
+ * Looks for a div with text "delete posts" (case insensitive), checks it's not disabled,
+ * and clicks the radio button (i tag) inside it
+ */
+async function selectDeletePostsOption(
+  vm: FacebookViewModel,
+): Promise<boolean> {
+  const webview = vm.getWebview();
+  if (!webview) return false;
+
+  try {
+    const clicked = await webview.executeJavaScript(`
+      (() => {
+        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+        if (!dialog) return false;
+
+        // Find all divs that might contain the delete posts option
+        const divs = dialog.querySelectorAll('div[aria-disabled]');
+        
+        for (const div of divs) {
+          // Check if this div or its children contain text about deleting posts
+          const text = div.textContent?.toLowerCase() || '';
+          if (text.includes('delete posts')) {
+            // Check that it's not disabled
+            if (div.getAttribute('aria-disabled') === 'false') {
+              // Find the radio button (i tag) inside this div
+              const radioButton = div.querySelector('i');
+              if (radioButton) {
+                radioButton.click();
+                return true;
+              }
+            } else {
+              console.log('Delete posts option is disabled');
+              return false;
+            }
+          }
+        }
+        
+        console.log('Could not find delete posts option');
+        return false;
+      })()
+    `);
+    return clicked;
+  } catch (error) {
+    vm.log("selectDeletePostsOption", `Error: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Click the Done button in the dialog
+ */
+async function clickDoneButton(vm: FacebookViewModel): Promise<boolean> {
+  const webview = vm.getWebview();
+  if (!webview) return false;
+
+  try {
+    const clicked = await webview.executeJavaScript(`
+      (() => {
+        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+        if (!dialog) return false;
+
+        const doneButton = dialog.querySelector('div[aria-label="Done"][role="button"]');
+        if (doneButton) {
+          doneButton.click();
+          return true;
+        }
+        return false;
+      })()
+    `);
+    return clicked;
+  } catch (error) {
+    vm.log("clickDoneButton", `Error: ${error}`);
+    return false;
+  }
+}
+
 export async function runJobDeleteWallPosts(
   vm: FacebookViewModel,
   jobIndex: number,
@@ -270,10 +388,13 @@ export async function runJobDeleteWallPosts(
 
   // Get all available list items with checkboxes
   const allItems = await getListsAndItems(vm);
-  vm.log("runJobDeleteWallPosts", `Found ${allItems.length} items with checkboxes`);
+  vm.log(
+    "runJobDeleteWallPosts",
+    `Found ${allItems.length} items with checkboxes`,
+  );
 
   let checkedCount = 0;
-  const maxToCheck = 50;
+  const maxToCheck = 2;
 
   // Loop through items and check those that can be deleted
   for (const { listIndex, itemIndex } of allItems) {
@@ -347,7 +468,49 @@ export async function runJobDeleteWallPosts(
     return;
   }
 
-  vm.log("runJobDeleteWallPosts", "Pausing for next steps");
+  // Wait for the dialog to update with the action options
+  await vm.sleep(1000);
+
+  await vm.waitForPause();
+
+  // Click the "Delete posts" radio button
+  vm.log("runJobDeleteWallPosts", "Selecting delete posts option");
+  const deleteSelected = await selectDeletePostsOption(vm);
+  if (!deleteSelected) {
+    vm.log("runJobDeleteWallPosts", "Failed to select delete posts option");
+    await Helpers.finishJob(vm, jobIndex);
+    return;
+  }
+
+  vm.log("runJobDeleteWallPosts", "Delete posts option selected");
+
+  await vm.waitForPause();
+
+  await vm.pause();
+  await vm.waitForPause();
+
+  // Click the Done button
+  vm.log("runJobDeleteWallPosts", "Clicking Done button");
+  const doneClicked = await clickDoneButton(vm);
+  if (!doneClicked) {
+    vm.log("runJobDeleteWallPosts", "Failed to click Done button");
+    await Helpers.finishJob(vm, jobIndex);
+    return;
+  }
+
+  vm.log("runJobDeleteWallPosts", "Done button clicked");
+
+  await vm.waitForPause();
+
+  // Wait for the dialog to disappear (indicates deletion is complete)
+  vm.log("runJobDeleteWallPosts", "Waiting for deletion to complete...");
+  const dialogDisappeared = await waitForManagePostsDialogToDisappear(vm);
+  if (!dialogDisappeared) {
+    vm.log("runJobDeleteWallPosts", "Timeout waiting for deletion to complete");
+    // Continue anyway - the deletion might have worked
+  } else {
+    vm.log("runJobDeleteWallPosts", "Deletion completed successfully");
+  }
 
   await vm.pause();
   await vm.waitForPause();

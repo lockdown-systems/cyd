@@ -107,8 +107,9 @@ describe("BaseViewModel", () => {
 
       await vm.clickElementByXPath("//button[@class='submit']");
 
-      const executeCall = vi.mocked(mockWebview.executeJavaScript).mock.calls[0][0];
-      
+      const executeCall = vi.mocked(mockWebview.executeJavaScript).mock
+        .calls[0][0];
+
       // Verify the code contains document.evaluate
       expect(executeCall).toContain("document.evaluate");
       // Verify it uses XPathResult.FIRST_ORDERED_NODE_TYPE

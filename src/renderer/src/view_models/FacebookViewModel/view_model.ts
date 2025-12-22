@@ -281,7 +281,9 @@ export class FacebookViewModel extends BaseViewModel {
         //
         // Before removal: [login, saveUserLang, setLangToEnglish, deleteWallPosts, restoreUserLang]
         // After removal:  [login, saveUserLang(done), deleteWallPosts]
-        if (this.account.facebookAccount?.userLang === LangJobs.DEFAULT_LANGUAGE) {
+        if (
+          this.account.facebookAccount?.userLang === LangJobs.DEFAULT_LANGUAGE
+        ) {
           this.log(
             "runJob",
             "User language is already English (US), removing setLangToEnglish and restoreUserLang jobs",
