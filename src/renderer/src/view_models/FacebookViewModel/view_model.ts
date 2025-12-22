@@ -16,6 +16,7 @@ import {
 } from "./types";
 import * as AuthOps from "./auth";
 import * as DeleteJobs from "./jobs_delete";
+import * as LangJobs from "./jobs_lang";
 
 const FACEBOOK_HOME_URL = "https://www.facebook.com/";
 
@@ -265,11 +266,11 @@ export class FacebookViewModel extends BaseViewModel {
         break;
 
       case "saveUserLang":
-        await DeleteJobs.runJobSaveUserLang(this, jobIndex);
+        await LangJobs.runJobSaveUserLang(this, jobIndex);
         break;
 
       case "setLangToEnglish":
-        await DeleteJobs.runJobSetLangToEnglish(this, jobIndex);
+        await LangJobs.runJobSetLangToEnglish(this, jobIndex);
         break;
 
       case "deleteWallPosts":
@@ -277,7 +278,7 @@ export class FacebookViewModel extends BaseViewModel {
         break;
 
       case "restoreUserLang":
-        await DeleteJobs.runJobRestoreUserLang(this, jobIndex);
+        await LangJobs.runJobRestoreUserLang(this, jobIndex);
         break;
     }
   }
