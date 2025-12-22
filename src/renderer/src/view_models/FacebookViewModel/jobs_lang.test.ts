@@ -513,64 +513,6 @@ describe("FacebookViewModel Language Jobs", () => {
     });
   });
 
-  describe("clickElementByXPath", () => {
-    it("returns true when element is clicked successfully", async () => {
-      const vm = createMockFacebookViewModel();
-      const mockWebview = vm.getWebview()!;
-
-      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(true);
-
-      const result = await LangJobs.clickElementByXPath(
-        vm,
-        LangJobs.XPATHS.ACCOUNT_LANGUAGE_BUTTON,
-      );
-
-      expect(result).toBe(true);
-    });
-
-    it("returns false when element is not found", async () => {
-      const vm = createMockFacebookViewModel();
-      const mockWebview = vm.getWebview()!;
-
-      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(false);
-
-      const result = await LangJobs.clickElementByXPath(
-        vm,
-        "//nonexistent/xpath",
-      );
-
-      expect(result).toBe(false);
-    });
-
-    it("returns false when webview is not available", async () => {
-      const vm = createMockFacebookViewModel();
-      vm.webview = null;
-
-      const result = await LangJobs.clickElementByXPath(
-        vm,
-        LangJobs.XPATHS.ACCOUNT_LANGUAGE_BUTTON,
-      );
-
-      expect(result).toBe(false);
-    });
-
-    it("handles errors gracefully", async () => {
-      const vm = createMockFacebookViewModel();
-      const mockWebview = vm.getWebview()!;
-
-      vi.mocked(mockWebview.executeJavaScript).mockRejectedValue(
-        new Error("XPath error"),
-      );
-
-      const result = await LangJobs.clickElementByXPath(
-        vm,
-        LangJobs.XPATHS.ACCOUNT_LANGUAGE_BUTTON,
-      );
-
-      expect(result).toBe(false);
-    });
-  });
-
   describe("Integration scenarios", () => {
     describe("User with English language", () => {
       it("saveUserLang -> setLangToEnglish (skips) -> restoreUserLang (skips)", async () => {

@@ -839,6 +839,38 @@ export class BaseViewModel {
     return await this.getWebview()?.executeJavaScript(code);
   }
 
+  /**
+   * Click an element by XPath
+   * Returns true if the element was found and clicked, false otherwise
+   */
+  async clickElementByXPath(xpath: string): Promise<boolean> {
+    const webview = this.getWebview();
+    if (!webview) return false;
+
+    try {
+      return await webview.executeJavaScript(`
+        (() => {
+          const result = document.evaluate(
+            '${xpath}',
+            document,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          );
+          const element = result.singleNodeValue;
+          if (element) {
+            element.click();
+            return true;
+          }
+          return false;
+        })()
+      `);
+    } catch (error) {
+      this.log("clickElementByXPath", `Error clicking element: ${error}`);
+      return false;
+    }
+  }
+
   // Pause and resume the jobs
 
   pause() {

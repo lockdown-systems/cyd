@@ -23,40 +23,6 @@ export const XPATHS = {
 };
 
 /**
- * Helper to click element by XPath
- */
-export async function clickElementByXPath(
-  vm: FacebookViewModel,
-  xpath: string,
-): Promise<boolean> {
-  const webview = vm.getWebview();
-  if (!webview) return false;
-
-  try {
-    return await webview.executeJavaScript(`
-      (() => {
-        const result = document.evaluate(
-          '${xpath}',
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        );
-        const element = result.singleNodeValue;
-        if (element) {
-          element.click();
-          return true;
-        }
-        return false;
-      })()
-    `);
-  } catch (error) {
-    vm.log("clickElementByXPath", `Error clicking element: ${error}`);
-    return false;
-  }
-}
-
-/**
  * Helper to wait for language dialog to appear
  */
 export async function waitForLanguageDialog(
@@ -223,7 +189,7 @@ export async function openLanguageDialog(
   await vm.sleep(1000);
 
   // Click the account language button
-  const clicked = await clickElementByXPath(vm, XPATH_ACCOUNT_LANGUAGE_BUTTON);
+  const clicked = await vm.clickElementByXPath(XPATH_ACCOUNT_LANGUAGE_BUTTON);
   if (!clicked) {
     vm.log("openLanguageDialog", "Failed to click account language button");
     return false;
