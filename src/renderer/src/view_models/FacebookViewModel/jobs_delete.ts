@@ -262,7 +262,7 @@ export async function runJobDeleteWallPosts(
   }
 
   // Wait a moment for the UI to update
-  await vm.sleep(300);
+  await vm.sleep(2000);
 
   vm.log("runJobDeleteWallPosts", "Dialog opened, finding posts to delete");
 
