@@ -31,7 +31,7 @@ const backToDashboard = () => {
     :breadcrumb-props="{
       buttons: [],
       label: t('facebook.finished.title'),
-      icon: getBreadcrumbIcon('finished'),
+      icon: getBreadcrumbIcon('delete'),
     }"
     :button-props="{
       backButtons: [],
@@ -45,14 +45,19 @@ const backToDashboard = () => {
   >
     <template #content>
       <div class="wizard-scroll-content">
-        <div class="mb-4">
-          <h2>
-            <i class="fa-solid fa-check-circle text-success me-2" />
-            {{ t("facebook.finished.title") }}
-          </h2>
-          <p class="text-muted">
-            {{ t("facebook.finished.description") }}
-          </p>
+        <div class="container mt-3">
+          <div class="finished">
+            <h2>{{ t("finished.youJustDeleted") }}</h2>
+            <ul>
+              <li>
+                <i class="fa-solid fa-fire delete-bullet" />
+                <strong>{{
+                  model.progress.wallPostsDeleted.toLocaleString()
+                }}</strong>
+                {{ t("facebook.finished.wallPosts") }}
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </template>

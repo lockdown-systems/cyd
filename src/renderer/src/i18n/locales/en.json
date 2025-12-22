@@ -418,7 +418,7 @@
     },
     "finished": {
       "title": "Jobs Completed",
-      "description": "Cyd has finished running all jobs. You can return to the dashboard to run more tasks."
+      "wallPosts": "wall posts"
     }
   },
   "review": {
@@ -608,9 +608,9 @@
         "checkingLogin": "Checking to see if you're still logged in to your Facebook account..."
       },
       "jobs": {
-        "savingLanguage": "# I'm checking your language settings.",
-        "settingLanguageToEnglish": "# I'm temporarily changing your language to English for automation.",
-        "restoringLanguage": "# I'm restoring your original language setting.",
+        "savingLanguage": "I'm checking your language settings.",
+        "settingLanguageToEnglish": "I'm temporarily changing your language to English for automation.",
+        "restoringLanguage": "I'm restoring your original language setting.",
         "deletingWallPosts": "# I'm deleting all posts from your Facebook wall."
       },
       "progress": {

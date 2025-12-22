@@ -12,21 +12,6 @@ defineProps<{
 <template>
   <template v-if="progress">
     <div class="progress-wrapper">
-      <!-- Login -->
-      <template v-if="progress.currentJob == 'login'">
-        <p>{{ t("jobs.login") }}</p>
-      </template>
-
-      <!-- Save user language -->
-      <template v-if="progress.currentJob == 'saveUserLang'">
-        <p>{{ t("viewModels.facebook.jobs.savingLanguage") }}</p>
-      </template>
-
-      <!-- Set language to English -->
-      <template v-if="progress.currentJob == 'setLangToEnglish'">
-        <p>{{ t("viewModels.facebook.jobs.settingLanguageToEnglish") }}</p>
-      </template>
-
       <!-- Delete wall posts -->
       <template v-if="progress.currentJob == 'deleteWallPosts'">
         <p>
@@ -39,11 +24,6 @@ defineProps<{
             {{ t("progress.savingComplete") }}
           </template>
         </p>
-      </template>
-
-      <!-- Restore user language -->
-      <template v-if="progress.currentJob == 'restoreUserLang'">
-        <p>{{ t("viewModels.facebook.jobs.restoringLanguage") }}</p>
       </template>
     </div>
   </template>
