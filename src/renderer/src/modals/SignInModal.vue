@@ -13,7 +13,7 @@ import type { DeviceInfo } from "../types";
 import { Account } from "../../../shared_types";
 import CydAPIClient, { APIErrorResponse } from "../../../cyd-api-client";
 import { xPostProgress } from "../util_x";
-import { facebookPostProgress } from "../util";
+import { facebookPostProgress } from "../util_facebook";
 
 import Modal from "bootstrap/js/dist/modal";
 
@@ -164,13 +164,11 @@ async function registerDevice() {
       }
     } else if (accounts[i].type == "Facebook") {
       try {
-        // For Facebook, we need to get the progress from the view model or calculate it
-        // For now, we'll just submit 0 since we don't have persistent progress storage
+        // Submit Facebook progress using the new IPC-based function
         await facebookPostProgress(
           apiClient.value,
           deviceInfo.value,
-          accounts[i].uuid,
-          0,
+          accounts[i].id,
         );
       } catch (e) {
         // Silently log the error and continue

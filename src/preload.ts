@@ -18,6 +18,9 @@ import {
   XImportArchiveResponse,
   XMigrateTweetCounts,
   XAccount,
+  // Facebook
+  FacebookJob,
+  FacebookProgressInfo,
 } from "./shared_types";
 
 const electronAPI = {
@@ -480,6 +483,58 @@ const electronAPI = {
     },
     initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
       return ipcRenderer.invoke("X:initArchiveOnlyMode", accountID);
+    },
+  },
+
+  // Facebook functions
+  Facebook: {
+    createJobs: (
+      accountID: number,
+      jobTypes: string[],
+    ): Promise<FacebookJob[]> => {
+      return ipcRenderer.invoke("Facebook:createJobs", accountID, jobTypes);
+    },
+    getLastFinishedJob: (
+      accountID: number,
+      jobType: string,
+    ): Promise<FacebookJob | null> => {
+      return ipcRenderer.invoke(
+        "Facebook:getLastFinishedJob",
+        accountID,
+        jobType,
+      );
+    },
+    updateJob: (accountID: number, jobJSON: string) => {
+      ipcRenderer.invoke("Facebook:updateJob", accountID, jobJSON);
+    },
+    getProgressInfo: (accountID: number): Promise<FacebookProgressInfo> => {
+      return ipcRenderer.invoke("Facebook:getProgressInfo", accountID);
+    },
+    getConfig: (accountID: number, key: string): Promise<string | null> => {
+      return ipcRenderer.invoke("Facebook:getConfig", accountID, key);
+    },
+    setConfig: (
+      accountID: number,
+      key: string,
+      value: string,
+    ): Promise<void> => {
+      return ipcRenderer.invoke("Facebook:setConfig", accountID, key, value);
+    },
+    deleteConfig: (accountID: number, key: string): Promise<void> => {
+      return ipcRenderer.invoke("Facebook:deleteConfig", accountID, key);
+    },
+    deleteConfigLike: (accountID: number, key: string): Promise<void> => {
+      return ipcRenderer.invoke("Facebook:deleteConfigLike", accountID, key);
+    },
+    incrementTotalWallPostsDeleted: (
+      accountID: number,
+      count: number,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Facebook:incrementTotalWallPostsDeleted",
+        accountID,
+        count,
+      );
     },
   },
 };

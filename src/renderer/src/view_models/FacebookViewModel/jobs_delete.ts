@@ -470,6 +470,12 @@ export async function runJobDeleteWallPosts(
       `Batch ${batchNumber} complete: deleted ${checkedCount} posts, total: ${totalDeleted}`,
     );
 
+    // Update the persistent counter in the database
+    await window.electron.Facebook.incrementTotalWallPostsDeleted(
+      vm.account.id,
+      checkedCount,
+    );
+
     // Submit progress to the API
     vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
 

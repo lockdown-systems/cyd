@@ -17,7 +17,7 @@ import { FacebookViewModel } from "../../view_models/FacebookViewModel";
 import type { FacebookProgress } from "../../view_models/FacebookViewModel/types";
 import { PlatformStates } from "../../types/PlatformStates";
 import { AutomationErrorType } from "../../automation_errors";
-import { facebookPostProgress } from "../../util";
+import { facebookPostProgress } from "../../util_facebook";
 
 const props = defineProps<{
   account: Account;
@@ -120,8 +120,7 @@ onMounted(async () => {
       await facebookPostProgress(
         apiClient.value,
         deviceInfo.value,
-        props.account.uuid,
-        model.value.progress.wallPostsDeleted,
+        props.account.id,
       );
     },
   });
