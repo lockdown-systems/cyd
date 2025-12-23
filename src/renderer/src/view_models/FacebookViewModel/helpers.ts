@@ -8,14 +8,16 @@ export async function finishJob(
   vm.jobs[jobIndex].finishedAt = finishedAt;
   vm.jobs[jobIndex].status = "finished";
   vm.jobs[jobIndex].progressJSON = JSON.stringify(vm.progress);
-  vm.log("finishJob", vm.jobs[jobIndex].jobType);
-
-  // Save the last finished job timestamp for this job type
+  await window.electron.Facebook.updateJob(
+    vm.account.id,
+    JSON.stringify(vm.jobs[jobIndex]),
+  );
   await window.electron.Facebook.setConfig(
     vm.account.id,
     `lastFinishedJob_${vm.jobs[jobIndex].jobType}`,
     finishedAt.toISOString(),
   );
+  vm.log("finishJob", vm.jobs[jobIndex].jobType);
 }
 
 export async function errorJob(
@@ -25,6 +27,10 @@ export async function errorJob(
   vm.jobs[jobIndex].finishedAt = new Date();
   vm.jobs[jobIndex].status = "error";
   vm.jobs[jobIndex].progressJSON = JSON.stringify(vm.progress);
+  await window.electron.Facebook.updateJob(
+    vm.account.id,
+    JSON.stringify(vm.jobs[jobIndex]),
+  );
   vm.log("errorJob", vm.jobs[jobIndex].jobType);
 }
 

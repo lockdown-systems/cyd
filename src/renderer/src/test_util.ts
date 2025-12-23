@@ -287,6 +287,22 @@ export function mockElectronAPI() {
       savePage: vi.fn().mockResolvedValue(undefined),
     },
 
+    // Facebook operations
+    Facebook: {
+      createJobs: vi.fn().mockResolvedValue([]),
+      getLastFinishedJob: vi.fn().mockResolvedValue(null),
+      updateJob: vi.fn().mockResolvedValue(undefined),
+      getProgressInfo: vi.fn().mockResolvedValue({
+        accountUUID: "test-uuid-123",
+        totalWallPostsDeleted: 0,
+      }),
+      getConfig: vi.fn().mockResolvedValue(null),
+      setConfig: vi.fn().mockResolvedValue(undefined),
+      deleteConfig: vi.fn().mockResolvedValue(undefined),
+      deleteConfigLike: vi.fn().mockResolvedValue(undefined),
+      incrementTotalWallPostsDeleted: vi.fn().mockResolvedValue(undefined),
+    },
+
     // Analytics (used by all view models)
     trackEvent: vi.fn().mockResolvedValue(undefined),
 

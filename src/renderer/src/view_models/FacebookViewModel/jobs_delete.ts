@@ -489,5 +489,8 @@ export async function runJobDeleteWallPosts(
 
   await vm.waitForPause();
 
+  // Always submit final progress to the API (even if 0 posts were deleted)
+  vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
+
   await Helpers.finishJob(vm, jobIndex);
 }

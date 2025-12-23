@@ -146,6 +146,31 @@ describe("FacebookViewModel Helpers", () => {
       expect(vm.jobs[1].status).toBe("finished");
       expect(vm.jobs[2].status).toBe("finished");
     });
+
+    it("calls electron updateJob with stringified job", async () => {
+      const vm = createMockFacebookViewModel();
+      const jobIndex = 0;
+
+      await Helpers.finishJob(vm, jobIndex);
+
+      expect(window.electron.Facebook.updateJob).toHaveBeenCalledWith(
+        vm.account.id,
+        expect.any(String),
+      );
+    });
+
+    it("saves lastFinishedJob config for the job type", async () => {
+      const vm = createMockFacebookViewModel();
+      const jobIndex = 0;
+
+      await Helpers.finishJob(vm, jobIndex);
+
+      expect(window.electron.Facebook.setConfig).toHaveBeenCalledWith(
+        vm.account.id,
+        `lastFinishedJob_${vm.jobs[jobIndex].jobType}`,
+        expect.any(String),
+      );
+    });
   });
 
   describe("errorJob", () => {
@@ -188,6 +213,18 @@ describe("FacebookViewModel Helpers", () => {
       expect(vm.log).toHaveBeenCalledWith(
         "errorJob",
         vm.jobs[jobIndex].jobType,
+      );
+    });
+
+    it("calls electron updateJob with stringified job", async () => {
+      const vm = createMockFacebookViewModel();
+      const jobIndex = 0;
+
+      await Helpers.errorJob(vm, jobIndex);
+
+      expect(window.electron.Facebook.updateJob).toHaveBeenCalledWith(
+        vm.account.id,
+        expect.any(String),
       );
     });
   });
