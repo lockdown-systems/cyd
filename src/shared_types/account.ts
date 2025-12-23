@@ -98,3 +98,15 @@ export type FacebookAccount = {
   deleteWallPosts: boolean;
   userLang: string;
 };
+
+export type FacebookProgressInfo = {
+  accountUUID: string;
+  totalWallPostsDeleted: number;
+};
+
+export function emptyFacebookProgressInfo(): FacebookProgressInfo {
+  return {
+    accountUUID: "",
+    totalWallPostsDeleted: 0,
+  };
+}

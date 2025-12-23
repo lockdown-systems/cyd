@@ -17,6 +17,7 @@ import { FacebookViewModel } from "../../view_models/FacebookViewModel";
 import type { FacebookProgress } from "../../view_models/FacebookViewModel/types";
 import { PlatformStates } from "../../types/PlatformStates";
 import { AutomationErrorType } from "../../automation_errors";
+import { facebookPostProgress } from "../../util";
 
 const props = defineProps<{
   account: Account;
@@ -51,6 +52,8 @@ const {
   initializePlatformView,
   canStateLoopRun,
   setState,
+  apiClient,
+  deviceInfo,
 } = usePlatformView(props.account, model, getPlatformConfig("Facebook")!);
 
 const automationHandlers = createAutomationHandlers(() =>
@@ -110,6 +113,18 @@ onMounted(async () => {
   }
 
   setupPlatformEventHandlers(automationHandlers);
+
+  // Facebook-specific event handlers
+  setupPlatformEventHandlers({
+    [`facebook-submit-progress-${props.account.id}`]: async () => {
+      await facebookPostProgress(
+        apiClient.value,
+        deviceInfo.value,
+        props.account.uuid,
+        model.value.progress.wallPostsDeleted,
+      );
+    },
+  });
 });
 
 onUnmounted(async () => {

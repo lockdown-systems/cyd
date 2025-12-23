@@ -13,6 +13,7 @@ import type { DeviceInfo } from "../types";
 import { Account } from "../../../shared_types";
 import CydAPIClient, { APIErrorResponse } from "../../../cyd-api-client";
 import { xPostProgress } from "../util_x";
+import { facebookPostProgress } from "../util";
 
 import Modal from "bootstrap/js/dist/modal";
 
@@ -160,6 +161,20 @@ async function registerDevice() {
       } catch (e) {
         // Silently log the error and continue
         console.log("Error getting X progress:", e);
+      }
+    } else if (accounts[i].type == "Facebook") {
+      try {
+        // For Facebook, we need to get the progress from the view model or calculate it
+        // For now, we'll just submit 0 since we don't have persistent progress storage
+        await facebookPostProgress(
+          apiClient.value,
+          deviceInfo.value,
+          accounts[i].uuid,
+          0,
+        );
+      } catch (e) {
+        // Silently log the error and continue
+        console.log("Error getting Facebook progress:", e);
       }
     }
   }

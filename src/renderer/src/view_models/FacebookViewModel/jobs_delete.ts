@@ -470,6 +470,9 @@ export async function runJobDeleteWallPosts(
       `Batch ${batchNumber} complete: deleted ${checkedCount} posts, total: ${totalDeleted}`,
     );
 
+    // Submit progress to the API
+    vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
+
     await vm.waitForPause();
   }
 
