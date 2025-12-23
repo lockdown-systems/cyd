@@ -154,8 +154,20 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     return Stats.getProgressInfo(this);
   }
 
-  // Config management - inherits from BaseAccountController
-  // getConfig, setConfig are already available
+  // Config management - override base class methods to ensure DB is initialized
+  async getConfig(key: string): Promise<string | null> {
+    if (!this.db) {
+      this.initDB();
+    }
+    return super.getConfig(key);
+  }
+
+  async setConfig(key: string, value: string): Promise<void> {
+    if (!this.db) {
+      this.initDB();
+    }
+    return super.setConfig(key, value);
+  }
 
   async deleteConfig(key: string): Promise<void> {
     if (!this.db) {
