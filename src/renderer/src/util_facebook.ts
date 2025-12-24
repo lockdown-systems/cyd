@@ -44,3 +44,8 @@ export async function facebookGetLastDelete(
   }
   return null;
 }
+
+export async function facebookRequiresPremium(): Promise<boolean> {
+  // All Facebook features require premium
+  return true;
+}

@@ -7,12 +7,13 @@ import FacebookLoginPage from "../../views/facebook/wizard/FacebookLoginPage.vue
 import FacebookDeleteOptionsPage from "../../views/facebook/wizard/FacebookDeleteOptionsPage.vue";
 import FacebookReviewPage from "../../views/facebook/wizard/FacebookReviewPage.vue";
 import FacebookFinishedPage from "../../views/facebook/wizard/FacebookFinishedPage.vue";
+import FacebookWizardCheckPremium from "../../views/facebook/wizard/FacebookWizardCheckPremium.vue";
 
 export const FacebookPlatformConfig: PlatformConfig = {
   name: "Facebook",
   features: {
     hasArchiveOnly: false,
-    hasPremiumGating: false,
+    hasPremiumGating: true,
     hasComplexImport: false,
     hasMigration: false,
     hasU2FSupport: true,
@@ -26,6 +27,7 @@ export const FacebookPlatformConfig: PlatformConfig = {
     wizardPages: {
       [PlatformStates.Login]: FacebookLoginPage,
       [PlatformStates.FacebookWizardDashboardDisplay]: FacebookWizardDashboard,
+      [PlatformStates.WizardCheckPremiumDisplay]: FacebookWizardCheckPremium,
       [PlatformStates.WizardDeleteOptionsDisplay]: FacebookDeleteOptionsPage,
       [PlatformStates.WizardReviewDisplay]: FacebookReviewPage,
       [PlatformStates.FinishedRunningJobsDisplay]: FacebookFinishedPage,

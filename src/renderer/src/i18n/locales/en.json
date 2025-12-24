@@ -419,6 +419,10 @@
     "finished": {
       "title": "Jobs Completed",
       "wallPosts": "wall posts"
+    },
+    "premium": {
+      "readyToDelete": "You're all set! Let's continue to configure what you want to delete.",
+      "continueToDeleteOptions": "Continue to Delete Options"
     }
   },
   "review": {
@@ -600,6 +604,7 @@
         "login": {
           "instructions": "Hello, friend! My name is **Cyd**. I can help you delete all of the posts from your Facebook wall.\n\n# To get started, log in to your Facebook account below."
         },
+        "checkPremium": "\n# Premium Required\n\nDeleting data from Facebook requires a premium subscription.",
         "deleteOptions": "\n# Which data do you want to delete?",
         "review": "I'm almost ready to start helping you delete your data from Facebook!\n\n# Here's what I'm planning on doing.",
         "finishedJobs": "\nAll done!\n\n# Here's what I did."
