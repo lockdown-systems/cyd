@@ -18,6 +18,7 @@ import type { FacebookProgress } from "../../view_models/FacebookViewModel/types
 import { PlatformStates } from "../../types/PlatformStates";
 import { AutomationErrorType } from "../../automation_errors";
 import { facebookPostProgress } from "../../util_facebook";
+import { showQuestionOpenModePremiumFeature } from "../../util";
 
 const props = defineProps<{
   account: Account;
@@ -86,10 +87,22 @@ const handleSetState = async (newState: string) => {
     await updateUserAuthenticated();
     await updateUserPremium();
 
-    // If user doesn't have auth or premium, redirect to premium check
+    // If user doesn't have auth or premium, check if in open source mode
     if (!userAuthenticated.value || !userPremium.value) {
-      setState(PlatformStates.WizardCheckPremium);
-      return;
+      // Check if running in open source mode
+      if ((await window.electron.getMode()) === "open") {
+        // Show confirmation dialog for open source mode
+        if (!(await showQuestionOpenModePremiumFeature())) {
+          // User cancelled, go back to dashboard
+          setState(PlatformStates.FacebookWizardDashboard);
+          return;
+        }
+        // User accepted, allow continuing to delete options
+      } else {
+        // Not in open source mode, redirect to premium check
+        setState(PlatformStates.WizardCheckPremium);
+        return;
+      }
     }
   }
 
