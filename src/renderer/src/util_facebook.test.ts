@@ -63,8 +63,13 @@ describe("util_facebook", () => {
       };
       mockFacebookGetProgressInfo.mockResolvedValue(mockProgressInfo);
 
-      const deviceInfo = { valid: true } as {
-        valid: boolean;
+      const deviceInfo = {
+        userEmail: "test@example.com",
+        deviceDescription: "Test Device",
+        deviceToken: "test-token",
+        deviceUUID: "test-device-uuid",
+        apiToken: "test-api-token",
+        valid: true,
       };
 
       await UtilFacebook.facebookPostProgress(mockApiClient, deviceInfo, 1);
@@ -91,8 +96,13 @@ describe("util_facebook", () => {
       };
       mockFacebookGetProgressInfo.mockResolvedValue(mockProgressInfo);
 
-      const deviceInfo = { valid: false } as {
-        valid: boolean;
+      const deviceInfo = {
+        userEmail: "test@example.com",
+        deviceDescription: "Test Device",
+        deviceToken: "test-token",
+        deviceUUID: "test-device-uuid",
+        apiToken: "test-api-token",
+        valid: false,
       };
 
       await UtilFacebook.facebookPostProgress(mockApiClient, deviceInfo, 1);
