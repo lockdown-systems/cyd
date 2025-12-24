@@ -150,10 +150,10 @@ export class FacebookViewModel extends BaseViewModel {
     }
 
     // Create jobs in the database and get them back with real IDs
-    this.jobs = await window.electron.Facebook.createJobs(
+    this.jobs = (await window.electron.Facebook.createJobs(
       this.account.id,
       jobTypes,
-    );
+    )) as FacebookJob[];
 
     this.log("defineJobs", JSON.parse(JSON.stringify(this.jobs)));
   }
@@ -281,8 +281,25 @@ export class FacebookViewModel extends BaseViewModel {
         ) {
           this.log(
             "runJob",
-            "User language is already English (US), removing setLangToEnglish and restoreUserLang jobs",
+            "User language is already English (US), canceling setLangToEnglish and restoreUserLang jobs",
           );
+
+          // Cancel these jobs in the database before removing from memory
+          const jobsToCancel = this.jobs.filter(
+            (job) =>
+              job.jobType === "setLangToEnglish" ||
+              job.jobType === "restoreUserLang",
+          );
+
+          for (const job of jobsToCancel) {
+            job.status = "canceled";
+            await window.electron.Facebook.updateJob(
+              this.account.id,
+              JSON.stringify(job),
+            );
+          }
+
+          // Remove from in-memory array
           this.jobs = this.jobs.filter(
             (job) =>
               job.jobType !== "setLangToEnglish" &&
