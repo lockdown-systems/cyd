@@ -352,9 +352,7 @@ export class FacebookViewModel extends BaseViewModel {
 
         case PlatformStates.WizardCheckPremium:
           this.showBrowser = false;
-          this.instructions = this.t(
-            "viewModels.facebook.wizard.checkPremium",
-          );
+          this.instructions = this.t("viewModels.facebook.wizard.checkPremium");
           await this.loadBlank();
           this.state = PlatformStates.WizardCheckPremiumDisplay;
           break;

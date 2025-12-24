@@ -54,6 +54,7 @@ const {
   setState,
   apiClient,
   deviceInfo,
+  updateUserAuthenticated,
   updateUserPremium,
 } = usePlatformView(props.account, model, getPlatformConfig("Facebook")!);
 
@@ -77,6 +78,23 @@ const onReportBug = async () => {
 };
 
 const typedProgress = computed(() => progress.value as FacebookProgress | null);
+
+const handleSetState = async (newState: string) => {
+  // If trying to go to delete options, check if user has premium first
+  if (newState === PlatformStates.WizardDeleteOptions) {
+    // Refresh authentication and premium status
+    await updateUserAuthenticated();
+    await updateUserPremium();
+
+    // If user doesn't have auth or premium, redirect to premium check
+    if (!userAuthenticated.value || !userPremium.value) {
+      setState(PlatformStates.WizardCheckPremium);
+      return;
+    }
+  }
+
+  setState(newState);
+};
 
 const startJobs = async () => {
   if (model.value.account.facebookAccount == null) {
@@ -153,7 +171,7 @@ onUnmounted(async () => {
     :webview-props="webviewProps"
     @on-refresh-clicked="emit('onRefreshClicked')"
     @on-remove-clicked="emit('onRemoveClicked')"
-    @set-state="setState($event)"
+    @set-state="handleSetState($event)"
     @start-jobs="startJobs"
     @update-user-premium="updateUserPremium"
     @on-pause="model.pause()"
