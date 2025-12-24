@@ -289,7 +289,20 @@ export function mockElectronAPI() {
 
     // Facebook operations
     Facebook: {
-      createJobs: vi.fn().mockResolvedValue([]),
+      createJobs: vi.fn().mockImplementation((_accountID, jobTypes: string[]) =>
+        Promise.resolve(
+          jobTypes.map((jobType, index) => ({
+            id: index + 1,
+            jobType,
+            status: "pending",
+            scheduledAt: new Date(),
+            startedAt: null,
+            finishedAt: null,
+            progressJSON: "",
+            error: null,
+          })),
+        ),
+      ),
       getLastFinishedJob: vi.fn().mockResolvedValue(null),
       updateJob: vi.fn().mockResolvedValue(undefined),
       getProgressInfo: vi.fn().mockResolvedValue({

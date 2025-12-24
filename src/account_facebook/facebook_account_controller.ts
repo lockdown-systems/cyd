@@ -11,6 +11,7 @@ import {
   FacebookProgress,
   emptyFacebookProgress,
   FacebookProgressInfo,
+  PlatformJob,
 } from "../shared_types";
 import {
   runMigrations,

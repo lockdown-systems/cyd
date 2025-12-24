@@ -149,16 +149,11 @@ export class FacebookViewModel extends BaseViewModel {
       jobTypes.push("restoreUserLang");
     }
 
-    // Create jobs array
-    this.jobs = jobTypes.map((jobType, index) => ({
-      id: index,
-      jobType,
-      status: "pending",
-      startedAt: null,
-      finishedAt: null,
-      progressJSON: "",
-      error: null,
-    }));
+    // Create jobs in the database and get them back with real IDs
+    this.jobs = await window.electron.Facebook.createJobs(
+      this.account.id,
+      jobTypes,
+    );
 
     this.log("defineJobs", JSON.parse(JSON.stringify(this.jobs)));
   }
