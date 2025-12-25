@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "systems.lockdown.cyd-mobile"
+      "bundleIdentifier": "systems.lockdown.cyd-mobile",
+      "appleTeamId": "G762K6CH36"
     },
     "android": {
       "adaptiveIcon": {
