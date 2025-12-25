@@ -1,0 +1,51 @@
+{
+  // Use workspace TypeScript version
+  "typescript.preferences.useAliasesForRenames": false,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+
+  // Ensure same TypeScript strictness
+  "typescript.preferences.strictNullChecks": true,
+  "typescript.preferences.strictFunctionTypes": true,
+
+  // Vue and testing specific settings
+  "vue.codeActions.enabled": true,
+  "vue.complete.casing.tags": "kebab",
+  "vue.complete.casing.props": "camel",
+
+  // Test file associations
+  "files.associations": {
+    "*.test.ts": "typescript",
+    "*.spec.ts": "typescript"
+  },
+
+  // TypeScript validation for test files
+  "typescript.validate.enable": true,
+  "typescript.format.enable": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+
+  // Ensure ESLint and TypeScript work together
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "vue",
+    "javascriptreact",
+    "typescriptreact"
+  ],
+
+  // Monorepo configuration
+  "eslint.workingDirectories": ["./", "./cyd-mobile"],
+
+  // React Native/Expo specific settings
+  "react-native-tools.showUserTips": false,
+  "react-native-tools.projectRoot": "./cyd-mobile",
+
+  // Search exclusions
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/coverage": true,
+    "**/out": true,
+    "**/.vite": true,
+    "**/build": true
+  }
+}

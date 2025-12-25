@@ -1,7 +1,12 @@
 {
   "recommendations": [
+    // Electron app extensions
     "Vue.volar",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    // Expo/React Native extensions
+    "expo.vscode-expo-tools",
+    "msjsdiag.vscode-react-native",
+    "dsznajder.es7-react-js-snippets"
   ]
 }
