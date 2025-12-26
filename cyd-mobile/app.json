@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "cyd-mobile",
-    "slug": "cyd-mobile",
+    "name": "Cyd",
+    "slug": "cyd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cydmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "platforms": ["android", "ios"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "systems.lockdown.cyd-mobile",
@@ -24,10 +25,6 @@
       "predictiveBackGestureEnabled": false,
       "package": "systems.lockdown.cydmobile"
     },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
       "expo-router",
       [
@@ -42,11 +39,11 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 300,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#c3d1e4",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#3a414b"
           }
         }
       ]

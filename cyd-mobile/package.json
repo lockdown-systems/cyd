@@ -4,9 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "prebuild": "expo prebuild",
+    "prebuild": "expo prebuild --clean",
     "android": "expo run:android --device",
     "ios": "expo run:ios --device",
+    "ios:release": "npx expo run:ios --configuration Release --device",
     "lint": "expo lint"
   },
   "dependencies": {
