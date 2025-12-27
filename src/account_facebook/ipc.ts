@@ -146,4 +146,25 @@ export const defineIPCFacebook = () => {
       }
     },
   );
+
+  ipcMain.handle("Facebook:isRateLimited", async (_, accountID: number) => {
+    try {
+      const controller = getFacebookAccountController(accountID);
+      return await controller.isRateLimited();
+    } catch (error) {
+      throw new Error(packageExceptionForReport(error as Error));
+    }
+  });
+
+  ipcMain.handle(
+    "Facebook:resetRateLimitInfo",
+    async (_, accountID: number) => {
+      try {
+        const controller = getFacebookAccountController(accountID);
+        await controller.resetRateLimitInfo();
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
 };

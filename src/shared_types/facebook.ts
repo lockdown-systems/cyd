@@ -18,6 +18,18 @@ export function emptyFacebookProgress(): FacebookProgress {
   };
 }
 
+export type FacebookRateLimitInfo = {
+  isRateLimited: boolean;
+  rateLimitReset: number;
+};
+
+export function emptyFacebookRateLimitInfo(): FacebookRateLimitInfo {
+  return {
+    isRateLimited: false,
+    rateLimitReset: 0,
+  };
+}
+
 // Re-export FacebookProgressInfo from account.ts where it's already defined
 export type { FacebookProgressInfo } from "./account";
 export { emptyFacebookProgressInfo } from "./account";

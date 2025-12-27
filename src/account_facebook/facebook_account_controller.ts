@@ -1,5 +1,6 @@
 import path from "path";
 
+import { session } from "electron";
 import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
@@ -11,6 +12,8 @@ import {
   FacebookProgress,
   emptyFacebookProgress,
   FacebookProgressInfo,
+  FacebookRateLimitInfo,
+  emptyFacebookRateLimitInfo,
 } from "../shared_types";
 import {
   runMigrations,
@@ -30,6 +33,7 @@ import { migrations } from "./controller/migrations";
 export class FacebookAccountController extends BaseAccountController<FacebookProgress> {
   // Making this public so it can be accessed in tests
   public account: FacebookAccount | null = null;
+  private rateLimitInfo: FacebookRateLimitInfo = emptyFacebookRateLimitInfo();
 
   protected cookies: Record<string, Record<string, string>> = {};
 
@@ -37,6 +41,21 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     super(accountID, mitmController);
     // Initialize progress with Facebook-specific type
     this.progress = emptyFacebookProgress();
+
+    // Monitor web request metadata for Facebook-specific functionality
+    const ses = session.fromPartition(`persist:account-${this.accountID}`);
+    ses.webRequest.onCompleted((details) => {
+      // Monitor for rate limits
+      if (details.statusCode == 429) {
+        log.info(
+          `FacebookAccountController: Rate limit detected for account ${this.accountID}`,
+        );
+        log.info("Rate limit details:", JSON.stringify(details, null, 2));
+        this.rateLimitInfo.isRateLimited = true;
+        // Facebook might not send x-rate-limit-reset, so default to 15 mins
+        this.rateLimitInfo.rateLimitReset = Math.floor(Date.now() / 1000) + 900;
+      }
+    });
   }
 
   protected getAccountType(): string {
@@ -88,6 +107,14 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
   protected getMITMURLs(): string[] {
     // Facebook doesn't currently use MITM interception
     return [];
+  }
+
+  async resetRateLimitInfo(): Promise<void> {
+    this.rateLimitInfo = emptyFacebookRateLimitInfo();
+  }
+
+  async isRateLimited(): Promise<FacebookRateLimitInfo> {
+    return this.rateLimitInfo;
   }
 
   refreshAccount() {

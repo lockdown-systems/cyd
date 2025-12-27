@@ -1,6 +1,7 @@
 import type { FacebookViewModel } from "./view_model";
 import { RunJobsState } from "./types";
 import * as Helpers from "./helpers";
+import { checkRateLimit } from "./rate_limit";
 
 const FACEBOOK_PROFILE_URL = "https://www.facebook.com/me/";
 
@@ -311,6 +312,9 @@ export async function runJobDeleteWallPosts(
   const maxToCheck = 50;
 
   while (true) {
+    // Check for rate limits
+    await checkRateLimit(vm);
+
     batchNumber++;
     vm.log("runJobDeleteWallPosts", `Starting batch ${batchNumber}`);
 
@@ -351,6 +355,9 @@ export async function runJobDeleteWallPosts(
 
     // Loop through items and check those that can be deleted
     for (const { listIndex, itemIndex } of allItems) {
+      // Check for rate limits
+      await checkRateLimit(vm);
+
       if (checkedCount >= maxToCheck) {
         vm.log(
           "runJobDeleteWallPosts",

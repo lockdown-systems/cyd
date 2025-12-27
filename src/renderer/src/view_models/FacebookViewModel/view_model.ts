@@ -1,6 +1,10 @@
 import type { WebviewTag } from "electron";
 import type { Emitter, EventType } from "mitt";
-import type { Account } from "../../../../shared_types";
+import {
+  Account,
+  FacebookRateLimitInfo,
+  emptyFacebookRateLimitInfo,
+} from "../../../../shared_types";
 import { BaseViewModel } from "../BaseViewModel";
 import { AutomationErrorType } from "../../automation_errors";
 import { formatError } from "../../util";
@@ -94,6 +98,7 @@ function findProfilePictureURI(data: unknown): string | null {
 
 export class FacebookViewModel extends BaseViewModel {
   public progress: FacebookProgress = emptyFacebookProgress();
+  public rateLimitInfo: FacebookRateLimitInfo = emptyFacebookRateLimitInfo();
   public jobs: FacebookJob[] = [];
   public currentJobIndex: number = 0;
 

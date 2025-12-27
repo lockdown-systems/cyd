@@ -21,6 +21,7 @@ import {
   // Facebook
   FacebookJob,
   FacebookProgressInfo,
+  FacebookRateLimitInfo,
 } from "./shared_types";
 
 const electronAPI = {
@@ -535,6 +536,12 @@ const electronAPI = {
         accountID,
         count,
       );
+    },
+    isRateLimited: (accountID: number): Promise<FacebookRateLimitInfo> => {
+      return ipcRenderer.invoke("Facebook:isRateLimited", accountID);
+    },
+    resetRateLimitInfo: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Facebook:resetRateLimitInfo", accountID);
     },
   },
 };
