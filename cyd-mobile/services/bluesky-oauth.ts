@@ -20,9 +20,12 @@ import { saveAuthenticatedBlueskyAccount } from "@/database/accounts";
 
 const STATE_PREFIX = "@cyd/bluesky/state/";
 const SESSION_PREFIX = "@cyd/bluesky/session/";
-const CLIENT_METADATA_PATH = "bluesky/client-metadata.json";
+const CLIENT_METADATA_PATH = "bluesky/client-metadata-mobile.json";
 const PROD_HOST = "api.cyd.social";
 const DEV_HOST = "dev-api.cyd.social";
+const REDIRECT_URI = __DEV__
+  ? "social.cyd.dev-api:/oauth/bluesky"
+  : "social.cyd.api:/oauth/bluesky";
 
 let clientPromise: Promise<OAuthClient> | null = null;
 const stateStore = createStateStore();
@@ -73,30 +76,15 @@ export async function authenticateBlueskyAccount(handleInput: string) {
   }
 
   const client = await getClient();
-  const redirectScheme = __DEV__ ? "cyd-dev" : "cyd";
-  const appRedirectUri =
-    `${redirectScheme}:/oauth/bluesky` as unknown as OAuthRedirectUri;
-
-  // Determine the redirect URI to use for the authorization request.
-  // If the metadata supports the app's custom scheme, use it.
-  // Otherwise, fallback to the first allowed redirect URI (e.g. the server-side redirect).
-  let authRedirectUri = appRedirectUri;
-  if (
-    client.clientMetadata.redirect_uris &&
-    !client.clientMetadata.redirect_uris.includes(appRedirectUri) &&
-    client.clientMetadata.redirect_uris.length > 0
-  ) {
-    authRedirectUri = client.clientMetadata
-      .redirect_uris[0] as unknown as OAuthRedirectUri;
-  }
+  const redirectUri = REDIRECT_URI as unknown as OAuthRedirectUri;
 
   const authUrl = await client.authorize(sanitizedHandle, {
-    redirect_uri: authRedirectUri,
+    redirect_uri: redirectUri,
   });
 
   const result = await WebBrowser.openAuthSessionAsync(
     authUrl.toString(),
-    appRedirectUri,
+    redirectUri,
   );
 
   if (result.type !== "success") {
@@ -112,7 +100,7 @@ export async function authenticateBlueskyAccount(handleInput: string) {
   const params = new URL(result.url).searchParams;
 
   const { session } = await client.callback(params, {
-    redirect_uri: authRedirectUri,
+    redirect_uri: redirectUri,
   });
 
   const agent = new Agent(session);

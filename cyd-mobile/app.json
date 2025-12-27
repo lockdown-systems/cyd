@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "cyd",
+    "scheme": ["social.cyd.api", "social.cyd.dev-api"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["android", "ios"],
@@ -16,7 +16,7 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["cyd", "cyd-dev"]
+            "CFBundleURLSchemes": ["social.cyd.api", "social.cyd.dev-api"]
           }
         ]
       }
@@ -34,7 +34,10 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "data": [{ "scheme": "cyd" }, { "scheme": "cyd-dev" }],
+          "data": [
+            { "scheme": "social.cyd.api" },
+            { "scheme": "social.cyd.dev-api" }
+          ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
