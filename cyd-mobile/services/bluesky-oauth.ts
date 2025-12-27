@@ -1,4 +1,4 @@
-import "react-native-webcrypto";
+import "@/services/polyfills";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Agent } from "@atproto/api";

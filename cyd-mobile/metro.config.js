@@ -10,4 +10,14 @@ config.resolver.assetExts = config.resolver.assetExts.filter(
 );
 config.resolver.sourceExts.push("svg");
 
+// Prefer "react-native" then "browser" exports.
+// This ensures we get the browser version of "jose" (which uses WebCrypto)
+// instead of the Node version (which uses node:crypto).
+config.resolver.unstable_conditionNames = [
+  "react-native",
+  "browser",
+  "require",
+  "import",
+];
+
 module.exports = config;

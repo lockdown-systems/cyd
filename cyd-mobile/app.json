@@ -39,6 +39,7 @@
       ]
     },
     "plugins": [
+      "react-native-quick-crypto",
       "expo-router",
       [
         "expo-build-properties",
