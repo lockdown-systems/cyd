@@ -53,4 +53,15 @@ export const migrations: Migration[] = [
       `CREATE INDEX IF NOT EXISTS idx_account_sort_order ON account(sortOrder ASC, id ASC);`,
     ],
   },
+  {
+    version: 2,
+    name: "store bluesky oauth session",
+    statements: [
+      `ALTER TABLE bsky_account ADD COLUMN did TEXT;`,
+      `ALTER TABLE bsky_account ADD COLUMN accessJwt TEXT;`,
+      `ALTER TABLE bsky_account ADD COLUMN refreshJwt TEXT;`,
+      `ALTER TABLE bsky_account ADD COLUMN sessionJson TEXT;`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_bsky_account_did ON bsky_account(did);`,
+    ],
+  },
 ];

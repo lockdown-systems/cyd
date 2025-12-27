@@ -16,6 +16,10 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
+        <Stack.Screen
+          name="add-account"
+          options={{ headerShown: true, presentation: "modal" }}
+        />
       </Stack>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </ThemeProvider>

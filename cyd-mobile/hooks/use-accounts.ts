@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 
 import {
   ensureDevSeedData,
@@ -51,6 +52,12 @@ export function useAccounts(): UseAccountsResult {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   return { accounts, loading, error, refresh };
 }

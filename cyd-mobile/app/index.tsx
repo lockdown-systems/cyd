@@ -9,7 +9,9 @@ import {
   StyleSheet,
   Text,
   View,
+  RefreshControl,
 } from "react-native";
+import { useRouter } from "expo-router";
 
 import WordmarkDark from "@/assets/images/cyd-wordmark-dark.svg";
 import WordmarkLight from "@/assets/images/cyd-wordmark.svg";
@@ -24,12 +26,12 @@ export default function AccountSelectionScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const Wordmark = colorScheme === "dark" ? WordmarkDark : WordmarkLight;
-  const { accounts, loading, error } = useAccounts();
+  const { accounts, loading, error, refresh } = useAccounts();
+  const router = useRouter();
 
   const handleAddAccount = useCallback(() => {
-    // TODO: navigate to the account onboarding flow.
-    console.log("Add account pressed");
-  }, []);
+    router.push("/add-account");
+  }, [router]);
 
   const handleSelectAccount = useCallback((account: AccountListItem) => {
     // TODO: replace with navigation when the detail view exists.
@@ -82,6 +84,15 @@ export default function AccountSelectionScreen() {
       style={[styles.safeArea, { backgroundColor: palette.background }]}
     >
       <View style={styles.container}>
+        {error ? (
+          <View
+            style={[styles.banner, { backgroundColor: palette.icon + "22" }]}
+          >
+            <Text style={[styles.bannerText, { color: palette.text }]}>
+              Unable to load accounts. Pull to refresh.
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.mainContent}>
           <View style={styles.wordmarkWrapper}>
             <Wordmark
@@ -99,6 +110,13 @@ export default function AccountSelectionScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={
               accounts.length === 0 ? styles.emptyListContainer : undefined
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={refresh}
+                tintColor={palette.icon}
+              />
             }
           />
 
@@ -298,5 +316,13 @@ const styles = StyleSheet.create({
   emptyListContainer: {
     flexGrow: 1,
     justifyContent: "center",
+  },
+  banner: {
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  bannerText: {
+    fontSize: 13,
   },
 });

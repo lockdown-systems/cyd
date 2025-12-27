@@ -11,11 +11,15 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@atproto/api": "^0.18.8",
+    "@atproto/oauth-client-node": "^0.3.13",
     "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.30",
+    "expo-auth-session": "^7.0.10",
     "expo-build-properties": "^1.0.10",
     "expo-constants": "~18.0.12",
     "expo-dev-client": "~6.0.20",
