@@ -49,6 +49,18 @@ if (
   (globalThis as any).AbortSignal = PolyfillAbortSignal;
 }
 
+if (
+  typeof globalThis.AbortSignal !== "undefined" &&
+  typeof (globalThis.AbortSignal as any).prototype?.throwIfAborted !==
+    "function"
+) {
+  (globalThis.AbortSignal as any).prototype.throwIfAborted = function () {
+    if (this.aborted) {
+      throw this.reason ?? new Error("AbortError");
+    }
+  };
+}
+
 if (typeof (globalThis.AbortSignal as any).timeout !== "function") {
   (globalThis.AbortSignal as any).timeout = function timeout(ms: number) {
     const controller = new AbortController();
