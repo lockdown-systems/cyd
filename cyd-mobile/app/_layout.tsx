@@ -17,6 +17,10 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen
+          name="account/[accountId]"
+          options={{ headerShown: true }}
+        />
+        <Stack.Screen
           name="add-account"
           options={{ headerShown: true, presentation: "modal" }}
         />

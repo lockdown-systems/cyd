@@ -33,10 +33,15 @@ export default function AccountSelectionScreen() {
     router.push("/add-account");
   }, [router]);
 
-  const handleSelectAccount = useCallback((account: AccountListItem) => {
-    // TODO: replace with navigation when the detail view exists.
-    console.log("Selected account", account.id);
-  }, []);
+  const handleSelectAccount = useCallback(
+    (account: AccountListItem) => {
+      router.push({
+        pathname: "/account/[accountId]",
+        params: { accountId: account.uuid },
+      });
+    },
+    [router],
+  );
 
   const handleOpenDesktop = useCallback(() => {
     Linking.openURL(CYD_DESKTOP_URL).catch((err) =>
