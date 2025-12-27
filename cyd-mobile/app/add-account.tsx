@@ -4,12 +4,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 
 import { Colors } from "@/constants/theme";
@@ -68,8 +68,11 @@ export default function AddAccountScreen() {
           </Text>
           <Text style={[styles.description, { color: palette.icon }]}>
             Enter your Bluesky handle to allow the Cyd app to manage your
-            account. Everything happens locally on your phone, and Cyd does not
-            collect any of your Bluesky data.
+            account.
+          </Text>
+          <Text style={[styles.description, { color: palette.icon }]}>
+            Everything happens locally on your phone, and Cyd does not collect
+            any of your Bluesky data.
           </Text>
 
           <View style={styles.fieldGroup}>

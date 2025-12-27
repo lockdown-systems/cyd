@@ -8,6 +8,10 @@ if (typeof global.TextEncoder === "undefined") {
   global.TextDecoder = TextEncoding.TextDecoder;
 }
 
+if (typeof Intl.Segmenter === "undefined") {
+  require("@formatjs/intl-segmenter/polyfill");
+}
+
 // Polyfill Event for @atproto/oauth-client
 if (typeof globalThis.Event === "undefined") {
   (globalThis as any).Event = class Event {

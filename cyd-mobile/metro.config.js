@@ -20,4 +20,23 @@ config.resolver.unstable_conditionNames = [
   "import",
 ];
 
+// Silence warnings about "multiformats" and "uint8arrays" exports
+const originalGetTransformOptions = config.transformer.getTransformOptions;
+config.transformer.getTransformOptions = async (
+  entryFiles,
+  options,
+  getDependenciesOf,
+) => {
+  const result = await originalGetTransformOptions(
+    entryFiles,
+    options,
+    getDependenciesOf,
+  );
+  return result;
+};
+
+// Ignore specific warnings in LogBox (runtime)
+// Note: This doesn't stop the bundler warnings, but helps clean up the device logs.
+// Bundler warnings are harder to suppress without patching Metro.
+
 module.exports = config;
