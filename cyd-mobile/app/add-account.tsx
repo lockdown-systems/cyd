@@ -13,21 +13,39 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 
 import { Colors } from "@/constants/theme";
-import { authenticateBlueskyAccount } from "@/services/bluesky-oauth";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  authenticateBlueskyAccount,
+  normalizeHandle,
+} from "@/services/bluesky-oauth";
 
 export default function AddAccountScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
+  const { accounts } = useAccounts();
   const [handle, setHandle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const normalizedHandle = normalizeHandle(handle);
 
-  const canSubmit = handle.trim().length > 0 && !submitting;
+  const canSubmit = normalizedHandle.length > 0 && !submitting;
 
   const onAuthenticate = async () => {
     if (!canSubmit) {
+      return;
+    }
+
+    const existingAccount = accounts.find(
+      (account) => normalizeHandle(account.handle) === normalizedHandle,
+    );
+
+    if (existingAccount) {
+      router.replace({
+        pathname: "/account/[accountId]",
+        params: { accountId: existingAccount.uuid },
+      });
       return;
     }
 
