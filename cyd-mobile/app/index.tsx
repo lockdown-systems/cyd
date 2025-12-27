@@ -74,7 +74,7 @@ export default function AccountSelectionScreen() {
 
     return (
       <Text style={[styles.emptyStateText, { color: palette.icon }]}>
-        No accounts yet. Add your first one.
+        Add a Bluesky account to get started.
       </Text>
     );
   }, [loading, error, palette.icon]);

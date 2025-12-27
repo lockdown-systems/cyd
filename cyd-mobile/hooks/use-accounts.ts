@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 
-import {
-  ensureDevSeedData,
-  listAccounts,
-  type AccountListItem,
-} from "@/database/accounts";
+import { type AccountListItem, listAccounts } from "@/database/accounts";
 
 export type UseAccountsResult = {
   accounts: AccountListItem[];
@@ -29,18 +25,17 @@ export function useAccounts(): UseAccountsResult {
   const refresh = useCallback(async () => {
     if (mountedRef.current) {
       setLoading(true);
+      setError(null);
     }
 
     try {
-      await ensureDevSeedData();
       const data = await listAccounts();
       if (mountedRef.current) {
         setAccounts(data);
-        setError(null);
       }
-    } catch (err) {
+    } catch (e) {
       if (mountedRef.current) {
-        setError(err instanceof Error ? err : new Error(String(err)));
+        setError(e instanceof Error ? e : new Error(String(e)));
       }
     } finally {
       if (mountedRef.current) {

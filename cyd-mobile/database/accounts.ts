@@ -28,25 +28,6 @@ type CreateBlueskyAccountParams = {
   sessionJson?: string | null;
 };
 
-const DEV_SEED_ACCOUNTS: CreateBlueskyAccountParams[] = [
-  {
-    uuid: "acc-demo-1",
-    did: "did:plc:demo1",
-    handle: "nexamind-cyd.bsky.social",
-    displayName: "Nexamind",
-    avatarDataURI:
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAAB8ESQZAAAAKUlEQVR4nO3MMQ0AIAgDQf//M2kYCRwYkpwN1F3T0zrg0g7T7NNsMIYQwkMAkf0Aw5TzfIMAAAAASUVORK5CYII=",
-  },
-  {
-    uuid: "acc-demo-2",
-    did: "did:plc:demo2",
-    handle: "support-cyd.bsky.social",
-    displayName: "Cyd Support",
-    avatarDataURI:
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAAB8ESQZAAAAL0lEQVR4nO3MMQ0AAAgDINc/9MYalKTBciyc2VXb3SJJkiRJkiRJkiQ5ZD4COr0F6jU8TDgAAAAASUVORK5CYII=",
-  },
-];
-
 export async function listAccounts(): Promise<AccountListItem[]> {
   const db = await getDatabase();
   const rows = await db.getAllAsync<
@@ -149,29 +130,6 @@ async function getNextSortOrder(db: SQLiteDatabase): Promise<number> {
     "SELECT COALESCE(MAX(sortOrder), -1) + 1 AS nextOrder FROM account;",
   );
   return row?.nextOrder ?? 0;
-}
-
-export async function ensureDevSeedData(): Promise<void> {
-  if (!__DEV__) {
-    return;
-  }
-
-  const db = await getDatabase();
-  const existing = await db.getFirstAsync<{ count: number }>(
-    "SELECT COUNT(1) as count FROM account;",
-  );
-
-  if ((existing?.count ?? 0) > 0) {
-    return;
-  }
-
-  for (let index = 0; index < DEV_SEED_ACCOUNTS.length; index += 1) {
-    const seed = DEV_SEED_ACCOUNTS[index];
-    await createBlueskyAccountWithDb(db, {
-      ...seed,
-      sortOrder: index,
-    });
-  }
 }
 
 export async function saveAuthenticatedBlueskyAccount(params: {
