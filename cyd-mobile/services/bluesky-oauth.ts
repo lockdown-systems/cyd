@@ -54,6 +54,7 @@ async function initClient(): Promise<OAuthClient> {
     stateStore,
     sessionStore,
     runtimeImplementation,
+    handleResolver: "https://bsky.social",
   });
 }
 
@@ -73,16 +74,29 @@ export async function authenticateBlueskyAccount(handleInput: string) {
 
   const client = await getClient();
   const redirectScheme = __DEV__ ? "cyd-dev" : "cyd";
-  const redirectUri =
+  const appRedirectUri =
     `${redirectScheme}:/oauth/bluesky` as unknown as OAuthRedirectUri;
 
+  // Determine the redirect URI to use for the authorization request.
+  // If the metadata supports the app's custom scheme, use it.
+  // Otherwise, fallback to the first allowed redirect URI (e.g. the server-side redirect).
+  let authRedirectUri = appRedirectUri;
+  if (
+    client.clientMetadata.redirect_uris &&
+    !client.clientMetadata.redirect_uris.includes(appRedirectUri) &&
+    client.clientMetadata.redirect_uris.length > 0
+  ) {
+    authRedirectUri = client.clientMetadata
+      .redirect_uris[0] as unknown as OAuthRedirectUri;
+  }
+
   const authUrl = await client.authorize(sanitizedHandle, {
-    redirect_uri: redirectUri,
+    redirect_uri: authRedirectUri,
   });
 
   const result = await WebBrowser.openAuthSessionAsync(
     authUrl.toString(),
-    redirectUri,
+    appRedirectUri,
   );
 
   if (result.type !== "success") {
@@ -98,7 +112,7 @@ export async function authenticateBlueskyAccount(handleInput: string) {
   const params = new URL(result.url).searchParams;
 
   const { session } = await client.callback(params, {
-    redirect_uri: redirectUri,
+    redirect_uri: authRedirectUri,
   });
 
   const agent = new Agent(session);

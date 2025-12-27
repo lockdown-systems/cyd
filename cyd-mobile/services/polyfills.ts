@@ -26,3 +26,58 @@ if (typeof globalThis.Event === "undefined") {
     }
   };
 }
+
+// Polyfill EventTarget for @atproto/oauth-client
+if (typeof globalThis.EventTarget === "undefined") {
+  (globalThis as any).EventTarget = class EventTarget {
+    private listeners: Record<string, EventListenerOrEventListenerObject[]> =
+      {};
+
+    addEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+    ) {
+      if (!listener) return;
+      if (!this.listeners[type]) {
+        this.listeners[type] = [];
+      }
+      this.listeners[type].push(listener);
+    }
+
+    removeEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+    ) {
+      if (!listener || !this.listeners[type]) return;
+      const index = this.listeners[type].indexOf(listener);
+      if (index !== -1) {
+        this.listeners[type].splice(index, 1);
+      }
+    }
+
+    dispatchEvent(event: Event): boolean {
+      if (!this.listeners[event.type]) return true;
+      this.listeners[event.type].forEach((listener) => {
+        if (typeof listener === "function") {
+          listener(event);
+        } else {
+          listener.handleEvent(event);
+        }
+      });
+      return true;
+    }
+  };
+}
+
+// Polyfill CustomEvent for @atproto/oauth-client
+if (typeof globalThis.CustomEvent === "undefined") {
+  (globalThis as any).CustomEvent = class CustomEvent extends (
+    (globalThis as any).Event
+  ) {
+    detail: any;
+    constructor(type: string, eventInitDict?: CustomEventInit) {
+      super(type, eventInitDict);
+      this.detail = eventInitDict?.detail;
+    }
+  };
+}
