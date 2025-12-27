@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Linking,
@@ -12,52 +13,25 @@ import {
 
 import WordmarkDark from "@/assets/images/cyd-wordmark-dark.svg";
 import WordmarkLight from "@/assets/images/cyd-wordmark.svg";
+import type { AccountListItem } from "@/database/accounts";
 import { Colors } from "@/constants/theme";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const CYD_DESKTOP_URL = "https://cyd.social/";
-
-type Account = {
-  id: string;
-  platform: "bluesky" | string;
-  name: string;
-  username: string;
-  avatarDataURI: string;
-};
-
-// Placeholder data for layout purposes. Replace with real account data later.
-const placeholderAccounts: Account[] = [
-  {
-    id: "acc-demo-1",
-    platform: "bluesky",
-    name: "Nexamind",
-    username: "nexamind-cyd.bsky.social",
-    avatarDataURI:
-      "base64:iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAAB8ESQZAAAAKUlEQVR4nO3MMQ0AIAgDQf//M2kYCRwYkpwN1F3T0zrg0g7T7NNsMIYQwkMAkf0Aw5TzfIMAAAAASUVORK5CYII=",
-  },
-  {
-    id: "acc-demo-2",
-    platform: "bluesky",
-    name: "Cyd Support",
-    username: "support-cyd.bsky.social",
-    avatarDataURI:
-      "base64:iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAAB8ESQZAAAAL0lEQVR4nO3MMQ0AAAgDINc/9MYalKTBciyc2VXb3SJJkiRJkiRJkiQ5ZD4COr0F6jU8TDgAAAAASUVORK5CYII=",
-  },
-];
 
 export default function AccountSelectionScreen() {
   const colorScheme = useColorScheme() ?? "light";
   const palette = Colors[colorScheme];
   const Wordmark = colorScheme === "dark" ? WordmarkDark : WordmarkLight;
-
-  const accounts = placeholderAccounts; // TODO: source real accounts
+  const { accounts, loading, error } = useAccounts();
 
   const handleAddAccount = useCallback(() => {
     // TODO: navigate to the account onboarding flow.
     console.log("Add account pressed");
   }, []);
 
-  const handleSelectAccount = useCallback((account: Account) => {
+  const handleSelectAccount = useCallback((account: AccountListItem) => {
     // TODO: replace with navigation when the detail view exists.
     console.log("Selected account", account.id);
   }, []);
@@ -69,7 +43,7 @@ export default function AccountSelectionScreen() {
   }, []);
 
   const renderAccount = useCallback(
-    ({ item }: { item: Account }) => (
+    ({ item }: { item: AccountListItem }) => (
       <AccountCard
         account={item}
         palette={palette}
@@ -79,14 +53,29 @@ export default function AccountSelectionScreen() {
     [palette, handleSelectAccount],
   );
 
-  const listEmpty = useMemo(
-    () => (
+  const listEmpty = useMemo(() => {
+    if (loading) {
+      return (
+        <View style={styles.emptyListContainer}>
+          <ActivityIndicator size="small" color={palette.icon} />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <Text style={[styles.emptyStateText, { color: palette.icon }]}>
+          Unable to load accounts. Pull to refresh.
+        </Text>
+      );
+    }
+
+    return (
       <Text style={[styles.emptyStateText, { color: palette.icon }]}>
         No accounts yet. Add your first one.
       </Text>
-    ),
-    [palette.icon],
-  );
+    );
+  }, [loading, error, palette.icon]);
 
   return (
     <SafeAreaView
@@ -104,7 +93,7 @@ export default function AccountSelectionScreen() {
 
           <FlatList
             data={accounts}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.uuid}
             renderItem={renderAccount}
             ListEmptyComponent={listEmpty}
             showsVerticalScrollIndicator={false}
@@ -155,15 +144,18 @@ export default function AccountSelectionScreen() {
 }
 
 type AccountCardProps = {
-  account: Account;
+  account: AccountListItem;
   palette: typeof Colors.light;
-  onSelect: (account: Account) => void;
+  onSelect: (account: AccountListItem) => void;
 };
 
 function AccountCard({ account, palette, onSelect }: AccountCardProps) {
-  const avatarUri = account.avatarDataURI.startsWith("base64:")
-    ? `data:image/png;base64,${account.avatarDataURI.slice(7)}`
-    : account.avatarDataURI;
+  const avatarUri = account.avatarDataURI || null;
+  const username = account.handle.startsWith("@")
+    ? account.handle
+    : `@${account.handle}`;
+  const displayName = account.displayName ?? username;
+  const initial = displayName.replace(/^@/, "").charAt(0).toUpperCase() || "?";
 
   return (
     <Pressable
@@ -176,30 +168,47 @@ function AccountCard({ account, palette, onSelect }: AccountCardProps) {
           opacity: pressed ? 0.92 : 1,
         },
       ]}
+      android_ripple={{ color: palette.icon + "33" }}
     >
-      <Image
-        source={{ uri: avatarUri }}
-        style={[
-          styles.avatar,
-          {
-            borderColor: palette.icon + "33",
-            backgroundColor: palette.icon + "33",
-          },
-        ]}
-        accessibilityIgnoresInvertColors
-      />
+      {avatarUri ? (
+        <Image
+          source={{ uri: avatarUri }}
+          style={[
+            styles.avatar,
+            {
+              borderColor: palette.icon + "33",
+              backgroundColor: palette.icon + "20",
+            },
+          ]}
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        <View
+          style={[
+            styles.avatarFallback,
+            {
+              borderColor: palette.icon + "33",
+              backgroundColor: palette.icon + "20",
+            },
+          ]}
+        >
+          <Text style={[styles.avatarInitial, { color: palette.text }]}>
+            {initial}
+          </Text>
+        </View>
+      )}
       <View style={styles.accountTextStack}>
         <Text
           style={[styles.accountName, { color: palette.text }]}
           numberOfLines={1}
         >
-          {account.name}
+          {displayName}
         </Text>
         <Text
           style={[styles.accountUsername, { color: palette.icon }]}
           numberOfLines={1}
         >
-          @{account.username}
+          {username}
         </Text>
       </View>
     </Pressable>
@@ -251,6 +260,18 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  avatarFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitial: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   addAccountButton: {
     borderRadius: 16,

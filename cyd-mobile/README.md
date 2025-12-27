@@ -1,50 +1,18 @@
-# Welcome to your Expo app 👋
+# Cyd Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is the code for Cyd for iOS and Android. It's implemented with Expo and React Native.
 
-## Get started
+## Database
 
-1. Install dependencies
+The app persists account metadata in a SQLite database (via [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/)). The shared database lives at `cyd-mobile/database` and is initialized on launch.
 
-   ```bash
-   npm install
-   ```
+### Creating a migration
 
-2. Start the app
+1. Open `database/migrations.ts`.
+2. Append a new migration object with a `version` greater than the current maximum.
+3. Add one or more SQL statements that are **idempotent** and valid for already-migrated databases. Keep destructive changes behind checks (e.g., `IF NOT EXISTS`).
+4. Save the file and restart the Expo dev server (or reload the app). On boot, the `getDatabase()` helper will run any pending migrations automatically.
 
-   ```bash
-   npx expo start
-   ```
+### Development seed data
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+When `__DEV__` is true and there are zero rows in `account`, `ensureDevSeedData()` inserts two sample Bluesky accounts. This keeps the Account Selection screen populated without requiring manual database work.
