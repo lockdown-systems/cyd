@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { install } from "react-native-quick-crypto";
 
 install();
