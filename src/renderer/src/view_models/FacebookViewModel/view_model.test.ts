@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { FacebookViewModel } from "./view_model";
+import * as AuthOps from "./auth";
 import {
   State,
   RunJobsState,
@@ -341,9 +342,7 @@ describe("FacebookViewModel", () => {
       });
       vm.jobs = [createMockJob("login")];
 
-      // Mock waitForFacebookLogin to resolve immediately
-      vi.spyOn(vm, "waitForFacebookLogin").mockResolvedValue(undefined);
-      vi.spyOn(vm, "captureIdentityFromPage").mockResolvedValue(undefined);
+      vi.spyOn(AuthOps, "runJobLogin").mockResolvedValue(undefined);
 
       await vm.runJob(0);
 
@@ -357,8 +356,7 @@ describe("FacebookViewModel", () => {
       });
       vm.jobs = [createMockJob("login")];
 
-      vi.spyOn(vm, "waitForFacebookLogin").mockResolvedValue(undefined);
-      vi.spyOn(vm, "captureIdentityFromPage").mockResolvedValue(undefined);
+      vi.spyOn(AuthOps, "runJobLogin").mockResolvedValue(undefined);
 
       await vm.runJob(0);
 
@@ -372,8 +370,7 @@ describe("FacebookViewModel", () => {
       });
       vm.jobs = [createMockJob("login")];
 
-      vi.spyOn(vm, "waitForFacebookLogin").mockResolvedValue(undefined);
-      vi.spyOn(vm, "captureIdentityFromPage").mockResolvedValue(undefined);
+      vi.spyOn(AuthOps, "runJobLogin").mockResolvedValue(undefined);
 
       await vm.runJob(0);
 
@@ -388,12 +385,11 @@ describe("FacebookViewModel", () => {
       });
       vm.state = State.Login;
 
-      vi.spyOn(vm, "waitForFacebookLogin").mockResolvedValue(undefined);
-      vi.spyOn(vm, "captureIdentityFromPage").mockResolvedValue(undefined);
+      const loginSpy = vi.spyOn(AuthOps, "login").mockResolvedValue(true);
 
       await vm.run();
 
-      expect(vm.loadURL).toHaveBeenCalled();
+      expect(loginSpy).toHaveBeenCalledWith(vm);
     });
 
     it("handles Dashboard state correctly", async () => {

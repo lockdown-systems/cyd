@@ -58,6 +58,7 @@ describe("AccountView", () => {
     window.electron.isFeatureEnabled = vi
       .fn()
       .mockImplementation((feature: string) => {
+        if (feature === "facebook") return Promise.resolve(true);
         if (feature === "bluesky") return Promise.resolve(false);
         return Promise.resolve(false);
       });

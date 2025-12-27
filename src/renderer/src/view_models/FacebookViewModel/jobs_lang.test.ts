@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { FacebookViewModel } from "./view_model";
+import { AutomationErrorType } from "../../automation_errors";
 import {
   State,
   RunJobsState,
@@ -84,6 +85,7 @@ function createMockFacebookViewModel(
   vi.spyOn(vm, "waitForLoadingToFinish").mockResolvedValue(undefined);
   vi.spyOn(vm, "pause").mockResolvedValue(undefined);
   vi.spyOn(vm, "loadURL").mockResolvedValue(undefined);
+  vi.spyOn(vm, "error").mockResolvedValue(undefined);
 
   return vm;
 }
@@ -282,7 +284,7 @@ describe("FacebookViewModel Language Jobs", () => {
       expect(vm.runJobsState).toBe(RunJobsState.SaveUserLang);
     });
 
-    it("defaults to English (US) when dialog fails to open", async () => {
+    it("reports error when dialog fails to open", async () => {
       const vm = createMockFacebookViewModel({
         facebookAccount: createMockFacebookAccount({ userLang: "" }),
       });
@@ -293,7 +295,13 @@ describe("FacebookViewModel Language Jobs", () => {
 
       await LangJobs.runJobSaveUserLang(vm, 0);
 
-      expect(vm.account.facebookAccount?.userLang).toBe("English (US)");
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.facebook_runJob_language_OpenDialogFailed,
+        expect.objectContaining({ job: "saveUserLang" }),
+        expect.anything(),
+      );
+      expect(vm.jobs[0].status).toBe("error");
+      expect(vm.account.facebookAccount?.userLang).toBe("");
     });
   });
 

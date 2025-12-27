@@ -82,6 +82,17 @@ export enum AutomationErrorType {
   facebook_runJob_UnknownError = "facebook_runJob_UnknownError",
   facebook_runError = "facebook_runError",
   facebook_unknownError = "facebook_unknown",
+  facebook_login_LoadFailed = "facebook_login_LoadFailed",
+  facebook_login_WaitForLoginTimeout = "facebook_login_WaitForLoginTimeout",
+  facebook_login_CaptureIdentityFailed = "facebook_login_CaptureIdentityFailed",
+  facebook_runJob_language_OpenDialogFailed = "facebook_runJob_language_OpenDialogFailed",
+  facebook_runJob_language_SelectLanguageFailed = "facebook_runJob_language_SelectLanguageFailed",
+  facebook_runJob_deleteWallPosts_ClickManagePostsFailed = "facebook_runJob_deleteWallPosts_ClickManagePostsFailed",
+  facebook_runJob_deleteWallPosts_ClickNextFailed = "facebook_runJob_deleteWallPosts_ClickNextFailed",
+  facebook_runJob_deleteWallPosts_DialogNotFound = "facebook_runJob_deleteWallPosts_DialogNotFound",
+  facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed = "facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed",
+  facebook_runJob_deleteWallPosts_ClickDoneFailed = "facebook_runJob_deleteWallPosts_ClickDoneFailed",
+  facebook_runJob_deleteWallPosts_CompletionTimeout = "facebook_runJob_deleteWallPosts_CompletionTimeout",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -240,4 +251,26 @@ export const AutomationErrorTypeToMessage = {
   [AutomationErrorType.facebook_runError]:
     "Error while in Facebook run function",
   [AutomationErrorType.facebook_unknownError]: "An unknown error occurred",
+  [AutomationErrorType.facebook_login_LoadFailed]:
+    "Failed to load Facebook during login",
+  [AutomationErrorType.facebook_login_WaitForLoginTimeout]:
+    "Timed out waiting for Facebook login to complete",
+  [AutomationErrorType.facebook_login_CaptureIdentityFailed]:
+    "Failed to capture Facebook identity information",
+  [AutomationErrorType.facebook_runJob_language_OpenDialogFailed]:
+    "Failed to open Facebook language settings",
+  [AutomationErrorType.facebook_runJob_language_SelectLanguageFailed]:
+    "Failed to select the desired Facebook language",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_ClickManagePostsFailed]:
+    "Failed to click the Manage posts button on Facebook",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_ClickNextFailed]:
+    "Failed to click Next in the Facebook Manage posts dialog",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_DialogNotFound]:
+    "Failed to open the Manage posts dialog on Facebook",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed]:
+    "Failed to select the delete posts option on Facebook",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_ClickDoneFailed]:
+    "Failed to click Done while deleting Facebook posts",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_CompletionTimeout]:
+    "Timed out waiting for Facebook to finish deleting posts",
 };

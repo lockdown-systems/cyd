@@ -1,5 +1,6 @@
 import type { FacebookViewModel } from "./view_model";
 import { RunJobsState } from "./types";
+import { AutomationErrorType } from "../../automation_errors";
 import * as Helpers from "./helpers";
 
 const FACEBOOK_LANGUAGE_SETTINGS_URL =
@@ -209,15 +210,17 @@ export async function runJobSaveUserLang(
   // Open the language dialog
   const dialogOpened = await openLanguageDialog(vm);
   if (!dialogOpened) {
-    vm.log(
-      "runJobSaveUserLang",
-      "Failed to open language dialog, defaulting to English (US)",
+    await vm.error(
+      AutomationErrorType.facebook_runJob_language_OpenDialogFailed,
+      {
+        job: "saveUserLang",
+        message: "Failed to open language dialog",
+      },
+      {
+        currentURL: vm.webview?.getURL(),
+      },
     );
-    if (vm.account.facebookAccount) {
-      vm.account.facebookAccount.userLang = DEFAULT_LANGUAGE;
-      await window.electron.database.saveAccount(JSON.stringify(vm.account));
-    }
-    await Helpers.finishJob(vm, jobIndex);
+    await Helpers.errorJob(vm, jobIndex);
     return;
   }
 
@@ -267,8 +270,17 @@ export async function runJobSetLangToEnglish(
   // Open the language dialog
   const dialogOpened = await openLanguageDialog(vm);
   if (!dialogOpened) {
-    vm.log("runJobSetLangToEnglish", "Failed to open language dialog");
-    await Helpers.finishJob(vm, jobIndex);
+    await vm.error(
+      AutomationErrorType.facebook_runJob_language_OpenDialogFailed,
+      {
+        job: "setLangToEnglish",
+        message: "Failed to open language dialog",
+      },
+      {
+        currentURL: vm.webview?.getURL(),
+      },
+    );
+    await Helpers.errorJob(vm, jobIndex);
     return;
   }
 
@@ -278,6 +290,18 @@ export async function runJobSetLangToEnglish(
   const selected = await selectLanguage(vm, DEFAULT_LANGUAGE);
   if (!selected) {
     vm.log("runJobSetLangToEnglish", "Failed to select English (US)");
+    await vm.error(
+      AutomationErrorType.facebook_runJob_language_SelectLanguageFailed,
+      {
+        job: "setLangToEnglish",
+        language: DEFAULT_LANGUAGE,
+      },
+      {
+        currentURL: vm.webview?.getURL(),
+      },
+    );
+    await Helpers.errorJob(vm, jobIndex);
+    return;
   } else {
     vm.log("runJobSetLangToEnglish", "Successfully selected English (US)");
   }
@@ -322,8 +346,17 @@ export async function runJobRestoreUserLang(
   // Open the language dialog
   const dialogOpened = await openLanguageDialog(vm);
   if (!dialogOpened) {
-    vm.log("runJobRestoreUserLang", "Failed to open language dialog");
-    await Helpers.finishJob(vm, jobIndex);
+    await vm.error(
+      AutomationErrorType.facebook_runJob_language_OpenDialogFailed,
+      {
+        job: "restoreUserLang",
+        message: "Failed to open language dialog",
+      },
+      {
+        currentURL: vm.webview?.getURL(),
+      },
+    );
+    await Helpers.errorJob(vm, jobIndex);
     return;
   }
 
@@ -333,6 +366,18 @@ export async function runJobRestoreUserLang(
   const selected = await selectLanguage(vm, userLang);
   if (!selected) {
     vm.log("runJobRestoreUserLang", `Failed to select ${userLang}`);
+    await vm.error(
+      AutomationErrorType.facebook_runJob_language_SelectLanguageFailed,
+      {
+        job: "restoreUserLang",
+        language: userLang,
+      },
+      {
+        currentURL: vm.webview?.getURL(),
+      },
+    );
+    await Helpers.errorJob(vm, jobIndex);
+    return;
   } else {
     vm.log("runJobRestoreUserLang", `Successfully restored to ${userLang}`);
   }

@@ -314,6 +314,10 @@ export function mockElectronAPI() {
       deleteConfig: vi.fn().mockResolvedValue(undefined),
       deleteConfigLike: vi.fn().mockResolvedValue(undefined),
       incrementTotalWallPostsDeleted: vi.fn().mockResolvedValue(undefined),
+      isRateLimited: vi
+        .fn()
+        .mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 }),
+      resetRateLimitInfo: vi.fn().mockResolvedValue(undefined),
     },
 
     // Analytics (used by all view models)

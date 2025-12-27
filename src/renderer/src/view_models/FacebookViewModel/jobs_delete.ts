@@ -2,8 +2,21 @@ import type { FacebookViewModel } from "./view_model";
 import { RunJobsState } from "./types";
 import * as Helpers from "./helpers";
 import { checkRateLimit } from "./rate_limit";
+import { AutomationErrorType } from "../../automation_errors";
 
 const FACEBOOK_PROFILE_URL = "https://www.facebook.com/me/";
+
+async function reportDeleteWallPostsError(
+  vm: FacebookViewModel,
+  jobIndex: number,
+  errorType: AutomationErrorType,
+  errorReportData: Record<string, unknown>,
+) {
+  await vm.error(errorType, errorReportData, {
+    currentURL: vm.webview?.getURL(),
+  });
+  await Helpers.errorJob(vm, jobIndex);
+}
 
 /**
  * Click the "Manage posts" button on the profile page
@@ -324,8 +337,16 @@ export async function runJobDeleteWallPosts(
     // safeExecuteJavaScript handles webview validation and errors
     const buttonClicked = await clickManagePostsButton(vm);
     if (!buttonClicked) {
-      vm.log("runJobDeleteWallPosts", "Failed to click Manage posts button");
-      break;
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_ClickManagePostsFailed,
+        {
+          batchNumber,
+          message: "Failed to click Manage posts button",
+        },
+      );
+      return;
     }
 
     await vm.waitForPause();
@@ -333,8 +354,16 @@ export async function runJobDeleteWallPosts(
     // Wait for the dialog to open
     const dialogOpened = await waitForManagePostsDialog(vm);
     if (!dialogOpened) {
-      vm.log("runJobDeleteWallPosts", "Manage posts dialog did not appear");
-      break;
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_DialogNotFound,
+        {
+          batchNumber,
+          message: "Manage posts dialog did not appear",
+        },
+      );
+      return;
     }
 
     // Wait a moment for the UI to update
@@ -423,8 +452,16 @@ export async function runJobDeleteWallPosts(
     vm.log("runJobDeleteWallPosts", "Clicking Next button");
     const nextClicked = await clickNextButton(vm);
     if (!nextClicked) {
-      vm.log("runJobDeleteWallPosts", "Failed to click Next button");
-      break;
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_ClickNextFailed,
+        {
+          batchNumber,
+          message: "Failed to click Next button",
+        },
+      );
+      return;
     }
 
     // Wait for the dialog to update with the action options
@@ -436,8 +473,16 @@ export async function runJobDeleteWallPosts(
     vm.log("runJobDeleteWallPosts", "Selecting delete posts option");
     const deleteSelected = await selectDeletePostsOption(vm);
     if (!deleteSelected) {
-      vm.log("runJobDeleteWallPosts", "Failed to select delete posts option");
-      break;
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
+        {
+          batchNumber,
+          message: "Failed to select delete posts option",
+        },
+      );
+      return;
     }
 
     vm.log("runJobDeleteWallPosts", "Delete posts option selected");
@@ -448,8 +493,16 @@ export async function runJobDeleteWallPosts(
     vm.log("runJobDeleteWallPosts", "Clicking Done button");
     const doneClicked = await clickDoneButton(vm);
     if (!doneClicked) {
-      vm.log("runJobDeleteWallPosts", "Failed to click Done button");
-      break;
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_ClickDoneFailed,
+        {
+          batchNumber,
+          message: "Failed to click Done button",
+        },
+      );
+      return;
     }
 
     vm.log("runJobDeleteWallPosts", "Done button clicked");

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { FacebookViewModel } from "./view_model";
+import { AutomationErrorType } from "../../automation_errors";
 import {
   State,
   RunJobsState,
@@ -79,6 +80,7 @@ function createMockFacebookViewModel(
   vi.spyOn(vm, "waitForLoadingToFinish").mockResolvedValue(undefined);
   vi.spyOn(vm, "pause").mockResolvedValue(undefined);
   vi.spyOn(vm, "loadURL").mockResolvedValue(undefined);
+  vi.spyOn(vm, "error").mockResolvedValue(undefined);
 
   return vm;
 }
@@ -133,7 +135,7 @@ describe("FacebookViewModel Delete Jobs", () => {
       expect(vm.loadURL).toHaveBeenCalledWith("https://www.facebook.com/me/");
     });
 
-    it("finishes job when Manage posts button is not found", async () => {
+    it("reports error when Manage posts button is not found", async () => {
       const vm = createMockFacebookViewModel();
       const mockWebview = vm.getWebview()!;
 
@@ -142,14 +144,17 @@ describe("FacebookViewModel Delete Jobs", () => {
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
-      expect(vm.log).toHaveBeenCalledWith(
-        "runJobDeleteWallPosts",
-        "Failed to click Manage posts button",
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.facebook_runJob_deleteWallPosts_ClickManagePostsFailed,
+        expect.objectContaining({
+          message: "Failed to click Manage posts button",
+        }),
+        expect.objectContaining({ currentURL: expect.any(String) }),
       );
-      expect(vm.jobs[3].status).toBe("finished");
+      expect(vm.jobs[3].status).toBe("error");
     });
 
-    it("handles dialog not appearing", async () => {
+    it("reports error when dialog does not appear", async () => {
       const vm = createMockFacebookViewModel();
       const mockWebview = vm.getWebview()!;
 
@@ -160,9 +165,12 @@ describe("FacebookViewModel Delete Jobs", () => {
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
-      expect(vm.log).toHaveBeenCalledWith(
-        "runJobDeleteWallPosts",
-        "Manage posts dialog did not appear",
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.facebook_runJob_deleteWallPosts_DialogNotFound,
+        expect.objectContaining({
+          message: "Manage posts dialog did not appear",
+        }),
+        expect.objectContaining({ currentURL: expect.any(String) }),
       );
     });
 
@@ -252,7 +260,10 @@ describe("FacebookViewModel Delete Jobs", () => {
       const vm = createMockFacebookViewModel();
       const mockWebview = vm.getWebview()!;
 
-      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(false);
+      vi.mocked(mockWebview.executeJavaScript)
+        .mockResolvedValueOnce(true) // clickManagePostsButton
+        .mockResolvedValueOnce(true) // waitForManagePostsDialog
+        .mockResolvedValueOnce([]); // getListsAndItems returns no items
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
@@ -266,7 +277,10 @@ describe("FacebookViewModel Delete Jobs", () => {
       const vm = createMockFacebookViewModel();
       const mockWebview = vm.getWebview()!;
 
-      vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(false);
+      vi.mocked(mockWebview.executeJavaScript)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce([]);
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 

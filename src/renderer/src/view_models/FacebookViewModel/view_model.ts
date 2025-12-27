@@ -22,8 +22,6 @@ import * as AuthOps from "./auth";
 import * as DeleteJobs from "./jobs_delete";
 import * as LangJobs from "./jobs_lang";
 
-const FACEBOOK_HOME_URL = "https://www.facebook.com/";
-
 interface CurrentUserInitialData {
   ACCOUNT_ID: string;
   NAME: string;
@@ -169,10 +167,14 @@ export class FacebookViewModel extends BaseViewModel {
     this.state = State.FacebookWizardDashboard;
   }
 
-  async waitForFacebookLogin(): Promise<void> {
+  async waitForFacebookLogin(timeoutMs: number = 120000): Promise<void> {
+    const start = Date.now();
     while (true) {
       if (await this.isLoggedIn()) {
         return;
+      }
+      if (Date.now() - start > timeoutMs) {
+        throw new Error("Timed out waiting for Facebook login");
       }
       await this.sleep(1500);
     }
@@ -428,9 +430,10 @@ export class FacebookViewModel extends BaseViewModel {
     this.showAutomationNotice = false;
     this.instructions = this.t("viewModels.facebook.wizard.login.instructions");
 
-    await this.loadURL(FACEBOOK_HOME_URL);
-    await this.waitForFacebookLogin();
-    await this.captureIdentityFromPage();
+    const loggedIn = await AuthOps.login(this);
+    if (!loggedIn) {
+      return;
+    }
 
     this.showBrowser = false;
     this.instructions = "";
