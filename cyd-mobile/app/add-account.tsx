@@ -37,6 +37,7 @@ export default function AddAccountScreen() {
       await authenticateBlueskyAccount(handle);
       router.back();
     } catch (err) {
+      console.error("[Bluesky OAuth] Authentication failed", err);
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
