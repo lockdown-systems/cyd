@@ -1,5 +1,5 @@
 import type { AppBskyActorDefs } from "@atproto/api";
-import type { OAuthSession } from "@atproto/oauth-client-node";
+import type { OAuthSession } from "@atproto/oauth-client";
 import type { SQLiteDatabase } from "expo-sqlite/next";
 
 import { getDatabase } from "./index";

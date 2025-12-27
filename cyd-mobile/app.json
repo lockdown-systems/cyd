@@ -5,14 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "cydmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "platforms": ["android", "ios"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "systems.lockdown.cyd-mobile",
-      "appleTeamId": "G762K6CH36"
+      "appleTeamId": "G762K6CH36",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["cyd", "cyd-dev"]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +29,14 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "systems.lockdown.cydmobile"
+      "package": "systems.lockdown.cydmobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "cyd" }, { "scheme": "cyd-dev" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       "expo-router",
