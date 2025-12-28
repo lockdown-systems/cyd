@@ -142,7 +142,7 @@ export default function AccountSelectionScreen() {
                 { color: palette.button.text },
               ]}
             >
-              Add Account
+              Add Bluesky Account
             </Text>
           </Pressable>
         </View>

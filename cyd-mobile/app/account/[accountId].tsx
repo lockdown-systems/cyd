@@ -1,10 +1,25 @@
-import { useMemo } from "react";
-import { Image, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import {
+  useMemo,
+  useState,
+  type ComponentProps,
+  type ComponentType,
+} from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAccounts } from "@/hooks/use-accounts";
+import { DashboardTab } from "./tabs/dashboard-tab";
+import { SaveTab } from "./tabs/save-tab";
+import { DeleteTab } from "./tabs/delete-tab";
+import { BrowseTab } from "./tabs/browse-tab";
+import type { AccountTabProps } from "./tabs/types";
 
 export default function AccountPlaceholderScreen() {
   const params = useLocalSearchParams<{ accountId: string | string[] }>();
@@ -18,6 +33,8 @@ export default function AccountPlaceholderScreen() {
     () => accounts.find((item) => item.uuid === accountId),
     [accounts, accountId],
   );
+  const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+  const insets = useSafeAreaInsets();
 
   const avatarUri = account?.avatarDataURI ?? null;
   const username = account?.handle
@@ -34,9 +51,12 @@ export default function AccountPlaceholderScreen() {
       : account
         ? null
         : "Account not found";
+  const canonicalHandle = username ?? account?.handle ?? accountId ?? "unknown";
+  const ActiveTabComponent = TAB_COMPONENTS[activeTab];
 
   return (
     <SafeAreaView
+      edges={["top", "left", "right"]}
       style={[styles.safeArea, { backgroundColor: palette.background }]}
     >
       <Stack.Screen
@@ -93,20 +113,86 @@ export default function AccountPlaceholderScreen() {
         }}
       />
       <View style={styles.container}>
-        {accountStatus ? (
-          <Text style={[styles.subtitle, { color: palette.icon }]}>
-            {accountStatus}
-          </Text>
-        ) : (
-          <Text style={[styles.subtitle, { color: palette.icon }]}>
-            Placeholder for account {account?.handle ?? accountId ?? "unknown"}.
-            Additional panels will live here soon.
-          </Text>
-        )}
+        <View style={styles.contentArea}>
+          {accountStatus ? (
+            <View style={styles.statusContainer}>
+              <Text style={[styles.subtitle, { color: palette.icon }]}>
+                {accountStatus}
+              </Text>
+            </View>
+          ) : (
+            <ActiveTabComponent handle={canonicalHandle} palette={palette} />
+          )}
+        </View>
+        <View
+          style={[styles.tabBarContainer, { paddingBottom: insets.bottom }]}
+        >
+          <View
+            style={[
+              styles.tabBar,
+              {
+                borderColor: palette.icon + "22",
+                backgroundColor: palette.card,
+              },
+            ]}
+          >
+            {TAB_CONFIG.map((tab) => {
+              const selected = tab.key === activeTab;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
+                  style={[
+                    styles.tabButton,
+                    selected && { backgroundColor: palette.icon + "11" },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                >
+                  <MaterialIcons
+                    name={tab.icon}
+                    size={20}
+                    color={selected ? palette.tint : palette.icon}
+                  />
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      { color: selected ? palette.tint : palette.icon },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
+
+type TabKey = "dashboard" | "save" | "delete" | "browse";
+
+type TabConfig = {
+  key: TabKey;
+  label: string;
+  icon: ComponentProps<typeof MaterialIcons>["name"];
+};
+
+const TAB_CONFIG: TabConfig[] = [
+  { key: "dashboard", label: "Dashboard", icon: "home" },
+  { key: "save", label: "Save", icon: "download" },
+  { key: "delete", label: "Delete", icon: "local-fire-department" },
+  { key: "browse", label: "Browse", icon: "preview" },
+];
+
+const TAB_COMPONENTS: Record<TabKey, ComponentType<AccountTabProps>> = {
+  dashboard: DashboardTab,
+  save: SaveTab,
+  delete: DeleteTab,
+  browse: BrowseTab,
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -114,8 +200,13 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 0,
     gap: 16,
+  },
+  contentArea: {
+    flex: 1,
   },
   headerTitle: {
     flexDirection: "row",
@@ -155,5 +246,34 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     lineHeight: 22,
+  },
+  statusContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  tabBar: {
+    flexDirection: "row",
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  tabBarContainer: {
+    paddingTop: 8,
+    paddingBottom: 0,
+    marginTop: "auto",
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    gap: 4,
+    borderRadius: 16,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
