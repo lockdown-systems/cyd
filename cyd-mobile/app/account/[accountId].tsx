@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useMemo,
   useState,
   type ComponentProps,
@@ -19,7 +20,7 @@ import { DashboardTab } from "./tabs/dashboard-tab";
 import { SaveTab } from "./tabs/save-tab";
 import { DeleteTab } from "./tabs/delete-tab";
 import { BrowseTab } from "./tabs/browse-tab";
-import type { AccountTabProps } from "./tabs/types";
+import type { AccountTabKey, AccountTabProps } from "./tabs/types";
 
 export default function AccountPlaceholderScreen() {
   const params = useLocalSearchParams<{ accountId: string | string[] }>();
@@ -33,8 +34,11 @@ export default function AccountPlaceholderScreen() {
     () => accounts.find((item) => item.uuid === accountId),
     [accounts, accountId],
   );
-  const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+  const [activeTab, setActiveTab] = useState<AccountTabKey>("dashboard");
   const insets = useSafeAreaInsets();
+  const handleSelectTab = useCallback((tab: AccountTabKey) => {
+    setActiveTab(tab);
+  }, []);
 
   const avatarUri = account?.avatarDataURI ?? null;
   const username = account?.handle
@@ -121,7 +125,11 @@ export default function AccountPlaceholderScreen() {
               </Text>
             </View>
           ) : (
-            <ActiveTabComponent handle={canonicalHandle} palette={palette} />
+            <ActiveTabComponent
+              handle={canonicalHandle}
+              palette={palette}
+              onSelectTab={handleSelectTab}
+            />
           )}
         </View>
         <View
@@ -141,7 +149,7 @@ export default function AccountPlaceholderScreen() {
               return (
                 <Pressable
                   key={tab.key}
-                  onPress={() => setActiveTab(tab.key)}
+                  onPress={() => handleSelectTab(tab.key)}
                   style={[
                     styles.tabButton,
                     selected && { backgroundColor: palette.icon + "11" },
@@ -172,10 +180,8 @@ export default function AccountPlaceholderScreen() {
   );
 }
 
-type TabKey = "dashboard" | "save" | "delete" | "browse";
-
 type TabConfig = {
-  key: TabKey;
+  key: AccountTabKey;
   label: string;
   icon: ComponentProps<typeof MaterialIcons>["name"];
 };
@@ -187,7 +193,7 @@ const TAB_CONFIG: TabConfig[] = [
   { key: "browse", label: "Browse", icon: "preview" },
 ];
 
-const TAB_COMPONENTS: Record<TabKey, ComponentType<AccountTabProps>> = {
+const TAB_COMPONENTS: Record<AccountTabKey, ComponentType<AccountTabProps>> = {
   dashboard: DashboardTab,
   save: SaveTab,
   delete: DeleteTab,
