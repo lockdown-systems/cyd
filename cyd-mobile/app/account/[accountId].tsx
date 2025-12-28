@@ -60,7 +60,7 @@ export default function AccountPlaceholderScreen() {
 
   return (
     <SafeAreaView
-      edges={["top", "left", "right"]}
+      edges={["left", "right"]}
       style={[styles.safeArea, { backgroundColor: palette.background }]}
     >
       <Stack.Screen
@@ -207,9 +207,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 0,
     paddingBottom: 0,
-    gap: 16,
+    gap: 4,
   },
   contentArea: {
     flex: 1,
