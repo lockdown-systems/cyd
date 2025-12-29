@@ -1,0 +1,39 @@
+name: Mobile Lint
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'cyd-mobile/**'
+      - '.github/workflows/mobile-lint.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'cyd-mobile/**'
+      - '.github/workflows/mobile-lint.yml'
+
+defaults:
+  run:
+    working-directory: cyd-mobile
+
+jobs:
+  lint:
+    name: ESLint Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cyd-mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
