@@ -322,7 +322,7 @@ export async function runJobDeleteWallPosts(
   // Keep deleting posts until there are no more to delete
   let totalDeleted = 0;
   let batchNumber = 0;
-  const maxToCheck = 50;
+  const maxToCheck = 10;
 
   while (true) {
     // Check for rate limits
@@ -540,6 +540,10 @@ export async function runJobDeleteWallPosts(
     vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
 
     await vm.waitForPause();
+
+    // Give Facebook a few seconds before refreshing
+    // It seems that this helps
+    await vm.sleep(3000);
 
     // Reload the profile page to see any newly available posts
     vm.log("runJobDeleteWallPosts", "Reloading profile page for next batch");
