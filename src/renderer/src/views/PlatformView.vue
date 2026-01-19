@@ -174,7 +174,7 @@ const currentJobsLength = computed(() => props.currentJobs.length);
           href="#"
           @click="openURL(config.urls.u2fDocs)"
           >{{ t("platform.readMore") }}</a
-        >.
+        ><span v-if="config.urls.u2fDocs">.</span>
       </p>
 
       <!-- Archive only option (conditional on feature flag) -->
