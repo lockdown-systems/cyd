@@ -184,23 +184,22 @@ export const runMainMigrations = () => {
         `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
       ],
     },
-    // Add accountID to facebookAccount table
+    // Create a new, separate facebookAccount in preparation for releasing Facebook support
     {
       name: "add accountID to facebookAccount table",
-      sql: [`ALTER TABLE facebookAccount ADD COLUMN accountID TEXT;`],
-    },
-    // Add deleteWallPosts to facebookAccount table
-    {
-      name: "add deleteWallPosts to facebookAccount table",
       sql: [
-        `ALTER TABLE facebookAccount ADD COLUMN deleteWallPosts INTEGER DEFAULT 1;`,
-      ],
-    },
-    // Add userLang to facebookAccount table
-    {
-      name: "add userLang to facebookAccount table",
-      sql: [
-        `ALTER TABLE facebookAccount ADD COLUMN userLang TEXT DEFAULT 'English (US)';`,
+        `DROP TABLE IF EXISTS facebookAccount;`,
+        `CREATE TABLE facebookAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    profileImageDataURI TEXT,
+    accountID TEXT,
+    deleteWallPosts INTEGER DEFAULT 1,
+    userLang TEXT DEFAULT 'English (US)'
+);`,
       ],
     },
   ]);
