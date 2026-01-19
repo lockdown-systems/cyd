@@ -42,8 +42,8 @@ async function clickManagePostsButton(vm: FacebookViewModel): Promise<boolean> {
 async function waitForManagePostsDialog(
   vm: FacebookViewModel,
 ): Promise<boolean> {
-  // Wait up to 10 seconds for dialog to appear
-  for (let i = 0; i < 20; i++) {
+  // Wait up to 30 seconds for dialog to appear
+  for (let i = 0; i < 60; i++) {
     const result = await vm.safeExecuteJavaScript<boolean>(
       `(() => {
         const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
@@ -366,15 +366,36 @@ export async function runJobDeleteWallPosts(
       return;
     }
 
-    // Wait a moment for the UI to update
-    await vm.sleep(2000);
-
-    vm.log("runJobDeleteWallPosts", "Dialog opened, finding posts to delete");
+    vm.log("runJobDeleteWallPosts", "Dialog opened, waiting for posts to load");
 
     await vm.waitForPause();
 
-    // Get all available list items with checkboxes
-    const allItems = await getListsAndItems(vm);
+    // Wait for items to appear in the dialog (with 30 second timeout)
+    // On slow connections, the dialog content may take time to load
+    let allItems: { listIndex: number; itemIndex: number }[] = [];
+    const maxWaitTime = 30000; // 30 seconds
+    const pollInterval = 500; // Check every 500ms
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWaitTime) {
+      allItems = await getListsAndItems(vm);
+      if (allItems.length > 0) {
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Found ${allItems.length} items after ${Date.now() - startTime}ms`,
+        );
+        break;
+      }
+      await vm.sleep(pollInterval);
+    }
+
+    if (allItems.length === 0) {
+      vm.log(
+        "runJobDeleteWallPosts",
+        `No items found after ${maxWaitTime}ms timeout, proceeding anyway`,
+      );
+    }
+
     vm.log(
       "runJobDeleteWallPosts",
       `Found ${allItems.length} items with checkboxes`,
