@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { PlatformStates } from "../../../types/PlatformStates";
+import { openURL } from "../../../util";
 
 const { t } = useI18n();
 
@@ -15,7 +16,7 @@ const cards = computed(() => [
     icon: "/assets/icon-database.png",
     title: t("facebook.dashboard.getArchiveTitle"),
     description: t("facebook.dashboard.getArchiveDescription"),
-    state: PlatformStates.FacebookWizardDashboardDisplay,
+    url: "https://docs.cyd.social/docs/facebook/get-archive",
     disabled: false,
     startHere: true,
   },
@@ -28,6 +29,15 @@ const cards = computed(() => [
     startHere: false,
   },
 ]);
+
+const handleCardClick = (card: (typeof cards.value)[0]) => {
+  if (card.disabled) return;
+  if (card.url) {
+    openURL(card.url);
+  } else if (card.state) {
+    emit("setState", card.state);
+  }
+};
 </script>
 
 <template>
@@ -42,9 +52,7 @@ const cards = computed(() => [
           <div
             class="card h-100"
             :class="{ 'disabled-card': card.disabled }"
-            @click="
-              !card.disabled && card.state && emit('setState', card.state)
-            "
+            @click="handleCardClick(card)"
           >
             <span
               v-if="card.startHere"
