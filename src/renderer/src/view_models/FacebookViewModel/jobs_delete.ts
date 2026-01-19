@@ -540,6 +540,11 @@ export async function runJobDeleteWallPosts(
     vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
 
     await vm.waitForPause();
+
+    // Reload the profile page to see any newly available posts
+    vm.log("runJobDeleteWallPosts", "Reloading profile page for next batch");
+    await vm.loadURL(FACEBOOK_PROFILE_URL);
+    await vm.waitForLoadingToFinish();
   }
 
   vm.log(
