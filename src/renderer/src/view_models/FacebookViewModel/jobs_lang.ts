@@ -112,7 +112,7 @@ export async function selectLanguage(
   const result = await vm.safeExecuteJavaScript<boolean>(
     `(() => {
       const targetLanguage = '${language}';
-      
+
       const result = document.evaluate(
         '${XPATH_LANGUAGE_LIST}',
         document,
@@ -173,8 +173,103 @@ export async function openLanguageDialog(
   await vm.waitForLoadingToFinish();
   await vm.sleep(1000);
 
-  // Click the account language button
-  const clicked = await vm.clickElementByXPath(XPATH_ACCOUNT_LANGUAGE_BUTTON);
+  // Try the original XPath first
+  let clicked = await vm.clickElementByXPath(XPATH_ACCOUNT_LANGUAGE_BUTTON);
+
+  // Fall back to robust selector if XPath fails
+  if (!clicked) {
+    vm.log("openLanguageDialog", "XPath failed, trying robust selector");
+    // Try multiple strategies: icons in list containers, then any clickable with icons
+    for (let strategy = 0; strategy < 2; strategy++) {
+      const clickedResult = await vm.safeExecuteJavaScript<boolean>(
+        `(() => {
+          // Strategy 0: Icons in list containers (settings rows)
+          // Strategy 1: Any clickable with icon in main content
+          const icons = Array.from(document.querySelectorAll('i, svg'))
+            .filter(icon => {
+              if (icon.offsetParent === null) return false;
+              const rect = icon.getBoundingClientRect();
+              // Must be in main content area
+              if (rect.left < 200 || rect.top < 100) return false;
+
+              if (${strategy} === 0) {
+                // Check if in list container
+                let parent = icon.parentElement;
+                for (let i = 0; i < 6 && parent; i++) {
+                  const role = parent.getAttribute('role');
+                  if (role === 'list' || role === 'listitem' || parent.tagName === 'UL' || parent.tagName === 'LI') {
+                    return true;
+                  }
+                  parent = parent.parentElement;
+                }
+                return false;
+              }
+              return true;
+            });
+
+          // Try clicking the parent of each icon
+          for (const icon of icons.slice(0, 3)) {
+            let element = icon.parentElement;
+            for (let i = 0; i < 8 && element; i++) {
+              const role = element.getAttribute('role');
+              const isClickable = role === 'button' ||
+                                 element.getAttribute('tabindex') !== null ||
+                                 window.getComputedStyle(element).cursor === 'pointer';
+
+              if (isClickable && element.offsetParent !== null) {
+                try {
+                  element.click();
+                  return true;
+                } catch (e) {
+                  break;
+                }
+              }
+              element = element.parentElement;
+            }
+          }
+          return false;
+        })()`,
+        "openLanguageDialog",
+      );
+
+      if (clickedResult.success && clickedResult.value) {
+        await vm.sleep(500);
+        clicked = await waitForLanguageDialog(vm);
+        if (clicked) break;
+      }
+    }
+
+    // Final fallback: try clicking any visible icon's clickable parent
+    if (!clicked) {
+      const finalResult = await vm.safeExecuteJavaScript<boolean>(
+        `(() => {
+          const icons = Array.from(document.querySelectorAll('i, svg'))
+            .filter(icon => icon.offsetParent !== null);
+
+          for (const icon of icons.slice(0, 5)) {
+            let element = icon;
+            for (let i = 0; i < 10 && element; i++) {
+              if (element.click) {
+                try {
+                  element.click();
+                  return true;
+                } catch (e) {}
+              }
+              element = element.parentElement;
+            }
+          }
+          return false;
+        })()`,
+        "openLanguageDialog",
+      );
+
+      if (finalResult.success && finalResult.value) {
+        await vm.sleep(500);
+        clicked = await waitForLanguageDialog(vm);
+      }
+    }
+  }
+
   if (!clicked) {
     vm.log("openLanguageDialog", "Failed to click account language button");
     return false;
