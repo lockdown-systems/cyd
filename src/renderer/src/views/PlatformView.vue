@@ -168,7 +168,11 @@ const currentJobsLength = computed(() => props.currentJobs.length);
         class="u2f-info text-center text-muted small ms-2"
       >
         <i class="fa-solid fa-circle-info me-2" />
-        {{ t("platform.u2fNotice") }}
+        {{
+          config.name === "Facebook"
+            ? t("platform.u2fNoticeFacebook")
+            : t("platform.u2fNotice")
+        }}
         <a
           v-if="config.urls.u2fDocs"
           href="#"

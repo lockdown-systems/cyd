@@ -343,6 +343,7 @@
   },
   "platform": {
     "u2fNotice": "If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white screen.",
+    "u2fNoticeFacebook": "If you use a U2F security key (like a Yubikey) for 2FA, press it when prompted.",
     "readMore": "Read more",
     "importArchiveOnly": "Import Archive Only (for deleted accounts with an archive)"
   },
