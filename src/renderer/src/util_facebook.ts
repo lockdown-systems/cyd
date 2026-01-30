@@ -1,49 +1,51 @@
 import CydAPIClient from "../../cyd-api-client";
 import type { DeviceInfo } from "./types";
-import { FacebookAccount } from "../../shared_types";
+import { FacebookProgressInfo } from "../../shared_types";
 
-export async function facebookGetLastImportArchive(
+export async function facebookPostProgress(
+  apiClient: CydAPIClient,
+  deviceInfo: DeviceInfo | null,
+  accountID: number,
+) {
+  const progressInfo: FacebookProgressInfo =
+    await window.electron.Facebook.getProgressInfo(accountID);
+  const postFacebookProgressResp = await apiClient.postFacebookProgress(
+    {
+      account_uuid: progressInfo.accountUUID,
+      total_wall_posts_deleted: progressInfo.totalWallPostsDeleted,
+    },
+    deviceInfo?.valid ? true : false,
+  );
+
+  if (
+    postFacebookProgressResp !== true &&
+    postFacebookProgressResp !== false &&
+    postFacebookProgressResp.error
+  ) {
+    // Silently log the error and continue
+    console.error(
+      "facebookPostProgress",
+      "failed to post progress to the API",
+      postFacebookProgressResp.message,
+    );
+  }
+}
+
+export async function facebookGetLastDelete(
   accountID: number,
 ): Promise<Date | null> {
-  const lastFinishedJob_importArchive =
+  const lastFinishedJob_deleteWallPosts =
     await window.electron.Facebook.getConfig(
       accountID,
-      "lastFinishedJob_importArchive",
+      "lastFinishedJob_deleteWallPosts",
     );
-  if (lastFinishedJob_importArchive) {
-    return new Date(lastFinishedJob_importArchive);
+  if (lastFinishedJob_deleteWallPosts) {
+    return new Date(lastFinishedJob_deleteWallPosts);
   }
   return null;
 }
 
-export async function facebookGetLastBuildDatabase(
-  _accountID: number,
-): Promise<Date | null> {
-  // TODO implement
-  return null;
-}
-
-export async function facebookHasSomeData(
-  _accountID: number,
-): Promise<boolean> {
-  const lastImportArchive: Date | null =
-    await facebookGetLastImportArchive(_accountID);
-  const lastBuildDatabase: Date | null =
-    await facebookGetLastBuildDatabase(_accountID);
-  return lastImportArchive !== null || lastBuildDatabase !== null;
-}
-
-export async function facebookRequiresPremium(
-  _facebookAccount: FacebookAccount,
-): Promise<boolean> {
-  // TODO: implement
-  return false;
-}
-
-export async function facebookPostProgress(
-  _apiClient: CydAPIClient,
-  _deviceInfo: DeviceInfo | null,
-  _accountID: number,
-) {
-  // TODO: implement
+export async function facebookRequiresPremium(): Promise<boolean> {
+  // All Facebook features require premium
+  return true;
 }

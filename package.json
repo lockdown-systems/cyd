@@ -114,7 +114,6 @@
   },
   "workspaces": [
     "archive-static-sites/x-archive",
-    "archive-static-sites/facebook-archive",
     "docs"
   ]
 }

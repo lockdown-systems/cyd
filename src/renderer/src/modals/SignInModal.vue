@@ -13,6 +13,7 @@ import type { DeviceInfo } from "../types";
 import { Account } from "../../../shared_types";
 import CydAPIClient, { APIErrorResponse } from "../../../cyd-api-client";
 import { xPostProgress } from "../util_x";
+import { facebookPostProgress } from "../util_facebook";
 
 import Modal from "bootstrap/js/dist/modal";
 
@@ -160,6 +161,18 @@ async function registerDevice() {
       } catch (e) {
         // Silently log the error and continue
         console.log("Error getting X progress:", e);
+      }
+    } else if (accounts[i].type == "Facebook") {
+      try {
+        // Submit Facebook progress using the new IPC-based function
+        await facebookPostProgress(
+          apiClient.value,
+          deviceInfo.value,
+          accounts[i].id,
+        );
+      } catch (e) {
+        // Silently log the error and continue
+        console.log("Error getting Facebook progress:", e);
       }
     }
   }

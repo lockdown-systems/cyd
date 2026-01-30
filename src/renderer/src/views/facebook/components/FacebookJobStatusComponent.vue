@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { FacebookJob } from "../../../../../shared_types";
+import type { FacebookJob } from "../../../view_models/FacebookViewModel";
 import StatusComponent from "../../shared_components/StatusComponent.vue";
 
 defineProps<{

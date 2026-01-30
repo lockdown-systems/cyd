@@ -143,31 +143,6 @@ export const runMainMigrations = () => {
         `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
       ],
     },
-    // Add Facebook table, and facebookAccountID to account
-    {
-      name: "add Facebook table, and facebookAccountID to account",
-      sql: [
-        `CREATE TABLE facebookAccount (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    accountID TEXT,
-    name TEXT,
-    profileImageDataURI TEXT,
-    saveMyData BOOLEAN DEFAULT 1,
-    deleteMyData BOOLEAN DEFAULT 0,
-    savePosts BOOLEAN DEFAULT 1,
-    savePostsHTML BOOLEAN DEFAULT 0,
-    deletePosts BOOLEAN DEFAULT 1,
-    deletePostsDaysOldEnabled BOOLEAN DEFAULT 0,
-    deletePostsDaysOld INTEGER DEFAULT 0,
-    deletePostsReactsThresholdEnabled BOOLEAN DEFAULT 0,
-    deletePostsReactsThreshold INTEGER DEFAULT 20
-);`,
-        `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
-      ],
-    },
     // Add userID to xAccount table
     {
       name: "add userID to xAccount table",
@@ -192,6 +167,39 @@ export const runMainMigrations = () => {
         `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioText TEXT DEFAULT '';`,
         `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioCreditCyd BOOLEAN DEFAULT 1;`,
         `ALTER TABLE xAccount ADD COLUMN tombstoneLockAccount BOOLEAN DEFAULT 1;`,
+      ],
+    },
+    // Add Facebook table, and facebookAccountID to account
+    {
+      name: "add Facebook table, and facebookAccountID to account",
+      sql: [
+        `CREATE TABLE facebookAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    profileImageDataURI TEXT
+);`,
+        `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
+      ],
+    },
+    // Create a new, separate facebookAccount in preparation for releasing Facebook support
+    {
+      name: "add accountID to facebookAccount table",
+      sql: [
+        `DROP TABLE IF EXISTS facebookAccount;`,
+        `CREATE TABLE facebookAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    profileImageDataURI TEXT,
+    accountID TEXT,
+    deleteWallPosts INTEGER DEFAULT 1,
+    userLang TEXT DEFAULT 'English (US)'
+);`,
       ],
     },
   ]);

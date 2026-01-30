@@ -1,6 +1,6 @@
 /**
- * Common job structure shared across all platform account controllers.
- * Both XJob and FacebookJob conform to this structure.
+ * Common job structure shared across platform account controllers.
+ * Currently used by X jobs.
  */
 export type PlatformJob = {
   id: number | null;

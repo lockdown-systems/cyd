@@ -1,12 +1,8 @@
 import { ipcMain } from "electron";
+import log from "electron-log/main";
 
 import { FacebookAccountController } from "./facebook_account_controller";
-
-import {
-  FacebookJob,
-  FacebookProgress,
-  FacebookDatabaseStats,
-} from "../shared_types";
+import { FacebookJob, FacebookProgressInfo } from "../shared_types";
 import { getMITMController } from "../mitm";
 import { packageExceptionForReport } from "../util";
 
@@ -16,28 +12,24 @@ const getFacebookAccountController = (
   accountID: number,
 ): FacebookAccountController => {
   if (!controllers[accountID]) {
+    log.debug(
+      "Creating new FacebookAccountController for accountID",
+      accountID,
+    );
     controllers[accountID] = new FacebookAccountController(
       accountID,
       getMITMController(accountID),
     );
   }
+  log.debug(
+    "Returning existing FacebookAccountController for accountID",
+    accountID,
+  );
   controllers[accountID].refreshAccount();
   return controllers[accountID];
 };
 
 export const defineIPCFacebook = () => {
-  ipcMain.handle(
-    "Facebook:resetProgress",
-    async (_, accountID: number): Promise<FacebookProgress> => {
-      try {
-        const controller = getFacebookAccountController(accountID);
-        return controller.resetProgress();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
   ipcMain.handle(
     "Facebook:createJobs",
     async (
@@ -48,6 +40,22 @@ export const defineIPCFacebook = () => {
       try {
         const controller = getFacebookAccountController(accountID);
         return controller.createJobs(jobTypes);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "Facebook:getLastFinishedJob",
+    async (
+      _,
+      accountID: number,
+      jobType: string,
+    ): Promise<FacebookJob | null> => {
+      try {
+        const controller = getFacebookAccountController(accountID);
+        return controller.getLastFinishedJob(jobType);
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
@@ -68,63 +76,11 @@ export const defineIPCFacebook = () => {
   );
 
   ipcMain.handle(
-    "Facebook:archiveBuild",
-    async (_, accountID: number): Promise<void> => {
+    "Facebook:getProgressInfo",
+    async (_, accountID: number): Promise<FacebookProgressInfo> => {
       try {
         const controller = getFacebookAccountController(accountID);
-        await controller.archiveBuild();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "Facebook:syncProgress",
-    async (_, accountID: number, progressJSON: string) => {
-      try {
-        const controller = getFacebookAccountController(accountID);
-        await controller.syncProgress(progressJSON);
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "Facebook:getProgress",
-    async (_, accountID: number): Promise<FacebookProgress> => {
-      try {
-        const controller = getFacebookAccountController(accountID);
-        return await controller.getProgress();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "Facebook:getCookie",
-    async (_, accountID: number, name: string): Promise<string | null> => {
-      try {
-        const controller = getFacebookAccountController(accountID);
-        return await controller.getCookie(name);
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "Facebook:getProfileImageDataURI",
-    async (
-      _,
-      accountID: number,
-      profilePictureURI: string,
-    ): Promise<string> => {
-      try {
-        const controller = getFacebookAccountController(accountID);
-        return await controller.getProfileImageDataURI(profilePictureURI);
+        return await controller.getProgressInfo();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
@@ -156,41 +112,56 @@ export const defineIPCFacebook = () => {
   );
 
   ipcMain.handle(
-    "Facebook:savePosts",
-    async (_, accountID: number): Promise<FacebookProgress> => {
+    "Facebook:deleteConfig",
+    async (_, accountID: number, key: string): Promise<void> => {
       try {
         const controller = getFacebookAccountController(accountID);
-        return await controller.savePosts();
+        return await controller.deleteConfig(key);
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
     },
   );
 
-  ipcMain.handle("Facebook:indexStart", async (_, accountID: number) => {
-    try {
-      const controller = getFacebookAccountController(accountID);
-      await controller.indexStart();
-    } catch (error) {
-      throw new Error(packageExceptionForReport(error as Error));
-    }
-  });
+  ipcMain.handle(
+    "Facebook:deleteConfigLike",
+    async (_, accountID: number, key: string): Promise<void> => {
+      try {
+        const controller = getFacebookAccountController(accountID);
+        return await controller.deleteConfigLike(key);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
 
-  ipcMain.handle("Facebook:indexStop", async (_, accountID: number) => {
+  ipcMain.handle(
+    "Facebook:incrementTotalWallPostsDeleted",
+    async (_, accountID: number, count: number): Promise<void> => {
+      try {
+        const controller = getFacebookAccountController(accountID);
+        return await controller.incrementTotalWallPostsDeleted(count);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  ipcMain.handle("Facebook:isRateLimited", async (_, accountID: number) => {
     try {
       const controller = getFacebookAccountController(accountID);
-      await controller.indexStop();
+      return await controller.isRateLimited();
     } catch (error) {
       throw new Error(packageExceptionForReport(error as Error));
     }
   });
 
   ipcMain.handle(
-    "Facebook:getDatabaseStats",
-    async (_, accountID: number): Promise<FacebookDatabaseStats> => {
+    "Facebook:resetRateLimitInfo",
+    async (_, accountID: number) => {
       try {
         const controller = getFacebookAccountController(accountID);
-        return await controller.getDatabaseStats();
+        await controller.resetRateLimitInfo();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }

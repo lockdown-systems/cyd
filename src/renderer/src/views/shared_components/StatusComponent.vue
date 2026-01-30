@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { FacebookJob } from "../../../../shared_types";
-import type { XJob } from "../../../../shared_types";
+import type { PlatformJob } from "../../../../shared_types";
 import RunningIcon from "./RunningIcon.vue";
 
 const { t } = useI18n();
 
+// Generic job type that extends PlatformJob with jobType
+interface GenericJob extends PlatformJob {
+  jobType: string;
+}
+
 defineProps<{
-  jobs: FacebookJob[] | XJob[];
+  jobs: GenericJob[];
   isPaused: boolean;
   clickingEnabled: boolean;
   getJobTypeText: Function;

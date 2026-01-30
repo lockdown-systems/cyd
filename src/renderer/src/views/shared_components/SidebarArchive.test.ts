@@ -192,7 +192,7 @@ describe("SidebarArchive", () => {
     const wrapper = mount(SidebarArchive, {
       props: {
         accountID: 5,
-        accountType: "Facebook",
+        accountType: "X",
       },
     });
 

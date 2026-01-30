@@ -203,6 +203,42 @@ export class BaseViewModel {
     return this.webview;
   }
 
+  /**
+   * Safely execute JavaScript in the webview with proper error handling.
+   * This method:
+   * 1. Checks if webview is valid
+   * 2. Wraps execution in try-catch
+   * 3. Returns a typed result indicating success/failure
+   *
+   * @param code - The JavaScript code to execute (should be an IIFE returning a value)
+   * @param logContext - Optional context string for logging errors
+   * @returns Object with success boolean, value (if successful), and error (if failed)
+   */
+  async safeExecuteJavaScript<T>(
+    code: string,
+    logContext?: string,
+  ): Promise<{ success: true; value: T } | { success: false; error: string }> {
+    const webview = this.getWebview();
+    if (!webview) {
+      const errorMsg = "Webview is not available";
+      if (logContext) {
+        this.log(logContext, errorMsg);
+      }
+      return { success: false, error: errorMsg };
+    }
+
+    try {
+      const result = await webview.executeJavaScript(code);
+      return { success: true, value: result as T };
+    } catch (error) {
+      const errorMsg = `${error}`;
+      if (logContext) {
+        this.log(logContext, `Error: ${errorMsg}`);
+      }
+      return { success: false, error: errorMsg };
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   log(func: string, message?: any) {
     this.logs.push({
@@ -264,19 +300,9 @@ export class BaseViewModel {
           : "";
         break;
       case "Facebook":
-        if (
-          this.account?.facebookAccount?.accountID &&
-          this.account?.facebookAccount?.name
-        ) {
-          username =
-            this.account?.facebookAccount.accountID +
-            " " +
-            this.account?.facebookAccount.name;
-        } else if (this.account?.facebookAccount?.accountID) {
-          username = this.account?.facebookAccount.accountID;
-        } else if (this.account?.facebookAccount?.name) {
-          username = this.account?.facebookAccount.name;
-        }
+        username = this.account?.facebookAccount?.username
+          ? this.account?.facebookAccount.username
+          : "";
         break;
       default:
         break;
@@ -847,6 +873,38 @@ export class BaseViewModel {
         })()
         `;
     return await this.getWebview()?.executeJavaScript(code);
+  }
+
+  /**
+   * Click an element by XPath
+   * Returns true if the element was found and clicked, false otherwise
+   */
+  async clickElementByXPath(xpath: string): Promise<boolean> {
+    const webview = this.getWebview();
+    if (!webview) return false;
+
+    try {
+      return await webview.executeJavaScript(`
+        (() => {
+          const result = document.evaluate(
+            '${xpath}',
+            document,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          );
+          const element = result.singleNodeValue;
+          if (element) {
+            element.click();
+            return true;
+          }
+          return false;
+        })()
+      `);
+    } catch (error) {
+      this.log("clickElementByXPath", `Error clicking element: ${error}`);
+      return false;
+    }
   }
 
   // Pause and resume the jobs

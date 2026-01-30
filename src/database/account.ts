@@ -91,7 +91,7 @@ export async function getAccountUsername(
   } else if (account.type == "Bluesky" && account.blueskyAccount) {
     return account.blueskyAccount?.username;
   } else if (account.type == "Facebook" && account.facebookAccount) {
-    return account.facebookAccount?.name;
+    return account.facebookAccount?.username;
   }
 
   return null;

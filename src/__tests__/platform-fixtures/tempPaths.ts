@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
 
 export interface PlatformPathMocks {
   getSettingsPath(): string;
@@ -34,9 +35,17 @@ export const createPlatformPathMocks = (
   platformKey: string,
 ): PlatformPathMocks => {
   const trackedPaths = new Set<string>();
-  const settingsPath = path.join(TESTDATA_ROOT, `settingsPath-${platformKey}`);
-  const dataPath = path.join(TESTDATA_ROOT, `dataPath-${platformKey}`);
-  const accountDataRoot = path.join(TESTDATA_ROOT, "dataPath");
+  // Use unique ID per mock instance to prevent parallel test conflicts
+  const uniqueId = randomUUID().substring(0, 8);
+  const settingsPath = path.join(
+    TESTDATA_ROOT,
+    `settingsPath-${platformKey}-${uniqueId}`,
+  );
+  const dataPath = path.join(
+    TESTDATA_ROOT,
+    `dataPath-${platformKey}-${uniqueId}`,
+  );
+  const accountDataRoot = path.join(TESTDATA_ROOT, `dataPath-${uniqueId}`);
 
   return {
     getSettingsPath: () => ensureDirSync(settingsPath, trackedPaths),

@@ -2,13 +2,13 @@
 /**
  * PlatformView.vue - Generic Platform View Component
  *
- * This is a generic, reusable component that works for any platform (X, Facebook, etc.).
+ * This is a generic, reusable component that works for any platform (X, etc.).
  * It uses the 3-piece architecture:
  * 1. usePlatformView composable - handles shared logic
  * 2. PlatformConfig - provides platform-specific configuration
  * 3. PlatformView (this component) - renders the generic template
  *
- * Platform-specific views (XView, FacebookView) are thin wrappers that:
+ * Platform-specific views (like XView) are thin wrappers that:
  * - Instantiate the platform ViewModel
  * - Handle platform-specific state and events
  * - Render this component with platform config
@@ -168,13 +168,17 @@ const currentJobsLength = computed(() => props.currentJobs.length);
         class="u2f-info text-center text-muted small ms-2"
       >
         <i class="fa-solid fa-circle-info me-2" />
-        {{ t("platform.u2fNotice") }}
+        {{
+          config.name === "Facebook"
+            ? t("platform.u2fNoticeFacebook")
+            : t("platform.u2fNotice")
+        }}
         <a
           v-if="config.urls.u2fDocs"
           href="#"
           @click="openURL(config.urls.u2fDocs)"
           >{{ t("platform.readMore") }}</a
-        >.
+        ><span v-if="config.urls.u2fDocs">.</span>
       </p>
 
       <!-- Archive only option (conditional on feature flag) -->

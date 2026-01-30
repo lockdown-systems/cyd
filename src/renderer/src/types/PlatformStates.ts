@@ -2,7 +2,7 @@
  * Platform States - Single Source of Truth
  *
  * This file defines ALL platform states for the entire application.
- * - Common states: Shared across all platforms (X, Facebook, etc.)
+ * - Common states: Shared across all platforms
  * - Platform-specific states: Used only by specific platforms
  *
  * Usage:
@@ -124,4 +124,13 @@ export const PlatformStates = {
 
   /** X: Display archive only wizard page */
   WizardArchiveOnlyDisplay: "WizardArchiveOnlyDisplay",
+
+  // ==========================================================================
+  // FACEBOOK-SPECIFIC STATES
+  // ==========================================================================
+  /** Facebook: Dashboard wizard page */
+  FacebookWizardDashboard: "FacebookWizardDashboard",
+
+  /** Facebook: Display dashboard wizard page */
+  FacebookWizardDashboardDisplay: "FacebookWizardDashboardDisplay",
 } as const;

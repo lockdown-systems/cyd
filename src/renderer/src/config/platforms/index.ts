@@ -15,7 +15,7 @@ export const platformRegistry: PlatformConfigRegistry = {
 
 /**
  * Get platform configuration by name
- * @param platformName - The name of the platform (e.g., 'X', 'Facebook')
+ * @param platformName - The name of the platform (e.g., 'X')
  * @returns Platform configuration object or undefined if not found
  */
 export function getPlatformConfig(

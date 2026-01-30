@@ -20,4 +20,3 @@ build_archive_site() {
 
 # Build each site
 build_archive_site x
-build_archive_site facebook

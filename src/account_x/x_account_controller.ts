@@ -127,21 +127,27 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
   protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
     // Keep track of cookies
-    if (details.requestHeaders) {
-      const hostname = new URL(details.url).hostname;
-      const cookieHeader = details.requestHeaders["Cookie"];
-      if (cookieHeader) {
-        const cookies = cookieHeader.split(";");
-        cookies.forEach((cookie: string) => {
-          const parts = cookie.split("=");
-          if (parts.length == 2) {
-            if (!this.cookies[hostname]) {
-              this.cookies[hostname] = {};
+    // Wrap in try-catch because this runs in a webRequest callback (restricted context)
+    try {
+      if (details.requestHeaders) {
+        const hostname = new URL(details.url).hostname;
+        const cookieHeader = details.requestHeaders["Cookie"];
+        if (cookieHeader) {
+          const cookies = cookieHeader.split(";");
+          cookies.forEach((cookie: string) => {
+            const parts = cookie.split("=");
+            if (parts.length == 2) {
+              if (!this.cookies[hostname]) {
+                this.cookies[hostname] = {};
+              }
+              this.cookies[hostname][parts[0].trim()] = parts[1].trim();
             }
-            this.cookies[hostname][parts[0].trim()] = parts[1].trim();
-          }
-        });
+          });
+        }
       }
+    } catch (error) {
+      // Silently log errors in webRequest callback to prevent crashes
+      log.error("XAccountController.handleCookieTracking error:", error);
     }
   }
 

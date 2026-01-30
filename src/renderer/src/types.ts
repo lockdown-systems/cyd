@@ -38,10 +38,8 @@ export const PlausibleEvents = Object.freeze({
 
   FACEBOOK_USER_SIGNED_IN: "Facebook User Signed In",
   FACEBOOK_JOB_STARTED_LOGIN: "Facebook Job Started: login",
-  FACEBOOK_JOB_STARTED_SAVE_POSTS: "Facebook Job Started: savePosts",
-  FACEBOOK_JOB_STARTED_SAVE_POSTS_HTML: "Facebook Job Started: savePostsHTML",
-  FACEBOOK_JOB_STARTED_DELETE_POSTS: "Facebook Job Started: deletePosts",
-  FACEBOOK_JOB_STARTED_ARCHIVE_BUILD: "Facebook Job Started: archiveBuild",
+  FACEBOOK_JOB_STARTED_DELETE_WALL_POSTS:
+    "Facebook Job Started: deleteWallPosts",
 });
 
 export type ButtonInfo = {

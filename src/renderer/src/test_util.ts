@@ -13,7 +13,7 @@ import en from "./i18n/locales/en.json";
 
 /**
  * General test utilities for all view models
- * These mocks can be used across X, Facebook, Bluesky, and other view models
+ * These mocks can be used across X, Bluesky, and other view models
  */
 
 /**
@@ -67,6 +67,24 @@ export function createMockXAccount(overrides?: Partial<XAccount>): XAccount {
     tombstoneUpdateBioText: "",
     tombstoneUpdateBioCreditCyd: false,
     tombstoneLockAccount: false,
+    ...overrides,
+  };
+}
+
+export function createMockFacebookAccount(
+  overrides?: Partial<FacebookAccount>,
+): FacebookAccount {
+  const now = new Date();
+  return {
+    id: 1,
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    username: "facebook-user",
+    profileImageDataURI: "",
+    accountID: null,
+    deleteWallPosts: false,
+    userLang: "English (US)",
     ...overrides,
   };
 }
@@ -269,6 +287,39 @@ export function mockElectronAPI() {
       savePage: vi.fn().mockResolvedValue(undefined),
     },
 
+    // Facebook operations
+    Facebook: {
+      createJobs: vi.fn().mockImplementation((_accountID, jobTypes: string[]) =>
+        Promise.resolve(
+          jobTypes.map((jobType, index) => ({
+            id: index + 1,
+            jobType,
+            status: "pending",
+            scheduledAt: new Date(),
+            startedAt: null,
+            finishedAt: null,
+            progressJSON: "",
+            error: null,
+          })),
+        ),
+      ),
+      getLastFinishedJob: vi.fn().mockResolvedValue(null),
+      updateJob: vi.fn().mockResolvedValue(undefined),
+      getProgressInfo: vi.fn().mockResolvedValue({
+        accountUUID: "test-uuid-123",
+        totalWallPostsDeleted: 0,
+      }),
+      getConfig: vi.fn().mockResolvedValue(null),
+      setConfig: vi.fn().mockResolvedValue(undefined),
+      deleteConfig: vi.fn().mockResolvedValue(undefined),
+      deleteConfigLike: vi.fn().mockResolvedValue(undefined),
+      incrementTotalWallPostsDeleted: vi.fn().mockResolvedValue(undefined),
+      isRateLimited: vi
+        .fn()
+        .mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 }),
+      resetRateLimitInfo: vi.fn().mockResolvedValue(undefined),
+    },
+
     // Analytics (used by all view models)
     trackEvent: vi.fn().mockResolvedValue(undefined),
 
@@ -364,38 +415,6 @@ export async function waitForAsync(
     }
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
-}
-
-/**
- * Creates a mock FacebookAccount with default values that can be overridden
- */
-export function createMockFacebookAccount(
-  overrides?: Partial<FacebookAccount>,
-): FacebookAccount {
-  const now = new Date();
-  return {
-    id: 1,
-    createdAt: now,
-    updatedAt: now,
-    accessedAt: now,
-    accountID: "100000000000000",
-    name: "Test User",
-    profileImageDataURI: "data:image/png;base64,test",
-    saveMyData: false,
-    deleteMyData: false,
-    archiveMyData: false,
-    savePosts: false,
-    savePostsHTML: false,
-    deletePosts: false,
-    deletePostsDaysOldEnabled: false,
-    deletePostsDaysOld: 0,
-    deletePostsReactsThresholdEnabled: false,
-    deletePostsReactsThreshold: 0,
-    deleteReposts: false,
-    deleteRepostsDaysOldEnabled: false,
-    deleteRepostsDaysOld: 0,
-    ...overrides,
-  };
 }
 
 /**

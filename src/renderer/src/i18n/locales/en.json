@@ -18,11 +18,12 @@
     "withCydDescriptionRest": "you can automatically delete your data in tech platforms, except for what you want to keep.",
     "readyToGetStarted": "Ready to get started? Add a new account.",
     "alpha": "Alpha",
-    "morePlatformsComingSoon": "More platforms coming soon.",
     "unknownAccountType": "Unknown account type. Something is wrong."
   },
   "jobs": {
     "login": "Logging in",
+    "saveUserLang": "Checking language",
+    "setLangToEnglish": "Using English",
     "indexTweets": "Saving tweets",
     "indexLikes": "Saving likes",
     "indexBookmarks": "Saving bookmarks",
@@ -42,7 +43,9 @@
     "tombstoneUpdateBio": "Updating bio",
     "tombstoneLockAccount": "Locking account",
     "savePosts": "Saving posts",
-    "savePostsHTML": "Saving posts HTML"
+    "savePostsHTML": "Saving posts HTML",
+    "deleteWallPosts": "Deleting wall posts",
+    "restoreUserLang": "Restoring language"
   },
   "progress": {
     "savingComplete": "Saving complete!",
@@ -247,6 +250,7 @@
     "backToLocalDatabase": "Back to Local Database",
     "backToDashboard": "Back to Dashboard",
     "continueToReview": "Continue to Review",
+    "unknownReviewType": "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
     "continueToImportArchive": "Continue to Import Archive",
     "continueToImportXArchiveButton": "Continue to Import X Archive",
     "continueToBuildOptions": "Continue to Build Options",
@@ -339,6 +343,7 @@
   },
   "platform": {
     "u2fNotice": "If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white screen.",
+    "u2fNoticeFacebook": "If you use a U2F security key (like a Yubikey) for 2FA, press it when prompted.",
     "readMore": "Read more",
     "importArchiveOnly": "Import Archive Only (for deleted accounts with an archive)"
   },
@@ -386,8 +391,40 @@
     "backToStart": "Back to start",
     "removeAccount": "Remove account",
     "xDescription": "Formerly Twitter, owned by billionaire Elon Musk",
-    "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg",
-    "blueskyDescription": "Open source social media platform based on AT Protocol"
+    "blueskyDescription": "Open source social media platform based on AT Protocol",
+    "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg"
+  },
+  "facebook": {
+    "loginTitle": "Sign in to Facebook",
+    "loginDescription": "Use the embedded browser to sign in to Facebook or Meta. Once you're logged in, Cyd will continue automatically.",
+    "loginStepOpen": "Open facebook.com and enter your email, phone number, or username.",
+    "loginStepComplete": "Complete any security prompts, including 2-factor codes or trusted device confirmations.",
+    "loginStepReturn": "When you see your Facebook home feed, return to Cyd to continue.",
+    "loginHelpText": "If you closed the browser window, click Refresh to start over.",
+    "dashboard": {
+      "getArchiveTitle": "Get Archive from Meta",
+      "getArchiveDescription": "If you want, export your Facebook archive BEFORE you delete all your posts.",
+      "deleteWallTitle": "Delete My Wall",
+      "deleteWallDescription": "Delete all posts from your Facebook wall."
+    },
+    "deleteOptions": {
+      "title": "Delete My Wall",
+      "description": "Select the data you want to delete from your Facebook wall.",
+      "deleteWallPosts": "Delete all posts from my wall"
+    },
+    "review": {
+      "deleteWallPosts": "All posts from your Facebook wall",
+      "languageSettingsMightChange": "Your Facebook language settings might temporarily change.",
+      "languageSettingsDescription": "If your Facebook account isn't already set to English, Cyd will set it to English, delete your data, and then change it back to your preferred language."
+    },
+    "finished": {
+      "title": "Jobs Completed",
+      "wallPosts": "wall posts"
+    },
+    "premium": {
+      "readyToDelete": "You're all set! Let's continue to configure what you want to delete.",
+      "continueToDeleteOptions": "Continue to Delete Options"
+    }
   },
   "review": {
     "backToDeleteOptions": "Back to Delete Options",
@@ -457,32 +494,6 @@
     "backupMoreData": "Backup More Data from X",
     "goToDashboard": "Go to Dashboard",
     "failedToGetAccountDataPath": "Failed to get account data path for archive-only account"
-  },
-  "facebook": {
-    "deleteFromFacebook": "Delete from Facebook",
-    "deleteFromFacebookDescription": "Delete your data from Facebook, except for what you want to keep.",
-    "deleteOptions": "Delete Options",
-    "backToImportOrBuild": "Back to Import or Build Database",
-    "continueToReview": "Continue to Review (NOT IMPL YET)",
-    "reviewChoices": "Review your choices",
-    "buildLocalDatabase": "Build a local database",
-    "savePosts": "Save posts",
-    "savePostsHTML": "Save HTML versions of posts",
-    "backToBuildOptions": "Back to Build Options",
-    "buildDatabase": "Build Database",
-    "buildOptions": "Build Options",
-    "unknownReviewType": "Oops, this is awkward. You clicked back, but I'm not sure where to go.",
-    "buildYourLocalDatabase": "Build your local database",
-    "buildYourLocalDatabaseDescription": "You can save posts.",
-    "saveMyPosts": "Save my posts",
-    "saveHTMLVersionOfEachPost": "Save an HTML version of each post",
-    "saveHTMLVersionOfEachPostDescription": "Make an HTML archive of each post, including its comments, which is good for taking screenshots",
-    "deleteMyPosts": "Delete my posts",
-    "deleteMyReposts": "Delete my reposts",
-    "buildYourLocalDatabaseButton": "Build Your Local Database",
-    "youJustSaved": "You just saved:",
-    "cydCanUnfriendEveryone": "Cyd can unfriend everyone right away",
-    "needImportOrBuildToDelete": "You'll need to import or build your database to delete your Facebook posts"
   },
   "tabs": {
     "cannotSignOutWithoutDeviceInfo": "Cannot sign out without device info",
@@ -586,6 +597,30 @@
           "updateBio": "**I'm updating your bio.**",
           "lockAccount": "**I'm locking your account.**"
         }
+      }
+    },
+    "facebook": {
+      "wizard": {
+        "dashboard": "\n# It's _your_ data. What do you want to do with it?",
+        "login": {
+          "instructions": "Hello, friend! My name is **Cyd**. I can help you delete all of the posts from your Facebook wall.\n\n# To get started, log in to your Facebook account below."
+        },
+        "checkPremium": "\n# Premium Required\n\nDeleting data from Facebook requires a premium subscription.",
+        "deleteOptions": "\n# Which data do you want to delete?",
+        "review": "I'm almost ready to start helping you delete your data from Facebook!\n\n# Here's what I'm planning on doing.",
+        "finishedJobs": "\nAll done!\n\n# Here's what I did."
+      },
+      "auth": {
+        "checkingLogin": "Checking to see if you're still logged in to your Facebook account..."
+      },
+      "jobs": {
+        "savingLanguage": "I'm checking your language settings.",
+        "settingLanguageToEnglish": "I'm temporarily changing your language to English (US) for automation.",
+        "restoringLanguage": "I'm restoring your original language setting.",
+        "deletingWallPosts": "# I'm deleting all posts from your Facebook wall."
+      },
+      "progress": {
+        "wallPostsDeleted": "Deleted {count} wall posts."
       }
     }
   }

@@ -92,20 +92,21 @@ export type FacebookAccount = {
   createdAt: Date;
   updatedAt: Date;
   accessedAt: Date;
-  accountID: string;
-  name: string;
+  username: string;
   profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  archiveMyData: boolean;
-  savePosts: boolean;
-  savePostsHTML: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsReactsThresholdEnabled: boolean;
-  deletePostsReactsThreshold: number;
-  deleteReposts: boolean;
-  deleteRepostsDaysOldEnabled: boolean;
-  deleteRepostsDaysOld: number;
+  accountID: string | null;
+  deleteWallPosts: boolean;
+  userLang: string;
 };
+
+export type FacebookProgressInfo = {
+  accountUUID: string;
+  totalWallPostsDeleted: number;
+};
+
+export function emptyFacebookProgressInfo(): FacebookProgressInfo {
+  return {
+    accountUUID: "",
+    totalWallPostsDeleted: 0,
+  };
+}

@@ -1,25 +1,16 @@
 import { exec, getMainDatabase, Sqlite3Info } from "./common";
-import { FacebookAccount } from "../shared_types";
+import type { FacebookAccount } from "../shared_types";
 
-// Types
-
-export interface FacebookAccountRow {
+interface FacebookAccountRow {
   id: number;
   createdAt: string;
   updatedAt: string;
   accessedAt: string;
-  accountID: string;
-  name: string;
+  username: string;
   profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  savePosts: boolean;
-  savePostsHTML: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsReactsThresholdEnabled: boolean;
-  deletePostsReactsThreshold: number;
+  accountID: string | null;
+  deleteWallPosts: number;
+  userLang: string;
 }
 
 function facebookAccountRowToFacebookAccount(
@@ -30,24 +21,14 @@ function facebookAccountRowToFacebookAccount(
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     accessedAt: new Date(row.accessedAt),
-    accountID: row.accountID,
-    name: row.name,
+    username: row.username,
     profileImageDataURI: row.profileImageDataURI,
-    saveMyData: !!row.saveMyData,
-    deleteMyData: !!row.deleteMyData,
-    savePosts: !!row.savePosts,
-    savePostsHTML: !!row.savePostsHTML,
-    deletePosts: !!row.deletePosts,
-    deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
-    deletePostsDaysOld: row.deletePostsDaysOld,
-    deletePostsReactsThresholdEnabled: !!row.deletePostsReactsThresholdEnabled,
-    deletePostsReactsThreshold: row.deletePostsReactsThreshold,
+    accountID: row.accountID,
+    deleteWallPosts: row.deleteWallPosts === 1,
+    userLang: row.userLang || "English (US)",
   };
 }
 
-// Functions
-
-// Get a single Facebook account by ID
 export const getFacebookAccount = (id: number): FacebookAccount | null => {
   const row: FacebookAccountRow | undefined = exec(
     getMainDatabase(),
@@ -55,13 +36,14 @@ export const getFacebookAccount = (id: number): FacebookAccount | null => {
     [id],
     "get",
   ) as FacebookAccountRow | undefined;
+
   if (!row) {
     return null;
   }
+
   return facebookAccountRowToFacebookAccount(row);
 };
 
-// Get all Facebook accounts
 export const getFacebookAccounts = (): FacebookAccount[] => {
   const rows: FacebookAccountRow[] = exec(
     getMainDatabase(),
@@ -70,27 +52,23 @@ export const getFacebookAccounts = (): FacebookAccount[] => {
     "all",
   ) as FacebookAccountRow[];
 
-  const accounts: FacebookAccount[] = [];
-  for (const row of rows) {
-    accounts.push(facebookAccountRowToFacebookAccount(row));
-  }
-  return accounts;
+  return rows.map((row) => facebookAccountRowToFacebookAccount(row));
 };
 
-// Create a new Facebook account
 export const createFacebookAccount = (): FacebookAccount => {
   const info: Sqlite3Info = exec(
     getMainDatabase(),
     "INSERT INTO facebookAccount DEFAULT VALUES",
   ) as Sqlite3Info;
+
   const account = getFacebookAccount(info.lastInsertRowid);
   if (!account) {
-    throw new Error("Failed to create account");
+    throw new Error("Failed to create Facebook account");
   }
+
   return account;
 };
 
-// Update the Facebook account based on account.id
 export const saveFacebookAccount = (account: FacebookAccount) => {
   exec(
     getMainDatabase(),
@@ -99,33 +77,19 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
         SET
             updatedAt = CURRENT_TIMESTAMP,
             accessedAt = CURRENT_TIMESTAMP,
-            accountID = ?,
-            name = ?,
+            username = ?,
             profileImageDataURI = ?,
-            saveMyData = ?,
-            deleteMyData = ?,
-            savePosts = ?,
-            savePostsHTML = ?,
-            deletePosts = ?,
-            deletePostsDaysOldEnabled = ?,
-            deletePostsDaysOld = ?,
-            deletePostsReactsThresholdEnabled = ?,
-            deletePostsReactsThreshold = ?
+            accountID = ?,
+            deleteWallPosts = ?,
+            userLang = ?
         WHERE id = ?
     `,
     [
-      account.accountID,
-      account.name,
+      account.username,
       account.profileImageDataURI,
-      account.saveMyData ? 1 : 0,
-      account.deleteMyData ? 1 : 0,
-      account.savePosts ? 1 : 0,
-      account.savePostsHTML ? 1 : 0,
-      account.deletePosts ? 1 : 0,
-      account.deletePostsDaysOldEnabled ? 1 : 0,
-      account.deletePostsDaysOld,
-      account.deletePostsReactsThresholdEnabled ? 1 : 0,
-      account.deletePostsReactsThreshold,
+      account.accountID,
+      account.deleteWallPosts ? 1 : 0,
+      account.userLang || "English (US)",
       account.id,
     ],
   );

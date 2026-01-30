@@ -69,6 +69,12 @@ export type PostXProgressAPIRequest = {
   total_tweets_migrated_to_bluesky: number;
 };
 
+// API models for POST /facebook-progress
+export type PostFacebookProgressAPIRequest = {
+  account_uuid: string;
+  total_wall_posts_deleted: number;
+};
+
 // API models for GET /user/premium
 export type UserPremiumAPIResponse = {
   premium_price_cents: number;
@@ -479,6 +485,62 @@ export default class CydAPIClient {
       } else {
         return this.returnError(
           `Failed to post XProgress with the server. Error: ${error.message}`,
+        );
+      }
+    }
+
+    return true;
+  }
+
+  async postFacebookProgress(
+    request: PostFacebookProgressAPIRequest,
+    authenticated: boolean,
+  ): Promise<boolean | APIErrorResponse> {
+    console.log("POST /facebook-progress", request);
+
+    if (authenticated) {
+      if (!(await this.validateAPIToken())) {
+        return this.returnError("Failed to get a new API token.");
+      }
+    }
+
+    try {
+      let response;
+      if (authenticated) {
+        response = await this.fetchAuthenticated(
+          "POST",
+          `${this.apiURL}/facebook-progress`,
+          request,
+        );
+      } else {
+        response = await this.fetch(
+          "POST",
+          `${this.apiURL}/facebook-progress`,
+          request,
+        );
+      }
+
+      if (response.status != 200) {
+        return this.returnError(
+          "Failed to post FacebookProgress with the server.",
+          response.status,
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error.response) {
+        const statusCode = error.response.status;
+        const responseBody = error.response.data;
+        return this.returnError(
+          `Failed to post FacebookProgress with the server. Status code: ${statusCode}, Response body: ${JSON.stringify(responseBody)}`,
+        );
+      } else if (error.request) {
+        return this.returnError(
+          "Failed to post FacebookProgress with the server. No response received.",
+        );
+      } else {
+        return this.returnError(
+          `Failed to post FacebookProgress with the server. Error: ${error.message}`,
         );
       }
     }

@@ -36,12 +36,6 @@ execSync("npm install", {
   cwd: "archive-static-sites/x-archive",
 });
 
-console.log("Running npm install for facebook-archive...");
-execSync("npm install", {
-  stdio: "inherit",
-  cwd: "archive-static-sites/facebook-archive",
-});
-
 if (os.platform() === "linux") {
   const chromeSandboxPath = path.resolve(
     "node_modules/electron/dist/chrome-sandbox",
