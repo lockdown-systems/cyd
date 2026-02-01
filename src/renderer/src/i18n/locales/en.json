@@ -577,6 +577,7 @@
           "archiveTweets": "# I'm downloading HTML copies of your tweets, starting with the oldest.\n\nThis may take a while...",
           "conversations": "# I'm saving your direct message conversations.\n\nHang on while I scroll down to your earliest direct message conversations...",
           "messages": "# I'm saving your direct messages.\n\nPlease wait while I index all the messages from each conversation...",
+          "messagesTimeoutError": "Unable to load a conversation. This appears to be an issue on X's side. The conversation will be skipped. You can try again later if needed.",
           "likes": "# I'm saving your likes.\n\nHang on while I scroll down to your earliest likes.",
           "bookmarks": "# I'm saving your bookmarks.\n\nHang on while I scroll down to your earliest bookmarks."
         },
