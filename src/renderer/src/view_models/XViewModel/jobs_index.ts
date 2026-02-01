@@ -356,9 +356,7 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
     navigator.userAgent,
   );
 
-  let tries: number,
-    success: boolean,
-    error: null | Error = null;
+  let tries: number, success: boolean;
 
   let indexMessagesStartResponse: XIndexMessagesStartResponse;
   let url = "";
@@ -428,7 +426,6 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
           if (vm.rateLimitInfo.isRateLimited) {
             await vm.waitForRateLimit();
           } else {
-            error = e;
             vm.log("runJobIndexMessages", [
               "loading conversation and waiting for messages failed, try #",
               tries,
@@ -452,7 +449,6 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
           );
           break;
         } else {
-          error = e as Error;
           vm.log("runJobIndexMessages", [
             "loading conversation and waiting for messages failed, try #",
             tries,
