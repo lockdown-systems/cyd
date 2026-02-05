@@ -356,9 +356,7 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
     navigator.userAgent,
   );
 
-  let tries: number,
-    success: boolean,
-    error: null | Error = null;
+  let tries: number, success: boolean;
 
   let indexMessagesStartResponse: XIndexMessagesStartResponse;
   let url = "";
@@ -409,7 +407,13 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
       try {
         url = `https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`;
         await vm.loadURLWithRateLimit(url);
-        await vm.waitForSelector('div[data-testid="DmActivityContainer"]', url);
+        // Use longer timeout on retries (60 seconds instead of default 30 seconds)
+        const timeout = tries > 0 ? 60000 : undefined;
+        await vm.waitForSelector(
+          'div[data-testid="DmActivityContainer"]',
+          url,
+          timeout,
+        );
         success = true;
         break;
       } catch (e) {
@@ -422,7 +426,6 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
           if (vm.rateLimitInfo.isRateLimited) {
             await vm.waitForRateLimit();
           } else {
-            error = e;
             vm.log("runJobIndexMessages", [
               "loading conversation and waiting for messages failed, try #",
               tries,
@@ -446,7 +449,6 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
           );
           break;
         } else {
-          error = e as Error;
           vm.log("runJobIndexMessages", [
             "loading conversation and waiting for messages failed, try #",
             tries,
@@ -457,9 +459,17 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
     }
 
     if (!success) {
-      await vm.error(AutomationErrorType.x_runJob_indexMessages_Timeout, {
-        error: formatError(error as Error),
-      });
+      // Instead of submitting an error report, show a user-friendly message
+      // and skip this conversation for now.
+      await window.electron.showError(
+        vm.t("viewModels.x.jobs.index.messagesTimeoutError"),
+      );
+      vm.log("runJobIndexMessages", [
+        "conversation timed out after 3 retries, skipping it",
+      ]);
+      vm.progress.conversationMessagesIndexed += 1;
+      await vm.syncProgress();
+      shouldSkip = true;
     }
 
     if (shouldSkip) {
