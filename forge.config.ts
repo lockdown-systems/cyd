@@ -95,7 +95,7 @@ function removeCodeSignatures(dir: string) {
   const files = fs.readdirSync(dir);
   files.forEach((file) => {
     const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
+    const stat = fs.lstatSync(filePath);
 
     if (stat.isDirectory()) {
       if (file === "_CodeSignature") {
