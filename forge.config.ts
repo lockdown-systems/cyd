@@ -228,7 +228,7 @@ const config: ForgeConfig = {
         process.env.WINDOWS_RELEASE === "true"
           ? {
               signToolPath: findLatestSigntoolPath(),
-              signWithParams: `sign /v /d "${process.env.CYD_ENV === "prod" ? "Cyd" : "Cyd Dev"}" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://ts.harica.gr`,
+              signWithParams: `/v /d "${process.env.CYD_ENV === "prod" ? "Cyd" : "Cyd Dev"}" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://ts.harica.gr`,
             }
           : undefined,
       // For auto-updates
