@@ -235,7 +235,8 @@ const config: ForgeConfig = {
       // For auto-updates
       remoteReleases: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/windows/${process.arch}`,
       noDelta: process.env.WINDOWS_RELEASE === "true" ? false : true,
-    }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any),
     // macOS DMG
     new MakerDMG({
       name:
