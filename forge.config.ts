@@ -228,6 +228,10 @@ const config: ForgeConfig = {
         process.env.WINDOWS_RELEASE === "true"
           ? `/v /d "${process.env.CYD_ENV === "prod" ? "Cyd" : "Cyd Dev"}" /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://ts.harica.gr`
           : undefined,
+      signToolPath:
+        process.env.WINDOWS_RELEASE === "true"
+          ? findLatestSigntoolPath()
+          : undefined,
       // For auto-updates
       remoteReleases: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/windows/${process.arch}`,
       noDelta: process.env.WINDOWS_RELEASE === "true" ? false : true,
