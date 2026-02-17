@@ -21,6 +21,7 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     root: "./",
     setupFiles: ["src/renderer/src/test-setup.ts"],
+    globalSetup: ["src/vitest-global-setup.ts"],
     coverage: {
       provider: "v8",
       include: ["src/**/*.{js,ts,vue}"],
