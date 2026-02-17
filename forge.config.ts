@@ -195,6 +195,14 @@ const config: ForgeConfig = {
         : "systems.lockdown.cyd-dev",
     appCopyright: `Copyright ${new Date().getFullYear()} Lockdown Systems LLC`,
     asar: true,
+    // Workaround for electron-forge > 7.4.0 not including node_modules in asar
+    // See: https://github.com/electron/forge/issues/3934
+    ignore: (file: string) => {
+      if (!file) return false;
+      if (file.startsWith("/.vite")) return false;
+      if (file.startsWith("/node_modules")) return false;
+      return true;
+    },
     icon: path.join(assetsPath, "icon"),
     beforeAsar: [
       // Copy the config.json file to the resources path
