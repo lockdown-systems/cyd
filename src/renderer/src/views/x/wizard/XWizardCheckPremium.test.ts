@@ -260,9 +260,8 @@ describe("XWizardCheckPremium", () => {
 
   describe("premium tasks display", () => {
     it("should load and display premium tasks from localStorage", async () => {
-      const { getPremiumTasks, clearPremiumTasks } = await import(
-        "../../../util"
-      );
+      const { getPremiumTasks, clearPremiumTasks } =
+        await import("../../../util");
       vi.mocked(getPremiumTasks).mockReturnValue([
         "Delete old tweets",
         "Filter by likes",

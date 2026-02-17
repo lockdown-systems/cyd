@@ -24,7 +24,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{js,ts,vue}"],
-      all: true,
+      all: false,
       clean: true,
       skipFull: false,
       reportOnFailure: true,

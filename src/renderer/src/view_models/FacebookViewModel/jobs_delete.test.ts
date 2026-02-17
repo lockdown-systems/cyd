@@ -75,7 +75,9 @@ function createMockFacebookViewModel(
   ];
 
   vi.spyOn(vm, "log").mockImplementation(() => {});
-  vi.spyOn(vm, "sleep").mockResolvedValue(undefined);
+  vi.spyOn(vm, "sleep").mockImplementation(async (ms: number) => {
+    vi.setSystemTime(Date.now() + ms);
+  });
   vi.spyOn(vm, "waitForPause").mockResolvedValue(undefined);
   vi.spyOn(vm, "waitForLoadingToFinish").mockResolvedValue(undefined);
   vi.spyOn(vm, "pause").mockResolvedValue(undefined);
@@ -88,10 +90,15 @@ function createMockFacebookViewModel(
 describe("FacebookViewModel Delete Jobs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use fake timers (Date only) so that the mocked sleep can advance
+    // Date.now() naturally, causing polling loops to exit without
+    // needing to spy on Date.now directly.
+    vi.useFakeTimers({ toFake: ["Date"] });
     mockElectronAPI();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -182,7 +189,7 @@ describe("FacebookViewModel Delete Jobs", () => {
       vi.mocked(mockWebview.executeJavaScript)
         .mockResolvedValueOnce(true) // clickManagePostsButton
         .mockResolvedValueOnce(true) // waitForManagePostsDialog (first check)
-        .mockResolvedValueOnce([]); // getListsAndItems returns empty
+        .mockResolvedValue([]); // getListsAndItems returns empty
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
@@ -207,7 +214,7 @@ describe("FacebookViewModel Delete Jobs", () => {
         if (callCount === 1) return true;
         // 2. waitForManagePostsDialog
         if (callCount === 2) return true;
-        // 3. getListsAndItems - return 3 items
+        // 3. getListsAndItems - return 3 items (first poll succeeds immediately)
         if (callCount === 3)
           return [
             { listIndex: 0, itemIndex: 0 },
@@ -244,12 +251,11 @@ describe("FacebookViewModel Delete Jobs", () => {
         if (callCount === 15) return true;
         // 16. waitForManagePostsDialog
         if (callCount === 16) return true;
-        // 17. getListsAndItems - no more items
-        if (callCount === 17) return [];
-
-        return false;
+        // 17+. getListsAndItems - no more items
+        return [];
       });
 
+      // Mock Date.now advances naturally via fake timers + sleep mock
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
       // After deleting 3 posts, progress should reflect this
@@ -263,7 +269,7 @@ describe("FacebookViewModel Delete Jobs", () => {
       vi.mocked(mockWebview.executeJavaScript)
         .mockResolvedValueOnce(true) // clickManagePostsButton
         .mockResolvedValueOnce(true) // waitForManagePostsDialog
-        .mockResolvedValueOnce([]); // getListsAndItems returns no items
+        .mockResolvedValue([]); // getListsAndItems returns no items
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
@@ -280,7 +286,7 @@ describe("FacebookViewModel Delete Jobs", () => {
       vi.mocked(mockWebview.executeJavaScript)
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce([]);
+        .mockResolvedValue([]);
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 

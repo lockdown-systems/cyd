@@ -497,9 +497,8 @@ describe("XWizardDashboard", () => {
     });
 
     it("should use most recent date when both import and build exist", async () => {
-      const { xGetLastImportArchive, xGetLastBuildDatabase } = await import(
-        "../../../util_x"
-      );
+      const { xGetLastImportArchive, xGetLastBuildDatabase } =
+        await import("../../../util_x");
       const importDate = new Date(2024, 0, 1); // Jan 1, 2024
       const buildDate = new Date(2024, 0, 15); // Jan 15, 2024 (more recent)
       vi.mocked(xGetLastImportArchive).mockResolvedValue(importDate);
