@@ -7,14 +7,14 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "bootstrap": "^5.3.8",
-    "vue": "^3.5.24",
+    "vue": "^3.5.28",
     "vue-class-component": "8.0.0-rc.1",
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
-    "@types/node": "^24.10.0",
+    "@types/node": "^25.2.3",
     "@vue/cli-plugin-router": "~5.0.9",
     "@vue/cli-plugin-typescript": "~5.0.9",
     "@vue/cli-service": "~5.0.9",

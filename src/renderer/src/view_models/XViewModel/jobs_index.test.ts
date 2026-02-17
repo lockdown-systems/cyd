@@ -655,7 +655,8 @@ describe("jobs_index.ts", () => {
 
       await IndexJobs.runJobIndexMessages(vm, 0);
 
-      expect(vm.error).toHaveBeenCalled();
+      // After 3 retries, the conversation is skipped with a user-facing error
+      expect(mockElectron.showError).toHaveBeenCalled();
     });
 
     it("should handle URLChangedError and skip inaccessible conversation", async () => {
