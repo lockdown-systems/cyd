@@ -24,6 +24,35 @@ if (!fs.existsSync(buildPath)) {
 }
 const assetsPath = path.join(__dirname, "assets");
 
+// Ensure the vendor signtool.exe used by Squirrel is the Windows SDK version.
+// The bundled vendor signtool.exe is too old for RFC 3161 timestamping with ECC
+// certificates. We also need to restore it if a previous failed build left a
+// stale SEA binary in its place.
+if (os.platform() === "win32") {
+  const vendorDir = path.join(
+    __dirname,
+    "node_modules",
+    "electron-winstaller",
+    "vendor",
+  );
+  const vendorSigntoolPath = path.join(vendorDir, "signtool.exe");
+  const backupPath = path.join(vendorDir, "signtool-original.exe");
+
+  // Clean up any stale SEA backup from a previous failed build
+  if (fs.existsSync(backupPath)) {
+    fs.unlinkSync(backupPath);
+  }
+
+  // Replace the vendor signtool.exe with the Windows SDK version
+  const sdkSigntoolPath = findLatestSigntoolPath();
+  if (sdkSigntoolPath) {
+    console.log(
+      `🔧 Replacing vendor signtool.exe with Windows SDK version: ${sdkSigntoolPath}`,
+    );
+    fs.copyFileSync(sdkSigntoolPath, vendorSigntoolPath);
+  }
+}
+
 // Build the X archive site
 if (os.platform() == "win32") {
   const scriptPath = path.join(__dirname, "scripts", "build-archive-sites.ps1");
@@ -232,11 +261,9 @@ const config: ForgeConfig = {
       name: process.env.CYD_ENV == "prod" ? "Cyd" : "CydDev",
       setupIcon: path.join(assetsPath, "installer-icon.ico"),
       loadingGif: path.join(assetsPath, "installer-loading.gif"),
-      windowsSign:
+      signWithParams:
         process.env.WINDOWS_RELEASE === "true"
-          ? {
-              signToolPath: findLatestSigntoolPath(),
-            }
+          ? `/v /n "Lockdown Systems LLC" /fd sha256 /td sha256 /tr http://ts.harica.gr /d "${process.env.CYD_ENV == "prod" ? "Cyd" : "Cyd Dev"}"`
           : undefined,
       // For auto-updates
       remoteReleases: `https://releases.lockdown.systems/cyd/${process.env.CYD_ENV}/windows/${process.arch}`,
