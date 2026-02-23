@@ -16,6 +16,8 @@
     "make-local": "node ./scripts/make.js make local",
     "make-dev": "node ./scripts/make.js make dev",
     "make-prod": "node ./scripts/make.js make prod",
+    "make-dev-docker": "docker build -t cyd-builder . && docker run --rm -v \"$(pwd)\":/workspace -w /workspace cyd-builder npm run make-dev",
+    "make-prod-docker": "docker build -t cyd-builder . && docker run --rm -v \"$(pwd)\":/workspace -w /workspace cyd-builder npm run make-prod",
     "publish-dev": "node ./scripts/make.js publish dev",
     "publish-prod": "node ./scripts/make.js publish prod",
     "test": "bash -c 'electron --no-sandbox node_modules/vitest/vitest.mjs run --silent=true --run \"${1:-src}\"' --",
