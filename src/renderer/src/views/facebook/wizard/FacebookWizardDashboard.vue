@@ -13,7 +13,7 @@ const emit = defineEmits<{
 
 const cards = computed(() => [
   {
-    icon: "/assets/icon-database.png",
+    icon: new URL("/assets/icon-database.png", import.meta.url).href,
     title: t("facebook.dashboard.getArchiveTitle"),
     description: t("facebook.dashboard.getArchiveDescription"),
     url: "https://docs.cyd.social/docs/facebook/get-archive",
@@ -21,7 +21,7 @@ const cards = computed(() => [
     startHere: true,
   },
   {
-    icon: "/assets/icon-delete.png",
+    icon: new URL("/assets/icon-delete.png", import.meta.url).href,
     title: t("facebook.dashboard.deleteWallTitle"),
     description: t("facebook.dashboard.deleteWallDescription"),
     state: PlatformStates.WizardDeleteOptions,
