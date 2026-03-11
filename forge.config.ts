@@ -137,23 +137,23 @@ function removeCodeSignatures(dir: string) {
   });
 }
 
-// For cyd:// and cyd-dev:// URLs
+// For social.cyd.api and social.cyd.dev-api URLs
 const protocols = [];
 if (process.env.CYD_ENV == "prod") {
   protocols.push({
     name: "Cyd",
-    schemes: ["cyd"],
+    schemes: ["social.cyd.api"],
   });
 } else {
   protocols.push({
     name: "Cyd Dev",
-    schemes: ["cyd-dev"],
+    schemes: ["social.cyd.dev-api"],
   });
 }
 const mimeTypeScheme =
   process.env.CYD_ENV == "prod"
-    ? "x-scheme-handler/cyd"
-    : "x-scheme-handler/cyd-dev";
+    ? "x-scheme-handler/social.cyd.api"
+    : "x-scheme-handler/social.cyd.dev-api";
 
 // macOS signing and notarization options
 let osxSign: OsxSignOptions | undefined;

@@ -85,10 +85,10 @@ log.info("User data folder is at:", app.getPath("userData"));
 // The main window
 let win: BrowserWindow | null = null;
 
-// Handle cyd:// URLs (or cyd-dev:// in dev mode)
+// Handle a cyd URLs (such as social.cyd.dev-api:/atproto-oauth-callback or social.cyd.api:/atproto-oauth-callback)
 const openCydURL = async (cydURL: string) => {
   if (!isAppReady) {
-    log.debug("Adding cyd:// URL to queue:", cydURL);
+    log.debug("Adding cyd URL to queue:", cydURL);
     cydURLQueue.push(cydURL);
     return;
   }
@@ -101,8 +101,8 @@ const openCydURL = async (cydURL: string) => {
     await createWindow();
   }
 
-  // If hostname is "open", this just means open Cyd
-  if (url.hostname == "open") {
+  // If pathname is "/open", this just means open Cyd
+  if (url.pathname === "/open" || url.pathname === "/open/") {
     const cydOpenEventName = "cydOpen";
     if (win) {
       log.info(
@@ -114,8 +114,8 @@ const openCydURL = async (cydURL: string) => {
     return;
   }
 
-  // If hostname is "bluesky-oauth", this means finish the Bluesky OAuth flow
-  if (url.hostname == "bluesky-oauth") {
+  // If pathname is "/atproto-oauth-callback/", this means finish the Bluesky OAuth flow
+  if (url.pathname === "/atproto-oauth-callback/") {
     // Get the account ID that's in the middle of the OAuth flow
     const accountID = database.getConfig("blueskyOAuthAccountID");
     const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
@@ -144,21 +144,22 @@ const openCydURL = async (cydURL: string) => {
   return;
 };
 
-// Register the cyd:// (or cyd-dev://) protocol
-const protocolString = config.mode == "prod" ? "cyd" : "cyd-dev";
+// Register the social.cyd.api: (or social.cyd.dev-api:/) protocol (reverse-domain of the API host)
+const protocolString =
+  config.mode == "prod" ? "social.cyd.api" : "social.cyd.dev-api";
 app.setAsDefaultProtocolClient(protocolString);
 
-// In Linux and Windows, handle cyd:// URLs passed in via the CLI
+// In Linux and Windows, handle cyd URLs passed in via the CLI
 const lastArg =
   process.argv.length >= 2 ? process.argv[process.argv.length - 1] : "";
 if (
   (process.platform == "linux" || process.platform == "win32") &&
-  lastArg.startsWith(protocolString + "://")
+  lastArg.startsWith(protocolString + ":")
 ) {
   openCydURL(lastArg);
 }
 
-// In macOS, handle the cyd:// URLs
+// In macOS, handle the cyd: URLs
 app.on("open-url", (event, url) => {
   openCydURL(url);
 });
