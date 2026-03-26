@@ -1,0 +1,38 @@
+app-id: social.cyd.Cyd
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '24.08'
+command: cyd
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-download
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --env=ELECTRON_OZONE_PLATFORM_HINT=auto
+modules:
+  - name: cyd
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ../out/Cyd-linux-x64
+        dest: cyd-archive
+      - type: file
+        path: social.cyd.Cyd.desktop
+      - type: file
+        path: social.cyd.Cyd.metainfo.xml
+      - type: file
+        path: cyd-wrapper.sh
+    build-commands:
+      - install -d /app/cyd
+      - cp -r cyd-archive/* /app/cyd/
+      - install -Dm755 cyd-wrapper.sh /app/bin/cyd
+      - install -Dm644 social.cyd.Cyd.desktop /app/share/applications/social.cyd.Cyd.desktop
+      - install -Dm644 social.cyd.Cyd.metainfo.xml /app/share/metainfo/social.cyd.Cyd.metainfo.xml
+      - install -Dm644 cyd-archive/resources/icon.png /app/share/icons/hicolor/512x512/apps/social.cyd.Cyd.png
