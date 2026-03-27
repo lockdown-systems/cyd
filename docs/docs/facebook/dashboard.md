@@ -2,6 +2,12 @@
 sidebar_position: 2
 ---
 
+:::warning[Beta Feature]
+
+These features are under beta testing right now and not available in the latest release.
+
+:::
+
 # Dashboard
 
 After signing in to your Facebook account, you'll see that the main panel shows you a Dashboard that allows you to naviate between these options:
