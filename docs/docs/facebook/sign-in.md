@@ -2,6 +2,12 @@
 sidebar_position: 1
 ---
 
+:::warning[Beta Feature]
+
+These features are under beta testing right now and not available in the latest release.
+
+:::
+
 # Sign In to Facebook
 
 When you're on the new account screen in Cyd, choose the Facebook platform. You'll see the following screen:

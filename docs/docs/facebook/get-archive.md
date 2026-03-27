@@ -2,6 +2,12 @@
 sidebar_position: 3
 ---
 
+:::warning[Beta Feature]
+
+These features are under beta testing right now and not available in the latest release.
+
+:::
+
 # Get Archive from Meta
 
 If you don't want to lose your historical Facebook data, export your Facebook archive _before_ deleting your Facebook posts! If you don't care about your old posts, skip this step.
