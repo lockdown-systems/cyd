@@ -16,6 +16,7 @@ import {
   mockElectronAPI,
 } from "../../test_util";
 import * as DeleteJobs from "./jobs_delete";
+import { parseActions, getHighestPriority } from "./jobs_delete";
 
 /**
  * Creates a mock FacebookJob for testing
@@ -195,7 +196,7 @@ describe("FacebookViewModel Delete Jobs", () => {
 
       expect(vm.log).toHaveBeenCalledWith(
         "runJobDeleteWallPosts",
-        "No deletable items found, finishing",
+        "No actionable items found, finishing",
       );
     });
 
@@ -338,6 +339,145 @@ describe("FacebookViewModel Delete Jobs", () => {
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
       expect(vm.waitForPause).toHaveBeenCalled();
+    });
+
+    it("stops batch and uncheck when priority drops from delete to hide", async () => {
+      // Items: item 0 supports delete+hide, item 1 supports hide only.
+      // Expected: check item 0 (priority=delete), check item 1 -> combined=hide -> uncheck item 1 and stop.
+      // Then proceed to delete item 0. On 2nd batch, clickManagePostsButton fails -> exit.
+      const vm = createMockFacebookViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      let callCount = 0;
+      vi.mocked(mockWebview.executeJavaScript).mockImplementation(async () => {
+        callCount++;
+        // 1. clickManagePostsButton
+        if (callCount === 1) return true;
+        // 2. waitForManagePostsDialog
+        if (callCount === 2) return true;
+        // 3. getListsAndItems - two items
+        if (callCount === 3)
+          return [
+            { listIndex: 0, itemIndex: 0 },
+            { listIndex: 0, itemIndex: 1 },
+          ];
+        // 4. toggleCheckbox item 0 (check)
+        if (callCount === 4) return true;
+        // 5. getActionDescription after item 0 — supports delete
+        if (callCount === 5)
+          return "You can hide or delete the posts selected.";
+        // 6. toggleCheckbox item 1 (check)
+        if (callCount === 6) return true;
+        // 7. getActionDescription after item 0+1 — combined only supports hide
+        if (callCount === 7) return "You can hide the posts selected.";
+        // 8. toggleCheckbox item 1 (uncheck)
+        if (callCount === 8) return true;
+        // 9. clickNextButton
+        if (callCount === 9) return true;
+        // 10. selectDeletePostsOption
+        if (callCount === 10) return true;
+        // 11. clickDoneButton
+        if (callCount === 11) return true;
+        // 12. waitForManagePostsDialogToDisappear - dialog gone
+        if (callCount === 12) return false;
+        // 13. Second batch: clickManagePostsButton fails -> exit
+        if (callCount === 13) return false;
+
+        return false;
+      });
+
+      await DeleteJobs.runJobDeleteWallPosts(vm, 3);
+
+      expect(vm.log).toHaveBeenCalledWith(
+        "runJobDeleteWallPosts",
+        expect.stringContaining('changes priority from "delete" to "hide"'),
+      );
+      expect(vm.progress.wallPostsDeleted).toBe(1);
+    });
+
+    it("performs untag action when highest priority is untag", async () => {
+      // Item supports untag+hide. Expected: batch action = untag.
+      // On 2nd batch, clickManagePostsButton fails -> exit.
+      const vm = createMockFacebookViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      let callCount = 0;
+      vi.mocked(mockWebview.executeJavaScript).mockImplementation(async () => {
+        callCount++;
+        // 1. clickManagePostsButton
+        if (callCount === 1) return true;
+        // 2. waitForManagePostsDialog
+        if (callCount === 2) return true;
+        // 3. getListsAndItems - one item
+        if (callCount === 3) return [{ listIndex: 0, itemIndex: 0 }];
+        // 4. toggleCheckbox item 0 (check)
+        if (callCount === 4) return true;
+        // 5. getActionDescription — untag+hide available
+        if (callCount === 5)
+          return "You can untag yourself from or hide the posts selected.";
+        // 6. clickNextButton
+        if (callCount === 6) return true;
+        // 7. selectUntagPostsOption
+        if (callCount === 7) return true;
+        // 8. clickDoneButton
+        if (callCount === 8) return true;
+        // 9. waitForManagePostsDialogToDisappear - dialog gone
+        if (callCount === 9) return false;
+        // 10. Second batch: clickManagePostsButton fails -> exit
+        if (callCount === 10) return false;
+
+        return false;
+      });
+
+      await DeleteJobs.runJobDeleteWallPosts(vm, 3);
+
+      expect(vm.log).toHaveBeenCalledWith(
+        "runJobDeleteWallPosts",
+        'First item sets batch action to "untag", checked 1/10',
+      );
+      expect(vm.progress.wallPostsDeleted).toBe(1);
+    });
+  });
+
+  describe("parseActions", () => {
+    it("parses delete+hide from combined description", () => {
+      expect(
+        parseActions("You can hide or delete the posts selected."),
+      ).toEqual(["delete", "hide"]);
+    });
+
+    it("parses untag+hide", () => {
+      expect(
+        parseActions("You can untag yourself from or hide the posts selected."),
+      ).toEqual(["untag", "hide"]);
+    });
+
+    it("parses hide only", () => {
+      expect(parseActions("You can hide the posts selected.")).toEqual([
+        "hide",
+      ]);
+    });
+
+    it("returns empty array for unrecognized text", () => {
+      expect(parseActions("Something completely different.")).toEqual([]);
+    });
+  });
+
+  describe("getHighestPriority", () => {
+    it("returns delete when delete is available", () => {
+      expect(getHighestPriority(["delete", "hide"])).toBe("delete");
+    });
+
+    it("returns untag over hide", () => {
+      expect(getHighestPriority(["untag", "hide"])).toBe("untag");
+    });
+
+    it("returns hide when only hide available", () => {
+      expect(getHighestPriority(["hide"])).toBe("hide");
+    });
+
+    it("returns null for empty actions", () => {
+      expect(getHighestPriority([])).toBeNull();
     });
   });
 });

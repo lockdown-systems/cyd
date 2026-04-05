@@ -91,6 +91,8 @@ export enum AutomationErrorType {
   facebook_runJob_deleteWallPosts_ClickNextFailed = "facebook_runJob_deleteWallPosts_ClickNextFailed",
   facebook_runJob_deleteWallPosts_DialogNotFound = "facebook_runJob_deleteWallPosts_DialogNotFound",
   facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed = "facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed",
+  facebook_runJob_deleteWallPosts_SelectUntagOptionFailed = "facebook_runJob_deleteWallPosts_SelectUntagOptionFailed",
+  facebook_runJob_deleteWallPosts_SelectHideOptionFailed = "facebook_runJob_deleteWallPosts_SelectHideOptionFailed",
   facebook_runJob_deleteWallPosts_ClickDoneFailed = "facebook_runJob_deleteWallPosts_ClickDoneFailed",
   facebook_runJob_deleteWallPosts_CompletionTimeout = "facebook_runJob_deleteWallPosts_CompletionTimeout",
 }
@@ -269,6 +271,10 @@ export const AutomationErrorTypeToMessage = {
     "Failed to open the Manage posts dialog on Facebook",
   [AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed]:
     "Failed to select the delete posts option on Facebook",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_SelectUntagOptionFailed]:
+    "Failed to select the untag posts option on Facebook",
+  [AutomationErrorType.facebook_runJob_deleteWallPosts_SelectHideOptionFailed]:
+    "Failed to select the hide posts option on Facebook",
   [AutomationErrorType.facebook_runJob_deleteWallPosts_ClickDoneFailed]:
     "Failed to click Done while deleting Facebook posts",
   [AutomationErrorType.facebook_runJob_deleteWallPosts_CompletionTimeout]:
