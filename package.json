@@ -115,7 +115,6 @@
     "appdmg": "^0.6.6"
   },
   "workspaces": [
-    "archive-static-sites/x-archive",
-    "docs"
+    "archive-static-sites/x-archive"
   ]
 }
