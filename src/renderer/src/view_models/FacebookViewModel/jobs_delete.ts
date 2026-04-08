@@ -128,14 +128,32 @@ async function getActionDescription(vm: FacebookViewModel): Promise<string> {
   return result.success ? result.value || "" : "";
 }
 
+type PostAction = "delete" | "untag" | "hide";
+
 /**
- * Check if the action description allows deletion
+ * Parse the available actions from an action description string.
+ * e.g. "You can hide or delete the posts selected." -> ['delete', 'hide']
+ *      "You can untag yourself from or hide the posts selected." -> ['untag', 'hide']
+ *      "You can hide the posts selected." -> ['hide']
  */
-function canDelete(actionDescription: string): boolean {
-  return (
-    actionDescription.startsWith("You can") &&
-    actionDescription.toLowerCase().includes("delete")
-  );
+export function parseActions(actionDescription: string): PostAction[] {
+  const actions: PostAction[] = [];
+  const text = actionDescription.toLowerCase();
+  if (text.includes("delete")) actions.push("delete");
+  if (text.includes("untag")) actions.push("untag");
+  if (text.includes("hide")) actions.push("hide");
+  return actions;
+}
+
+/**
+ * Return the highest-priority action from a list.
+ * Priority order: delete > untag > hide
+ */
+export function getHighestPriority(actions: PostAction[]): PostAction | null {
+  if (actions.includes("delete")) return "delete";
+  if (actions.includes("untag")) return "untag";
+  if (actions.includes("hide")) return "hide";
+  return null;
 }
 
 /**
@@ -211,7 +229,8 @@ async function getListsAndItems(
     })()`,
     "getListsAndItems",
   );
-  return result.success ? result.value : [];
+  if (!result.success || !Array.isArray(result.value)) return [];
+  return result.value;
 }
 
 /**
@@ -274,6 +293,76 @@ async function selectDeletePostsOption(
       return false;
     })()`,
     "selectDeletePostsOption",
+  );
+  return result.success && result.value;
+}
+
+/**
+ * Select the "Untag yourself" radio button in the action selection dialog
+ */
+async function selectUntagPostsOption(vm: FacebookViewModel): Promise<boolean> {
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return false;
+
+      const divs = dialog.querySelectorAll('div[aria-disabled]');
+
+      for (const div of divs) {
+        const text = div.textContent?.toLowerCase() || '';
+        if (text.includes('untag') || text.includes('remove tags')) {
+          if (div.getAttribute('aria-disabled') === 'false') {
+            const radioButton = div.querySelector('i');
+            if (radioButton) {
+              radioButton.click();
+              return true;
+            }
+          } else {
+            console.log('Untag option is disabled');
+            return false;
+          }
+        }
+      }
+
+      console.log('Could not find untag option');
+      return false;
+    })()`,
+    "selectUntagPostsOption",
+  );
+  return result.success && result.value;
+}
+
+/**
+ * Select the "Hide posts" radio button in the action selection dialog
+ */
+async function selectHidePostsOption(vm: FacebookViewModel): Promise<boolean> {
+  const result = await vm.safeExecuteJavaScript<boolean>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return false;
+
+      const divs = dialog.querySelectorAll('div[aria-disabled]');
+
+      for (const div of divs) {
+        const text = div.textContent?.toLowerCase() || '';
+        if (text.includes('hide')) {
+          if (div.getAttribute('aria-disabled') === 'false') {
+            const radioButton = div.querySelector('i');
+            if (radioButton) {
+              radioButton.click();
+              return true;
+            }
+          } else {
+            console.log('Hide option is disabled');
+            return false;
+          }
+        }
+      }
+
+      console.log('Could not find hide option');
+      return false;
+    })()`,
+    "selectHidePostsOption",
   );
   return result.success && result.value;
 }
@@ -402,8 +491,11 @@ export async function runJobDeleteWallPosts(
     );
 
     let checkedCount = 0;
+    let batchAction: PostAction | null = null;
 
-    // Loop through items and check those that can be deleted
+    // Loop through items, checking each one. Track the highest-priority action
+    // available for all checked items. Stop when adding a new item would reduce
+    // the priority (e.g. from delete -> hide).
     for (const { listIndex, itemIndex } of allItems) {
       // Check for rate limits
       await checkRateLimit(vm);
@@ -431,39 +523,62 @@ export async function runJobDeleteWallPosts(
       // Wait a moment for the UI to update
       await vm.sleep(300);
 
-      // Check the action description
+      // Read the combined action description (reflects all currently-checked items)
       const actionDescription = await getActionDescription(vm);
       vm.log(
         "runJobDeleteWallPosts",
         `Action description: "${actionDescription}"`,
       );
 
-      if (canDelete(actionDescription)) {
-        // This item can be deleted, keep it checked
+      const combinedPriority = getHighestPriority(
+        parseActions(actionDescription),
+      );
+
+      if (batchAction === null) {
+        // First item: establish the batch action
+        if (combinedPriority === null) {
+          // Unrecognized description, skip this item
+          vm.log(
+            "runJobDeleteWallPosts",
+            `Item [${listIndex}][${itemIndex}] has unrecognized action description, unchecking`,
+          );
+          await toggleCheckbox(vm, listIndex, itemIndex, false);
+          await vm.sleep(300);
+          continue;
+        }
+        batchAction = combinedPriority;
         checkedCount++;
         vm.log(
           "runJobDeleteWallPosts",
-          `Checked deletable item ${checkedCount}/${maxToCheck}`,
+          `First item sets batch action to "${batchAction}", checked ${checkedCount}/${maxToCheck}`,
         );
-      } else {
-        // This item cannot be deleted, uncheck it
+      } else if (combinedPriority === batchAction) {
+        // Same priority: keep this item checked and continue
+        checkedCount++;
         vm.log(
           "runJobDeleteWallPosts",
-          `Item [${listIndex}][${itemIndex}] cannot be deleted, unchecking`,
+          `Item keeps batch action "${batchAction}", checked ${checkedCount}/${maxToCheck}`,
+        );
+      } else {
+        // Adding this item changes the priority — uncheck it and stop
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Item [${listIndex}][${itemIndex}] changes priority from "${batchAction}" to "${combinedPriority}", unchecking and stopping`,
         );
         await toggleCheckbox(vm, listIndex, itemIndex, false);
         await vm.sleep(300);
+        break;
       }
     }
 
     vm.log(
       "runJobDeleteWallPosts",
-      `Selected ${checkedCount} items for deletion`,
+      `Selected ${checkedCount} items for action "${batchAction}"`,
     );
 
     // If nothing was checked, we're done
     if (checkedCount === 0) {
-      vm.log("runJobDeleteWallPosts", "No deletable items found, finishing");
+      vm.log("runJobDeleteWallPosts", "No actionable items found, finishing");
       break;
     }
 
@@ -490,23 +605,40 @@ export async function runJobDeleteWallPosts(
 
     await vm.waitForPause();
 
-    // Click the "Delete posts" radio button
-    vm.log("runJobDeleteWallPosts", "Selecting delete posts option");
-    const deleteSelected = await selectDeletePostsOption(vm);
-    if (!deleteSelected) {
-      await reportDeleteWallPostsError(
-        vm,
-        jobIndex,
-        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
-        {
-          batchNumber,
-          message: "Failed to select delete posts option",
-        },
-      );
+    // Select the appropriate action radio button
+    vm.log("runJobDeleteWallPosts", `Selecting "${batchAction}" option`);
+    let actionSelected = false;
+    let actionErrorType =
+      AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed;
+    let actionErrorMessage = "Failed to select delete posts option";
+
+    if (batchAction === "delete") {
+      actionSelected = await selectDeletePostsOption(vm);
+      actionErrorType =
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed;
+      actionErrorMessage = "Failed to select delete posts option";
+    } else if (batchAction === "untag") {
+      actionSelected = await selectUntagPostsOption(vm);
+      actionErrorType =
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectUntagOptionFailed;
+      actionErrorMessage = "Failed to select untag posts option";
+    } else {
+      // hide
+      actionSelected = await selectHidePostsOption(vm);
+      actionErrorType =
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectHideOptionFailed;
+      actionErrorMessage = "Failed to select hide posts option";
+    }
+
+    if (!actionSelected) {
+      await reportDeleteWallPostsError(vm, jobIndex, actionErrorType, {
+        batchNumber,
+        message: actionErrorMessage,
+      });
       return;
     }
 
-    vm.log("runJobDeleteWallPosts", "Delete posts option selected");
+    vm.log("runJobDeleteWallPosts", `"${batchAction}" option selected`);
 
     await vm.waitForPause();
 
