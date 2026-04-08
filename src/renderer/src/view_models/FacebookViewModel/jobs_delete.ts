@@ -310,7 +310,7 @@ async function selectUntagPostsOption(vm: FacebookViewModel): Promise<boolean> {
 
       for (const div of divs) {
         const text = div.textContent?.toLowerCase() || '';
-        if (text.includes('untag')) {
+        if (text.includes('untag') || text.includes('remove tags')) {
           if (div.getAttribute('aria-disabled') === 'false') {
             const radioButton = div.querySelector('i');
             if (radioButton) {
