@@ -27,9 +27,6 @@ if (fs.existsSync(buildDir)) {
 console.log("Running npm install for Cyd...");
 execSync("npm install", { stdio: "inherit" });
 
-console.log("Running npm install for docs...");
-execSync("npm install", { stdio: "inherit", cwd: "docs" });
-
 console.log("Running npm install for x-archive...");
 execSync("npm install", {
   stdio: "inherit",
