@@ -130,6 +130,134 @@ async function getActionDescription(vm: FacebookViewModel): Promise<string> {
 
 type PostAction = "delete" | "untag" | "hide";
 
+async function getCheckboxState(
+  vm: FacebookViewModel,
+  listIndex: number,
+  itemIndex: number,
+): Promise<boolean | null> {
+  const result = await vm.safeExecuteJavaScript<boolean | null>(
+    `(() => {
+      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      if (!dialog) return null;
+
+      const lists = dialog.querySelectorAll('div[role="list"]');
+      if (${listIndex} >= lists.length) return null;
+
+      const list = lists[${listIndex}];
+      const items = list.querySelectorAll('div[role="listitem"]');
+      if (${itemIndex} >= items.length) return null;
+
+      const item = items[${itemIndex}];
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      const checkboxControl = item.querySelector('[role="checkbox"]');
+      const ariaChecked =
+        checkboxControl?.getAttribute('aria-checked') ??
+        checkbox?.getAttribute('aria-checked');
+
+      if (ariaChecked === 'true') return true;
+      if (ariaChecked === 'false') return false;
+      if (checkbox instanceof HTMLInputElement) return checkbox.checked;
+
+      return null;
+    })()`,
+    "getCheckboxState",
+  );
+
+  return result.success ? result.value : null;
+}
+
+async function waitForCheckboxState(
+  vm: FacebookViewModel,
+  listIndex: number,
+  itemIndex: number,
+  expectedChecked: boolean,
+  timeoutMs: number = 5000,
+): Promise<boolean> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeoutMs) {
+    const checked = await getCheckboxState(vm, listIndex, itemIndex);
+    if (checked === expectedChecked) {
+      return true;
+    }
+    await vm.sleep(200);
+  }
+
+  return false;
+}
+
+async function waitForActionDescriptionStable(
+  vm: FacebookViewModel,
+  timeoutMs: number = 5000,
+): Promise<string> {
+  const startTime = Date.now();
+  let lastDescription = "";
+
+  while (Date.now() - startTime < timeoutMs) {
+    const description = await getActionDescription(vm);
+    if (description !== "" && description === lastDescription) {
+      return description;
+    }
+    lastDescription = description;
+    await vm.sleep(200);
+  }
+
+  return lastDescription;
+}
+
+async function waitForBatchAction(
+  vm: FacebookViewModel,
+  expectedAction: PostAction,
+  timeoutMs: number = 5000,
+): Promise<{ success: boolean; actionDescription: string }> {
+  const startTime = Date.now();
+  let lastDescription = "";
+
+  while (Date.now() - startTime < timeoutMs) {
+    const actionDescription = await getActionDescription(vm);
+    lastDescription = actionDescription;
+
+    if (
+      getHighestPriority(parseActions(actionDescription)) === expectedAction
+    ) {
+      return { success: true, actionDescription };
+    }
+
+    await vm.sleep(200);
+  }
+
+  return { success: false, actionDescription: lastDescription };
+}
+
+async function waitForActionOptionsDialog(
+  vm: FacebookViewModel,
+  timeoutMs: number = 10000,
+): Promise<boolean> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeoutMs) {
+    const result = await vm.safeExecuteJavaScript<boolean>(
+      `(() => {
+        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+        if (!dialog) return false;
+
+        const hasActionOptions = dialog.querySelector('div[aria-disabled]');
+        const hasDoneButton = dialog.querySelector('div[aria-label="Done"][role="button"]');
+        return Boolean(hasActionOptions && hasDoneButton);
+      })()`,
+      "waitForActionOptionsDialog",
+    );
+
+    if (result.success && result.value) {
+      return true;
+    }
+
+    await vm.sleep(200);
+  }
+
+  return false;
+}
+
 /**
  * Parse the available actions from an action description string.
  * e.g. "You can hide or delete the posts selected." -> ['delete', 'hide']
@@ -137,6 +265,10 @@ type PostAction = "delete" | "untag" | "hide";
  *      "You can hide the posts selected." -> ['hide']
  */
 export function parseActions(actionDescription: string): PostAction[] {
+  if (typeof actionDescription !== "string") {
+    return [];
+  }
+
   const actions: PostAction[] = [];
   const text = actionDescription.toLowerCase();
   if (text.includes("delete")) actions.push("delete");
@@ -179,17 +311,34 @@ async function toggleCheckbox(
 
       const item = items[${itemIndex}];
       const checkbox = item.querySelector('input[type="checkbox"]');
-      if (!checkbox) return false;
+      const checkboxControl = item.querySelector('[role="checkbox"]');
+      if (!checkbox && !checkboxControl) return false;
 
-      const isChecked = checkbox.getAttribute('aria-checked') === 'true';
+      const ariaChecked =
+        checkboxControl?.getAttribute('aria-checked') ??
+        checkbox?.getAttribute('aria-checked');
+      let isChecked;
+
+      if (ariaChecked === 'true') {
+        isChecked = true;
+      } else if (ariaChecked === 'false') {
+        isChecked = false;
+      } else if (checkbox instanceof HTMLInputElement) {
+        isChecked = checkbox.checked;
+      } else {
+        return false;
+      }
+
       const shouldCheck = ${shouldCheck};
+      const clickTarget = checkboxControl ?? checkbox;
+      if (!clickTarget) return false;
 
       // Only click if we need to change the state
       if (isChecked !== shouldCheck) {
-        checkbox.click();
+        clickTarget.click();
         return true;
       }
-      return false;
+      return true;
     })()`,
     "toggleCheckbox",
   );
@@ -520,11 +669,22 @@ export async function runJobDeleteWallPosts(
         continue;
       }
 
-      // Wait a moment for the UI to update
-      await vm.sleep(300);
+      const checkboxChecked = await waitForCheckboxState(
+        vm,
+        listIndex,
+        itemIndex,
+        true,
+      );
+      if (!checkboxChecked) {
+        vm.log(
+          "runJobDeleteWallPosts",
+          `Timed out waiting for item [${listIndex}][${itemIndex}] to become checked`,
+        );
+        continue;
+      }
 
       // Read the combined action description (reflects all currently-checked items)
-      const actionDescription = await getActionDescription(vm);
+      const actionDescription = await waitForActionDescriptionStable(vm);
       vm.log(
         "runJobDeleteWallPosts",
         `Action description: "${actionDescription}"`,
@@ -543,7 +703,7 @@ export async function runJobDeleteWallPosts(
             `Item [${listIndex}][${itemIndex}] has unrecognized action description, unchecking`,
           );
           await toggleCheckbox(vm, listIndex, itemIndex, false);
-          await vm.sleep(300);
+          await waitForCheckboxState(vm, listIndex, itemIndex, false);
           continue;
         }
         batchAction = combinedPriority;
@@ -566,7 +726,33 @@ export async function runJobDeleteWallPosts(
           `Item [${listIndex}][${itemIndex}] changes priority from "${batchAction}" to "${combinedPriority}", unchecking and stopping`,
         );
         await toggleCheckbox(vm, listIndex, itemIndex, false);
-        await vm.sleep(300);
+        const checkboxUnchecked = await waitForCheckboxState(
+          vm,
+          listIndex,
+          itemIndex,
+          false,
+        );
+        if (!checkboxUnchecked) {
+          vm.log(
+            "runJobDeleteWallPosts",
+            `Timed out waiting for item [${listIndex}][${itemIndex}] to become unchecked`,
+          );
+        }
+
+        const batchActionRestored = await waitForBatchAction(vm, batchAction);
+        if (!batchActionRestored.success) {
+          await reportDeleteWallPostsError(
+            vm,
+            jobIndex,
+            AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
+            {
+              batchNumber,
+              message: `Batch action did not return to "${batchAction}" after unchecking item [${listIndex}][${itemIndex}]`,
+              actionDescription: batchActionRestored.actionDescription,
+            },
+          );
+          return;
+        }
         break;
       }
     }
@@ -582,7 +768,30 @@ export async function runJobDeleteWallPosts(
       break;
     }
 
+    if (batchAction === null) {
+      vm.log(
+        "runJobDeleteWallPosts",
+        "Checked items were selected but no batch action was determined",
+      );
+      break;
+    }
+
     await vm.waitForPause();
+
+    const batchActionReady = await waitForBatchAction(vm, batchAction);
+    if (!batchActionReady.success) {
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
+        {
+          batchNumber,
+          message: `Action description did not settle on "${batchAction}" before clicking Next`,
+          actionDescription: batchActionReady.actionDescription,
+        },
+      );
+      return;
+    }
 
     // Click the Next button
     vm.log("runJobDeleteWallPosts", "Clicking Next button");
@@ -601,7 +810,19 @@ export async function runJobDeleteWallPosts(
     }
 
     // Wait for the dialog to update with the action options
-    await vm.sleep(1000);
+    const actionOptionsReady = await waitForActionOptionsDialog(vm);
+    if (!actionOptionsReady) {
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_DialogNotFound,
+        {
+          batchNumber,
+          message: "Action options did not appear after clicking Next",
+        },
+      );
+      return;
+    }
 
     await vm.waitForPause();
 

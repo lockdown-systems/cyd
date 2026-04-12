@@ -348,43 +348,113 @@ describe("FacebookViewModel Delete Jobs", () => {
       const vm = createMockFacebookViewModel();
       const mockWebview = vm.getWebview()!;
 
-      let callCount = 0;
-      vi.mocked(mockWebview.executeJavaScript).mockImplementation(async () => {
-        callCount++;
-        // 1. clickManagePostsButton
-        if (callCount === 1) return true;
-        // 2. waitForManagePostsDialog
-        if (callCount === 2) return true;
-        // 3. getListsAndItems - two items
-        if (callCount === 3)
-          return [
-            { listIndex: 0, itemIndex: 0 },
-            { listIndex: 0, itemIndex: 1 },
-          ];
-        // 4. toggleCheckbox item 0 (check)
-        if (callCount === 4) return true;
-        // 5. getActionDescription after item 0 — supports delete
-        if (callCount === 5)
-          return "You can hide or delete the posts selected.";
-        // 6. toggleCheckbox item 1 (check)
-        if (callCount === 6) return true;
-        // 7. getActionDescription after item 0+1 — combined only supports hide
-        if (callCount === 7) return "You can hide the posts selected.";
-        // 8. toggleCheckbox item 1 (uncheck)
-        if (callCount === 8) return true;
-        // 9. clickNextButton
-        if (callCount === 9) return true;
-        // 10. selectDeletePostsOption
-        if (callCount === 10) return true;
-        // 11. clickDoneButton
-        if (callCount === 11) return true;
-        // 12. waitForManagePostsDialogToDisappear - dialog gone
-        if (callCount === 12) return false;
-        // 13. Second batch: clickManagePostsButton fails -> exit
-        if (callCount === 13) return false;
+      let managePostsClicks = 0;
+      let isDialogOpen = false;
+      let isActionOptionsVisible = false;
+      const checkedItems = new Set<string>();
 
-        return false;
-      });
+      vi.mocked(mockWebview.executeJavaScript).mockImplementation(
+        async (code: string) => {
+          if (
+            code.includes(
+              `querySelectorAll('div[aria-label="Manage posts"][role="button"]')`,
+            )
+          ) {
+            managePostsClicks++;
+            isDialogOpen = managePostsClicks === 1;
+            isActionOptionsVisible = false;
+            return managePostsClicks <= 2;
+          }
+
+          if (
+            code.includes(
+              `document.querySelector('div[aria-label="Manage posts"][role="dialog"]')`,
+            ) &&
+            code.includes("return !!dialog;")
+          ) {
+            return isDialogOpen;
+          }
+
+          if (code.includes("result.push({ listIndex, itemIndex });")) {
+            return managePostsClicks === 1
+              ? [
+                  { listIndex: 0, itemIndex: 0 },
+                  { listIndex: 0, itemIndex: 1 },
+                ]
+              : [];
+          }
+
+          if (code.includes("const shouldCheck = ")) {
+            const listMatch = code.match(/const list = lists\[(\d+)\];/);
+            const itemMatch = code.match(/const item = items\[(\d+)\];/);
+            const shouldCheckMatch = code.match(
+              /const shouldCheck = (true|false);/,
+            );
+
+            if (!listMatch || !itemMatch || !shouldCheckMatch) {
+              return false;
+            }
+
+            const key = `${listMatch[1]}-${itemMatch[1]}`;
+            const shouldCheck = shouldCheckMatch[1] === "true";
+
+            if (shouldCheck) {
+              checkedItems.add(key);
+            } else {
+              checkedItems.delete(key);
+            }
+
+            return true;
+          }
+
+          if (code.includes("checkbox instanceof HTMLInputElement")) {
+            const listMatch = code.match(/const list = lists\[(\d+)\];/);
+            const itemMatch = code.match(/const item = items\[(\d+)\];/);
+
+            if (!listMatch || !itemMatch) {
+              return null;
+            }
+
+            return checkedItems.has(`${listMatch[1]}-${itemMatch[1]}`);
+          }
+
+          if (code.includes('text.startsWith("You can")')) {
+            if (checkedItems.has("0-0") && !checkedItems.has("0-1")) {
+              return "You can hide or delete the posts selected.";
+            }
+
+            if (checkedItems.has("0-0") && checkedItems.has("0-1")) {
+              return "You can hide the posts selected.";
+            }
+
+            return "";
+          }
+
+          if (code.includes(`aria-label="Next"`)) {
+            isActionOptionsVisible = true;
+            return true;
+          }
+
+          if (
+            code.includes("const hasActionOptions =") &&
+            code.includes(`aria-label="Done"`)
+          ) {
+            return isActionOptionsVisible;
+          }
+
+          if (code.includes("text.includes('delete posts')")) {
+            return checkedItems.size === 1 && checkedItems.has("0-0");
+          }
+
+          if (code.includes(`aria-label="Done"`)) {
+            isDialogOpen = false;
+            isActionOptionsVisible = false;
+            return true;
+          }
+
+          return false;
+        },
+      );
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
@@ -401,33 +471,86 @@ describe("FacebookViewModel Delete Jobs", () => {
       const vm = createMockFacebookViewModel();
       const mockWebview = vm.getWebview()!;
 
-      let callCount = 0;
-      vi.mocked(mockWebview.executeJavaScript).mockImplementation(async () => {
-        callCount++;
-        // 1. clickManagePostsButton
-        if (callCount === 1) return true;
-        // 2. waitForManagePostsDialog
-        if (callCount === 2) return true;
-        // 3. getListsAndItems - one item
-        if (callCount === 3) return [{ listIndex: 0, itemIndex: 0 }];
-        // 4. toggleCheckbox item 0 (check)
-        if (callCount === 4) return true;
-        // 5. getActionDescription — untag+hide available
-        if (callCount === 5)
-          return "You can untag yourself from or hide the posts selected.";
-        // 6. clickNextButton
-        if (callCount === 6) return true;
-        // 7. selectUntagPostsOption
-        if (callCount === 7) return true;
-        // 8. clickDoneButton
-        if (callCount === 8) return true;
-        // 9. waitForManagePostsDialogToDisappear - dialog gone
-        if (callCount === 9) return false;
-        // 10. Second batch: clickManagePostsButton fails -> exit
-        if (callCount === 10) return false;
+      let managePostsClicks = 0;
+      let isDialogOpen = false;
+      let isActionOptionsVisible = false;
+      const checkedItems = new Set<string>();
 
-        return false;
-      });
+      vi.mocked(mockWebview.executeJavaScript).mockImplementation(
+        async (code: string) => {
+          if (
+            code.includes(
+              `querySelectorAll('div[aria-label="Manage posts"][role="button"]')`,
+            )
+          ) {
+            managePostsClicks++;
+            isDialogOpen = managePostsClicks === 1;
+            isActionOptionsVisible = false;
+            return managePostsClicks <= 2;
+          }
+
+          if (
+            code.includes(
+              `document.querySelector('div[aria-label="Manage posts"][role="dialog"]')`,
+            ) &&
+            code.includes("return !!dialog;")
+          ) {
+            return isDialogOpen;
+          }
+
+          if (code.includes("result.push({ listIndex, itemIndex });")) {
+            return managePostsClicks === 1
+              ? [{ listIndex: 0, itemIndex: 0 }]
+              : [];
+          }
+
+          if (code.includes("const shouldCheck = ")) {
+            if (code.includes("const shouldCheck = true;")) {
+              checkedItems.add("0-0");
+            } else {
+              checkedItems.delete("0-0");
+            }
+            return true;
+          }
+
+          if (code.includes("checkbox instanceof HTMLInputElement")) {
+            return checkedItems.has("0-0");
+          }
+
+          if (code.includes('text.startsWith("You can")')) {
+            return checkedItems.has("0-0")
+              ? "You can untag yourself from or hide the posts selected."
+              : "";
+          }
+
+          if (code.includes(`aria-label="Next"`)) {
+            isActionOptionsVisible = true;
+            return true;
+          }
+
+          if (
+            code.includes("const hasActionOptions =") &&
+            code.includes(`aria-label="Done"`)
+          ) {
+            return isActionOptionsVisible;
+          }
+
+          if (
+            code.includes("text.includes('untag')") ||
+            code.includes("text.includes('remove tags')")
+          ) {
+            return true;
+          }
+
+          if (code.includes(`aria-label="Done"`)) {
+            isDialogOpen = false;
+            isActionOptionsVisible = false;
+            return true;
+          }
+
+          return false;
+        },
+      );
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
 
@@ -436,6 +559,136 @@ describe("FacebookViewModel Delete Jobs", () => {
         'First item sets batch action to "untag", checked 1/10',
       );
       expect(vm.progress.wallPostsDeleted).toBe(1);
+    });
+
+    it("unchecks the last item before clicking Next when delete is no longer allowed", async () => {
+      const vm = createMockFacebookViewModel();
+      const mockWebview = vm.getWebview()!;
+
+      let managePostsClicks = 0;
+      let isDialogOpen = false;
+      let isActionOptionsVisible = false;
+      const checkedItems = new Set<string>();
+      const itemCount = 9;
+
+      vi.mocked(mockWebview.executeJavaScript).mockImplementation(
+        async (code: string) => {
+          if (
+            code.includes(
+              `querySelectorAll('div[aria-label="Manage posts"][role="button"]')`,
+            )
+          ) {
+            managePostsClicks++;
+            isDialogOpen = managePostsClicks <= 2;
+            isActionOptionsVisible = false;
+            return isDialogOpen;
+          }
+
+          if (
+            code.includes(
+              `document.querySelector('div[aria-label="Manage posts"][role="dialog"]')`,
+            ) &&
+            code.includes("return !!dialog;")
+          ) {
+            return isDialogOpen;
+          }
+
+          if (code.includes("result.push({ listIndex, itemIndex });")) {
+            if (managePostsClicks === 1) {
+              return Array.from({ length: itemCount }, (_, itemIndex) => ({
+                listIndex: 0,
+                itemIndex,
+              }));
+            }
+
+            return [];
+          }
+
+          if (code.includes("const shouldCheck = ")) {
+            const listMatch = code.match(/const list = lists\[(\d+)\];/);
+            const itemMatch = code.match(/const item = items\[(\d+)\];/);
+            const shouldCheckMatch = code.match(
+              /const shouldCheck = (true|false);/,
+            );
+
+            if (!listMatch || !itemMatch || !shouldCheckMatch) {
+              return false;
+            }
+
+            const key = `${listMatch[1]}-${itemMatch[1]}`;
+            const shouldCheck = shouldCheckMatch[1] === "true";
+
+            // Regression guard: the real DOM exposes checkbox.checked, not aria-checked on the input.
+            const currentChecked = code.includes("checkbox.checked")
+              ? checkedItems.has(key)
+              : false;
+
+            if (currentChecked !== shouldCheck) {
+              if (shouldCheck) {
+                checkedItems.add(key);
+              } else {
+                checkedItems.delete(key);
+              }
+            }
+
+            return true;
+          }
+
+          if (code.includes("checkbox instanceof HTMLInputElement")) {
+            const listMatch = code.match(/const list = lists\[(\d+)\];/);
+            const itemMatch = code.match(/const item = items\[(\d+)\];/);
+
+            if (!listMatch || !itemMatch) {
+              return null;
+            }
+
+            return checkedItems.has(`${listMatch[1]}-${itemMatch[1]}`);
+          }
+
+          if (code.includes('text.startsWith("You can")')) {
+            return checkedItems.size <= 8
+              ? "You can hide or delete the posts selected."
+              : "You can hide the posts selected.";
+          }
+
+          if (code.includes(`aria-label="Next"`)) {
+            isActionOptionsVisible = true;
+            return true;
+          }
+
+          if (
+            code.includes("const hasActionOptions =") &&
+            code.includes(`aria-label="Done"`)
+          ) {
+            return isActionOptionsVisible;
+          }
+
+          if (code.includes("text.includes('delete posts')")) {
+            return checkedItems.size <= 8;
+          }
+
+          if (code.includes(`aria-label="Done"`)) {
+            isDialogOpen = false;
+            isActionOptionsVisible = false;
+            return true;
+          }
+
+          return false;
+        },
+      );
+
+      await DeleteJobs.runJobDeleteWallPosts(vm, 3);
+
+      expect(vm.progress.wallPostsDeleted).toBe(8);
+      expect(vm.error).not.toHaveBeenCalledWith(
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(vm.log).toHaveBeenCalledWith(
+        "runJobDeleteWallPosts",
+        'Selected 8 items for action "delete"',
+      );
     });
   });
 
