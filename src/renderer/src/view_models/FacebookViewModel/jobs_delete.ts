@@ -418,7 +418,7 @@ async function selectDeletePostsOption(
 
       // Find all divs that might contain the delete posts option
       const divs = dialog.querySelectorAll('div[aria-disabled]');
-      
+
       for (const div of divs) {
         // Check if this div or its children contain text about deleting posts
         const text = div.textContent?.toLowerCase() || '';
@@ -437,7 +437,7 @@ async function selectDeletePostsOption(
           }
         }
       }
-      
+
       console.log('Could not find delete posts option');
       return false;
     })()`,
@@ -640,62 +640,63 @@ export async function runJobDeleteWallPosts(
     );
 
     let checkedCount = 0;
-    let batchAction: PostAction | null = null;
+    const batchActions: PostAction[] = ["delete", "untag", "hide"] // Check all actions in priority order
+    let batchAction: PostAction = "delete";
 
-    // Loop through items, checking each one. Track the highest-priority action
-    // available for all checked items. Stop when adding a new item would reduce
-    // the priority (e.g. from delete -> hide).
-    for (const { listIndex, itemIndex } of allItems) {
-      // Check for rate limits
-      await checkRateLimit(vm);
+    // infinite loop to loop through different actions
+    for (const action of batchActions) {
+      batchAction = action
+      // Loop through items, checking if any item match the current batchAction priority action.
+      // Stop when adding a new item would reduce the priority (e.g. from delete -> hide).
+      for (const { listIndex, itemIndex } of allItems) {
+        // Check for rate limits
+        await checkRateLimit(vm);
 
-      if (checkedCount >= maxToCheck) {
+        if (checkedCount >= maxToCheck) {
+          vm.log(
+            "runJobDeleteWallPosts",
+            `Reached maximum of ${maxToCheck} items`,
+          );
+          break;
+        }
+
+        await vm.waitForPause();
+
+        // Check this checkbox
+        const toggled = await toggleCheckbox(vm, listIndex, itemIndex, true);
+        if (!toggled) {
+          vm.log(
+            "runJobDeleteWallPosts",
+            `Failed to check item [${listIndex}][${itemIndex}]`,
+          );
+          continue;
+        }
+
+        const checkboxChecked = await waitForCheckboxState(
+          vm,
+          listIndex,
+          itemIndex,
+          true,
+        );
+        if (!checkboxChecked) {
+          vm.log(
+            "runJobDeleteWallPosts",
+            `Timed out waiting for item [${listIndex}][${itemIndex}] to become checked`,
+          );
+          continue;
+        }
+
+        // Read the combined action description (reflects all currently-checked items)
+        const actionDescription = await waitForActionDescriptionStable(vm);
         vm.log(
           "runJobDeleteWallPosts",
-          `Reached maximum of ${maxToCheck} items`,
+          `Action description: "${actionDescription}"`,
         );
-        break;
-      }
 
-      await vm.waitForPause();
-
-      // Check this checkbox
-      const toggled = await toggleCheckbox(vm, listIndex, itemIndex, true);
-      if (!toggled) {
-        vm.log(
-          "runJobDeleteWallPosts",
-          `Failed to check item [${listIndex}][${itemIndex}]`,
+        const combinedPriority = getHighestPriority(
+          parseActions(actionDescription),
         );
-        continue;
-      }
 
-      const checkboxChecked = await waitForCheckboxState(
-        vm,
-        listIndex,
-        itemIndex,
-        true,
-      );
-      if (!checkboxChecked) {
-        vm.log(
-          "runJobDeleteWallPosts",
-          `Timed out waiting for item [${listIndex}][${itemIndex}] to become checked`,
-        );
-        continue;
-      }
-
-      // Read the combined action description (reflects all currently-checked items)
-      const actionDescription = await waitForActionDescriptionStable(vm);
-      vm.log(
-        "runJobDeleteWallPosts",
-        `Action description: "${actionDescription}"`,
-      );
-
-      const combinedPriority = getHighestPriority(
-        parseActions(actionDescription),
-      );
-
-      if (batchAction === null) {
-        // First item: establish the batch action
         if (combinedPriority === null) {
           // Unrecognized description, skip this item
           vm.log(
@@ -705,74 +706,74 @@ export async function runJobDeleteWallPosts(
           await toggleCheckbox(vm, listIndex, itemIndex, false);
           await waitForCheckboxState(vm, listIndex, itemIndex, false);
           continue;
-        }
-        batchAction = combinedPriority;
-        checkedCount++;
-        vm.log(
-          "runJobDeleteWallPosts",
-          `First item sets batch action to "${batchAction}", checked ${checkedCount}/${maxToCheck}`,
-        );
-      } else if (combinedPriority === batchAction) {
-        // Same priority: keep this item checked and continue
-        checkedCount++;
-        vm.log(
-          "runJobDeleteWallPosts",
-          `Item keeps batch action "${batchAction}", checked ${checkedCount}/${maxToCheck}`,
-        );
-      } else {
-        // Adding this item changes the priority — uncheck it and stop
-        vm.log(
-          "runJobDeleteWallPosts",
-          `Item [${listIndex}][${itemIndex}] changes priority from "${batchAction}" to "${combinedPriority}", unchecking and stopping`,
-        );
-        await toggleCheckbox(vm, listIndex, itemIndex, false);
-        const checkboxUnchecked = await waitForCheckboxState(
-          vm,
-          listIndex,
-          itemIndex,
-          false,
-        );
-        if (!checkboxUnchecked) {
+        } else if (combinedPriority === batchAction) {
+          // Same priority: keep this item checked and continue
+          checkedCount++;
           vm.log(
             "runJobDeleteWallPosts",
-            `Timed out waiting for item [${listIndex}][${itemIndex}] to become unchecked`,
+            `Item keeps batch action "${batchAction}", checked ${checkedCount}/${maxToCheck}`,
           );
-        }
-
-        const batchActionRestored = await waitForBatchAction(vm, batchAction);
-        if (!batchActionRestored.success) {
-          await reportDeleteWallPostsError(
+        } else {
+          // Adding this item changes the priority — uncheck it and stop
+          vm.log(
+            "runJobDeleteWallPosts",
+            `Item [${listIndex}][${itemIndex}] changes priority from "${batchAction}" to "${combinedPriority}", unchecking and stopping`,
+          );
+          await toggleCheckbox(vm, listIndex, itemIndex, false);
+          const checkboxUnchecked = await waitForCheckboxState(
             vm,
-            jobIndex,
-            AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
-            {
-              batchNumber,
-              message: `Batch action did not return to "${batchAction}" after unchecking item [${listIndex}][${itemIndex}]`,
-              actionDescription: batchActionRestored.actionDescription,
-            },
+            listIndex,
+            itemIndex,
+            false,
           );
-          return;
+          if (!checkboxUnchecked) {
+            vm.log(
+              "runJobDeleteWallPosts",
+              `Timed out waiting for item [${listIndex}][${itemIndex}] to become unchecked`,
+            );
+          }
+
+          const batchActionRestored = await waitForBatchAction(vm, batchAction);
+          if (!batchActionRestored.success && checkedCount !== 0) {
+            await reportDeleteWallPostsError(
+              vm,
+              jobIndex,
+              AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
+              {
+                batchNumber,
+                message: `Batch action did not return to "${batchAction}" after unchecking item [${listIndex}][${itemIndex}]`,
+                actionDescription: batchActionRestored.actionDescription,
+              },
+            );
+            return;
+          }
+          break;
         }
+      }
+
+      vm.log(
+        "runJobDeleteWallPosts",
+        `Selected ${checkedCount} items for action "${batchAction}"`,
+      );
+
+      if (checkedCount !== 0) {
+        // If actionable items found, no need to loop through other actions
         break;
+      }
+
+      // If nothing was checked, see if more items get selected by next priority action in the list
+      if (batchAction !== "hide") {
+        vm.log(
+          "runJobDeleteWallPosts",
+          `No actionable items found for action "${batchAction}", checking next priority action`
+        )
       }
     }
 
-    vm.log(
-      "runJobDeleteWallPosts",
-      `Selected ${checkedCount} items for action "${batchAction}"`,
-    );
-
-    // If nothing was checked, we're done
-    if (checkedCount === 0) {
+    if (checkedCount === 0 && batchAction === "hide") {
+      // If the current action is hide and still checked item is 0, means all priority actions have
+      // been checked and nothing left to do.
       vm.log("runJobDeleteWallPosts", "No actionable items found, finishing");
-      break;
-    }
-
-    if (batchAction === null) {
-      vm.log(
-        "runJobDeleteWallPosts",
-        "Checked items were selected but no batch action was determined",
-      );
       break;
     }
 

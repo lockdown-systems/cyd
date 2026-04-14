@@ -190,6 +190,9 @@ describe("FacebookViewModel Delete Jobs", () => {
       vi.mocked(mockWebview.executeJavaScript)
         .mockResolvedValueOnce(true) // clickManagePostsButton
         .mockResolvedValueOnce(true) // waitForManagePostsDialog (first check)
+        .mockResolvedValue([])
+        .mockResolvedValueOnce(true) // clickManagePostsButton
+        .mockResolvedValueOnce(true) // waitForManagePostsDialog (first check)
         .mockResolvedValue([]); // getListsAndItems returns empty
 
       await DeleteJobs.runJobDeleteWallPosts(vm, 3);
@@ -556,7 +559,7 @@ describe("FacebookViewModel Delete Jobs", () => {
 
       expect(vm.log).toHaveBeenCalledWith(
         "runJobDeleteWallPosts",
-        'First item sets batch action to "untag", checked 1/10',
+        'Item keeps batch action "untag", checked 1/10',
       );
       expect(vm.progress.wallPostsDeleted).toBe(1);
     });
