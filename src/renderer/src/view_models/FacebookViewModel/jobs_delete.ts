@@ -640,12 +640,12 @@ export async function runJobDeleteWallPosts(
     );
 
     let checkedCount = 0;
-    const batchActions: PostAction[] = ["delete", "untag", "hide"] // Check all actions in priority order
+    const batchActions: PostAction[] = ["delete", "untag", "hide"]; // Check all actions in priority order
     let batchAction: PostAction = "delete";
 
     // infinite loop to loop through different actions
     for (const action of batchActions) {
-      batchAction = action
+      batchAction = action;
       // Loop through items, checking if any item match the current batchAction priority action.
       // Stop when adding a new item would reduce the priority (e.g. from delete -> hide).
       for (const { listIndex, itemIndex } of allItems) {
@@ -714,10 +714,10 @@ export async function runJobDeleteWallPosts(
             `Item keeps batch action "${batchAction}", checked ${checkedCount}/${maxToCheck}`,
           );
         } else {
-          // Adding this item changes the priority — uncheck it and stop
+          // Adding this item changes the priority — uncheck it and go to next item
           vm.log(
             "runJobDeleteWallPosts",
-            `Item [${listIndex}][${itemIndex}] changes priority from "${batchAction}" to "${combinedPriority}", unchecking and stopping`,
+            `Item [${listIndex}][${itemIndex}] changes priority from "${batchAction}" to "${combinedPriority}", unchecking`,
           );
           await toggleCheckbox(vm, listIndex, itemIndex, false);
           const checkboxUnchecked = await waitForCheckboxState(
@@ -747,7 +747,7 @@ export async function runJobDeleteWallPosts(
             );
             return;
           }
-          break;
+          continue;
         }
       }
 
@@ -765,8 +765,8 @@ export async function runJobDeleteWallPosts(
       if (batchAction !== "hide") {
         vm.log(
           "runJobDeleteWallPosts",
-          `No actionable items found for action "${batchAction}", checking next priority action`
-        )
+          `No actionable items found for action "${batchAction}", checking next priority action`,
+        );
       }
     }
 
