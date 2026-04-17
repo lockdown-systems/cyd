@@ -17,7 +17,7 @@ const wallPostsProgressHtml = computed(() => {
       deleteCount: props.progress.wallPostsDeleted.toLocaleString(),
       untagCount: props.progress.wallPostsUntagged.toLocaleString(),
       hideCount: props.progress.wallPostsHidden.toLocaleString(),
-    })
+    }),
   );
 });
 </script>

@@ -27,11 +27,13 @@ const backToDashboard = () => {
 </script>
 
 <template>
-  <BaseWizardPage :breadcrumb-props="{
-    buttons: [],
-    label: t('facebook.finished.title'),
-    icon: getBreadcrumbIcon('delete'),
-  }" :button-props="{
+  <BaseWizardPage
+    :breadcrumb-props="{
+      buttons: [],
+      label: t('facebook.finished.title'),
+      icon: getBreadcrumbIcon('delete'),
+    }"
+    :button-props="{
       backButtons: [],
       nextButtons: [
         {
@@ -39,7 +41,8 @@ const backToDashboard = () => {
           action: backToDashboard,
         },
       ],
-    }">
+    }"
+  >
     <template #content>
       <div class="wizard-scroll-content">
         <div class="container mt-3">
@@ -50,21 +53,21 @@ const backToDashboard = () => {
                 <i class="fa-solid fa-fire delete-bullet" />
                 <strong>{{
                   model.progress.wallPostsDeleted.toLocaleString()
-                  }}</strong>
+                }}</strong>
                 {{ t("facebook.finished.wallPostsDeleted") }}
               </li>
               <li>
                 <i class="fa-solid fa-fire delete-bullet" />
                 <strong>{{
                   model.progress.wallPostsUntagged.toLocaleString()
-                  }}</strong>
+                }}</strong>
                 {{ t("facebook.finished.wallPostsUntagged") }}
               </li>
               <li>
                 <i class="fa-solid fa-fire delete-bullet" />
                 <strong>{{
                   model.progress.wallPostsHidden.toLocaleString()
-                  }}</strong>
+                }}</strong>
                 {{ t("facebook.finished.wallPostsHidden") }}
               </li>
             </ul>
