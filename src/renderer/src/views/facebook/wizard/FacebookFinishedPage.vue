@@ -27,13 +27,11 @@ const backToDashboard = () => {
 </script>
 
 <template>
-  <BaseWizardPage
-    :breadcrumb-props="{
-      buttons: [],
-      label: t('facebook.finished.title'),
-      icon: getBreadcrumbIcon('delete'),
-    }"
-    :button-props="{
+  <BaseWizardPage :breadcrumb-props="{
+    buttons: [],
+    label: t('facebook.finished.title'),
+    icon: getBreadcrumbIcon('delete'),
+  }" :button-props="{
       backButtons: [],
       nextButtons: [
         {
@@ -41,33 +39,32 @@ const backToDashboard = () => {
           action: backToDashboard,
         },
       ],
-    }"
-  >
+    }">
     <template #content>
       <div class="wizard-scroll-content">
         <div class="container mt-3">
           <div class="finished">
             <h2>{{ t("finished.youJustDeleted") }}</h2>
             <ul>
-              <li v-if="model.progress.wallPostsDeleted > 0">
+              <li>
                 <i class="fa-solid fa-fire delete-bullet" />
                 <strong>{{
                   model.progress.wallPostsDeleted.toLocaleString()
-                }}</strong>
+                  }}</strong>
                 {{ t("facebook.finished.wallPostsDeleted") }}
               </li>
-              <li v-if="model.progress.wallPostsUntagged > 0">
+              <li>
                 <i class="fa-solid fa-fire delete-bullet" />
                 <strong>{{
                   model.progress.wallPostsUntagged.toLocaleString()
-                }}</strong>
+                  }}</strong>
                 {{ t("facebook.finished.wallPostsUntagged") }}
               </li>
-              <li v-if="model.progress.wallPostsHidden > 0">
+              <li>
                 <i class="fa-solid fa-fire delete-bullet" />
                 <strong>{{
                   model.progress.wallPostsHidden.toLocaleString()
-                }}</strong>
+                  }}</strong>
                 {{ t("facebook.finished.wallPostsHidden") }}
               </li>
             </ul>

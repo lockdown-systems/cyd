@@ -44,7 +44,7 @@
     "tombstoneLockAccount": "Locking account",
     "savePosts": "Saving posts",
     "savePostsHTML": "Saving posts HTML",
-    "deleteWallPosts": "Deleting wall posts",
+    "deleteWallPosts": "Removing wall posts",
     "restoreUserLang": "Restoring language"
   },
   "progress": {
@@ -623,8 +623,8 @@
         "settingLanguageToEnglish": "I'm temporarily changing your language to English (US) for automation.",
         "restoringLanguage": "I'm restoring your original language setting.",
         "removingWallPosts": "# I'm removing all posts from your Facebook wall.",
-        "checkBatchActionWallPosts": "# I'm looking for a batch of posts to {action}...",
-        "removeActionWallPosts": "# I'm {action} {count} posts....",
+        "checkBatchActionWallPosts": "# I'm looking for a batch of posts to **{action}**...",
+        "removeActionWallPosts": "# I'm **{action} {count} posts**....",
         "actionDelete": "delete",
         "actionDeletePresent": "deleting",
         "actionUntag": "untag",
@@ -633,9 +633,7 @@
         "actionHidePresent": "hiding"
       },
       "progress": {
-        "wallPostsDeleted": "Deleted {count} wall posts.",
-        "wallPostsUntagged": "Untagged {count} wall posts.",
-        "wallPostsHidden": "Hidden {count} wall posts."
+        "wallPostsProgress": "Deleted **{deleteCount}**, untagged **{untagCount}**, and hid **{hideCount}** wall posts."
       }
     }
   }
