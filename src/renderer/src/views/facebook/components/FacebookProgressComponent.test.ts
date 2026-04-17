@@ -21,6 +21,8 @@ function createMockProgress(
   return {
     currentJob: "",
     wallPostsDeleted: 0,
+    wallPostsUntagged: 0,
+    wallPostsHidden: 0,
     isDeleteWallPostsFinished: false,
     ...overrides,
   };

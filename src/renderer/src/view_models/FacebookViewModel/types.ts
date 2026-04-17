@@ -35,6 +35,8 @@ export type FacebookJob = {
 export type FacebookProgress = {
   currentJob: string;
   wallPostsDeleted: number;
+  wallPostsUntagged: number;
+  wallPostsHidden: number;
   isDeleteWallPostsFinished: boolean;
 };
 
@@ -42,6 +44,8 @@ export function emptyFacebookProgress(): FacebookProgress {
   return {
     currentJob: "",
     wallPostsDeleted: 0,
+    wallPostsUntagged: 0,
+    wallPostsHidden: 0,
     isDeleteWallPostsFinished: false,
   };
 }

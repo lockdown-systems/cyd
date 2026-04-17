@@ -686,7 +686,7 @@ describe("FacebookViewModel Delete Jobs", () => {
         "runJobDeleteWallPosts",
         'Item keeps batch action "untag", checked 1/10',
       );
-      expect(vm.progress.wallPostsDeleted).toBe(1);
+      expect(vm.progress.wallPostsUntagged).toBe(1);
     });
 
     it("unchecks the last item before clicking Next when delete is no longer allowed", async () => {

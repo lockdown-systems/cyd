@@ -407,12 +407,12 @@
       "getArchiveTitle": "Get Archive from Meta",
       "getArchiveDescription": "If you want, export your Facebook archive BEFORE you delete all your posts.",
       "deleteWallTitle": "Delete My Wall",
-      "deleteWallDescription": "Delete all posts from your Facebook wall."
+      "deleteWallDescription": "Remove all posts from your Facebook wall."
     },
     "deleteOptions": {
       "title": "Delete My Wall",
-      "description": "Select the data you want to delete from your Facebook wall.",
-      "deleteWallPosts": "Delete all posts from my wall"
+      "description": "Select the data you want to remove from your Facebook wall.",
+      "deleteWallPosts": "Remove all posts from my wall"
     },
     "review": {
       "deleteWallPosts": "All posts from your Facebook wall",
@@ -421,7 +421,9 @@
     },
     "finished": {
       "title": "Jobs Completed",
-      "wallPosts": "wall posts removed (deleted, untagged, or hidden)"
+      "wallPostsDeleted": "wall posts deleted",
+      "wallPostsUntagged": "wall posts untagged",
+      "wallPostsHidden": "wall posts hidden"
     },
     "premium": {
       "readyToDelete": "You're all set! Let's continue to configure what you want to delete.",
@@ -631,7 +633,9 @@
         "actionHidePresent": "hiding"
       },
       "progress": {
-        "wallPostsDeleted": "Removed {count} wall posts."
+        "wallPostsDeleted": "Deleted {count} wall posts.",
+        "wallPostsUntagged": "Untagged {count} wall posts.",
+        "wallPostsHidden": "Hidden {count} wall posts."
       }
     }
   }

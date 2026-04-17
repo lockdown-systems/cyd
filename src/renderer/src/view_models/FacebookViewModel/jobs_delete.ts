@@ -571,6 +571,8 @@ export async function runJobDeleteWallPosts(
 
   // Keep deleting posts until there are no more to delete
   let totalDeleted = 0;
+  let totalUntagged = 0;
+  let totalHidden = 0;
   let batchNumber = 0;
   const maxToCheck = 10;
 
@@ -923,18 +925,38 @@ export async function runJobDeleteWallPosts(
     }
 
     // Update progress
-    totalDeleted += checkedCount;
-    vm.progress.wallPostsDeleted = totalDeleted;
+    if (batchAction === "delete") {
+      totalDeleted += checkedCount;
+      vm.progress.wallPostsDeleted = totalDeleted;
+    } else if (batchAction === "untag") {
+      totalUntagged += checkedCount;
+      vm.progress.wallPostsUntagged = totalUntagged;
+    } else {
+      totalHidden += checkedCount;
+      vm.progress.wallPostsHidden = totalHidden;
+    }
     vm.log(
       "runJobDeleteWallPosts",
-      `Batch ${batchNumber} complete: deleted ${checkedCount} posts, total: ${totalDeleted}`,
+      `Batch ${batchNumber} complete: ${batchAction} ${checkedCount} posts (deleted: ${totalDeleted}, untagged: ${totalUntagged}, hidden: ${totalHidden})`,
     );
 
     // Update the persistent counter in the database
-    await window.electron.Facebook.incrementTotalWallPostsDeleted(
-      vm.account.id,
-      checkedCount,
-    );
+    if (batchAction === "delete") {
+      await window.electron.Facebook.incrementTotalWallPostsDeleted(
+        vm.account.id,
+        checkedCount,
+      );
+    } else if (batchAction === "untag") {
+      await window.electron.Facebook.incrementTotalWallPostsUntagged(
+        vm.account.id,
+        checkedCount,
+      );
+    } else {
+      await window.electron.Facebook.incrementTotalWallPostsHidden(
+        vm.account.id,
+        checkedCount,
+      );
+    }
 
     // Submit progress to the API
     vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);

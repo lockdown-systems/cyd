@@ -147,6 +147,30 @@ export const defineIPCFacebook = () => {
     },
   );
 
+  ipcMain.handle(
+    "Facebook:incrementTotalWallPostsUntagged",
+    async (_, accountID: number, count: number): Promise<void> => {
+      try {
+        const controller = getFacebookAccountController(accountID);
+        return await controller.incrementTotalWallPostsUntagged(count);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "Facebook:incrementTotalWallPostsHidden",
+    async (_, accountID: number, count: number): Promise<void> => {
+      try {
+        const controller = getFacebookAccountController(accountID);
+        return await controller.incrementTotalWallPostsHidden(count);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
   ipcMain.handle("Facebook:isRateLimited", async (_, accountID: number) => {
     try {
       const controller = getFacebookAccountController(accountID);

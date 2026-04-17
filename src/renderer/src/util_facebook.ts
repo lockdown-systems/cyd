@@ -13,6 +13,8 @@ export async function facebookPostProgress(
     {
       account_uuid: progressInfo.accountUUID,
       total_wall_posts_deleted: progressInfo.totalWallPostsDeleted,
+      total_wall_posts_untagged: progressInfo.totalWallPostsUntagged,
+      total_wall_posts_hidden: progressInfo.totalWallPostsHidden,
     },
     deviceInfo?.valid ? true : false,
   );

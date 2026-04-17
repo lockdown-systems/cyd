@@ -73,6 +73,8 @@ export type PostXProgressAPIRequest = {
 export type PostFacebookProgressAPIRequest = {
   account_uuid: string;
   total_wall_posts_deleted: number;
+  total_wall_posts_untagged: number;
+  total_wall_posts_hidden: number;
 };
 
 // API models for GET /user/premium
