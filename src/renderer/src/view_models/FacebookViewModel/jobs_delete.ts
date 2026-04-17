@@ -130,6 +130,18 @@ async function getActionDescription(vm: FacebookViewModel): Promise<string> {
 
 type PostAction = "delete" | "untag" | "hide";
 
+const actionVerbKeys: Record<PostAction, string> = {
+  delete: "viewModels.facebook.jobs.actionDelete",
+  untag: "viewModels.facebook.jobs.actionUntag",
+  hide: "viewModels.facebook.jobs.actionHide",
+};
+
+const actionPresentKeys: Record<PostAction, string> = {
+  delete: "viewModels.facebook.jobs.actionDeletePresent",
+  untag: "viewModels.facebook.jobs.actionUntagPresent",
+  hide: "viewModels.facebook.jobs.actionHidePresent",
+};
+
 async function getCheckboxState(
   vm: FacebookViewModel,
   listIndex: number,
@@ -646,9 +658,12 @@ export async function runJobDeleteWallPosts(
     // infinite loop to loop through different actions
     for (const action of batchActions) {
       batchAction = action;
-      vm.instructions = vm.t("viewModels.facebook.jobs.checkBatchActionWallPosts", {
-        action: batchAction,
-      });
+      vm.instructions = vm.t(
+        "viewModels.facebook.jobs.checkBatchActionWallPosts",
+        {
+          action: vm.t(actionVerbKeys[batchAction]),
+        },
+      );
       // Loop through items, checking if any item match the current batchAction priority action.
       // Stop when adding a new item would reduce the priority (e.g. from delete -> hide).
       for (const { listIndex, itemIndex } of allItems) {
@@ -761,10 +776,13 @@ export async function runJobDeleteWallPosts(
 
       if (checkedCount !== 0) {
         // If actionable items found, no need to loop through other actions
-        vm.instructions = vm.t("viewModels.facebook.jobs.removeActionWallPosts", {
-          action: batchAction,
-          count: checkedCount,
-        });
+        vm.instructions = vm.t(
+          "viewModels.facebook.jobs.removeActionWallPosts",
+          {
+            action: vm.t(actionPresentKeys[batchAction]),
+            count: checkedCount,
+          },
+        );
         break;
       }
 

@@ -622,7 +622,13 @@
         "restoringLanguage": "I'm restoring your original language setting.",
         "removingWallPosts": "# I'm removing all posts from your Facebook wall.",
         "checkBatchActionWallPosts": "# I'm looking for a batch of posts to {action}...",
-        "removeActionWallPosts": "# I'm going to {action} {count} posts...."
+        "removeActionWallPosts": "# I'm {action} {count} posts....",
+        "actionDelete": "delete",
+        "actionDeletePresent": "deleting",
+        "actionUntag": "untag",
+        "actionUntagPresent": "untagging",
+        "actionHide": "hide",
+        "actionHidePresent": "hiding"
       },
       "progress": {
         "wallPostsDeleted": "Removed {count} wall posts."
