@@ -620,7 +620,9 @@
         "savingLanguage": "I'm checking your language settings.",
         "settingLanguageToEnglish": "I'm temporarily changing your language to English (US) for automation.",
         "restoringLanguage": "I'm restoring your original language setting.",
-        "deletingWallPosts": "# I'm removing all posts from your Facebook wall."
+        "removingWallPosts": "# I'm removing all posts from your Facebook wall.",
+        "checkBatchActionWallPosts": "# I'm looking for a batch of posts to {action}...",
+        "removeActionWallPosts": "# I'm going to {action} {count} posts...."
       },
       "progress": {
         "wallPostsDeleted": "Removed {count} wall posts."

@@ -545,7 +545,7 @@ export async function runJobDeleteWallPosts(
 
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
-  vm.instructions = vm.t("viewModels.facebook.jobs.deletingWallPosts");
+  vm.instructions = vm.t("viewModels.facebook.jobs.removingWallPosts");
 
   vm.log("runJobDeleteWallPosts", "Loading profile page");
 
@@ -646,6 +646,9 @@ export async function runJobDeleteWallPosts(
     // infinite loop to loop through different actions
     for (const action of batchActions) {
       batchAction = action;
+      vm.instructions = vm.t("viewModels.facebook.jobs.checkBatchActionWallPosts", {
+        action: batchAction,
+      });
       // Loop through items, checking if any item match the current batchAction priority action.
       // Stop when adding a new item would reduce the priority (e.g. from delete -> hide).
       for (const { listIndex, itemIndex } of allItems) {
@@ -758,6 +761,10 @@ export async function runJobDeleteWallPosts(
 
       if (checkedCount !== 0) {
         // If actionable items found, no need to loop through other actions
+        vm.instructions = vm.t("viewModels.facebook.jobs.removeActionWallPosts", {
+          action: batchAction,
+          count: checkedCount,
+        });
         break;
       }
 
