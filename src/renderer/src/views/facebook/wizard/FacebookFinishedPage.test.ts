@@ -105,7 +105,41 @@ describe("FacebookFinishedPage", () => {
       });
 
       expect(wrapper.text()).toContain("42");
-      expect(wrapper.text()).toContain("wall posts");
+      expect(wrapper.text()).toContain("wall posts deleted");
+    });
+
+    it("shows wall posts untagged count", () => {
+      const vm = createMockFacebookViewModel();
+      vm.progress.wallPostsUntagged = 15;
+
+      const wrapper = mount(FacebookFinishedPage, {
+        global: {
+          plugins: [i18n],
+        },
+        props: {
+          model: vm,
+        },
+      });
+
+      expect(wrapper.text()).toContain("15");
+      expect(wrapper.text()).toContain("wall posts untagged");
+    });
+
+    it("shows wall posts hidden count", () => {
+      const vm = createMockFacebookViewModel();
+      vm.progress.wallPostsHidden = 8;
+
+      const wrapper = mount(FacebookFinishedPage, {
+        global: {
+          plugins: [i18n],
+        },
+        props: {
+          model: vm,
+        },
+      });
+
+      expect(wrapper.text()).toContain("8");
+      expect(wrapper.text()).toContain("wall posts hidden");
     });
 
     it("formats large numbers with locale string", () => {

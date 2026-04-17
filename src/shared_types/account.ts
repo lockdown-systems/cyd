@@ -102,11 +102,15 @@ export type FacebookAccount = {
 export type FacebookProgressInfo = {
   accountUUID: string;
   totalWallPostsDeleted: number;
+  totalWallPostsUntagged: number;
+  totalWallPostsHidden: number;
 };
 
 export function emptyFacebookProgressInfo(): FacebookProgressInfo {
   return {
     accountUUID: "",
     totalWallPostsDeleted: 0,
+    totalWallPostsUntagged: 0,
+    totalWallPostsHidden: 0,
   };
 }

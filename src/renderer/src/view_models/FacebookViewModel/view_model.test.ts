@@ -463,6 +463,8 @@ describe("FacebookViewModel", () => {
 
       expect(progress.currentJob).toBe("");
       expect(progress.wallPostsDeleted).toBe(0);
+      expect(progress.wallPostsUntagged).toBe(0);
+      expect(progress.wallPostsHidden).toBe(0);
       expect(progress.isDeleteWallPostsFinished).toBe(false);
     });
 

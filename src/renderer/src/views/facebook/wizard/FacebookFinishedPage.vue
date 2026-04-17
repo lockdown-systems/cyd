@@ -54,7 +54,21 @@ const backToDashboard = () => {
                 <strong>{{
                   model.progress.wallPostsDeleted.toLocaleString()
                 }}</strong>
-                {{ t("facebook.finished.wallPosts") }}
+                {{ t("facebook.finished.wallPostsDeleted") }}
+              </li>
+              <li>
+                <i class="fa-solid fa-fire delete-bullet" />
+                <strong>{{
+                  model.progress.wallPostsUntagged.toLocaleString()
+                }}</strong>
+                {{ t("facebook.finished.wallPostsUntagged") }}
+              </li>
+              <li>
+                <i class="fa-solid fa-fire delete-bullet" />
+                <strong>{{
+                  model.progress.wallPostsHidden.toLocaleString()
+                }}</strong>
+                {{ t("facebook.finished.wallPostsHidden") }}
               </li>
             </ul>
           </div>

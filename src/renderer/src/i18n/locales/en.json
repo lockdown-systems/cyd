@@ -44,7 +44,7 @@
     "tombstoneLockAccount": "Locking account",
     "savePosts": "Saving posts",
     "savePostsHTML": "Saving posts HTML",
-    "deleteWallPosts": "Deleting wall posts",
+    "deleteWallPosts": "Removing wall posts",
     "restoreUserLang": "Restoring language"
   },
   "progress": {
@@ -407,12 +407,12 @@
       "getArchiveTitle": "Get Archive from Meta",
       "getArchiveDescription": "If you want, export your Facebook archive BEFORE you delete all your posts.",
       "deleteWallTitle": "Delete My Wall",
-      "deleteWallDescription": "Delete all posts from your Facebook wall."
+      "deleteWallDescription": "Remove all posts from your Facebook wall."
     },
     "deleteOptions": {
       "title": "Delete My Wall",
-      "description": "Select the data you want to delete from your Facebook wall.",
-      "deleteWallPosts": "Delete all posts from my wall"
+      "description": "Select the data you want to remove from your Facebook wall.",
+      "deleteWallPosts": "Remove all posts from my wall"
     },
     "review": {
       "deleteWallPosts": "All posts from your Facebook wall",
@@ -421,7 +421,9 @@
     },
     "finished": {
       "title": "Jobs Completed",
-      "wallPosts": "wall posts removed (deleted, untagged, or hidden)"
+      "wallPostsDeleted": "wall posts deleted",
+      "wallPostsUntagged": "wall posts untagged",
+      "wallPostsHidden": "wall posts hidden"
     },
     "premium": {
       "readyToDelete": "You're all set! Let's continue to configure what you want to delete.",
@@ -620,10 +622,19 @@
         "savingLanguage": "I'm checking your language settings.",
         "settingLanguageToEnglish": "I'm temporarily changing your language to English (US) for automation.",
         "restoringLanguage": "I'm restoring your original language setting.",
-        "deletingWallPosts": "# I'm removing all posts from your Facebook wall."
+        "removingWallPosts": "# I'm removing all posts from your Facebook wall.",
+        "managePostsLoading": "# I'm checking what posts are left to remove.",
+        "checkBatchActionWallPosts": "# I'm looking for a batch of posts to **{action}**...",
+        "removeActionWallPosts": "# I'm **{action} {count} posts**....",
+        "actionDelete": "delete",
+        "actionDeletePresent": "deleting",
+        "actionUntag": "untag",
+        "actionUntagPresent": "untagging",
+        "actionHide": "hide",
+        "actionHidePresent": "hiding"
       },
       "progress": {
-        "wallPostsDeleted": "Removed {count} wall posts."
+        "wallPostsProgress": "Deleted **{deleteCount}**, untagged **{untagCount}**, and hid **{hideCount}** wall posts."
       }
     }
   }

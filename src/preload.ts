@@ -537,6 +537,26 @@ const electronAPI = {
         count,
       );
     },
+    incrementTotalWallPostsUntagged: (
+      accountID: number,
+      count: number,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Facebook:incrementTotalWallPostsUntagged",
+        accountID,
+        count,
+      );
+    },
+    incrementTotalWallPostsHidden: (
+      accountID: number,
+      count: number,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Facebook:incrementTotalWallPostsHidden",
+        accountID,
+        count,
+      );
+    },
     isRateLimited: (accountID: number): Promise<FacebookRateLimitInfo> => {
       return ipcRenderer.invoke("Facebook:isRateLimited", accountID);
     },

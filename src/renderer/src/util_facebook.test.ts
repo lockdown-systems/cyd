@@ -60,6 +60,8 @@ describe("util_facebook", () => {
       const mockProgressInfo = {
         accountUUID: "test-uuid-123",
         totalWallPostsDeleted: 42,
+        totalWallPostsUntagged: 0,
+        totalWallPostsHidden: 0,
       };
       mockFacebookGetProgressInfo.mockResolvedValue(mockProgressInfo);
 
@@ -79,6 +81,8 @@ describe("util_facebook", () => {
         {
           account_uuid: "test-uuid-123",
           total_wall_posts_deleted: 42,
+          total_wall_posts_untagged: 0,
+          total_wall_posts_hidden: 0,
         },
         true,
       );
@@ -93,6 +97,8 @@ describe("util_facebook", () => {
       const mockProgressInfo = {
         accountUUID: "test-uuid-456",
         totalWallPostsDeleted: 100,
+        totalWallPostsUntagged: 0,
+        totalWallPostsHidden: 0,
       };
       mockFacebookGetProgressInfo.mockResolvedValue(mockProgressInfo);
 
@@ -111,6 +117,8 @@ describe("util_facebook", () => {
         {
           account_uuid: "test-uuid-456",
           total_wall_posts_deleted: 100,
+          total_wall_posts_untagged: 0,
+          total_wall_posts_hidden: 0,
         },
         false,
       );
@@ -125,6 +133,8 @@ describe("util_facebook", () => {
       const mockProgressInfo = {
         accountUUID: "test-uuid-789",
         totalWallPostsDeleted: 0,
+        totalWallPostsUntagged: 0,
+        totalWallPostsHidden: 0,
       };
       mockFacebookGetProgressInfo.mockResolvedValue(mockProgressInfo);
 
@@ -134,6 +144,8 @@ describe("util_facebook", () => {
         {
           account_uuid: "test-uuid-789",
           total_wall_posts_deleted: 0,
+          total_wall_posts_untagged: 0,
+          total_wall_posts_hidden: 0,
         },
         false,
       );
@@ -154,6 +166,8 @@ describe("util_facebook", () => {
       const mockProgressInfo = {
         accountUUID: "test-uuid",
         totalWallPostsDeleted: 10,
+        totalWallPostsUntagged: 0,
+        totalWallPostsHidden: 0,
       };
       mockFacebookGetProgressInfo.mockResolvedValue(mockProgressInfo);
 

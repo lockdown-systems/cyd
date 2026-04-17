@@ -222,4 +222,18 @@ export class FacebookAccountController extends BaseAccountController<FacebookPro
     const newValue = (currentValue ? parseInt(currentValue) : 0) + count;
     await this.setConfig("totalWallPostsDeleted", newValue.toString());
   }
+
+  // Increment the total wall posts untagged counter
+  async incrementTotalWallPostsUntagged(count: number): Promise<void> {
+    const currentValue = await this.getConfig("totalWallPostsUntagged");
+    const newValue = (currentValue ? parseInt(currentValue) : 0) + count;
+    await this.setConfig("totalWallPostsUntagged", newValue.toString());
+  }
+
+  // Increment the total wall posts hidden counter
+  async incrementTotalWallPostsHidden(count: number): Promise<void> {
+    const currentValue = await this.getConfig("totalWallPostsHidden");
+    const newValue = (currentValue ? parseInt(currentValue) : 0) + count;
+    await this.setConfig("totalWallPostsHidden", newValue.toString());
+  }
 }

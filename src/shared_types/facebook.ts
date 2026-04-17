@@ -10,11 +10,15 @@ export type FacebookJob = PlatformJob & {
 
 export type FacebookProgress = {
   wallPostsDeleted: number;
+  wallPostsUntagged: number;
+  wallPostsHidden: number;
 };
 
 export function emptyFacebookProgress(): FacebookProgress {
   return {
     wallPostsDeleted: 0,
+    wallPostsUntagged: 0,
+    wallPostsHidden: 0,
   };
 }
 
