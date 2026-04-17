@@ -657,7 +657,7 @@ export async function runJobDeleteWallPosts(
     const batchActions: PostAction[] = ["delete", "untag", "hide"]; // Check all actions in priority order
     let batchAction: PostAction = "delete";
 
-    // infinite loop to loop through different actions
+    // loop through different actions
     for (const action of batchActions) {
       batchAction = action;
       vm.instructions = vm.t(
@@ -969,6 +969,7 @@ export async function runJobDeleteWallPosts(
 
     // Reload the profile page to see any newly available posts
     vm.log("runJobDeleteWallPosts", "Reloading profile page for next batch");
+    vm.instructions = vm.t("viewModels.facebook.jobs.managePostsLoading");
     await vm.loadURL(FACEBOOK_PROFILE_URL);
     await vm.waitForLoadingToFinish();
   }

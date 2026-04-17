@@ -623,6 +623,7 @@
         "settingLanguageToEnglish": "I'm temporarily changing your language to English (US) for automation.",
         "restoringLanguage": "I'm restoring your original language setting.",
         "removingWallPosts": "# I'm removing all posts from your Facebook wall.",
+        "managePostsLoading": "# I'm checking what posts are left to remove.",
         "checkBatchActionWallPosts": "# I'm looking for a batch of posts to **{action}**...",
         "removeActionWallPosts": "# I'm **{action} {count} posts**....",
         "actionDelete": "delete",
