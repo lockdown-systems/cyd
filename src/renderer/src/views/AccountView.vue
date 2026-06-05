@@ -132,10 +132,12 @@ onMounted(async () => {
         </div>
 
         <div class="mt-4">
+          <!-- eslint-disable vue/no-v-html -->
           <p
             class="text-muted"
             v-html="t('account.facebookDevelopmentNote')"
           ></p>
+          <!-- eslint-enable vue/no-v-html -->
         </div>
       </div>
 
@@ -143,7 +145,9 @@ onMounted(async () => {
       <div class="mobile-promo">
         <div class="mobile-promo-content">
           <div class="mobile-promo-text">
+            <!-- eslint-disable vue/no-v-html -->
             <h5 v-html="t('account.blueskyMobilePromo')"></h5>
+            <!-- eslint-enable vue/no-v-html -->
             <p>
               <a
                 href="https://cyd.social/docs/mobile/download"
