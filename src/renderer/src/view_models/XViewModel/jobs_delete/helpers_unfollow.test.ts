@@ -57,7 +57,11 @@ describe("helpers_unfollow.ts", () => {
     it("should successfully unfollow an account", async () => {
       const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
 
-      expect(result).toEqual({ success: true, shouldReload: false });
+      expect(result).toEqual({
+        success: true,
+        shouldRetry: false,
+        shouldReload: false,
+      });
       expect(vm.scriptMouseoverElementNth).toHaveBeenCalledWith(
         'div[data-testid="cellInnerDiv"] button button',
         0,
@@ -72,6 +76,8 @@ describe("helpers_unfollow.ts", () => {
       expect(vm.scriptClickElement).toHaveBeenCalledWith(
         'button[data-testid="confirmationSheetConfirm"]',
       );
+      expect(mockElectron.X.isRateLimited).toHaveBeenCalled();
+      expect(vm.waitForRateLimit).not.toHaveBeenCalled();
     });
 
     it("should fail if mouseover fails", async () => {
@@ -79,7 +85,11 @@ describe("helpers_unfollow.ts", () => {
 
       const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
 
-      expect(result).toEqual({ success: false, shouldReload: true });
+      expect(result).toEqual({
+        success: false,
+        shouldRetry: false,
+        shouldReload: true,
+      });
     });
 
     it("should fail if click following button fails", async () => {
@@ -87,7 +97,11 @@ describe("helpers_unfollow.ts", () => {
 
       const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
 
-      expect(result).toEqual({ success: false, shouldReload: true });
+      expect(result).toEqual({
+        success: false,
+        shouldRetry: false,
+        shouldReload: true,
+      });
     });
 
     it("should handle errors during confirmation", async () => {
@@ -99,7 +113,48 @@ describe("helpers_unfollow.ts", () => {
 
       const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
 
-      expect(result).toEqual({ success: false, shouldReload: true });
+      expect(result).toEqual({
+        success: false,
+        shouldRetry: false,
+        shouldReload: true,
+      });
+      expect(vm.waitForRateLimit).not.toHaveBeenCalled();
+    });
+
+    it("should wait and retry when the confirm button never appears due to a rate limit", async () => {
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(new Error("Error"));
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: 0,
+      });
+
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+
+      expect(result).toEqual({
+        success: false,
+        shouldRetry: true,
+        shouldReload: true,
+      });
+      expect(vm.waitForRateLimit).toHaveBeenCalled();
+    });
+
+    it("should wait and retry when rate limited after clicking confirm", async () => {
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: 0,
+      });
+
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+
+      expect(result).toEqual({
+        success: false,
+        shouldRetry: true,
+        shouldReload: true,
+      });
+      expect(vm.scriptClickElement).toHaveBeenCalledWith(
+        'button[data-testid="confirmationSheetConfirm"]',
+      );
+      expect(vm.waitForRateLimit).toHaveBeenCalled();
     });
   });
 
@@ -173,6 +228,31 @@ describe("helpers_unfollow.ts", () => {
       expect(result.errorType).toBe(
         AutomationErrorType.x_runJob_unfollowEveryone_MouseoverFailed,
       );
+    });
+
+    it("should not trigger an error and should keep the same index when rate limited", async () => {
+      // Rate limited after clicking confirm: the account wasn't actually unfollowed,
+      // so the job must retry it rather than report an error or move on.
+      vm.progress.isUnfollowEveryoneFinished = false;
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: 0,
+      });
+
+      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
+        vm,
+        7,
+        100,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.errorTriggered).toBe(false);
+      expect(result.errorType).toBe(null);
+      expect(result.shouldReload).toBe(true);
+      expect(result.newAccountIndex).toBe(7); // Same account gets retried
+      expect(vm.waitForRateLimit).toHaveBeenCalled();
+      // The account should not be counted as unfollowed
+      expect(vm.progress.accountsUnfollowed).toBe(0);
     });
 
     it("should keep same index when reload needed on error", async () => {

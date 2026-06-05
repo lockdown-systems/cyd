@@ -19,12 +19,13 @@ export async function unfollowEveryoneCheckIfFinished(
 
 /**
  * Unfollow a single account
- * @returns Object with success flag and whether to reload page
+ * @returns Object with success flag, whether the account was rate limited and should be retried
+ *   and whether to reload the page
  */
 export async function unfollowEveryoneUnfollowAccount(
   vm: XViewModel,
   accountIndex: number,
-): Promise<{ success: boolean; shouldReload: boolean }> {
+): Promise<{ success: boolean; shouldRetry: boolean; shouldReload: boolean }> {
   // Mouseover the "Following" button on the next user
   if (
     !(await vm.scriptMouseoverElementNth(
@@ -32,7 +33,7 @@ export async function unfollowEveryoneUnfollowAccount(
       accountIndex,
     ))
   ) {
-    return { success: false, shouldReload: true };
+    return { success: false, shouldRetry: false, shouldReload: true };
   }
 
   // Click the unfollow button
@@ -42,7 +43,7 @@ export async function unfollowEveryoneUnfollowAccount(
       accountIndex,
     ))
   ) {
-    return { success: false, shouldReload: true };
+    return { success: false, shouldRetry: false, shouldReload: true };
   }
 
   // Wait for confirm button
@@ -52,11 +53,12 @@ export async function unfollowEveryoneUnfollowAccount(
     vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
     if (vm.rateLimitInfo.isRateLimited) {
       await vm.waitForRateLimit();
+      return { success: false, shouldRetry: true, shouldReload: true };
     }
     vm.log("unfollowEveryoneUnfollowAccount", [
       "wait for confirm button failed",
     ]);
-    return { success: false, shouldReload: true };
+    return { success: false, shouldRetry: false, shouldReload: true };
   }
 
   // Click the confirm button
@@ -65,10 +67,19 @@ export async function unfollowEveryoneUnfollowAccount(
       'button[data-testid="confirmationSheetConfirm"]',
     ))
   ) {
-    return { success: false, shouldReload: true };
+    return { success: false, shouldRetry: false, shouldReload: true };
   }
 
-  return { success: true, shouldReload: false };
+  // if we were rate limited the account wasn't actually unfollowed, so
+  // wait it out and retry instead of moving on.
+  await vm.sleep(500);
+  vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
+  if (vm.rateLimitInfo.isRateLimited) {
+    await vm.waitForRateLimit();
+    return { success: false, shouldRetry: true, shouldReload: true };
+  }
+
+  return { success: true, shouldRetry: false, shouldReload: false };
 }
 
 /**
@@ -100,6 +111,17 @@ export async function unfollowEveryoneProcessIteration(
   // Unfollow the account
   const result = await unfollowEveryoneUnfollowAccount(vm, accountIndex);
   if (!result.success) {
+    // A rate limit isn't an error: we already waited it out, so just reload and retry
+    // this same account instead of ending the job.
+    if (result.shouldRetry) {
+      return {
+        success: false,
+        errorTriggered: false,
+        errorType: null,
+        shouldReload: result.shouldReload,
+        newAccountIndex: accountIndex,
+      };
+    }
     return {
       success: false,
       errorTriggered: true,
