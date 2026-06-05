@@ -394,7 +394,10 @@
     "removeAccount": "Remove account",
     "xDescription": "Formerly Twitter, owned by billionaire Elon Musk",
     "blueskyDescription": "Open source social media platform based on AT Protocol",
-    "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg"
+    "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg",
+    "facebookDevelopmentNote": "<strong>Facebook</strong> support is under active development.",
+    "blueskyMobilePromo": "Want to clean up your <strong>Bluesky</strong> data? Use the Cyd mobile app!",
+    "downloadMobileApp": "Download Cyd for iPhone and Android"
   },
   "facebook": {
     "loginTitle": "Sign in to Facebook",
