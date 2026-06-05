@@ -62,16 +62,16 @@
     "vue-i18n": "^11.2.8"
   },
   "devDependencies": {
-    "@electron-forge/cli": "7.11.1",
-    "@electron-forge/maker-deb": "7.11.1",
-    "@electron-forge/maker-dmg": "7.11.1",
-    "@electron-forge/maker-rpm": "7.11.1",
-    "@electron-forge/maker-squirrel": "7.11.1",
-    "@electron-forge/maker-zip": "7.11.1",
-    "@electron-forge/plugin-auto-unpack-natives": "7.11.1",
-    "@electron-forge/plugin-fuses": "7.11.1",
-    "@electron-forge/plugin-vite": "7.11.1",
-    "@electron-forge/publisher-s3": "7.11.1",
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-dmg": "^7.11.2",
+    "@electron-forge/maker-rpm": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
+    "@electron-forge/plugin-fuses": "^7.11.2",
+    "@electron-forge/plugin-vite": "^7.11.2",
+    "@electron-forge/publisher-s3": "^7.11.2",
     "@electron/fuses": "^1.8.0",
     "@electron/notarize": "^3.1.1",
     "@electron/osx-sign": "^2.3.0",
@@ -116,5 +116,17 @@
   },
   "workspaces": [
     "archive-static-sites/x-archive"
-  ]
+  ],
+  "allowScripts": {
+    "better-sqlite3@12.10.0": true,
+    "electron@40.10.2": true,
+    "core-js@3.49.0": true,
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.0": true,
+    "esbuild@0.27.7": true,
+    "fs-xattr@0.3.1": true,
+    "fsevents@2.3.3": true,
+    "macos-alias@0.2.12": true
+  }
 }
