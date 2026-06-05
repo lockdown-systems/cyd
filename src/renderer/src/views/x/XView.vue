@@ -322,12 +322,34 @@ const debugModeDisable = async () => {
 // Account mode modal handlers
 const handleAccountModeModalLogin = async () => {
   showAccountModeModal.value = false;
+  await nextTick(); // Wait for PlatformView to render
+
+  // Initialize the platform view now that it's rendered
+  if (
+    platformViewRef.value?.webviewComponent !== null &&
+    platformViewRef.value?.webviewComponent !== undefined
+  ) {
+    const webview = platformViewRef.value.webviewComponent as WebviewTag;
+    await initializePlatformView(webview);
+  }
+
   model.value.state = State.Login;
   await startStateLoop();
 };
 
 const handleAccountModeModalArchiveOnly = async () => {
   showAccountModeModal.value = false;
+  await nextTick(); // Wait for PlatformView to render
+
+  // Initialize the platform view now that it's rendered
+  if (
+    platformViewRef.value?.webviewComponent !== null &&
+    platformViewRef.value?.webviewComponent !== undefined
+  ) {
+    const webview = platformViewRef.value.webviewComponent as WebviewTag;
+    await initializePlatformView(webview);
+  }
+
   await window.electron.X.initArchiveOnlyMode(props.account.id);
   await updateAccount();
   model.value.state = State.WizardArchiveOnly;
@@ -348,7 +370,16 @@ onMounted(async () => {
   // Wait for child components to mount
   await nextTick();
 
-  if (
+  // Check if we need to show the account mode modal (new account with no username)
+  const shouldShowModal =
+    props.account.xAccount !== null &&
+    !props.account.xAccount.username &&
+    !localStorage.getItem(`account-${props.account.id}-state`);
+
+  if (shouldShowModal) {
+    showAccountModeModal.value = true;
+    // Don't initialize platform view yet - it will be done in the modal handlers
+  } else if (
     platformViewRef.value?.webviewComponent !== null &&
     platformViewRef.value?.webviewComponent !== undefined
   ) {
@@ -372,12 +403,7 @@ onMounted(async () => {
         localStorage.removeItem(`account-${props.account.id}-state`);
       }
 
-      // Check if we need to show the account mode modal (new account with no username)
-      if (!props.account.xAccount.username && !savedState) {
-        showAccountModeModal.value = true;
-      } else {
-        await startStateLoop();
-      }
+      await startStateLoop();
     }
   } else {
     console.error("Webview component not found");
@@ -406,6 +432,7 @@ onUnmounted(async () => {
 
 <template>
   <PlatformView
+    v-if="!showAccountModeModal"
     ref="platformViewRef"
     :account="account"
     :config="config"
