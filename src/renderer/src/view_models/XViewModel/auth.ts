@@ -14,7 +14,7 @@ export async function login(vm: XViewModel): Promise<void> {
   // Load the login page and wait for it to redirect to home
   await vm.loadURLWithRateLimit("https://x.com/login", [
     "https://x.com/home",
-    "https://x.com/i/flow/login",
+    "https://x.com/i/",
   ]);
   if (vm.cancelWaitForURL) {
     // If the user clicks archive only before the page is done loading, we cancel the login
