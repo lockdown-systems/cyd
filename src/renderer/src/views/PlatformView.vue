@@ -76,9 +76,6 @@ const emit = defineEmits<{
   finishedRunAgainClicked: [];
   updateUserPremium: [];
 
-  // Archive only (conditional on feature flag)
-  archiveOnlyClicked: [];
-
   // Job control events
   onPause: [];
   onResume: [];
@@ -180,20 +177,6 @@ const currentJobsLength = computed(() => props.currentJobs.length);
           >{{ t("platform.readMore") }}</a
         ><span v-if="config.urls.u2fDocs">.</span>
       </p>
-
-      <!-- Archive only option (conditional on feature flag) -->
-      <div
-        v-if="
-          config.features.hasArchiveOnly && modelState == PlatformStates.Login
-        "
-        class="text-center ms-2 mt-2 mb-4"
-      >
-        <slot name="archive-only-button">
-          <button class="btn btn-secondary" @click="emit('archiveOnlyClicked')">
-            {{ t("platform.importArchiveOnly") }}
-          </button>
-        </slot>
-      </div>
 
       <AutomationNotice v-bind="automationNoticeProps" />
     </template>
