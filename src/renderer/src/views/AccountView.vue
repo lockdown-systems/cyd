@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 // Feature flags
 const blueskyFeature = ref(false);
+const facebookFeature = ref(false);
 
 const isRefreshing = ref(false);
 
@@ -41,6 +42,7 @@ const accountClicked = (accountType: string) => {
 
 onMounted(async () => {
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
+  facebookFeature.value = await window.electron.isFeatureEnabled("bluesky");
 
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {
@@ -109,7 +111,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="col-12 col-md-6">
+          <div v-if="facebookFeature" class="col-12 col-md-6">
             <div
               class="card m-2 select-account-facebook"
               @click="accountClicked('Facebook')"
