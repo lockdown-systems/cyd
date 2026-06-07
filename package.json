@@ -16,6 +16,8 @@
     "make-local": "node ./scripts/make.js make local",
     "make-dev": "node ./scripts/make.js make dev",
     "make-prod": "node ./scripts/make.js make prod",
+    "make-windows-unsigned": "node ./scripts/make-windows-unsigned.mjs",
+    "finalize-windows-release": "node ./scripts/finalize-windows-release.mjs",
     "make-dev-docker": "docker build -t cyd-builder . && docker run --rm -v \"$(pwd)\":/workspace -w /workspace cyd-builder npm run make-dev",
     "make-prod-docker": "docker build -t cyd-builder . && docker run --rm -v \"$(pwd)\":/workspace -w /workspace cyd-builder npm run make-prod",
     "publish-dev": "node ./scripts/make.js publish dev",

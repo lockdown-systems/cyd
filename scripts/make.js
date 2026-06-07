@@ -38,6 +38,26 @@ if (platform == "win32") {
 }
 
 try {
+  if (platform === "win32" && command === "publish") {
+    if (mode === "local") {
+      console.error('Windows publish supports only "dev" and "prod" modes.');
+      process.exit(1);
+    }
+
+    // Phase 1 split: keep current publish entrypoint but delegate to explicit
+    // unsigned-build and finalization scripts.
+    execSync(`node ./scripts/make-windows-unsigned.mjs ${mode}`, {
+      stdio: "inherit",
+    });
+    execSync(
+      `node ./scripts/finalize-windows-release.mjs ${mode} --skip-clean`,
+      {
+        stdio: "inherit",
+      },
+    );
+    process.exit(0);
+  }
+
   // Clean up previous builds and install dependencies
   execSync(`node ./scripts/clean.mjs`, { stdio: "inherit" });
 
