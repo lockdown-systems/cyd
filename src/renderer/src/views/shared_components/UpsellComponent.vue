@@ -45,7 +45,7 @@ const teamsClicked = async () => {
 };
 
 const donateClicked = () => {
-  openURL("https://opencollective.com/lockdown-systems");
+  openURL("https://lockdown.systems/donate/");
 };
 
 const collectiveClicked = () => {
