@@ -24,7 +24,10 @@ try {
   execSync("node ./scripts/clean.mjs", { stdio: "inherit" });
 
   const archFlag = arch ? ` --arch ${arch}` : "";
-  execSync(`electron-forge make${archFlag}`, { stdio: "inherit" });
+  execSync(
+    `electron-forge make --platform win32 --targets @electron-forge/maker-squirrel${archFlag}`,
+    { stdio: "inherit" },
+  );
 } catch (error) {
   console.error("Error executing unsigned Windows build:", error.message);
   process.exit(1);
