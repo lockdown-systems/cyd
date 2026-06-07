@@ -5,7 +5,7 @@
  * Thin wrapper around PlatformView that handles X-specific logic:
  * - XViewModel instantiation
  * - X-specific state (rateLimitInfo, failure states, mediaPath)
- * - X-specific methods (archiveOnlyClicked, startJobs, etc.)
+ * - X-specific methods (startJobs, etc.)
  * - X-specific event handlers
  */
 
@@ -49,6 +49,7 @@ import { usePlatformView } from "../../composables/usePlatformView";
 import { getPlatformConfig } from "../../config/platforms";
 import PlatformView from "../PlatformView.vue";
 import XProgressComponent from "./components/XProgressComponent.vue";
+import XAccountModeModal from "../../modals/XAccountModeModal.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -68,6 +69,7 @@ const failureStateIndexTweets_FailedToRetryAfterRateLimit = ref(false);
 const failureStateIndexLikes_FailedToRetryAfterRateLimit = ref(false);
 const rateLimitInfo = ref<XRateLimitInfo | null>(null);
 const mediaPath = ref("");
+const showAccountModeModal = ref(false);
 
 // The X view model
 const model = ref<XViewModel>(new XViewModel(props.account, emitter));
@@ -141,11 +143,6 @@ watch(
 );
 
 // X-specific methods
-const archiveOnlyClicked = async () => {
-  model.value.cancelWaitForURL = true;
-  await setState(State.WizardArchiveOnly.toString());
-};
-
 const onAutomationErrorRetry = async () => {
   console.log("Retrying automation after error");
 
@@ -322,6 +319,47 @@ const debugModeDisable = async () => {
   model.value.state = State.WizardPrestart;
 };
 
+// Account mode modal handlers
+const handleAccountModeModalLogin = async () => {
+  showAccountModeModal.value = false;
+  await nextTick(); // Wait for PlatformView to render
+
+  // Initialize the platform view now that it's rendered
+  if (
+    platformViewRef.value?.webviewComponent !== null &&
+    platformViewRef.value?.webviewComponent !== undefined
+  ) {
+    const webview = platformViewRef.value.webviewComponent as WebviewTag;
+    await initializePlatformView(webview);
+  }
+
+  model.value.state = State.Login;
+  await startStateLoop();
+};
+
+const handleAccountModeModalArchiveOnly = async () => {
+  showAccountModeModal.value = false;
+  await nextTick(); // Wait for PlatformView to render
+
+  // Initialize the platform view now that it's rendered
+  if (
+    platformViewRef.value?.webviewComponent !== null &&
+    platformViewRef.value?.webviewComponent !== undefined
+  ) {
+    const webview = platformViewRef.value.webviewComponent as WebviewTag;
+    await initializePlatformView(webview);
+  }
+
+  await window.electron.X.initArchiveOnlyMode(props.account.id);
+  await updateAccount();
+  model.value.state = State.WizardArchiveOnly;
+  await startStateLoop();
+};
+
+const handleAccountModeModalHide = () => {
+  showAccountModeModal.value = false;
+};
+
 // Lifecycle
 onMounted(async () => {
   setupAuthListeners();
@@ -332,7 +370,16 @@ onMounted(async () => {
   // Wait for child components to mount
   await nextTick();
 
-  if (
+  // Check if we need to show the account mode modal (new account with no username)
+  const shouldShowModal =
+    props.account.xAccount !== null &&
+    !props.account.xAccount.username &&
+    !localStorage.getItem(`account-${props.account.id}-state`);
+
+  if (shouldShowModal) {
+    showAccountModeModal.value = true;
+    // Don't initialize platform view yet - it will be done in the modal handlers
+  } else if (
     platformViewRef.value?.webviewComponent !== null &&
     platformViewRef.value?.webviewComponent !== undefined
   ) {
@@ -385,6 +432,7 @@ onUnmounted(async () => {
 
 <template>
   <PlatformView
+    v-if="!showAccountModeModal"
     ref="platformViewRef"
     :account="account"
     :config="config"
@@ -415,7 +463,6 @@ onUnmounted(async () => {
     @start-jobs-just-save="startJobsJustSave"
     @finished-run-again-clicked="finishedRunAgainClicked"
     @update-user-premium="updateUserPremium"
-    @archive-only-clicked="archiveOnlyClicked"
     @on-pause="model.pause()"
     @on-resume="model.resume()"
     @on-cancel="emit('onRefreshClicked')"
@@ -456,4 +503,12 @@ onUnmounted(async () => {
       </div>
     </template>
   </PlatformView>
+
+  <!-- Account mode modal for new X accounts -->
+  <XAccountModeModal
+    v-if="showAccountModeModal"
+    @choose-login="handleAccountModeModalLogin"
+    @choose-archive-only="handleAccountModeModalArchiveOnly"
+    @hide="handleAccountModeModalHide"
+  />
 </template>

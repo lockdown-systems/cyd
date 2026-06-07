@@ -123,6 +123,14 @@
       "failedToRegisterNewDevice": "Failed to register new device. Please try again later."
     }
   },
+  "modals": {
+    "xAccountMode": {
+      "title": "Do you still have access to your X account?",
+      "description": "If you can't login to your X account (you deleted it, or you were permanently suspended), but you have an X archive, add this account in Archive Only mode. You won't be able to delete data in this mode, but you can migrate your data to Bluesky.",
+      "loginButton": "I Can Login to X",
+      "archiveOnlyButton": "I Can't Login, Use Archive Only Mode"
+    }
+  },
   "errorReport": {
     "title": "Submit an error report",
     "errorsOccurred": "{count} errors occured",
@@ -346,8 +354,7 @@
   "platform": {
     "u2fNotice": "If you use a U2F security key (like a Yubikey) for 2FA, press it when you see a white screen.",
     "u2fNoticeFacebook": "If you use a U2F security key (like a Yubikey) for 2FA, press it when prompted.",
-    "readMore": "Read more",
-    "importArchiveOnly": "Import Archive Only (for deleted accounts with an archive)"
+    "readMore": "Read more"
   },
   "finished": {
     "viewBlueskyProfile": "View Bluesky Profile",
