@@ -1,0 +1,150 @@
+name: Release for Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to build"
+        required: true
+        type: string
+
+jobs:
+  resolve-release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.parse-tag.outputs.tag_name }}
+      tag_version: ${{ steps.parse-tag.outputs.tag_version }}
+      release_env: ${{ steps.parse-tag.outputs.release_env }}
+    steps:
+      - name: Resolve tag and release environment
+        id: parse-tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_NAME="${{ inputs.tag }}"
+          else
+            TAG_NAME="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ ! "$TAG_NAME" =~ ^v.+$ ]]; then
+            echo "::error title=Invalid tag::Tag must start with 'v'. Got: $TAG_NAME"
+            exit 1
+          fi
+
+          TAG_NO_PREFIX="${TAG_NAME#v}"
+          if [[ "$TAG_NAME" == *-dev ]]; then
+            RELEASE_ENV="dev"
+            TAG_VERSION="${TAG_NO_PREFIX%-dev}"
+          else
+            RELEASE_ENV="prod"
+            TAG_VERSION="$TAG_NO_PREFIX"
+          fi
+
+          if [ -z "$TAG_VERSION" ]; then
+            echo "::error title=Invalid tag::Could not derive version from tag: $TAG_NAME"
+            exit 1
+          fi
+
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag_version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_env=$RELEASE_ENV" >> "$GITHUB_OUTPUT"
+
+  build-windows-unsigned:
+    needs: resolve-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-2022
+          - arch: arm64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout repository at release tag
+        uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ needs.resolve-release.outputs.tag_name }}
+
+      - name: Install node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+
+      - name: Make sure the version string matches the tag version
+        shell: pwsh
+        run: |
+          $pkgVersion = node -e "console.log(require('./package.json').version)"
+          $pkgBaseVersion = $pkgVersion -replace '-dev$',''
+          $tagVersion = "${{ needs.resolve-release.outputs.tag_version }}"
+          if ($pkgBaseVersion -ne $tagVersion) {
+            Write-Error "Version check failed: package.json version '$pkgVersion' does not match tag version '$tagVersion'"
+            exit 1
+          }
+
+      - name: Build unsigned Windows release artifacts
+        shell: pwsh
+        run: |
+          npm run make-windows-unsigned -- "${{ needs.resolve-release.outputs.release_env }}" "${{ matrix.arch }}"
+
+      - name: Generate checksums for unsigned artifacts
+        shell: pwsh
+        run: |
+          $checksumFile = "windows-unsigned-checksums-${{ matrix.arch }}.txt"
+          $files = Get-ChildItem -Path "out/make" -File -Recurse | Sort-Object FullName
+          if (-not $files -or $files.Count -eq 0) {
+            Write-Error "No files found under out/make to checksum"
+            exit 1
+          }
+
+          $lines = @()
+          foreach ($file in $files) {
+            $relativePath = [System.IO.Path]::GetRelativePath($PWD.Path, $file.FullName) -replace '\\','/'
+            $hash = (Get-FileHash -Path $file.FullName -Algorithm SHA256).Hash.ToLower()
+            $lines += "$hash  $relativePath"
+          }
+
+          Set-Content -Path $checksumFile -Value $lines
+
+      - name: Upload unsigned Windows artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-unsigned-${{ needs.resolve-release.outputs.release_env }}-${{ matrix.arch }}
+          path: |
+            out/make/**
+            windows-unsigned-checksums-${{ matrix.arch }}.txt
+
+  publish-manifest:
+    needs:
+      - resolve-release
+      - build-windows-unsigned
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download unsigned Windows artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: windows-unsigned-${{ needs.resolve-release.outputs.release_env }}-*
+          path: downloaded-artifacts
+
+      - name: Build windows-release-manifest.json
+        env:
+          RELEASE_ENV: ${{ needs.resolve-release.outputs.release_env }}
+          TAG_NAME: ${{ needs.resolve-release.outputs.tag_name }}
+          TAG_VERSION: ${{ needs.resolve-release.outputs.tag_version }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          ARTIFACTS_ROOT: downloaded-artifacts
+        run: |
+          node ./scripts/build-windows-release-manifest.mjs
+
+      - name: Upload windows release manifest
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-release-manifest-${{ needs.resolve-release.outputs.release_env }}
+          path: windows-release-manifest.json
