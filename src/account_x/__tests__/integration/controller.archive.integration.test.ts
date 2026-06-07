@@ -3,7 +3,7 @@ import "../../../__tests__/platform-fixtures/network";
 
 import fs from "fs";
 import path from "path";
-import archiver from "archiver";
+import { ZipArchive } from "archiver";
 import { beforeEach, afterEach, describe, expect, test, vi } from "vitest";
 
 import { exec } from "../../../database";
@@ -20,7 +20,7 @@ async function createTestArchiveZip(targetDir: string): Promise<void> {
 
   await new Promise<void>((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
-    const zip = archiver("zip", { zlib: { level: 9 } });
+    const zip = new ZipArchive({ zlib: { level: 9 } });
     output.on("close", () => resolve());
     output.on("error", (err) => reject(err));
     zip.on("error", (err) => reject(err));

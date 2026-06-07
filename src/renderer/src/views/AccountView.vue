@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 // Feature flags
 const blueskyFeature = ref(false);
+const facebookFeature = ref(false);
 
 const isRefreshing = ref(false);
 
@@ -41,6 +42,7 @@ const accountClicked = (accountType: string) => {
 
 onMounted(async () => {
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
+  facebookFeature.value = await window.electron.isFeatureEnabled("bluesky");
 
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {
@@ -109,7 +111,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="col-12 col-md-6">
+          <div v-if="facebookFeature" class="col-12 col-md-6">
             <div
               class="card m-2 select-account-facebook"
               @click="accountClicked('Facebook')"
@@ -126,6 +128,40 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <!-- eslint-disable vue/no-v-html -->
+          <p
+            class="text-muted"
+            v-html="t('account.facebookDevelopmentNote')"
+          ></p>
+          <!-- eslint-enable vue/no-v-html -->
+        </div>
+      </div>
+
+      <!-- Cyd Mobile Promo -->
+      <div class="mobile-promo">
+        <div class="mobile-promo-content">
+          <div class="mobile-promo-text">
+            <!-- eslint-disable vue/no-v-html -->
+            <h5 v-html="t('account.blueskyMobilePromo')"></h5>
+            <!-- eslint-enable vue/no-v-html -->
+            <p>
+              <a
+                href="https://cyd.social/docs/mobile/download"
+                target="_blank"
+                >{{ t("account.downloadMobileApp") }}</a
+              >
+            </p>
+          </div>
+          <div class="mobile-promo-image">
+            <img
+              src="/assets/cyd-mobile-screenshot.png"
+              alt="Cyd Mobile App"
+              class="mobile-screenshot"
+            />
           </div>
         </div>
       </div>
@@ -177,5 +213,121 @@ onMounted(async () => {
 .select-account .description .name {
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+/* Mobile Promo Styles */
+.mobile-promo {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 100;
+  max-width: 500px;
+}
+
+.mobile-promo-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #e8f7ff 0%, #f0f9ff 100%);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: rotate(-1deg);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.mobile-promo-content:hover {
+  transform: rotate(0deg) translateY(-4px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-promo-text {
+  flex: 1;
+}
+
+.mobile-promo-text h5 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.mobile-promo-text p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.mobile-promo-text a {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.mobile-promo-text a:hover {
+  text-decoration: underline;
+}
+
+.mobile-promo-image {
+  margin-top: -10px;
+  margin-bottom: -40px;
+}
+
+.mobile-screenshot {
+  width: 150px;
+  height: auto;
+  border-radius: 8px;
+  transform: rotate(3deg);
+  transition: transform 0.3s ease;
+}
+
+.mobile-promo-content:hover .mobile-screenshot {
+  transform: rotate(0deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mobile-promo {
+    position: static;
+    max-width: 100%;
+    margin-top: 2rem;
+  }
+
+  .mobile-promo-content {
+    transform: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .mobile-screenshot {
+    width: 150px;
+    transform: none;
+  }
+
+  .mobile-promo-content:hover {
+    transform: none;
+  }
+
+  .mobile-promo-content:hover .mobile-screenshot {
+    transform: none;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .mobile-promo {
+    max-width: 380px;
+  }
+
+  .mobile-screenshot {
+    width: 130px;
+  }
+
+  .mobile-promo-text h5 {
+    font-size: 0.9rem;
+  }
+
+  .mobile-promo-text p {
+    font-size: 0.85rem;
+  }
 }
 </style>
