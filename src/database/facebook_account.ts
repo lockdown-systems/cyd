@@ -10,6 +10,13 @@ interface FacebookAccountRow {
   profileImageDataURI: string;
   accountID: string | null;
   deleteWallPosts: number;
+  deleteComments: number;
+  deleteReactions: number;
+  deletePostsOnOthers: number;
+  deleteOthersPosts: number;
+  deleteCheckins: number;
+  deleteTaggedPosts: number;
+  deleteTaggedMedia: number;
   userLang: string;
 }
 
@@ -25,6 +32,13 @@ function facebookAccountRowToFacebookAccount(
     profileImageDataURI: row.profileImageDataURI,
     accountID: row.accountID,
     deleteWallPosts: row.deleteWallPosts === 1,
+    deleteComments: row.deleteComments === 1,
+    deleteReactions: row.deleteReactions === 1,
+    deletePostsOnOthers: row.deletePostsOnOthers === 1,
+    deleteOthersPosts: row.deleteOthersPosts === 1,
+    deleteCheckins: row.deleteCheckins === 1,
+    deleteTaggedPosts: row.deleteTaggedPosts === 1,
+    deleteTaggedMedia: row.deleteTaggedMedia === 1,
     userLang: row.userLang || "English (US)",
   };
 }
@@ -81,6 +95,13 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
             profileImageDataURI = ?,
             accountID = ?,
             deleteWallPosts = ?,
+            deleteComments = ?,
+            deleteReactions = ?,
+            deletePostsOnOthers = ?,
+            deleteOthersPosts = ?,
+            deleteCheckins = ?,
+            deleteTaggedPosts = ?,
+            deleteTaggedMedia = ?,
             userLang = ?
         WHERE id = ?
     `,
@@ -89,6 +110,13 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
       account.profileImageDataURI,
       account.accountID,
       account.deleteWallPosts ? 1 : 0,
+      account.deleteComments ? 1 : 0,
+      account.deleteReactions ? 1 : 0,
+      account.deletePostsOnOthers ? 1 : 0,
+      account.deleteOthersPosts ? 1 : 0,
+      account.deleteCheckins ? 1 : 0,
+      account.deleteTaggedPosts ? 1 : 0,
+      account.deleteTaggedMedia ? 1 : 0,
       account.userLang || "English (US)",
       account.id,
     ],
