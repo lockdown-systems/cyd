@@ -420,20 +420,39 @@
       "deleteWallDescription": "Remove all posts from your Facebook wall."
     },
     "deleteOptions": {
-      "title": "Delete My Wall",
-      "description": "Select the data you want to remove from your Facebook wall.",
-      "deleteWallPosts": "Remove all posts from my wall"
+      "title": "Delete My Facebook Data",
+      "description": "Select the data you want to delete from your Facebook activity log.",
+      "deleteWallPosts": "Posts, photos, and videos",
+      "deleteComments": "Comments",
+      "deleteReactions": "Likes and reactions",
+      "deletePostsOnOthers": "Your posts on other people's timelines",
+      "deleteOthersPosts": "Other people's posts on your timeline",
+      "deleteCheckins": "Check-ins",
+      "deleteTaggedPosts": "Posts you're tagged in",
+      "deleteTaggedMedia": "Photos and videos you're tagged in"
     },
     "review": {
-      "deleteWallPosts": "All posts from your Facebook wall",
+      "deleteWallPosts": "Your posts, photos, and videos",
+      "deleteComments": "Your comments",
+      "deleteReactions": "Your likes and reactions",
+      "deletePostsOnOthers": "Your posts on other people's timelines",
+      "deleteOthersPosts": "Other people's posts on your timeline",
+      "deleteCheckins": "Your check-ins",
+      "deleteTaggedPosts": "Posts you're tagged in",
+      "deleteTaggedMedia": "Photos and videos you're tagged in",
       "languageSettingsMightChange": "Your Facebook language settings might temporarily change.",
       "languageSettingsDescription": "If your Facebook account isn't already set to English, Cyd will set it to English, delete your data, and then change it back to your preferred language."
     },
     "finished": {
       "title": "Jobs Completed",
-      "wallPostsDeleted": "wall posts deleted",
-      "wallPostsUntagged": "wall posts untagged",
-      "wallPostsHidden": "wall posts hidden"
+      "wallPostsDeleted": "posts, photos, and videos deleted",
+      "commentsDeleted": "comments deleted",
+      "reactionsDeleted": "likes and reactions deleted",
+      "postsOnOthersDeleted": "posts on others' timelines deleted",
+      "othersPostsDeleted": "others' posts on your timeline deleted",
+      "checkinsDeleted": "check-ins deleted",
+      "taggedPostsDeleted": "tagged posts deleted",
+      "taggedMediaDeleted": "tagged photos and videos deleted"
     },
     "premium": {
       "readyToDelete": "You're all set! Let's continue to configure what you want to delete.",
@@ -632,6 +651,7 @@
         "savingLanguage": "I'm checking your language settings.",
         "settingLanguageToEnglish": "I'm temporarily changing your language to English (US) for automation.",
         "restoringLanguage": "I'm restoring your original language setting.",
+        "deletingCategory": "# I'm deleting **{category}** from your Facebook activity log.",
         "removingWallPosts": "# I'm removing all posts from your Facebook wall.",
         "managePostsLoading": "# I'm checking what posts are left to remove.",
         "checkBatchActionWallPosts": "# I'm looking for a batch of posts to **{action}**...",
