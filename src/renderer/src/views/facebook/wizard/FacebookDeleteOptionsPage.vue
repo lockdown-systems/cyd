@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { reactive, onMounted, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   FacebookViewModel,
   State,
 } from "../../../view_models/FacebookViewModel";
+import {
+  FACEBOOK_DELETE_CATEGORIES,
+  type FacebookDeleteSetting,
+} from "../../../view_models/FacebookViewModel/categories";
 import { getBreadcrumbIcon, setJobsType } from "../../../util";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
@@ -26,13 +30,21 @@ const emit = defineEmits(["setState", "updateAccount"]);
 // Use wizard page composable
 const { isLoading, setLoading } = useWizardPage();
 
-// Settings
-const deleteWallPosts = ref(false);
-
-// Check if delete option is selected
-const hasValidSelection = computed(() => {
-  return deleteWallPosts.value;
+const settings = reactive<Record<FacebookDeleteSetting, boolean>>({
+  deleteWallPosts: false,
+  deleteComments: false,
+  deleteReactions: false,
+  deletePostsOnOthers: false,
+  deleteOthersPosts: false,
+  deleteCheckins: false,
+  deleteTaggedPosts: false,
+  deleteTaggedMedia: false,
 });
+
+// At least one category must be selected to continue
+const hasValidSelection = computed(() =>
+  FACEBOOK_DELETE_CATEGORIES.some((category) => settings[category.setting]),
+);
 
 // Custom next handler
 const nextClicked = async () => {
@@ -53,7 +65,9 @@ const loadSettings = async () => {
       props.model.account?.id,
     );
     if (account && account.facebookAccount) {
-      deleteWallPosts.value = account.facebookAccount.deleteWallPosts;
+      for (const category of FACEBOOK_DELETE_CATEGORIES) {
+        settings[category.setting] = account.facebookAccount[category.setting];
+      }
     }
   } finally {
     setLoading(false);
@@ -76,7 +90,9 @@ const saveSettings = async () => {
       props.model.account?.id,
     );
     if (account && account.facebookAccount) {
-      account.facebookAccount.deleteWallPosts = deleteWallPosts.value;
+      for (const category of FACEBOOK_DELETE_CATEGORIES) {
+        account.facebookAccount[category.setting] = settings[category.setting];
+      }
       await window.electron.database.saveAccount(JSON.stringify(account));
       emit("updateAccount");
     }
@@ -130,26 +146,25 @@ onMounted(async () => {
         </div>
 
         <form @submit.prevent>
-          <div class="mb-3">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="form-check">
-                <input
-                  id="deleteWallPosts"
-                  v-model="deleteWallPosts"
-                  type="checkbox"
-                  class="form-check-input"
-                  @change="saveSettings"
-                />
-                <label
-                  class="form-check-label mr-1 text-nowrap"
-                  for="deleteWallPosts"
-                >
-                  {{ t("facebook.deleteOptions.deleteWallPosts") }}
-                </label>
-                <span class="ms-2 text-muted">{{
-                  t("wizard.recommended")
-                }}</span>
-              </div>
+          <div
+            v-for="category in FACEBOOK_DELETE_CATEGORIES"
+            :key="category.setting"
+            class="mb-3"
+          >
+            <div class="form-check">
+              <input
+                :id="category.setting"
+                v-model="settings[category.setting]"
+                type="checkbox"
+                class="form-check-input"
+                @change="saveSettings"
+              />
+              <label
+                class="form-check-label mr-1 text-nowrap"
+                :for="category.setting"
+              >
+                {{ t(category.labelKey) }}
+              </label>
             </div>
           </div>
         </form>
