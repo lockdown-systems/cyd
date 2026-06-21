@@ -5,8 +5,10 @@ import {
   State,
 } from "../../../view_models/FacebookViewModel";
 import { getBreadcrumbIcon } from "../../../util";
+import { FACEBOOK_DELETE_CATEGORIES } from "../../../view_models/FacebookViewModel/categories";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+import { computed } from "vue";
 
 const { t } = useI18n();
 
@@ -15,7 +17,16 @@ interface Props extends StandardWizardPageProps {
   model: FacebookViewModel;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+// One row per category that had at least one item deleted.
+const deletedCounts = computed(() =>
+  FACEBOOK_DELETE_CATEGORIES.map((category) => ({
+    setting: category.setting,
+    count: props.model.progress[category.counter],
+    label: t(`facebook.finished.${category.counter}`),
+  })).filter((entry) => entry.count > 0),
+);
 
 // Emits
 const emit = defineEmits(["setState"]);
@@ -49,26 +60,10 @@ const backToDashboard = () => {
           <div class="finished">
             <h2>{{ t("finished.youJustDeleted") }}</h2>
             <ul>
-              <li>
+              <li v-for="entry in deletedCounts" :key="entry.setting">
                 <i class="fa-solid fa-fire delete-bullet" />
-                <strong>{{
-                  model.progress.wallPostsDeleted.toLocaleString()
-                }}</strong>
-                {{ t("facebook.finished.wallPostsDeleted") }}
-              </li>
-              <li>
-                <i class="fa-solid fa-fire delete-bullet" />
-                <strong>{{
-                  model.progress.wallPostsUntagged.toLocaleString()
-                }}</strong>
-                {{ t("facebook.finished.wallPostsUntagged") }}
-              </li>
-              <li>
-                <i class="fa-solid fa-fire delete-bullet" />
-                <strong>{{
-                  model.progress.wallPostsHidden.toLocaleString()
-                }}</strong>
-                {{ t("facebook.finished.wallPostsHidden") }}
+                <strong>{{ entry.count.toLocaleString() }}</strong>
+                {{ entry.label }}
               </li>
             </ul>
           </div>
