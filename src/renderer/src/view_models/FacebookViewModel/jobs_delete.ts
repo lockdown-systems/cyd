@@ -3,18 +3,11 @@ import { RunJobsState } from "./types";
 import * as Helpers from "./helpers";
 import { checkRateLimit } from "./rate_limit";
 import { AutomationErrorType } from "../../automation_errors";
+import {
+  selectedDeleteCategories,
+  type FacebookDeleteCategory,
+} from "./categories";
 
-const FACEBOOK_PROFILE_URL = "https://www.facebook.com/me/";
-const FACEBOOK_CATEGORY_KEYS = {
-  "comments": "COMMENTSCLUSTER",
-  "reactions": "LIKEDPOSTS",
-  "user_posts": "MANAGEPOSTSPHOTOSANDVIDEOS",
-  "posts_on_others": "POSTSONOTHERSTIMELINES",
-  "others_posts": "WALLCLUSTER",
-  "checkins": "CHECKINS",
-  "tagged_posts": "MANAGETAGSBYOTHERSCLUSTER",
-  "tagged_media": "TAGGEDPHOTOS",
-}
 const ACTIVITY_LOG_CHECKBOX_NAME = "comet_activity_log_select_all_checkbox"
 
 async function reportDeleteWallPostsError(
@@ -30,288 +23,6 @@ async function reportDeleteWallPostsError(
 }
 
 /**
- * Click the "Manage posts" button on the profile page
- */
-async function clickManagePostsButton(vm: FacebookViewModel): Promise<boolean> {
-  const result = await vm.safeExecuteJavaScript<boolean>(
-    `(() => {
-      const buttons = document.querySelectorAll('div[aria-label="Manage posts"][role="button"]');
-      if (buttons.length > 0) {
-        buttons[0].click();
-        return true;
-      }
-      return false;
-    })()`,
-    "clickManagePostsButton",
-  );
-  return result.success && result.value;
-}
-
-/**
- * Wait for the "Manage posts" dialog to appear
- */
-async function waitForManagePostsDialog(
-  vm: FacebookViewModel,
-): Promise<boolean> {
-  // Wait up to 30 seconds for dialog to appear
-  for (let i = 0; i < 60; i++) {
-    const result = await vm.safeExecuteJavaScript<boolean>(
-      `(() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        return !!dialog;
-      })()`,
-      "waitForManagePostsDialog",
-    );
-
-    if (!result.success) {
-      return false;
-    }
-
-    if (result.value) {
-      // Give it a moment for content to load
-      await vm.sleep(500);
-      return true;
-    }
-    await vm.sleep(500);
-  }
-  return false;
-}
-
-/**
- * Wait for the "Manage posts" dialog to disappear
- * This indicates the deletion process has completed
- */
-async function waitForManagePostsDialogToDisappear(
-  vm: FacebookViewModel,
-): Promise<boolean> {
-  // Wait up to 60 seconds for dialog to disappear (deletion might take a while)
-  for (let i = 0; i < 120; i++) {
-    const result = await vm.safeExecuteJavaScript<boolean>(
-      `(() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        return !!dialog;
-      })()`,
-      "waitForManagePostsDialogToDisappear",
-    );
-
-    if (!result.success) {
-      return false;
-    }
-
-    if (!result.value) {
-      vm.log("waitForManagePostsDialogToDisappear", "Dialog has disappeared");
-      return true;
-    }
-    await vm.sleep(500);
-  }
-
-  vm.log(
-    "waitForManagePostsDialogToDisappear",
-    "Timeout waiting for dialog to disappear",
-  );
-  return false;
-}
-
-/**
- * Get the action description text from the dialog
- * Returns text like "You can hide or delete the posts selected." or empty string
- */
-async function getActionDescription(vm: FacebookViewModel): Promise<string> {
-  const result = await vm.safeExecuteJavaScript<string>(
-    `(() => {
-      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-      if (!dialog) return "";
-
-      // Find the actions description span
-      // It's nested in the structure described by the user
-      // We'll search for spans that contain text about deletion/hiding
-      const spans = dialog.querySelectorAll('span');
-      for (const span of spans) {
-        const text = span.textContent?.trim() || "";
-        if (text.startsWith("You can")) {
-          return text;
-        }
-      }
-      return "";
-    })()`,
-    "getActionDescription",
-  );
-  return result.success ? result.value || "" : "";
-}
-
-type PostAction = "delete" | "untag" | "hide";
-
-const actionVerbKeys: Record<PostAction, string> = {
-  delete: "viewModels.facebook.jobs.actionDelete",
-  untag: "viewModels.facebook.jobs.actionUntag",
-  hide: "viewModels.facebook.jobs.actionHide",
-};
-
-const actionPresentKeys: Record<PostAction, string> = {
-  delete: "viewModels.facebook.jobs.actionDeletePresent",
-  untag: "viewModels.facebook.jobs.actionUntagPresent",
-  hide: "viewModels.facebook.jobs.actionHidePresent",
-};
-
-async function getCheckboxState(
-  vm: FacebookViewModel,
-  listIndex: number,
-  itemIndex: number,
-): Promise<boolean | null> {
-  const result = await vm.safeExecuteJavaScript<boolean | null>(
-    `(() => {
-      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-      if (!dialog) return null;
-
-      const lists = dialog.querySelectorAll('div[role="list"]');
-      if (${listIndex} >= lists.length) return null;
-
-      const list = lists[${listIndex}];
-      const items = list.querySelectorAll('div[role="listitem"]');
-      if (${itemIndex} >= items.length) return null;
-
-      const item = items[${itemIndex}];
-      const checkbox = item.querySelector('input[type="checkbox"]');
-      const checkboxControl = item.querySelector('[role="checkbox"]');
-      const ariaChecked =
-        checkboxControl?.getAttribute('aria-checked') ??
-        checkbox?.getAttribute('aria-checked');
-
-      if (ariaChecked === 'true') return true;
-      if (ariaChecked === 'false') return false;
-      if (checkbox instanceof HTMLInputElement) return checkbox.checked;
-
-      return null;
-    })()`,
-    "getCheckboxState",
-  );
-
-  return result.success ? result.value : null;
-}
-
-async function waitForCheckboxState(
-  vm: FacebookViewModel,
-  listIndex: number,
-  itemIndex: number,
-  expectedChecked: boolean,
-  timeoutMs: number = 5000,
-): Promise<boolean> {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < timeoutMs) {
-    const checked = await getCheckboxState(vm, listIndex, itemIndex);
-    if (checked === expectedChecked) {
-      return true;
-    }
-    await vm.sleep(200);
-  }
-
-  return false;
-}
-
-async function waitForActionDescriptionStable(
-  vm: FacebookViewModel,
-  timeoutMs: number = 5000,
-): Promise<string> {
-  const startTime = Date.now();
-  let lastDescription = "";
-
-  while (Date.now() - startTime < timeoutMs) {
-    const description = await getActionDescription(vm);
-    if (description !== "" && description === lastDescription) {
-      return description;
-    }
-    lastDescription = description;
-    await vm.sleep(200);
-  }
-
-  return lastDescription;
-}
-
-async function waitForBatchAction(
-  vm: FacebookViewModel,
-  expectedAction: PostAction,
-  timeoutMs: number = 5000,
-): Promise<{ success: boolean; actionDescription: string }> {
-  const startTime = Date.now();
-  let lastDescription = "";
-
-  while (Date.now() - startTime < timeoutMs) {
-    const actionDescription = await getActionDescription(vm);
-    lastDescription = actionDescription;
-
-    if (
-      getHighestPriority(parseActions(actionDescription)) === expectedAction
-    ) {
-      return { success: true, actionDescription };
-    }
-
-    await vm.sleep(200);
-  }
-
-  return { success: false, actionDescription: lastDescription };
-}
-
-async function waitForActionOptionsDialog(
-  vm: FacebookViewModel,
-  timeoutMs: number = 10000,
-): Promise<boolean> {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < timeoutMs) {
-    const result = await vm.safeExecuteJavaScript<boolean>(
-      `(() => {
-        const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-        if (!dialog) return false;
-
-        const hasActionOptions = dialog.querySelector('div[aria-disabled]');
-        const hasDoneButton = dialog.querySelector('div[aria-label="Done"][role="button"]');
-        return Boolean(hasActionOptions && hasDoneButton);
-      })()`,
-      "waitForActionOptionsDialog",
-    );
-
-    if (result.success && result.value) {
-      return true;
-    }
-
-    await vm.sleep(200);
-  }
-
-  return false;
-}
-
-/**
- * Parse the available actions from an action description string.
- * e.g. "You can hide or delete the posts selected." -> ['delete', 'hide']
- *      "You can untag yourself from or hide the posts selected." -> ['untag', 'hide']
- *      "You can hide the posts selected." -> ['hide']
- */
-export function parseActions(actionDescription: string): PostAction[] {
-  if (typeof actionDescription !== "string") {
-    return [];
-  }
-
-  const actions: PostAction[] = [];
-  const text = actionDescription.toLowerCase();
-  if (text.includes("delete")) actions.push("delete");
-  if (text.includes("untag")) actions.push("untag");
-  if (text.includes("hide")) actions.push("hide");
-  return actions;
-}
-
-/**
- * Return the highest-priority action from a list.
- * Priority order: delete > untag > hide
- */
-export function getHighestPriority(actions: PostAction[]): PostAction | null {
-  if (actions.includes("delete")) return "delete";
-  if (actions.includes("untag")) return "untag";
-  if (actions.includes("hide")) return "hide";
-  return null;
-}
-
-/**
  * Toggle a checkbox by name and return success
  */
 async function toggleSelectAllCheckbox(vm: FacebookViewModel, shouldCheck: boolean): Promise<boolean> {
@@ -320,7 +31,9 @@ async function toggleSelectAllCheckbox(vm: FacebookViewModel, shouldCheck: boole
       const checkbox = document.querySelector('input[name="${ACTIVITY_LOG_CHECKBOX_NAME}"]');
       if (!checkbox) return false;
 
-      const isChecked = checkbox?.getAttribute('aria-checked') || checkbox.checked;
+      // aria-checked is the string "true"/"false"; fall back to the native checked prop.
+      const ariaChecked = checkbox.getAttribute('aria-checked');
+      const isChecked = ariaChecked === 'true' ? true : (ariaChecked === 'false' ? false : checkbox.checked);
 
       const shouldCheck = ${shouldCheck};
 
@@ -337,61 +50,20 @@ async function toggleSelectAllCheckbox(vm: FacebookViewModel, shouldCheck: boole
 }
 
 /**
- * Get the total number of lists and items
+ * Count the selectable items (row checkboxes, excluding the "select all" header checkbox)
+ * so we can report how many items a delete batch removed.
  */
-async function getListsAndItems(
-  vm: FacebookViewModel,
-): Promise<{ listIndex: number; itemIndex: number }[]> {
-  const result = await vm.safeExecuteJavaScript<
-    { listIndex: number; itemIndex: number }[]
-  >(
+async function countSelectableItems(vm: FacebookViewModel): Promise<number> {
+  const result = await vm.safeExecuteJavaScript<number>(
     `(() => {
-      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-      if (!dialog) return [];
-
-      const lists = dialog.querySelectorAll('div[role="list"]');
-      const result = [];
-
-      for (let listIndex = 0; listIndex < lists.length; listIndex++) {
-        const list = lists[listIndex];
-        const listItems = list.querySelectorAll('div[role="listitem"]');
-
-        for (let itemIndex = 0; itemIndex < listItems.length; itemIndex++) {
-          const item = listItems[itemIndex];
-          const checkbox = item.querySelector('input[type="checkbox"]');
-          if (checkbox) {
-            result.push({ listIndex, itemIndex });
-          }
-        }
-      }
-
-      return result;
+      const checkboxes = document.querySelectorAll(
+        'input[type="checkbox"]:not([name="${ACTIVITY_LOG_CHECKBOX_NAME}"])'
+      );
+      return checkboxes.length;
     })()`,
-    "getListsAndItems",
+    "countSelectableItems",
   );
-  if (!result.success || !Array.isArray(result.value)) return [];
-  return result.value;
-}
-
-/**
- * Click the Next button in the dialog
- */
-async function clickNextButton(vm: FacebookViewModel): Promise<boolean> {
-  const result = await vm.safeExecuteJavaScript<boolean>(
-    `(() => {
-      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
-      if (!dialog) return false;
-
-      const nextButton = dialog.querySelector('div[aria-label="Next"][role="button"]');
-      if (nextButton) {
-        nextButton.click();
-        return true;
-      }
-      return false;
-    })()`,
-    "clickNextButton",
-  );
-  return result.success && result.value;
+  return result.success && typeof result.value === "number" ? result.value : 0;
 }
 
 /**
@@ -424,109 +96,179 @@ async function clickDeletePostsOption(
 }
 
 /**
- * Click the Done button in the dialog
+ * Confirm the "Move to trash?" dialog that appears after clicking Trash.
+ * Best-effort: some flows delete without a confirmation step.
  */
-async function clickDoneButton(vm: FacebookViewModel): Promise<boolean> {
+async function confirmDeletion(vm: FacebookViewModel): Promise<boolean> {
   const result = await vm.safeExecuteJavaScript<boolean>(
     `(() => {
-      const dialog = document.querySelector('div[aria-label="Manage posts"][role="dialog"]');
+      const dialog = document.querySelector('div[role="dialog"]');
       if (!dialog) return false;
-
-      const doneButton = dialog.querySelector('div[aria-label="Done"][role="button"]');
-      if (doneButton) {
-        doneButton.click();
-        return true;
+      const buttons = dialog.querySelectorAll('div[role="button"], button');
+      for (const button of buttons) {
+        const label = (button.getAttribute('aria-label') || button.textContent || '').trim().toLowerCase();
+        if (['delete', 'move to trash', 'confirm', 'remove'].includes(label)) {
+          if (button.getAttribute('aria-disabled') === 'true') return false;
+          button.click();
+          return true;
+        }
       }
       return false;
     })()`,
-    "clickDoneButton",
+    "confirmDeletion",
   );
   return result.success && result.value;
 }
 
+/**
+ * Wait for a delete batch to be applied: the select-all checkbox clears or disappears.
+ */
+async function waitForBatchToComplete(
+  vm: FacebookViewModel,
+  timeoutMs: number = 30000,
+): Promise<boolean> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    const settled = await vm.safeExecuteJavaScript<boolean>(
+      `(() => {
+        const checkbox = document.querySelector('input[name="${ACTIVITY_LOG_CHECKBOX_NAME}"]');
+        if (!checkbox) return true; // no items left
+        const ariaChecked = checkbox.getAttribute('aria-checked');
+        const isChecked = ariaChecked === 'true' ? true : (ariaChecked === 'false' ? false : checkbox.checked);
+        return !isChecked; // selection cleared => batch applied
+      })()`,
+      "waitForBatchToComplete",
+    );
+    if (settled.success && settled.value) {
+      return true;
+    }
+    await vm.sleep(500);
+  }
+  return false;
+}
+
 async function loadActivityLog(
   vm: FacebookViewModel,
-  categoryKey: keyof typeof FACEBOOK_CATEGORY_KEYS
+  categoryKey: string,
 ): Promise<void> {
   if (vm.account.facebookAccount) {
     vm.log("loadActivityLog", `Loading activity log for category key: ${categoryKey}`);
 
     const FACEBOOK_ACTIVITY_LOG_URL = `https://www.facebook.com/${vm.account.facebookAccount.accountID}/\
-allactivity?activity_history=false&category_key=${FACEBOOK_CATEGORY_KEYS[categoryKey]}\
-&manage_mode=false&should_load_landing_page=false`;
+allactivity?activity_history=false&category_key=${categoryKey}\
+&manage_mode=true&should_load_landing_page=false`;
 
     await vm.loadURL(FACEBOOK_ACTIVITY_LOG_URL);
     await vm.waitForLoadingToFinish();
-
-    await vm.pause();
 
     await vm.waitForPause();
   }
 }
 
-export async function runJobDeleteWallPosts(
+/**
+ * Delete every item in a single activity-log category, batch by batch, until none remain.
+ * Returns the number of items deleted, or null if the job errored.
+ */
+async function deleteCategory(
+  vm: FacebookViewModel,
+  jobIndex: number,
+  category: FacebookDeleteCategory,
+): Promise<number | null> {
+  await loadActivityLog(vm, category.categoryKey);
+
+  // Keep deleting until there are no more items to delete
+  while (true) {
+    // Check for rate limits
+    await checkRateLimit(vm);
+    await vm.waitForPause();
+
+    // Select all currently loaded items. The checkbox only exists when there are
+    // items, so a false result means we're done with this category.
+    const toggled = await toggleSelectAllCheckbox(vm, true);
+    if (!toggled) {
+      vm.log("deleteCategory", `No more items for category ${category.setting}`);
+      break;
+    }
+
+    // Count what we're about to delete so we can report progress
+    const batchCount = await countSelectableItems(vm);
+
+    await vm.waitForPause();
+
+    // Click on trash
+    const deletedBtnClicked = await clickDeletePostsOption(vm);
+    if (!deletedBtnClicked) {
+      vm.log("deleteCategory", `Failed to click "Trash" button`);
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_SelectDeleteOptionFailed,
+        { category: category.setting, message: "Failed to click Trash button" },
+      );
+      return null;
+    }
+
+    // Confirm the deletion dialog if one appears, then wait for the batch to apply
+    await vm.sleep(1000);
+    await confirmDeletion(vm);
+    const completed = await waitForBatchToComplete(vm);
+    if (!completed) {
+      await reportDeleteWallPostsError(
+        vm,
+        jobIndex,
+        AutomationErrorType.facebook_runJob_deleteWallPosts_CompletionTimeout,
+        { category: category.setting, message: "Batch did not complete" },
+      );
+      return null;
+    }
+
+    // Record progress for this batch
+    vm.progress[category.counter] += batchCount;
+    await Helpers.incrementCumulativeTotal(vm, category.counter, batchCount);
+    vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
+  }
+
+  return vm.progress[category.counter];
+}
+
+export async function runJobDeleteActivity(
   vm: FacebookViewModel,
   jobIndex: number,
 ): Promise<void> {
-  vm.runJobsState = RunJobsState.DeleteWallPosts;
+  vm.runJobsState = RunJobsState.DeleteActivity;
 
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
-  vm.instructions = vm.t("viewModels.facebook.jobs.removingWallPosts");
+  vm.progress.isDeleteActivityFinished = false;
 
-  // TODO: might want to not hardcode but based on the options selected by users
-  const postCategoryKeys = [
-    "user_posts",
-    "posts_on_others",
-    "others_posts",
-    "checkins",
-    "tagged_posts",
-    "tagged_media"
-  ] as (keyof typeof FACEBOOK_CATEGORY_KEYS)[];
+  // Delete each data category the user selected. Every category uses the identical
+  // activity-log flow and differs only by its category_key.
+  const categories = vm.account.facebookAccount
+    ? selectedDeleteCategories(vm.account.facebookAccount)
+    : [];
 
-  for (const categoryKey  of postCategoryKeys) {
-    // Load activity log page based on category key
+  for (const category of categories) {
     await vm.waitForPause();
-    await loadActivityLog(vm, categoryKey);
 
-    // Keep deleting posts until there are no more to delete
-    let totalDeleted = 0;
-    while (true) {
-      // Check for rate limits
-      await checkRateLimit(vm);
+    vm.progress.currentCategory = category.setting;
+    vm.instructions = vm.t("viewModels.facebook.jobs.deletingCategory", {
+      category: vm.t(category.labelKey),
+    });
 
-      // Check select all checkbox
-      const toggled = await toggleSelectAllCheckbox(vm, true);
-      if (!toggled) {
-        vm.log(
-          "runJobDeleteWallPosts",
-          `Failed to check "All" checkbox`,
-        );
-        continue;
-      }
-
-      await vm.waitForPause();
-
-      // Click on trash
-      const deletedBtnClicked = await clickDeletePostsOption(vm);
-      if(deletedBtnClicked) {
-        vm.log(
-          "runJobDeleteWallPosts",
-          `Failed to click "Trash" button`,
-        );
-        continue;
-      }
+    const deleted = await deleteCategory(vm, jobIndex, category);
+    if (deleted === null) {
+      // deleteCategory already marked the job as errored
+      return;
     }
   }
 
-  vm.log(
-    "runJobDeleteWallPosts",
-    `All done! Total posts deleted: ${totalDeleted}`,
-  );
+  vm.progress.currentCategory = "";
+  vm.progress.isDeleteActivityFinished = true;
+  vm.log("runJobDeleteActivity", "All done!");
 
   await vm.waitForPause();
 
-  // Always submit final progress to the API (even if 0 posts were deleted)
+  // Always submit final progress to the API (even if 0 items were deleted)
   vm.emitter?.emit(`facebook-submit-progress-${vm.account.id}`);
 
   await Helpers.finishJob(vm, jobIndex);
