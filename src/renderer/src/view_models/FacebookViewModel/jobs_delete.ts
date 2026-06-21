@@ -67,32 +67,38 @@ async function countSelectableItems(vm: FacebookViewModel): Promise<number> {
 }
 
 /**
- * Click the "Trash" button in the header section
- * Looks for a div with role "button" and aria-label "trash" (case insensitive), checks it's not disabled,
- * and clicks the button
+ * Click the "Trash" button in the header section.
+ * The action toolbar renders after items are selected, so poll for the button to appear
+ * and become enabled. Treats a missing aria-disabled attribute as "enabled".
  */
 async function clickDeletePostsOption(
   vm: FacebookViewModel,
+  timeoutMs: number = 10000,
 ): Promise<boolean> {
-  const result = await vm.safeExecuteJavaScript<boolean>(
-    `(() => {
-      const deleteButton = document.querySelector('div[aria-label="Trash"][role="button"]');
-      if (!deleteButton) return false;
-
-      if (deleteButton.getAttribute('aria-disabled') === 'false') {
-        deleteButton.click();
-        return true;
-      } else {
-        console.log('Delete posts option is disabled');
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    const result = await vm.safeExecuteJavaScript<boolean>(
+      `(() => {
+        const buttons = document.querySelectorAll('div[role="button"], [aria-label]');
+        for (const button of buttons) {
+          const label = (button.getAttribute('aria-label') || '').trim().toLowerCase();
+          if (label === 'trash' || label === 'move to trash') {
+            // Only skip if explicitly disabled; a missing attribute means enabled.
+            if (button.getAttribute('aria-disabled') === 'true') continue;
+            button.click();
+            return true;
+          }
+        }
         return false;
-      }
-
-      console.log('Could not find delete posts option');
-      return false;
-    })()`,
-    "clickDeletePostsOption",
-  );
-  return result.success && result.value;
+      })()`,
+      "clickDeletePostsOption",
+    );
+    if (result.success && result.value) {
+      return true;
+    }
+    await vm.sleep(500);
+  }
+  return false;
 }
 
 /**
