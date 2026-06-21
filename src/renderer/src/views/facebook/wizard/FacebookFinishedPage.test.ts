@@ -105,12 +105,12 @@ describe("FacebookFinishedPage", () => {
       });
 
       expect(wrapper.text()).toContain("42");
-      expect(wrapper.text()).toContain("wall posts deleted");
+      expect(wrapper.text()).toContain("posts, photos, and videos deleted");
     });
 
-    it("shows wall posts untagged count", () => {
+    it("shows a per-category count for each category with deletions", () => {
       const vm = createMockFacebookViewModel();
-      vm.progress.wallPostsUntagged = 15;
+      vm.progress.commentsDeleted = 7;
 
       const wrapper = mount(FacebookFinishedPage, {
         global: {
@@ -121,13 +121,13 @@ describe("FacebookFinishedPage", () => {
         },
       });
 
-      expect(wrapper.text()).toContain("15");
-      expect(wrapper.text()).toContain("wall posts untagged");
+      expect(wrapper.text()).toContain("7");
+      expect(wrapper.text()).toContain("comments deleted");
     });
 
-    it("shows wall posts hidden count", () => {
+    it("omits categories with no deletions", () => {
       const vm = createMockFacebookViewModel();
-      vm.progress.wallPostsHidden = 8;
+      vm.progress.wallPostsDeleted = 42;
 
       const wrapper = mount(FacebookFinishedPage, {
         global: {
@@ -138,8 +138,8 @@ describe("FacebookFinishedPage", () => {
         },
       });
 
-      expect(wrapper.text()).toContain("8");
-      expect(wrapper.text()).toContain("wall posts hidden");
+      // No comments were deleted, so that line should not appear.
+      expect(wrapper.text()).not.toContain("comments deleted");
     });
 
     it("formats large numbers with locale string", () => {

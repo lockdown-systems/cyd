@@ -8,7 +8,7 @@ import {
   type FacebookDeleteCategory,
 } from "./categories";
 
-const ACTIVITY_LOG_CHECKBOX_NAME = "comet_activity_log_select_all_checkbox"
+const ACTIVITY_LOG_CHECKBOX_NAME = "comet_activity_log_select_all_checkbox";
 
 // Facebook throttles consecutive bulk deletions. Cool down between batches, and if it
 // reports it's "still processing the previous changes", back off and retry
@@ -31,7 +31,10 @@ async function reportDeleteWallPostsError(
 /**
  * Toggle a checkbox by name and return success
  */
-async function toggleSelectAllCheckbox(vm: FacebookViewModel, shouldCheck: boolean): Promise<boolean> {
+async function toggleSelectAllCheckbox(
+  vm: FacebookViewModel,
+  shouldCheck: boolean,
+): Promise<boolean> {
   const result = await vm.safeExecuteJavaScript<boolean>(
     `(() => {
       const checkbox = document.querySelector('input[name="${ACTIVITY_LOG_CHECKBOX_NAME}"]');
@@ -226,7 +229,10 @@ async function loadActivityLog(
   categoryKey: string,
 ): Promise<void> {
   if (vm.account.facebookAccount) {
-    vm.log("loadActivityLog", `Loading activity log for category key: ${categoryKey}`);
+    vm.log(
+      "loadActivityLog",
+      `Loading activity log for category key: ${categoryKey}`,
+    );
 
     const FACEBOOK_ACTIVITY_LOG_URL = `https://www.facebook.com/${vm.account.facebookAccount.accountID}/\
 allactivity?activity_history=false&category_key=${categoryKey}\
@@ -266,11 +272,17 @@ async function deleteCategory(
           vm,
           jobIndex,
           AutomationErrorType.facebook_runJob_deleteWallPosts_CompletionTimeout,
-          { category: category.setting, message: "Facebook kept reporting it was still processing" },
+          {
+            category: category.setting,
+            message: "Facebook kept reporting it was still processing",
+          },
         );
         return null;
       }
-      vm.log("deleteCategory", `Facebook still processing previous changes; backing off (retry ${processingRetries})`);
+      vm.log(
+        "deleteCategory",
+        `Facebook still processing previous changes; backing off (retry ${processingRetries})`,
+      );
       await dismissModal(vm);
       await vm.sleep(PROCESSING_BACKOFF_MS);
       await loadActivityLog(vm, category.categoryKey);
@@ -283,14 +295,20 @@ async function deleteCategory(
     // rather than the checkbox's presence.
     const batchCount = await countSelectableItems(vm);
     if (batchCount === 0) {
-      vm.log("deleteCategory", `No more items for category ${category.setting}`);
+      vm.log(
+        "deleteCategory",
+        `No more items for category ${category.setting}`,
+      );
       break;
     }
 
     // Select all currently loaded items
     const toggled = await toggleSelectAllCheckbox(vm, true);
     if (!toggled) {
-      vm.log("deleteCategory", `Could not select items for category ${category.setting}`);
+      vm.log(
+        "deleteCategory",
+        `Could not select items for category ${category.setting}`,
+      );
       break;
     }
 
@@ -315,7 +333,10 @@ async function deleteCategory(
 
     // If Facebook says it's still processing, don't count this batch; back off and retry.
     if (await isStillProcessing(vm)) {
-      vm.log("deleteCategory", "Facebook still processing after confirm; backing off");
+      vm.log(
+        "deleteCategory",
+        "Facebook still processing after confirm; backing off",
+      );
       await dismissModal(vm);
       await vm.sleep(PROCESSING_BACKOFF_MS);
       await loadActivityLog(vm, category.categoryKey);

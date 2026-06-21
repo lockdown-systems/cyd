@@ -23,7 +23,7 @@ describe("util_facebook", () => {
   });
 
   describe("facebookGetLastDelete", () => {
-    test("returns null when no lastFinishedJob_deleteWallPosts config exists", async () => {
+    test("returns null when no lastFinishedJob_deleteActivity config exists", async () => {
       mockFacebookGetConfig.mockResolvedValue(null);
 
       const result = await UtilFacebook.facebookGetLastDelete(1);
@@ -31,11 +31,11 @@ describe("util_facebook", () => {
       expect(result).toBeNull();
       expect(mockFacebookGetConfig).toHaveBeenCalledWith(
         1,
-        "lastFinishedJob_deleteWallPosts",
+        "lastFinishedJob_deleteActivity",
       );
     });
 
-    test("returns Date when lastFinishedJob_deleteWallPosts config exists", async () => {
+    test("returns Date when lastFinishedJob_deleteActivity config exists", async () => {
       const testDate = "2024-01-15T10:30:00.000Z";
       mockFacebookGetConfig.mockResolvedValue(testDate);
 
@@ -45,7 +45,7 @@ describe("util_facebook", () => {
       expect(result?.toISOString()).toBe(testDate);
       expect(mockFacebookGetConfig).toHaveBeenCalledWith(
         1,
-        "lastFinishedJob_deleteWallPosts",
+        "lastFinishedJob_deleteActivity",
       );
     });
   });

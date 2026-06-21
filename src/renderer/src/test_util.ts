@@ -84,6 +84,13 @@ export function createMockFacebookAccount(
     profileImageDataURI: "",
     accountID: null,
     deleteWallPosts: false,
+    deleteComments: false,
+    deleteReactions: false,
+    deletePostsOnOthers: false,
+    deleteOthersPosts: false,
+    deleteCheckins: false,
+    deleteTaggedPosts: false,
+    deleteTaggedMedia: false,
     userLang: "English (US)",
     ...overrides,
   };
