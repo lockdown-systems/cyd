@@ -8,7 +8,7 @@ export enum RunJobsState {
   Default = "",
   SaveUserLang = "SaveUserLang",
   SetLangToEnglish = "SetLangToEnglish",
-  DeleteWallPosts = "DeleteWallPosts",
+  DeleteActivity = "DeleteActivity",
   RestoreUserLang = "RestoreUserLang",
 }
 
@@ -17,7 +17,7 @@ export type FacebookJobType =
   | "login"
   | "saveUserLang"
   | "setLangToEnglish"
-  | "deleteWallPosts"
+  | "deleteActivity"
   | "restoreUserLang";
 
 // Facebook job
@@ -31,22 +31,40 @@ export type FacebookJob = {
   error: string | null;
 };
 
-// Facebook progress tracking
+// Facebook progress tracking.
 export type FacebookProgress = {
   currentJob: string;
+  // The category currently being processed by the deleteActivity job (a category
+  // `setting` id, e.g. "deleteComments"), or "" when not deleting.
+  currentCategory: string;
   wallPostsDeleted: number;
   wallPostsUntagged: number;
   wallPostsHidden: number;
-  isDeleteWallPostsFinished: boolean;
+  commentsDeleted: number;
+  reactionsDeleted: number;
+  postsOnOthersDeleted: number;
+  othersPostsDeleted: number;
+  checkinsDeleted: number;
+  taggedPostsDeleted: number;
+  taggedMediaDeleted: number;
+  isDeleteActivityFinished: boolean;
 };
 
 export function emptyFacebookProgress(): FacebookProgress {
   return {
     currentJob: "",
+    currentCategory: "",
     wallPostsDeleted: 0,
     wallPostsUntagged: 0,
     wallPostsHidden: 0,
-    isDeleteWallPostsFinished: false,
+    commentsDeleted: 0,
+    reactionsDeleted: 0,
+    postsOnOthersDeleted: 0,
+    othersPostsDeleted: 0,
+    checkinsDeleted: 0,
+    taggedPostsDeleted: 0,
+    taggedMediaDeleted: 0,
+    isDeleteActivityFinished: false,
   };
 }
 
