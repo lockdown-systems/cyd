@@ -124,7 +124,7 @@ describe("FacebookViewModel", () => {
       const vm = createMockFacebookViewModel();
 
       expect(vm.progress.wallPostsDeleted).toBe(0);
-      expect(vm.progress.isDeleteWallPostsFinished).toBe(false);
+      expect(vm.progress.isDeleteActivityFinished).toBe(false);
       expect(vm.progress.currentJob).toBe("");
     });
 
@@ -190,7 +190,7 @@ describe("FacebookViewModel", () => {
       const jobTypes = vm.jobs.map((j) => j.jobType);
       expect(jobTypes).toContain("saveUserLang");
       expect(jobTypes).toContain("setLangToEnglish");
-      expect(jobTypes).toContain("deleteWallPosts");
+      expect(jobTypes).toContain("deleteActivity");
       expect(jobTypes).toContain("restoreUserLang");
     });
 
@@ -205,7 +205,7 @@ describe("FacebookViewModel", () => {
         "login",
         "saveUserLang",
         "setLangToEnglish",
-        "deleteWallPosts",
+        "deleteActivity",
         "restoreUserLang",
       ]);
     });
@@ -261,17 +261,17 @@ describe("FacebookViewModel", () => {
     it("resets progress to empty state", async () => {
       const vm = createMockFacebookViewModel();
       vm.progress.wallPostsDeleted = 100;
-      vm.progress.isDeleteWallPostsFinished = true;
+      vm.progress.isDeleteActivityFinished = true;
 
       await vm.reset();
 
       expect(vm.progress.wallPostsDeleted).toBe(0);
-      expect(vm.progress.isDeleteWallPostsFinished).toBe(false);
+      expect(vm.progress.isDeleteActivityFinished).toBe(false);
     });
 
     it("clears jobs array", async () => {
       const vm = createMockFacebookViewModel();
-      vm.jobs = [createMockJob("login"), createMockJob("deleteWallPosts")];
+      vm.jobs = [createMockJob("login"), createMockJob("deleteActivity")];
 
       await vm.reset();
 
@@ -296,7 +296,7 @@ describe("FacebookViewModel", () => {
       vm.action = "testAction";
       vm.actionString = "Test action string";
       vm.progress.wallPostsDeleted = 50;
-      vm.jobs = [createMockJob("login"), createMockJob("deleteWallPosts")];
+      vm.jobs = [createMockJob("login"), createMockJob("deleteActivity")];
       vm.currentJobIndex = 1;
 
       const savedState = vm.saveState();
@@ -323,15 +323,15 @@ describe("FacebookViewModel", () => {
     it("preserves all progress fields", () => {
       const vm = createMockFacebookViewModel();
 
-      vm.progress.currentJob = "deleteWallPosts";
+      vm.progress.currentJob = "deleteActivity";
       vm.progress.wallPostsDeleted = 123;
-      vm.progress.isDeleteWallPostsFinished = true;
+      vm.progress.isDeleteActivityFinished = true;
 
       const savedState = vm.saveState();
 
-      expect(savedState.progress.currentJob).toBe("deleteWallPosts");
+      expect(savedState.progress.currentJob).toBe("deleteActivity");
       expect(savedState.progress.wallPostsDeleted).toBe(123);
-      expect(savedState.progress.isDeleteWallPostsFinished).toBe(true);
+      expect(savedState.progress.isDeleteActivityFinished).toBe(true);
     });
   });
 
@@ -465,7 +465,7 @@ describe("FacebookViewModel", () => {
       expect(progress.wallPostsDeleted).toBe(0);
       expect(progress.wallPostsUntagged).toBe(0);
       expect(progress.wallPostsHidden).toBe(0);
-      expect(progress.isDeleteWallPostsFinished).toBe(false);
+      expect(progress.isDeleteActivityFinished).toBe(false);
     });
 
     it("returns a new object each time", () => {

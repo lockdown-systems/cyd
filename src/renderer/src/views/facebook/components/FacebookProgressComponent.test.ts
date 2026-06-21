@@ -20,10 +20,18 @@ function createMockProgress(
 ): FacebookProgress {
   return {
     currentJob: "",
+    currentCategory: "",
     wallPostsDeleted: 0,
     wallPostsUntagged: 0,
     wallPostsHidden: 0,
-    isDeleteWallPostsFinished: false,
+    commentsDeleted: 0,
+    reactionsDeleted: 0,
+    postsOnOthersDeleted: 0,
+    othersPostsDeleted: 0,
+    checkinsDeleted: 0,
+    taggedPostsDeleted: 0,
+    taggedMediaDeleted: 0,
+    isDeleteActivityFinished: false,
     ...overrides,
   };
 }
@@ -53,7 +61,7 @@ describe("FacebookProgressComponent", () => {
           plugins: [i18n],
         },
         props: {
-          progress: createMockProgress({ currentJob: "deleteWallPosts" }),
+          progress: createMockProgress({ currentJob: "deleteActivity" }),
         },
       });
 
@@ -69,7 +77,7 @@ describe("FacebookProgressComponent", () => {
         },
         props: {
           progress: createMockProgress({
-            currentJob: "deleteWallPosts",
+            currentJob: "deleteActivity",
             wallPostsDeleted: 42,
           }),
         },
@@ -85,7 +93,7 @@ describe("FacebookProgressComponent", () => {
         },
         props: {
           progress: createMockProgress({
-            currentJob: "deleteWallPosts",
+            currentJob: "deleteActivity",
             wallPostsDeleted: 1234567,
           }),
         },
@@ -102,9 +110,9 @@ describe("FacebookProgressComponent", () => {
         },
         props: {
           progress: createMockProgress({
-            currentJob: "deleteWallPosts",
+            currentJob: "deleteActivity",
             wallPostsDeleted: 100,
-            isDeleteWallPostsFinished: true,
+            isDeleteActivityFinished: true,
           }),
         },
       });
@@ -119,9 +127,9 @@ describe("FacebookProgressComponent", () => {
         },
         props: {
           progress: createMockProgress({
-            currentJob: "deleteWallPosts",
+            currentJob: "deleteActivity",
             wallPostsDeleted: 50,
-            isDeleteWallPostsFinished: false,
+            isDeleteActivityFinished: false,
           }),
         },
       });
@@ -172,7 +180,7 @@ describe("FacebookProgressComponent", () => {
         },
         props: {
           progress: createMockProgress({
-            currentJob: "deleteWallPosts",
+            currentJob: "deleteActivity",
             wallPostsDeleted: 10,
           }),
         },
@@ -182,7 +190,7 @@ describe("FacebookProgressComponent", () => {
 
       await wrapper.setProps({
         progress: createMockProgress({
-          currentJob: "deleteWallPosts",
+          currentJob: "deleteActivity",
           wallPostsDeleted: 25,
         }),
       });
