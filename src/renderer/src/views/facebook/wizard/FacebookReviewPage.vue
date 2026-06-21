@@ -6,6 +6,10 @@ import {
   State,
 } from "../../../view_models/FacebookViewModel";
 import { getBreadcrumbIcon } from "../../../util";
+import {
+  FACEBOOK_DELETE_CATEGORIES,
+  type FacebookDeleteCategory,
+} from "../../../view_models/FacebookViewModel/categories";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
@@ -28,7 +32,8 @@ const emit = defineEmits(["setState", "updateAccount", "startJobs"]);
 // Use wizard page composable
 const { isLoading, setLoading } = useWizardPage();
 
-const deleteWallPosts = ref(false);
+// The categories the user selected to delete.
+const selectedCategories = ref<FacebookDeleteCategory[]>([]);
 
 // Custom next handler
 const nextClicked = async () => {
@@ -42,7 +47,7 @@ const backClicked = async () => {
 
 // Check if we can proceed
 const canProceed = computed(() => {
-  return deleteWallPosts.value;
+  return selectedCategories.value.length > 0;
 });
 
 onMounted(async () => {
@@ -52,7 +57,10 @@ onMounted(async () => {
       props.model.account?.id,
     );
     if (account && account.facebookAccount) {
-      deleteWallPosts.value = account.facebookAccount.deleteWallPosts;
+      const facebookAccount = account.facebookAccount;
+      selectedCategories.value = FACEBOOK_DELETE_CATEGORIES.filter(
+        (category) => facebookAccount[category.setting],
+      );
     }
   } finally {
     setLoading(false);
@@ -112,8 +120,11 @@ onMounted(async () => {
                 {{ t("review.deleteMyData") }}
               </h3>
               <ul>
-                <li v-if="deleteWallPosts">
-                  <b>{{ t("facebook.review.deleteWallPosts") }}</b>
+                <li
+                  v-for="category in selectedCategories"
+                  :key="category.setting"
+                >
+                  <b>{{ t(`facebook.review.${category.setting}`) }}</b>
                 </li>
               </ul>
             </div>
