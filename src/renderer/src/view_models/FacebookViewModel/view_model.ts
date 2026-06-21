@@ -21,6 +21,7 @@ import {
 import * as AuthOps from "./auth";
 import * as DeleteJobs from "./jobs_delete";
 import * as LangJobs from "./jobs_lang";
+import { selectedDeleteCategories } from "./categories";
 
 interface CurrentUserInitialData {
   ACCOUNT_ID: string;
@@ -139,16 +140,19 @@ export class FacebookViewModel extends BaseViewModel {
     // Always login first
     jobTypes.push("login");
 
-    // Add delete jobs if enabled
-    if (this.account.facebookAccount?.deleteWallPosts) {
+    // Add deleteActivity job if the user wants at least one data category deleted
+    const hasDeleteCategories =
+      this.account.facebookAccount &&
+      selectedDeleteCategories(this.account.facebookAccount).length > 0;
+    if (hasDeleteCategories) {
       // Language jobs wrap around delete jobs:
       // 1. Save user's current language
       // 2. Set language to English (needed for automation)
-      // 3. Delete wall posts
+      // 3. Delete the selected activity categories
       // 4. Restore user's original language
       jobTypes.push("saveUserLang");
       jobTypes.push("setLangToEnglish");
-      jobTypes.push("deleteWallPosts");
+      jobTypes.push("deleteActivity");
       jobTypes.push("restoreUserLang");
     }
 
@@ -319,8 +323,8 @@ export class FacebookViewModel extends BaseViewModel {
         await LangJobs.runJobSetLangToEnglish(this, jobIndex);
         break;
 
-      case "deleteWallPosts":
-        await DeleteJobs.runJobDeleteWallPosts(this, jobIndex);
+      case "deleteActivity":
+        await DeleteJobs.runJobDeleteActivity(this, jobIndex);
         break;
 
       case "restoreUserLang":
