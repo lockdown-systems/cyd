@@ -12,6 +12,13 @@ export type FacebookProgress = {
   wallPostsDeleted: number;
   wallPostsUntagged: number;
   wallPostsHidden: number;
+  commentsDeleted: number;
+  reactionsDeleted: number;
+  postsOnOthersDeleted: number;
+  othersPostsDeleted: number;
+  checkinsDeleted: number;
+  taggedPostsDeleted: number;
+  taggedMediaDeleted: number;
 };
 
 export function emptyFacebookProgress(): FacebookProgress {
@@ -19,8 +26,28 @@ export function emptyFacebookProgress(): FacebookProgress {
     wallPostsDeleted: 0,
     wallPostsUntagged: 0,
     wallPostsHidden: 0,
+    commentsDeleted: 0,
+    reactionsDeleted: 0,
+    postsOnOthersDeleted: 0,
+    othersPostsDeleted: 0,
+    checkinsDeleted: 0,
+    taggedPostsDeleted: 0,
+    taggedMediaDeleted: 0,
   };
 }
+
+// getProgressInfo aggregates these for the server to track cumulative
+// deletion totals (across runs)
+export const FACEBOOK_DELETE_COUNTERS: (keyof FacebookProgress)[] = [
+  "wallPostsDeleted",
+  "commentsDeleted",
+  "reactionsDeleted",
+  "postsOnOthersDeleted",
+  "othersPostsDeleted",
+  "checkinsDeleted",
+  "taggedPostsDeleted",
+  "taggedMediaDeleted",
+];
 
 export type FacebookRateLimitInfo = {
   isRateLimited: boolean;
