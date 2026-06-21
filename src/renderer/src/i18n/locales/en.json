@@ -45,6 +45,7 @@
     "savePosts": "Saving posts",
     "savePostsHTML": "Saving posts HTML",
     "deleteWallPosts": "Removing wall posts",
+    "deleteActivity": "Deleting Facebook data",
     "restoreUserLang": "Restoring language"
   },
   "progress": {
