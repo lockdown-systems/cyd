@@ -1,5 +1,4 @@
 import type { FacebookAccount } from "../../../../shared_types";
-import type { FacebookProgress } from "./types";
 
 // The account boolean settings that enable deleting each data category.
 export type FacebookDeleteSetting =
@@ -12,13 +11,24 @@ export type FacebookDeleteSetting =
   | "deleteTaggedPosts"
   | "deleteTaggedMedia";
 
+// The numeric FacebookProgress fields, one per category.
+export type FacebookDeleteCounter =
+  | "wallPostsDeleted"
+  | "commentsDeleted"
+  | "reactionsDeleted"
+  | "postsOnOthersDeleted"
+  | "othersPostsDeleted"
+  | "checkinsDeleted"
+  | "taggedPostsDeleted"
+  | "taggedMediaDeleted";
+
 export type FacebookDeleteCategory = {
   // The FacebookAccount boolean field that enables deleting this category.
   setting: FacebookDeleteSetting & keyof FacebookAccount;
   // The category_key URL parameter for the Facebook activity log.
   categoryKey: string;
   // The FacebookProgress counter incremented as items in this category are deleted.
-  counter: keyof FacebookProgress;
+  counter: FacebookDeleteCounter;
   // The i18n key for the checkbox label shown on the delete options page.
   labelKey: string;
 };
