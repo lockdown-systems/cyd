@@ -96,6 +96,13 @@ export type FacebookAccount = {
   profileImageDataURI: string;
   accountID: string | null;
   deleteWallPosts: boolean;
+  deleteComments: boolean;
+  deleteReactions: boolean;
+  deletePostsOnOthers: boolean;
+  deleteOthersPosts: boolean;
+  deleteCheckins: boolean;
+  deleteTaggedPosts: boolean;
+  deleteTaggedMedia: boolean;
   userLang: string;
 };
 
