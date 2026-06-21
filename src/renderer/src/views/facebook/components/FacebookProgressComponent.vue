@@ -26,7 +26,7 @@ const deletedCounts = computed(() => {
     <div class="progress-wrapper">
       <!-- Delete activity -->
       <template v-if="progress.currentJob == 'deleteActivity'">
-        <ul>
+        <ul class="deleted-counts">
           <li v-for="entry in deletedCounts" :key="entry.setting">
             {{ entry.count.toLocaleString() }} {{ entry.label }}
           </li>
@@ -40,3 +40,11 @@ const deletedCounts = computed(() => {
 </template>
 
 <style scoped src="../../shared_components/progress-styles.css"></style>
+
+<style scoped>
+.deleted-counts {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+</style>
