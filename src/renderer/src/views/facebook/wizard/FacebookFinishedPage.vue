@@ -58,14 +58,17 @@ const backToDashboard = () => {
       <div class="wizard-scroll-content">
         <div class="container mt-3">
           <div class="finished">
-            <h2>{{ t("finished.youJustDeleted") }}</h2>
-            <ul>
-              <li v-for="entry in deletedCounts" :key="entry.setting">
-                <i class="fa-solid fa-fire delete-bullet" />
-                <strong>{{ entry.count.toLocaleString() }}</strong>
-                {{ entry.label }}
-              </li>
-            </ul>
+            <template v-if="deletedCounts.length > 0">
+              <h2>{{ t("finished.youJustDeleted") }}</h2>
+              <ul>
+                <li v-for="entry in deletedCounts" :key="entry.setting">
+                  <i class="fa-solid fa-fire delete-bullet" />
+                  <strong>{{ entry.count.toLocaleString() }}</strong>
+                  {{ entry.label }}
+                </li>
+              </ul>
+            </template>
+            <h2 v-else>{{ t("facebook.finished.nothingToDelete") }}</h2>
           </div>
         </div>
       </div>

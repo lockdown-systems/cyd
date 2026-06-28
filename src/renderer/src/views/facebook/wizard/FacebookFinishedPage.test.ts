@@ -76,8 +76,9 @@ describe("FacebookFinishedPage", () => {
       expect(wrapper.find(".mock-base-wizard-page").exists()).toBe(true);
     });
 
-    it("shows You just deleted heading", () => {
+    it("shows You just deleted heading when there were deletions", () => {
       const vm = createMockFacebookViewModel();
+      vm.progress.wallPostsDeleted = 1;
 
       const wrapper = mount(FacebookFinishedPage, {
         global: {
@@ -89,6 +90,22 @@ describe("FacebookFinishedPage", () => {
       });
 
       expect(wrapper.text()).toContain("You just deleted");
+    });
+
+    it("shows a nothing-to-delete message when there were no deletions", () => {
+      const vm = createMockFacebookViewModel();
+
+      const wrapper = mount(FacebookFinishedPage, {
+        global: {
+          plugins: [i18n],
+        },
+        props: {
+          model: vm,
+        },
+      });
+
+      expect(wrapper.text()).not.toContain("You just deleted");
+      expect(wrapper.text()).toContain("Nothing needed to be deleted");
     });
 
     it("shows wall posts deleted count", () => {
