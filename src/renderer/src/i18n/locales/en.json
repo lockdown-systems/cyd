@@ -446,6 +446,7 @@
     },
     "finished": {
       "title": "Jobs Completed",
+      "nothingToDelete": "Nothing needed to be deleted - all done",
       "wallPostsDeleted": "posts, photos, and videos deleted",
       "commentsDeleted": "comments deleted",
       "reactionsDeleted": "likes and reactions deleted",
