@@ -140,7 +140,7 @@ async function clickDeletePostsOption(
 async function confirmDeletion(vm: FacebookViewModel): Promise<boolean> {
   const result = await vm.safeExecuteJavaScript<boolean>(
     `(() => {
-      const dialog = document.querySelector('div[role="dialog"]');
+      const dialog = document.querySelector('div[role="dialog"][aria-modal="true"]');
       if (!dialog) return false;
       const CONFIRM_LABELS = ['delete', 'move to trash', 'confirm', 'remove', 'remove tags', 'remove tag', 'untag'];
       const buttons = dialog.querySelectorAll('div[role="button"], button');
