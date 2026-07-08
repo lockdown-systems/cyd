@@ -46,6 +46,20 @@ const hasValidSelection = computed(() =>
   FACEBOOK_DELETE_CATEGORIES.some((category) => settings[category.setting]),
 );
 
+// Whether every category is currently selected
+const allSelected = computed(() =>
+  FACEBOOK_DELETE_CATEGORIES.every((category) => settings[category.setting]),
+);
+
+// Toggle every category on or off at once
+const toggleSelectAll = async () => {
+  const shouldSelect = !allSelected.value;
+  for (const category of FACEBOOK_DELETE_CATEGORIES) {
+    settings[category.setting] = shouldSelect;
+  }
+  await saveSettings();
+};
+
 // Custom next handler
 const nextClicked = async () => {
   await saveSettings();
@@ -146,6 +160,19 @@ onMounted(async () => {
         </div>
 
         <form @submit.prevent>
+          <div class="mb-3">
+            <button
+              type="button"
+              class="btn btn-sm btn-link"
+              @click="toggleSelectAll"
+            >
+              {{
+                allSelected
+                  ? t("facebook.deleteOptions.deselectAll")
+                  : t("facebook.deleteOptions.selectAll")
+              }}
+            </button>
+          </div>
           <div
             v-for="category in FACEBOOK_DELETE_CATEGORIES"
             :key="category.setting"

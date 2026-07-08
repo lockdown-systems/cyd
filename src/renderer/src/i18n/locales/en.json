@@ -423,6 +423,8 @@
     "deleteOptions": {
       "title": "Delete My Facebook Data",
       "description": "Select the data you want to delete from your Facebook activity log.",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
       "deleteWallPosts": "Posts, photos, and videos",
       "deleteComments": "Comments",
       "deleteReactions": "Likes and reactions",
