@@ -1,3 +1,6 @@
+// Desktop-scoped API client for cyd.
+// Keep this file limited to methods and models used by desktop code.
+
 // API error response
 export type APIErrorResponse = {
   error: boolean;
@@ -21,17 +24,6 @@ export type RegisterDeviceAPIRequest = {
 export type RegisterDeviceAPIResponse = {
   uuid: string;
   device_token: string;
-};
-
-// API models for GET /device (an array of these)
-export type GetDevicesAPIResponse = {
-  uuid: string;
-  description: string;
-  last_accessed_at: Date;
-};
-
-export type GetDevicesAPIResponseArray = {
-  devices: GetDevicesAPIResponse[];
 };
 
 // API models for POST /token
@@ -77,58 +69,23 @@ export type PostFacebookProgressAPIRequest = {
   total_wall_posts_hidden: number;
 };
 
+export type BillingPeriod = "annual" | "monthly";
+export type CurrentBillingPeriod = BillingPeriod | "none";
+
 // API models for GET /user/premium
 export type UserPremiumAPIResponse = {
-  premium_price_cents: number;
+  premium_price_annual_cents: number;
+  premium_price_monthly_cents: number;
   premium_business_price_cents: number;
   premium_access: boolean;
   has_individual_subscription: boolean;
   subscription_cancel_at_period_end: boolean;
-  subscription_current_period_end: string;
+  subscription_current_period_end: string | null;
   has_business_subscription: boolean;
   business_organizations: string[];
-};
-
-// API models for POST /user/invoices (an array of these)
-export type GetUserInvoicesAPIResponse = {
-  created_at: string;
-  hosted_invoice_url: string;
-  status: string;
-  total: number;
-};
-
-// API models for POST /user/premium
-export type PostUserPremiumAPIRequest = {
-  promotion_code: string;
-};
-
-export type PostUserPremiumAPIResponse = {
-  redirect_url: string;
-};
-
-// API models for POST /user/coupon-code
-export type PostUserCouponCodeAPIRequest = {
-  promotion_code: string;
-};
-
-export type PostUserCouponCodeAPIResponse = {
-  valid: boolean;
-  currency?: string;
-  duration?: string;
-  duration_in_months?: number;
-  amount_off?: number;
-  percent_off?: number;
-  name?: string;
-};
-
-// API models for GET /user/stats
-export type UserStatsAPIResponse = {
-  total_tweets_archived: number;
-  total_messages_indexed: number;
-  total_tweets_deleted: number;
-  total_retweets_deleted: number;
-  total_likes_deleted: number;
-  total_conversations_deleted: number;
+  current_billing_period: CurrentBillingPeriod;
+  partner: boolean;
+  stored_credit_cents: number;
 };
 
 // API models for POST /automation-error-report
@@ -159,31 +116,25 @@ export default class CydAPIClient {
   private userEmail: string | null = null;
   private deviceToken: string | null = null;
   private apiToken: string | null = null;
-  private deviceUUID: string | null = null;
 
   constructor() {
     this.apiURL = null;
     this.userEmail = null;
     this.deviceToken = null;
     this.apiToken = null;
-    this.deviceUUID = null;
   }
 
   initialize(APIURL: string): void {
     this.apiURL = APIURL;
   }
 
-  setUserEmail(userEmail: string) {
+  setUserEmail(userEmail: string): void {
     this.userEmail = userEmail;
   }
 
-  async setDeviceToken(deviceToken: string) {
+  async setDeviceToken(deviceToken: string): Promise<void> {
     this.deviceToken = deviceToken;
     await this.getNewAPIToken();
-  }
-
-  getDeviceUUID(): string | null {
-    return this.deviceUUID;
   }
 
   returnError(message: string, status?: number): APIErrorResponse {
@@ -232,7 +183,7 @@ export default class CydAPIClient {
           return;
         }
 
-        // Try to get a new token, and then try one more time
+        // Try to get a new token, and then try one more time.
         console.log(
           "Failed to authenticate with the server. Trying to get a new API token.",
         );
@@ -317,11 +268,7 @@ export default class CydAPIClient {
   ): Promise<RegisterDeviceAPIResponse | APIErrorResponse> {
     console.log("POST /device");
     try {
-      const response = await this.fetch(
-        "POST",
-        `${this.apiURL}/device`,
-        request,
-      );
+      const response = await this.fetch("POST", `${this.apiURL}/device`, request);
       if (response.status != 200) {
         return this.returnError(
           "Failed to register device with the server.",
@@ -342,11 +289,7 @@ export default class CydAPIClient {
   ): Promise<TokenAPIResponse | APIErrorResponse> {
     console.log("POST /token");
     try {
-      const response = await this.fetch(
-        "POST",
-        `${this.apiURL}/token`,
-        request,
-      );
+      const response = await this.fetch("POST", `${this.apiURL}/token`, request);
       if (response.status != 200) {
         return this.returnError(
           "Failed to get token with the server.",
@@ -356,9 +299,6 @@ export default class CydAPIClient {
       const data: TokenAPIResponse = await response.json();
 
       this.apiToken = data.api_token;
-
-      // Set the device UUID
-      this.deviceUUID = data.device_uuid;
       return data;
     } catch {
       return this.returnError(
@@ -395,29 +335,6 @@ export default class CydAPIClient {
     }
   }
 
-  async getDevices(): Promise<GetDevicesAPIResponseArray | APIErrorResponse> {
-    console.log("GET /device");
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "GET",
-        `${this.apiURL}/device`,
-        null,
-      );
-      if (response.status != 200) {
-        return this.returnError("Failed to get devices.", response.status);
-      }
-      const data: GetDevicesAPIResponse[] = await response.json();
-      return { devices: data };
-    } catch {
-      return this.returnError(
-        "Failed to get devices. Maybe the server is down?",
-      );
-    }
-  }
-
   async ping(): Promise<boolean> {
     console.log("GET /ping");
     if (!(await this.validateAPIToken())) {
@@ -444,27 +361,14 @@ export default class CydAPIClient {
   ): Promise<boolean | APIErrorResponse> {
     console.log("POST /x-progress", request);
 
-    if (authenticated) {
-      if (!(await this.validateAPIToken())) {
-        return this.returnError("Failed to get a new API token.");
-      }
+    if (authenticated && !(await this.validateAPIToken())) {
+      return this.returnError("Failed to get a new API token.");
     }
 
     try {
-      let response;
-      if (authenticated) {
-        response = await this.fetchAuthenticated(
-          "POST",
-          `${this.apiURL}/x-progress`,
-          request,
-        );
-      } else {
-        response = await this.fetch(
-          "POST",
-          `${this.apiURL}/x-progress`,
-          request,
-        );
-      }
+      const response = authenticated
+        ? await this.fetchAuthenticated("POST", `${this.apiURL}/x-progress`, request)
+        : await this.fetch("POST", `${this.apiURL}/x-progress`, request);
 
       if (response.status != 200) {
         return this.returnError(
@@ -500,27 +404,18 @@ export default class CydAPIClient {
   ): Promise<boolean | APIErrorResponse> {
     console.log("POST /facebook-progress", request);
 
-    if (authenticated) {
-      if (!(await this.validateAPIToken())) {
-        return this.returnError("Failed to get a new API token.");
-      }
+    if (authenticated && !(await this.validateAPIToken())) {
+      return this.returnError("Failed to get a new API token.");
     }
 
     try {
-      let response;
-      if (authenticated) {
-        response = await this.fetchAuthenticated(
-          "POST",
-          `${this.apiURL}/facebook-progress`,
-          request,
-        );
-      } else {
-        response = await this.fetch(
-          "POST",
-          `${this.apiURL}/facebook-progress`,
-          request,
-        );
-      }
+      const response = authenticated
+        ? await this.fetchAuthenticated(
+            "POST",
+            `${this.apiURL}/facebook-progress`,
+            request,
+          )
+        : await this.fetch("POST", `${this.apiURL}/facebook-progress`, request);
 
       if (response.status != 200) {
         return this.returnError(
@@ -578,164 +473,6 @@ export default class CydAPIClient {
     }
   }
 
-  async getUserInvoices(): Promise<
-    GetUserInvoicesAPIResponse[] | APIErrorResponse
-  > {
-    console.log("GET /user/invoices");
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "GET",
-        `${this.apiURL}/user/invoices`,
-        null,
-      );
-      if (response.status != 200) {
-        return this.returnError("Failed to get invoices.", response.status);
-      }
-      const data: GetUserInvoicesAPIResponse[] = await response.json();
-      return data;
-    } catch {
-      return this.returnError(
-        "Failed to get invoices. Maybe the server is down?",
-      );
-    }
-  }
-
-  async postUserPremium(
-    promotion_code: string,
-  ): Promise<PostUserPremiumAPIResponse | APIErrorResponse> {
-    console.log(`POST /user/premium ${promotion_code}`);
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "POST",
-        `${this.apiURL}/user/premium`,
-        {
-          promotion_code: promotion_code,
-        },
-      );
-      if (response.status != 200) {
-        return this.returnError(
-          "Failed to upgrade user to premium.",
-          response.status,
-        );
-      }
-      const data: PostUserPremiumAPIResponse = await response.json();
-      return data;
-    } catch {
-      return this.returnError(
-        "Failed to upgrade user to premium. Maybe the server is down?",
-      );
-    }
-  }
-
-  async putUserPremium(action: string): Promise<boolean | APIErrorResponse> {
-    console.log("PUT /user/premium");
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "PUT",
-        `${this.apiURL}/user/premium`,
-        { action: action },
-      );
-      if (response.status != 200) {
-        return this.returnError(
-          "Failed to update subscription.",
-          response.status,
-        );
-      }
-      return true;
-    } catch {
-      return this.returnError(
-        "Failed to update subscription. Maybe the server is down?",
-      );
-    }
-  }
-
-  async postUserCouponCode(
-    promotion_code: string,
-  ): Promise<PostUserCouponCodeAPIResponse | APIErrorResponse> {
-    console.log("POST /user/coupon-code");
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "POST",
-        `${this.apiURL}/user/coupon-code`,
-        {
-          promotion_code: promotion_code,
-        },
-      );
-      if (response.status != 200) {
-        return this.returnError(
-          "Failed to apply coupon code.",
-          response.status,
-        );
-      }
-      const data: PostUserCouponCodeAPIResponse = await response.json();
-      return data;
-    } catch {
-      return this.returnError(
-        "Failed to apply coupon code. Maybe the server is down?",
-      );
-    }
-  }
-
-  async deleteUserPremium(): Promise<boolean | APIErrorResponse> {
-    console.log("DELETE /user/premium");
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "DELETE",
-        `${this.apiURL}/user/premium`,
-        null,
-      );
-      if (response.status != 200) {
-        return this.returnError(
-          "Failed to cancel subscription.",
-          response.status,
-        );
-      }
-      return true;
-    } catch {
-      return this.returnError(
-        "Failed to cancel subscription. Maybe the server is down?",
-      );
-    }
-  }
-
-  async getUserStats(): Promise<UserStatsAPIResponse | APIErrorResponse> {
-    console.log("GET /user/stats");
-    if (!(await this.validateAPIToken())) {
-      return this.returnError("Failed to get a new API token.");
-    }
-    try {
-      const response = await this.fetchAuthenticated(
-        "GET",
-        `${this.apiURL}/user/stats`,
-        null,
-      );
-      if (response.status != 200) {
-        return this.returnError("Failed to get user stats.", response.status);
-      }
-      const data: UserStatsAPIResponse = await response.json();
-      return data;
-    } catch {
-      return this.returnError(
-        "Failed to get user stats. Maybe the server is down?",
-      );
-    }
-  }
-
   // Submit automation error report
 
   async postAutomationErrorReport(
@@ -744,27 +481,19 @@ export default class CydAPIClient {
   ): Promise<boolean | APIErrorResponse> {
     console.log("POST /automation-error-report", request, authenticated);
 
-    if (authenticated) {
-      if (!(await this.validateAPIToken())) {
-        return this.returnError("Failed to get a new API token.");
-      }
+    if (authenticated && !(await this.validateAPIToken())) {
+      return this.returnError("Failed to get a new API token.");
     }
 
     try {
-      let response;
-      if (authenticated) {
-        response = await this.fetchAuthenticated(
-          "POST",
-          `${this.apiURL}/automation-error-report`,
-          request,
-        );
-      } else {
-        response = await this.fetch(
-          "POST",
-          `${this.apiURL}/automation-error-report`,
-          request,
-        );
-      }
+      const response = authenticated
+        ? await this.fetchAuthenticated(
+            "POST",
+            `${this.apiURL}/automation-error-report`,
+            request,
+          )
+        : await this.fetch("POST", `${this.apiURL}/automation-error-report`, request);
+
       if (response.status != 200) {
         return this.returnError(
           "Failed to post automation error report with the server.",
