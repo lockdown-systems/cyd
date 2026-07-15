@@ -268,7 +268,11 @@ export default class CydAPIClient {
   ): Promise<RegisterDeviceAPIResponse | APIErrorResponse> {
     console.log("POST /device");
     try {
-      const response = await this.fetch("POST", `${this.apiURL}/device`, request);
+      const response = await this.fetch(
+        "POST",
+        `${this.apiURL}/device`,
+        request,
+      );
       if (response.status != 200) {
         return this.returnError(
           "Failed to register device with the server.",
@@ -289,7 +293,11 @@ export default class CydAPIClient {
   ): Promise<TokenAPIResponse | APIErrorResponse> {
     console.log("POST /token");
     try {
-      const response = await this.fetch("POST", `${this.apiURL}/token`, request);
+      const response = await this.fetch(
+        "POST",
+        `${this.apiURL}/token`,
+        request,
+      );
       if (response.status != 200) {
         return this.returnError(
           "Failed to get token with the server.",
@@ -367,7 +375,11 @@ export default class CydAPIClient {
 
     try {
       const response = authenticated
-        ? await this.fetchAuthenticated("POST", `${this.apiURL}/x-progress`, request)
+        ? await this.fetchAuthenticated(
+            "POST",
+            `${this.apiURL}/x-progress`,
+            request,
+          )
         : await this.fetch("POST", `${this.apiURL}/x-progress`, request);
 
       if (response.status != 200) {
@@ -492,7 +504,11 @@ export default class CydAPIClient {
             `${this.apiURL}/automation-error-report`,
             request,
           )
-        : await this.fetch("POST", `${this.apiURL}/automation-error-report`, request);
+        : await this.fetch(
+            "POST",
+            `${this.apiURL}/automation-error-report`,
+            request,
+          );
 
       if (response.status != 200) {
         return this.returnError(

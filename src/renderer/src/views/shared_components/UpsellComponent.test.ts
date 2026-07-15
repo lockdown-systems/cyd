@@ -335,9 +335,7 @@ describe("UpsellComponent", () => {
     donateButton.element.dispatchEvent(clickEvent);
     await wrapper.vm.$nextTick();
 
-    expect(openURL).toHaveBeenCalledWith(
-      "https://lockdown.systems/donate/",
-    );
+    expect(openURL).toHaveBeenCalledWith("https://lockdown.systems/donate/");
   });
 
   it("should register emitter listeners on mount", async () => {

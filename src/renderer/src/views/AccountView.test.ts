@@ -180,6 +180,13 @@ describe("AccountView", () => {
     });
 
     it("should show Facebook option", async () => {
+      window.electron.isFeatureEnabled = vi
+        .fn()
+        .mockImplementation((feature: string) => {
+          if (feature === "bluesky") return Promise.resolve(true);
+          return Promise.resolve(false);
+        });
+
       const unknownAccount = createMockAccount({ type: "unknown" });
 
       wrapper = mount(AccountView, {
@@ -199,6 +206,13 @@ describe("AccountView", () => {
     });
 
     it("should emit accountSelected when Facebook card clicked", async () => {
+      window.electron.isFeatureEnabled = vi
+        .fn()
+        .mockImplementation((feature: string) => {
+          if (feature === "bluesky") return Promise.resolve(true);
+          return Promise.resolve(false);
+        });
+
       const unknownAccount = createMockAccount({ type: "unknown" });
 
       wrapper = mount(AccountView, {
