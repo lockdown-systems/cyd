@@ -46,3 +46,6 @@ coverage/
 # Other
 CLAUDE.md
 CLAUDE_NOTES.md
+
+# CodeGraph (local code-intelligence index, machine-specific)
+.codegraph/
