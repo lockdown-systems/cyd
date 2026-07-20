@@ -12,6 +12,23 @@ vi.mock("../../util", () => ({
 // Mock CydAPIClient
 const mockPing = vi.fn();
 const mockGetUserPremium = vi.fn();
+
+const createUserPremiumResponse = (overrides = {}) => ({
+  premium_price_annual_cents: 3600,
+  premium_price_monthly_cents: 400,
+  premium_business_price_cents: 1337,
+  premium_access: false,
+  has_individual_subscription: false,
+  subscription_cancel_at_period_end: false,
+  subscription_current_period_end: null,
+  has_business_subscription: false,
+  business_organizations: [],
+  current_billing_period: "none",
+  partner: false,
+  stored_credit_cents: 0,
+  ...overrides,
+});
+
 vi.mock("../../../../cyd-api-client", () => {
   return {
     default: class CydAPIClient {
@@ -47,10 +64,7 @@ describe("UpsellComponent", () => {
 
     // Default mock responses
     mockPing.mockResolvedValue(true);
-    mockGetUserPremium.mockResolvedValue({
-      premium_access: false,
-      has_business_subscription: false,
-    });
+    mockGetUserPremium.mockResolvedValue(createUserPremiumResponse());
   });
 
   afterEach(() => {
@@ -88,10 +102,9 @@ describe("UpsellComponent", () => {
   });
 
   it("should show premium thank you message when user has premium", async () => {
-    mockGetUserPremium.mockResolvedValue({
-      premium_access: true,
-      has_business_subscription: false,
-    });
+    mockGetUserPremium.mockResolvedValue(
+      createUserPremiumResponse({ premium_access: true }),
+    );
 
     const wrapper = mount(UpsellComponent, {
       global: {
@@ -122,10 +135,12 @@ describe("UpsellComponent", () => {
   });
 
   it("should show business subscription message when user has business subscription", async () => {
-    mockGetUserPremium.mockResolvedValue({
-      premium_access: true,
-      has_business_subscription: true,
-    });
+    mockGetUserPremium.mockResolvedValue(
+      createUserPremiumResponse({
+        premium_access: true,
+        has_business_subscription: true,
+      }),
+    );
 
     const wrapper = mount(UpsellComponent, {
       global: {
@@ -320,9 +335,7 @@ describe("UpsellComponent", () => {
     donateButton.element.dispatchEvent(clickEvent);
     await wrapper.vm.$nextTick();
 
-    expect(openURL).toHaveBeenCalledWith(
-      "https://opencollective.com/lockdown-systems",
-    );
+    expect(openURL).toHaveBeenCalledWith("https://lockdown.systems/donate/");
   });
 
   it("should register emitter listeners on mount", async () => {

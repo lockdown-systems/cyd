@@ -106,7 +106,7 @@ describe("auth.ts", () => {
 
       expect(mockVM.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/login",
-        ["https://x.com/home", "https://x.com/i/flow/login"],
+        ["https://x.com/home", "https://x.com/i/"],
       );
       expect(mockVM.waitForURL).toHaveBeenCalledWith("https://x.com/home");
     });

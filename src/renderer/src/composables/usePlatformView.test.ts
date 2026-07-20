@@ -14,6 +14,22 @@ import {
 import type { BasePlatformViewModel } from "../types/PlatformView";
 import type { PlatformConfig } from "../types/PlatformConfig";
 
+const createUserPremiumResponse = (overrides = {}) => ({
+  premium_price_annual_cents: 3600,
+  premium_price_monthly_cents: 400,
+  premium_business_price_cents: 1337,
+  premium_access: true,
+  has_individual_subscription: false,
+  subscription_cancel_at_period_end: false,
+  subscription_current_period_end: null,
+  has_business_subscription: false,
+  business_organizations: [],
+  current_billing_period: "none",
+  partner: false,
+  stored_credit_cents: 0,
+  ...overrides,
+});
+
 // Create a mock view model
 const createMockViewModel = (): BasePlatformViewModel & {
   run: () => Promise<void>;
@@ -71,7 +87,7 @@ describe("usePlatformView", () => {
     apiClient.ping = vi.fn().mockResolvedValue(true);
     apiClient.getUserPremium = vi
       .fn()
-      .mockResolvedValue({ premium_access: true });
+      .mockResolvedValue(createUserPremiumResponse());
   });
 
   afterEach(() => {

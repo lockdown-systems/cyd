@@ -7,12 +7,13 @@ import { beforeEach, afterEach, test, expect, vi } from "vitest";
 vi.mock("./util", () => ({
   ...vi.importActual("./util"), // Import and spread the actual implementations
   getSettingsPath: vi.fn(() => {
-    const settingsPath = path.join(
-      __dirname,
-      "..",
-      "testdata",
-      "settingsPath-database",
-    );
+    // Use the per-worker isolated path set up in test-setup.ts. Falling back
+    // to the shared parent directory here caused parallel workers to delete
+    // each other's databases during afterEach cleanup.
+    const settingsPath =
+      process.env.TEST_MODE === "1" && process.env.TEST_SETTINGS_PATH
+        ? process.env.TEST_SETTINGS_PATH
+        : path.join(__dirname, "..", "testdata", "settingsPath-database");
     if (!fs.existsSync(settingsPath)) {
       fs.mkdirSync(settingsPath, { recursive: true });
     }
