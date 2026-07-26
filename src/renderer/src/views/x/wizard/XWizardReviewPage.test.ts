@@ -210,9 +210,59 @@ describe("XWizardReviewPage", () => {
 
       expect(backButton).toBeTruthy();
     });
+
+    it("should warn about account suspension for delete mode", async () => {
+      const { getJobsType } = await import("../../../util");
+      vi.mocked(getJobsType).mockReturnValue("delete");
+
+      const mockModel = createMockModel({
+        xAccount: {
+          archiveTweets: true,
+        },
+      });
+
+      wrapper = mount(XWizardReviewPage, {
+        props: {
+          model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const warning = wrapper.find(".alert-warning");
+      expect(warning.exists()).toBe(true);
+      expect(warning.text()).toContain("might suspend your account");
+    });
   });
 
   describe("basic rendering - archive mode", () => {
+    it("should not warn about account suspension for archive mode", async () => {
+      const { getJobsType } = await import("../../../util");
+      vi.mocked(getJobsType).mockReturnValue("archive");
+
+      const mockModel = createMockModel({
+        xAccount: {
+          archiveTweets: true,
+        },
+      });
+
+      wrapper = mount(XWizardReviewPage, {
+        props: {
+          model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.find(".alert-warning").exists()).toBe(false);
+    });
+
     it("should show Start Archiving button for archive mode", async () => {
       const { getJobsType } = await import("../../../util");
       vi.mocked(getJobsType).mockReturnValue("archive");

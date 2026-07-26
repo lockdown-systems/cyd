@@ -502,6 +502,8 @@
     "updateYourBio": "Update your bio",
     "bioPreview": "Bio Preview",
     "lockYourAccount": "Lock your account",
+    "suspensionWarningTitle": "X might suspend your account for deleting a lot of data.",
+    "suspensionWarningDetails": "Cyd deletes your data slowly, from inside a real browser window, and respects X's rate limits. Even so, X sometimes treats deleting a lot of data as suspicious activity. This can happen whether or not you use Cyd, and suspensions are outside of our control.",
     "learnMore": "Learn more."
   },
   "importing": {

@@ -559,6 +559,20 @@ onMounted(async () => {
           </form>
 
           <div
+            v-if="jobsType == 'delete'"
+            class="alert alert-warning mt-4"
+            role="alert"
+          >
+            <p class="fw-bold mb-0">
+              <i class="fa-solid fa-triangle-exclamation me-1" />
+              {{ t("review.suspensionWarningTitle") }}
+            </p>
+            <p class="alert-details mb-0">
+              {{ t("review.suspensionWarningDetails") }}
+            </p>
+          </div>
+
+          <div
             v-if="
               jobsType == 'save' ||
               jobsType == 'archive' ||
