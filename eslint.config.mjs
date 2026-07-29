@@ -19,6 +19,7 @@ export default tseslint.config(
       "global.d.ts",
       "forge.env.d.ts",
       "docs/**/*",
+      ".agents/**/*",
     ],
   },
   // TypeScript files
