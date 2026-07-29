@@ -9,7 +9,7 @@ Mobile and desktop Cyd offer the same Bluesky account-management capabilities an
 _Avoid_: UI parity, identical clients
 
 **Cyd archive**:
-A complete, self-contained, versioned snapshot of an account's saved data and media that supported Cyd clients can exchange without losing its meaning. Unversioned mobile Bluesky archives are legacy version 1 archives.
+A complete, self-contained, versioned snapshot of an account's saved data and media that supported Cyd clients can exchange without losing its meaning. Version 2 is the first supported Cyd archive format; the earlier unversioned mobile prototype is not a Cyd archive compatibility surface.
 _Avoid_: HTML export, database backup
 
 **Interchange database**:
@@ -33,8 +33,8 @@ Local preferences governing how Cyd saves and manages a Bluesky identity. An arc
 _Avoid_: account data, archive state
 
 **Scheduled reminder**:
-A client-local prompt to review and start due account-management work. It does not authorize Cyd to perform deletion unattended.
-_Avoid_: scheduled job, automatic deletion, push notification
+A prompt to review and start due account-management work. It does not authorize Cyd to perform deletion unattended; clients may use platform-appropriate delivery such as local notifications or server-scheduled push.
+_Avoid_: scheduled job, automatic deletion
 
 **Connection**:
 A local installation's authorization to act on a Bluesky identity. Connections are established separately on each client and are never part of a Cyd archive.
