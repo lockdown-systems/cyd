@@ -1,0 +1,3 @@
+# Merge archive imports idempotently
+
+Importing a Cyd archive merges it with the matching local account rather than replacing local data. Records match on stable Bluesky identifiers such as AT URIs, richer or newer representations can update older ones, data absent from the archive is retained, and importing the same archive repeatedly has no further effect; this supports safe cross-device transfer without sacrificing data collected independently on either device. Because import is an explicit recovery action, it may restore locally deleted records, and its preview reports that restoration rather than relying on permanent deletion tombstones that would suppress older backups.
