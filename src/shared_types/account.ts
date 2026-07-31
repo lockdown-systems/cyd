@@ -3,7 +3,7 @@ export type Account = {
   type: string; // "X"
   sortOrder: number;
   xAccount: XAccount | null;
-  blueskyAccount: BlueskyAccount | null;
+  blueskyLocalAccount: BlueskyLocalAccount | null;
   facebookAccount: FacebookAccount | null;
   uuid: string;
 };
@@ -56,35 +56,15 @@ export type XAccount = {
   tombstoneLockAccount: boolean;
 };
 
-export type BlueskyAccount = {
-  id: number;
+export type BlueskyLocalAccount = {
+  uuid: string;
   createdAt: Date;
   updatedAt: Date;
   accessedAt: Date;
-  username: string;
-  profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  archivePosts: boolean;
-  archivePostsHTML: boolean;
-  archiveLikes: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsLikesThresholdEnabled: boolean;
-  deletePostsLikesThreshold: number;
-  deletePostsRepostsThresholdEnabled: boolean;
-  deletePostsRepostsThreshold: number;
-  deleteReposts: boolean;
-  deleteRepostsDaysOldEnabled: boolean;
-  deleteRepostsDaysOld: number;
-  deleteLikes: boolean;
-  deleteLikesDaysOldEnabled: boolean;
-  deleteLikesDaysOld: number;
-  followingCount: number;
-  followersCount: number;
-  postsCount: number;
-  likesCount: number;
+  did: string | null;
+  handle: string;
+  displayName: string;
+  avatarUrl: string;
 };
 
 export type FacebookAccount = {

@@ -317,6 +317,65 @@ describe("AccountView", () => {
     });
   });
 
+  describe("Bluesky local account type", () => {
+    it("opens and renders a Bluesky local account", async () => {
+      const account = createMockAccount({
+        type: "Bluesky",
+        xAccount: null,
+        blueskyLocalAccount: {
+          uuid: "00000000-0000-4000-8000-000000000001",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          accessedAt: new Date(),
+          did: "did:plc:alice",
+          handle: "alice.test",
+          displayName: "Alice",
+          avatarUrl: "",
+        },
+      });
+
+      wrapper = mount(AccountView, {
+        props: { account },
+        global: { plugins: [i18n] },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.find(".bluesky-local-account").text()).toContain("Alice");
+      expect(window.electron.Bluesky.openLocalAccount).toHaveBeenCalledWith(
+        account.id,
+      );
+    });
+
+    it("initializes storage when an unknown account becomes Bluesky", async () => {
+      const unknownAccount = createMockAccount({ type: "unknown" });
+      wrapper = mount(AccountView, {
+        props: { account: unknownAccount },
+        global: { plugins: [i18n] },
+      });
+
+      await wrapper.setProps({
+        account: {
+          ...unknownAccount,
+          type: "Bluesky",
+          blueskyLocalAccount: {
+            uuid: unknownAccount.uuid,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            accessedAt: new Date(),
+            did: null,
+            handle: "",
+            displayName: "",
+            avatarUrl: "",
+          },
+        },
+      });
+
+      expect(window.electron.Bluesky.openLocalAccount).toHaveBeenCalledWith(
+        unknownAccount.id,
+      );
+    });
+  });
+
   describe("Facebook account type", () => {
     it("should render FacebookView when account type is Facebook", async () => {
       const facebookAccount = createMockAccount({

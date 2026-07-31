@@ -50,7 +50,7 @@ afterEach(() => {
 
 // database tests
 
-test("config, account, xAccount, blueskyAccount, facebookAccount tables should be created", async () => {
+test("config, account, xAccount, blueskyLocalAccount, facebookAccount tables should be created", async () => {
   const db = database.getMainDatabase();
   const tables = await database.exec(
     db,
@@ -63,7 +63,7 @@ test("config, account, xAccount, blueskyAccount, facebookAccount tables should b
       expect.objectContaining({ name: "config" }),
       expect.objectContaining({ name: "account" }),
       expect.objectContaining({ name: "xAccount" }),
-      expect.objectContaining({ name: "blueskyAccount" }),
+      expect.objectContaining({ name: "blueskyLocalAccount" }),
       expect.objectContaining({ name: "facebookAccount" }),
     ]),
   );
@@ -157,36 +157,17 @@ test("getXAccounts should retrieve all XAccounts", () => {
   expect(accounts).toEqual(expect.arrayContaining([xAccount1, xAccount2]));
 });
 
-test("createBlueskyAccount should create a new BlueskyAccount", () => {
-  const blueskyAccount = database.createBlueskyAccount();
-  expect(blueskyAccount).toHaveProperty("id");
+test("createBlueskyLocalAccount should create a BlueskyLocalAccount", () => {
+  const account = database.createAccount();
+  const blueskyAccount = database.createBlueskyLocalAccount(account.uuid);
+  expect(blueskyAccount).toHaveProperty("uuid", account.uuid);
   expect(blueskyAccount).toHaveProperty("createdAt");
   expect(blueskyAccount).toHaveProperty("updatedAt");
   expect(blueskyAccount).toHaveProperty("accessedAt");
-  expect(blueskyAccount).toHaveProperty("username");
-  expect(blueskyAccount).toHaveProperty("profileImageDataURI");
-  expect(blueskyAccount).toHaveProperty("saveMyData");
-  expect(blueskyAccount).toHaveProperty("deleteMyData");
-  expect(blueskyAccount).toHaveProperty("archivePosts");
-  expect(blueskyAccount).toHaveProperty("archivePostsHTML");
-  expect(blueskyAccount).toHaveProperty("archiveLikes");
-  expect(blueskyAccount).toHaveProperty("deletePosts");
-  expect(blueskyAccount).toHaveProperty("deletePostsDaysOld");
-  expect(blueskyAccount).toHaveProperty("deletePostsDaysOldEnabled");
-  expect(blueskyAccount).toHaveProperty("deletePostsLikesThresholdEnabled");
-  expect(blueskyAccount).toHaveProperty("deletePostsLikesThreshold");
-  expect(blueskyAccount).toHaveProperty("deletePostsRepostsThresholdEnabled");
-  expect(blueskyAccount).toHaveProperty("deletePostsRepostsThreshold");
-  expect(blueskyAccount).toHaveProperty("deleteReposts");
-  expect(blueskyAccount).toHaveProperty("deleteRepostsDaysOld");
-  expect(blueskyAccount).toHaveProperty("deleteRepostsDaysOldEnabled");
-  expect(blueskyAccount).toHaveProperty("deleteLikes");
-  expect(blueskyAccount).toHaveProperty("deleteLikesDaysOld");
-  expect(blueskyAccount).toHaveProperty("deleteLikesDaysOldEnabled");
-  expect(blueskyAccount).toHaveProperty("followingCount");
-  expect(blueskyAccount).toHaveProperty("followersCount");
-  expect(blueskyAccount).toHaveProperty("postsCount");
-  expect(blueskyAccount).toHaveProperty("likesCount");
+  expect(blueskyAccount).toHaveProperty("did", null);
+  expect(blueskyAccount).toHaveProperty("handle", "");
+  expect(blueskyAccount).toHaveProperty("displayName", "");
+  expect(blueskyAccount).toHaveProperty("avatarUrl", "");
 });
 
 test("createFacebookAccount should create a new FacebookAccount", () => {
@@ -200,19 +181,20 @@ test("createFacebookAccount should create a new FacebookAccount", () => {
   expect(facebookAccount).toHaveProperty("accountID");
 });
 
-test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
-  const blueskyAccount = database.createBlueskyAccount();
-  blueskyAccount.username = "newUsername";
-  database.saveBlueskyAccount(blueskyAccount);
+test("saveBlueskyLocalAccount should update an existing BlueskyLocalAccount", () => {
+  const account = database.createAccount();
+  const blueskyAccount = database.createBlueskyLocalAccount(account.uuid);
+  blueskyAccount.handle = "new.handle";
+  database.saveBlueskyLocalAccount(blueskyAccount);
 
   const db = database.getMainDatabase();
   const result = database.exec(
     db,
-    "SELECT * FROM blueskyAccount WHERE id = ?",
-    [blueskyAccount.id],
+    "SELECT * FROM blueskyLocalAccount WHERE uuid = ?",
+    [blueskyAccount.uuid],
     "get",
   );
-  expect(result).toEqual(expect.objectContaining({ username: "newUsername" }));
+  expect(result).toEqual(expect.objectContaining({ handle: "new.handle" }));
 });
 
 test("saveFacebookAccount should update an existing FacebookAccount", () => {
@@ -236,21 +218,26 @@ test("saveFacebookAccount should update an existing FacebookAccount", () => {
   );
 });
 
-test("getBlueskyAccount should retrieve the correct BlueskyAccount", () => {
-  const blueskyAccount = database.createBlueskyAccount();
-  database.saveBlueskyAccount(blueskyAccount);
+test("getBlueskyLocalAccount should retrieve the correct local account", () => {
+  const account = database.createAccount();
+  const blueskyAccount = database.createBlueskyLocalAccount(account.uuid);
+  database.saveBlueskyLocalAccount(blueskyAccount);
 
-  const retrievedAccount = database.getBlueskyAccount(blueskyAccount.id);
+  const retrievedAccount = database.getBlueskyLocalAccount(blueskyAccount.uuid);
   expect(retrievedAccount).toEqual(blueskyAccount);
 });
 
-test("getBlueskyAccounts should retrieve all BlueskyAccounts", () => {
-  const blueskyAccount1 = database.createBlueskyAccount();
-  const blueskyAccount2 = database.createBlueskyAccount();
-  database.saveBlueskyAccount(blueskyAccount1);
-  database.saveBlueskyAccount(blueskyAccount2);
+test("getBlueskyLocalAccounts should retrieve all local accounts", () => {
+  const blueskyAccount1 = database.createBlueskyLocalAccount(
+    database.createAccount().uuid,
+  );
+  const blueskyAccount2 = database.createBlueskyLocalAccount(
+    database.createAccount().uuid,
+  );
+  database.saveBlueskyLocalAccount(blueskyAccount1);
+  database.saveBlueskyLocalAccount(blueskyAccount2);
 
-  const accounts = database.getBlueskyAccounts();
+  const accounts = database.getBlueskyLocalAccounts();
   expect(accounts).toEqual(
     expect.arrayContaining([blueskyAccount1, blueskyAccount2]),
   );

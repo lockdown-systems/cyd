@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getAccountIcon } from "../util";
 import type { Account } from "../../../shared_types";
@@ -39,6 +39,16 @@ const refresh = async () => {
 const accountClicked = (accountType: string) => {
   emit("accountSelected", props.account, accountType);
 };
+
+watch(
+  () => props.account.type,
+  async (accountType) => {
+    if (accountType === "Bluesky") {
+      await window.electron.Bluesky.openLocalAccount(props.account.id);
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
@@ -173,6 +183,21 @@ onMounted(async () => {
         @on-refresh-clicked="refresh"
         @on-remove-clicked="emit('onRemoveClicked')"
       />
+    </template>
+
+    <template v-else-if="account.type == 'Bluesky'">
+      <div class="bluesky-local-account container mt-5">
+        <h2>
+          {{ account.blueskyLocalAccount?.displayName || "Bluesky" }}
+        </h2>
+        <p v-if="account.blueskyLocalAccount?.handle">
+          @{{ account.blueskyLocalAccount.handle }}
+        </p>
+        <p class="text-muted">{{ t("account.blueskyLocalStorageReady") }}</p>
+        <button class="btn btn-danger" @click="emit('onRemoveClicked')">
+          {{ t("account.removeAccount") }}
+        </button>
+      </div>
     </template>
 
     <template v-else-if="account.type == 'Facebook'">
