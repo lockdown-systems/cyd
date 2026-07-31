@@ -1,0 +1,445 @@
+{
+  "archiveFormat": {
+    "format": "cyd-archive",
+    "platform": "bluesky",
+    "version": 2
+  },
+  "desktopBlueskyVersionBehavior": {
+    "unversionedV1": "reject_unsupported_legacy_format",
+    "blueskyV2Import": "accept",
+    "blueskyV2Export": "write_only_bluesky_v2",
+    "otherPlatform": "reject_unsupported_archive_platform",
+    "newerVersion": "reject_unsupported_newer_version"
+  },
+  "commonSemantics": {
+    "archive": {
+      "createdAt": "2026-01-15T12:00:00.000Z",
+      "accountDid": "did:plc:canonicalalice",
+      "accountUuid": "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12"
+    },
+    "identity": {
+      "did": "did:plc:canonicalalice",
+      "currentProfileId": "profile-alice-current"
+    },
+    "profiles": [
+      {
+        "id": "profile-alice-captured",
+        "did": "did:plc:canonicalalice",
+        "handle": "alice.test",
+        "displayName": "Alice Captured",
+        "description": "captured author",
+        "avatarAssetId": null,
+        "bannerAssetId": null,
+        "capturedAt": "2025-12-01T09:00:00.000Z"
+      },
+      {
+        "id": "profile-alice-current",
+        "did": "did:plc:canonicalalice",
+        "handle": "alice.example",
+        "displayName": "Alice Current",
+        "description": "current profile",
+        "avatarAssetId": "asset-image",
+        "bannerAssetId": null,
+        "capturedAt": "2026-01-15T12:00:00.000Z"
+      },
+      {
+        "id": "profile-bob",
+        "did": "did:plc:canonicalbob",
+        "handle": "bob.example",
+        "displayName": "Bob",
+        "description": "direct context author",
+        "avatarAssetId": null,
+        "bannerAssetId": null,
+        "capturedAt": "2026-01-15T12:00:00.000Z"
+      }
+    ],
+    "records": [
+      {
+        "uri": "at://did:plc:canonicalalice/app.bsky.feed.like/like",
+        "cid": "bafy-like",
+        "recordType": "app.bsky.feed.like",
+        "authorProfileId": "profile-alice-captured",
+        "indexedAt": null,
+        "createdAt": "2026-01-03T10:00:00.000Z",
+        "firstObservedAt": "2026-01-03T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null,
+        "text": null,
+        "facets": [],
+        "payload": {}
+      },
+      {
+        "uri": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "cid": "bafy-post",
+        "recordType": "app.bsky.feed.post",
+        "authorProfileId": "profile-alice-captured",
+        "indexedAt": null,
+        "createdAt": "2026-01-01T10:00:00.000Z",
+        "firstObservedAt": "2026-01-01T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null,
+        "text": "Own post with full video",
+        "facets": [],
+        "payload": {}
+      },
+      {
+        "uri": "at://did:plc:canonicalalice/app.bsky.feed.repost/repost",
+        "cid": "bafy-repost",
+        "recordType": "app.bsky.feed.repost",
+        "authorProfileId": "profile-alice-captured",
+        "indexedAt": null,
+        "createdAt": "2026-01-02T10:00:00.000Z",
+        "firstObservedAt": "2026-01-02T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null,
+        "text": null,
+        "facets": [],
+        "payload": {}
+      },
+      {
+        "uri": "at://did:plc:canonicalalice/app.bsky.graph.listitem/bookmark",
+        "cid": "bafy-bookmark",
+        "recordType": "app.cyd.bookmark",
+        "authorProfileId": "profile-alice-captured",
+        "indexedAt": null,
+        "createdAt": "2026-01-04T10:00:00.000Z",
+        "firstObservedAt": "2026-01-04T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null,
+        "text": null,
+        "facets": [],
+        "payload": {}
+      },
+      {
+        "uri": "at://did:plc:canonicalbob/app.bsky.feed.post/quote",
+        "cid": "bafy-quote",
+        "recordType": "app.bsky.feed.post",
+        "authorProfileId": "profile-bob",
+        "indexedAt": null,
+        "createdAt": "2025-12-29T10:00:00.000Z",
+        "firstObservedAt": "2025-12-29T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": "2026-01-10T00:00:00.000Z",
+        "text": "Quoted record later deleted at source",
+        "facets": [],
+        "payload": {}
+      },
+      {
+        "uri": "at://did:plc:canonicalbob/app.bsky.feed.post/reply",
+        "cid": "bafy-reply",
+        "recordType": "app.bsky.feed.post",
+        "authorProfileId": "profile-bob",
+        "indexedAt": null,
+        "createdAt": "2025-12-30T10:00:00.000Z",
+        "firstObservedAt": "2025-12-30T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null,
+        "text": "Direct reply parent",
+        "facets": [],
+        "payload": {}
+      }
+    ],
+    "selections": [
+      {
+        "category": "bookmarks",
+        "subjectId": "at://did:plc:canonicalalice/app.bsky.graph.listitem/bookmark",
+        "selectedAt": "2026-01-15T12:00:00.000Z"
+      },
+      {
+        "category": "chats",
+        "subjectId": "convo-canonical",
+        "selectedAt": "2026-01-15T12:00:00.000Z"
+      },
+      {
+        "category": "likes",
+        "subjectId": "at://did:plc:canonicalalice/app.bsky.feed.like/like",
+        "selectedAt": "2026-01-15T12:00:00.000Z"
+      },
+      {
+        "category": "posts",
+        "subjectId": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "selectedAt": "2026-01-15T12:00:00.000Z"
+      },
+      {
+        "category": "reposts",
+        "subjectId": "at://did:plc:canonicalalice/app.bsky.feed.repost/repost",
+        "selectedAt": "2026-01-15T12:00:00.000Z"
+      }
+    ],
+    "recordSubjects": [
+      {
+        "relationshipUri": "at://did:plc:canonicalalice/app.bsky.feed.like/like",
+        "subjectRecordUri": "at://did:plc:canonicalalice/app.bsky.feed.post/post"
+      },
+      {
+        "relationshipUri": "at://did:plc:canonicalalice/app.bsky.feed.repost/repost",
+        "subjectRecordUri": "at://did:plc:canonicalbob/app.bsky.feed.post/quote"
+      },
+      {
+        "relationshipUri": "at://did:plc:canonicalalice/app.bsky.graph.listitem/bookmark",
+        "subjectRecordUri": "at://did:plc:canonicalalice/app.bsky.feed.post/post"
+      }
+    ],
+    "recordContext": [
+      {
+        "recordUri": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "kind": "external",
+        "contextRecordUri": null,
+        "contextProfileId": null,
+        "external": {
+          "title": "Canonical link",
+          "uri": "https://example.com/context"
+        }
+      },
+      {
+        "recordUri": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "kind": "quote",
+        "contextRecordUri": "at://did:plc:canonicalbob/app.bsky.feed.post/quote",
+        "contextProfileId": "profile-bob",
+        "external": null
+      },
+      {
+        "recordUri": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "kind": "reply_parent",
+        "contextRecordUri": "at://did:plc:canonicalbob/app.bsky.feed.post/reply",
+        "contextProfileId": "profile-bob",
+        "external": null
+      }
+    ],
+    "conversations": [
+      {
+        "id": "convo-canonical",
+        "rev": "1",
+        "firstObservedAt": "2026-01-15T12:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null
+      }
+    ],
+    "conversationMembers": [
+      {
+        "conversationId": "convo-canonical",
+        "profileId": "profile-alice-captured"
+      },
+      {
+        "conversationId": "convo-canonical",
+        "profileId": "profile-bob"
+      }
+    ],
+    "messages": [
+      {
+        "id": "message-canonical",
+        "conversationId": "convo-canonical",
+        "senderProfileId": "profile-bob",
+        "sentAt": "2026-01-05T10:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null,
+        "text": "Portable direct message",
+        "facets": [],
+        "payload": {}
+      }
+    ],
+    "relationships": [
+      {
+        "uri": "at://did:plc:canonicalalice/app.bsky.graph.follow/bob",
+        "kind": "follow",
+        "actorDid": "did:plc:canonicalalice",
+        "subjectDid": "did:plc:canonicalbob",
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": null
+      },
+      {
+        "uri": "mute:did:plc:canonicalbob",
+        "kind": "mute",
+        "actorDid": "did:plc:canonicalalice",
+        "subjectDid": "did:plc:canonicalbob",
+        "createdAt": "2026-01-15T12:00:00.000Z",
+        "observedAt": "2026-01-15T12:00:00.000Z",
+        "sourceDeletedAt": "2026-01-12T00:00:00.000Z"
+      }
+    ],
+    "recordAssets": [
+      {
+        "ownerType": "profile",
+        "ownerId": "profile-alice-current",
+        "assetId": "asset-image",
+        "role": "avatar",
+        "position": 0
+      },
+      {
+        "ownerType": "record",
+        "ownerId": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "assetId": "asset-image",
+        "role": "content",
+        "position": 0
+      },
+      {
+        "ownerType": "record",
+        "ownerId": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "assetId": "asset-video-full",
+        "role": "content",
+        "position": 1
+      },
+      {
+        "ownerType": "record",
+        "ownerId": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "assetId": "asset-preview",
+        "role": "preview",
+        "position": 0
+      },
+      {
+        "ownerType": "record",
+        "ownerId": "at://did:plc:canonicalalice/app.bsky.feed.post/post",
+        "assetId": "asset-thumbnail",
+        "role": "thumbnail",
+        "position": 0
+      }
+    ],
+    "portableSettings": [
+      { "key": "delete_follows", "value": false },
+      { "key": "delete_posts", "value": { "olderThanDays": 30 } },
+      { "key": "save_bookmarks", "value": true },
+      { "key": "save_chats", "value": true },
+      { "key": "save_likes", "value": true },
+      { "key": "save_posts", "value": true },
+      { "key": "save_reposts", "value": true }
+    ]
+  },
+  "fixtures": {
+    "complete.cyd": {
+      "completeness": "complete",
+      "assets": [
+        {
+          "id": "asset-image",
+          "kind": "image",
+          "mediaType": "image/png",
+          "byteCount": 70,
+          "sha256": "6c55d7bbccd73bb135e8e7c7161b4be3cef97142313f2fba304e73b3329ecc3d",
+          "archivePath": "media/sha256/6c/6c55d7bbccd73bb135e8e7c7161b4be3cef97142313f2fba304e73b3329ecc3d",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-image",
+          "width": 1,
+          "height": 1,
+          "altText": "canonical image"
+        },
+        {
+          "id": "asset-preview",
+          "kind": "preview",
+          "mediaType": "image/png",
+          "byteCount": 70,
+          "sha256": "74280ef143147745086279ee96a1a35f8821c5f03785b46476537c24e3990847",
+          "archivePath": "media/sha256/74/74280ef143147745086279ee96a1a35f8821c5f03785b46476537c24e3990847",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-preview",
+          "width": 1,
+          "height": 1,
+          "altText": "canonical preview"
+        },
+        {
+          "id": "asset-thumbnail",
+          "kind": "thumbnail",
+          "mediaType": "image/png",
+          "byteCount": 70,
+          "sha256": "c7fe85dd5a8b22c8c3295535bb3665617f778c9d81058f3b8adc1eae69db99ec",
+          "archivePath": "media/sha256/c7/c7fe85dd5a8b22c8c3295535bb3665617f778c9d81058f3b8adc1eae69db99ec",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-thumbnail",
+          "width": 1,
+          "height": 1,
+          "altText": "canonical thumbnail"
+        },
+        {
+          "id": "asset-video-full",
+          "kind": "video",
+          "mediaType": "video/mp4",
+          "byteCount": 149576,
+          "sha256": "f7a5be429b0d633d22038d97f5930c95e8403643fbb5b4e7274ee5ec16018cde",
+          "archivePath": "media/sha256/f7/f7a5be429b0d633d22038d97f5930c95e8403643fbb5b4e7274ee5ec16018cde",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-video-full",
+          "width": 1280,
+          "height": 720,
+          "altText": "canonical video"
+        }
+      ]
+    },
+    "incomplete.cyd": {
+      "completeness": "incomplete",
+      "assets": [
+        {
+          "id": "asset-image",
+          "kind": "image",
+          "mediaType": "image/png",
+          "byteCount": 70,
+          "sha256": "6c55d7bbccd73bb135e8e7c7161b4be3cef97142313f2fba304e73b3329ecc3d",
+          "archivePath": "media/sha256/6c/6c55d7bbccd73bb135e8e7c7161b4be3cef97142313f2fba304e73b3329ecc3d",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-image",
+          "width": 1,
+          "height": 1,
+          "altText": "canonical image"
+        },
+        {
+          "id": "asset-preview",
+          "kind": "preview",
+          "mediaType": "image/png",
+          "byteCount": 70,
+          "sha256": "74280ef143147745086279ee96a1a35f8821c5f03785b46476537c24e3990847",
+          "archivePath": "media/sha256/74/74280ef143147745086279ee96a1a35f8821c5f03785b46476537c24e3990847",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-preview",
+          "width": 1,
+          "height": 1,
+          "altText": "canonical preview"
+        },
+        {
+          "id": "asset-thumbnail",
+          "kind": "thumbnail",
+          "mediaType": "image/png",
+          "byteCount": 70,
+          "sha256": "c7fe85dd5a8b22c8c3295535bb3665617f778c9d81058f3b8adc1eae69db99ec",
+          "archivePath": "media/sha256/c7/c7fe85dd5a8b22c8c3295535bb3665617f778c9d81058f3b8adc1eae69db99ec",
+          "availability": "available",
+          "unavailableReason": null,
+          "sourceUrl": "https://cdn.example/asset-thumbnail",
+          "width": 1,
+          "height": 1,
+          "altText": "canonical thumbnail"
+        },
+        {
+          "id": "asset-video-full",
+          "kind": "video",
+          "mediaType": "video/mp4",
+          "byteCount": null,
+          "sha256": null,
+          "archivePath": null,
+          "availability": "unavailable",
+          "unavailableReason": "source video was unavailable at export",
+          "sourceUrl": "https://cdn.example/asset-video-full",
+          "width": null,
+          "height": null,
+          "altText": null
+        }
+      ]
+    }
+  },
+  "excluded": [
+    "credentials",
+    "oauth",
+    "schedules",
+    "jobs",
+    "logs",
+    "analytics",
+    "diagnostics",
+    "errorReports",
+    "caches",
+    "temporaryData",
+    "uiState"
+  ]
+}

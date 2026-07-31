@@ -1,3 +1,3 @@
-# Bidirectional Cyd archive compatibility begins with version 2
+# Bidirectional Cyd Bluesky archive compatibility begins with version 2
 
-Cyd mobile and desktop exchange Cyd archives beginning with the canonical version 2 format. The unversioned mobile prototype has no users and is unsupported by both clients; abandoning it avoids coupling the shared contract to Mobile's historical runtime schema. Each client clearly rejects archive versions it does not support so evolving one application does not silently break portability with the other.
+Cyd mobile and desktop exchange Cyd Bluesky archives beginning with the canonical Bluesky version 2 format. Bluesky archive versions are independent of the archive contracts and version histories for Cyd's other social platforms. The unversioned mobile prototype has no users and is unsupported by both clients; abandoning it avoids coupling the shared contract to Mobile's historical runtime schema. Each client clearly rejects Bluesky archive versions it does not support so evolving one application does not silently break portability with the other.

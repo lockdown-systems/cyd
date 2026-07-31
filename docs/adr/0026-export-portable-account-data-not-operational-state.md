@@ -1,3 +1,3 @@
-# Export portable account data, not operational state
+# Export portable Bluesky saved data, not operational state
 
-Version 2 archives include account identity and captured profile, saved records and media, source-deletion state, asset-completeness state, and portable save/delete rule defaults. They exclude credentials, schedules, pending or historical jobs, logs, analytics, error reports, temporary files, caches, and UI state because those are client-local operations whose transfer could duplicate work or trigger unintended behavior.
+Bluesky version 2 archives include the Bluesky identity and captured profile, Bluesky saved records and media, Bluesky source-deletion state, asset-completeness state, and portable Bluesky account settings. They exclude credentials, schedules, pending or historical jobs, logs, analytics, error reports, temporary files, caches, and UI state because those are client-local operations whose transfer could duplicate work or trigger unintended behavior.
