@@ -1,0 +1,38 @@
+{
+  "desktopVersionBehavior": {
+    "unversionedV1": "reject_unsupported_legacy_format",
+    "v2Import": "accept",
+    "v2Export": "write_only_v2",
+    "newerVersion": "reject_unsupported_newer_version"
+  },
+  "fixtures": {
+    "complete.cyd": {
+      "completeness": "complete",
+      "categories": ["bookmarks", "chats", "likes", "posts", "reposts"],
+      "contextKinds": ["external", "quote", "reply_parent"],
+      "assetKinds": ["image", "preview", "thumbnail", "video"],
+      "unavailableAssets": 0
+    },
+    "incomplete.cyd": {
+      "completeness": "incomplete",
+      "categories": ["bookmarks", "chats", "likes", "posts", "reposts"],
+      "contextKinds": ["external", "quote", "reply_parent"],
+      "assetKinds": ["image", "preview", "thumbnail", "video"],
+      "unavailableAssets": 1,
+      "missingSemanticAsset": "asset-video-full"
+    }
+  },
+  "excluded": [
+    "credentials",
+    "oauth",
+    "schedules",
+    "jobs",
+    "logs",
+    "analytics",
+    "diagnostics",
+    "errorReports",
+    "caches",
+    "temporaryData",
+    "uiState"
+  ]
+}
