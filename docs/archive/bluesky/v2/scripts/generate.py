@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import sqlite3
 import struct
 import tempfile
 import zipfile
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,22 +19,28 @@ CREATED = "2026-01-15T12:00:00.000Z"
 DID = "did:plc:canonicalalice"
 UUID = "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12"
 
-# A real 1x1 PNG. Distinct suffixes are legal trailing ancillary bytes and make
-# the canonical image, preview, and thumbnail independently addressable.
-PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-)
+
+def png_chunk(kind: bytes, payload: bytes) -> bytes:
+    checksum = zlib.crc32(kind + payload) & 0xFFFFFFFF
+    return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", checksum)
 
 
-def box(kind: bytes, payload: bytes) -> bytes:
-    return struct.pack(">I4s", len(payload) + 8, kind) + payload
+def one_pixel_png(red: int, green: int, blue: int) -> bytes:
+    signature = b"\x89PNG\r\n\x1a\n"
+    header = struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0)
+    scanline = bytes((0, red, green, blue, 255))
+    return (
+        signature
+        + png_chunk(b"IHDR", header)
+        + png_chunk(b"IDAT", zlib.compress(scanline))
+        + png_chunk(b"IEND", b"")
+    )
 
 
-# A small complete ISO-BMFF payload used to prove that video means the offline
-# full-video object, not merely its preview or thumbnail.
-VIDEO = box(b"ftyp", b"isom\x00\x00\x02\x00isomiso2mp41") + box(
-    b"free", b"canonical-cyd-bluesky-v2-full-video"
-) + box(b"mdat", b"\x00\x00\x00\x01\x65\x88\x84canonical-video-sample")
+IMAGE = one_pixel_png(35, 116, 171)
+PREVIEW = one_pixel_png(80, 160, 80)
+THUMBNAIL = one_pixel_png(200, 120, 40)
+FULL_VIDEO = (ROOT / "assets" / "full-video.mp4").read_bytes()
 
 
 def add_asset(
@@ -67,8 +73,8 @@ def add_asset(
             digest,
             archive_path,
             f"https://cdn.example/{asset_id}",
-            1 if kind != "video" else 320,
-            1 if kind != "video" else 180,
+            1 if kind != "video" else 1280,
+            1 if kind != "video" else 720,
             f"canonical {kind}",
         ),
     )
@@ -91,16 +97,16 @@ def populate(db: sqlite3.Connection, staging: Path, complete: bool) -> None:
     )
     db.execute("INSERT INTO identity VALUES (?, ?)", (DID, "profile-alice-current"))
 
-    add_asset(db, staging, "asset-image", "image", "image/png", PNG + b"image")
-    add_asset(db, staging, "asset-preview", "preview", "image/png", PNG + b"preview")
-    add_asset(db, staging, "asset-thumbnail", "thumbnail", "image/png", PNG + b"thumbnail")
+    add_asset(db, staging, "asset-image", "image", "image/png", IMAGE)
+    add_asset(db, staging, "asset-preview", "preview", "image/png", PREVIEW)
+    add_asset(db, staging, "asset-thumbnail", "thumbnail", "image/png", THUMBNAIL)
     add_asset(
         db,
         staging,
         "asset-video-full",
         "video",
         "video/mp4",
-        VIDEO if complete else None,
+        FULL_VIDEO if complete else None,
         "source video was unavailable at export",
     )
     db.execute(

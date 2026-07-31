@@ -65,37 +65,40 @@ completeness must equal the single row in `data.db.archive`.
 
 It lists every regular payload except itself exactly once, sorted by path.
 Each entry contains its normalized path, uncompressed byte length, and SHA-256
-of its bytes. Readers must validate the complete manifest before exposing an
-import preview or mutating live data. `metadata.json` and `data.db` are payloads.
+of its bytes. Readers must validate the complete manifest before exposing a
+Bluesky archive import preview or mutating Bluesky saved data. `metadata.json`
+and `data.db` are payloads.
 Media paths must end in their digest and their bytes must match that digest.
 
 Readers extract into an isolated staging directory while validating entry
 type, path, declared and expanded sizes, entry counts, free space, and digest.
 They must not follow links or write outside staging. There is no small fixed
 archive-size limit; clients may require explicit confirmation at documented
-resource thresholds. Failure or cancellation leaves the live account unchanged.
+resource thresholds. Failure or cancellation leaves the live Bluesky local
+account unchanged.
 
-## Interchange database
+## Bluesky interchange database
 
 `data.db` is SQLite 3 and must implement [schema.sql](schema.sql) exactly for
-Bluesky v2. It is an interchange model, never a copy of a client's runtime database.
-Text is UTF-8. Booleans are integers constrained to `0` or `1`. JSON columns
-contain canonical JSON values rather than client-specific serialized objects.
+Bluesky v2. It is a Bluesky interchange model, never a copy of a client's
+runtime database. Text is UTF-8. Booleans are integers constrained to `0` or
+`1`. JSON columns contain canonical JSON values rather than client-specific
+serialized objects.
 
 The model has these semantic groups:
 
-- `archive`, `identity`, and `profiles`: local UUID, durable DID, current
-  profile, and captured historical author profiles.
+- `archive`, `identity`, and `profiles`: Bluesky local account UUID, durable
+  DID, current profile, and captured historical author profiles.
 - `records`, `selections`, `record_subjects`, and `record_context`: the latest
   observed form of posts/reposts/likes/bookmarks, the selected relationship's
   target record, plus direct reply-parent, quote, external, and author context.
   Context is bounded; it does not recursively capture threads.
 - `conversations`, `conversation_members`, and `messages`: direct-message
   context, membership, and messages.
-- `relationships`: follows, blocks, and mutes with source-deletion state.
+- `relationships`: follows, blocks, and mutes with Bluesky source-deletion state.
 - `assets` and `record_assets`: every expected image, preview, thumbnail, and
   full video, including unavailable assets and their reason.
-- `portable_settings`: portable save defaults and source-delete defaults.
+- `portable_settings`: portable Bluesky account setting defaults.
 
 Stable AT URIs identify records; DIDs identify Bluesky identities. `cid` is
 the latest observed CID, not revision history. `observed_at`,
@@ -106,14 +109,16 @@ byte count, media type, and content-addressed payload.
 
 All five selection categories—`posts`, `reposts`, `likes`, `bookmarks`, and
 `chats`—must be representable. Category selection pulls its required direct
-context and media with it. Import merges records by stable identifiers,
-retains local data absent from the archive, prefers newer non-empty
-observations, and is idempotent. It may restore locally deleted data.
+context and media with it. Bluesky archive import merges records by stable
+identifiers, retains Bluesky saved data absent from the Cyd Bluesky archive,
+prefers newer non-empty observations, and is idempotent. It may restore data
+removed through Bluesky local deletion.
 
 ## Completeness and consistency
 
-Export is a point-in-time-consistent snapshot of the selected account data and
-media. Each archive stands alone; Bluesky v2 has no delta or predecessor mechanism.
+Export is a point-in-time-consistent snapshot of the selected Bluesky saved
+data. Each Cyd Bluesky archive stands alone; Bluesky v2 has no delta or
+predecessor mechanism.
 A structurally valid archive may be incomplete. Missing expected media must be
 represented as `unavailable` or `missing`, never silently omitted. The archive
 and metadata completeness is `complete` if and only if all asset rows are
@@ -121,12 +126,13 @@ and metadata completeness is `complete` if and only if all asset rows are
 
 ## Privacy boundary
 
-Only portable Bluesky account data belongs in Bluesky v2. Archives must not contain OAuth or
-other credentials, private keys, sessions, schedules, pending/running/history
-jobs, logs, analytics, diagnostics, error reports, caches, temporary data,
-filesystem paths, or UI state. Portable settings are defaults, not authority
-to schedule or execute work, and do not overwrite an existing account unless
-the user explicitly chooses to adopt them.
+Only portable Bluesky saved data belongs in Bluesky v2. Cyd Bluesky archives
+must not contain OAuth or other credentials, private keys, sessions, schedules,
+pending/running/history jobs, logs, analytics, diagnostics, error reports,
+caches, temporary data, filesystem paths, or UI state. Portable Bluesky account
+settings are defaults, not authority to schedule or execute work, and do not
+overwrite an existing Bluesky local account unless the user explicitly chooses
+to adopt them.
 
 ## Version behavior
 
@@ -146,19 +152,27 @@ is release-enabled.
 examples generated by `scripts/generate.py`. They cover every category,
 captured/current profiles, reply/quote/external context, relationships,
 observations, deletion state, chats, settings, images, previews, video
-thumbnails, and a full video payload. The incomplete fixture differs by one
-expected unavailable full-video asset. Expectations are machine-readable in
-`fixtures/semantic-expectations.json`.
+thumbnails, and a playable full video payload. The PNG payloads have complete
+chunk framing and valid CRCs; the MP4 is an FFmpeg-generated test pattern with
+movie metadata and sample tables. The incomplete fixture differs by one
+expected unavailable full-video asset.
+
+`fixtures/semantic-expectations.json` defines the normalized identity, profiles,
+records, selections, record subjects, direct context, conversations, messages,
+relationships, observation and deletion state, assets and their digests,
+asset roles, portable Bluesky account settings, completeness, and version
+behavior. A consumer must compare all of those semantics, not only row counts
+or category names.
 
 Consumers compare normalized database meaning, asset digests, completeness,
 and rejection outcomes—not ZIP bytes, entry order, or SQLite page layout.
 
 ## Bluesky version history
 
-| Version            | Status      | Meaning                                                                                                                               |
-| ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Unversioned (“v1”) | Unsupported | Historical Mobile-only Bluesky archive format; never a cross-client contract.                                                         |
-| 2                  | Current     | First Cyd Bluesky archive contract supported for Desktop/Mobile interchange. Plaintext ZIP and canonical SQLite interchange database. |
+| Version            | Status      | Meaning                                                                                                                                       |
+| ------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unversioned (“v1”) | Unsupported | Historical Mobile-only Bluesky archive format; never a cross-client contract.                                                                 |
+| 2                  | Current     | First Cyd Bluesky archive contract supported for Desktop/Mobile interchange. Plaintext ZIP and canonical SQLite Bluesky interchange database. |
 
 Future Bluesky versions must append an entry here and define explicit reader
 behavior. Version meaning must never be inferred from a filename or applied to
