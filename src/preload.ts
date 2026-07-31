@@ -187,8 +187,18 @@ const electronAPI = {
     saveAccount: (accountJSON: string) => {
       ipcRenderer.invoke("database:saveAccount", accountJSON);
     },
-    deleteAccount: (accountID: number) => {
-      return ipcRenderer.invoke("database:deleteAccount", accountID);
+    deleteAccount: (accountID: number, confirmationUuid?: string) => {
+      return ipcRenderer.invoke(
+        "database:deleteAccount",
+        accountID,
+        confirmationUuid,
+      );
+    },
+  },
+
+  Bluesky: {
+    openLocalAccount: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Bluesky:openLocalAccount", accountID);
     },
   },
 

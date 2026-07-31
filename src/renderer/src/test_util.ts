@@ -106,7 +106,7 @@ export function createMockAccount(overrides?: Partial<Account>): Account {
     type: "X",
     sortOrder: 0,
     xAccount: createMockXAccount(),
-    blueskyAccount: null,
+    blueskyLocalAccount: null,
     facebookAccount: null,
     uuid: "test-uuid-123",
     ...overrides,
@@ -164,6 +164,10 @@ export function mockElectronAPI() {
       setConfig: vi.fn().mockResolvedValue(undefined),
       createErrorReport: vi.fn().mockResolvedValue(undefined),
       dismissNewErrorReports: vi.fn().mockResolvedValue(undefined),
+    },
+
+    Bluesky: {
+      openLocalAccount: vi.fn().mockResolvedValue(undefined),
     },
 
     // X operations

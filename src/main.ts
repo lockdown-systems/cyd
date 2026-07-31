@@ -23,6 +23,7 @@ import electronSquirrelStartup from "electron-squirrel-startup";
 import * as database from "./database";
 import { defineIPCX } from "./account_x";
 import { defineIPCFacebook } from "./account_facebook";
+import { defineIPCBluesky } from "./account_bluesky";
 import { defineIPCArchive } from "./archive";
 import {
   getUpdatesBaseURL,
@@ -585,6 +586,16 @@ async function createWindow() {
           if (!account) {
             return null;
           }
+          if (account.type === "Bluesky") {
+            const localAccountPath = path.join(
+              getDataPath(),
+              "Bluesky",
+              account.uuid,
+            );
+            return filename === ""
+              ? localAccountPath
+              : path.join(localAccountPath, filename);
+          }
           const username = await database.getAccountUsername(account);
           if (!username) {
             return null;
@@ -657,6 +668,7 @@ async function createWindow() {
 
     // Other IPC events
     database.defineIPCDatabase();
+    defineIPCBluesky();
     defineIPCX();
     defineIPCFacebook();
     defineIPCArchive();

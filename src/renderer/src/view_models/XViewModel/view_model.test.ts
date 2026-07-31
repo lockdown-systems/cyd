@@ -172,7 +172,7 @@ describe("XViewModel", () => {
         tombstoneUpdateBioCreditCyd: false,
         tombstoneLockAccount: false,
       },
-      blueskyAccount: null,
+      blueskyLocalAccount: null,
       uuid: "test-uuid-123",
     };
 

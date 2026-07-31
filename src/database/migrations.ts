@@ -1,4 +1,37 @@
-import { runMigrations, getMainDatabase } from "./common";
+import { runMigrations, getMainDatabase, Migration } from "./common";
+
+export const replaceDormantBlueskyAccountsMigration: Migration = {
+  name: "replace dormant Bluesky accounts",
+  sql: [
+    `DELETE FROM account WHERE type = 'Bluesky';`,
+    `DROP TABLE IF EXISTS blueskyAccount;`,
+    `CREATE TABLE accountReplacement (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL DEFAULT 'unknown',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    xAccountId INTEGER DEFAULT NULL,
+    uuid TEXT NOT NULL,
+    facebookAccountID INTEGER DEFAULT NULL
+);`,
+    `INSERT INTO accountReplacement
+    (id, type, sortOrder, xAccountId, uuid, facebookAccountID)
+SELECT id, type, sortOrder, xAccountId, uuid, facebookAccountID FROM account;`,
+    `DROP TABLE account;`,
+    `ALTER TABLE accountReplacement RENAME TO account;`,
+    `CREATE UNIQUE INDEX accountUuid ON account(uuid);`,
+    `CREATE TABLE blueskyLocalAccount (
+    uuid TEXT PRIMARY KEY,
+    createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    did TEXT UNIQUE,
+    handle TEXT NOT NULL DEFAULT '',
+    displayName TEXT NOT NULL DEFAULT '',
+    avatarUrl TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (uuid) REFERENCES account(uuid) ON DELETE CASCADE
+);`,
+  ],
+};
 
 export const runMainMigrations = () => {
   runMigrations(getMainDatabase(), [
@@ -216,5 +249,6 @@ export const runMainMigrations = () => {
         `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedMedia INTEGER DEFAULT 0;`,
       ],
     },
+    replaceDormantBlueskyAccountsMigration,
   ]);
 };

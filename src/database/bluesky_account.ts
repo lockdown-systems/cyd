@@ -1,205 +1,84 @@
-import { exec, getMainDatabase, Sqlite3Info } from "./common";
-import { BlueskyAccount } from "../shared_types";
+import { exec, getMainDatabase } from "./common";
+import { BlueskyLocalAccount } from "../shared_types";
 
-// Types
-
-export interface BlueskyAccountRow {
-  id: number;
+interface BlueskyLocalAccountRow {
+  uuid: string;
   createdAt: string;
   updatedAt: string;
   accessedAt: string;
-  username: string;
-  profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  archivePosts: boolean;
-  archivePostsHTML: boolean;
-  archiveLikes: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsLikesThresholdEnabled: boolean;
-  deletePostsLikesThreshold: number;
-  deletePostsRepostsThresholdEnabled: boolean;
-  deletePostsRepostsThreshold: number;
-  deleteReposts: boolean;
-  deleteRepostsDaysOldEnabled: boolean;
-  deleteRepostsDaysOld: number;
-  deleteLikes: boolean;
-  deleteLikesDaysOldEnabled: boolean;
-  deleteLikesDaysOld: number;
-  followingCount: number;
-  followersCount: number;
-  postsCount: number;
-  likesCount: number;
+  did: string | null;
+  handle: string;
+  displayName: string;
+  avatarUrl: string;
 }
 
-// Functions
+const accountFromRow = (row: BlueskyLocalAccountRow): BlueskyLocalAccount => ({
+  uuid: row.uuid,
+  createdAt: new Date(row.createdAt),
+  updatedAt: new Date(row.updatedAt),
+  accessedAt: new Date(row.accessedAt),
+  did: row.did,
+  handle: row.handle,
+  displayName: row.displayName,
+  avatarUrl: row.avatarUrl,
+});
 
-// Get a single Bluesky account by ID
-export const getBlueskyAccount = (id: number): BlueskyAccount | null => {
-  const row: BlueskyAccountRow | undefined = exec(
+export const getBlueskyLocalAccount = (
+  uuid: string,
+): BlueskyLocalAccount | null => {
+  const row = exec(
     getMainDatabase(),
-    "SELECT * FROM blueskyAccount WHERE id = ?",
-    [id],
+    "SELECT * FROM blueskyLocalAccount WHERE uuid = ?",
+    [uuid],
     "get",
-  ) as BlueskyAccountRow | undefined;
-  if (!row) {
-    return null;
-  }
-  return {
-    id: row.id,
-    createdAt: new Date(row.createdAt),
-    updatedAt: new Date(row.updatedAt),
-    accessedAt: new Date(row.accessedAt),
-    username: row.username,
-    profileImageDataURI: row.profileImageDataURI,
-    saveMyData: !!row.saveMyData,
-    deleteMyData: !!row.deleteMyData,
-    archivePosts: !!row.archivePosts,
-    archivePostsHTML: !!row.archivePostsHTML,
-    archiveLikes: !!row.archiveLikes,
-    deletePosts: !!row.deletePosts,
-    deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
-    deletePostsDaysOld: row.deletePostsDaysOld,
-    deletePostsLikesThresholdEnabled: !!row.deletePostsLikesThresholdEnabled,
-    deletePostsLikesThreshold: row.deletePostsLikesThreshold,
-    deletePostsRepostsThresholdEnabled:
-      !!row.deletePostsRepostsThresholdEnabled,
-    deletePostsRepostsThreshold: row.deletePostsRepostsThreshold,
-    deleteReposts: !!row.deleteReposts,
-    deleteRepostsDaysOldEnabled: !!row.deleteRepostsDaysOldEnabled,
-    deleteRepostsDaysOld: row.deleteRepostsDaysOld,
-    deleteLikes: !!row.deleteLikes,
-    deleteLikesDaysOldEnabled: !!row.deleteLikesDaysOldEnabled,
-    deleteLikesDaysOld: row.deleteLikesDaysOld,
-    followingCount: row.followingCount,
-    followersCount: row.followersCount,
-    postsCount: row.postsCount,
-    likesCount: row.likesCount,
-  };
+  ) as BlueskyLocalAccountRow | undefined;
+  return row ? accountFromRow(row) : null;
 };
 
-// Get all Bluesky accounts
-export const getBlueskyAccounts = (): BlueskyAccount[] => {
-  const rows: BlueskyAccountRow[] = exec(
+export const getBlueskyLocalAccounts = (): BlueskyLocalAccount[] => {
+  const rows = exec(
     getMainDatabase(),
-    "SELECT * FROM blueskyAccount",
+    "SELECT * FROM blueskyLocalAccount",
     [],
     "all",
-  ) as BlueskyAccountRow[];
-
-  const accounts: BlueskyAccount[] = [];
-  for (const row of rows) {
-    accounts.push({
-      id: row.id,
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt),
-      accessedAt: new Date(row.accessedAt),
-      username: row.username,
-      profileImageDataURI: row.profileImageDataURI,
-      saveMyData: !!row.saveMyData,
-      deleteMyData: !!row.deleteMyData,
-      archivePosts: !!row.archivePosts,
-      archivePostsHTML: !!row.archivePostsHTML,
-      archiveLikes: !!row.archiveLikes,
-      deletePosts: !!row.deletePosts,
-      deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
-      deletePostsDaysOld: row.deletePostsDaysOld,
-      deletePostsLikesThresholdEnabled: !!row.deletePostsLikesThresholdEnabled,
-      deletePostsLikesThreshold: row.deletePostsLikesThreshold,
-      deletePostsRepostsThresholdEnabled:
-        !!row.deletePostsRepostsThresholdEnabled,
-      deletePostsRepostsThreshold: row.deletePostsRepostsThreshold,
-      deleteReposts: !!row.deleteReposts,
-      deleteRepostsDaysOldEnabled: !!row.deleteRepostsDaysOldEnabled,
-      deleteRepostsDaysOld: row.deleteRepostsDaysOld,
-      deleteLikes: !!row.deleteLikes,
-      deleteLikesDaysOldEnabled: !!row.deleteLikesDaysOldEnabled,
-      deleteLikesDaysOld: row.deleteLikesDaysOld,
-      followingCount: row.followingCount,
-      followersCount: row.followersCount,
-      postsCount: row.postsCount,
-      likesCount: row.likesCount,
-    });
-  }
-  return accounts;
+  ) as BlueskyLocalAccountRow[];
+  return rows.map(accountFromRow);
 };
 
-// Create a new Bluesky account
-export const createBlueskyAccount = (): BlueskyAccount => {
-  const info: Sqlite3Info = exec(
-    getMainDatabase(),
-    "INSERT INTO blueskyAccount DEFAULT VALUES",
-  ) as Sqlite3Info;
-  const account = getBlueskyAccount(info.lastInsertRowid);
+export const createBlueskyLocalAccount = (
+  uuid: string,
+): BlueskyLocalAccount => {
+  exec(getMainDatabase(), "INSERT INTO blueskyLocalAccount (uuid) VALUES (?)", [
+    uuid,
+  ]);
+  const account = getBlueskyLocalAccount(uuid);
   if (!account) {
-    throw new Error("Failed to create account");
+    throw new Error("Failed to create Bluesky local account");
   }
   return account;
 };
 
-// Update the Bluesky account based on account.id
-export const saveBlueskyAccount = (account: BlueskyAccount) => {
+export const saveBlueskyLocalAccount = (account: BlueskyLocalAccount): void => {
+  const storedAccount = getBlueskyLocalAccount(account.uuid);
+  if (storedAccount?.did && storedAccount.did !== account.did) {
+    throw new Error("A Bluesky local account DID cannot be changed");
+  }
   exec(
     getMainDatabase(),
-    `
-        UPDATE blueskyAccount
-        SET
-            updatedAt = CURRENT_TIMESTAMP,
-            accessedAt = CURRENT_TIMESTAMP,
-            username = ?,
-            profileImageDataURI = ?,
-            saveMyData = ?,
-            deleteMyData = ?,
-            archivePosts = ?,
-            archivePostsHTML = ?,
-            archiveLikes = ?,
-            deletePosts = ?,
-            deletePostsDaysOld = ?,
-            deletePostsDaysOldEnabled = ?,
-            deletePostsLikesThresholdEnabled = ?,
-            deletePostsLikesThreshold = ?,
-            deletePostsRepostsThresholdEnabled = ?,
-            deletePostsRepostsThreshold = ?,
-            deleteReposts = ?,
-            deleteRepostsDaysOldEnabled = ?,
-            deleteRepostsDaysOld = ?,
-            deleteLikes = ?,
-            deleteLikesDaysOldEnabled = ?,
-            deleteLikesDaysOld = ?,
-            followingCount = ?,
-            followersCount = ?,
-            postsCount = ?,
-            likesCount = ?
-        WHERE id = ?
-    `,
+    `UPDATE blueskyLocalAccount
+     SET updatedAt = CURRENT_TIMESTAMP,
+         accessedAt = CURRENT_TIMESTAMP,
+         did = ?,
+         handle = ?,
+         displayName = ?,
+         avatarUrl = ?
+     WHERE uuid = ?`,
     [
-      account.username,
-      account.profileImageDataURI,
-      account.saveMyData ? 1 : 0,
-      account.deleteMyData ? 1 : 0,
-      account.archivePosts ? 1 : 0,
-      account.archivePostsHTML ? 1 : 0,
-      account.archiveLikes ? 1 : 0,
-      account.deletePosts ? 1 : 0,
-      account.deletePostsDaysOld,
-      account.deletePostsDaysOldEnabled ? 1 : 0,
-      account.deletePostsLikesThresholdEnabled ? 1 : 0,
-      account.deletePostsLikesThreshold,
-      account.deletePostsRepostsThresholdEnabled ? 1 : 0,
-      account.deletePostsRepostsThreshold,
-      account.deleteReposts ? 1 : 0,
-      account.deleteRepostsDaysOldEnabled ? 1 : 0,
-      account.deleteRepostsDaysOld,
-      account.deleteLikes ? 1 : 0,
-      account.deleteLikesDaysOldEnabled ? 1 : 0,
-      account.deleteLikesDaysOld,
-      account.followingCount,
-      account.followersCount,
-      account.postsCount,
-      account.likesCount,
-      account.id,
+      account.did,
+      account.handle,
+      account.displayName,
+      account.avatarUrl,
+      account.uuid,
     ],
   );
 };
