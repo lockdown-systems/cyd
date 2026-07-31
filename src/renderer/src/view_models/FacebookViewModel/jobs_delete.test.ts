@@ -121,6 +121,24 @@ function mockSafeExecuteJavaScript(
           return { success: true, value: false };
         case "countSelectableItems":
           return { success: true, value: itemsPerBatch };
+        case "describeBlockingUI":
+          // A password confirmation modal over the activity log
+          return {
+            success: true,
+            value: {
+              url: "https://www.facebook.com/123/allactivity",
+              passwordInputCount: 1,
+              passwordInputs: [{ name: "pass", ariaLabel: "Password" }],
+              dialogs: [
+                {
+                  ariaLabel: "Confirm password",
+                  hasPasswordInput: true,
+                  buttons: ["Continue"],
+                  text: "Please re-enter your password",
+                },
+              ],
+            },
+          };
         case "clickDeletePostsOption":
           return { success: true, value: clickTrashSuccess };
         case "confirmDeletion":
@@ -279,6 +297,63 @@ describe("FacebookViewModel Delete Jobs", () => {
       expect(vm.jobs[3].status).toBe("error");
       // The job errored before completing, so it is never marked finished
       expect(vm.progress.isDeleteActivityFinished).toBe(false);
+    });
+
+    it("never captures a password", () => {
+      const PASSWORD = "correct-horse-battery-staple";
+
+      document.title = "Facebook";
+      document.body.innerHTML = `
+        <div role="dialog" aria-modal="true" aria-label="Confirm password">
+          <h2><span>Please re-enter your password</span></h2>
+          <form>
+            <input type="password" name="pass" aria-label="Password" placeholder="Password" />
+            <div role="button" aria-label="Continue"><span>Continue</span></div>
+          </form>
+        </div>
+      `;
+
+      const input = document.querySelector(
+        'input[type="password"]',
+      ) as HTMLInputElement;
+      // As a user types it, and as a page could reflect it into the markup
+      input.value = PASSWORD;
+      input.setAttribute("value", PASSWORD);
+
+      const snapshot = eval(DeleteJobs.BLOCKING_UI_JS);
+
+      expect(JSON.stringify(snapshot)).not.toContain(PASSWORD);
+      // Still captures what we need to write a selector
+      expect(snapshot.passwordInputs[0]).toMatchObject({
+        name: "pass",
+        ariaLabel: "Password",
+      });
+      expect(snapshot.dialogs[0].buttons).toContain("Continue");
+
+      document.body.innerHTML = "";
+    });
+
+    it("attaches a description of whatever blocked us to the error report", async () => {
+      const vm = createMockFacebookViewModel({
+        facebookAccount: createMockFacebookAccount({ deleteWallPosts: true }),
+      });
+      mockSafeExecuteJavaScript(vm, {
+        batchesPerCategory: 1,
+        clickTrashSuccess: false,
+      });
+
+      await DeleteJobs.runJobDeleteActivity(vm, 3);
+
+      const sensitiveContext = vi.mocked(vm.error).mock.calls[0][2];
+      expect(sensitiveContext.blockingUI).toMatchObject({
+        passwordInputCount: 1,
+        dialogs: [
+          expect.objectContaining({
+            ariaLabel: "Confirm password",
+            hasPasswordInput: true,
+          }),
+        ],
+      });
     });
   });
 });
