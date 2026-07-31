@@ -1,8 +1,14 @@
 {
-  "desktopVersionBehavior": {
+  "archiveFormat": {
+    "format": "cyd-archive",
+    "platform": "bluesky",
+    "version": 2
+  },
+  "desktopBlueskyVersionBehavior": {
     "unversionedV1": "reject_unsupported_legacy_format",
-    "v2Import": "accept",
-    "v2Export": "write_only_v2",
+    "blueskyV2Import": "accept",
+    "blueskyV2Export": "write_only_bluesky_v2",
+    "otherPlatform": "reject_unsupported_archive_platform",
     "newerVersion": "reject_unsupported_newer_version"
   },
   "fixtures": {

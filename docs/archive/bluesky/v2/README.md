@@ -1,15 +1,17 @@
-# Cyd archive format version 2
+# Cyd Bluesky archive format version 2
 
-This directory is the normative contract for the first cross-client Cyd
-archive. “Must”, “must not”, “required”, “should”, and “may” are used in their
-RFC 2119 sense.
+This directory is the normative contract for version 2 of the cross-client Cyd
+Bluesky archive. It applies only to Bluesky data; other social platforms have
+independent archive contracts and version histories. “Must”, “must not”,
+“required”, “should”, and “may” are used in their RFC 2119 sense.
 
 ## Package
 
-A v2 archive is a plaintext, self-contained ZIP file. Its filename and file
-extension are not authoritative. Readers identify it from `metadata.json`.
-All ZIP entry names are UTF-8, `/`-separated, normalized relative paths. An
-archive has exactly this layout:
+A Bluesky v2 archive is a plaintext, self-contained ZIP file. Its filename and
+file extension are not authoritative. Readers identify its archive family,
+platform, and platform-specific version from `metadata.json`. All ZIP entry
+names are UTF-8, `/`-separated, normalized relative paths. An archive has
+exactly this layout:
 
 ```text
 metadata.json
@@ -29,6 +31,7 @@ reserved and must be ignored):
 ```json
 {
   "format": "cyd-archive",
+  "platform": "bluesky",
   "version": 2,
   "createdAt": "2026-01-15T12:00:00.000Z",
   "accountDid": "did:plc:examplealice",
@@ -37,10 +40,15 @@ reserved and must be ignored):
 }
 ```
 
+`format`, `platform`, and `version` form the format discriminator. Version 2
+belongs to the Bluesky archive version namespace; it does not define version 2
+for X, Facebook, Mastodon, or any other platform. Readers must reject a
+different platform rather than interpreting it with this schema.
+
 Times use RFC 3339 UTC with milliseconds. `completeness` is `complete` only
 when every expected asset is available; otherwise it is `incomplete`. The
-metadata identity, UUID, creation time, and completeness must equal the single
-row in `data.db.archive`.
+metadata format, platform, version, identity, UUID, creation time, and
+completeness must equal the single row in `data.db.archive`.
 
 ## Integrity manifest
 
@@ -70,7 +78,7 @@ resource thresholds. Failure or cancellation leaves the live account unchanged.
 ## Interchange database
 
 `data.db` is SQLite 3 and must implement [schema.sql](schema.sql) exactly for
-v2. It is an interchange model, never a copy of a client's runtime database.
+Bluesky v2. It is an interchange model, never a copy of a client's runtime database.
 Text is UTF-8. Booleans are integers constrained to `0` or `1`. JSON columns
 contain canonical JSON values rather than client-specific serialized objects.
 
@@ -105,7 +113,7 @@ observations, and is idempotent. It may restore locally deleted data.
 ## Completeness and consistency
 
 Export is a point-in-time-consistent snapshot of the selected account data and
-media. Each archive stands alone; v2 has no delta or predecessor mechanism.
+media. Each archive stands alone; Bluesky v2 has no delta or predecessor mechanism.
 A structurally valid archive may be incomplete. Missing expected media must be
 represented as `unavailable` or `missing`, never silently omitted. The archive
 and metadata completeness is `complete` if and only if all asset rows are
@@ -113,7 +121,7 @@ and metadata completeness is `complete` if and only if all asset rows are
 
 ## Privacy boundary
 
-Only portable account data belongs in v2. Archives must not contain OAuth or
+Only portable Bluesky account data belongs in Bluesky v2. Archives must not contain OAuth or
 other credentials, private keys, sessions, schedules, pending/running/history
 jobs, logs, analytics, diagnostics, error reports, caches, temporary data,
 filesystem paths, or UI state. Portable settings are defaults, not authority
@@ -122,13 +130,15 @@ the user explicitly chooses to adopt them.
 
 ## Version behavior
 
-Desktop imports and exports v2 only. It rejects the historical unversioned
-mobile format explicitly as `unsupported legacy format`; it never guesses v1
-from a filename. It rejects a valid internal version greater than 2 explicitly
-as `unsupported newer archive version`. It rejects invalid v2 content as an
-invalid or corrupt archive, which is distinct from version rejection. Desktop
-writers must emit only v2. Readers must ship and pass the canonical semantic
-fixtures before v2 writing is release-enabled.
+Desktop imports and exports Bluesky v2 only. It rejects the historical
+unversioned Bluesky mobile format explicitly as `unsupported legacy format`;
+it never guesses a version from a filename. It rejects another platform as
+`unsupported archive platform` and a valid internal Bluesky version greater
+than 2 as `unsupported newer archive version`. It rejects invalid Bluesky v2
+content as an invalid or corrupt archive, which is distinct from platform and
+version rejection. Desktop Bluesky writers must emit only Bluesky v2. Readers
+must ship and pass the canonical semantic fixtures before Bluesky v2 writing
+is release-enabled.
 
 ## Canonical fixtures
 
@@ -143,12 +153,13 @@ expected unavailable full-video asset. Expectations are machine-readable in
 Consumers compare normalized database meaning, asset digests, completeness,
 and rejection outcomes—not ZIP bytes, entry order, or SQLite page layout.
 
-## Version history
+## Bluesky version history
 
-| Version            | Status      | Meaning                                                                                                                       |
-| ------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Unversioned (“v1”) | Unsupported | Historical Mobile-only archive format; never a cross-client contract.                                                         |
-| 2                  | Current     | First Cyd archive contract supported for Desktop/Mobile interchange. Plaintext ZIP and canonical SQLite interchange database. |
+| Version            | Status      | Meaning                                                                                                                               |
+| ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Unversioned (“v1”) | Unsupported | Historical Mobile-only Bluesky archive format; never a cross-client contract.                                                         |
+| 2                  | Current     | First Cyd Bluesky archive contract supported for Desktop/Mobile interchange. Plaintext ZIP and canonical SQLite interchange database. |
 
-Future versions must append an entry here and define explicit reader behavior.
-Version meaning must never be inferred from a filename.
+Future Bluesky versions must append an entry here and define explicit reader
+behavior. Version meaning must never be inferred from a filename or applied to
+another social platform.

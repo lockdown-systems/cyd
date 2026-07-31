@@ -1,9 +1,10 @@
-PRAGMA application_id = 0x43594432;
+PRAGMA application_id = 0x43594232;
 PRAGMA user_version = 2;
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE archive (
   format TEXT NOT NULL CHECK (format = 'cyd-archive'),
+  platform TEXT NOT NULL CHECK (platform = 'bluesky'),
   version INTEGER NOT NULL CHECK (version = 2),
   created_at TEXT NOT NULL,
   account_did TEXT NOT NULL,

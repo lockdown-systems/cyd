@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the semantic v2 fixtures. ZIP/SQLite bytes are not the contract."""
+"""Generate the semantic Bluesky v2 fixtures. ZIP/SQLite bytes are not the contract."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def box(kind: bytes, payload: bytes) -> bytes:
 # A small complete ISO-BMFF payload used to prove that video means the offline
 # full-video object, not merely its preview or thumbnail.
 VIDEO = box(b"ftyp", b"isom\x00\x00\x02\x00isomiso2mp41") + box(
-    b"free", b"canonical-cyd-v2-full-video"
+    b"free", b"canonical-cyd-bluesky-v2-full-video"
 ) + box(b"mdat", b"\x00\x00\x00\x01\x65\x88\x84canonical-video-sample")
 
 
@@ -77,7 +77,7 @@ def add_asset(
 def populate(db: sqlite3.Connection, staging: Path, complete: bool) -> None:
     completeness = "complete" if complete else "incomplete"
     db.execute(
-        "INSERT INTO archive VALUES ('cyd-archive', 2, ?, ?, ?, ?)",
+        "INSERT INTO archive VALUES ('cyd-archive', 'bluesky', 2, ?, ?, ?, ?)",
         (CREATED, DID, UUID, completeness),
     )
     profiles = [
@@ -181,10 +181,11 @@ def populate(db: sqlite3.Connection, staging: Path, complete: bool) -> None:
 
 
 def generate(name: str, complete: bool) -> None:
-    with tempfile.TemporaryDirectory(prefix=f"cyd-v2-{name}-") as temporary:
+    with tempfile.TemporaryDirectory(prefix=f"cyd-bluesky-v2-{name}-") as temporary:
         staging = Path(temporary)
         metadata = {
             "format": "cyd-archive",
+            "platform": "bluesky",
             "version": 2,
             "createdAt": CREATED,
             "accountDid": DID,

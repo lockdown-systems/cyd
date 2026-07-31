@@ -6,14 +6,16 @@ import Database from "better-sqlite3";
 import { afterEach, describe, expect, test } from "vitest";
 import unzipper from "unzipper";
 
-const contractRoot = path.resolve("docs/archive/v2");
+const contractRoot = path.resolve("docs/archive/bluesky/v2");
 const fixtureRoot = path.join(contractRoot, "fixtures");
 const temporaryDirectories: string[] = [];
 
 async function openFixture(name: "complete" | "incomplete") {
   const archivePath = path.join(fixtureRoot, `${name}.cyd`);
   const directory = await unzipper.Open.file(archivePath);
-  const outputPath = fs.mkdtempSync(path.join(os.tmpdir(), `cyd-v2-${name}-`));
+  const outputPath = fs.mkdtempSync(
+    path.join(os.tmpdir(), `cyd-bluesky-v2-${name}-`),
+  );
   temporaryDirectories.push(outputPath);
   await directory.extract({ path: outputPath });
   const database = new Database(path.join(outputPath, "data.db"), {
@@ -28,7 +30,7 @@ afterEach(() => {
   }
 });
 
-describe("canonical Cyd archive v2 fixtures", () => {
+describe("canonical Cyd Bluesky archive v2 fixtures", () => {
   test.each(["complete", "incomplete"] as const)(
     "%s fixture represents every portable category and direct context",
     async (fixtureName) => {
@@ -121,20 +123,50 @@ describe("canonical Cyd archive v2 fixtures", () => {
     },
   );
 
-  test("semantic expectations make Desktop version support explicit", () => {
+  test("metadata and database scope version 2 to Bluesky", async () => {
+    const { database, directory } = await openFixture("complete");
+    const metadataEntry = directory.files.find(
+      (entry) => entry.path === "metadata.json",
+    );
+    const metadata = JSON.parse(
+      (await metadataEntry!.buffer()).toString("utf8"),
+    ) as Record<string, unknown>;
+
+    expect(metadata).toMatchObject({
+      format: "cyd-archive",
+      platform: "bluesky",
+      version: 2,
+    });
+    expect(
+      database.prepare("SELECT format, platform, version FROM archive").get(),
+    ).toEqual({ format: "cyd-archive", platform: "bluesky", version: 2 });
+    expect(database.pragma("application_id", { simple: true })).toBe(
+      0x43594232,
+    );
+    database.close();
+  });
+
+  test("semantic expectations make Desktop Bluesky version support explicit", () => {
     const expectations = JSON.parse(
       fs.readFileSync(
         path.join(fixtureRoot, "semantic-expectations.json"),
         "utf8",
       ),
     ) as {
-      desktopVersionBehavior: Record<string, string>;
+      archiveFormat: Record<string, unknown>;
+      desktopBlueskyVersionBehavior: Record<string, string>;
     };
 
-    expect(expectations.desktopVersionBehavior).toEqual({
+    expect(expectations.archiveFormat).toEqual({
+      format: "cyd-archive",
+      platform: "bluesky",
+      version: 2,
+    });
+    expect(expectations.desktopBlueskyVersionBehavior).toEqual({
       unversionedV1: "reject_unsupported_legacy_format",
-      v2Import: "accept",
-      v2Export: "write_only_v2",
+      blueskyV2Import: "accept",
+      blueskyV2Export: "write_only_bluesky_v2",
+      otherPlatform: "reject_unsupported_archive_platform",
       newerVersion: "reject_unsupported_newer_version",
     });
   });
