@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>social.cyd.Cyd</id>
+  <name>Cyd</name>
+  <summary>Backup, delete, and migrate your data from tech platforms</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary=https://cyd.social/terms/</project_license>
+  <description>
+    <p>Cyd lets you regain control of your data on tech platforms. Back up your data locally, delete tweets, likes, and DMs, and migrate your content to open platforms like Bluesky.</p>
+    <p>Cyd runs directly on your computer - your accounts and data stay private.</p>
+  </description>
+  <url type="homepage">https://cyd.social</url>
+  <url type="bugtracker">https://github.com/lockdown-systems/cyd/issues</url>
+  <developer id="social.cyd">
+    <name>Lockdown Systems Collective</name>
+  </developer>
+  <launchable type="desktop-id">social.cyd.Cyd.desktop</launchable>
+  <content_rating type="oars-1.1" />
+</component>
