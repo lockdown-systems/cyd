@@ -215,11 +215,26 @@ export async function runJobIndexConversations(
     await vm.scrollUp(2000);
     await vm.sleep(1000);
 
-    // If the conversations list is empty, there is no search text field
+    // Check if loading the DM page is causing one to ask for PIN
+    if (await vm.detectTweetsDMPinPage("https://x.com/i/chat")) {
+      vm.log(
+        "runJobIndexConversations",
+        "asking for DM PIN detected",
+      );
+      vm.pause()
+      vm.showBrowser = true;
+      vm.showAutomationNotice = false;
+
+      await vm.waitForURL("https://x.com/home");
+
+      vm.showBrowser = false;
+      vm.showAutomationNotice = true;
+    }
+
+    // If the conversations list is empty, there is no search bar
     try {
-      // Wait for the search text field to appear with a 30 second timeout
       await vm.waitForSelector(
-        'section input[type="text"]',
+        '[data-testid="dm-inbox-panel"] [data-testid="dm-search-bar"]',
         "https://x.com/i/chat",
         30000,
       );
@@ -233,10 +248,10 @@ export async function runJobIndexConversations(
       break;
     }
 
-    // Wait for conversations to appear
+    // Wait for at least some conversations to appear
     try {
       await vm.waitForSelector(
-        'section div div[role="tablist"] div[data-testid="cellInnerDiv"]',
+        '[data-testid="dm-inbox-panel"] ul li a[id^="dm-conversation-option"]',
         "https://x.com/i/chat",
       );
       break;

@@ -232,6 +232,12 @@ export class XViewModel extends BaseViewModel {
     return Helpers.syncProgress(this);
   }
 
+  async detectTweetsDMPinPage(url: string): Promise<boolean> {
+    const newURL = new URL(this.webview?.getURL() || "");
+    const originalURL = new URL(url);
+    return newURL !== originalURL && newURL.pathname == "/i/chat/pin/recovery"
+  }
+
   async indexTweetsHandleRateLimit(): Promise<boolean> {
     return IndexJobs.indexTweetsHandleRateLimit(this);
   }
