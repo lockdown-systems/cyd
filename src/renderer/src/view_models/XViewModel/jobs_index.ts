@@ -48,7 +48,7 @@ export async function runJobIndexTweets(
   const username = vm.account.xAccount?.username || "";
   const url = `https://x.com/${username}/with_replies`;
   await vm.loadURLWithRateLimit(url);
-  await vm.sleep(500);
+  await vm.sleep(2000);
 
   // Check if tweets list is empty
   if (
@@ -568,7 +568,7 @@ export async function runJobIndexLikes(
   const username = vm.account.xAccount?.username || "";
   const url = `https://x.com/${username}/likes`;
   await vm.loadURLWithRateLimit(url);
-  await vm.sleep(500);
+  await vm.sleep(2000);
 
   // Check if likes list is empty
   if (
@@ -665,7 +665,7 @@ export async function runJobIndexBookmarks(
   await window.electron.X.resetRateLimitInfo(vm.account.id);
   const url = "https://x.com/i/bookmarks";
   await vm.loadURLWithRateLimit(url);
-  await vm.sleep(500);
+  await vm.sleep(2000);
 
   // Check if bookmarks list is empty
   if (
