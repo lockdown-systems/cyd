@@ -202,7 +202,7 @@ export async function runJobIndexConversations(
     await window.electron.X.resetRateLimitInfo(vm.account.id);
 
     // Load the messages page
-    await vm.loadURLWithRateLimit("https://x.com/messages");
+    await vm.loadURLWithRateLimit("https://x.com/i/chat");
     vm.log(
       "runJobIndexConversations",
       "loaded messages page, waiting for conversations to load",
@@ -220,7 +220,7 @@ export async function runJobIndexConversations(
       // Wait for the search text field to appear with a 30 second timeout
       await vm.waitForSelector(
         'section input[type="text"]',
-        "https://x.com/messages",
+        "https://x.com/i/chat",
         30000,
       );
     } catch (e) {
@@ -237,7 +237,7 @@ export async function runJobIndexConversations(
     try {
       await vm.waitForSelector(
         'section div div[role="tablist"] div[data-testid="cellInnerDiv"]',
-        "https://x.com/messages",
+        "https://x.com/i/chat",
       );
       break;
     } catch (e) {
@@ -405,7 +405,7 @@ export async function runJobIndexMessages(vm: XViewModel, jobIndex: number) {
 
       // Load URL and wait for messages to appear
       try {
-        url = `https://x.com/messages/${indexMessagesStartResponse.conversationIDs[i]}`;
+        url = `https://x.com/i/chat/${indexMessagesStartResponse.conversationIDs[i]}`;
         await vm.loadURLWithRateLimit(url);
         // Use longer timeout on retries (60 seconds instead of default 30 seconds)
         const timeout = tries > 0 ? 60000 : undefined;

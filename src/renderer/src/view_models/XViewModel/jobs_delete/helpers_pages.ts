@@ -17,14 +17,14 @@ export async function deleteDMsLoadDMsPage(vm: XViewModel): Promise<boolean> {
 
   success = false;
   for (tries = 0; tries < 3; tries++) {
-    await vm.loadURLWithRateLimit("https://x.com/messages");
+    await vm.loadURLWithRateLimit("https://x.com/i/chat");
 
     // If the conversations list is empty, there is no search text field
     try {
       // Wait for the search text field to appear with a 30 second timeout
       await vm.waitForSelector(
         'section input[type="text"]',
-        "https://x.com/messages",
+        "https://x.com/i/chat",
         30000,
       );
     } catch (e) {
@@ -44,7 +44,7 @@ export async function deleteDMsLoadDMsPage(vm: XViewModel): Promise<boolean> {
       );
       await vm.waitForSelector(
         'section div div[role="tablist"] div[data-testid="cellInnerDiv"]',
-        "https://x.com/messages",
+        "https://x.com/i/chat",
       );
       success = true;
       break;

@@ -810,7 +810,7 @@ describe("jobs_delete.ts", () => {
 
       // Should load DMs page at least once
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/messages",
+        "https://x.com/i/chat",
       );
     });
 
