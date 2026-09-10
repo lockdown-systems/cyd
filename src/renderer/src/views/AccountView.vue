@@ -42,7 +42,7 @@ const accountClicked = (accountType: string) => {
 
 onMounted(async () => {
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
-  facebookFeature.value = await window.electron.isFeatureEnabled("bluesky");
+  facebookFeature.value = await window.electron.isFeatureEnabled("facebook");
 
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {

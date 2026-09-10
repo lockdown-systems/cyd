@@ -177,13 +177,16 @@ describe("AccountView", () => {
       expect(blueskyCard.exists()).toBe(true);
       expect(blueskyCard.text()).toContain("Bluesky");
       expect(blueskyCard.text()).toContain("AT Protocol");
+
+      // The Bluesky flag must not also unhide Facebook
+      expect(wrapper.find(".select-account-facebook").exists()).toBe(false);
     });
 
     it("should show Facebook option", async () => {
       window.electron.isFeatureEnabled = vi
         .fn()
         .mockImplementation((feature: string) => {
-          if (feature === "bluesky") return Promise.resolve(true);
+          if (feature === "facebook") return Promise.resolve(true);
           return Promise.resolve(false);
         });
 
@@ -209,7 +212,7 @@ describe("AccountView", () => {
       window.electron.isFeatureEnabled = vi
         .fn()
         .mockImplementation((feature: string) => {
-          if (feature === "bluesky") return Promise.resolve(true);
+          if (feature === "facebook") return Promise.resolve(true);
           return Promise.resolve(false);
         });
 
