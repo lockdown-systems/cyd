@@ -1,24 +1,27 @@
-import { runMigrations, getMainDatabase } from "./common";
+import { runMigrations, getMainDatabase, type Migration } from "./common";
 
-export const runMainMigrations = () => {
-  runMigrations(getMainDatabase(), [
-    // Create the tables
-    {
-      name: "initial",
-      sql: [
-        `CREATE TABLE config (
+/**
+ * Migrations for Cyd's main database, in the order they are applied.
+ * Migrations are append-only: history is never rewritten.
+ */
+export const mainMigrations: Migration[] = [
+  // Create the tables
+  {
+    name: "initial",
+    sql: [
+      `CREATE TABLE config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL UNIQUE,
     value TEXT NOT NULL
 );`,
-        `CREATE TABLE account (
+      `CREATE TABLE account (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL DEFAULT 'unknown',
     sortOrder INTEGER NOT NULL DEFAULT 0,
     xAccountId INTEGER DEFAULT NULL,
     uuid TEXT NOT NULL
 );`,
-        `CREATE TABLE xAccount (
+      `CREATE TABLE xAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -43,40 +46,40 @@ export const runMainMigrations = () => {
     deleteLikesDaysOld INTEGER DEFAULT 0,
     deleteDMs BOOLEAN DEFAULT 0
 );`,
-      ],
-    },
-    // Add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount
-    {
-      name: "add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount",
-      sql: [
-        `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`,
-        `ALTER TABLE xAccount ADD COLUMN followingCount INTEGER DEFAULT 0;`,
-        `ALTER TABLE xAccount ADD COLUMN followersCount INTEGER DEFAULT 0;`,
-        `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT -1;`,
-        `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT -1;`,
-      ],
-    },
-    // Add unfollowEveryone to xAccount
-    {
-      name: "add unfollowEveryone to xAccount",
-      sql: [
-        `ALTER TABLE xAccount ADD COLUMN unfollowEveryone BOOLEAN DEFAULT 1;`,
-      ],
-    },
-    // Add deleteTweetsDaysOldEnabled, deleteRetweetsDaysOldEnabled, deleteLikesDaysOldEnabled to xAccount
-    {
-      name: "add deleteTweetsDaysOldEnabled, deleteRetweetsDaysOldEnabled, deleteLikesDaysOldEnabled to xAccount",
-      sql: [
-        `ALTER TABLE xAccount ADD COLUMN deleteTweetsDaysOldEnabled BOOLEAN DEFAULT 0;`,
-        `ALTER TABLE xAccount ADD COLUMN deleteRetweetsDaysOldEnabled BOOLEAN DEFAULT 0;`,
-        `ALTER TABLE xAccount ADD COLUMN deleteLikesDaysOldEnabled BOOLEAN DEFAULT 0;`,
-      ],
-    },
-    // Add errorReport table. Status can be "new", "submitted", and "dismissed"
-    {
-      name: "add errorReport table",
-      sql: [
-        `CREATE TABLE errorReport (
+    ],
+  },
+  // Add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount
+  {
+    name: "add importFromArchive, followingCount, follwersCount, tweetsCount, likesCount to xAccount",
+    sql: [
+      `ALTER TABLE xAccount ADD COLUMN importFromArchive BOOLEAN DEFAULT 1;`,
+      `ALTER TABLE xAccount ADD COLUMN followingCount INTEGER DEFAULT 0;`,
+      `ALTER TABLE xAccount ADD COLUMN followersCount INTEGER DEFAULT 0;`,
+      `ALTER TABLE xAccount ADD COLUMN tweetsCount INTEGER DEFAULT -1;`,
+      `ALTER TABLE xAccount ADD COLUMN likesCount INTEGER DEFAULT -1;`,
+    ],
+  },
+  // Add unfollowEveryone to xAccount
+  {
+    name: "add unfollowEveryone to xAccount",
+    sql: [
+      `ALTER TABLE xAccount ADD COLUMN unfollowEveryone BOOLEAN DEFAULT 1;`,
+    ],
+  },
+  // Add deleteTweetsDaysOldEnabled, deleteRetweetsDaysOldEnabled, deleteLikesDaysOldEnabled to xAccount
+  {
+    name: "add deleteTweetsDaysOldEnabled, deleteRetweetsDaysOldEnabled, deleteLikesDaysOldEnabled to xAccount",
+    sql: [
+      `ALTER TABLE xAccount ADD COLUMN deleteTweetsDaysOldEnabled BOOLEAN DEFAULT 0;`,
+      `ALTER TABLE xAccount ADD COLUMN deleteRetweetsDaysOldEnabled BOOLEAN DEFAULT 0;`,
+      `ALTER TABLE xAccount ADD COLUMN deleteLikesDaysOldEnabled BOOLEAN DEFAULT 0;`,
+    ],
+  },
+  // Add errorReport table. Status can be "new", "submitted", and "dismissed"
+  {
+    name: "add errorReport table",
+    sql: [
+      `CREATE TABLE errorReport (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     accountID INTEGER DEFAULT NULL,
@@ -90,26 +93,26 @@ export const runMainMigrations = () => {
     sensitiveContextData TEXT DEFAULT NULL,
     status TEXT DEFAULT 'new'
 );`,
-      ],
-    },
-    // Add archiveMyData to xAccount
-    {
-      name: "add archiveMyData to xAccount",
-      sql: [`ALTER TABLE xAccount ADD COLUMN archiveMyData BOOLEAN DEFAULT 0;`],
-    },
-    // Add archiveBookmarks, deleteBookmarks to xAccount
-    {
-      name: "add archiveBookmarks, deleteBookmarks to xAccount",
-      sql: [
-        `ALTER TABLE xAccount ADD COLUMN archiveBookmarks BOOLEAN DEFAULT 1;`,
-        `ALTER TABLE xAccount ADD COLUMN deleteBookmarks BOOLEAN DEFAULT 0;`,
-      ],
-    },
-    // Add Bluesky table, and blueskyAccountID to account
-    {
-      name: "add Bluesky table, and blueskyAccountID to account",
-      sql: [
-        `CREATE TABLE blueskyAccount (
+    ],
+  },
+  // Add archiveMyData to xAccount
+  {
+    name: "add archiveMyData to xAccount",
+    sql: [`ALTER TABLE xAccount ADD COLUMN archiveMyData BOOLEAN DEFAULT 0;`],
+  },
+  // Add archiveBookmarks, deleteBookmarks to xAccount
+  {
+    name: "add archiveBookmarks, deleteBookmarks to xAccount",
+    sql: [
+      `ALTER TABLE xAccount ADD COLUMN archiveBookmarks BOOLEAN DEFAULT 1;`,
+      `ALTER TABLE xAccount ADD COLUMN deleteBookmarks BOOLEAN DEFAULT 0;`,
+    ],
+  },
+  // Add Bluesky table, and blueskyAccountID to account
+  {
+    name: "add Bluesky table, and blueskyAccountID to account",
+    sql: [
+      `CREATE TABLE blueskyAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -140,40 +143,40 @@ export const runMainMigrations = () => {
     postsCount INTEGER DEFAULT -1,
     likesCount INTEGER DEFAULT -1
 );`,
-        `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
-      ],
-    },
-    // Add userID to xAccount table
-    {
-      name: "add userID to xAccount table",
-      sql: [`ALTER TABLE xAccount ADD COLUMN userID TEXT;`],
-    },
-    // Add archiveOnly to xAccount table
-    {
-      name: "add archiveOnly to xAccount table",
-      sql: [`ALTER TABLE xAccount ADD COLUMN archiveOnly BOOLEAN DEFAULT 0;`],
-    },
-    // Add tombstone settings to xAccount table
-    {
-      name: "add tombstone settings to xAccount table",
-      sql: [
-        `ALTER TABLE xAccount ADD COLUMN bio TEXT;`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBanner BOOLEAN DEFAULT 1;`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerBackground TEXT DEFAULT 'night';`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerSocialIcons TEXT DEFAULT 'none';`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerShowText BOOLEAN DEFAULT 1;`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneBannerDataURL TEXT DEFAULT '';`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBio BOOLEAN DEFAULT 1;`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioText TEXT DEFAULT '';`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioCreditCyd BOOLEAN DEFAULT 1;`,
-        `ALTER TABLE xAccount ADD COLUMN tombstoneLockAccount BOOLEAN DEFAULT 1;`,
-      ],
-    },
-    // Add Facebook table, and facebookAccountID to account
-    {
-      name: "add Facebook table, and facebookAccountID to account",
-      sql: [
-        `CREATE TABLE facebookAccount (
+      `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
+    ],
+  },
+  // Add userID to xAccount table
+  {
+    name: "add userID to xAccount table",
+    sql: [`ALTER TABLE xAccount ADD COLUMN userID TEXT;`],
+  },
+  // Add archiveOnly to xAccount table
+  {
+    name: "add archiveOnly to xAccount table",
+    sql: [`ALTER TABLE xAccount ADD COLUMN archiveOnly BOOLEAN DEFAULT 0;`],
+  },
+  // Add tombstone settings to xAccount table
+  {
+    name: "add tombstone settings to xAccount table",
+    sql: [
+      `ALTER TABLE xAccount ADD COLUMN bio TEXT;`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBanner BOOLEAN DEFAULT 1;`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerBackground TEXT DEFAULT 'night';`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerSocialIcons TEXT DEFAULT 'none';`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBannerShowText BOOLEAN DEFAULT 1;`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneBannerDataURL TEXT DEFAULT '';`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBio BOOLEAN DEFAULT 1;`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioText TEXT DEFAULT '';`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneUpdateBioCreditCyd BOOLEAN DEFAULT 1;`,
+      `ALTER TABLE xAccount ADD COLUMN tombstoneLockAccount BOOLEAN DEFAULT 1;`,
+    ],
+  },
+  // Add Facebook table, and facebookAccountID to account
+  {
+    name: "add Facebook table, and facebookAccountID to account",
+    sql: [
+      `CREATE TABLE facebookAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -181,15 +184,15 @@ export const runMainMigrations = () => {
     username TEXT,
     profileImageDataURI TEXT
 );`,
-        `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
-      ],
-    },
-    // Create a new, separate facebookAccount in preparation for releasing Facebook support
-    {
-      name: "add accountID to facebookAccount table",
-      sql: [
-        `DROP TABLE IF EXISTS facebookAccount;`,
-        `CREATE TABLE facebookAccount (
+      `ALTER TABLE account ADD COLUMN facebookAccountID INTEGER DEFAULT NULL;`,
+    ],
+  },
+  // Create a new, separate facebookAccount in preparation for releasing Facebook support
+  {
+    name: "add accountID to facebookAccount table",
+    sql: [
+      `DROP TABLE IF EXISTS facebookAccount;`,
+      `CREATE TABLE facebookAccount (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -200,21 +203,52 @@ export const runMainMigrations = () => {
     deleteWallPosts INTEGER DEFAULT 1,
     userLang TEXT DEFAULT 'English (US)'
 );`,
-      ],
-    },
-    // Add per-category delete settings so users can choose which activity-log
-    // data to delete (comments, reactions, etc.) independently of wall posts.
-    {
-      name: "add per-category delete settings to facebookAccount table",
-      sql: [
-        `ALTER TABLE facebookAccount ADD COLUMN deleteComments INTEGER DEFAULT 0;`,
-        `ALTER TABLE facebookAccount ADD COLUMN deleteReactions INTEGER DEFAULT 0;`,
-        `ALTER TABLE facebookAccount ADD COLUMN deletePostsOnOthers INTEGER DEFAULT 0;`,
-        `ALTER TABLE facebookAccount ADD COLUMN deleteOthersPosts INTEGER DEFAULT 0;`,
-        `ALTER TABLE facebookAccount ADD COLUMN deleteCheckins INTEGER DEFAULT 0;`,
-        `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedPosts INTEGER DEFAULT 0;`,
-        `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedMedia INTEGER DEFAULT 0;`,
-      ],
-    },
-  ]);
+    ],
+  },
+  // Replace the dormant Bluesky model with UUID-keyed local accounts.
+  //
+  // The old blueskyAccount table was never reachable outside a disabled
+  // feature flag, so its rows are abandoned rather than migrated. This is a
+  // forward migration: it drops the obsolete table and link and creates the
+  // new local account model, leaving migration history intact.
+  {
+    name: "replace the dormant Bluesky model with UUID-keyed local accounts",
+    sql: [
+      `DELETE FROM account WHERE type = 'Bluesky';`,
+      `DROP TABLE IF EXISTS blueskyAccount;`,
+      `ALTER TABLE account DROP COLUMN blueskyAccountID;`,
+      `CREATE TABLE blueskyAccount (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    did TEXT DEFAULT NULL,
+    handle TEXT DEFAULT NULL,
+    displayName TEXT DEFAULT NULL,
+    profileImageDataURI TEXT DEFAULT NULL
+);`,
+      // A Bluesky identity may appear at most once locally, but a local
+      // account that has never connected has no DID yet.
+      `CREATE UNIQUE INDEX blueskyAccountDID ON blueskyAccount (did) WHERE did IS NOT NULL;`,
+      `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
+    ],
+  },
+  // Add per-category delete settings so users can choose which activity-log
+  // data to delete (comments, reactions, etc.) independently of wall posts.
+  {
+    name: "add per-category delete settings to facebookAccount table",
+    sql: [
+      `ALTER TABLE facebookAccount ADD COLUMN deleteComments INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteReactions INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deletePostsOnOthers INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteOthersPosts INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteCheckins INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedPosts INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedMedia INTEGER DEFAULT 0;`,
+    ],
+  },
+];
+
+export const runMainMigrations = () => {
+  runMigrations(getMainDatabase(), mainMigrations);
 };

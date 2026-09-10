@@ -23,6 +23,10 @@ import electronSquirrelStartup from "electron-squirrel-startup";
 import * as database from "./database";
 import { defineIPCX } from "./account_x";
 import { defineIPCFacebook } from "./account_facebook";
+import {
+  defineIPCBluesky,
+  ensureBlueskyAccountStorage,
+} from "./account_bluesky";
 import { defineIPCArchive } from "./archive";
 import {
   getUpdatesBaseURL,
@@ -585,12 +589,19 @@ async function createWindow() {
           if (!account) {
             return null;
           }
-          const username = await database.getAccountUsername(account);
-          if (!username) {
-            return null;
-          }
 
-          const archivePath = getAccountDataPath(account.type, username);
+          // A Bluesky local account's data lives under its Cyd UUID, because a
+          // Bluesky handle can change at any time.
+          let archivePath: string;
+          if (account.type === "Bluesky") {
+            archivePath = ensureBlueskyAccountStorage(account.uuid).accountPath;
+          } else {
+            const username = await database.getAccountUsername(account);
+            if (!username) {
+              return null;
+            }
+            archivePath = getAccountDataPath(account.type, username);
+          }
           if (filename == "") {
             return archivePath;
           } else {
@@ -659,6 +670,7 @@ async function createWindow() {
     database.defineIPCDatabase();
     defineIPCX();
     defineIPCFacebook();
+    defineIPCBluesky();
     defineIPCArchive();
   }
   // @ts-expect-error: typescript doesn't know about this global variable

@@ -4,6 +4,7 @@ import { exec, getMainDatabase, Sqlite3Info } from "./common";
 import { createXAccount, getXAccount, saveXAccount } from "./x_account";
 import {
   createBlueskyAccount,
+  deleteBlueskyAccount,
   getBlueskyAccount,
   saveBlueskyAccount,
 } from "./bluesky_account";
@@ -19,6 +20,7 @@ import {
   FacebookAccount,
 } from "../shared_types";
 import { packageExceptionForReport } from "../util";
+import { removeBlueskyAccountStorage } from "../account_bluesky/storage";
 
 // Types
 
@@ -89,7 +91,7 @@ export async function getAccountUsername(
   if (account.type == "X" && account.xAccount) {
     return account.xAccount?.username;
   } else if (account.type == "Bluesky" && account.blueskyAccount) {
-    return account.blueskyAccount?.username;
+    return account.blueskyAccount?.handle;
   } else if (account.type == "Facebook" && account.facebookAccount) {
     return account.facebookAccount?.username;
   }
@@ -231,10 +233,12 @@ export const deleteAccount = (accountID: number) => {
       }
       break;
     case "Bluesky":
+      // A Bluesky local account owns a UUID-keyed directory holding its
+      // connection material, runtime database, media, jobs, and staged work.
+      // Deleting the account removes those local resources and nothing else.
+      removeBlueskyAccountStorage(account.uuid);
       if (account.blueskyAccount) {
-        exec(getMainDatabase(), "DELETE FROM blueskyAccount WHERE id = ?", [
-          account.blueskyAccount.id,
-        ]);
+        deleteBlueskyAccount(account.blueskyAccount.id);
       }
       break;
     case "Facebook":

@@ -44,8 +44,8 @@ export const createTestAccount = (
       break;
     case "Bluesky":
       if (account.blueskyAccount) {
-        account.blueskyAccount.username =
-          options.username ?? account.blueskyAccount.username ?? "test";
+        account.blueskyAccount.handle =
+          options.username ?? account.blueskyAccount.handle ?? "test";
       }
       break;
   }
