@@ -18,10 +18,6 @@ import { openURL } from "../util";
 
 const { t } = useI18n();
 
-defineProps<{
-  updatesAvailable: boolean;
-}>();
-
 const emit = defineEmits<{
   checkForUpdatesClicked: [];
 }>();

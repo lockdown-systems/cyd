@@ -1,3 +1,12 @@
+export enum UpdateStatus {
+  Unknown,
+  Error,
+  Checking,
+  Available,
+  NotAvailable,
+  Downloaded,
+}
+
 export type DeviceInfo = {
   userEmail: string;
   deviceDescription: string;

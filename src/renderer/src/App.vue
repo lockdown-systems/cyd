@@ -4,8 +4,8 @@ import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue";
 import { useI18n } from "vue-i18n";
 import semver from "semver";
 
-import { DeviceInfo, PlausibleEvents } from "./types";
-import { getDeviceInfo, openURL } from "./util";
+import { DeviceInfo, PlausibleEvents, UpdateStatus } from "./types";
+import { getDeviceInfo } from "./util";
 import CydAPIClient, {
   APIErrorResponse,
   GetVersionAPIResponse,
@@ -18,6 +18,7 @@ import AutomationErrorReportModal from "./modals/AutomationErrorReportModal.vue"
 import AdvancedSettingsModal from "./modals/AdvancedSettingsModal.vue";
 
 import TabsView from "./views/TabsView.vue";
+import UpdatesBar from "./views/shared_components/UpdatesBar.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -123,15 +124,6 @@ emitter?.on("signed-out", () => {
 });
 
 // Check for updates
-enum UpdateStatus {
-  Unknown,
-  Error,
-  Checking,
-  Available,
-  NotAvailable,
-  Downloaded,
-}
-
 const updatesAvailable = ref(false);
 const updateStatus = ref(UpdateStatus.Unknown);
 let checkForUpdatesInterval: ReturnType<typeof setTimeout> | null = null;
@@ -325,46 +317,15 @@ onUnmounted(() => {
     <template v-else>
       <TabsView
         v-if="!shouldHideTabsView"
-        :updates-available="updatesAvailable"
         @check-for-updates-clicked="checkForUpdates(true)"
       />
 
-      <div v-if="updatesAvailable" class="updates-bar">
-        <p>
-          <strong>{{ t("app.updates.updateAvailable") }}</strong>
-          {{ t("app.updates.shouldUseLatestVersion") }}
-        </p>
-        <p class="text-muted">
-          <template v-if="platform === 'linux'">
-            {{ t("app.updates.installViaPackageManager") }}
-          </template>
-          <template v-else>
-            <template v-if="updateStatus == UpdateStatus.Checking">
-              {{ t("app.updates.loadingUpdateStatus") }}
-            </template>
-            <template v-else-if="updateStatus == UpdateStatus.Available">
-              {{ t("app.updates.downloadingUpdate") }}
-            </template>
-            <template v-else-if="updateStatus == UpdateStatus.Downloaded">
-              <button class="btn btn-primary" @click="restartToUpdateClicked">
-                {{ t("app.updates.restartToUpdate") }}
-              </button>
-            </template>
-            <template
-              v-else-if="
-                updateStatus == UpdateStatus.Error ||
-                updateStatus == UpdateStatus.NotAvailable
-              "
-            >
-              {{ t("app.updates.errorWithAutomaticUpdate") }}
-              <a href="#" @click="openURL('https://cyd.social/download/')">{{
-                t("app.updates.fromWebsite")
-              }}</a
-              >.
-            </template>
-          </template>
-        </p>
-      </div>
+      <UpdatesBar
+        v-if="updatesAvailable"
+        :update-status="updateStatus"
+        :platform="platform"
+        @restart-to-update-clicked="restartToUpdateClicked"
+      />
     </template>
 
     <!-- Sign in modal -->

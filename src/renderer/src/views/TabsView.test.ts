@@ -124,9 +124,7 @@ describe("TabsView", () => {
 
   const mountComponent = async () => {
     wrapper = mount(TabsView, {
-      props: {
-        updatesAvailable: false,
-      },
+      props: {},
       global: {
         plugins: [i18n],
         provide: {
