@@ -4,12 +4,9 @@ import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { safeStorageMock } from "../../../__tests__/platform-fixtures/electronMocks";
 import {
-  CredentialStorageUnavailableError,
-  accountCredentialNamespace,
-  deleteCredentialNamespace,
-  getCredential,
-  listCredentialKeys,
-  setCredential,
+  CredentialStoreUnavailableError,
+  accountCredentials,
+  type AccountCredentials,
 } from "../../../credentials";
 import { getConfig, setConfig } from "../../../database";
 import { BlueskyService } from "../../controller/bluesky/BlueskyService";
@@ -83,16 +80,17 @@ const oauthStores = async (
 
 describe("BlueskyService credential storage", () => {
   let context: XControllerTestContext | null = null;
-  let namespace = "";
+  let credentials: AccountCredentials | null = null;
 
   beforeEach(() => {
     context = createXControllerTestContext();
-    namespace = accountCredentialNamespace(context.account.id);
+    credentials = accountCredentials(context.account.id);
     safeStorageMock.isEncryptionAvailable.mockReturnValue(true);
   });
 
   afterEach(() => {
-    deleteCredentialNamespace(namespace);
+    credentials?.deleteAll();
+    credentials = null;
     context?.cleanup();
     context = null;
     oauthClientMock.capturedOptions.length = 0;
@@ -105,7 +103,7 @@ describe("BlueskyService credential storage", () => {
 
     await stores.sessionStore.set("did:web:cyd", SESSION_CREDENTIAL);
 
-    expect(getCredential(namespace, "blueskySessionStore-did:web:cyd")).toBe(
+    expect(credentials!.get("blueskySessionStore-did:web:cyd")).toBe(
       JSON.stringify(SESSION_CREDENTIAL),
     );
     expect(
@@ -122,7 +120,7 @@ describe("BlueskyService credential storage", () => {
 
     await stores.stateStore.set("state-key", STATE_CREDENTIAL);
 
-    expect(getCredential(namespace, "blueskyStateStore-state-key")).toBe(
+    expect(credentials!.get("blueskyStateStore-state-key")).toBe(
       JSON.stringify(STATE_CREDENTIAL),
     );
     expect(
@@ -137,7 +135,7 @@ describe("BlueskyService credential storage", () => {
 
     await stores.stateStore.del("state-key");
 
-    expect(listCredentialKeys(namespace)).toEqual([]);
+    expect(credentials!.keys()).toEqual([]);
     await expect(stores.stateStore.get("state-key")).resolves.toBeUndefined();
   });
 
@@ -148,10 +146,10 @@ describe("BlueskyService credential storage", () => {
 
     await expect(
       stores.sessionStore.set("did:web:cyd", SESSION_CREDENTIAL),
-    ).rejects.toBeInstanceOf(CredentialStorageUnavailableError);
+    ).rejects.toBeInstanceOf(CredentialStoreUnavailableError);
 
     safeStorageMock.isEncryptionAvailable.mockReturnValue(true);
-    expect(listCredentialKeys(namespace)).toEqual([]);
+    expect(credentials!.keys()).toEqual([]);
     expect(
       getConfig("blueskySessionStore-did:web:cyd", context!.controller.db),
     ).toBeNull();
@@ -159,13 +157,11 @@ describe("BlueskyService credential storage", () => {
 
   test("disconnect removes stored OAuth credentials", async () => {
     const service = createService(context!.controller, context!.account.id);
-    setCredential(
-      namespace,
+    credentials!.set(
       "blueskySessionStore-did:web:cyd",
       JSON.stringify(SESSION_CREDENTIAL),
     );
-    setCredential(
-      namespace,
+    credentials!.set(
       "blueskyStateStore-state-key",
       JSON.stringify(STATE_CREDENTIAL),
     );
@@ -176,7 +172,7 @@ describe("BlueskyService credential storage", () => {
 
     await service.disconnect();
 
-    expect(listCredentialKeys(namespace)).toEqual([]);
+    expect(credentials!.keys()).toEqual([]);
     expect(await context!.controller.getConfig("blueskyDID")).toBeNull();
   });
 
@@ -199,7 +195,7 @@ describe("BlueskyService credential storage", () => {
 
     context!.controller.initDB();
 
-    expect(getCredential(namespace, "blueskySessionStore-did:web:cyd")).toBe(
+    expect(credentials!.get("blueskySessionStore-did:web:cyd")).toBe(
       JSON.stringify(SESSION_CREDENTIAL),
     );
     expect(

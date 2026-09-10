@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 
 import i18n from "../../i18n";
-import CredentialStorageBar from "./CredentialStorageBar.vue";
+import CredentialStoreBar from "./CredentialStoreBar.vue";
 import type { CredentialProtection } from "../../../../shared_types";
 
 const protection = (
@@ -18,12 +18,12 @@ const protection = (
 });
 
 const mountBar = (value: CredentialProtection | null) =>
-  mount(CredentialStorageBar, {
+  mount(CredentialStoreBar, {
     props: { protection: value },
     global: { plugins: [i18n] },
   });
 
-describe("CredentialStorageBar", () => {
+describe("CredentialStoreBar", () => {
   it("says nothing when the OS protects credentials", () => {
     const wrapper = mountBar(
       protection({
@@ -35,19 +35,19 @@ describe("CredentialStorageBar", () => {
       }),
     );
 
-    expect(wrapper.find(".credential-storage-bar").exists()).toBe(false);
+    expect(wrapper.find(".credential-store-bar").exists()).toBe(false);
   });
 
   it("says nothing before the protection is known", () => {
     const wrapper = mountBar(null);
 
-    expect(wrapper.find(".credential-storage-bar").exists()).toBe(false);
+    expect(wrapper.find(".credential-store-bar").exists()).toBe(false);
   });
 
   it("discloses the Linux basic_text fallback", () => {
     const wrapper = mountBar(protection());
 
-    const bar = wrapper.find(".credential-storage-bar");
+    const bar = wrapper.find(".credential-store-bar");
     expect(bar.exists()).toBe(true);
     expect(bar.text()).toContain("not protected on this computer");
     expect(bar.text()).toContain("KWallet");
@@ -55,14 +55,21 @@ describe("CredentialStorageBar", () => {
     expect(bar.text()).toContain("basic_text");
   });
 
-  it("discloses an unrecognized Linux backend", () => {
+  it("discloses an unrecognized Linux backend without guessing why", () => {
     const wrapper = mountBar(
-      protection({ backend: "unknown", rawBackend: "something_new" }),
+      protection({
+        backend: "unknown",
+        rawBackend: "something_new",
+        canPersist: false,
+      }),
     );
 
-    const bar = wrapper.find(".credential-storage-bar");
+    const bar = wrapper.find(".credential-store-bar");
     expect(bar.exists()).toBe(true);
     expect(bar.text()).toContain("something_new");
+    expect(bar.text()).toContain("does not recognize the password store");
+    // It must not claim the desktop has no keyring; Cyd does not know that.
+    expect(bar.text()).not.toContain("could not find a system keyring");
   });
 
   it("explains when credentials cannot be stored at all", () => {
@@ -74,8 +81,11 @@ describe("CredentialStorageBar", () => {
       }),
     );
 
-    const bar = wrapper.find(".credential-storage-bar");
+    const bar = wrapper.find(".credential-store-bar");
     expect(bar.text()).toContain("will not save your Bluesky connection");
+    // X login cookies keep being persisted by Chromium either way, so the
+    // warning must not imply that nothing is stored.
+    expect(bar.text()).toContain("X login cookies are still stored");
   });
 
   it("can be dismissed", async () => {
@@ -84,10 +94,10 @@ describe("CredentialStorageBar", () => {
     // The test environment stubs MouseEvent, so dispatch the click natively
     // rather than through test-utils' synthetic event.
     (
-      wrapper.find(".credential-storage-bar-close").element as HTMLElement
+      wrapper.find(".credential-store-bar-close").element as HTMLElement
     ).click();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find(".credential-storage-bar").exists()).toBe(false);
+    expect(wrapper.find(".credential-store-bar").exists()).toBe(false);
   });
 });

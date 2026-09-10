@@ -1,13 +1,14 @@
-# Credential storage
+# Cyd credential store
 
 Cyd must not persist account-control credentials in application-managed
 plaintext storage. This document describes what Cyd treats as a credential,
-where each credential lives, what the storage does and does not protect
+where each credential lives, what the store does and does not protect
 against, and how to verify the behavior by hand on each platform.
 
 Related decisions: [ADR 0005](../adr/0005-exclude-credentials-from-archives.md),
-[ADR 0018](../adr/0018-use-oauth-and-os-protected-credential-storage.md), and
-[ADR 0030](../adr/0030-encrypt-credentials-not-saved-content.md).
+[ADR 0018](../adr/0018-use-oauth-and-os-protected-credential-storage.md),
+[ADR 0030](../adr/0030-encrypt-credentials-not-saved-content.md), and
+[ADR 0033](../adr/0033-refuse-unprotected-credential-storage.md).
 
 ## What counts as a credential
 
@@ -34,6 +35,9 @@ The Cyd credential store keeps one owner-only vault file per account under
 ciphertext produced by `safeStorage`; the vault never contains a plaintext
 credential. It lives outside every account database, media directory, and
 archive, so exporting or copying account data cannot carry a credential along.
+Callers reach it through `accountCredentials(accountID)` and name a
+credential; which vault it belongs to and how it is encrypted are the store's
+business, not theirs.
 
 Nothing else may hold a credential. `setConfig` throws if asked to write one of
 the legacy credential keys into the plaintext `config` table.
@@ -56,13 +60,25 @@ Cyd claims exactly the protection the selected backend provides, and no more.
 hard-coded key, so anyone who can read the user's files can read the
 credential. Cyd uses it deliberately rather than failing, because a Linux
 desktop without a keyring is common and the alternative is an unusable app,
-but it detects the case and says so in a dismissible warning bar that names
-the backend. `logCredentialProtection()` records the same fact at startup.
+but it detects the case and says so in a warning bar that names the backend.
+`logCredentialProtection()` records the same fact at startup.
 
-When no backend exists at all, Cyd refuses to persist credentials:
-`setCredential` throws `CredentialStorageUnavailableError` rather than writing
-plaintext, and the OAuth flow fails with that message. The user can still use
-Cyd; they reconnect each session.
+That exception covers `basic_text` and nothing else. A password store Cyd does
+not recognize is reported as `unknown` and treated as unusable, because Cyd
+cannot describe what it protects against and must not imply otherwise.
+
+Where no usable backend exists, Cyd refuses to persist credentials:
+`accountCredentials(id).set()` throws `CredentialStoreUnavailableError` rather
+than writing plaintext, and the OAuth flow fails with that message. The user
+can still use Cyd; they reconnect each session. X login cookies are a separate
+matter: Chromium keeps persisting them through whatever password store it
+selected, which is why the warning says so rather than claiming Cyd stores
+nothing.
+
+The warning bar can be dismissed for the session, matching how Cyd's other
+persistent bars behave. The limitation does not change until the user installs
+a keyring, and the bar reappears on the next launch; the startup log records
+it either way.
 
 ## Threat model
 
@@ -73,9 +89,12 @@ Protected against:
   diagnostics, and logs. SQL statement parameters are redacted to type and
   length before they reach any log or error report, so a credential cannot
   ride along in a debug line or a support bundle.
-- Credentials outliving the account. Deleting an account deletes its whole
-  credential namespace, and disconnecting a Bluesky migration revokes the
-  session and deletes its OAuth state and session material.
+- Credentials outliving the account. Cyd revokes before it discards:
+  disconnecting a Bluesky migration and deleting an account both ask the
+  authorization server to invalidate the session first, then delete the
+  account's whole vault and clear Chromium's partition for its cookies. A
+  revocation that fails, because the machine is offline, never blocks the
+  deletion the user asked for.
 - Casual inspection of a copied profile directory on macOS, Windows, and Linux
   with a keyring: the vault is unreadable without the OS-held key.
 
@@ -104,8 +123,13 @@ refresh tokens and a private DPoP key, into the account database's plaintext
    so the deleted bytes do not survive in the WAL or in free pages.
 
 If no credential backend is available, the sweep deletes the rows without
-saving them: an unprotected credential is worse than no credential, and the
-user reconnects.
+saving them: an unprotected credential is worse than no credential. It clears
+the stored Bluesky DID at the same time, so the account stops presenting a
+connection whose session Cyd just threw away, and the user reconnects.
+
+Cyd cannot revoke a credential it has refused to hold. A user who wants the
+old session invalidated at Bluesky, rather than merely deleted here, should
+revoke Cyd's authorization in their Bluesky account settings.
 
 The sweep migrates rather than revokes, so a user stays connected. It cannot
 reach copies that already left the machine: a backup, a synced folder, or a
@@ -158,9 +182,18 @@ storage. "Connect" means completing the X-to-Bluesky migration OAuth flow.
 
 - [ ] Start Cyd with `--password-store=basic` on a machine with no keyring.
 - [ ] The warning bar appears, names `basic_text`, and can be dismissed.
+- [ ] The warning names the password store, and does not claim Cyd stores
+      nothing at all.
 - [ ] The startup log contains the `NOT protected at rest` warning.
 - [ ] Connecting still works, and the migration still runs.
 - [ ] Restarting Cyd shows the warning again.
+
+### Linux, unrecognized password store
+
+- [ ] Make Chromium report a password store Cyd does not know.
+- [ ] The warning bar appears, names the store, and says Cyd does not
+      recognize it, without claiming the desktop has no keyring.
+- [ ] Connecting reports the credential-store error instead of persisting.
 
 ### Any platform, no backend
 

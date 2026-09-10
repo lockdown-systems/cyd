@@ -1,19 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
-const safeStorageMock = vi.hoisted(() => ({
-  isEncryptionAvailable: vi.fn(() => true),
-  getSelectedStorageBackend: vi.fn(() => "gnome_libsecret"),
-  encryptString: vi.fn((plaintext: string) => Buffer.from(`enc:${plaintext}`)),
-  decryptString: vi.fn((ciphertext: Buffer) =>
-    ciphertext.toString().replace(/^enc:/, ""),
-  ),
-}));
-
-vi.mock("electron", () => ({
-  safeStorage: safeStorageMock,
-  app: { getPath: vi.fn(() => "/tmp"), getVersion: vi.fn(() => "0.0.1") },
-  ipcMain: { handle: vi.fn() },
-}));
+import { safeStorageMock } from "../../__tests__/platform-fixtures/electronMocks";
 
 import { getCredentialProtection } from "../backend";
 
@@ -103,14 +90,17 @@ describe("getCredentialProtection", () => {
     expect(protection.disclosureRequired).toBe(true);
   });
 
-  test("an unrecognized Linux backend claims no protection", () => {
+  test("an unrecognized Linux backend is not persisted to", () => {
     setPlatform("linux");
     safeStorageMock.getSelectedStorageBackend.mockReturnValue("something_new");
 
     const protection = getCredentialProtection();
 
+    // basic_text is the only sanctioned fallback. A store Cyd cannot
+    // describe gets no benefit of the doubt.
     expect(protection.backend).toBe("unknown");
     expect(protection.osProtected).toBe(false);
+    expect(protection.canPersist).toBe(false);
     expect(protection.disclosureRequired).toBe(true);
     expect(protection.rawBackend).toBe("something_new");
   });

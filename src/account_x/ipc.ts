@@ -37,6 +37,32 @@ const getXAccountController = (accountID: number): XAccountController => {
   return controllers[accountID];
 };
 
+/**
+ * Revoke this X account's Bluesky migration connection, if it has one.
+ *
+ * Deleting an account discards its credentials locally; this tells the
+ * authorization server to invalidate them too, so a copied refresh token
+ * cannot outlive the account. Accounts that never connected do no work and
+ * touch no network.
+ */
+export const revokeXBlueskyConnection = async (
+  accountID: number,
+): Promise<void> => {
+  const controller = getXAccountController(accountID);
+  if (!controller.db) {
+    controller.initDB();
+  }
+  if (!controller.db) {
+    // No account database means this account never connected to anything.
+    return;
+  }
+  const did = await controller.getConfig("blueskyDID");
+  if (!did) {
+    return;
+  }
+  await controller.blueskyDisconnect();
+};
+
 export const defineIPCX = () => {
   ipcMain.handle(
     "X:resetProgress",

@@ -20,7 +20,7 @@ import AdvancedSettingsModal from "./modals/AdvancedSettingsModal.vue";
 
 import TabsView from "./views/TabsView.vue";
 import UpdatesBar from "./views/shared_components/UpdatesBar.vue";
-import CredentialStorageBar from "./views/shared_components/CredentialStorageBar.vue";
+import CredentialStoreBar from "./views/shared_components/CredentialStoreBar.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -336,7 +336,7 @@ onUnmounted(() => {
         @check-for-updates-clicked="checkForUpdates(true)"
       />
 
-      <CredentialStorageBar :protection="credentialProtection" />
+      <CredentialStoreBar :protection="credentialProtection" />
 
       <UpdatesBar
         v-if="updatesAvailable"

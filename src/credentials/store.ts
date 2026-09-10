@@ -12,14 +12,12 @@ import { getCredentialProtection } from "./backend";
 // backing up or exporting account data can never carry them along.
 const CREDENTIALS_DIRECTORY = "credentials";
 
+// The vault file format. A vault written by a future version is unreadable
+// rather than misread.
 const VAULT_VERSION = 1;
 
 const OWNER_ONLY_DIRECTORY = 0o700;
 const OWNER_ONLY_FILE = 0o600;
-
-// A namespace becomes a filename, so it may not contain anything that could
-// point at another directory.
-const NAMESPACE_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i;
 
 // Windows has no POSIX permission bits, and chmod there is a lie that can
 // throw on some filesystems.
@@ -30,10 +28,10 @@ const supportsOwnerOnlyPermissions = (): boolean =>
  * Thrown when Cyd cannot protect a credential and therefore refuses to
  * persist it. Callers must handle this rather than fall back to plaintext.
  */
-export class CredentialStorageUnavailableError extends Error {
+export class CredentialStoreUnavailableError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "CredentialStorageUnavailableError";
+    this.name = "CredentialStoreUnavailableError";
   }
 }
 
@@ -49,11 +47,15 @@ const emptyVault = (): Vault => ({
   credentials: {},
 });
 
-const assertNamespace = (namespace: string): string => {
-  if (!NAMESPACE_PATTERN.test(namespace)) {
-    throw new Error(`Invalid credential namespace: ${namespace}`);
+/**
+ * Each account owns one vault, named after the account. Deleting the account
+ * deletes the vault, so nothing an account stores can outlive it.
+ */
+const accountVaultName = (accountID: number): string => {
+  if (!Number.isInteger(accountID) || accountID < 0) {
+    throw new Error(`Invalid account ID for a credential vault: ${accountID}`);
   }
-  return namespace;
+  return `account-${accountID}`;
 };
 
 export const credentialsDirectoryPath = (): string =>
@@ -70,34 +72,37 @@ const ensureCredentialsDirectory = (): string => {
   return directory;
 };
 
-const vaultPath = (namespace: string): string =>
-  path.join(credentialsDirectoryPath(), `${assertNamespace(namespace)}.json`);
+const vaultPath = (vaultName: string): string =>
+  path.join(credentialsDirectoryPath(), `${vaultName}.json`);
 
-const readVault = (namespace: string): Vault => {
-  const filePath = vaultPath(namespace);
+const readVault = (vaultName: string): Vault => {
+  const filePath = vaultPath(vaultName);
   if (!fs.existsSync(filePath)) {
     return emptyVault();
   }
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Vault;
-    if (!parsed || typeof parsed.credentials !== "object") {
+    if (parsed?.version !== VAULT_VERSION) {
+      throw new Error(`Unsupported vault version: ${parsed?.version}`);
+    }
+    if (typeof parsed.credentials !== "object" || parsed.credentials === null) {
       throw new Error("Vault is missing its credentials");
     }
-    return { version: parsed.version ?? VAULT_VERSION, ...parsed };
+    return parsed;
   } catch (error) {
     // A vault Cyd cannot read is a vault Cyd cannot use. Log the failure
     // without its contents and start over, which costs the user a
     // reconnection rather than a broken app.
     log.error(
-      `credentials: could not read the vault for ${namespace}, discarding it`,
+      "credentials: could not read a credential vault, discarding it",
       error instanceof Error ? error.message : error,
     );
     return emptyVault();
   }
 };
 
-const writeVault = (namespace: string, vault: Vault): void => {
-  const filePath = vaultPath(namespace);
+const writeVault = (vaultName: string, vault: Vault): void => {
+  const filePath = vaultPath(vaultName);
 
   if (Object.keys(vault.credentials).length === 0) {
     // An empty vault is the same as no vault, and leaving the file behind
@@ -120,95 +125,98 @@ const writeVault = (namespace: string, vault: Vault): void => {
  * is false, Cyd must do without persisted credentials rather than store them
  * in the clear.
  */
-export const isCredentialStorageAvailable = (): boolean =>
+export const isCredentialStoreAvailable = (): boolean =>
   getCredentialProtection().canPersist;
 
 /**
- * The credential namespace owned by one account. Deleting the account deletes
- * the whole namespace, so nothing an account stores can outlive it.
+ * One account's credentials.
+ *
+ * Callers name a credential and nothing else: which vault it belongs to, how
+ * it is encrypted, and where it sits on disk are this module's business.
+ * Credential names are never logged, because they can carry an identifier
+ * such as a Bluesky DID.
  */
-export const accountCredentialNamespace = (accountID: number): string =>
-  `account-${accountID}`;
-
-export const setCredential = (
-  namespace: string,
-  key: string,
-  value: string,
-): void => {
-  assertNamespace(namespace);
-
-  if (!isCredentialStorageAvailable()) {
-    throw new CredentialStorageUnavailableError(
-      "No operating-system credential storage is available, so Cyd refuses to persist this credential",
-    );
-  }
-
-  const vault = readVault(namespace);
-  vault.credentials[key] = safeStorage.encryptString(value).toString("base64");
-  writeVault(namespace, vault);
+export type AccountCredentials = {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+  delete(key: string): void;
+  deleteWithPrefix(prefix: string): void;
+  keys(): string[];
+  deleteAll(): void;
 };
 
-export const getCredential = (
-  namespace: string,
-  key: string,
-): string | null => {
-  assertNamespace(namespace);
+export const accountCredentials = (accountID: number): AccountCredentials => {
+  const vaultName = accountVaultName(accountID);
 
-  const vault = readVault(namespace);
-  const ciphertext = vault.credentials[key];
-  if (ciphertext === undefined) {
-    return null;
-  }
+  return {
+    get(key: string): string | null {
+      const vault = readVault(vaultName);
+      const ciphertext = vault.credentials[key];
+      if (ciphertext === undefined) {
+        return null;
+      }
 
-  try {
-    return safeStorage.decryptString(Buffer.from(ciphertext, "base64"));
-  } catch (error) {
-    // The OS key changed, or the vault came from another machine. The
-    // credential is unusable, so drop it instead of retrying forever.
-    log.warn(
-      `credentials: could not decrypt ${namespace}/${key}, discarding it`,
-      error instanceof Error ? error.message : error,
-    );
-    delete vault.credentials[key];
-    writeVault(namespace, vault);
-    return null;
-  }
-};
+      try {
+        return safeStorage.decryptString(Buffer.from(ciphertext, "base64"));
+      } catch (error) {
+        // The OS key changed, or the vault came from another machine. The
+        // credential is unusable, so drop it instead of retrying forever.
+        log.warn(
+          `credentials: could not decrypt a credential for account ${accountID}, discarding it`,
+          error instanceof Error ? error.message : error,
+        );
+        delete vault.credentials[key];
+        writeVault(vaultName, vault);
+        return null;
+      }
+    },
 
-export const listCredentialKeys = (namespace: string): string[] =>
-  Object.keys(readVault(assertNamespace(namespace)).credentials);
+    set(key: string, value: string): void {
+      if (!isCredentialStoreAvailable()) {
+        throw new CredentialStoreUnavailableError(
+          "No operating-system credential storage is available, so Cyd refuses to persist this credential",
+        );
+      }
 
-export const deleteCredential = (namespace: string, key: string): void => {
-  assertNamespace(namespace);
-  const vault = readVault(namespace);
-  if (!(key in vault.credentials)) {
-    return;
-  }
-  delete vault.credentials[key];
-  writeVault(namespace, vault);
-};
+      const vault = readVault(vaultName);
+      vault.credentials[key] = safeStorage
+        .encryptString(value)
+        .toString("base64");
+      writeVault(vaultName, vault);
+    },
 
-export const deleteCredentialsWithPrefix = (
-  namespace: string,
-  prefix: string,
-): void => {
-  assertNamespace(namespace);
-  const vault = readVault(namespace);
-  let deleted = false;
-  for (const key of Object.keys(vault.credentials)) {
-    if (key.startsWith(prefix)) {
+    delete(key: string): void {
+      const vault = readVault(vaultName);
+      if (!(key in vault.credentials)) {
+        return;
+      }
       delete vault.credentials[key];
-      deleted = true;
-    }
-  }
-  if (deleted) {
-    writeVault(namespace, vault);
-  }
-};
+      writeVault(vaultName, vault);
+    },
 
-export const deleteCredentialNamespace = (namespace: string): void => {
-  const filePath = vaultPath(namespace);
-  if (fs.existsSync(filePath)) {
-    fs.rmSync(filePath, { force: true });
-  }
+    deleteWithPrefix(prefix: string): void {
+      const vault = readVault(vaultName);
+      let deleted = false;
+      for (const key of Object.keys(vault.credentials)) {
+        if (key.startsWith(prefix)) {
+          delete vault.credentials[key];
+          deleted = true;
+        }
+      }
+      if (deleted) {
+        writeVault(vaultName, vault);
+      }
+    },
+
+    keys(): string[] {
+      return Object.keys(readVault(vaultName).credentials);
+    },
+
+    deleteAll(): void {
+      const filePath = vaultPath(vaultName);
+      if (fs.existsSync(filePath)) {
+        fs.rmSync(filePath, { force: true });
+      }
+    },
+  };
 };

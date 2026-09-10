@@ -2,19 +2,20 @@ import Database from "better-sqlite3";
 import log from "electron-log/main";
 
 import { exec } from "../database/common";
-import {
-  CredentialStorageUnavailableError,
-  accountCredentialNamespace,
-  setCredential,
-} from "./store";
+import { CREDENTIAL_KEY_PREFIXES } from "./keys";
+import { CredentialStoreUnavailableError, accountCredentials } from "./store";
 
 // Cyd once serialized the X-to-Bluesky migration's OAuth state and session,
 // which carry access tokens, refresh tokens, and a private DPoP key, into the
-// account's plaintext SQLite config table. These are the keys it used.
-const LEGACY_CREDENTIAL_KEY_PATTERNS = [
-  "blueskyStateStore-%",
-  "blueskySessionStore-%",
-];
+// account's plaintext SQLite config table, under these keys.
+const LEGACY_CREDENTIAL_KEY_PATTERNS = CREDENTIAL_KEY_PREFIXES.map(
+  (prefix) => `${prefix}%`,
+);
+
+// The DID names the Bluesky identity a session belonged to. When credentials
+// are discarded rather than saved, this goes too, so the account does not
+// keep claiming a connection it can no longer use.
+const BLUESKY_DID_KEY = "blueskyDID";
 
 export type LegacyCredentialSweep = {
   // Keys that now live in protected storage.
@@ -41,31 +42,24 @@ const hasConfigTable = (db: Database.Database): boolean =>
  * runs. It only runs when a sweep actually removed something.
  */
 const purgeDeletedRowRemnants = (db: Database.Database): void => {
-  try {
+  // A failure here leaves remnants behind but must not stop the sweep, which
+  // has already removed the rows themselves.
+  const attempt = (what: string, purge: () => void) => {
+    try {
+      purge();
+    } catch (error) {
+      log.warn(`sweepLegacyOAuthCredentials: could not ${what}`, error);
+    }
+  };
+
+  const checkpoint = () => {
     db.pragma("wal_checkpoint(TRUNCATE)");
-  } catch (error) {
-    log.warn(
-      "sweepLegacyOAuthCredentials: could not checkpoint the WAL",
-      error,
-    );
-  }
-  try {
-    db.exec("VACUUM");
-  } catch (error) {
-    log.warn(
-      "sweepLegacyOAuthCredentials: could not vacuum the database",
-      error,
-    );
-  }
-  try {
-    // VACUUM rebuilds the database through the WAL, so truncate it again.
-    db.pragma("wal_checkpoint(TRUNCATE)");
-  } catch (error) {
-    log.warn(
-      "sweepLegacyOAuthCredentials: could not checkpoint the WAL",
-      error,
-    );
-  }
+  };
+
+  attempt("checkpoint the WAL", checkpoint);
+  attempt("vacuum the database", () => db.exec("VACUUM"));
+  // VACUUM rebuilds the database through the WAL, so truncate it again.
+  attempt("checkpoint the WAL", checkpoint);
 };
 
 /**
@@ -100,7 +94,7 @@ export const sweepLegacyOAuthCredentials = (
     return sweep;
   }
 
-  const namespace = accountCredentialNamespace(accountID);
+  const credentials = accountCredentials(accountID);
 
   for (const row of rows) {
     // The old store blanked rows rather than deleting them, so an empty value
@@ -109,12 +103,14 @@ export const sweepLegacyOAuthCredentials = (
       continue;
     }
     try {
-      setCredential(namespace, row.key, row.value);
+      credentials.set(row.key, row.value);
       sweep.moved.push(row.key);
     } catch (error) {
-      if (!(error instanceof CredentialStorageUnavailableError)) {
+      if (!(error instanceof CredentialStoreUnavailableError)) {
+        // Credential names can carry a Bluesky DID, so the failure names the
+        // account rather than the credential.
         log.error(
-          `sweepLegacyOAuthCredentials: could not migrate ${row.key}`,
+          `sweepLegacyOAuthCredentials: could not migrate a credential for account ${accountID}`,
           error,
         );
       }
@@ -125,6 +121,14 @@ export const sweepLegacyOAuthCredentials = (
   exec(db, `DELETE FROM config WHERE ${whereClause}`, [
     ...LEGACY_CREDENTIAL_KEY_PATTERNS,
   ]);
+
+  if (sweep.discarded.length > 0) {
+    // Cyd cannot revoke a credential it just refused to hold, so the least it
+    // can do is stop presenting the account as connected. Reconnecting
+    // replaces the session Cyd threw away.
+    exec(db, "DELETE FROM config WHERE key = ?", [BLUESKY_DID_KEY]);
+  }
+
   purgeDeletedRowRemnants(db);
 
   log.info(

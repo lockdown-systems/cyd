@@ -1,4 +1,5 @@
 import { ipcMain, session } from "electron";
+import log from "electron-log/main";
 
 import { exec, getMainDatabase, Sqlite3Info } from "./common";
 import { createXAccount, getXAccount, saveXAccount } from "./x_account";
@@ -21,10 +22,7 @@ import {
 } from "../shared_types";
 import { packageExceptionForReport } from "../util";
 import { removeBlueskyAccountStorage } from "../account_bluesky/storage";
-import {
-  accountCredentialNamespace,
-  deleteCredentialNamespace,
-} from "../credentials";
+import { accountCredentials } from "../credentials";
 
 // Types
 
@@ -258,12 +256,32 @@ export const deleteAccount = (
       break;
   }
 
-  // Every credential an account persisted lives in the namespace it owns, so
+  // Every credential an account persisted lives in the vault it owns, so
   // deleting the account leaves nothing behind that could still act on it.
-  deleteCredentialNamespace(accountCredentialNamespace(accountID));
+  accountCredentials(accountID).deleteAll();
 
   // Delete the account
   exec(getMainDatabase(), "DELETE FROM account WHERE id = ?", [accountID]);
+};
+
+/**
+ * Ask each platform to revoke whatever it authorized for this account.
+ *
+ * Revocation needs a platform controller and the network, so it is imported
+ * lazily rather than dragging the account controllers into the database
+ * layer. A platform that cannot reach its server must not block a deletion
+ * the user asked for: the local credentials go either way.
+ */
+const revokeAccountConnections = async (accountID: number): Promise<void> => {
+  try {
+    const { revokeXBlueskyConnection } = await import("../account_x/ipc");
+    await revokeXBlueskyConnection(accountID);
+  } catch (error) {
+    log.error(
+      `revokeAccountConnections: could not revoke connections for account ${accountID}`,
+      error,
+    );
+  }
 };
 
 // IPC
@@ -317,6 +335,12 @@ export const defineIPCDatabaseAccount = () => {
     "database:deleteAccount",
     async (_, accountID, confirmedAccountUUID?: string) => {
       try {
+        // Revoke before discarding: once the local credentials are gone, Cyd
+        // can no longer tell the authorization server to invalidate them.
+        await revokeAccountConnections(accountID);
+
+        // Chromium holds this account's login cookies in its own persistent
+        // partition, which is the credential store for X.
         const ses = session.fromPartition(`persist:account-${accountID}`);
         await ses.closeAllConnections();
         await ses.clearStorageData();

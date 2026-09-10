@@ -5,32 +5,22 @@ import path from "path";
 import Database from "better-sqlite3";
 import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
-const safeStorageMock = vi.hoisted(() => ({
-  isEncryptionAvailable: vi.fn(() => true),
-  getSelectedStorageBackend: vi.fn(() => "gnome_libsecret"),
-  encryptString: vi.fn((plaintext: string) => Buffer.from(`enc:${plaintext}`)),
-  decryptString: vi.fn((ciphertext: Buffer) =>
-    ciphertext.toString().replace(/^enc:/, ""),
-  ),
-}));
+import { safeStorageMock } from "../../__tests__/platform-fixtures/electronMocks";
 
 const settingsPathHolder = vi.hoisted(() => ({ value: "" }));
 
-vi.mock("electron", () => ({
-  safeStorage: safeStorageMock,
-  app: { getPath: vi.fn(() => os.tmpdir()), getVersion: vi.fn(() => "0.0.1") },
-  ipcMain: { handle: vi.fn() },
-}));
+// Each test gets its own settings directory, so vaults from one test can
+// never be read by another.
+vi.mock("../../util", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../util")>("../../util");
+  return { ...actual, getSettingsPath: () => settingsPathHolder.value };
+});
 
-vi.mock("../../util", () => ({
-  getSettingsPath: () => settingsPathHolder.value,
-}));
-
-import { getCredential, listCredentialKeys } from "../store";
+import { accountCredentials } from "../store";
 import { sweepLegacyOAuthCredentials } from "../legacy";
 
 const ACCOUNT_ID = 3;
-const NAMESPACE = "account-3";
 const SESSION_SECRET = JSON.stringify({
   dpopJwk: { kty: "EC", d: "private-dpop-key-material" },
   tokenSet: { refresh_token: "refresh-token-value" },
@@ -94,10 +84,10 @@ describe("sweepLegacyOAuthCredentials", () => {
       "blueskyStateStore-abc123",
     ]);
     expect(result.discarded).toEqual([]);
-    expect(getCredential(NAMESPACE, "blueskySessionStore-did:web:cyd")).toBe(
-      SESSION_SECRET,
-    );
-    expect(getCredential(NAMESPACE, "blueskyStateStore-abc123")).toBe(
+    expect(
+      accountCredentials(ACCOUNT_ID).get("blueskySessionStore-did:web:cyd"),
+    ).toBe(SESSION_SECRET);
+    expect(accountCredentials(ACCOUNT_ID).get("blueskyStateStore-abc123")).toBe(
       STATE_SECRET,
     );
   });
@@ -137,11 +127,24 @@ describe("sweepLegacyOAuthCredentials", () => {
       "blueskyStateStore-abc123",
     ]);
     // Rows are still removed: an unprotected credential is worse than none.
+    // The DID goes too, so the account stops claiming a connection whose
+    // session Cyd just threw away.
+    const remaining = db.prepare("SELECT key FROM config").all() as {
+      key: string;
+    }[];
+    expect(remaining.map((row) => row.key)).toEqual([]);
+    expect(readAllDatabaseBytes()).not.toContain("refresh-token-value");
+  });
+
+  test("keeps the DID when the credentials were migrated", () => {
+    seedLegacyRows();
+
+    sweepLegacyOAuthCredentials(db, ACCOUNT_ID);
+
     const remaining = db.prepare("SELECT key FROM config").all() as {
       key: string;
     }[];
     expect(remaining.map((row) => row.key)).toEqual(["blueskyDID"]);
-    expect(readAllDatabaseBytes()).not.toContain("refresh-token-value");
   });
 
   test("does nothing on an account with no legacy rows", () => {
@@ -154,7 +157,7 @@ describe("sweepLegacyOAuthCredentials", () => {
 
     expect(result.moved).toEqual([]);
     expect(result.discarded).toEqual([]);
-    expect(listCredentialKeys(NAMESPACE)).toEqual([]);
+    expect(accountCredentials(ACCOUNT_ID).keys()).toEqual([]);
   });
 
   test("is idempotent", () => {
@@ -165,9 +168,9 @@ describe("sweepLegacyOAuthCredentials", () => {
 
     expect(second.moved).toEqual([]);
     expect(second.discarded).toEqual([]);
-    expect(getCredential(NAMESPACE, "blueskySessionStore-did:web:cyd")).toBe(
-      SESSION_SECRET,
-    );
+    expect(
+      accountCredentials(ACCOUNT_ID).get("blueskySessionStore-did:web:cyd"),
+    ).toBe(SESSION_SECRET);
   });
 
   test("tolerates a database with no config table", () => {

@@ -4,48 +4,31 @@ import path from "path";
 
 import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
-const safeStorageMock = vi.hoisted(() => ({
-  isEncryptionAvailable: vi.fn(() => true),
-  getSelectedStorageBackend: vi.fn(() => "gnome_libsecret"),
-  encryptString: vi.fn((plaintext: string) => Buffer.from(`enc:${plaintext}`)),
-  decryptString: vi.fn((ciphertext: Buffer) => {
-    const text = ciphertext.toString();
-    if (!text.startsWith("enc:")) {
-      throw new Error("Unable to decrypt");
-    }
-    return text.slice("enc:".length);
-  }),
-}));
+import { safeStorageMock } from "../../__tests__/platform-fixtures/electronMocks";
 
 const settingsPathHolder = vi.hoisted(() => ({ value: "" }));
 
-vi.mock("electron", () => ({
-  safeStorage: safeStorageMock,
-  app: { getPath: vi.fn(() => os.tmpdir()), getVersion: vi.fn(() => "0.0.1") },
-  ipcMain: { handle: vi.fn() },
-}));
-
-vi.mock("../../util", () => ({
-  getSettingsPath: () => settingsPathHolder.value,
-}));
+// Each test gets its own settings directory, so vaults from one test can
+// never be read by another.
+vi.mock("../../util", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../util")>("../../util");
+  return { ...actual, getSettingsPath: () => settingsPathHolder.value };
+});
 
 import {
-  CredentialStorageUnavailableError,
-  accountCredentialNamespace,
+  CredentialStoreUnavailableError,
+  accountCredentials,
   credentialsDirectoryPath,
-  deleteCredential,
-  deleteCredentialNamespace,
-  deleteCredentialsWithPrefix,
-  getCredential,
-  isCredentialStorageAvailable,
-  listCredentialKeys,
-  setCredential,
+  isCredentialStoreAvailable,
 } from "../store";
 
-const NAMESPACE = "account-7";
+const ACCOUNT_ID = 7;
+
+const credentials = () => accountCredentials(ACCOUNT_ID);
 
 const vaultPath = () =>
-  path.join(credentialsDirectoryPath(), `${NAMESPACE}.json`);
+  path.join(credentialsDirectoryPath(), `account-${ACCOUNT_ID}.json`);
 
 describe("credential store", () => {
   beforeEach(() => {
@@ -64,15 +47,15 @@ describe("credential store", () => {
   });
 
   test("round-trips a credential", () => {
-    setCredential(NAMESPACE, "blueskySessionStore-did:web:cyd", "the-token");
+    credentials().set("blueskySessionStore-did:web:cyd", "the-token");
 
-    expect(getCredential(NAMESPACE, "blueskySessionStore-did:web:cyd")).toBe(
+    expect(credentials().get("blueskySessionStore-did:web:cyd")).toBe(
       "the-token",
     );
   });
 
   test("never writes the credential value in plaintext", () => {
-    setCredential(NAMESPACE, "session", "super-secret-refresh-token");
+    credentials().set("session", "super-secret-refresh-token");
 
     const onDisk = fs.readFileSync(vaultPath(), "utf-8");
     expect(onDisk).not.toContain("super-secret-refresh-token");
@@ -82,49 +65,49 @@ describe("credential store", () => {
   });
 
   test("returns null for credentials that were never stored", () => {
-    expect(getCredential(NAMESPACE, "missing")).toBeNull();
-    setCredential(NAMESPACE, "present", "value");
-    expect(getCredential(NAMESPACE, "missing")).toBeNull();
+    expect(credentials().get("missing")).toBeNull();
+    credentials().set("present", "value");
+    expect(credentials().get("missing")).toBeNull();
   });
 
   test("deletes a single credential", () => {
-    setCredential(NAMESPACE, "one", "1");
-    setCredential(NAMESPACE, "two", "2");
+    credentials().set("one", "1");
+    credentials().set("two", "2");
 
-    deleteCredential(NAMESPACE, "one");
+    credentials().delete("one");
 
-    expect(getCredential(NAMESPACE, "one")).toBeNull();
-    expect(getCredential(NAMESPACE, "two")).toBe("2");
+    expect(credentials().get("one")).toBeNull();
+    expect(credentials().get("two")).toBe("2");
   });
 
   test("deletes every credential sharing a prefix", () => {
-    setCredential(NAMESPACE, "blueskyStateStore-a", "a");
-    setCredential(NAMESPACE, "blueskySessionStore-b", "b");
-    setCredential(NAMESPACE, "somethingElse", "c");
+    credentials().set("blueskyStateStore-a", "a");
+    credentials().set("blueskySessionStore-b", "b");
+    credentials().set("somethingElse", "c");
 
-    deleteCredentialsWithPrefix(NAMESPACE, "bluesky");
+    credentials().deleteWithPrefix("bluesky");
 
-    expect(listCredentialKeys(NAMESPACE)).toEqual(["somethingElse"]);
+    expect(credentials().keys()).toEqual(["somethingElse"]);
   });
 
   test("deleting a namespace removes its vault from disk", () => {
-    setCredential(NAMESPACE, "one", "1");
+    credentials().set("one", "1");
     expect(fs.existsSync(vaultPath())).toBe(true);
 
-    deleteCredentialNamespace(NAMESPACE);
+    credentials().deleteAll();
 
     expect(fs.existsSync(vaultPath())).toBe(false);
-    expect(listCredentialKeys(NAMESPACE)).toEqual([]);
+    expect(credentials().keys()).toEqual([]);
   });
 
-  test("deleting an unknown namespace is a no-op", () => {
-    expect(() => deleteCredentialNamespace("account-999")).not.toThrow();
+  test("deleting an account with no vault is a no-op", () => {
+    expect(() => accountCredentials(999).deleteAll()).not.toThrow();
   });
 
   test.skipIf(process.platform === "win32")(
     "keeps the vault owner-only",
     () => {
-      setCredential(NAMESPACE, "one", "1");
+      credentials().set("one", "1");
 
       expect(fs.statSync(vaultPath()).mode & 0o777).toBe(0o600);
       expect(fs.statSync(credentialsDirectoryPath()).mode & 0o777).toBe(0o700);
@@ -134,16 +117,16 @@ describe("credential store", () => {
   test("refuses to persist when no credential backend is available", () => {
     safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
 
-    expect(isCredentialStorageAvailable()).toBe(false);
-    expect(() => setCredential(NAMESPACE, "one", "1")).toThrow(
-      CredentialStorageUnavailableError,
+    expect(isCredentialStoreAvailable()).toBe(false);
+    expect(() => credentials().set("one", "1")).toThrow(
+      CredentialStoreUnavailableError,
     );
     expect(fs.existsSync(vaultPath())).toBe(false);
     expect(safeStorageMock.encryptString).not.toHaveBeenCalled();
   });
 
   test("drops credentials it can no longer decrypt", () => {
-    setCredential(NAMESPACE, "one", "1");
+    credentials().set("one", "1");
     // A vault written under a different OS key, e.g. after the user moved the
     // profile to another machine, decrypts to nothing usable.
     fs.writeFileSync(
@@ -154,27 +137,41 @@ describe("credential store", () => {
       }),
     );
 
-    expect(getCredential(NAMESPACE, "one")).toBeNull();
+    expect(credentials().get("one")).toBeNull();
     // The unusable entry is removed rather than left to fail forever.
-    expect(listCredentialKeys(NAMESPACE)).toEqual([]);
+    expect(credentials().keys()).toEqual([]);
   });
 
   test("recovers from a corrupt vault file", () => {
     fs.mkdirSync(credentialsDirectoryPath(), { recursive: true });
     fs.writeFileSync(vaultPath(), "not json at all");
 
-    expect(getCredential(NAMESPACE, "one")).toBeNull();
-    setCredential(NAMESPACE, "one", "1");
-    expect(getCredential(NAMESPACE, "one")).toBe("1");
+    expect(credentials().get("one")).toBeNull();
+    credentials().set("one", "1");
+    expect(credentials().get("one")).toBe("1");
   });
 
-  test("rejects namespaces that could escape the credentials directory", () => {
-    expect(() => setCredential("../evil", "one", "1")).toThrow();
-    expect(() => getCredential("account/7", "one")).toThrow();
-    expect(() => deleteCredentialNamespace("")).toThrow();
+  test("rejects account IDs that could escape the credentials directory", () => {
+    // A vault is named after its account, so an account ID that is not a
+    // plain non-negative integer must never reach the filesystem.
+    expect(() => accountCredentials(1.5)).toThrow();
+    expect(() => accountCredentials(-1)).toThrow();
+    expect(() => accountCredentials(NaN)).toThrow();
   });
 
-  test("namespaces an account by its database ID", () => {
-    expect(accountCredentialNamespace(7)).toBe("account-7");
+  test("names an account's vault after the account", () => {
+    credentials().set("one", "1");
+
+    expect(fs.existsSync(vaultPath())).toBe(true);
+  });
+
+  test("discards a vault written by a future version of Cyd", () => {
+    fs.mkdirSync(credentialsDirectoryPath(), { recursive: true });
+    fs.writeFileSync(
+      vaultPath(),
+      JSON.stringify({ version: 99, credentials: { one: "whatever" } }),
+    );
+
+    expect(credentials().get("one")).toBeNull();
   });
 });

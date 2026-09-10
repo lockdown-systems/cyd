@@ -17,11 +17,18 @@ const shouldDisclose = computed(
   () => props.protection?.disclosureRequired === true,
 );
 
+// Each case gets its own words. Telling someone their desktop has no keyring
+// when Cyd simply did not recognize their password store would be a guess
+// dressed as a diagnosis.
 const message = computed(() => {
-  if (props.protection?.canPersist === false) {
-    return t("app.credentialStorage.unavailable");
+  switch (props.protection?.backend) {
+    case "basic_text":
+      return t("app.credentialStore.noKeyring");
+    case "unknown":
+      return t("app.credentialStore.unrecognizedKeyring");
+    default:
+      return t("app.credentialStore.unavailable");
   }
-  return t("app.credentialStorage.unprotectedLinux");
 });
 
 // Naming the backend keeps the warning honest and checkable: the user can
@@ -39,38 +46,40 @@ const dismissed = ref(false);
 <template>
   <div
     v-if="shouldDisclose && !dismissed"
-    class="credential-storage-bar"
+    class="credential-store-bar"
     role="alert"
   >
     <button
       type="button"
-      class="btn-close credential-storage-bar-close"
-      :aria-label="t('app.credentialStorage.dismiss')"
+      class="btn-close credential-store-bar-close"
+      :aria-label="t('app.credentialStore.dismiss')"
       @click="dismissed = true"
     ></button>
     <p>
-      <strong>{{ t("app.credentialStorage.unprotectedTitle") }}</strong>
+      <strong>{{ t("app.credentialStore.unprotectedTitle") }}</strong>
     </p>
     <p class="text-muted">
       {{ message }}
-      <span class="credential-storage-backend">({{ backendName }})</span>
+      <span class="credential-store-backend">{{
+        t("app.credentialStore.backendLabel", { backend: backendName })
+      }}</span>
     </p>
   </div>
 </template>
 
 <style scoped>
-.credential-storage-bar {
+.credential-store-bar {
   position: relative;
   padding: 0.75rem 2rem 0.75rem 1rem;
   background-color: var(--bs-warning-bg-subtle, #fff3cd);
   border-top: 1px solid var(--bs-warning-border-subtle, #ffe69c);
 }
 
-.credential-storage-bar p {
+.credential-store-bar p {
   margin-bottom: 0;
 }
 
-.credential-storage-bar-close {
+.credential-store-bar-close {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;

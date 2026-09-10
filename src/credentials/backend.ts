@@ -111,9 +111,14 @@ export const getCredentialProtection = (): CredentialProtection => {
       rawBackend,
       platform,
       // libsecret and KWallet are the only Linux stores Cyd treats as
-      // protecting credentials; everything else is a disclosed fallback.
+      // protecting credentials.
       osProtected,
-      canPersist: true,
+      // basic_text is the one deliberate fallback: it protects nothing, but
+      // a Linux desktop without a keyring is common and refusing there would
+      // leave those users unable to connect at all. A store Cyd does not
+      // recognize gets no such benefit of the doubt, because Cyd cannot say
+      // what it protects against.
+      canPersist: osProtected || backend === "basic_text",
       disclosureRequired: !osProtected,
     };
   }

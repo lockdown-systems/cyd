@@ -33,11 +33,10 @@ import {
   deleteConfig as globalDeleteConfig,
 } from "../../../database";
 import {
-  accountCredentialNamespace,
-  deleteCredential,
-  deleteCredentialsWithPrefix,
-  getCredential,
-  setCredential,
+  BLUESKY_OAUTH_SESSION_PREFIX,
+  BLUESKY_OAUTH_STATE_PREFIX,
+  accountCredentials,
+  type AccountCredentials,
 } from "../../../credentials";
 import {
   XTweetRow,
@@ -45,11 +44,6 @@ import {
   XTweetURLRow,
   XTweetBlueskyMigrationRow,
 } from "../../types";
-
-// Credential names inside the account's credential namespace. They match the
-// legacy config keys so a migrated credential keeps its identity.
-const STATE_CREDENTIAL_PREFIX = "blueskyStateStore-";
-const SESSION_CREDENTIAL_PREFIX = "blueskySessionStore-";
 
 /**
  * Service class for handling Bluesky migration operations for X/Twitter accounts.
@@ -74,8 +68,8 @@ export class BlueskyService {
     private updateRateLimitInfo: (info: Partial<XRateLimitInfo>) => void,
   ) {}
 
-  private credentialNamespace(): string {
-    return accountCredentialNamespace(this.accountID);
+  private credentials(): AccountCredentials {
+    return accountCredentials(this.accountID);
   }
 
   private async clientFromClientID(
@@ -86,7 +80,7 @@ export class BlueskyService {
     // refresh tokens plus a private DPoP key. Both are account-control
     // credentials, so they live in protected storage and never in this
     // account's SQLite config table.
-    const namespace = this.credentialNamespace();
+    const credentials = this.credentials();
     const options: NodeOAuthClientFromMetadataOptions = {
       clientId: `https://${host}/${path}`,
       stateStore: {
@@ -94,40 +88,36 @@ export class BlueskyService {
           key: string,
           internalState: NodeSavedState,
         ): Promise<void> => {
-          setCredential(
-            namespace,
-            `${STATE_CREDENTIAL_PREFIX}${key}`,
+          credentials.set(
+            `${BLUESKY_OAUTH_STATE_PREFIX}${key}`,
             JSON.stringify(internalState),
           );
         },
         get: async (key: string): Promise<NodeSavedState | undefined> => {
-          const stateStore = getCredential(
-            namespace,
-            `${STATE_CREDENTIAL_PREFIX}${key}`,
+          const stateStore = credentials.get(
+            `${BLUESKY_OAUTH_STATE_PREFIX}${key}`,
           );
           return stateStore ? JSON.parse(stateStore) : undefined;
         },
         del: async (key: string): Promise<void> => {
-          deleteCredential(namespace, `${STATE_CREDENTIAL_PREFIX}${key}`);
+          credentials.delete(`${BLUESKY_OAUTH_STATE_PREFIX}${key}`);
         },
       },
       sessionStore: {
         set: async (sub: string, session: NodeSavedSession): Promise<void> => {
-          setCredential(
-            namespace,
-            `${SESSION_CREDENTIAL_PREFIX}${sub}`,
+          credentials.set(
+            `${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`,
             JSON.stringify(session),
           );
         },
         get: async (sub: string): Promise<NodeSavedSession | undefined> => {
-          const sessionStore = getCredential(
-            namespace,
-            `${SESSION_CREDENTIAL_PREFIX}${sub}`,
+          const sessionStore = credentials.get(
+            `${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`,
           );
           return sessionStore ? JSON.parse(sessionStore) : undefined;
         },
         del: async (sub: string): Promise<void> => {
-          deleteCredential(namespace, `${SESSION_CREDENTIAL_PREFIX}${sub}`);
+          credentials.delete(`${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`);
         },
       },
     };
@@ -248,9 +238,9 @@ export class BlueskyService {
     // Finish the callback
     const { session, state } = await this.blueskyClient.callback(params);
 
+    // The OAuth state is authorization material, so it is never logged.
     log.info(
-      "BlueskyService.callback: authorize() was called with state",
-      state,
+      `BlueskyService.callback: authorize() returned a state: ${state !== undefined}`,
     );
     log.info("BlueskyService.callback: user authenticated as", session.did);
 
@@ -292,14 +282,14 @@ export class BlueskyService {
     await this.deleteConfig("blueskyDID");
 
     // Delete the OAuth state and session from protected storage
-    const namespace = this.credentialNamespace();
-    deleteCredentialsWithPrefix(namespace, STATE_CREDENTIAL_PREFIX);
-    deleteCredentialsWithPrefix(namespace, SESSION_CREDENTIAL_PREFIX);
+    const credentials = this.credentials();
+    credentials.deleteWithPrefix(BLUESKY_OAUTH_STATE_PREFIX);
+    credentials.deleteWithPrefix(BLUESKY_OAUTH_SESSION_PREFIX);
 
     // Older versions of Cyd kept these in the account's config table. Sweep
     // them here too, in case a database predates the credential facility.
-    await this.deleteConfigLike(`${STATE_CREDENTIAL_PREFIX}%`);
-    await this.deleteConfigLike(`${SESSION_CREDENTIAL_PREFIX}%`);
+    await this.deleteConfigLike(`${BLUESKY_OAUTH_STATE_PREFIX}%`);
+    await this.deleteConfigLike(`${BLUESKY_OAUTH_SESSION_PREFIX}%`);
   }
 
   async getTweetCounts(): Promise<XMigrateTweetCounts> {
