@@ -90,6 +90,7 @@
     },
     "updates": {
       "updateAvailable": "Cyd update available.",
+      "dismiss": "Dismiss",
       "shouldUseLatestVersion": "You should always use the latest version of Cyd.",
       "installViaPackageManager": "Install updates using your operating system's package manager.",
       "loadingUpdateStatus": "Loading update status...",
