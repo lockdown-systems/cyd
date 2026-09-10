@@ -105,9 +105,9 @@
     },
     "credentialStore": {
       "unprotectedTitle": "Your saved logins are not protected on this computer.",
-      "noKeyring": "Cyd could not find a system keyring, so your login cookies and Bluesky credentials are stored on this computer without operating-system protection. Anyone who can read your files can use them. Install and unlock GNOME Keyring (libsecret) or KWallet, then restart Cyd.",
-      "unrecognizedKeyring": "Cyd does not recognize the password store your desktop selected, so it cannot say how well your credentials are protected. Your Bluesky credentials are stored on this computer without operating-system protection, so anyone who can read your files can use them. Install and unlock GNOME Keyring (libsecret) or KWallet, then restart Cyd.",
-      "unavailable": "Cyd could not find any way to protect credentials on this computer, so your login cookies and Bluesky credentials are stored without operating-system protection. Anyone who can read your files can use them.",
+      "noKeyring": "No system keyring found, so Cyd stores your logins unencrypted. Anyone who can read your files can use them. Install GNOME Keyring (libsecret) or KWallet, then restart Cyd.",
+      "unrecognizedKeyring": "Cyd does not recognize your desktop's password store, so it stores your logins unencrypted. Install GNOME Keyring (libsecret) or KWallet, then restart Cyd.",
+      "unavailable": "Cyd found no way to protect credentials here, so it stores your logins unencrypted. Anyone who can read your files can use them.",
       "backendLabel": "Password store: {backend}",
       "dismiss": "Dismiss"
     }

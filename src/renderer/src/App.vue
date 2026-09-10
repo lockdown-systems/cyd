@@ -336,14 +336,16 @@ onUnmounted(() => {
         @check-for-updates-clicked="checkForUpdates(true)"
       />
 
-      <CredentialStoreBar :protection="credentialProtection" />
+      <div class="bottom-bars">
+        <UpdatesBar
+          v-if="updatesAvailable"
+          :update-status="updateStatus"
+          :platform="platform"
+          @restart-to-update-clicked="restartToUpdateClicked"
+        />
 
-      <UpdatesBar
-        v-if="updatesAvailable"
-        :update-status="updateStatus"
-        :platform="platform"
-        @restart-to-update-clicked="restartToUpdateClicked"
-      />
+        <CredentialStoreBar :protection="credentialProtection" />
+      </div>
     </template>
 
     <!-- Sign in modal -->

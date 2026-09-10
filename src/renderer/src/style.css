@@ -89,6 +89,11 @@ body {
   text-align: right;
 }
 
+/* Lifted clear of the credential disclosure, which is pinned to the bottom. */
+.updates-bar-raised {
+  bottom: 92px;
+}
+
 .updates-bar p {
   margin: 0;
 }

@@ -65,9 +65,9 @@ describe("CredentialStoreBar", () => {
     const bar = wrapper.find(".credential-store-bar");
     expect(bar.exists()).toBe(true);
     expect(bar.text()).toContain("something_new");
-    expect(bar.text()).toContain("does not recognize the password store");
+    expect(bar.text()).toContain("does not recognize your desktop");
     // It must not claim the desktop has no keyring; Cyd does not know that.
-    expect(bar.text()).not.toContain("could not find a system keyring");
+    expect(bar.text()).not.toContain("No system keyring found");
   });
 
   it("explains when no facility could protect the credentials", () => {
@@ -79,10 +79,10 @@ describe("CredentialStoreBar", () => {
     );
 
     const bar = wrapper.find(".credential-store-bar");
-    expect(bar.text()).toContain("without operating-system protection");
+    expect(bar.text()).toContain("unencrypted");
     // Cyd still saves the connection, so the warning must say what the risk
     // is rather than imply that nothing is stored.
-    expect(bar.text()).toContain("login cookies");
+    expect(bar.text()).toContain("stores your logins");
     expect(bar.text()).not.toContain("will not save");
   });
 

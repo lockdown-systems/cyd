@@ -69,8 +69,15 @@ const dismissed = ref(false);
 
 <style scoped>
 .credential-store-bar {
-  position: relative;
-  padding: 0.75rem 2rem 0.75rem 1rem;
+  /* A disclosure the user has to scroll to find is not a disclosure, so this
+     is pinned to the bottom of the window rather than left in the document
+     flow. It sits above the updates bar, which moves up to make room. */
+  z-index: 101;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
   background-color: var(--bs-warning-bg-subtle, #fff3cd);
   border-top: 1px solid var(--bs-warning-border-subtle, #ffe69c);
 }
