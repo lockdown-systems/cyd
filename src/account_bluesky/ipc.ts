@@ -2,7 +2,10 @@ import { ipcMain } from "electron";
 import log from "electron-log/main";
 
 import { BlueskyAccountController } from "./bluesky_account_controller";
-import type { BlueskyAccount, BlueskyLocalAccountPaths } from "../shared_types";
+import type {
+  BlueskyLocalAccount,
+  BlueskyLocalAccountPaths,
+} from "../shared_types";
 import { packageExceptionForReport } from "../util";
 
 const controllers: Record<number, BlueskyAccountController> = {};
@@ -23,7 +26,7 @@ export const defineIPCBluesky = () => {
   // store, and staging area on first use.
   ipcMain.handle(
     "Bluesky:openLocalAccount",
-    async (_, accountID: number): Promise<BlueskyAccount | null> => {
+    async (_, accountID: number): Promise<BlueskyLocalAccount | null> => {
       try {
         const controller = getBlueskyAccountController(accountID);
         controller.initDB();

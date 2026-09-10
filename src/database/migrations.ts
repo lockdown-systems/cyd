@@ -223,28 +223,46 @@ export const mainMigrations: Migration[] = [
   //
   // The old blueskyAccount table was never reachable outside a disabled
   // feature flag, so its rows are abandoned rather than migrated. This is a
-  // forward migration: it drops the obsolete table and link and creates the
-  // new local account model, leaving migration history intact.
+  // forward migration: it drops the obsolete table and its link, then creates
+  // the new model, leaving migration history intact.
+  //
+  // Every statement here is safe to run again on an already-migrated
+  // database, so a crash between applying the schema and recording the
+  // migration cannot wedge Cyd on the next launch.
   {
     name: "replace the dormant Bluesky model with UUID-keyed local accounts",
     sql: [
       `DELETE FROM account WHERE type = 'Bluesky';`,
       `DROP TABLE IF EXISTS blueskyAccount;`,
-      `ALTER TABLE account DROP COLUMN blueskyAccountID;`,
-      `CREATE TABLE blueskyAccount (
+      // SQLite cannot drop a column conditionally, so the obsolete link is
+      // removed by rebuilding the table without it.
+      `DROP TABLE IF EXISTS accountReplacement;`,
+      `CREATE TABLE accountReplacement (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    accessedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    did TEXT DEFAULT NULL,
+    type TEXT NOT NULL DEFAULT 'unknown',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    xAccountId INTEGER DEFAULT NULL,
+    uuid TEXT NOT NULL,
+    facebookAccountID INTEGER DEFAULT NULL
+);`,
+      `INSERT INTO accountReplacement
+    (id, type, sortOrder, xAccountId, uuid, facebookAccountID)
+SELECT id, type, sortOrder, xAccountId, uuid, facebookAccountID FROM account;`,
+      `DROP TABLE account;`,
+      `ALTER TABLE accountReplacement RENAME TO account;`,
+      // A Bluesky local account is identified by its account's Cyd UUID, so
+      // that UUID has to be unique.
+      `CREATE UNIQUE INDEX IF NOT EXISTS accountUUID ON account (uuid);`,
+      `CREATE TABLE IF NOT EXISTS blueskyLocalAccount (
+    uuid TEXT PRIMARY KEY,
+    createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    accessedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    did TEXT UNIQUE,
     handle TEXT DEFAULT NULL,
     displayName TEXT DEFAULT NULL,
     profileImageDataURI TEXT DEFAULT NULL
 );`,
-      // A Bluesky identity may appear at most once locally, but a local
-      // account that has never connected has no DID yet.
-      `CREATE UNIQUE INDEX blueskyAccountDID ON blueskyAccount (did) WHERE did IS NOT NULL;`,
-      `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
     ],
   },
 ];

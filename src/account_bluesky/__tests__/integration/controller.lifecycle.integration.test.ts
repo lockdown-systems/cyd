@@ -62,6 +62,7 @@ describe("BlueskyAccountController - local account lifecycle", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
     expect(controller.account?.did).toBeNull();
+    expect(controller.account?.uuid).toEqual(account.uuid);
 
     const paths = controller.getPaths();
     expect(paths.accountPath).toContain(account.uuid);
@@ -263,13 +264,23 @@ describe("BlueskyAccountController - local account lifecycle", () => {
     expect(bob.controller.getMedia(bobMedia.digest)).not.toBeNull();
   });
 
+  test("Cyd's account list cannot delete a Bluesky account without confirming it", () => {
+    const { account, controller } = context.createLocalAccount();
+    const paths = controller.getPaths();
+
+    expect(() => deleteAccount(account.id)).toThrow(/requires confirming/);
+
+    expect(fs.existsSync(paths.accountPath)).toBe(true);
+    expect(getAccount(account.id)).not.toBeNull();
+  });
+
   test("removing the account through Cyd's account list also removes its local resources", () => {
     const { account, controller } = context.createLocalAccount();
     const paths = controller.getPaths();
     controller.saveMedia(Buffer.from("saved data"), "image/png");
     controller.cleanup();
 
-    deleteAccount(account.id);
+    deleteAccount(account.id, account.uuid);
 
     expect(fs.existsSync(paths.accountPath)).toBe(false);
     expect(getAccount(account.id)).toBeNull();

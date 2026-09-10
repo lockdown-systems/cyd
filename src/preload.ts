@@ -19,7 +19,7 @@ import {
   XMigrateTweetCounts,
   XAccount,
   // Bluesky
-  BlueskyAccount,
+  BlueskyLocalAccount,
   BlueskyLocalAccountPaths,
   // Facebook
   FacebookJob,
@@ -190,8 +190,12 @@ const electronAPI = {
     saveAccount: (accountJSON: string) => {
       ipcRenderer.invoke("database:saveAccount", accountJSON);
     },
-    deleteAccount: (accountID: number) => {
-      return ipcRenderer.invoke("database:deleteAccount", accountID);
+    deleteAccount: (accountID: number, confirmedAccountUUID?: string) => {
+      return ipcRenderer.invoke(
+        "database:deleteAccount",
+        accountID,
+        confirmedAccountUUID,
+      );
     },
   },
 
@@ -492,7 +496,9 @@ const electronAPI = {
 
   // Bluesky functions
   Bluesky: {
-    openLocalAccount: (accountID: number): Promise<BlueskyAccount | null> => {
+    openLocalAccount: (
+      accountID: number,
+    ): Promise<BlueskyLocalAccount | null> => {
       return ipcRenderer.invoke("Bluesky:openLocalAccount", accountID);
     },
     getLocalAccountPaths: (

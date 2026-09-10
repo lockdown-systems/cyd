@@ -1,10 +1,10 @@
-import { exec, getMainDatabase, Sqlite3Info } from "./common";
-import { BlueskyAccount } from "../shared_types";
+import { exec, getMainDatabase } from "./common";
+import { BlueskyLocalAccount } from "../shared_types";
 
 // Types
 
-export interface BlueskyAccountRow {
-  id: number;
+export interface BlueskyLocalAccountRow {
+  uuid: string;
   createdAt: string;
   updatedAt: string;
   accessedAt: string;
@@ -16,9 +16,11 @@ export interface BlueskyAccountRow {
 
 // Functions
 
-const blueskyAccountFromRow = (row: BlueskyAccountRow): BlueskyAccount => {
+const blueskyLocalAccountFromRow = (
+  row: BlueskyLocalAccountRow,
+): BlueskyLocalAccount => {
   return {
-    id: row.id,
+    uuid: row.uuid,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     accessedAt: new Date(row.accessedAt),
@@ -29,64 +31,76 @@ const blueskyAccountFromRow = (row: BlueskyAccountRow): BlueskyAccount => {
   };
 };
 
-// Get a single Bluesky local account by ID
-export const getBlueskyAccount = (id: number): BlueskyAccount | null => {
-  const row: BlueskyAccountRow | undefined = exec(
+// Get a single Bluesky local account by its Cyd UUID
+export const getBlueskyLocalAccount = (
+  uuid: string,
+): BlueskyLocalAccount | null => {
+  const row: BlueskyLocalAccountRow | undefined = exec(
     getMainDatabase(),
-    "SELECT * FROM blueskyAccount WHERE id = ?",
-    [id],
+    "SELECT * FROM blueskyLocalAccount WHERE uuid = ?",
+    [uuid],
     "get",
-  ) as BlueskyAccountRow | undefined;
+  ) as BlueskyLocalAccountRow | undefined;
   if (!row) {
     return null;
   }
-  return blueskyAccountFromRow(row);
+  return blueskyLocalAccountFromRow(row);
 };
 
 // Get the Bluesky local account that represents a Bluesky identity
-export const getBlueskyAccountByDID = (did: string): BlueskyAccount | null => {
-  const row: BlueskyAccountRow | undefined = exec(
+export const getBlueskyLocalAccountByDID = (
+  did: string,
+): BlueskyLocalAccount | null => {
+  const row: BlueskyLocalAccountRow | undefined = exec(
     getMainDatabase(),
-    "SELECT * FROM blueskyAccount WHERE did = ?",
+    "SELECT * FROM blueskyLocalAccount WHERE did = ?",
     [did],
     "get",
-  ) as BlueskyAccountRow | undefined;
+  ) as BlueskyLocalAccountRow | undefined;
   if (!row) {
     return null;
   }
-  return blueskyAccountFromRow(row);
+  return blueskyLocalAccountFromRow(row);
 };
 
 // Get all Bluesky local accounts
-export const getBlueskyAccounts = (): BlueskyAccount[] => {
-  const rows: BlueskyAccountRow[] = exec(
+export const getBlueskyLocalAccounts = (): BlueskyLocalAccount[] => {
+  const rows: BlueskyLocalAccountRow[] = exec(
     getMainDatabase(),
-    "SELECT * FROM blueskyAccount",
+    "SELECT * FROM blueskyLocalAccount",
     [],
     "all",
-  ) as BlueskyAccountRow[];
-  return rows.map(blueskyAccountFromRow);
+  ) as BlueskyLocalAccountRow[];
+  return rows.map(blueskyLocalAccountFromRow);
 };
 
-// Create a new Bluesky local account
-export const createBlueskyAccount = (): BlueskyAccount => {
-  const info: Sqlite3Info = exec(
-    getMainDatabase(),
-    "INSERT INTO blueskyAccount DEFAULT VALUES",
-  ) as Sqlite3Info;
-  const account = getBlueskyAccount(info.lastInsertRowid);
+// Create a new Bluesky local account, keyed by its account's Cyd UUID
+export const createBlueskyLocalAccount = (
+  uuid: string,
+): BlueskyLocalAccount => {
+  exec(getMainDatabase(), "INSERT INTO blueskyLocalAccount (uuid) VALUES (?)", [
+    uuid,
+  ]);
+  const account = getBlueskyLocalAccount(uuid);
   if (!account) {
     throw new Error("Failed to create account");
   }
   return account;
 };
 
-// Update the Bluesky local account based on account.id
-export const saveBlueskyAccount = (account: BlueskyAccount) => {
+// Update a Bluesky local account's identity and profile data
+export const saveBlueskyLocalAccount = (account: BlueskyLocalAccount) => {
+  // The DID is the durable social identity of this local account. Its handle
+  // and display name change freely; the identity behind them does not.
+  const storedAccount = getBlueskyLocalAccount(account.uuid);
+  if (storedAccount?.did && storedAccount.did !== account.did) {
+    throw new Error("A Bluesky local account's identity cannot change");
+  }
+
   exec(
     getMainDatabase(),
     `
-        UPDATE blueskyAccount
+        UPDATE blueskyLocalAccount
         SET
             updatedAt = CURRENT_TIMESTAMP,
             accessedAt = CURRENT_TIMESTAMP,
@@ -94,19 +108,21 @@ export const saveBlueskyAccount = (account: BlueskyAccount) => {
             handle = ?,
             displayName = ?,
             profileImageDataURI = ?
-        WHERE id = ?
+        WHERE uuid = ?
     `,
     [
       account.did,
       account.handle,
       account.displayName,
       account.profileImageDataURI,
-      account.id,
+      account.uuid,
     ],
   );
 };
 
-// Delete a Bluesky local account's settings row
-export const deleteBlueskyAccount = (id: number) => {
-  exec(getMainDatabase(), "DELETE FROM blueskyAccount WHERE id = ?", [id]);
+// Delete a Bluesky local account's row
+export const deleteBlueskyLocalAccount = (uuid: string) => {
+  exec(getMainDatabase(), "DELETE FROM blueskyLocalAccount WHERE uuid = ?", [
+    uuid,
+  ]);
 };

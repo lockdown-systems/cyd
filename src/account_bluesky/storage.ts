@@ -129,25 +129,26 @@ export const storeBlueskyMediaFile = (
 ): StoredMediaFile => {
   const digest = sha256Digest(data);
   const assetPath = blueskyMediaPath(mediaPath, digest);
-
-  if (fs.existsSync(assetPath)) {
-    return {
-      digest,
-      byteLength: data.length,
-      path: assetPath,
-      deduplicated: true,
-    };
-  }
-
   ensureOwnerOnlyDirectory(path.dirname(assetPath));
-  fs.writeFileSync(assetPath, data, { mode: OWNER_ONLY_FILE });
+
+  // Create the asset exclusively, so two jobs saving the same bytes at once
+  // cannot half-overwrite one file.
+  let deduplicated = false;
+  try {
+    fs.writeFileSync(assetPath, data, { flag: "wx", mode: OWNER_ONLY_FILE });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      throw error;
+    }
+    deduplicated = true;
+  }
   ensureOwnerOnlyFile(assetPath);
 
   return {
     digest,
     byteLength: data.length,
     path: assetPath,
-    deduplicated: false,
+    deduplicated,
   };
 };
 

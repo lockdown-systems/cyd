@@ -74,7 +74,7 @@ describe("TabsView", () => {
           type: "unknown",
           sortOrder: 0,
           xAccount: null,
-          blueskyAccount: null,
+          blueskyLocalAccount: null,
           uuid: accountUUID,
         };
         testDatabase.accounts.push(newAccount);
@@ -292,5 +292,31 @@ describe("TabsView", () => {
     expect(wrapper.find(".account-button-3").exists()).toBe(true);
     expect(wrapper.find(".account-button-4").exists()).toBe(true);
     expect(wrapper.find(".account-button-5").exists()).toBe(false);
+  });
+
+  it("confirms which account is being removed", async () => {
+    testDatabase.accounts = [
+      {
+        id: 1,
+        type: "Bluesky",
+        sortOrder: 0,
+        xAccount: null,
+        blueskyLocalAccount: null,
+        facebookAccount: null,
+        uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+      },
+    ];
+
+    await mountComponent();
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const componentInstance = wrapper.vm as unknown as TabsViewInstance;
+    await componentInstance.removeAccount(1);
+
+    expect(window.electron.database.deleteAccount).toHaveBeenCalledWith(
+      1,
+      "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+    );
   });
 });

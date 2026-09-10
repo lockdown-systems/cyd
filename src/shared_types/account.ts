@@ -3,7 +3,7 @@ export type Account = {
   type: string; // "X"
   sortOrder: number;
   xAccount: XAccount | null;
-  blueskyAccount: BlueskyAccount | null;
+  blueskyLocalAccount: BlueskyLocalAccount | null;
   facebookAccount: FacebookAccount | null;
   uuid: string;
 };
@@ -56,8 +56,13 @@ export type XAccount = {
   tombstoneLockAccount: boolean;
 };
 
-export type BlueskyAccount = {
-  id: number;
+/**
+ * This installation's local representation of a Bluesky identity. It is
+ * identified by its Cyd UUID, which is also the account's UUID, so a handle
+ * change never moves its storage.
+ */
+export type BlueskyLocalAccount = {
+  uuid: string;
   createdAt: Date;
   updatedAt: Date;
   accessedAt: Date;

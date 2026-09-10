@@ -7,14 +7,14 @@ import {
   exec,
   runMigrations,
   getAccount,
-  getBlueskyAccountByDID,
-  saveBlueskyAccount,
+  getBlueskyLocalAccountByDID,
+  saveBlueskyLocalAccount,
   deleteAccount,
   getConfig,
   setConfig,
 } from "../database";
 import type {
-  BlueskyAccount,
+  BlueskyLocalAccount,
   BlueskyDeleteConfirmation,
   BlueskyJob,
   BlueskyLocalAccountPaths,
@@ -44,7 +44,7 @@ import type { BlueskyJobRow, BlueskyMediaRow } from "./types";
 export class BlueskyAccountController {
   public accountID: number;
   public accountUUID: string = "";
-  public account: BlueskyAccount | null = null;
+  public account: BlueskyLocalAccount | null = null;
   public db: Database.Database | null = null;
 
   private paths: BlueskyLocalAccountPaths | null = null;
@@ -71,7 +71,7 @@ export class BlueskyAccountController {
     }
 
     this.accountUUID = account.uuid;
-    this.account = account.blueskyAccount;
+    this.account = account.blueskyLocalAccount;
   }
 
   /**
@@ -135,8 +135,8 @@ export class BlueskyAccountController {
     if (!this.account) {
       throw new Error(`Bluesky local account ${this.accountID} not found`);
     }
-    const existing = getBlueskyAccountByDID(did);
-    if (existing && existing.id !== this.account.id) {
+    const existing = getBlueskyLocalAccountByDID(did);
+    if (existing && existing.uuid !== this.account.uuid) {
       // Diagnostics must not carry DIDs, so the message names neither
       // identity nor account.
       throw new Error(
@@ -144,7 +144,7 @@ export class BlueskyAccountController {
       );
     }
     this.account.did = did;
-    saveBlueskyAccount(this.account);
+    saveBlueskyLocalAccount(this.account);
     this.refreshAccount();
   }
 
@@ -169,7 +169,7 @@ export class BlueskyAccountController {
     if (profile.profileImageDataURI !== undefined) {
       this.account.profileImageDataURI = profile.profileImageDataURI;
     }
-    saveBlueskyAccount(this.account);
+    saveBlueskyLocalAccount(this.account);
     this.refreshAccount();
   }
 
@@ -333,7 +333,7 @@ export class BlueskyAccountController {
     // Closing the database first releases the files that deleting the account
     // is about to remove.
     this.cleanup();
-    deleteAccount(this.accountID);
+    deleteAccount(this.accountID, confirmation.confirmedAccountUUID);
 
     this.paths = null;
     this.account = null;
