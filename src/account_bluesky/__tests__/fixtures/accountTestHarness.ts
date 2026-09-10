@@ -2,14 +2,14 @@ import { BlueskyAccountController } from "../../bluesky_account_controller";
 import type { Account } from "../../../shared_types";
 import { createTestAccount } from "../../../__tests__/platform-fixtures/accountFactory";
 
-export interface BlueskyLocalAccountHandle {
+export interface BlueskyTestAccount {
   account: Account;
   controller: BlueskyAccountController;
 }
 
 export interface BlueskyControllerTestContext {
   /** Create another Bluesky local account alongside the existing ones. */
-  createLocalAccount(handle?: string): BlueskyLocalAccountHandle;
+  createLocalAccount(handle?: string): BlueskyTestAccount;
   /** Open an existing local account again, as a restarted app would. */
   reopenLocalAccount(accountID: number): BlueskyAccountController;
   cleanup(): void;
@@ -33,7 +33,7 @@ export const createBlueskyControllerTestContext =
     };
 
     return {
-      createLocalAccount: (handle?: string): BlueskyLocalAccountHandle => {
+      createLocalAccount: (handle?: string): BlueskyTestAccount => {
         const { account, cleanup } = createTestAccount({
           type: "Bluesky",
           username: handle,

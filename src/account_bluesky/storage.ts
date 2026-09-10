@@ -3,7 +3,10 @@ import path from "path";
 import crypto from "crypto";
 
 import { getDataPath } from "../util";
-import type { BlueskyLocalAccountPaths } from "../shared_types";
+import type {
+  BlueskyLocalAccountPaths,
+  BlueskySavedMedia,
+} from "../shared_types";
 
 // Every Bluesky local account owns one UUID-keyed directory. Handles are
 // mutable profile data, so they never appear in a path: renaming a Bluesky
@@ -49,6 +52,18 @@ export const ensureOwnerOnlyFile = (filePath: string): string => {
 };
 
 /**
+ * SQLite creates the database and its write-ahead log side by side with
+ * default permissions, and saved data lives in the log until it is
+ * checkpointed. All three files must be owner-only.
+ */
+export const ensureOwnerOnlyDatabase = (databasePath: string): string => {
+  for (const suffix of ["", "-wal", "-shm"]) {
+    ensureOwnerOnlyFile(`${databasePath}${suffix}`);
+  }
+  return databasePath;
+};
+
+/**
  * Where one Bluesky local account keeps its local resources. This only
  * computes paths; nothing is created.
  */
@@ -87,7 +102,7 @@ export const removeBlueskyAccountStorage = (accountUUID: string): void => {
   fs.rmSync(paths.accountPath, { recursive: true, force: true });
 };
 
-export const sha256Digest = (data: Buffer): string =>
+const sha256Digest = (data: Buffer): string =>
   crypto.createHash("sha256").update(data).digest("hex");
 
 /**
@@ -102,12 +117,7 @@ export const blueskyMediaPath = (mediaPath: string, digest: string): string => {
   return path.join(mediaPath, "sha256", digest.slice(0, 2), digest);
 };
 
-export type StoredMediaFile = {
-  digest: string;
-  byteLength: number;
-  path: string;
-  deduplicated: boolean;
-};
+export type StoredMediaFile = Omit<BlueskySavedMedia, "mediaType">;
 
 /**
  * Write bytes into an account's content-addressed media store. Storing the

@@ -1,3 +1,5 @@
+import type { PlatformJob } from "./common";
+
 // Types for Bluesky local accounts.
 //
 // A Bluesky local account is this installation's local representation of a
@@ -27,19 +29,17 @@ export type BlueskyStoredMedia = {
   mediaType: string;
   /** Absolute path of the stored asset inside this account's media store. */
   path: string;
-  /** True when the identical bytes were already stored for this account. */
+};
+
+/** The result of saving media, which may already have been stored. */
+export type BlueskySavedMedia = BlueskyStoredMedia & {
+  /** True when this account already held the identical bytes. */
   deduplicated: boolean;
 };
 
-export type BlueskyJob = {
-  id: number | null;
-  jobType: string;
-  status: string;
+export type BlueskyJob = PlatformJob & {
+  jobType: string; // "savePosts"
   scheduledAt: Date;
-  startedAt: Date | null;
-  finishedAt: Date | null;
-  progressJSON: string;
-  error: string | null;
 };
 
 /**

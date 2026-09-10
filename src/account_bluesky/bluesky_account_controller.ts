@@ -18,6 +18,7 @@ import type {
   BlueskyDeleteConfirmation,
   BlueskyJob,
   BlueskyLocalAccountPaths,
+  BlueskySavedMedia,
   BlueskyStoredMedia,
 } from "../shared_types";
 import {
@@ -25,8 +26,7 @@ import {
   clearBlueskyStagingAreas,
   createBlueskyStagingArea,
   ensureBlueskyAccountStorage,
-  ensureOwnerOnlyFile,
-  removeBlueskyAccountStorage,
+  ensureOwnerOnlyDatabase,
   storeBlueskyMediaFile,
 } from "./storage";
 import { migrations } from "./controller/migrations";
@@ -99,7 +99,9 @@ export class BlueskyAccountController {
     this.db = new Database(paths.databasePath, {});
     this.db.pragma("journal_mode = WAL");
     runMigrations(this.db, migrations);
-    ensureOwnerOnlyFile(paths.databasePath);
+    // The write-ahead log holds saved data too, so it is created by now and
+    // must be locked down alongside the database file.
+    ensureOwnerOnlyDatabase(paths.databasePath);
   }
 
   private requireDB(): Database.Database {
@@ -135,8 +137,10 @@ export class BlueskyAccountController {
     }
     const existing = getBlueskyAccountByDID(did);
     if (existing && existing.id !== this.account.id) {
+      // Diagnostics must not carry DIDs, so the message names neither
+      // identity nor account.
       throw new Error(
-        `Bluesky identity ${did} already belongs to another Bluesky local account`,
+        "That Bluesky identity already belongs to another Bluesky local account",
       );
     }
     this.account.did = did;
@@ -175,7 +179,7 @@ export class BlueskyAccountController {
    * Store one media asset for this account. Identical bytes are stored once,
    * within this account only.
    */
-  saveMedia(data: Buffer, mediaType: string): BlueskyStoredMedia {
+  saveMedia(data: Buffer, mediaType: string): BlueskySavedMedia {
     const db = this.requireDB();
     const stored = storeBlueskyMediaFile(this.getPaths().mediaPath, data);
 
@@ -224,7 +228,6 @@ export class BlueskyAccountController {
       byteLength: row.byteLength,
       mediaType: row.mediaType,
       path: assetPath,
-      deduplicated: false,
     };
   }
 
@@ -327,8 +330,9 @@ export class BlueskyAccountController {
       );
     }
 
+    // Closing the database first releases the files that deleting the account
+    // is about to remove.
     this.cleanup();
-    removeBlueskyAccountStorage(this.accountUUID);
     deleteAccount(this.accountID);
 
     this.paths = null;

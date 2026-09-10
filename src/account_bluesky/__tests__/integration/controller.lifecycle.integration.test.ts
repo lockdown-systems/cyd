@@ -124,6 +124,25 @@ describe("BlueskyAccountController - local account lifecycle", () => {
     expect(reopened.getConfig("lastSaveCursor")).toEqual("cursor-1");
   });
 
+  test("job state survives a restart mid-job", () => {
+    const { account, controller } = context.createLocalAccount();
+    const [job] = controller.createJobs(["savePosts"]);
+
+    controller.updateJob({
+      ...job,
+      status: "running",
+      startedAt: new Date("2026-01-15T12:00:00.000Z"),
+      progressJSON: JSON.stringify({ postsSaved: 12 }),
+    });
+    controller.cleanup();
+
+    const [resumed] = context.reopenLocalAccount(account.id).getJobs();
+    expect(resumed.status).toEqual("running");
+    expect(resumed.startedAt).toEqual(new Date("2026-01-15T12:00:00.000Z"));
+    expect(resumed.finishedAt).toBeNull();
+    expect(JSON.parse(resumed.progressJSON)).toEqual({ postsSaved: 12 });
+  });
+
   test("media is content-addressed and deduplicated within one account", () => {
     const { controller } = context.createLocalAccount();
     const bytes = Buffer.from("a video that two records share");

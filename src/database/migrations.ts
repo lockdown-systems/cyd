@@ -205,6 +205,20 @@ export const mainMigrations: Migration[] = [
 );`,
     ],
   },
+  // Add per-category delete settings so users can choose which activity-log
+  // data to delete (comments, reactions, etc.) independently of wall posts.
+  {
+    name: "add per-category delete settings to facebookAccount table",
+    sql: [
+      `ALTER TABLE facebookAccount ADD COLUMN deleteComments INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteReactions INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deletePostsOnOthers INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteOthersPosts INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteCheckins INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedPosts INTEGER DEFAULT 0;`,
+      `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedMedia INTEGER DEFAULT 0;`,
+    ],
+  },
   // Replace the dormant Bluesky model with UUID-keyed local accounts.
   //
   // The old blueskyAccount table was never reachable outside a disabled
@@ -231,20 +245,6 @@ export const mainMigrations: Migration[] = [
       // account that has never connected has no DID yet.
       `CREATE UNIQUE INDEX blueskyAccountDID ON blueskyAccount (did) WHERE did IS NOT NULL;`,
       `ALTER TABLE account ADD COLUMN blueskyAccountID INTEGER DEFAULT NULL;`,
-    ],
-  },
-  // Add per-category delete settings so users can choose which activity-log
-  // data to delete (comments, reactions, etc.) independently of wall posts.
-  {
-    name: "add per-category delete settings to facebookAccount table",
-    sql: [
-      `ALTER TABLE facebookAccount ADD COLUMN deleteComments INTEGER DEFAULT 0;`,
-      `ALTER TABLE facebookAccount ADD COLUMN deleteReactions INTEGER DEFAULT 0;`,
-      `ALTER TABLE facebookAccount ADD COLUMN deletePostsOnOthers INTEGER DEFAULT 0;`,
-      `ALTER TABLE facebookAccount ADD COLUMN deleteOthersPosts INTEGER DEFAULT 0;`,
-      `ALTER TABLE facebookAccount ADD COLUMN deleteCheckins INTEGER DEFAULT 0;`,
-      `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedPosts INTEGER DEFAULT 0;`,
-      `ALTER TABLE facebookAccount ADD COLUMN deleteTaggedMedia INTEGER DEFAULT 0;`,
     ],
   },
 ];
