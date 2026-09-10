@@ -99,7 +99,11 @@ const openCydURL = async (cydURL: string) => {
   }
 
   const url = new URL(cydURL);
-  log.info(`Opening URL: ${url.toString()}`);
+  // The query string can carry an OAuth authorization code, which is an
+  // account-control credential, so only the path is ever logged or shown.
+  const urlWithoutQuery = new URL(url.toString());
+  urlWithoutQuery.search = "";
+  log.info(`Opening URL: ${urlWithoutQuery.toString()}`);
 
   // If there's no main window, open one
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -133,7 +137,6 @@ const openCydURL = async (cydURL: string) => {
       log.info(
         "Sending Bluesky OAuth callback event to renderer:",
         blueskyOAuthCallbackEventName,
-        url.search,
       );
       win.webContents.send(blueskyOAuthCallbackEventName, url.search);
     }
@@ -143,7 +146,7 @@ const openCydURL = async (cydURL: string) => {
   // For all other paths, show an error
   dialog.showMessageBoxSync({
     title: "Cyd",
-    message: `Invalid Cyd URL: ${url.toString()}.`,
+    message: `Invalid Cyd URL: ${urlWithoutQuery.toString()}.`,
     type: "info",
   });
   return;
