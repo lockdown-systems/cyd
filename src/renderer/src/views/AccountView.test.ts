@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, VueWrapper } from "@vue/test-utils";
+import { mount, VueWrapper, flushPromises } from "@vue/test-utils";
 import AccountView from "./AccountView.vue";
 import {
   mockElectronAPI,
   createMockAccount,
+  createMockBlueskyLocalAccount,
   createMockFacebookAccount,
 } from "../test_util";
 import type { Account } from "../../../shared_types";
@@ -411,6 +412,54 @@ describe("AccountView", () => {
 
       expect(wrapper.text()).toContain("Unknown account type");
       expect(wrapper.text()).toContain("Something is wrong");
+    });
+  });
+
+  describe("Bluesky local accounts", () => {
+    const mountBlueskyAccount = (handle: string | null) => {
+      const account: Account = createMockAccount({
+        id: 7,
+        type: "Bluesky",
+        uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+        xAccount: null,
+        blueskyLocalAccount: createMockBlueskyLocalAccount({
+          uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+          handle,
+          displayName: handle ? "Alice" : null,
+        }),
+      });
+      return mount(AccountView, {
+        props: { account },
+        global: { plugins: [i18n] },
+      });
+    };
+
+    it("opens the account's private local storage", async () => {
+      wrapper = mountBlueskyAccount("alice.bsky.social");
+      await flushPromises();
+
+      expect(window.electron.Bluesky.openLocalAccount).toHaveBeenCalledWith(7);
+    });
+
+    it("shows the account's current profile once its storage is ready", async () => {
+      wrapper = mountBlueskyAccount("alice.bsky.social");
+      await flushPromises();
+
+      const panel = wrapper.find(".bluesky-local-account");
+      expect(panel.exists()).toBe(true);
+      expect(panel.text()).toContain("Alice");
+      expect(panel.text()).toContain("@alice.bsky.social");
+    });
+
+    it("asks to remove the account when the remove button is clicked", async () => {
+      wrapper = mountBlueskyAccount(null);
+      await flushPromises();
+
+      const removeButton = wrapper.find(".bluesky-local-account button");
+      (removeButton.element as HTMLElement).click();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.emitted("onRemoveClicked")).toHaveLength(1);
     });
   });
 });

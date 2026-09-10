@@ -18,6 +18,9 @@ import {
   XImportArchiveResponse,
   XMigrateTweetCounts,
   XAccount,
+  // Bluesky
+  BlueskyLocalAccount,
+  BlueskyLocalAccountPaths,
   // Facebook
   FacebookJob,
   FacebookProgressInfo,
@@ -187,8 +190,12 @@ const electronAPI = {
     saveAccount: (accountJSON: string) => {
       ipcRenderer.invoke("database:saveAccount", accountJSON);
     },
-    deleteAccount: (accountID: number) => {
-      return ipcRenderer.invoke("database:deleteAccount", accountID);
+    deleteAccount: (accountID: number, confirmedAccountUUID?: string) => {
+      return ipcRenderer.invoke(
+        "database:deleteAccount",
+        accountID,
+        confirmedAccountUUID,
+      );
     },
   },
 
@@ -484,6 +491,33 @@ const electronAPI = {
     },
     initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
       return ipcRenderer.invoke("X:initArchiveOnlyMode", accountID);
+    },
+  },
+
+  // Bluesky functions
+  Bluesky: {
+    openLocalAccount: (
+      accountID: number,
+    ): Promise<BlueskyLocalAccount | null> => {
+      return ipcRenderer.invoke("Bluesky:openLocalAccount", accountID);
+    },
+    getLocalAccountPaths: (
+      accountID: number,
+    ): Promise<BlueskyLocalAccountPaths> => {
+      return ipcRenderer.invoke("Bluesky:getLocalAccountPaths", accountID);
+    },
+    deleteLocalAccount: (
+      accountID: number,
+      confirmedAccountUUID: string,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Bluesky:deleteLocalAccount",
+        accountID,
+        confirmedAccountUUID,
+      );
+    },
+    clearStagingAreas: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Bluesky:clearStagingAreas", accountID);
     },
   },
 

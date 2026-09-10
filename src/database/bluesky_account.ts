@@ -1,205 +1,128 @@
-import { exec, getMainDatabase, Sqlite3Info } from "./common";
-import { BlueskyAccount } from "../shared_types";
+import { exec, getMainDatabase } from "./common";
+import { BlueskyLocalAccount } from "../shared_types";
 
 // Types
 
-export interface BlueskyAccountRow {
-  id: number;
+export interface BlueskyLocalAccountRow {
+  uuid: string;
   createdAt: string;
   updatedAt: string;
   accessedAt: string;
-  username: string;
-  profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  archivePosts: boolean;
-  archivePostsHTML: boolean;
-  archiveLikes: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsLikesThresholdEnabled: boolean;
-  deletePostsLikesThreshold: number;
-  deletePostsRepostsThresholdEnabled: boolean;
-  deletePostsRepostsThreshold: number;
-  deleteReposts: boolean;
-  deleteRepostsDaysOldEnabled: boolean;
-  deleteRepostsDaysOld: number;
-  deleteLikes: boolean;
-  deleteLikesDaysOldEnabled: boolean;
-  deleteLikesDaysOld: number;
-  followingCount: number;
-  followersCount: number;
-  postsCount: number;
-  likesCount: number;
+  did: string | null;
+  handle: string | null;
+  displayName: string | null;
+  profileImageDataURI: string | null;
 }
 
 // Functions
 
-// Get a single Bluesky account by ID
-export const getBlueskyAccount = (id: number): BlueskyAccount | null => {
-  const row: BlueskyAccountRow | undefined = exec(
-    getMainDatabase(),
-    "SELECT * FROM blueskyAccount WHERE id = ?",
-    [id],
-    "get",
-  ) as BlueskyAccountRow | undefined;
-  if (!row) {
-    return null;
-  }
+const blueskyLocalAccountFromRow = (
+  row: BlueskyLocalAccountRow,
+): BlueskyLocalAccount => {
   return {
-    id: row.id,
+    uuid: row.uuid,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     accessedAt: new Date(row.accessedAt),
-    username: row.username,
+    did: row.did,
+    handle: row.handle,
+    displayName: row.displayName,
     profileImageDataURI: row.profileImageDataURI,
-    saveMyData: !!row.saveMyData,
-    deleteMyData: !!row.deleteMyData,
-    archivePosts: !!row.archivePosts,
-    archivePostsHTML: !!row.archivePostsHTML,
-    archiveLikes: !!row.archiveLikes,
-    deletePosts: !!row.deletePosts,
-    deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
-    deletePostsDaysOld: row.deletePostsDaysOld,
-    deletePostsLikesThresholdEnabled: !!row.deletePostsLikesThresholdEnabled,
-    deletePostsLikesThreshold: row.deletePostsLikesThreshold,
-    deletePostsRepostsThresholdEnabled:
-      !!row.deletePostsRepostsThresholdEnabled,
-    deletePostsRepostsThreshold: row.deletePostsRepostsThreshold,
-    deleteReposts: !!row.deleteReposts,
-    deleteRepostsDaysOldEnabled: !!row.deleteRepostsDaysOldEnabled,
-    deleteRepostsDaysOld: row.deleteRepostsDaysOld,
-    deleteLikes: !!row.deleteLikes,
-    deleteLikesDaysOldEnabled: !!row.deleteLikesDaysOldEnabled,
-    deleteLikesDaysOld: row.deleteLikesDaysOld,
-    followingCount: row.followingCount,
-    followersCount: row.followersCount,
-    postsCount: row.postsCount,
-    likesCount: row.likesCount,
   };
 };
 
-// Get all Bluesky accounts
-export const getBlueskyAccounts = (): BlueskyAccount[] => {
-  const rows: BlueskyAccountRow[] = exec(
+// Get a single Bluesky local account by its Cyd UUID
+export const getBlueskyLocalAccount = (
+  uuid: string,
+): BlueskyLocalAccount | null => {
+  const row: BlueskyLocalAccountRow | undefined = exec(
     getMainDatabase(),
-    "SELECT * FROM blueskyAccount",
-    [],
-    "all",
-  ) as BlueskyAccountRow[];
-
-  const accounts: BlueskyAccount[] = [];
-  for (const row of rows) {
-    accounts.push({
-      id: row.id,
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt),
-      accessedAt: new Date(row.accessedAt),
-      username: row.username,
-      profileImageDataURI: row.profileImageDataURI,
-      saveMyData: !!row.saveMyData,
-      deleteMyData: !!row.deleteMyData,
-      archivePosts: !!row.archivePosts,
-      archivePostsHTML: !!row.archivePostsHTML,
-      archiveLikes: !!row.archiveLikes,
-      deletePosts: !!row.deletePosts,
-      deletePostsDaysOldEnabled: !!row.deletePostsDaysOldEnabled,
-      deletePostsDaysOld: row.deletePostsDaysOld,
-      deletePostsLikesThresholdEnabled: !!row.deletePostsLikesThresholdEnabled,
-      deletePostsLikesThreshold: row.deletePostsLikesThreshold,
-      deletePostsRepostsThresholdEnabled:
-        !!row.deletePostsRepostsThresholdEnabled,
-      deletePostsRepostsThreshold: row.deletePostsRepostsThreshold,
-      deleteReposts: !!row.deleteReposts,
-      deleteRepostsDaysOldEnabled: !!row.deleteRepostsDaysOldEnabled,
-      deleteRepostsDaysOld: row.deleteRepostsDaysOld,
-      deleteLikes: !!row.deleteLikes,
-      deleteLikesDaysOldEnabled: !!row.deleteLikesDaysOldEnabled,
-      deleteLikesDaysOld: row.deleteLikesDaysOld,
-      followingCount: row.followingCount,
-      followersCount: row.followersCount,
-      postsCount: row.postsCount,
-      likesCount: row.likesCount,
-    });
+    "SELECT * FROM blueskyLocalAccount WHERE uuid = ?",
+    [uuid],
+    "get",
+  ) as BlueskyLocalAccountRow | undefined;
+  if (!row) {
+    return null;
   }
-  return accounts;
+  return blueskyLocalAccountFromRow(row);
 };
 
-// Create a new Bluesky account
-export const createBlueskyAccount = (): BlueskyAccount => {
-  const info: Sqlite3Info = exec(
+// Get the Bluesky local account that represents a Bluesky identity
+export const getBlueskyLocalAccountByDID = (
+  did: string,
+): BlueskyLocalAccount | null => {
+  const row: BlueskyLocalAccountRow | undefined = exec(
     getMainDatabase(),
-    "INSERT INTO blueskyAccount DEFAULT VALUES",
-  ) as Sqlite3Info;
-  const account = getBlueskyAccount(info.lastInsertRowid);
+    "SELECT * FROM blueskyLocalAccount WHERE did = ?",
+    [did],
+    "get",
+  ) as BlueskyLocalAccountRow | undefined;
+  if (!row) {
+    return null;
+  }
+  return blueskyLocalAccountFromRow(row);
+};
+
+// Get all Bluesky local accounts
+export const getBlueskyLocalAccounts = (): BlueskyLocalAccount[] => {
+  const rows: BlueskyLocalAccountRow[] = exec(
+    getMainDatabase(),
+    "SELECT * FROM blueskyLocalAccount",
+    [],
+    "all",
+  ) as BlueskyLocalAccountRow[];
+  return rows.map(blueskyLocalAccountFromRow);
+};
+
+// Create a new Bluesky local account, keyed by its account's Cyd UUID
+export const createBlueskyLocalAccount = (
+  uuid: string,
+): BlueskyLocalAccount => {
+  exec(getMainDatabase(), "INSERT INTO blueskyLocalAccount (uuid) VALUES (?)", [
+    uuid,
+  ]);
+  const account = getBlueskyLocalAccount(uuid);
   if (!account) {
     throw new Error("Failed to create account");
   }
   return account;
 };
 
-// Update the Bluesky account based on account.id
-export const saveBlueskyAccount = (account: BlueskyAccount) => {
+// Update a Bluesky local account's identity and profile data
+export const saveBlueskyLocalAccount = (account: BlueskyLocalAccount) => {
+  // The DID is the durable social identity of this local account. Its handle
+  // and display name change freely; the identity behind them does not.
+  const storedAccount = getBlueskyLocalAccount(account.uuid);
+  if (storedAccount?.did && storedAccount.did !== account.did) {
+    throw new Error("A Bluesky local account's identity cannot change");
+  }
+
   exec(
     getMainDatabase(),
     `
-        UPDATE blueskyAccount
+        UPDATE blueskyLocalAccount
         SET
             updatedAt = CURRENT_TIMESTAMP,
             accessedAt = CURRENT_TIMESTAMP,
-            username = ?,
-            profileImageDataURI = ?,
-            saveMyData = ?,
-            deleteMyData = ?,
-            archivePosts = ?,
-            archivePostsHTML = ?,
-            archiveLikes = ?,
-            deletePosts = ?,
-            deletePostsDaysOld = ?,
-            deletePostsDaysOldEnabled = ?,
-            deletePostsLikesThresholdEnabled = ?,
-            deletePostsLikesThreshold = ?,
-            deletePostsRepostsThresholdEnabled = ?,
-            deletePostsRepostsThreshold = ?,
-            deleteReposts = ?,
-            deleteRepostsDaysOldEnabled = ?,
-            deleteRepostsDaysOld = ?,
-            deleteLikes = ?,
-            deleteLikesDaysOldEnabled = ?,
-            deleteLikesDaysOld = ?,
-            followingCount = ?,
-            followersCount = ?,
-            postsCount = ?,
-            likesCount = ?
-        WHERE id = ?
+            did = ?,
+            handle = ?,
+            displayName = ?,
+            profileImageDataURI = ?
+        WHERE uuid = ?
     `,
     [
-      account.username,
+      account.did,
+      account.handle,
+      account.displayName,
       account.profileImageDataURI,
-      account.saveMyData ? 1 : 0,
-      account.deleteMyData ? 1 : 0,
-      account.archivePosts ? 1 : 0,
-      account.archivePostsHTML ? 1 : 0,
-      account.archiveLikes ? 1 : 0,
-      account.deletePosts ? 1 : 0,
-      account.deletePostsDaysOld,
-      account.deletePostsDaysOldEnabled ? 1 : 0,
-      account.deletePostsLikesThresholdEnabled ? 1 : 0,
-      account.deletePostsLikesThreshold,
-      account.deletePostsRepostsThresholdEnabled ? 1 : 0,
-      account.deletePostsRepostsThreshold,
-      account.deleteReposts ? 1 : 0,
-      account.deleteRepostsDaysOldEnabled ? 1 : 0,
-      account.deleteRepostsDaysOld,
-      account.deleteLikes ? 1 : 0,
-      account.deleteLikesDaysOldEnabled ? 1 : 0,
-      account.deleteLikesDaysOld,
-      account.followingCount,
-      account.followersCount,
-      account.postsCount,
-      account.likesCount,
-      account.id,
+      account.uuid,
     ],
   );
+};
+
+// Delete a Bluesky local account's row
+export const deleteBlueskyLocalAccount = (uuid: string) => {
+  exec(getMainDatabase(), "DELETE FROM blueskyLocalAccount WHERE uuid = ?", [
+    uuid,
+  ]);
 };
