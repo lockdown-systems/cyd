@@ -92,7 +92,10 @@ const removeAccount = async (accountID: number) => {
     )
   ) {
     console.log(`Removing account ${accountID}`);
-    await window.electron.database.deleteAccount(accountID);
+    // Deleting a Bluesky local account requires naming the account being
+    // destroyed; other account types ignore the confirmation.
+    const account = accounts.value.find(({ id }) => id === accountID);
+    await window.electron.database.deleteAccount(accountID, account?.uuid);
     accounts.value = await window.electron.database.getAccounts();
 
     if (accounts.value.length === 0) {

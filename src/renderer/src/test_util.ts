@@ -2,7 +2,12 @@ import { vi } from "vitest";
 import type { WebviewTag } from "electron";
 import type { Emitter, EventType } from "mitt";
 import mitt from "mitt";
-import type { Account, XAccount, FacebookAccount } from "../../shared_types";
+import type {
+  Account,
+  XAccount,
+  BlueskyLocalAccount,
+  FacebookAccount,
+} from "../../shared_types";
 import type { VueWrapper } from "@vue/test-utils";
 import { mount } from "@vue/test-utils";
 import { ref } from "vue";
@@ -96,6 +101,23 @@ export function createMockFacebookAccount(
   };
 }
 
+export function createMockBlueskyLocalAccount(
+  overrides?: Partial<BlueskyLocalAccount>,
+): BlueskyLocalAccount {
+  const now = new Date();
+  return {
+    uuid: "test-uuid-123",
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    did: null,
+    handle: null,
+    displayName: null,
+    profileImageDataURI: null,
+    ...overrides,
+  };
+}
+
 /**
  * Creates a mock Account with default values that can be overridden
  * By default creates an X account, but can be customized for other types
@@ -106,7 +128,7 @@ export function createMockAccount(overrides?: Partial<Account>): Account {
     type: "X",
     sortOrder: 0,
     xAccount: createMockXAccount(),
-    blueskyAccount: null,
+    blueskyLocalAccount: null,
     facebookAccount: null,
     uuid: "test-uuid-123",
     ...overrides,
@@ -329,6 +351,20 @@ export function mockElectronAPI() {
         .fn()
         .mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 }),
       resetRateLimitInfo: vi.fn().mockResolvedValue(undefined),
+    },
+
+    // Bluesky local account operations
+    Bluesky: {
+      openLocalAccount: vi.fn().mockResolvedValue(null),
+      getLocalAccountPaths: vi.fn().mockResolvedValue({
+        accountPath: "/tmp/Bluesky/test-uuid-123",
+        databasePath: "/tmp/Bluesky/test-uuid-123/data.sqlite3",
+        mediaPath: "/tmp/Bluesky/test-uuid-123/media",
+        stagingPath: "/tmp/Bluesky/test-uuid-123/staging",
+        connectionPath: "/tmp/Bluesky/test-uuid-123/connection",
+      }),
+      deleteLocalAccount: vi.fn().mockResolvedValue(undefined),
+      clearStagingAreas: vi.fn().mockResolvedValue(undefined),
     },
 
     // Analytics (used by all view models)

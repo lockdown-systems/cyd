@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getAccountIcon } from "../util";
 import type { Account } from "../../../shared_types";
@@ -39,6 +39,23 @@ const refresh = async () => {
 const accountClicked = (accountType: string) => {
   emit("accountSelected", props.account, accountType);
 };
+
+// Opening a Bluesky local account creates its private, owner-only storage on
+// first use. Connecting an identity and browsing saved data come later.
+const blueskyLocalAccountReady = ref(false);
+
+watch(
+  () => props.account.type,
+  async (accountType) => {
+    if (accountType !== "Bluesky") {
+      blueskyLocalAccountReady.value = false;
+      return;
+    }
+    await window.electron.Bluesky.openLocalAccount(props.account.id);
+    blueskyLocalAccountReady.value = true;
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
@@ -173,6 +190,23 @@ onMounted(async () => {
         @on-refresh-clicked="refresh"
         @on-remove-clicked="emit('onRemoveClicked')"
       />
+    </template>
+
+    <template v-else-if="account.type == 'Bluesky'">
+      <div class="bluesky-local-account container mt-5">
+        <h2>
+          {{ account.blueskyLocalAccount?.displayName || t("account.bluesky") }}
+        </h2>
+        <p v-if="account.blueskyLocalAccount?.handle" class="handle">
+          @{{ account.blueskyLocalAccount.handle }}
+        </p>
+        <p v-if="blueskyLocalAccountReady" class="text-muted">
+          {{ t("account.blueskyLocalStorageReady") }}
+        </p>
+        <button class="btn btn-danger" @click="emit('onRemoveClicked')">
+          {{ t("account.removeAccount") }}
+        </button>
+      </div>
     </template>
 
     <template v-else-if="account.type == 'Facebook'">

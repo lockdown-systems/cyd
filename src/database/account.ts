@@ -3,9 +3,10 @@ import { ipcMain, session } from "electron";
 import { exec, getMainDatabase, Sqlite3Info } from "./common";
 import { createXAccount, getXAccount, saveXAccount } from "./x_account";
 import {
-  createBlueskyAccount,
-  getBlueskyAccount,
-  saveBlueskyAccount,
+  createBlueskyLocalAccount,
+  deleteBlueskyLocalAccount,
+  getBlueskyLocalAccount,
+  saveBlueskyLocalAccount,
 } from "./bluesky_account";
 import {
   createFacebookAccount,
@@ -15,10 +16,11 @@ import {
 import {
   Account,
   XAccount,
-  BlueskyAccount,
+  BlueskyLocalAccount,
   FacebookAccount,
 } from "../shared_types";
 import { packageExceptionForReport } from "../util";
+import { removeBlueskyAccountStorage } from "../account_bluesky/storage";
 
 // Types
 
@@ -27,14 +29,13 @@ interface AccountRow {
   type: string;
   sortOrder: number;
   xAccountId: number | null;
-  blueskyAccountID: number | null;
   facebookAccountID: number | null;
   uuid: string;
 }
 
 function accountFromAccountRow(row: AccountRow): Account {
   let xAccount: XAccount | null = null;
-  let blueskyAccount: BlueskyAccount | null = null;
+  let blueskyLocalAccount: BlueskyLocalAccount | null = null;
   let facebookAccount: FacebookAccount | null = null;
   switch (row.type) {
     case "X":
@@ -44,9 +45,9 @@ function accountFromAccountRow(row: AccountRow): Account {
       break;
 
     case "Bluesky":
-      if (row.blueskyAccountID) {
-        blueskyAccount = getBlueskyAccount(row.blueskyAccountID);
-      }
+      // A Bluesky local account is keyed by the account's Cyd UUID, so there
+      // is no separate link to follow.
+      blueskyLocalAccount = getBlueskyLocalAccount(row.uuid);
       break;
 
     case "Facebook":
@@ -61,7 +62,7 @@ function accountFromAccountRow(row: AccountRow): Account {
     type: row.type,
     sortOrder: row.sortOrder,
     xAccount: xAccount,
-    blueskyAccount: blueskyAccount,
+    blueskyLocalAccount: blueskyLocalAccount,
     facebookAccount: facebookAccount,
     uuid: row.uuid,
   };
@@ -88,8 +89,8 @@ export async function getAccountUsername(
 ): Promise<string | null> {
   if (account.type == "X" && account.xAccount) {
     return account.xAccount?.username;
-  } else if (account.type == "Bluesky" && account.blueskyAccount) {
-    return account.blueskyAccount?.username;
+  } else if (account.type == "Bluesky" && account.blueskyLocalAccount) {
+    return account.blueskyLocalAccount.handle;
   } else if (account.type == "Facebook" && account.facebookAccount) {
     return account.facebookAccount?.username;
   }
@@ -155,7 +156,7 @@ export const selectAccountType = (accountID: number, type: string): Account => {
       account.xAccount = createXAccount();
       break;
     case "Bluesky":
-      account.blueskyAccount = createBlueskyAccount();
+      account.blueskyLocalAccount = createBlueskyLocalAccount(account.uuid);
       break;
     case "Facebook":
       account.facebookAccount = createFacebookAccount();
@@ -165,9 +166,6 @@ export const selectAccountType = (accountID: number, type: string): Account => {
   }
 
   const xAccountId = account.xAccount ? account.xAccount.id : null;
-  const blueskyAccountID = account.blueskyAccount
-    ? account.blueskyAccount.id
-    : null;
   const facebookAccountID = account.facebookAccount
     ? account.facebookAccount.id
     : null;
@@ -180,11 +178,10 @@ export const selectAccountType = (accountID: number, type: string): Account => {
         SET
             type = ?,
             xAccountId = ?,
-            blueskyAccountID = ?,
             facebookAccountID = ?
         WHERE id = ?
     `,
-    [type, xAccountId, blueskyAccountID, facebookAccountID, account.id],
+    [type, xAccountId, facebookAccountID, account.id],
   );
 
   account.type = type;
@@ -195,8 +192,8 @@ export const selectAccountType = (accountID: number, type: string): Account => {
 export const saveAccount = (account: Account) => {
   if (account.xAccount) {
     saveXAccount(account.xAccount);
-  } else if (account.blueskyAccount) {
-    saveBlueskyAccount(account.blueskyAccount);
+  } else if (account.blueskyLocalAccount) {
+    saveBlueskyLocalAccount(account.blueskyLocalAccount);
   } else if (account.facebookAccount) {
     saveFacebookAccount(account.facebookAccount);
   }
@@ -214,11 +211,22 @@ export const saveAccount = (account: Account) => {
   );
 };
 
-export const deleteAccount = (accountID: number) => {
+export const deleteAccount = (
+  accountID: number,
+  confirmedAccountUUID?: string,
+) => {
   // Get the account
   const account = getAccount(accountID);
   if (!account) {
     throw new Error("Account not found");
+  }
+
+  // Deleting a Bluesky local account destroys an irreplaceable local backup,
+  // so every path into it must name the account it means to destroy.
+  if (account.type === "Bluesky" && confirmedAccountUUID !== account.uuid) {
+    throw new Error(
+      "Deleting a Bluesky local account requires confirming its account UUID",
+    );
   }
 
   // Delete the account type
@@ -231,11 +239,11 @@ export const deleteAccount = (accountID: number) => {
       }
       break;
     case "Bluesky":
-      if (account.blueskyAccount) {
-        exec(getMainDatabase(), "DELETE FROM blueskyAccount WHERE id = ?", [
-          account.blueskyAccount.id,
-        ]);
-      }
+      // A Bluesky local account owns a UUID-keyed directory holding its
+      // connection material, runtime database, media, jobs, and staged work.
+      // Deleting the account removes those local resources and nothing else.
+      removeBlueskyAccountStorage(account.uuid);
+      deleteBlueskyLocalAccount(account.uuid);
       break;
     case "Facebook":
       if (account.facebookAccount) {
@@ -297,14 +305,17 @@ export const defineIPCDatabaseAccount = () => {
     }
   });
 
-  ipcMain.handle("database:deleteAccount", async (_, accountID) => {
-    try {
-      const ses = session.fromPartition(`persist:account-${accountID}`);
-      await ses.closeAllConnections();
-      await ses.clearStorageData();
-      deleteAccount(accountID);
-    } catch (error) {
-      throw new Error(packageExceptionForReport(error as Error));
-    }
-  });
+  ipcMain.handle(
+    "database:deleteAccount",
+    async (_, accountID, confirmedAccountUUID?: string) => {
+      try {
+        const ses = session.fromPartition(`persist:account-${accountID}`);
+        await ses.closeAllConnections();
+        await ses.clearStorageData();
+        deleteAccount(accountID, confirmedAccountUUID);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
 };

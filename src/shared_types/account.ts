@@ -3,7 +3,7 @@ export type Account = {
   type: string; // "X"
   sortOrder: number;
   xAccount: XAccount | null;
-  blueskyAccount: BlueskyAccount | null;
+  blueskyLocalAccount: BlueskyLocalAccount | null;
   facebookAccount: FacebookAccount | null;
   uuid: string;
 };
@@ -56,35 +56,22 @@ export type XAccount = {
   tombstoneLockAccount: boolean;
 };
 
-export type BlueskyAccount = {
-  id: number;
+/**
+ * This installation's local representation of a Bluesky identity. It is
+ * identified by its Cyd UUID, which is also the account's UUID, so a handle
+ * change never moves its storage.
+ */
+export type BlueskyLocalAccount = {
+  uuid: string;
   createdAt: Date;
   updatedAt: Date;
   accessedAt: Date;
-  username: string;
-  profileImageDataURI: string;
-  saveMyData: boolean;
-  deleteMyData: boolean;
-  archivePosts: boolean;
-  archivePostsHTML: boolean;
-  archiveLikes: boolean;
-  deletePosts: boolean;
-  deletePostsDaysOldEnabled: boolean;
-  deletePostsDaysOld: number;
-  deletePostsLikesThresholdEnabled: boolean;
-  deletePostsLikesThreshold: number;
-  deletePostsRepostsThresholdEnabled: boolean;
-  deletePostsRepostsThreshold: number;
-  deleteReposts: boolean;
-  deleteRepostsDaysOldEnabled: boolean;
-  deleteRepostsDaysOld: number;
-  deleteLikes: boolean;
-  deleteLikesDaysOldEnabled: boolean;
-  deleteLikesDaysOld: number;
-  followingCount: number;
-  followersCount: number;
-  postsCount: number;
-  likesCount: number;
+  /** The durable Bluesky identity, once it is known. */
+  did: string | null;
+  /** Mutable profile data; never used to locate storage. */
+  handle: string | null;
+  displayName: string | null;
+  profileImageDataURI: string | null;
 };
 
 export type FacebookAccount = {
