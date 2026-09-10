@@ -115,24 +115,30 @@ describe("sweepLegacyOAuthCredentials", () => {
     expect(bytes).not.toContain("pkce-verifier-value");
   });
 
-  test("discards legacy credentials when storage is unavailable", () => {
+  test("migrates legacy credentials even when the OS cannot protect them", () => {
     seedLegacyRows();
+    // A Linux desktop with no keyring. The credentials move to the vault in
+    // the clear, which is disclosed in the app, rather than being destroyed
+    // and costing the user a connection they still have.
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue("basic_text");
     safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
 
     const result = sweepLegacyOAuthCredentials(db, ACCOUNT_ID);
 
-    expect(result.moved).toEqual([]);
-    expect(result.discarded.sort()).toEqual([
+    expect(result.moved.sort()).toEqual([
       "blueskySessionStore-did:web:cyd",
       "blueskyStateStore-abc123",
     ]);
-    // Rows are still removed: an unprotected credential is worse than none.
-    // The DID goes too, so the account stops claiming a connection whose
-    // session Cyd just threw away.
+    expect(result.discarded).toEqual([]);
+    expect(
+      accountCredentials(ACCOUNT_ID).get("blueskySessionStore-did:web:cyd"),
+    ).toBe(SESSION_SECRET);
+    // The account stays connected, and the credential still leaves the
+    // database it was never supposed to be in.
     const remaining = db.prepare("SELECT key FROM config").all() as {
       key: string;
     }[];
-    expect(remaining.map((row) => row.key)).toEqual([]);
+    expect(remaining.map((row) => row.key)).toEqual(["blueskyDID"]);
     expect(readAllDatabaseBytes()).not.toContain("refresh-token-value");
   });
 

@@ -180,7 +180,6 @@ export function mockElectronAPI() {
       rawBackend: null,
       platform: "darwin",
       osProtected: true,
-      canPersist: true,
       disclosureRequired: false,
     }),
 

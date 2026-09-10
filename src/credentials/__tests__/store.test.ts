@@ -16,12 +16,7 @@ vi.mock("../../util", async () => {
   return { ...actual, getSettingsPath: () => settingsPathHolder.value };
 });
 
-import {
-  CredentialStoreUnavailableError,
-  accountCredentials,
-  credentialsDirectoryPath,
-  isCredentialStoreAvailable,
-} from "../store";
+import { accountCredentials, credentialsDirectoryPath } from "../store";
 
 const ACCOUNT_ID = 7;
 
@@ -114,15 +109,56 @@ describe("credential store", () => {
     },
   );
 
-  test("refuses to persist when no credential backend is available", () => {
+  test("stores in the clear when the OS cannot protect the credential", () => {
+    // A Linux desktop with no keyring. Cyd keeps the user connected and
+    // discloses the limitation rather than refusing to persist.
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue("basic_text");
     safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
 
-    expect(isCredentialStoreAvailable()).toBe(false);
-    expect(() => credentials().set("one", "1")).toThrow(
-      CredentialStoreUnavailableError,
-    );
-    expect(fs.existsSync(vaultPath())).toBe(false);
+    expect(() => credentials().set("one", "the-token")).not.toThrow();
+
     expect(safeStorageMock.encryptString).not.toHaveBeenCalled();
+    expect(credentials().get("one")).toBe("the-token");
+    // The vault says plainly that this value is not protected, and the file
+    // is still owner-only.
+    const onDisk = JSON.parse(fs.readFileSync(vaultPath(), "utf-8"));
+    expect(onDisk.credentials.one).toEqual({
+      protected: false,
+      value: "the-token",
+    });
+  });
+
+  test("protects credentials again once a keyring is available", () => {
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue("basic_text");
+    safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
+    credentials().set("unprotected", "written-without-a-keyring");
+
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue(
+      "gnome_libsecret",
+    );
+    safeStorageMock.isEncryptionAvailable.mockReturnValue(true);
+    credentials().set("protected", "written-with-a-keyring");
+
+    // The older value stays readable, and the new one is encrypted.
+    expect(credentials().get("unprotected")).toBe("written-without-a-keyring");
+    expect(credentials().get("protected")).toBe("written-with-a-keyring");
+    const onDisk = fs.readFileSync(vaultPath(), "utf-8");
+    expect(onDisk).not.toContain("written-with-a-keyring");
+  });
+
+  test("reads a version 1 vault, which held only ciphertext", () => {
+    fs.mkdirSync(credentialsDirectoryPath(), { recursive: true });
+    fs.writeFileSync(
+      vaultPath(),
+      JSON.stringify({
+        version: 1,
+        credentials: {
+          one: Buffer.from("enc:the-token").toString("base64"),
+        },
+      }),
+    );
+
+    expect(credentials().get("one")).toBe("the-token");
   });
 
   test("drops credentials it can no longer decrypt", () => {

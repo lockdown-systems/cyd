@@ -12,9 +12,10 @@ import { getCredentialProtection } from "./backend";
 // backing up or exporting account data can never carry them along.
 const CREDENTIALS_DIRECTORY = "credentials";
 
-// The vault file format. A vault written by a future version is unreadable
-// rather than misread.
-const VAULT_VERSION = 1;
+// The vault file format. Version 1 held only ciphertext, before Cyd persisted
+// credentials on desktops the operating system cannot protect.
+const VAULT_VERSION = 2;
+const LEGACY_VAULT_VERSION = 1;
 
 const OWNER_ONLY_DIRECTORY = 0o700;
 const OWNER_ONLY_FILE = 0o600;
@@ -24,22 +25,19 @@ const OWNER_ONLY_FILE = 0o600;
 const supportsOwnerOnlyPermissions = (): boolean =>
   process.platform !== "win32";
 
-/**
- * Thrown when Cyd cannot protect a credential and therefore refuses to
- * persist it. Callers must handle this rather than fall back to plaintext.
- */
-export class CredentialStoreUnavailableError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "CredentialStoreUnavailableError";
-  }
-}
+type VaultEntry = {
+  // Whether `value` is ciphertext from the operating system's facility. When
+  // this is false, `value` is the credential itself: Cyd persists it in the
+  // clear rather than dropping a connection the user asked for, and discloses
+  // that in the app.
+  protected: boolean;
+  value: string;
+};
 
 type Vault = {
   version: number;
-  // Keys are credential names; values are base64 ciphertext produced by the
-  // operating system's credential facility.
-  credentials: Record<string, string>;
+  // Keys are credential names.
+  credentials: Record<string, VaultEntry>;
 };
 
 const emptyVault = (): Vault => ({
@@ -75,20 +73,48 @@ const ensureCredentialsDirectory = (): string => {
 const vaultPath = (vaultName: string): string =>
   path.join(credentialsDirectoryPath(), `${vaultName}.json`);
 
+const parseEntry = (entry: unknown): VaultEntry => {
+  // Version 1 wrote a bare base64 string, which was always ciphertext.
+  if (typeof entry === "string") {
+    return { protected: true, value: entry };
+  }
+  if (
+    entry !== null &&
+    typeof entry === "object" &&
+    typeof (entry as VaultEntry).value === "string"
+  ) {
+    return {
+      protected: (entry as VaultEntry).protected === true,
+      value: (entry as VaultEntry).value,
+    };
+  }
+  throw new Error("Vault holds an unreadable credential");
+};
+
 const readVault = (vaultName: string): Vault => {
   const filePath = vaultPath(vaultName);
   if (!fs.existsSync(filePath)) {
     return emptyVault();
   }
   try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as Vault;
-    if (parsed?.version !== VAULT_VERSION) {
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as {
+      version?: number;
+      credentials?: Record<string, unknown>;
+    };
+    if (
+      parsed?.version !== VAULT_VERSION &&
+      parsed?.version !== LEGACY_VAULT_VERSION
+    ) {
       throw new Error(`Unsupported vault version: ${parsed?.version}`);
     }
     if (typeof parsed.credentials !== "object" || parsed.credentials === null) {
       throw new Error("Vault is missing its credentials");
     }
-    return parsed;
+    const credentials: Record<string, VaultEntry> = {};
+    for (const [key, entry] of Object.entries(parsed.credentials)) {
+      credentials[key] = parseEntry(entry);
+    }
+    return { version: VAULT_VERSION, credentials };
   } catch (error) {
     // A vault Cyd cannot read is a vault Cyd cannot use. Log the failure
     // without its contents and start over, which costs the user a
@@ -121,18 +147,38 @@ const writeVault = (vaultName: string, vault: Vault): void => {
 };
 
 /**
- * Whether the operating system can protect credentials right now. When this
- * is false, Cyd must do without persisted credentials rather than store them
- * in the clear.
+ * Encode a credential for the vault, protected if the operating system offers
+ * anything to protect it with.
+ *
+ * Where it does not, Cyd stores the credential in the clear rather than
+ * refusing: a desktop without a keyring is common, the user asked to stay
+ * connected, and the alternative is an app that cannot do its job there. The
+ * limitation is disclosed instead of hidden, by the same protection check
+ * that lands here.
  */
-export const isCredentialStoreAvailable = (): boolean =>
-  getCredentialProtection().canPersist;
+const encodeCredential = (value: string): VaultEntry => {
+  if (getCredentialProtection().osProtected) {
+    try {
+      return {
+        protected: true,
+        value: safeStorage.encryptString(value).toString("base64"),
+      };
+    } catch (error) {
+      // The backend reported that it could protect this and then did not.
+      log.error(
+        "credentials: the OS credential facility refused to encrypt, storing in the clear",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+  return { protected: false, value };
+};
 
 /**
  * One account's credentials.
  *
  * Callers name a credential and nothing else: which vault it belongs to, how
- * it is encrypted, and where it sits on disk are this module's business.
+ * it is protected, and where it sits on disk are this module's business.
  * Credential names are never logged, because they can carry an identifier
  * such as a Bluesky DID.
  */
@@ -151,13 +197,16 @@ export const accountCredentials = (accountID: number): AccountCredentials => {
   return {
     get(key: string): string | null {
       const vault = readVault(vaultName);
-      const ciphertext = vault.credentials[key];
-      if (ciphertext === undefined) {
+      const entry = vault.credentials[key];
+      if (entry === undefined) {
         return null;
+      }
+      if (!entry.protected) {
+        return entry.value;
       }
 
       try {
-        return safeStorage.decryptString(Buffer.from(ciphertext, "base64"));
+        return safeStorage.decryptString(Buffer.from(entry.value, "base64"));
       } catch (error) {
         // The OS key changed, or the vault came from another machine. The
         // credential is unusable, so drop it instead of retrying forever.
@@ -172,16 +221,8 @@ export const accountCredentials = (accountID: number): AccountCredentials => {
     },
 
     set(key: string, value: string): void {
-      if (!isCredentialStoreAvailable()) {
-        throw new CredentialStoreUnavailableError(
-          "No operating-system credential storage is available, so Cyd refuses to persist this credential",
-        );
-      }
-
       const vault = readVault(vaultName);
-      vault.credentials[key] = safeStorage
-        .encryptString(value)
-        .toString("base64");
+      vault.credentials[key] = encodeCredential(value);
       writeVault(vaultName, vault);
     },
 

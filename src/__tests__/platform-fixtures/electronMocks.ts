@@ -22,6 +22,10 @@ const shellMockImpl = {
 // Tests run without a real OS credential facility, so safeStorage is a
 // reversible stand-in. Tests that care about an unprotected or missing
 // backend override these mocks.
+//
+// Real Electron couples these two on Linux: whenever Chromium falls back to
+// the basic_text password store, isEncryptionAvailable() returns false. A test
+// that overrides only the backend name describes a machine that cannot exist.
 const safeStorageMockImpl = {
   isEncryptionAvailable: vi.fn(() => true),
   getSelectedStorageBackend: vi.fn(() => "gnome_libsecret"),

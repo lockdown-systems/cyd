@@ -11,27 +11,33 @@ const KWALLET_BACKENDS = new Set(["kwallet", "kwallet5", "kwallet6"]);
 // protected desktop is not reported as unprotected on older distributions.
 const LIBSECRET_BACKENDS = new Set(["gnome_libsecret", "gnome_keyring"]);
 
-const unavailableProtection = (platform: string): CredentialProtection => ({
-  backend: "unavailable",
-  rawBackend: null,
-  platform,
-  osProtected: false,
-  canPersist: false,
-  disclosureRequired: true,
-});
-
 /**
  * Chromium only selects a password store on Linux; asking anywhere else either
  * throws or returns a value that means nothing.
+ *
+ * This is read even when encryption is unavailable, because naming the store
+ * the desktop chose is the difference between a warning the user can act on
+ * and one they cannot.
  */
-const selectedLinuxBackend = (): string => {
+const selectedLinuxBackend = (): string | null => {
   if (typeof safeStorage.getSelectedStorageBackend !== "function") {
-    return "unknown";
+    return null;
   }
-  return safeStorage.getSelectedStorageBackend() ?? "unknown";
+  try {
+    return safeStorage.getSelectedStorageBackend() ?? null;
+  } catch (error) {
+    log.warn(
+      "getCredentialProtection: could not read the Linux password store",
+      error,
+    );
+    return null;
+  }
 };
 
-const linuxBackend = (rawBackend: string): CredentialBackend => {
+const linuxBackend = (rawBackend: string | null): CredentialBackend => {
+  if (rawBackend === null) {
+    return "unavailable";
+  }
   if (LIBSECRET_BACKENDS.has(rawBackend)) {
     return "gnome_libsecret";
   }
@@ -46,13 +52,16 @@ const linuxBackend = (rawBackend: string): CredentialBackend => {
   return "unknown";
 };
 
+const isProtectedLinuxBackend = (backend: CredentialBackend): boolean =>
+  backend === "gnome_libsecret" || backend === "kwallet";
+
 /**
  * Report which facility protects Cyd's persisted credentials at rest.
  *
- * This is the single place that decides whether Cyd may persist credentials,
- * and whether it owes the user a disclosure about how weakly they are
- * protected. It never claims more protection than the selected backend
- * provides.
+ * This is the single place that decides whether the operating system protects
+ * a credential, and therefore whether Cyd owes the user a disclosure that it
+ * does not. It never claims more protection than the selected backend
+ * provides. It never decides whether to persist: Cyd always does.
  */
 export const getCredentialProtection = (): CredentialProtection => {
   const platform = process.platform;
@@ -64,68 +73,47 @@ export const getCredentialProtection = (): CredentialProtection => {
     // safeStorage throws when the app is not ready, and on Linux when no
     // password store could be selected at all.
     log.warn("getCredentialProtection: safeStorage is unavailable", error);
-    return unavailableProtection(platform);
-  }
-
-  if (!encryptionAvailable) {
-    return unavailableProtection(platform);
-  }
-
-  if (platform === "darwin") {
-    return {
-      backend: "macos_keychain",
-      rawBackend: null,
-      platform,
-      osProtected: true,
-      canPersist: true,
-      disclosureRequired: false,
-    };
-  }
-
-  if (platform === "win32") {
-    return {
-      backend: "windows_dpapi",
-      rawBackend: null,
-      platform,
-      osProtected: true,
-      canPersist: true,
-      disclosureRequired: false,
-    };
+    encryptionAvailable = false;
   }
 
   if (platform === "linux") {
-    let rawBackend: string;
-    try {
-      rawBackend = selectedLinuxBackend();
-    } catch (error) {
-      log.warn(
-        "getCredentialProtection: could not read the Linux password store",
-        error,
-      );
-      rawBackend = "unknown";
-    }
+    const rawBackend = selectedLinuxBackend();
     const backend = linuxBackend(rawBackend);
-    const osProtected = backend === "gnome_libsecret" || backend === "kwallet";
+    // Electron reports encryption as unavailable whenever Chromium fell back
+    // to basic_text, so a keyring-backed name is not on its own a promise
+    // that the keyring answered.
+    const osProtected = encryptionAvailable && isProtectedLinuxBackend(backend);
     return {
       backend,
       rawBackend,
       platform,
-      // libsecret and KWallet are the only Linux stores Cyd treats as
-      // protecting credentials.
       osProtected,
-      // basic_text is the one deliberate fallback: it protects nothing, but
-      // a Linux desktop without a keyring is common and refusing there would
-      // leave those users unable to connect at all. A store Cyd does not
-      // recognize gets no such benefit of the doubt, because Cyd cannot say
-      // what it protects against.
-      canPersist: osProtected || backend === "basic_text",
       disclosureRequired: !osProtected,
+    };
+  }
+
+  if (platform === "darwin" || platform === "win32") {
+    const backend: CredentialBackend =
+      platform === "darwin" ? "macos_keychain" : "windows_dpapi";
+    return {
+      // Chromium only exposes a selected password store on Linux.
+      backend: encryptionAvailable ? backend : "unavailable",
+      rawBackend: null,
+      platform,
+      osProtected: encryptionAvailable,
+      disclosureRequired: !encryptionAvailable,
     };
   }
 
   // Cyd only ships on macOS, Windows, and Linux. Any other platform has no
   // vetted credential facility, so it gets none.
-  return unavailableProtection(platform);
+  return {
+    backend: "unavailable",
+    rawBackend: null,
+    platform,
+    osProtected: false,
+    disclosureRequired: true,
+  };
 };
 
 /**
@@ -141,7 +129,6 @@ export const logCredentialProtection = (): CredentialProtection => {
       backend: protection.backend,
       rawBackend: protection.rawBackend,
       osProtected: protection.osProtected,
-      canPersist: protection.canPersist,
     }),
   );
   if (protection.disclosureRequired) {

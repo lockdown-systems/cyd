@@ -33,7 +33,6 @@ describe("getCredentialProtection", () => {
 
     expect(protection.backend).toBe("macos_keychain");
     expect(protection.osProtected).toBe(true);
-    expect(protection.canPersist).toBe(true);
     expect(protection.disclosureRequired).toBe(false);
     // Chromium only exposes a selected password store on Linux.
     expect(protection.rawBackend).toBeNull();
@@ -78,46 +77,77 @@ describe("getCredentialProtection", () => {
     },
   );
 
-  test("Linux basic_text is a persisted but disclosed fallback", () => {
+  test("Linux basic_text is unprotected and disclosed", () => {
     setPlatform("linux");
+    // Real Electron reports encryption as unavailable whenever Chromium fell
+    // back to basic_text, so the two go together.
     safeStorageMock.getSelectedStorageBackend.mockReturnValue("basic_text");
+    safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
 
     const protection = getCredentialProtection();
 
+    // The store is still named, so the warning bar can say which one it is.
     expect(protection.backend).toBe("basic_text");
+    expect(protection.rawBackend).toBe("basic_text");
     expect(protection.osProtected).toBe(false);
-    expect(protection.canPersist).toBe(true);
     expect(protection.disclosureRequired).toBe(true);
   });
 
-  test("an unrecognized Linux backend is not persisted to", () => {
+  test("an unrecognized Linux backend is named but not vouched for", () => {
     setPlatform("linux");
     safeStorageMock.getSelectedStorageBackend.mockReturnValue("something_new");
 
     const protection = getCredentialProtection();
 
-    // basic_text is the only sanctioned fallback. A store Cyd cannot
-    // describe gets no benefit of the doubt.
+    // A store Cyd cannot describe gets no benefit of the doubt, even when
+    // Chromium says it can encrypt.
     expect(protection.backend).toBe("unknown");
-    expect(protection.osProtected).toBe(false);
-    expect(protection.canPersist).toBe(false);
-    expect(protection.disclosureRequired).toBe(true);
     expect(protection.rawBackend).toBe("something_new");
+    expect(protection.osProtected).toBe(false);
+    expect(protection.disclosureRequired).toBe(true);
   });
 
-  test("credentials cannot be persisted when encryption is unavailable", () => {
+  test("a keyring-backed name without working encryption is not protected", () => {
     setPlatform("linux");
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue(
+      "gnome_libsecret",
+    );
+    safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
+
+    const protection = getCredentialProtection();
+
+    // The desktop named a keyring, but nothing answered, so Cyd must not
+    // claim the credential is protected.
+    expect(protection.backend).toBe("gnome_libsecret");
+    expect(protection.osProtected).toBe(false);
+    expect(protection.disclosureRequired).toBe(true);
+  });
+
+  test("Linux with no selectable password store is unavailable", () => {
+    setPlatform("linux");
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue(null);
     safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
 
     const protection = getCredentialProtection();
 
     expect(protection.backend).toBe("unavailable");
-    expect(protection.canPersist).toBe(false);
+    expect(protection.rawBackend).toBeNull();
     expect(protection.osProtected).toBe(false);
     expect(protection.disclosureRequired).toBe(true);
   });
 
-  test("a throwing safeStorage is treated as unavailable", () => {
+  test("macOS without working encryption is unavailable", () => {
+    setPlatform("darwin");
+    safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
+
+    const protection = getCredentialProtection();
+
+    expect(protection.backend).toBe("unavailable");
+    expect(protection.osProtected).toBe(false);
+    expect(protection.disclosureRequired).toBe(true);
+  });
+
+  test("a throwing safeStorage is treated as unprotected", () => {
     setPlatform("darwin");
     safeStorageMock.isEncryptionAvailable.mockImplementation(() => {
       throw new Error("app not ready");
@@ -126,6 +156,7 @@ describe("getCredentialProtection", () => {
     const protection = getCredentialProtection();
 
     expect(protection.backend).toBe("unavailable");
-    expect(protection.canPersist).toBe(false);
+    expect(protection.osProtected).toBe(false);
+    expect(protection.disclosureRequired).toBe(true);
   });
 });

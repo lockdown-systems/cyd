@@ -12,7 +12,6 @@ const protection = (
   rawBackend: "basic_text",
   platform: "linux",
   osProtected: false,
-  canPersist: true,
   disclosureRequired: true,
   ...overrides,
 });
@@ -60,7 +59,6 @@ describe("CredentialStoreBar", () => {
       protection({
         backend: "unknown",
         rawBackend: "something_new",
-        canPersist: false,
       }),
     );
 
@@ -72,20 +70,20 @@ describe("CredentialStoreBar", () => {
     expect(bar.text()).not.toContain("could not find a system keyring");
   });
 
-  it("explains when credentials cannot be stored at all", () => {
+  it("explains when no facility could protect the credentials", () => {
     const wrapper = mountBar(
       protection({
         backend: "unavailable",
         rawBackend: null,
-        canPersist: false,
       }),
     );
 
     const bar = wrapper.find(".credential-store-bar");
-    expect(bar.text()).toContain("will not save your Bluesky connection");
-    // X login cookies keep being persisted by Chromium either way, so the
-    // warning must not imply that nothing is stored.
-    expect(bar.text()).toContain("X login cookies are still stored");
+    expect(bar.text()).toContain("without operating-system protection");
+    // Cyd still saves the connection, so the warning must say what the risk
+    // is rather than imply that nothing is stored.
+    expect(bar.text()).toContain("login cookies");
+    expect(bar.text()).not.toContain("will not save");
   });
 
   it("can be dismissed", async () => {

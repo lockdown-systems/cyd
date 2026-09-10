@@ -3,7 +3,7 @@ import log from "electron-log/main";
 
 import { exec } from "../database/common";
 import { CREDENTIAL_KEY_PREFIXES } from "./keys";
-import { CredentialStoreUnavailableError, accountCredentials } from "./store";
+import { accountCredentials } from "./store";
 
 // Cyd once serialized the X-to-Bluesky migration's OAuth state and session,
 // which carry access tokens, refresh tokens, and a private DPoP key, into the
@@ -20,8 +20,8 @@ const BLUESKY_DID_KEY = "blueskyDID";
 export type LegacyCredentialSweep = {
   // Keys that now live in protected storage.
   moved: string[];
-  // Keys that were destroyed because Cyd could not protect them. The user
-  // reconnects; nothing they saved is lost.
+  // Keys that could not be moved, and were destroyed along with the rows
+  // that held them. The user reconnects; nothing they saved is lost.
   discarded: string[];
 };
 
@@ -67,8 +67,10 @@ const purgeDeletedRowRemnants = (db: Database.Database): void => {
  * and erase the rows that held them.
  *
  * Called whenever an account database opens, this is the only path that reads
- * those legacy rows. It is idempotent, and when no credential facility is
- * available it destroys the credentials rather than leaving them readable.
+ * those legacy rows. It is idempotent. The credential store persists on every
+ * desktop, protected where the operating system offers protection and in the
+ * clear where it does not, so a sweep normally moves everything. A credential
+ * that cannot be stored at all is destroyed rather than left readable here.
  */
 export const sweepLegacyOAuthCredentials = (
   db: Database.Database,
@@ -106,14 +108,12 @@ export const sweepLegacyOAuthCredentials = (
       credentials.set(row.key, row.value);
       sweep.moved.push(row.key);
     } catch (error) {
-      if (!(error instanceof CredentialStoreUnavailableError)) {
-        // Credential names can carry a Bluesky DID, so the failure names the
-        // account rather than the credential.
-        log.error(
-          `sweepLegacyOAuthCredentials: could not migrate a credential for account ${accountID}`,
-          error,
-        );
-      }
+      // Credential names can carry a Bluesky DID, so the failure names the
+      // account rather than the credential.
+      log.error(
+        `sweepLegacyOAuthCredentials: could not migrate a credential for account ${accountID}`,
+        error,
+      );
       sweep.discarded.push(row.key);
     }
   }

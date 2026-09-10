@@ -4,7 +4,6 @@ import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 
 import { safeStorageMock } from "../../../__tests__/platform-fixtures/electronMocks";
 import {
-  CredentialStoreUnavailableError,
   accountCredentials,
   type AccountCredentials,
 } from "../../../credentials";
@@ -139,17 +138,19 @@ describe("BlueskyService credential storage", () => {
     await expect(stores.stateStore.get("state-key")).resolves.toBeUndefined();
   });
 
-  test("refuses to persist an OAuth session with no credential backend", async () => {
+  test("persists an OAuth session with no credential backend, in the clear", async () => {
     const service = createService(context!.controller, context!.account.id);
     const stores = await oauthStores(service);
+    safeStorageMock.getSelectedStorageBackend.mockReturnValue("basic_text");
     safeStorageMock.isEncryptionAvailable.mockReturnValue(false);
 
     await expect(
       stores.sessionStore.set("did:web:cyd", SESSION_CREDENTIAL),
-    ).rejects.toBeInstanceOf(CredentialStoreUnavailableError);
+    ).resolves.toBeUndefined();
 
-    safeStorageMock.isEncryptionAvailable.mockReturnValue(true);
-    expect(credentials!.keys()).toEqual([]);
+    // It goes to the credential vault, disclosed as unprotected, and still
+    // never to the account's plaintext config table.
+    expect(credentials!.keys()).toEqual(["blueskySessionStore-did:web:cyd"]);
     expect(
       getConfig("blueskySessionStore-did:web:cyd", context!.controller.db),
     ).toBeNull();

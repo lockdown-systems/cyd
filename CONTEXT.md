@@ -78,5 +78,5 @@ Any persisted material that lets its holder act on a user's platform account, in
 _Avoid_: credential, secret, token
 
 **Cyd credential store**:
-The desktop-wide facility that persists account-control credentials through operating-system protected storage, outside every account database, media directory, and Cyd archive. On Linux it may use Chromium's unprotected `basic_text` backend only when that limitation is detected and disclosed to the user.
+The desktop-wide facility that persists account-control credentials outside every account database, media directory, and Cyd archive. It encrypts them through operating-system protected storage where a keyring is available, and stores them in the clear where none is, disclosing that limitation to the user.
 _Avoid_: credential storage, keychain, encrypted database
