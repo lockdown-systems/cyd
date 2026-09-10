@@ -33,11 +33,23 @@ import {
   deleteConfig as globalDeleteConfig,
 } from "../../../database";
 import {
+  accountCredentialNamespace,
+  deleteCredential,
+  deleteCredentialsWithPrefix,
+  getCredential,
+  setCredential,
+} from "../../../credentials";
+import {
   XTweetRow,
   XTweetMediaRow,
   XTweetURLRow,
   XTweetBlueskyMigrationRow,
 } from "../../types";
+
+// Credential names inside the account's credential namespace. They match the
+// legacy config keys so a migrated credential keeps its identity.
+const STATE_CREDENTIAL_PREFIX = "blueskyStateStore-";
+const SESSION_CREDENTIAL_PREFIX = "blueskySessionStore-";
 
 /**
  * Service class for handling Bluesky migration operations for X/Twitter accounts.
@@ -62,10 +74,19 @@ export class BlueskyService {
     private updateRateLimitInfo: (info: Partial<XRateLimitInfo>) => void,
   ) {}
 
+  private credentialNamespace(): string {
+    return accountCredentialNamespace(this.accountID);
+  }
+
   private async clientFromClientID(
     host: string,
     path: string,
   ): Promise<NodeOAuthClient> {
+    // The OAuth state holds the PKCE verifier and the session holds access and
+    // refresh tokens plus a private DPoP key. Both are account-control
+    // credentials, so they live in protected storage and never in this
+    // account's SQLite config table.
+    const namespace = this.credentialNamespace();
     const options: NodeOAuthClientFromMetadataOptions = {
       clientId: `https://${host}/${path}`,
       stateStore: {
@@ -73,34 +94,40 @@ export class BlueskyService {
           key: string,
           internalState: NodeSavedState,
         ): Promise<void> => {
-          await this.setConfig(
-            `blueskyStateStore-${key}`,
+          setCredential(
+            namespace,
+            `${STATE_CREDENTIAL_PREFIX}${key}`,
             JSON.stringify(internalState),
           );
         },
         get: async (key: string): Promise<NodeSavedState | undefined> => {
-          const stateStore = await this.getConfig(`blueskyStateStore-${key}`);
+          const stateStore = getCredential(
+            namespace,
+            `${STATE_CREDENTIAL_PREFIX}${key}`,
+          );
           return stateStore ? JSON.parse(stateStore) : undefined;
         },
         del: async (key: string): Promise<void> => {
-          await this.setConfig(`blueskyStateStore-${key}`, "");
+          deleteCredential(namespace, `${STATE_CREDENTIAL_PREFIX}${key}`);
         },
       },
       sessionStore: {
         set: async (sub: string, session: NodeSavedSession): Promise<void> => {
-          await this.setConfig(
-            `blueskySessionStore-${sub}`,
+          setCredential(
+            namespace,
+            `${SESSION_CREDENTIAL_PREFIX}${sub}`,
             JSON.stringify(session),
           );
         },
         get: async (sub: string): Promise<NodeSavedSession | undefined> => {
-          const sessionStore = await this.getConfig(
-            `blueskySessionStore-${sub}`,
+          const sessionStore = getCredential(
+            namespace,
+            `${SESSION_CREDENTIAL_PREFIX}${sub}`,
           );
           return sessionStore ? JSON.parse(sessionStore) : undefined;
         },
         del: async (sub: string): Promise<void> => {
-          await this.setConfig(`blueskySessionStore-${sub}`, "");
+          deleteCredential(namespace, `${SESSION_CREDENTIAL_PREFIX}${sub}`);
         },
       },
     };
@@ -260,10 +287,19 @@ export class BlueskyService {
     // Delete from global config
     await globalDeleteConfig("blueskyOAuthAccountID");
 
-    // Delete from account config
+    // Delete from account config. The DID is a public identifier, but it is
+    // what points at the credentials, so it goes too.
     await this.deleteConfig("blueskyDID");
-    await this.deleteConfigLike("blueskyStateStore-%");
-    await this.deleteConfigLike("blueskySessionStore-%");
+
+    // Delete the OAuth state and session from protected storage
+    const namespace = this.credentialNamespace();
+    deleteCredentialsWithPrefix(namespace, STATE_CREDENTIAL_PREFIX);
+    deleteCredentialsWithPrefix(namespace, SESSION_CREDENTIAL_PREFIX);
+
+    // Older versions of Cyd kept these in the account's config table. Sweep
+    // them here too, in case a database predates the credential facility.
+    await this.deleteConfigLike(`${STATE_CREDENTIAL_PREFIX}%`);
+    await this.deleteConfigLike(`${SESSION_CREDENTIAL_PREFIX}%`);
   }
 
   async getTweetCounts(): Promise<XMigrateTweetCounts> {

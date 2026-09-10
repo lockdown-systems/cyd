@@ -11,7 +11,17 @@ interface ConfigRow {
   value: string;
 }
 
+// Config keys Cyd used to store account-control credentials under. Nothing
+// may write them again; src/credentials owns this material now.
+const CREDENTIAL_CONFIG_KEY_PREFIXES = [
+  "blueskyStateStore-",
+  "blueskySessionStore-",
+];
+
 // Functions
+
+export const isCredentialConfigKey = (key: string): boolean =>
+  CREDENTIAL_CONFIG_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
 
 export const getConfig = (
   key: string,
@@ -34,6 +44,14 @@ export const setConfig = (
   value: string,
   db: Database.Database | null = null,
 ) => {
+  if (isCredentialConfigKey(key)) {
+    // Cyd once wrote OAuth state and sessions here. The config table is
+    // plaintext, so this is now a bug, not a fallback: credentials belong in
+    // src/credentials.
+    throw new Error(
+      `Refusing to store a credential in the plaintext config table: ${key}`,
+    );
+  }
   if (!db) {
     db = getMainDatabase();
   }

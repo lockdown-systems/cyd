@@ -72,3 +72,11 @@ _Avoid_: source deletion, Bluesky local deletion
 **Bluesky local deletion**:
 An explicit removal of Bluesky saved data from Cyd, independent of whether the source still exists on Bluesky.
 _Avoid_: local deletion, Bluesky source deletion, stop saving
+
+**Account-control credential**:
+Any persisted material that lets its holder act on a user's platform account, including OAuth access and refresh tokens, private DPoP keys, authorization state containing a secret, app passwords, reusable session material, and authentication cookies. Identifiers such as a Bluesky DID or an X username are not credentials.
+_Avoid_: credential, secret, token
+
+**Cyd credential store**:
+The desktop-wide facility that persists account-control credentials through operating-system protected storage, outside every account database, media directory, and Cyd archive. On Linux it may use Chromium's unprotected `basic_text` backend only when that limitation is detected and disclosed to the user.
+_Avoid_: credential storage, keychain, encrypted database

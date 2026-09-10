@@ -21,6 +21,10 @@ import {
 } from "../shared_types";
 import { packageExceptionForReport } from "../util";
 import { removeBlueskyAccountStorage } from "../account_bluesky/storage";
+import {
+  accountCredentialNamespace,
+  deleteCredentialNamespace,
+} from "../credentials";
 
 // Types
 
@@ -253,6 +257,10 @@ export const deleteAccount = (
       }
       break;
   }
+
+  // Every credential an account persisted lives in the namespace it owns, so
+  // deleting the account leaves nothing behind that could still act on it.
+  deleteCredentialNamespace(accountCredentialNamespace(accountID));
 
   // Delete the account
   exec(getMainDatabase(), "DELETE FROM account WHERE id = ?", [accountID]);

@@ -1,0 +1,93 @@
+import { describe, it, expect } from "vitest";
+import { mount } from "@vue/test-utils";
+
+import i18n from "../../i18n";
+import CredentialStorageBar from "./CredentialStorageBar.vue";
+import type { CredentialProtection } from "../../../../shared_types";
+
+const protection = (
+  overrides: Partial<CredentialProtection> = {},
+): CredentialProtection => ({
+  backend: "basic_text",
+  rawBackend: "basic_text",
+  platform: "linux",
+  osProtected: false,
+  canPersist: true,
+  disclosureRequired: true,
+  ...overrides,
+});
+
+const mountBar = (value: CredentialProtection | null) =>
+  mount(CredentialStorageBar, {
+    props: { protection: value },
+    global: { plugins: [i18n] },
+  });
+
+describe("CredentialStorageBar", () => {
+  it("says nothing when the OS protects credentials", () => {
+    const wrapper = mountBar(
+      protection({
+        backend: "macos_keychain",
+        platform: "darwin",
+        rawBackend: null,
+        osProtected: true,
+        disclosureRequired: false,
+      }),
+    );
+
+    expect(wrapper.find(".credential-storage-bar").exists()).toBe(false);
+  });
+
+  it("says nothing before the protection is known", () => {
+    const wrapper = mountBar(null);
+
+    expect(wrapper.find(".credential-storage-bar").exists()).toBe(false);
+  });
+
+  it("discloses the Linux basic_text fallback", () => {
+    const wrapper = mountBar(protection());
+
+    const bar = wrapper.find(".credential-storage-bar");
+    expect(bar.exists()).toBe(true);
+    expect(bar.text()).toContain("not protected on this computer");
+    expect(bar.text()).toContain("KWallet");
+    // The exact backend is named, so the warning is checkable rather than vague.
+    expect(bar.text()).toContain("basic_text");
+  });
+
+  it("discloses an unrecognized Linux backend", () => {
+    const wrapper = mountBar(
+      protection({ backend: "unknown", rawBackend: "something_new" }),
+    );
+
+    const bar = wrapper.find(".credential-storage-bar");
+    expect(bar.exists()).toBe(true);
+    expect(bar.text()).toContain("something_new");
+  });
+
+  it("explains when credentials cannot be stored at all", () => {
+    const wrapper = mountBar(
+      protection({
+        backend: "unavailable",
+        rawBackend: null,
+        canPersist: false,
+      }),
+    );
+
+    const bar = wrapper.find(".credential-storage-bar");
+    expect(bar.text()).toContain("will not save your Bluesky connection");
+  });
+
+  it("can be dismissed", async () => {
+    const wrapper = mountBar(protection());
+
+    // The test environment stubs MouseEvent, so dispatch the click natively
+    // rather than through test-utils' synthetic event.
+    (
+      wrapper.find(".credential-storage-bar-close").element as HTMLElement
+    ).click();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find(".credential-storage-bar").exists()).toBe(false);
+  });
+});

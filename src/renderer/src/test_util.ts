@@ -174,6 +174,16 @@ export function createMockEmitter(): Emitter<Record<EventType, unknown>> {
  */
 export function mockElectronAPI() {
   const mockElectron = {
+    // Credential protection (used by the disclosure bar in App.vue)
+    getCredentialProtection: vi.fn().mockResolvedValue({
+      backend: "macos_keychain",
+      rawBackend: null,
+      platform: "darwin",
+      osProtected: true,
+      canPersist: true,
+      disclosureRequired: false,
+    }),
+
     // Database operations (used by all view models)
     database: {
       getAccount: vi.fn().mockResolvedValue(createMockAccount()),

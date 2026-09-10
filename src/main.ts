@@ -28,6 +28,7 @@ import {
   ensureBlueskyAccountStorage,
 } from "./account_bluesky";
 import { defineIPCArchive } from "./archive";
+import { defineIPCCredentials, logCredentialProtection } from "./credentials";
 import {
   getUpdatesBaseURL,
   getAccountDataPath,
@@ -672,6 +673,11 @@ async function createWindow() {
     defineIPCFacebook();
     defineIPCBluesky();
     defineIPCArchive();
+    defineIPCCredentials();
+
+    // Record which facility protects credentials at rest, so support logs can
+    // tell an OS-protected install from a disclosed Linux fallback.
+    logCredentialProtection();
   }
   // @ts-expect-error: typescript doesn't know about this global variable
   global.ipcHandlersRegistered = true;

@@ -59,6 +59,7 @@ import * as Account from "./controller/account";
 import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithMediaAndURLs";
 import { migrations } from "./controller/migrations";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
+import { sweepLegacyOAuthCredentials } from "../credentials";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -190,6 +191,13 @@ export class XAccountController extends BaseAccountController<XProgress> {
     this.db = new Database(dbPath, {});
     this.db.pragma("journal_mode = WAL");
     runMigrations(this.db, migrations);
+
+    // Older versions stored the X-to-Bluesky OAuth state and session in this
+    // database's config table in plaintext. Opening the database is the one
+    // moment Cyd is guaranteed to be able to move them somewhere protected
+    // and erase what is left behind.
+    sweepLegacyOAuthCredentials(this.db, this.accountID);
+
     log.info("XAccountController.initDB: database initialized");
   }
 

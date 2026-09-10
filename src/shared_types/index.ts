@@ -4,3 +4,4 @@ export * from "./x";
 export * from "./facebook";
 export * from "./bluesky";
 export * from "./bluesky_migration";
+export * from "./credentials";

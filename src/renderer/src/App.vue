@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import semver from "semver";
 
 import { DeviceInfo, PlausibleEvents, UpdateStatus } from "./types";
+import type { CredentialProtection } from "../../shared_types";
 import { getDeviceInfo } from "./util";
 import CydAPIClient, {
   APIErrorResponse,
@@ -19,6 +20,7 @@ import AdvancedSettingsModal from "./modals/AdvancedSettingsModal.vue";
 
 import TabsView from "./views/TabsView.vue";
 import UpdatesBar from "./views/shared_components/UpdatesBar.vue";
+import CredentialStorageBar from "./views/shared_components/CredentialStorageBar.vue";
 
 // Get the global emitter
 const vueInstance = getCurrentInstance();
@@ -190,6 +192,11 @@ const cydAutoUpdaterUpdateDownloadedEventName =
 
 const platform = ref("");
 
+// How the operating system protects Cyd's persisted credentials. Cyd
+// discloses a weak or missing backend rather than letting people assume their
+// logins are protected.
+const credentialProtection = ref<CredentialProtection | null>(null);
+
 onMounted(async () => {
   await window.electron.trackEvent(
     PlausibleEvents.APP_OPENED,
@@ -199,6 +206,15 @@ onMounted(async () => {
   apiClient.value.initialize(await window.electron.getAPIURL());
 
   platform.value = await window.electron.getPlatform();
+
+  try {
+    credentialProtection.value =
+      await window.electron.getCredentialProtection();
+  } catch {
+    // A failure to describe the protection is not a reason to block startup,
+    // and the main process has already logged it.
+    credentialProtection.value = null;
+  }
 
   await refreshDeviceInfo();
   isFirstLoad.value = false;
@@ -319,6 +335,8 @@ onUnmounted(() => {
         v-if="!shouldHideTabsView"
         @check-for-updates-clicked="checkForUpdates(true)"
       />
+
+      <CredentialStorageBar :protection="credentialProtection" />
 
       <UpdatesBar
         v-if="updatesAvailable"

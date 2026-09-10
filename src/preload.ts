@@ -5,6 +5,7 @@ import {
   ResponseData,
   ArchiveInfo,
   BlueskyMigrationProfile,
+  CredentialProtection,
   // X
   XJob,
   XProgress,
@@ -63,6 +64,12 @@ const electronAPI = {
   },
   getDashURL: (): Promise<string> => {
     return ipcRenderer.invoke("getDashURL");
+  },
+  // How the operating system protects Cyd's persisted credentials. The
+  // renderer uses this to disclose an unprotected backend; it never receives
+  // a credential itself.
+  getCredentialProtection: (): Promise<CredentialProtection> => {
+    return ipcRenderer.invoke("credentials:getProtection");
   },
   isFeatureEnabled: (feature: string): Promise<boolean> => {
     return ipcRenderer.invoke("isFeatureEnabled", feature);
