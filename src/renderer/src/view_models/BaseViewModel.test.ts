@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BaseViewModel } from "./BaseViewModel";
 import { AutomationErrorType } from "../automation_errors";
 import {
+  browserAutomationAPI,
   createMockAccount,
   createMockEmitter,
   mockElectronAPI,
@@ -36,32 +37,6 @@ function createMockBaseViewModel() {
   return vm;
 }
 
-/** Every method the browser-automation layer adds, and the core must not have. */
-const automationAPI = [
-  "init",
-  "destroy",
-  "getWebview",
-  "safeExecuteJavaScript",
-  "loadURL",
-  "loadBlank",
-  "waitForURL",
-  "waitForLoadingToFinish",
-  "waitForSelector",
-  "waitForSelectorWithinSelector",
-  "doesSelectorExist",
-  "countSelectorsFound",
-  "getScrollHeight",
-  "scrollToBottom",
-  "scrollToTop",
-  "scrollUp",
-  "scriptClickElement",
-  "scriptMouseoverElement",
-  "scriptGetInnerText",
-  "scriptGetAllInnerHTML",
-  "scriptSendClickInputEvent",
-  "clickElementByXPath",
-];
-
 describe("BaseViewModel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,7 +44,7 @@ describe("BaseViewModel", () => {
   });
 
   describe("webview-free core", () => {
-    it.each(automationAPI)(
+    it.each(browserAutomationAPI)(
       "does not expose %s, because the core drives no browser",
       (method) => {
         const vm = createMockBaseViewModel();

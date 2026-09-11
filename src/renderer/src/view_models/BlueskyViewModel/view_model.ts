@@ -35,8 +35,10 @@ export class BlueskyViewModel extends BaseViewModel {
   }
 
   /**
-   * An automatic Bluesky error report names no account: a handle and a DID
-   * both identify a person, and neither belongs in one.
+   * An automatic Bluesky error report names no account: a handle and a DID both
+   * identify a person, and neither belongs in one. Spelled out rather than left
+   * to the core's default, so that adding a label here is a deliberate choice
+   * against the ADR rather than an oversight.
    *
    * See docs/adr/0029-minimize-bluesky-diagnostics.md.
    */

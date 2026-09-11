@@ -10,24 +10,12 @@ import {
 } from "../test_util";
 
 /**
- * A platform built on the browser-automation layer, standing in for X or
+ * Helper to create a mock BrowserViewModel instance with a webview already
+ * handed to it, the way a platform view does at mount. It stands in for X or
  * Facebook.
  */
-class TestBrowserViewModel extends BrowserViewModel {
-  constructor(
-    account: ReturnType<typeof createMockAccount>,
-    emitter: ReturnType<typeof createMockEmitter>,
-  ) {
-    super(account, emitter);
-  }
-}
-
-/**
- * Helper to create a mock BrowserViewModel instance with a webview already
- * handed to it, the way a platform view does at mount
- */
-function createMockBaseViewModel() {
-  const vm = new TestBrowserViewModel(
+function createMockBrowserViewModel() {
+  const vm = new BrowserViewModel(
     createMockAccount({ type: "X" }),
     createMockEmitter(),
   );
@@ -51,7 +39,7 @@ describe("BrowserViewModel", () => {
 
   describe("clickElementByXPath", () => {
     it("returns true when element is clicked successfully", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(true);
@@ -65,7 +53,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns false when element is not found", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(false);
@@ -76,7 +64,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns false when webview is not available", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.webview = null;
 
       const result = await vm.clickElementByXPath("//button[@id='test']");
@@ -85,7 +73,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("handles errors gracefully", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockRejectedValue(
@@ -102,7 +90,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("executes correct XPath evaluation code", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(true);
@@ -125,7 +113,7 @@ describe("BrowserViewModel", () => {
 
   describe("safeExecuteJavaScript", () => {
     it("returns success with value when JavaScript executes successfully", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue({
@@ -144,7 +132,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns success false when webview is not available", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.webview = null;
 
       const result = await vm.safeExecuteJavaScript<boolean>(
@@ -163,7 +151,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns success false when JavaScript execution throws", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockRejectedValue(
@@ -186,7 +174,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("does not log when no logContext is provided", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.webview = null;
 
       await vm.safeExecuteJavaScript<boolean>("(() => true)()");
@@ -196,7 +184,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns success false when webview is destroyed", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.isWebviewDestroyed = true;
 
       const result = await vm.safeExecuteJavaScript<boolean>(
@@ -211,7 +199,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("handles primitive return values correctly", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(42);
@@ -228,7 +216,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("handles array return values correctly", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue([1, 2, 3]);
@@ -247,7 +235,7 @@ describe("BrowserViewModel", () => {
 
   describe("getWebview", () => {
     it("returns webview when not destroyed", () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.isWebviewDestroyed = false;
 
       const webview = vm.getWebview();
@@ -256,7 +244,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns null when webview is destroyed", () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.isWebviewDestroyed = true;
 
       const webview = vm.getWebview();
@@ -265,7 +253,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns null when webview is null", () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.webview = null;
 
       const webview = vm.getWebview();
@@ -276,7 +264,7 @@ describe("BrowserViewModel", () => {
 
   describe("destroy", () => {
     it("marks webview as destroyed", () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       expect(vm.isWebviewDestroyed).toBe(false);
 
       vm.destroy();
@@ -287,7 +275,7 @@ describe("BrowserViewModel", () => {
 
   describe("doesSelectorExist", () => {
     it("returns true when selector exists", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(true);
@@ -301,7 +289,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("returns false when selector does not exist", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(false);
@@ -314,7 +302,7 @@ describe("BrowserViewModel", () => {
 
   describe("countSelectorsFound", () => {
     it("returns count of matching selectors", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       const mockWebview = vm.getWebview()!;
 
       vi.mocked(mockWebview.executeJavaScript).mockResolvedValue(5);
@@ -327,7 +315,7 @@ describe("BrowserViewModel", () => {
 
   describe("error reporting", () => {
     it("attaches the page URL and a screenshot when the person can see the browser", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.showBrowser = true;
       vi.mocked(vm.getWebview()!.getURL).mockReturnValue(
         "https://x.com/settings",
@@ -345,7 +333,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("attaches the page URL but no screenshot while the browser is hidden", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.showBrowser = false;
       vi.mocked(vm.getWebview()!.getURL).mockReturnValue(
         "https://x.com/settings",
@@ -363,7 +351,7 @@ describe("BrowserViewModel", () => {
     });
 
     it("attaches no page once the webview is gone", async () => {
-      const vm = createMockBaseViewModel();
+      const vm = createMockBrowserViewModel();
       vm.showBrowser = true;
       vm.destroy();
 

@@ -655,6 +655,36 @@ describe("usePlatformView", () => {
       wrapper.unmount();
     });
 
+    it("refuses to start a browser-driven platform with no webview", async () => {
+      const model = ref(createMockViewModel());
+      const TestComponent = createTestComponent(createMockAccount(), model);
+
+      const wrapper = mount(TestComponent, {
+        global: {
+          provide: {
+            apiClient: ref(apiClient),
+            deviceInfo: ref({ valid: true }),
+          },
+          config: {
+            globalProperties: {
+              emitter,
+            },
+          },
+        },
+      });
+
+      const { platformView } = wrapper.vm as {
+        platformView: ReturnType<typeof usePlatformView>;
+      };
+
+      await expect(platformView.initializePlatformView()).rejects.toThrow(
+        "driven through a browser",
+      );
+      expect(model.value.init).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    });
+
     it("offers no webview props to a platform that drives no browser", () => {
       const model = ref(createMockViewModel());
       const config = createMockConfig();

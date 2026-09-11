@@ -34,9 +34,9 @@ export type ErrorReportPageContext = {
 /**
  * Renderer-side owner of one account's view state, for every platform.
  *
- * This core is platform-agnostic and knows nothing about how a platform is
- * driven: it holds the account and its state machine, the recent log, error
- * reporting, pause and resume through sleep and wake, and translation.
+ * This core knows nothing about how a platform is driven: it holds the account
+ * and its state machine, the recent log, error reporting, pause and resume
+ * through sleep and wake, and translation.
  *
  * Platforms driven through an embedded browser build on BrowserViewModel,
  * which adds the webview and the page-interaction helpers. Platforms that talk
@@ -193,7 +193,8 @@ export class BaseViewModel {
       sensitiveContextData,
     );
 
-    // Submit progress to the API
+    // Submit progress to the API. Only the X view listens, so this is the one
+    // place the core is not platform-neutral yet.
     this.emitter?.emit(`x-submit-progress-${this.account?.id}`);
 
     await window.electron.trackEvent(
