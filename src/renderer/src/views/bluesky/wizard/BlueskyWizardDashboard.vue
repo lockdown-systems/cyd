@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { BlueskyViewModel } from "../../../view_models/BlueskyViewModel";
+import { State } from "../../../view_models/BlueskyViewModel";
 
 const { t } = useI18n();
 
@@ -9,21 +10,29 @@ const props = defineProps<{
   model: BlueskyViewModel;
 }>();
 
+const emit = defineEmits<{
+  setState: [value: string];
+}>();
+
 /**
- * Every capability on this dashboard arrives in a later issue: connecting an
- * account (#674), saving data (#676 and #677), and browsing it offline (#676
- * and #677). They are shown as unavailable rather than hidden, so the
- * dashboard describes what this account will be able to do.
+ * Saving data and browsing it offline arrive in #676 and #677. They are shown
+ * as unavailable rather than hidden, so the dashboard describes what this
+ * account will be able to do.
  *
- * Nothing here reads a Bluesky connection or the network, so the dashboard
- * renders for an account that has neither.
+ * Nothing here reads the network, so the dashboard renders for an account with
+ * no Bluesky connection and no saved data.
  */
 const cards = computed(() => [
   {
     icon: new URL("/assets/icon-bluesky.png", import.meta.url).href,
-    title: t("bluesky.dashboard.connectTitle"),
-    description: t("bluesky.dashboard.connectDescription"),
-    disabled: true,
+    title: props.model.isConnected
+      ? t("bluesky.dashboard.connectedTitle")
+      : t("bluesky.dashboard.connectTitle"),
+    description: props.model.isConnected
+      ? t("bluesky.dashboard.connectedDescription")
+      : t("bluesky.dashboard.connectDescription"),
+    disabled: false,
+    action: () => emit("setState", State.BlueskyWizardConnect),
   },
   {
     icon: new URL("/assets/icon-database.png", import.meta.url).href,
@@ -40,9 +49,9 @@ const cards = computed(() => [
 ]);
 
 /**
- * A Bluesky connection is authorization to act on an identity, which is not
- * built yet, so the most this dashboard can say is whether the local account
- * is linked to a Bluesky identity at all.
+ * A Bluesky connection is this installation's authorization to act on an
+ * identity. An account can be linked to an identity without holding one, so
+ * the dashboard says which.
  */
 const hasBlueskyIdentity = computed(() =>
   Boolean(props.model.localAccount?.did),
@@ -58,6 +67,12 @@ const hasBlueskyIdentity = computed(() =>
       >
         {{ t("bluesky.dashboard.noIdentity") }}
       </p>
+      <p
+        v-else-if="!model.isConnected"
+        class="not-connected text-muted small text-center"
+      >
+        {{ t("bluesky.dashboard.notConnected") }}
+      </p>
 
       <div class="dashboard row align-items-stretch g-3 justify-content-center">
         <div
@@ -69,6 +84,7 @@ const hasBlueskyIdentity = computed(() =>
             class="card h-100"
             :class="{ 'disabled-card': card.disabled }"
             :aria-disabled="card.disabled"
+            @click="card.action && card.action()"
           >
             <span
               v-if="card.disabled"
@@ -90,7 +106,8 @@ const hasBlueskyIdentity = computed(() =>
 </template>
 
 <style scoped>
-.no-identity {
+.no-identity,
+.not-connected {
   margin-bottom: 0;
   padding: 0 2rem;
 }

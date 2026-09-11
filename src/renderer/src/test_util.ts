@@ -114,6 +114,7 @@ export function createMockBlueskyLocalAccount(
     handle: null,
     displayName: null,
     profileImageDataURI: null,
+    connectedAt: null,
     ...overrides,
   };
 }
@@ -403,6 +404,17 @@ export function mockElectronAPI() {
       }),
       deleteLocalAccount: vi.fn().mockResolvedValue(undefined),
       clearStagingAreas: vi.fn().mockResolvedValue(undefined),
+      connect: vi.fn().mockResolvedValue(true),
+      completeConnection: vi.fn().mockResolvedValue(true),
+      connectWithExistingSession: vi.fn().mockResolvedValue(false),
+      getProfile: vi.fn().mockResolvedValue(null),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+    },
+
+    // Main-process events (used by pages that wait for an OAuth callback)
+    ipcRenderer: {
+      on: vi.fn(),
+      removeAllListeners: vi.fn(),
     },
 
     // Analytics (used by all view models)
@@ -429,11 +441,26 @@ export function mockElectronAPI() {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const previousWindow = (global as any).window;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).window = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(global as any).window,
+    ...previousWindow,
     electron: mockElectron,
   };
+
+  // Spreading a window only copies enumerable own properties, which leaves the
+  // DOM event constructors behind, and the stand-ins this suite installs on the
+  // real window are not events jsdom will dispatch. Vue Test Utils builds every
+  // simulated event from `window.Event`, so a mounted component could not be
+  // typed into or submitted without a real one. `createEvent` is how jsdom
+  // hands back the genuine constructor after it has been shadowed.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).window.Event =
+      globalThis.document?.createEvent("Event").constructor;
+  } catch {
+    // No DOM in this suite, so nothing will dispatch an event either.
+  }
 
   return mockElectron;
 }

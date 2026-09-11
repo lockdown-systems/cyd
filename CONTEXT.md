@@ -80,3 +80,15 @@ _Avoid_: credential, secret, token
 **Cyd credential store**:
 The desktop-wide facility that persists account-control credentials outside every account database, media directory, and Cyd archive. It encrypts them through operating-system protected storage where a keyring is available, and stores them in the clear where none is, disclosing that limitation to the user.
 _Avoid_: credential storage, keychain, encrypted database
+
+**Bluesky OAuth session**:
+One Bluesky identity's authorization, keyed by DID and shared by every part of Cyd that acts on that identity. Cyd holds at most one per DID, and authorizing an identity once is enough for every platform that wants it.
+_Avoid_: Bluesky connection, OAuth token, login
+
+**Bluesky session holder**:
+An account that depends on a Bluesky OAuth session: an X account with its Bluesky migration connected, or a connected Bluesky local account bound to that DID. Holders are derived from account state rather than counted, and a session is revoked at its PDS when and only when its last holder releases it.
+_Avoid_: reference count, connection owner, Bluesky connection
+
+**Bluesky OAuth flow**:
+One in-flight browser authorization, named by the platform and account that started it. The name travels inside the OAuth request, so interleaved authorizations each return to their own initiator.
+_Avoid_: OAuth state, callback, session

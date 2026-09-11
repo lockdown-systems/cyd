@@ -20,6 +20,8 @@ import {
   XMigrateTweetCounts,
   XAccount,
   // Bluesky
+  BlueskyConnectStart,
+  BlueskyIdentityProfile,
   BlueskyLocalAccount,
   BlueskyLocalAccountPaths,
   // Facebook
@@ -460,7 +462,7 @@ const electronAPI = {
     blueskyAuthorize: (
       accountID: number,
       handle: string,
-    ): Promise<boolean | string> => {
+    ): Promise<BlueskyConnectStart> => {
       return ipcRenderer.invoke("X:blueskyAuthorize", accountID, handle);
     },
     blueskyCallback: (
@@ -512,6 +514,38 @@ const electronAPI = {
       accountID: number,
     ): Promise<BlueskyLocalAccountPaths> => {
       return ipcRenderer.invoke("Bluesky:getLocalAccountPaths", accountID);
+    },
+    connect: (
+      accountID: number,
+      handle: string,
+    ): Promise<BlueskyConnectStart> => {
+      return ipcRenderer.invoke("Bluesky:connect", accountID, handle);
+    },
+    completeConnection: (
+      accountID: number,
+      queryString: string,
+    ): Promise<true | string> => {
+      return ipcRenderer.invoke(
+        "Bluesky:completeConnection",
+        accountID,
+        queryString,
+      );
+    },
+    connectWithExistingSession: (
+      accountID: number,
+      did: string,
+    ): Promise<boolean> => {
+      return ipcRenderer.invoke(
+        "Bluesky:connectWithExistingSession",
+        accountID,
+        did,
+      );
+    },
+    getProfile: (accountID: number): Promise<BlueskyIdentityProfile | null> => {
+      return ipcRenderer.invoke("Bluesky:getProfile", accountID);
+    },
+    disconnect: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Bluesky:disconnect", accountID);
     },
     deleteLocalAccount: (
       accountID: number,

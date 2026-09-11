@@ -99,6 +99,8 @@ export enum AutomationErrorType {
   // Bluesky
   bluesky_runError = "bluesky_runError",
   bluesky_openLocalAccountError = "bluesky_openLocalAccountError",
+  bluesky_connectError = "bluesky_connectError",
+  bluesky_disconnectError = "bluesky_disconnectError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -289,4 +291,8 @@ export const AutomationErrorTypeToMessage = {
     "An error occurred in your Bluesky account",
   [AutomationErrorType.bluesky_openLocalAccountError]:
     "Failed to open this Bluesky account's local storage",
+  [AutomationErrorType.bluesky_connectError]:
+    "Failed to connect this Bluesky account",
+  [AutomationErrorType.bluesky_disconnectError]:
+    "Failed to disconnect this Bluesky account",
 };

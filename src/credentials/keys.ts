@@ -7,12 +7,13 @@
  * it here once.
  */
 
-// The X-to-Bluesky migration's OAuth authorization state, which carries the
-// PKCE verifier.
+// A Bluesky OAuth authorization state, which carries the PKCE verifier and a
+// private DPoP key. Keyed by the OAuth `state` parameter.
 export const BLUESKY_OAUTH_STATE_PREFIX = "blueskyStateStore-";
 
-// The X-to-Bluesky migration's OAuth session, which carries access and
-// refresh tokens and a private DPoP key.
+// A Bluesky OAuth session, which carries access and refresh tokens and a
+// private DPoP key. Keyed by the DID it authorizes, and shared by every part
+// of Cyd that acts on that identity.
 export const BLUESKY_OAUTH_SESSION_PREFIX = "blueskySessionStore-";
 
 export const CREDENTIAL_KEY_PREFIXES = [

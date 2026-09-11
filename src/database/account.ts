@@ -284,6 +284,28 @@ const revokeAccountConnections = async (accountID: number): Promise<void> => {
   }
 };
 
+/**
+ * Release a deleted Bluesky local account's hold on its identity.
+ *
+ * This runs after the account row is gone, because who holds a Bluesky session
+ * is derived from the accounts that exist: asking any earlier would still
+ * count this one. An X account with the migration connected to the same
+ * identity keeps its session and is not signed out.
+ */
+const releaseDeletedBlueskyHold = async (did: string): Promise<void> => {
+  try {
+    // Imported lazily: the shared OAuth module derives holders from this
+    // module, so naming it at the top would close a cycle.
+    const { releaseBlueskyHold } = await import("../bluesky_oauth");
+    await releaseBlueskyHold(did);
+  } catch (error) {
+    log.error(
+      "releaseDeletedBlueskyHold: could not release a deleted account's Bluesky hold",
+      error,
+    );
+  }
+};
+
 // IPC
 
 export const defineIPCDatabaseAccount = () => {
@@ -335,6 +357,14 @@ export const defineIPCDatabaseAccount = () => {
     "database:deleteAccount",
     async (_, accountID, confirmedAccountUUID?: string) => {
       try {
+        // A Bluesky local account holds its identity's shared session for as
+        // long as it exists, so the identity is noted before it is destroyed.
+        const account = getAccount(accountID);
+        const blueskyDID =
+          account?.type === "Bluesky"
+            ? (account.blueskyLocalAccount?.did ?? null)
+            : null;
+
         // Revoke before discarding: once the local credentials are gone, Cyd
         // can no longer tell the authorization server to invalidate them.
         await revokeAccountConnections(accountID);
@@ -345,6 +375,10 @@ export const defineIPCDatabaseAccount = () => {
         await ses.closeAllConnections();
         await ses.clearStorageData();
         deleteAccount(accountID, confirmedAccountUUID);
+
+        if (blueskyDID) {
+          await releaseDeletedBlueskyHold(blueskyDID);
+        }
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }

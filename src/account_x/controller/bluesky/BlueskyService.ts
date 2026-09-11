@@ -2,17 +2,10 @@ import path from "path";
 import fs from "fs";
 import mime from "mime-types";
 
-import { shell } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
 
-import {
-  NodeOAuthClient,
-  NodeSavedState,
-  NodeSavedSession,
-  OAuthSession,
-  NodeOAuthClientFromMetadataOptions,
-} from "@atproto/oauth-client-node";
+import { OAuthSession } from "@atproto/oauth-client-node";
 import { Agent, BlobRef, RichText } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
@@ -26,18 +19,20 @@ import {
   XRateLimitInfo,
   XTweetItem,
 } from "../../../shared_types";
-import {
-  exec,
-  Sqlite3Count,
-  setConfig as globalSetConfig,
-  deleteConfig as globalDeleteConfig,
-} from "../../../database";
+import { exec, Sqlite3Count } from "../../../database";
 import {
   BLUESKY_OAUTH_SESSION_PREFIX,
   BLUESKY_OAUTH_STATE_PREFIX,
   accountCredentials,
-  type AccountCredentials,
 } from "../../../credentials";
+import {
+  authorizeBlueskyIdentity,
+  completeBlueskyAuthorization,
+  getBlueskyProfile,
+  releaseBlueskyHold,
+  restoreBlueskySession,
+  type BlueskyConnectStart,
+} from "../../../bluesky_oauth";
 import {
   XTweetRow,
   XTweetMediaRow,
@@ -50,8 +45,6 @@ import {
  * This encapsulates all Bluesky-related functionality that was previously in XAccountController.
  */
 export class BlueskyService {
-  private blueskyClient: NodeOAuthClient | null = null;
-
   constructor(
     private db: Database.Database,
     private account: XAccount,
@@ -68,228 +61,102 @@ export class BlueskyService {
     private updateRateLimitInfo: (info: Partial<XRateLimitInfo>) => void,
   ) {}
 
-  private credentials(): AccountCredentials {
-    return accountCredentials(this.accountID);
+  /**
+   * Whether this X account's migration is connected, and to which identity.
+   *
+   * The DID is a public identifier, not a credential; the credentials it
+   * points at live in the shared Bluesky OAuth store, where a Bluesky local
+   * account for the same identity can reach them too.
+   */
+  private async connectedDID(): Promise<string | null> {
+    return this.getConfig("blueskyDID");
   }
 
-  private async clientFromClientID(
-    host: string,
-    path: string,
-  ): Promise<NodeOAuthClient> {
-    // The OAuth state holds the PKCE verifier and the session holds access and
-    // refresh tokens plus a private DPoP key. Both are account-control
-    // credentials, so they live in protected storage and never in this
-    // account's SQLite config table.
-    const credentials = this.credentials();
-    const options: NodeOAuthClientFromMetadataOptions = {
-      clientId: `https://${host}/${path}`,
-      stateStore: {
-        set: async (
-          key: string,
-          internalState: NodeSavedState,
-        ): Promise<void> => {
-          credentials.set(
-            `${BLUESKY_OAUTH_STATE_PREFIX}${key}`,
-            JSON.stringify(internalState),
-          );
-        },
-        get: async (key: string): Promise<NodeSavedState | undefined> => {
-          const stateStore = credentials.get(
-            `${BLUESKY_OAUTH_STATE_PREFIX}${key}`,
-          );
-          return stateStore ? JSON.parse(stateStore) : undefined;
-        },
-        del: async (key: string): Promise<void> => {
-          credentials.delete(`${BLUESKY_OAUTH_STATE_PREFIX}${key}`);
-        },
-      },
-      sessionStore: {
-        set: async (sub: string, session: NodeSavedSession): Promise<void> => {
-          credentials.set(
-            `${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`,
-            JSON.stringify(session),
-          );
-        },
-        get: async (sub: string): Promise<NodeSavedSession | undefined> => {
-          const sessionStore = credentials.get(
-            `${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`,
-          );
-          return sessionStore ? JSON.parse(sessionStore) : undefined;
-        },
-        del: async (sub: string): Promise<void> => {
-          credentials.delete(`${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`);
-        },
-      },
-    };
-    const clientMetadata = await NodeOAuthClient.fetchMetadata(options);
-    return new NodeOAuthClient({ ...options, clientMetadata });
-  }
-
-  async initClient(): Promise<NodeOAuthClient> {
-    // Figure out the host and path
-    let host;
-    if (process.env.CYD_MODE === "prod") {
-      host = "api.cyd.social";
-    } else {
-      host = "dev-api.cyd.social";
-    }
-    const path = "bluesky/client-metadata.json";
-
-    // Create the client
-    try {
-      // Try creating a client
-      return await this.clientFromClientID(host, path);
-    } catch (e) {
-      log.error("BlueskyService.initClient: Error creating Bluesky client", e);
-      // On error, disconnect and delete old state and session data
-      await this.disconnect();
-
-      // And try again
-      return await this.clientFromClientID(host, path);
-    }
-  }
-
-  async getProfile(): Promise<BlueskyMigrationProfile | null> {
-    if (!this.blueskyClient) {
-      this.blueskyClient = await this.initClient();
-    }
-
-    const did = await this.getConfig("blueskyDID");
+  /** The live session for the identity this migration is connected to. */
+  private async session(): Promise<OAuthSession | null> {
+    const did = await this.connectedDID();
     if (!did) {
       return null;
     }
-
-    let session: OAuthSession;
-    try {
-      session = await this.blueskyClient.restore(did);
-    } catch (e) {
-      log.warn("BlueskyService.getProfile: Failed to restore session", e);
-      return null;
-    }
-    const agent = new Agent(session);
-    if (!agent.did) {
-      return null;
-    }
-
-    const profile = await agent.getProfile({ actor: agent.did });
-    const blueskyMigrationProfile: BlueskyMigrationProfile = {
-      did: profile.data.did,
-      handle: profile.data.handle,
-      displayName: profile.data.displayName,
-      avatar: profile.data.avatar,
-    };
-    return blueskyMigrationProfile;
+    return restoreBlueskySession(did);
   }
 
-  async authorize(handle: string): Promise<boolean | string> {
-    // Initialize the Bluesky client
-    if (!this.blueskyClient) {
-      this.blueskyClient = await this.initClient();
+  async getProfile(): Promise<BlueskyMigrationProfile | null> {
+    const did = await this.connectedDID();
+    if (!did) {
+      return null;
     }
-
-    try {
-      // Check if the handle starts with @. If so, strip the @ and try authorizing
-      if (handle.startsWith("@")) {
-        handle = handle.substring(1);
-      }
-
-      // Authorize the handle
-      const url = await this.blueskyClient.authorize(handle);
-
-      // Save the account ID in the global config
-      await globalSetConfig("blueskyOAuthAccountID", this.accountID.toString());
-
-      // Open the URL in the default browser
-      await shell.openExternal(url.toString());
-
-      return true;
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        log.error(
-          "BlueskyService.authorize: Error authorizing Bluesky client",
-          e,
-        );
-        return e.message;
-      } else {
-        log.error("BlueskyService.authorize: Unknown error", e);
-        return String(e);
-      }
-    }
+    return getBlueskyProfile(did);
   }
 
+  /**
+   * Connect the migration to a Bluesky handle.
+   *
+   * An identity Cyd already holds a session for — because a Bluesky local
+   * account authorized it, or this account did before — is bound here without
+   * a second browser sign-in. Anything else starts one.
+   */
+  async authorize(handle: string): Promise<BlueskyConnectStart> {
+    const start = await authorizeBlueskyIdentity(handle, {
+      platform: "X",
+      accountID: this.accountID,
+    });
+    if (start.status === "reused") {
+      await this.setConfig("blueskyDID", start.did);
+    }
+    return start;
+  }
+
+  /**
+   * Finish an authorization this account started and bind the identity to it.
+   *
+   * Connecting an identity Cyd already holds a session for does not ask for a
+   * second browser authorization; the migration simply joins the Bluesky
+   * platform as another holder of the same session.
+   */
   async callback(queryString: string): Promise<boolean | string> {
-    // Initialize the Bluesky client
-    if (!this.blueskyClient) {
-      this.blueskyClient = await this.initClient();
+    const authorization = await completeBlueskyAuthorization(queryString);
+    if (!authorization.ok) {
+      return authorization.error;
     }
 
-    const params = new URLSearchParams(queryString);
+    await this.setConfig("blueskyDID", authorization.did);
 
-    // Handle errors
-    const error = params.get("error");
-    const errorDescription = params.get("error_description");
-    if (errorDescription) {
-      return errorDescription;
+    const profile = await getBlueskyProfile(authorization.did);
+    if (!profile) {
+      return "Could not read the Bluesky profile for the authorized identity";
     }
-    if (error) {
-      return `The authorization failed with error: ${error}`;
-    }
-
-    // Finish the callback
-    const { session, state } = await this.blueskyClient.callback(params);
-
-    // The OAuth state is authorization material, so it is never logged.
-    log.info(
-      `BlueskyService.callback: authorize() returned a state: ${state !== undefined}`,
-    );
-    log.info("BlueskyService.callback: user authenticated as", session.did);
-
-    // Save the did
-    await this.setConfig("blueskyDID", session.did);
-
-    const agent = new Agent(session);
-    if (agent.did) {
-      // Make Authenticated API calls
-      const profile = await agent.getProfile({ actor: agent.did });
-      log.info("Bluesky profile:", profile.data);
-
-      return true;
-    } else {
-      return "agent.did is null";
-    }
+    return true;
   }
 
+  /**
+   * Disconnect this account's migration.
+   *
+   * Only this account's hold is released. A Bluesky local account on the same
+   * identity keeps its connection and is never asked to re-authorize, and no
+   * path here can force a revocation on its behalf. Clearing the account's own
+   * state first is what makes the release honest: by the time the shared
+   * module counts who is left, this account is no longer among them.
+   */
   async disconnect(): Promise<void> {
-    // Revoke the session
-    try {
-      if (!this.blueskyClient) {
-        this.blueskyClient = await this.initClient();
-      }
-      const did = await this.getConfig("blueskyDID");
-      if (did) {
-        const session = await this.blueskyClient.restore(did);
-        await session.signOut();
-      }
-    } catch (e) {
-      log.error("BlueskyService.disconnect: Error revoking session", e);
-    }
+    const did = await this.connectedDID();
 
-    // Delete from global config
-    await globalDeleteConfig("blueskyOAuthAccountID");
-
-    // Delete from account config. The DID is a public identifier, but it is
-    // what points at the credentials, so it goes too.
+    // The DID is what points at the credentials, so the account stops
+    // claiming a connection before anything else happens.
     await this.deleteConfig("blueskyDID");
 
-    // Delete the OAuth state and session from protected storage
-    const credentials = this.credentials();
-    credentials.deleteWithPrefix(BLUESKY_OAUTH_STATE_PREFIX);
-    credentials.deleteWithPrefix(BLUESKY_OAUTH_SESSION_PREFIX);
-
-    // Older versions of Cyd kept these in the account's config table. Sweep
-    // them here too, in case a database predates the credential facility.
+    // Older versions of Cyd kept the OAuth state and session in this account's
+    // config table and its own credential vault. Sweep both, in case a
+    // database predates the shared store.
     await this.deleteConfigLike(`${BLUESKY_OAUTH_STATE_PREFIX}%`);
     await this.deleteConfigLike(`${BLUESKY_OAUTH_SESSION_PREFIX}%`);
+    const legacyCredentials = accountCredentials(this.accountID);
+    legacyCredentials.deleteWithPrefix(BLUESKY_OAUTH_STATE_PREFIX);
+    legacyCredentials.deleteWithPrefix(BLUESKY_OAUTH_SESSION_PREFIX);
+
+    if (did) {
+      await releaseBlueskyHold(did);
+    }
   }
 
   async getTweetCounts(): Promise<XMigrateTweetCounts> {
@@ -920,15 +787,10 @@ export class BlueskyService {
 
   // Return true on success, and a string (error message) on error
   async migrateTweet(tweetID: string): Promise<boolean | string> {
-    // Get the Bluesky client
-    if (!this.blueskyClient) {
-      this.blueskyClient = await this.initClient();
-    }
-    const did = await this.getConfig("blueskyDID");
-    if (!did) {
+    const session = await this.session();
+    if (!session) {
       return "Bluesky DID not found";
     }
-    const session = await this.blueskyClient.restore(did);
     const agent: Agent = new Agent(session);
 
     // Build the record
@@ -1039,15 +901,10 @@ export class BlueskyService {
   }
 
   async deleteMigratedTweet(tweetID: string): Promise<boolean | string> {
-    // Get the Bluesky client
-    if (!this.blueskyClient) {
-      this.blueskyClient = await this.initClient();
-    }
-    const did = await this.getConfig("blueskyDID");
-    if (!did) {
+    const session = await this.session();
+    if (!session) {
       return "Bluesky DID not found";
     }
-    const session = await this.blueskyClient.restore(did);
     const agent = new Agent(session);
 
     // Select the migration record

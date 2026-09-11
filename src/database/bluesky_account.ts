@@ -12,6 +12,7 @@ export interface BlueskyLocalAccountRow {
   handle: string | null;
   displayName: string | null;
   profileImageDataURI: string | null;
+  connectedAt: string | null;
 }
 
 // Functions
@@ -28,6 +29,7 @@ const blueskyLocalAccountFromRow = (
     handle: row.handle,
     displayName: row.displayName,
     profileImageDataURI: row.profileImageDataURI,
+    connectedAt: row.connectedAt ? new Date(row.connectedAt) : null,
   };
 };
 
@@ -118,6 +120,55 @@ export const saveBlueskyLocalAccount = (account: BlueskyLocalAccount) => {
       account.uuid,
     ],
   );
+};
+
+/**
+ * Record that this installation is authorized to act on the account's
+ * identity, or that it is no longer.
+ *
+ * Connection state is deliberately not part of `saveBlueskyLocalAccount`: the
+ * renderer hands whole accounts to that function, and whether a shared OAuth
+ * session still has a holder must only change on the connect and disconnect
+ * paths that actually established or released the authorization.
+ */
+export const setBlueskyLocalAccountConnected = (
+  uuid: string,
+  connected: boolean,
+) => {
+  exec(
+    getMainDatabase(),
+    `
+        UPDATE blueskyLocalAccount
+        SET
+            updatedAt = CURRENT_TIMESTAMP,
+            accessedAt = CURRENT_TIMESTAMP,
+            connectedAt = ?
+        WHERE uuid = ?
+    `,
+    [connected ? new Date().toISOString() : null, uuid],
+  );
+};
+
+/**
+ * The Cyd account IDs of every connected Bluesky local account bound to this
+ * identity. These are the Bluesky platform's holders of the identity's shared
+ * OAuth session, derived from account state rather than counted.
+ */
+export const getConnectedBlueskyLocalAccountIDs = (did: string): number[] => {
+  const rows: { id: number }[] = exec(
+    getMainDatabase(),
+    `
+        SELECT account.id AS id
+        FROM account
+        JOIN blueskyLocalAccount ON blueskyLocalAccount.uuid = account.uuid
+        WHERE account.type = 'Bluesky'
+        AND blueskyLocalAccount.did = ?
+        AND blueskyLocalAccount.connectedAt IS NOT NULL
+    `,
+    [did],
+    "all",
+  ) as { id: number }[];
+  return rows.map((row) => row.id);
 };
 
 // Delete a Bluesky local account's row

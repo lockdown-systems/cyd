@@ -265,6 +265,20 @@ SELECT id, type, sortOrder, xAccountId, uuid, facebookAccountID FROM account;`,
 );`,
     ],
   },
+  // Record whether a Bluesky local account currently holds an authorization.
+  //
+  // A Bluesky local account keeps its DID forever, because that DID is how an
+  // archive import recognizes the identity again. Whether Cyd is *authorized*
+  // to act on it is a separate, reversible fact, and it is the one that says
+  // whether this account still depends on the shared OAuth session. Keeping it
+  // as account state, rather than as a counter beside the session, means a
+  // crash or a forced quit cannot leave a hold nothing can release.
+  {
+    name: "record whether a Bluesky local account holds an authorization",
+    sql: [
+      `ALTER TABLE blueskyLocalAccount ADD COLUMN connectedAt DATETIME DEFAULT NULL;`,
+    ],
+  },
 ];
 
 export const runMainMigrations = () => {

@@ -1,9 +1,11 @@
-export type BlueskyMigrationProfile = {
-  did: string;
-  handle: string;
-  displayName?: string;
-  avatar?: string;
-};
+import type { BlueskyIdentityProfile } from "./bluesky";
+
+/**
+ * The X migration's view of a Bluesky identity. It is the same profile the
+ * Bluesky platform reads, because both go through the same shared OAuth
+ * session and the same AT Protocol call.
+ */
+export type BlueskyMigrationProfile = BlueskyIdentityProfile;
 
 export interface BlueskyAPIError {
   error: string;

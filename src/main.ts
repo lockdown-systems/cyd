@@ -30,6 +30,13 @@ import {
 import { defineIPCArchive } from "./archive";
 import { defineIPCCredentials, logCredentialProtection } from "./credentials";
 import {
+  BLUESKY_OAUTH_CALLBACK_PATH,
+  blueskyOAuthCallbackEventName,
+  blueskyOAuthCallbackScheme,
+  resolveBlueskyOAuthFlow,
+  sweepOrphanedBlueskyOAuth,
+} from "./bluesky_oauth";
+import {
   getUpdatesBaseURL,
   getAccountDataPath,
   getResourcesPath,
@@ -90,7 +97,8 @@ log.info("User data folder is at:", app.getPath("userData"));
 // The main window
 let win: BrowserWindow | null = null;
 
-// Handle a cyd URLs (such as social.cyd.dev-api:/atproto-oauth-callback or social.cyd.api:/atproto-oauth-callback)
+// Handle a cyd URL (such as social.cyd.dev-api:/atproto-oauth-callback/ or
+// social.cyd.api:/atproto-oauth-callback/)
 const openCydURL = async (cydURL: string) => {
   if (!isAppReady) {
     log.debug("Adding cyd URL to queue:", cydURL);
@@ -123,22 +131,22 @@ const openCydURL = async (cydURL: string) => {
     return;
   }
 
-  // If pathname is "/atproto-oauth-callback/", this means finish the Bluesky OAuth flow
-  if (url.pathname === "/atproto-oauth-callback/") {
-    // Get the account ID that's in the middle of the OAuth flow
-    const accountID = database.getConfig("blueskyOAuthAccountID");
-    const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
+  // A Bluesky authorization coming back from the browser. The flow identifier
+  // travels inside the OAuth request, so the answer reaches whichever platform
+  // started it, however many flows are in the air.
+  if (url.pathname === BLUESKY_OAUTH_CALLBACK_PATH) {
+    const flow = resolveBlueskyOAuthFlow(url.search);
+    if (!flow) {
+      // Cyd holds no authorization state matching this callback: it is stale,
+      // already spent, or was not started here. Nothing is dispatched.
+      log.warn("Ignoring a Bluesky OAuth callback Cyd did not start");
+      return;
+    }
 
-    // Reset the config value
-    database.deleteConfig("blueskyOAuthAccountID");
-
-    // Send the event to the renderer
+    const eventName = blueskyOAuthCallbackEventName(flow);
     if (win) {
-      log.info(
-        "Sending Bluesky OAuth callback event to renderer:",
-        blueskyOAuthCallbackEventName,
-      );
-      win.webContents.send(blueskyOAuthCallbackEventName, url.search);
+      log.info("Sending Bluesky OAuth callback event to renderer:", eventName);
+      win.webContents.send(eventName, url.search);
     }
     return;
   }
@@ -152,9 +160,9 @@ const openCydURL = async (cydURL: string) => {
   return;
 };
 
-// Register the social.cyd.api: (or social.cyd.dev-api:/) protocol (reverse-domain of the API host)
-const protocolString =
-  config.mode == "prod" ? "social.cyd.api" : "social.cyd.dev-api";
+// Register the callback scheme (the reverse-domain form of the API host) that
+// Cyd's published OAuth client metadata redirects to.
+const protocolString = blueskyOAuthCallbackScheme();
 app.setAsDefaultProtocolClient(protocolString);
 
 // In Linux and Windows, handle cyd URLs passed in via the CLI
@@ -235,6 +243,14 @@ async function initializeApp() {
 
   // Dismiss any stale error reports
   database.dismissAllNewErrorReports();
+
+  // A Bluesky session whose last holder went away during an interrupted quit
+  // would otherwise stay alive at its PDS forever. Sweeping at startup makes
+  // that self-correcting rather than permanent, and costs nothing when there
+  // is nothing to sweep.
+  sweepOrphanedBlueskyOAuth().catch((error) => {
+    log.error("Failed to sweep orphaned Bluesky OAuth material:", error);
+  });
 
   // If a device description has not been created yet, make one now
   const deviceDescription = database.getConfig("deviceDescription");

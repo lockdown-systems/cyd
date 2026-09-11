@@ -9,10 +9,20 @@ import {
   getAccount,
   getBlueskyLocalAccountByDID,
   saveBlueskyLocalAccount,
+  setBlueskyLocalAccountConnected,
   deleteAccount,
   getConfig,
   setConfig,
 } from "../database";
+import {
+  authorizeBlueskyIdentity,
+  blueskySessionIsUsable,
+  completeBlueskyAuthorization,
+  getBlueskyProfile,
+  releaseBlueskyHold,
+  type BlueskyConnectStart,
+} from "../bluesky_oauth";
+import { getImageDataURI } from "../shared/utils/image-utils";
 import type {
   BlueskyLocalAccount,
   BlueskyDeleteConfirmation,
@@ -146,6 +156,125 @@ export class BlueskyAccountController {
     this.account.did = did;
     saveBlueskyLocalAccount(this.account);
     this.refreshAccount();
+  }
+
+  /** Whether this installation is currently authorized to act on the identity. */
+  get isConnected(): boolean {
+    return Boolean(this.account?.connectedAt);
+  }
+
+  /**
+   * Start a browser authorization for a handle.
+   *
+   * This goes through the one Bluesky OAuth implementation in Cyd, so an
+   * identity the X migration already authorized needs no second sign-in: the
+   * shared session is found by DID and reused. Authorization is OAuth and
+   * every call afterwards is a direct AT Protocol call — never an app
+   * password, never scraping, never interception.
+   */
+  async connect(handle: string): Promise<BlueskyConnectStart> {
+    const start = await authorizeBlueskyIdentity(handle, {
+      platform: "Bluesky",
+      accountID: this.accountID,
+    });
+    if (start.status === "reused") {
+      try {
+        await this.bindIdentity(start.did);
+      } catch (error) {
+        return {
+          status: "error",
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+    return start;
+  }
+
+  /**
+   * Bind this account to an identity Cyd already holds a session for, without
+   * sending anyone back to a browser. Returns false when there is no usable
+   * session, which is the caller's cue to authorize.
+   */
+  async connectWithExistingSession(did: string): Promise<boolean> {
+    if (!(await blueskySessionIsUsable(did))) {
+      return false;
+    }
+    await this.bindIdentity(did);
+    return true;
+  }
+
+  /**
+   * Finish an authorization this account started: bind the authenticated DID
+   * and refresh the identity's current profile.
+   */
+  async completeConnection(queryString: string): Promise<true | string> {
+    const authorization = await completeBlueskyAuthorization(queryString);
+    if (!authorization.ok) {
+      return authorization.error;
+    }
+    try {
+      await this.bindIdentity(authorization.did);
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+    return true;
+  }
+
+  /**
+   * Bind the identity and take its current profile. Binding is what makes this
+   * account a holder of the shared session, so it happens only once the
+   * session is known to exist.
+   */
+  private async bindIdentity(did: string): Promise<void> {
+    this.setDID(did);
+    setBlueskyLocalAccountConnected(this.accountUUID, true);
+    this.refreshAccount();
+    await this.refreshProfile();
+  }
+
+  /**
+   * Take the identity's current profile from its PDS. A handle change lands
+   * here and changes nothing about where this account's data lives.
+   */
+  async refreshProfile(): Promise<void> {
+    const did = this.account?.did;
+    if (!did) {
+      return;
+    }
+    const profile = await getBlueskyProfile(did);
+    if (!profile) {
+      return;
+    }
+    this.updateProfile({
+      handle: profile.handle,
+      displayName: profile.displayName ?? null,
+      profileImageDataURI: profile.avatar
+        ? await getImageDataURI(profile.avatar)
+        : null,
+    });
+  }
+
+  /**
+   * Remove this installation's authorization to act on the identity, keeping
+   * the local account and every byte of Bluesky saved data.
+   *
+   * Only this account's hold is released. An X account whose migration is
+   * connected to the same identity stays connected and is never asked to
+   * re-authorize; the session is revoked at the PDS only once nobody is left
+   * holding it. Recording the disconnection first is what makes the release
+   * honest: by then this account is no longer among the holders.
+   */
+  async disconnect(): Promise<void> {
+    const did = this.account?.did ?? null;
+    if (!this.accountUUID) {
+      return;
+    }
+    setBlueskyLocalAccountConnected(this.accountUUID, false);
+    this.refreshAccount();
+
+    if (did) {
+      await releaseBlueskyHold(did);
+    }
   }
 
   /**

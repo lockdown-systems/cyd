@@ -17,6 +17,7 @@ import {
   XDeleteReviewStats,
   XImportArchiveResponse,
   BlueskyMigrationProfile,
+  BlueskyConnectStart,
   XMigrateTweetCounts,
 } from "../shared_types";
 import { getMITMController } from "../mitm";
@@ -623,7 +624,11 @@ export const defineIPCX = () => {
 
   ipcMain.handle(
     "X:blueskyAuthorize",
-    async (_, accountID: number, handle: string): Promise<boolean | string> => {
+    async (
+      _,
+      accountID: number,
+      handle: string,
+    ): Promise<BlueskyConnectStart> => {
       try {
         const controller = getXAccountController(accountID);
         return await controller.blueskyAuthorize(handle);

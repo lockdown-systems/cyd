@@ -56,6 +56,18 @@ const accountVaultName = (accountID: number): string => {
   return `account-${accountID}`;
 };
 
+// A shared vault belongs to a facility rather than to an account, so its name
+// is constrained to what can safely become a filename and can never collide
+// with the `account-` namespace.
+const SHARED_VAULT_NAME_PATTERN = /^[a-z0-9-]+$/;
+
+const sharedVaultName = (name: string): string => {
+  if (!SHARED_VAULT_NAME_PATTERN.test(name)) {
+    throw new Error(`Invalid name for a shared credential vault: ${name}`);
+  }
+  return `shared-${name}`;
+};
+
 export const credentialsDirectoryPath = (): string =>
   path.join(getSettingsPath(), CREDENTIALS_DIRECTORY);
 
@@ -191,9 +203,28 @@ export type AccountCredentials = {
   deleteAll(): void;
 };
 
-export const accountCredentials = (accountID: number): AccountCredentials => {
-  const vaultName = accountVaultName(accountID);
+export const accountCredentials = (accountID: number): AccountCredentials =>
+  credentialVault(accountVaultName(accountID), `account ${accountID}`);
 
+/**
+ * Credentials owned by a facility rather than by one account.
+ *
+ * A shared vault exists so that one credential can serve every account that
+ * depends on it: Bluesky OAuth sessions are keyed by DID, and the same DID can
+ * be reached from more than one Cyd account. Nothing deletes a shared vault
+ * wholesale, because no single account owns it.
+ */
+export const sharedCredentials = (name: string): AccountCredentials =>
+  credentialVault(sharedVaultName(name), `the ${name} store`);
+
+/**
+ * One vault's credentials. `owner` names the vault in log lines, which must
+ * never carry a credential name.
+ */
+const credentialVault = (
+  vaultName: string,
+  owner: string,
+): AccountCredentials => {
   return {
     get(key: string): string | null {
       const vault = readVault(vaultName);
@@ -211,7 +242,7 @@ export const accountCredentials = (accountID: number): AccountCredentials => {
         // The OS key changed, or the vault came from another machine. The
         // credential is unusable, so drop it instead of retrying forever.
         log.warn(
-          `credentials: could not decrypt a credential for account ${accountID}, discarding it`,
+          `credentials: could not decrypt a credential for ${owner}, discarding it`,
           error instanceof Error ? error.message : error,
         );
         delete vault.credentials[key];

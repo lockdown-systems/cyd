@@ -142,4 +142,10 @@ export const PlatformStates = {
 
   /** Bluesky: Display dashboard wizard page */
   BlueskyWizardDashboardDisplay: "BlueskyWizardDashboardDisplay",
+
+  /** Bluesky: Connect an identity wizard page */
+  BlueskyWizardConnect: "BlueskyWizardConnect",
+
+  /** Bluesky: Display connect an identity wizard page */
+  BlueskyWizardConnectDisplay: "BlueskyWizardConnectDisplay",
 } as const;
