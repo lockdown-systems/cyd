@@ -34,6 +34,7 @@ const {
   startStateLoop,
   platformCleanup,
   setupProviders,
+  initializePlatformView,
   canStateLoopRun,
   setState,
 } = usePlatformView(props.account, model, getPlatformConfig("Bluesky")!);
@@ -46,10 +47,10 @@ onMounted(async () => {
   setupAuthListeners();
   setupProviders();
 
-  // Bluesky has no webview to hand the view model: the account's local storage
-  // is all the dashboard needs, and it renders with no connection and no saved
-  // data.
-  await model.value.init();
+  // Bluesky's platform config drives no browser, so the composable starts the
+  // view model with no webview: the account's local storage is all the
+  // dashboard needs, and it renders with no connection and no saved data.
+  await initializePlatformView();
   await startStateLoop();
 
   setupPlatformEventHandlers(automationHandlers);

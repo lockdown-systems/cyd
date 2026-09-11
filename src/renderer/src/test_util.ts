@@ -160,6 +160,35 @@ export function createMockWebview(): WebviewTag {
 }
 
 /**
+ * Every method the browser-automation layer adds to a view model. A platform
+ * built on the webview-free core must expose none of them.
+ */
+export const browserAutomationAPI = [
+  "init",
+  "destroy",
+  "getWebview",
+  "safeExecuteJavaScript",
+  "loadURL",
+  "loadBlank",
+  "waitForURL",
+  "waitForLoadingToFinish",
+  "waitForSelector",
+  "waitForSelectorWithinSelector",
+  "doesSelectorExist",
+  "countSelectorsFound",
+  "getScrollHeight",
+  "scrollToBottom",
+  "scrollToTop",
+  "scrollUp",
+  "scriptClickElement",
+  "scriptMouseoverElement",
+  "scriptGetInnerText",
+  "scriptGetAllInnerHTML",
+  "scriptSendClickInputEvent",
+  "clickElementByXPath",
+];
+
+/**
  * Creates a mock mitt emitter for testing
  * Used by view models for event emission
  */

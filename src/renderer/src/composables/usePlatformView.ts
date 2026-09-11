@@ -23,10 +23,13 @@ const registeredProviders = new Set<string>();
  */
 export function usePlatformView<
   T extends BasePlatformViewModel & {
-    run: () => Promise<void>;
-    init: (webview: WebviewTag) => Promise<void>;
-    cleanup: () => void;
-  },
+    run(): Promise<void>;
+    cleanup(): void;
+  } &
+    // A platform that drives a browser is handed the webview to drive; a
+    // platform that talks to an API directly is handed nothing. Keeping these
+    // apart means each platform's view is still held to its own signature.
+    ({ init(webview: WebviewTag): Promise<void> } | { init(): Promise<void> }),
 >(account: Account, model: Ref<T>, config: PlatformConfig) {
   // Get dependencies
   const vueInstance = getCurrentInstance();
@@ -73,19 +76,24 @@ export function usePlatformView<
     showAutomationNotice: model.value.showAutomationNotice,
   }));
 
-  const webviewProps = computed(() => ({
-    src: "about:blank",
-    partition: `persist:account-${account.id}`,
-    class: [
-      "webview",
-      {
-        hidden: !model.value.showBrowser,
-        "webview-automation-border": model.value.showAutomationNotice,
-        "webview-input-border": !model.value.showAutomationNotice,
-        "webview-clickable": clickingEnabled.value,
-      },
-    ],
-  }));
+  // Only a platform that drives a browser has a webview to configure.
+  const webviewProps = computed(() =>
+    config.features.usesWebview
+      ? {
+          src: "about:blank",
+          partition: `persist:account-${account.id}`,
+          class: [
+            "webview",
+            {
+              hidden: !model.value.showBrowser,
+              "webview-automation-border": model.value.showAutomationNotice,
+              "webview-input-border": !model.value.showAutomationNotice,
+              "webview-clickable": clickingEnabled.value,
+            },
+          ],
+        }
+      : undefined,
+  );
 
   // Watch model state changes
   watch(
@@ -290,10 +298,29 @@ export function usePlatformView<
   const pause = () => model.value.pause();
   const resume = () => model.value.resume();
 
-  // Lifecycle management
-  const initializePlatformView = async (webview: WebviewTag) => {
+  /**
+   * Start the view model, with whatever its own init asks for. The platform
+   * config says whether this platform is driven through a browser, so a
+   * platform that is not never sees a webview.
+   */
+  const initializePlatformView = async (...args: Parameters<T["init"]>) => {
     console.log("Initializing platform view");
-    await model.value.init(webview);
+
+    if (!config.features.usesWebview) {
+      await (model.value.init as () => Promise<void>)();
+      return;
+    }
+
+    const [webview] = args as [WebviewTag | undefined];
+    if (!webview) {
+      // Half-starting a platform whose every job needs a page is worse than
+      // stopping here.
+      throw new Error(
+        `${config.name} is driven through a browser, but no webview was handed to it`,
+      );
+    }
+
+    await (model.value.init as (webview: WebviewTag) => Promise<void>)(webview);
   };
 
   const setupProviders = () => {

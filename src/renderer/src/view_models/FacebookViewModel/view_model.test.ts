@@ -8,6 +8,7 @@ import {
   emptyFacebookProgress,
 } from "./types";
 import { PlatformStates } from "../../types/PlatformStates";
+import { AutomationErrorType } from "../../automation_errors";
 import type { FacebookAccount } from "../../../../shared_types";
 import {
   createMockAccount,
@@ -454,6 +455,26 @@ describe("FacebookViewModel", () => {
       await vm.run();
 
       expect(vm.state).toBe(State.Login);
+    });
+  });
+
+  describe("error reports", () => {
+    it("names the Facebook account the report is about by its username", async () => {
+      const vm = createMockFacebookViewModel({
+        facebookAccount: { username: "Test User" },
+      });
+
+      await vm.error(
+        AutomationErrorType.facebook_unknownError,
+        null,
+        null,
+        true,
+      );
+
+      const [, , , , username] = vi.mocked(
+        window.electron.database.createErrorReport,
+      ).mock.calls[0];
+      expect(username).toBe("Test User");
     });
   });
 

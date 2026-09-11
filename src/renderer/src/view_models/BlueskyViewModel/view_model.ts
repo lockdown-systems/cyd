@@ -34,6 +34,18 @@ export class BlueskyViewModel extends BaseViewModel {
     this.state = State.BlueskyWizardDashboard;
   }
 
+  /**
+   * An automatic Bluesky error report names no account: a handle and a DID both
+   * identify a person, and neither belongs in one. Spelled out rather than left
+   * to the core's default, so that adding a label here is a deliberate choice
+   * against the ADR rather than an oversight.
+   *
+   * See docs/adr/0029-minimize-bluesky-diagnostics.md.
+   */
+  protected get errorReportAccountLabel(): string {
+    return "";
+  }
+
   /** This installation's local representation of the Bluesky identity. */
   get localAccount(): BlueskyLocalAccount | null {
     return this.account.blueskyLocalAccount;

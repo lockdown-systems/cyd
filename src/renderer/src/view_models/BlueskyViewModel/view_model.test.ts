@@ -4,6 +4,7 @@ import { State } from "./types";
 import { AutomationErrorType } from "../../automation_errors";
 import type { Account, BlueskyLocalAccount } from "../../../../shared_types";
 import {
+  browserAutomationAPI,
   createMockAccount,
   createMockBlueskyLocalAccount,
   createMockEmitter,
@@ -99,8 +100,16 @@ describe("BlueskyViewModel", () => {
 
       expect(model.showBrowser).toBe(false);
       expect(model.showAutomationNotice).toBe(false);
-      expect(model.getWebview()).toBeNull();
     });
+
+    it.each(browserAutomationAPI.filter((method) => method !== "init"))(
+      "has no %s to call, because it builds on the webview-free core",
+      (method) => {
+        const model = createViewModel();
+
+        expect(method in model).toBe(false);
+      },
+    );
   });
 
   describe("state loop", () => {
