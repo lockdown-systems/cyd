@@ -152,6 +152,13 @@ Protected against, on every platform:
   authorization server cannot retract one it has already signed. That window
   is the limit of what revocation can offer anywhere, not a Cyd behavior.
 
+  On Bluesky-hosted accounts a second delay compounds it. Those reach an
+  "entryway" service acting as the authorization server, and revoking there
+  can take up to fifteen minutes to propagate: refresh tokens stop working at
+  once, access tokens do not. A free-standing PDS revokes both immediately.
+  Worth knowing before hand-testing a disconnect, because the lag looks like
+  a failed revocation.
+
   A revocation that fails is not detectable locally. The AT Protocol client
   discards the outcome of the revocation request, so Cyd cannot log it,
   retry it, or tell the user. A disconnect looks identical whether the
@@ -205,15 +212,60 @@ storage. "Connect" means completing the X-to-Bluesky migration OAuth flow.
 
 ### macOS (Keychain)
 
-- [ ] Connect. `Keychain Access` shows a `Cyd Safe Storage` (or equivalent)
-      entry, and the app logs `backend: macos_keychain`.
-- [ ] No warning bar appears.
-- [ ] `<settings>/credentials/account-{id}.json` exists, is mode `600`, and
-      every entry is `"protected": true` with no readable token.
-- [ ] `grep` the account's `data.sqlite3` for `refresh_token` and `dpopJwk`:
-      no match.
-- [ ] Disconnect. The vault entries are gone.
-- [ ] Delete the account. `<settings>/credentials/account-{id}.json` is gone.
+Checked against the real `safeStorage` on macOS 26.6 (Darwin 25.6.0), not
+against the test double. This platform is the one where `osProtected` is
+inferred rather than corroborated: Chromium names no password store off Linux,
+so `rawBackend` is `null` and the only cross-check available is the Keychain
+item itself. Confirm that item exists rather than trusting the flag.
+
+Two paths differ from the other platforms and will silently produce a false
+pass if taken from the Linux instructions:
+
+- **The log is not under userData.** `electron-log` writes to
+  `~/Library/Logs/{appName}/main.log` on macOS whatever `--user-data-dir`
+  says, so `<userData>/logs/main.log` does not exist. That file is also shared
+  across profiles, so filter by timestamp rather than using `tail -1`.
+- The account database is under `dataPath`, which `--user-data-dir` does
+  **not** redirect. A throwaway profile still reads and writes the real
+  `~/Documents/Cyd Dev`. Back that directory up before seeding a canary.
+
+- [x] Connect. `Keychain Access` shows a `Cyd Safe Storage` entry — named
+      `Cyd Dev Safe Storage`, account `Cyd Dev Key`, on a dev build — and the
+      app logs
+      `{"platform":"darwin","backend":"macos_keychain","rawBackend":null,"osProtected":true}`.
+      Check the item's creation date against the timestamp of that log line:
+      matching to the second is what shows this launch minted the key, rather
+      than an earlier install having left one behind.
+- [x] No warning bar appears, and no `NOT protected at rest` line is logged.
+- [x] `<settings>/credentials/account-{id}.json` exists, is mode `600` inside
+      a `700` directory, and every entry is `"protected": true` with no
+      readable token.
+- [x] The stored value is a `v10` AES-256-GCM blob, the same envelope Windows
+      produces; on macOS the key wrapping it is the Keychain item above rather
+      than a DPAPI-wrapped key in `Local State`. Base64-decoding an entry must
+      yield opaque bytes. Readable JSON here would mean `"protected": true` is
+      lying, which is this platform's characteristic failure.
+- [x] `grep` the account's `data.sqlite3` for `refresh_token` and `dpopJwk`:
+      no match, and `config` holds `blueskyDID` and nothing else. Grepping the
+      whole of `dataPath` and the profile, rather than the three named files,
+      found no token plaintext anywhere.
+- [x] The legacy sweep migrates on this platform too: the canary moves into
+      the vault encrypted rather than merely relocated, the blank tombstone
+      row goes as well, and the canary is gone from `.sqlite3`, `-wal`, and
+      `-shm`.
+- [x] Disconnect. The vault entries are gone — and so is the vault file,
+      because `writeVault` removes a vault that has gone empty rather than
+      leaving a file that would suggest credentials still exist.
+- [ ] Disconnect revokes server-side. Not re-verified here. `disconnect()`
+      lives in `BlueskyService` with no `darwin` branch, and the refresh token
+      was confirmed rejected on Windows, so this is platform-independent
+      rather than untested. Note that grepping the log for `revok` proves
+      nothing: there is no success line, and the only local signal is the
+      _absence_ of `BlueskyService.disconnect: Error revoking session`, which
+      rules out a network failure and not a refusal.
+- [x] Delete the account. `<settings>/credentials/account-{id}.json` is gone.
+      `deleteAccount` calls `deleteAll()` unconditionally, after the
+      per-type branch, so this holds for an account that never connected.
 
 ### Windows (OS-backed protection)
 
