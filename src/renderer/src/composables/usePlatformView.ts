@@ -23,9 +23,13 @@ const registeredProviders = new Set<string>();
  */
 export function usePlatformView<
   T extends BasePlatformViewModel & {
-    run: () => Promise<void>;
-    init: (webview: WebviewTag) => Promise<void>;
-    cleanup: () => void;
+    run(): Promise<void>;
+    /**
+     * Platforms that drive a browser are handed the webview to drive; the rest
+     * are handed nothing.
+     */
+    init(webview?: WebviewTag): Promise<void>;
+    cleanup(): void;
   },
 >(account: Account, model: Ref<T>, config: PlatformConfig) {
   // Get dependencies
@@ -73,19 +77,24 @@ export function usePlatformView<
     showAutomationNotice: model.value.showAutomationNotice,
   }));
 
-  const webviewProps = computed(() => ({
-    src: "about:blank",
-    partition: `persist:account-${account.id}`,
-    class: [
-      "webview",
-      {
-        hidden: !model.value.showBrowser,
-        "webview-automation-border": model.value.showAutomationNotice,
-        "webview-input-border": !model.value.showAutomationNotice,
-        "webview-clickable": clickingEnabled.value,
-      },
-    ],
-  }));
+  // Only a platform that drives a browser has a webview to configure.
+  const webviewProps = computed(() =>
+    config.features.usesWebview
+      ? {
+          src: "about:blank",
+          partition: `persist:account-${account.id}`,
+          class: [
+            "webview",
+            {
+              hidden: !model.value.showBrowser,
+              "webview-automation-border": model.value.showAutomationNotice,
+              "webview-input-border": !model.value.showAutomationNotice,
+              "webview-clickable": clickingEnabled.value,
+            },
+          ],
+        }
+      : undefined,
+  );
 
   // Watch model state changes
   watch(
@@ -290,9 +299,25 @@ export function usePlatformView<
   const pause = () => model.value.pause();
   const resume = () => model.value.resume();
 
-  // Lifecycle management
-  const initializePlatformView = async (webview: WebviewTag) => {
+  /**
+   * Start the view model. The platform config says whether this platform is
+   * driven through a browser, so a platform that is not never sees a webview.
+   */
+  const initializePlatformView = async (webview?: WebviewTag) => {
     console.log("Initializing platform view");
+
+    if (!config.features.usesWebview) {
+      await model.value.init();
+      return;
+    }
+
+    if (!webview) {
+      console.error(
+        `${config.name}View: no webview to initialize with, and this platform is driven through one`,
+      );
+      return;
+    }
+
     await model.value.init(webview);
   };
 

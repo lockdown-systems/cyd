@@ -32,9 +32,9 @@ const createUserPremiumResponse = (overrides = {}) => ({
 
 // Create a mock view model
 const createMockViewModel = (): BasePlatformViewModel & {
-  run: () => Promise<void>;
-  init: (webview: WebviewTag) => Promise<void>;
-  cleanup: () => void;
+  run(): Promise<void>;
+  init(webview?: WebviewTag): Promise<void>;
+  cleanup(): void;
 } => ({
   state: "idle",
   runJobsState: "idle",
@@ -61,6 +61,7 @@ const createMockConfig = (): PlatformConfig => ({
     hasComplexImport: false,
     hasMigration: false,
     hasU2FSupport: false,
+    usesWebview: true,
   },
   urls: {
     helpDocs: "https://example.com/help",
@@ -615,6 +616,104 @@ describe("usePlatformView", () => {
       await platformView.initializePlatformView(mockWebview);
 
       expect(model.value.init).toHaveBeenCalledWith(mockWebview);
+
+      wrapper.unmount();
+    });
+
+    it("initializes a platform that drives no browser with no webview", async () => {
+      const model = ref(createMockViewModel());
+      const config = createMockConfig();
+      config.features.usesWebview = false;
+      const TestComponent = createTestComponent(
+        createMockAccount(),
+        model,
+        config,
+      );
+
+      const wrapper = mount(TestComponent, {
+        global: {
+          provide: {
+            apiClient: ref(apiClient),
+            deviceInfo: ref({ valid: true }),
+          },
+          config: {
+            globalProperties: {
+              emitter,
+            },
+          },
+        },
+      });
+
+      const { platformView } = wrapper.vm as {
+        platformView: ReturnType<typeof usePlatformView>;
+      };
+
+      await platformView.initializePlatformView();
+
+      expect(model.value.init).toHaveBeenCalledWith();
+
+      wrapper.unmount();
+    });
+
+    it("offers no webview props to a platform that drives no browser", () => {
+      const model = ref(createMockViewModel());
+      const config = createMockConfig();
+      config.features.usesWebview = false;
+      const TestComponent = createTestComponent(
+        createMockAccount(),
+        model,
+        config,
+      );
+
+      const wrapper = mount(TestComponent, {
+        global: {
+          provide: {
+            apiClient: ref(apiClient),
+            deviceInfo: ref({ valid: true }),
+          },
+          config: {
+            globalProperties: {
+              emitter,
+            },
+          },
+        },
+      });
+
+      const { platformView } = wrapper.vm as {
+        platformView: ReturnType<typeof usePlatformView>;
+      };
+
+      expect(platformView.webviewProps.value).toBeUndefined();
+
+      wrapper.unmount();
+    });
+
+    it("offers webview props to a platform that drives a browser", () => {
+      const model = ref(createMockViewModel());
+      const account = createMockAccount();
+      const TestComponent = createTestComponent(account, model);
+
+      const wrapper = mount(TestComponent, {
+        global: {
+          provide: {
+            apiClient: ref(apiClient),
+            deviceInfo: ref({ valid: true }),
+          },
+          config: {
+            globalProperties: {
+              emitter,
+            },
+          },
+        },
+      });
+
+      const { platformView } = wrapper.vm as {
+        platformView: ReturnType<typeof usePlatformView>;
+      };
+
+      expect(platformView.webviewProps.value).toMatchObject({
+        partition: `persist:account-${account.id}`,
+      });
 
       wrapper.unmount();
     });

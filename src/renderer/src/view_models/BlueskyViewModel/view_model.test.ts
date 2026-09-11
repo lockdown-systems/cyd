@@ -99,8 +99,23 @@ describe("BlueskyViewModel", () => {
 
       expect(model.showBrowser).toBe(false);
       expect(model.showAutomationNotice).toBe(false);
-      expect(model.getWebview()).toBeNull();
     });
+
+    it.each([
+      "getWebview",
+      "loadURL",
+      "waitForSelector",
+      "scriptClickElement",
+      "safeExecuteJavaScript",
+      "clickElementByXPath",
+    ])(
+      "has no %s to call, because it builds on the webview-free core",
+      (method) => {
+        const model = createViewModel();
+
+        expect(method in model).toBe(false);
+      },
+    );
   });
 
   describe("state loop", () => {

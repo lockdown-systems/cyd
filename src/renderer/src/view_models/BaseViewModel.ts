@@ -1,4 +1,3 @@
-import { WebviewTag } from "electron";
 import type { Emitter, EventType } from "mitt";
 import type { Account } from "../../../shared_types";
 import { PlausibleEvents } from "../types";
@@ -6,7 +5,13 @@ import { AutomationErrorType } from "../automation_errors";
 import { logObj } from "../util";
 import { TranslatorFn, TranslatorParams, translate } from "../i18n/translator";
 
-const DEFAULT_TIMEOUT = 30000;
+// The browser-automation layer raises these while driving a page, and the
+// platforms it drives already import them from here.
+export {
+  TimeoutError,
+  URLChangedError,
+  InternetDownError,
+} from "./automation_failures";
 
 type Log = {
   timestamp: string; // ISO string
@@ -15,49 +20,41 @@ type Log = {
   message?: any;
 };
 
-export class TimeoutError extends Error {
-  constructor(selector: string) {
-    super(`Timeout waiting for selector: ${selector}`);
-    this.name = "TimeoutError";
-  }
-}
+/**
+ * What a failure's page looked like when it happened. Only a platform that
+ * drives a browser has a page, so the core attaches nothing.
+ */
+export type ErrorReportPageContext = {
+  /** The URL the platform was on. */
+  currentURL?: string;
+  /** A screenshot of that page, as a data URL. */
+  screenshotDataURL?: string;
+};
 
-export class URLChangedError extends Error {
-  constructor(oldURL: string, newURL: string, validURLs: string[] = []) {
-    let errorMessage = `URL changed from ${oldURL} to ${newURL}`;
-    if (validURLs.length > 0) {
-      errorMessage += ` (valid URLs: ${validURLs.join(", ")})`;
-    }
-    super(errorMessage);
-    this.name = "URLChangedError";
-  }
-}
-
-export class InternetDownError extends Error {
-  constructor() {
-    super(`Internet connection is down`);
-    this.name = "InternetDownError";
-  }
-}
-
+/**
+ * Renderer-side owner of one account's view state, for every platform.
+ *
+ * This core is platform-agnostic and knows nothing about how a platform is
+ * driven: it holds the account and its state machine, the recent log, error
+ * reporting, pause and resume through sleep and wake, and translation.
+ *
+ * Platforms driven through an embedded browser build on BrowserViewModel,
+ * which adds the webview and the page-interaction helpers. Platforms that talk
+ * to an API directly build on this class, so no automation method is reachable
+ * on them.
+ */
 export class BaseViewModel {
   public logs: Log[] = [];
 
   public account: Account;
-  public webview: WebviewTag | null;
-  public webContentsID: number | null;
-  public isWebviewDestroyed: boolean;
 
   public state: string;
   public runJobsState: string;
   public action: string;
   public actionString: string;
   public actionFinishedString: string;
-  public domReady: boolean;
 
   public isPaused: boolean;
-
-  public cancelWaitForURL: boolean;
 
   // If the computer resumes from sleep, should we resume the automation?
   public shouldResumeOnResume: boolean;
@@ -70,7 +67,6 @@ export class BaseViewModel {
 
   public emitter: Emitter<Record<EventType, unknown>> | null;
 
-  public domReadyHandler: () => void;
   protected translator: TranslatorFn;
 
   constructor(
@@ -79,9 +75,6 @@ export class BaseViewModel {
     translator: TranslatorFn = translate,
   ) {
     this.account = account;
-    this.webview = null;
-    this.webContentsID = null;
-    this.isWebviewDestroyed = false;
 
     this.state = "";
     this.runJobsState = "";
@@ -91,10 +84,8 @@ export class BaseViewModel {
     this.instructions = "";
     this.showBrowser = false;
     this.showAutomationNotice = false;
-    this.domReady = false;
 
     this.isPaused = false;
-    this.cancelWaitForURL = false;
     this.shouldResumeOnResume = false;
     this.suspendLock = false;
 
@@ -102,8 +93,6 @@ export class BaseViewModel {
     this.translator = translator;
 
     this.resetLogs();
-
-    this.domReadyHandler = async () => {};
 
     // Suspend and resume
     window.electron.onPowerMonitorSuspend(() => this.powerMonitorSuspend());
@@ -114,9 +103,12 @@ export class BaseViewModel {
     return this.translator(key, params);
   }
 
+  /**
+   * Release what this view model holds open. The core holds nothing, so
+   * platforms and layers with resources of their own override this.
+   */
   cleanup() {
-    // Remove the event listener
-    this.getWebview()?.removeEventListener("dom-ready", this.domReadyHandler);
+    // Nothing to release
   }
 
   async reloadAccount() {
@@ -155,87 +147,6 @@ export class BaseViewModel {
       this.resume();
     } else {
       this.log("powerMonitorResume", "was already paused");
-    }
-  }
-
-  async init(webview: WebviewTag) {
-    this.webview = webview;
-
-    this.domReadyHandler = async () => {
-      this.log("domReadyHandler", "dom-ready");
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      // dom-ready has been fired
-      this.domReady = true;
-
-      const webview = this.getWebview();
-      if (webview) {
-        // Set the webContentsID
-        this.webContentsID = webview.getWebContentsId();
-
-        // Remove the event listener
-        webview.removeEventListener("dom-ready", this.domReadyHandler);
-      }
-    };
-    this.getWebview()?.addEventListener("dom-ready", this.domReadyHandler);
-
-    // Open devtools if needed
-    const shouldOpenDevtools = await window.electron.shouldOpenDevtools();
-
-    if (shouldOpenDevtools) {
-      this.getWebview()?.openDevTools();
-    }
-
-    // Wait for dom-ready
-    while (!this.domReady) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-  }
-
-  destroy() {
-    this.isWebviewDestroyed = true;
-  }
-
-  getWebview(): WebviewTag | null {
-    if (this.isWebviewDestroyed) {
-      return null;
-    }
-    return this.webview;
-  }
-
-  /**
-   * Safely execute JavaScript in the webview with proper error handling.
-   * This method:
-   * 1. Checks if webview is valid
-   * 2. Wraps execution in try-catch
-   * 3. Returns a typed result indicating success/failure
-   *
-   * @param code - The JavaScript code to execute (should be an IIFE returning a value)
-   * @param logContext - Optional context string for logging errors
-   * @returns Object with success boolean, value (if successful), and error (if failed)
-   */
-  async safeExecuteJavaScript<T>(
-    code: string,
-    logContext?: string,
-  ): Promise<{ success: true; value: T } | { success: false; error: string }> {
-    const webview = this.getWebview();
-    if (!webview) {
-      const errorMsg = "Webview is not available";
-      if (logContext) {
-        this.log(logContext, errorMsg);
-      }
-      return { success: false, error: errorMsg };
-    }
-
-    try {
-      const result = await webview.executeJavaScript(code);
-      return { success: true, value: result as T };
-    } catch (error) {
-      const errorMsg = `${error}`;
-      if (logContext) {
-        this.log(logContext, `Error: ${errorMsg}`);
-      }
-      return { success: false, error: errorMsg };
     }
   }
 
@@ -289,30 +200,9 @@ export class BaseViewModel {
       PlausibleEvents.AUTOMATION_ERROR_OCCURED,
       navigator.userAgent,
     );
-    const webview = this.getWebview();
 
-    // Get username
-    let username = "";
-    switch (this.account?.type) {
-      case "X":
-        username = this.account?.xAccount?.username
-          ? this.account?.xAccount.username
-          : "";
-        break;
-      case "Facebook":
-        username = this.account?.facebookAccount?.username
-          ? this.account?.facebookAccount.username
-          : "";
-        break;
-      default:
-        break;
-    }
-
-    // Get screenshot
-    let screenshotDataURL = "";
-    if (webview && this.showBrowser) {
-      screenshotDataURL = (await webview.capturePage()).toDataURL();
-    }
+    // Get whatever the platform can say about the page it failed on
+    const pageContext = await this.errorReportPageContext();
 
     // Add logs to sensitiive context data
     if (sensitiveContextData === null) {
@@ -321,8 +211,8 @@ export class BaseViewModel {
     sensitiveContextData.logs = this.logs;
 
     // Add current URL to sensitive context data
-    if (webview) {
-      sensitiveContextData.currentURL = webview.getURL();
+    if (pageContext.currentURL !== undefined) {
+      sensitiveContextData.currentURL = pageContext.currentURL;
     }
 
     // Create the error
@@ -331,14 +221,31 @@ export class BaseViewModel {
       this.account.type,
       automationErrorType,
       JSON.stringify(errorReportData),
-      username,
-      screenshotDataURL,
+      this.errorReportAccountLabel,
+      pageContext.screenshotDataURL ?? "",
       JSON.stringify(sensitiveContextData),
     );
 
     if (!allowContinue) {
       await this.showErrorModal();
     }
+  }
+
+  /**
+   * How an error report names the account it is about. Each platform knows its
+   * own accounts, so each one derives its own label, and a platform that must
+   * not name the account keeps this empty.
+   */
+  protected get errorReportAccountLabel(): string {
+    return "";
+  }
+
+  /**
+   * The page a failure happened on. Only a platform driven through a browser
+   * has one, so the core reports a failure with no page at all.
+   */
+  protected async errorReportPageContext(): Promise<ErrorReportPageContext> {
+    return {};
   }
 
   async showErrorModal() {
@@ -349,185 +256,8 @@ export class BaseViewModel {
     await this.waitForPause();
   }
 
-  async waitForLoadingToFinish(timeout: number = DEFAULT_TIMEOUT) {
-    this.log("waitForLoadingToFinish", "waiting for loading to finish");
-    const startTime = Date.now();
-    do {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      // Check if operation was cancelled (e.g., user clicked archive-only)
-      if (this.cancelWaitForURL) {
-        this.log("waitForLoadingToFinish", "cancelled by user action");
-        this.getWebview()?.stop();
-        return;
-      }
-
-      if (Date.now() - startTime >= timeout) {
-        this.log(
-          "waitForLoadingToFinish",
-          "timeout reached while waiting for loading to finish",
-        );
-        // Force stop any navigation before returning
-        this.getWebview()?.stop();
-        return;
-      }
-    } while (this.getWebview()?.isLoading());
-    this.log("waitForLoadingToFinish", "loading finished");
-  }
-
   async sleep(ms: number) {
     await new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  async getScrollHeight() {
-    return await this.getWebview()?.executeJavaScript(
-      "document.body.scrollHeight",
-    );
-  }
-
-  async waitForSelector(
-    selector: string,
-    startingURL: string = "",
-    timeout: number = DEFAULT_TIMEOUT,
-  ) {
-    if (this.webview === null) {
-      this.log("waitForSelector", "webview is null");
-      return;
-    }
-
-    if (startingURL == "") {
-      startingURL = this.webview.getURL();
-    }
-
-    const startTime = Date.now();
-    while (true) {
-      // Check if the URL has changed
-      if (this.webview.getURL() !== startingURL) {
-        this.log("waitForSelector", `URL changed: ${this.webview.getURL()}`);
-        throw new URLChangedError(startingURL, this.webview.getURL());
-      }
-
-      // Check if we have timed out
-      if (Date.now() - startTime > timeout) {
-        throw new TimeoutError(selector);
-      }
-
-      // Did we find the selector?
-      const found = await this.getWebview()?.executeJavaScript(
-        `document.querySelector('${selector}') !== null`,
-      );
-      if (found) {
-        this.log("waitForSelector", `found: ${selector}`);
-        break;
-      }
-      await this.sleep(200);
-    }
-  }
-
-  async doesSelectorExist(selector: string): Promise<boolean> {
-    return await this.getWebview()?.executeJavaScript(
-      `document.querySelector('${selector}') !== null`,
-    );
-  }
-
-  // if the last element in the list of elements that match containerSelector, and check if selector exists
-  async doesSelectorWithinElementLastExist(
-    containerSelector: string,
-    selector: string,
-  ): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${containerSelector}');
-            if(els.length == 0) { return false; }
-            const lastEl = els[els.length - 1];
-            const innerEl = lastEl.querySelector('${selector}');
-            if(innerEl === null) { return false; }
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  async isSelectorLastDisabled(selector: string): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${selector}');
-            if(els.length == 0) { return false; }
-            const lastEl = els[els.length - 1];
-            return lastEl.disabled;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  async countSelectorsFound(selector: string): Promise<number> {
-    return await this.getWebview()?.executeJavaScript(
-      `document.querySelectorAll('${selector}').length`,
-    );
-  }
-
-  // Count the number of selector elements within the last element in the list of elements that match containerSelector
-  async countSelectorsWithinElementLastFound(
-    containerSelector: string,
-    selector: string,
-  ): Promise<number> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${containerSelector}');
-            if(els.length == 0) { return 0; }
-            const lastEl = els[els.length - 1];
-            const innerEls = lastEl.querySelectorAll('${selector}');
-            return innerEls.length;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // wait for containerSelector to exist, and also selector within containerSelector to exist
-  async waitForSelectorWithinSelector(
-    containerSelector: string,
-    selector: string,
-    timeout: number = DEFAULT_TIMEOUT,
-  ) {
-    if (this.webview === null) {
-      this.log("waitForSelector", "webview is null");
-      return;
-    }
-
-    const startingURL = this.webview.getURL();
-
-    const startTime = Date.now();
-    while (true) {
-      if (Date.now() - startTime > timeout) {
-        throw new TimeoutError(selector);
-      }
-      const found = await this.getWebview()?.executeJavaScript(`
-                (() => {
-                    const el = document.querySelector('${containerSelector}');
-                    if(el === null) { return false; }
-                    const innerEl = el.querySelector('${selector}');
-                    if(innerEl === null) { return false; }
-                    return true;
-                })()
-            `);
-      if (found) {
-        this.log("waitForSelectorWithinSelector", `found: ${selector}`);
-        break;
-      }
-      await this.sleep(200);
-
-      // Check if the URL has changed
-      if (this.webview.getURL() !== startingURL) {
-        this.log(
-          "waitForSelectorWithinSelector",
-          `URL changed: ${this.webview.getURL()}`,
-        );
-        throw new URLChangedError(startingURL, this.webview.getURL());
-      }
-    }
   }
 
   async checkInternetConnectivity(): Promise<boolean> {
@@ -553,360 +283,6 @@ export class BaseViewModel {
     }
   }
 
-  async loadBlank() {
-    this.log("loadBlank");
-    const webview = this.getWebview();
-    if (webview) {
-      // Note: We need to wait for the page to finish loading before and after to prevent GUEST_VIEW_MANAGER_CALL
-      // https://github.com/electron/electron/issues/24171#issuecomment-953053293
-      await this.waitForLoadingToFinish();
-      await webview.loadURL("about:blank");
-      await this.waitForLoadingToFinish();
-    }
-  }
-
-  async loadURL(url: string) {
-    const webview = this.getWebview();
-    if (webview) {
-      // Note: We need to wait for the page to finish loading before and after to prevent GUEST_VIEW_MANAGER_CALL
-      // https://github.com/electron/electron/issues/24171#issuecomment-953053293
-      await this.waitForLoadingToFinish();
-
-      let tries = 0;
-      while (true) {
-        try {
-          this.log("loadURL", `try #${tries}, ${url}`);
-          await webview.loadURL(url);
-          // Sleep 2 seconds after loading each URL, to make everything more stable.
-          // The X rate limits are intense, so this should not slow anything down.
-          this.sleep(2000);
-          this.log("loadURL", "URL loaded successfully");
-          break;
-        } catch (error) {
-          // Check if this was a cancellation (user clicked archive-only, etc.)
-          if (this.cancelWaitForURL) {
-            this.log("loadURL", "Login cancelled");
-            return; // Exit gracefully instead of throwing
-          }
-
-          this.log("loadURL", ["Failed to load URL", error]);
-          tries++;
-          if (tries >= 3) {
-            if (await this.checkInternetConnectivity()) {
-              throw error;
-            } else {
-              if (
-                !(await window.electron.showQuestion(
-                  `Error loading URL ${url}. It looks like your internet connection is down. Please check your connection and try again.`,
-                  "Retry",
-                  "Cancel",
-                ))
-              ) {
-                throw new InternetDownError();
-              } else {
-                tries = 0;
-                this.sleep(1000);
-              }
-            }
-          } else {
-            // Wait 1 second before retrying
-            this.sleep(1000);
-          }
-        }
-      }
-    } else {
-      this.log("loadURL", "webview is null");
-    }
-
-    await this.waitForLoadingToFinish();
-  }
-
-  async waitForURL(waitingForURL: string) {
-    this.cancelWaitForURL = false;
-    while (!this.cancelWaitForURL) {
-      const newURL = this.getWebview()?.getURL();
-      this.log("waitForURL", {
-        waitingForURL: waitingForURL,
-        currentURL: newURL,
-      });
-
-      // Check if we got the URL we were waiting for
-      if (newURL?.startsWith(waitingForURL)) {
-        break;
-      }
-
-      await this.sleep(250);
-    }
-  }
-
-  // Return true if we scrolled, and false if we can't scroll anymore
-  async scrollToBottom() {
-    await this.waitForPause();
-
-    // Find the last scroll position
-    const scrollTop = await this.getWebview()?.executeJavaScript(
-      "document.documentElement.scrollTop || document.body.scrollTop",
-    );
-
-    // Scroll to the bottom
-    this.log("scrollToBottom", "scrolling to bottom");
-    await this.getWebview()?.executeJavaScript(
-      "window.scrollTo(0, document.body.scrollHeight)",
-    );
-    await this.sleep(1000);
-    await this.waitForLoadingToFinish();
-
-    // Have we scrolled?
-    const newScrollTop = await this.getWebview()?.executeJavaScript(
-      "document.documentElement.scrollTop || document.body.scrollTop",
-    );
-    if (newScrollTop === scrollTop) {
-      return false;
-    }
-    return true;
-  }
-
-  // Return true if we scrolled, and false if we can't scroll anymore
-  async scrollToTop(selector: string) {
-    // Find the last scroll position
-    const scrollTop = await this.getWebview()?.executeJavaScript(`
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return false; }
-            return el.scrollTop;
-        })()
-        `);
-
-    await this.waitForLoadingToFinish();
-    await this.sleep(500);
-
-    // Scroll to the top
-    this.log("scrollToTop", "scrolling to top");
-    await this.getWebview()?.executeJavaScript(`
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return false; }
-            el.scrollTo(0,0);
-        })()
-        `);
-    await this.sleep(500);
-    await this.waitForLoadingToFinish();
-
-    // Have we scrolled?
-    const newScrollTop = await this.getWebview()?.executeJavaScript(`
-            (() => {
-                let el = document.querySelector('${selector}');
-                if(el === null) { return false; }
-                return el.scrollTop;
-            })()
-        `);
-    if (newScrollTop === scrollTop) {
-      return false;
-    }
-    return true;
-  }
-
-  async scrollUp(height: number) {
-    await this.getWebview()?.executeJavaScript(
-      `window.scrollBy(0, -${height})`,
-    );
-    await this.sleep(500);
-    await this.waitForLoadingToFinish();
-  }
-
-  async scriptClickElement(selector: string): Promise<boolean> {
-    const code = `
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return false; }
-            el.click();
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // click the Nth element in the list of elements that match selector
-  async scriptClickElementNth(selector: string, n: number): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${selector}');
-            if(els.length < ${n + 1}) { return false; }
-            const firstEl = els[${n}];
-            firstEl.click()
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // click the first element in the list of elements that match selector
-  async scriptClickElementFirst(selector: string): Promise<boolean> {
-    return await this.scriptClickElementNth(selector, 0);
-  }
-
-  // click the last element in the list of elements that match selector
-  async scriptClickElementLast(selector: string): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${selector}');
-            if(els.length == 0) { return false; }
-            const lastEl = els[els.length - 1];
-            lastEl.click()
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // if the first element in the list of elements that match containerSelector, and click selector
-  async scriptClickElementWithinElementFirst(
-    containerSelector: string,
-    selector: string,
-  ): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${containerSelector}');
-            if(els.length == 0) { return false; }
-            const firstEl = els[0];
-            const innerEl = firstEl.querySelector('${selector}');
-            if(innerEl === null) { return false; }
-            innerEl.click();
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // if the last element in the list of elements that match containerSelector, and click selector
-  async scriptClickElementWithinElementLast(
-    containerSelector: string,
-    selector: string,
-  ): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${containerSelector}');
-            if(els.length == 0) { return false; }
-            const lastEl = els[els.length - 1];
-            const innerEl = lastEl.querySelector('${selector}');
-            if(innerEl === null) { return false; }
-            innerEl.click();
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  async scriptMouseoverElement(selector: string): Promise<boolean> {
-    const code = `
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return false; }
-            el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // mouseover the Nth element in the list of elements that match selector
-  async scriptMouseoverElementNth(
-    selector: string,
-    n: number,
-  ): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${selector}');
-            if(els.length < ${n + 1}) { return false; }
-            const firstEl = els[${n}];
-            firstEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  // mouseover the first element in the list of elements that match selector
-  async scriptMouseoverElementFirst(selector: string): Promise<boolean> {
-    return await this.scriptMouseoverElementNth(selector, 0);
-  }
-
-  // mouseover the last element in the list of elements that match selector
-  async scriptMouseoverElementLast(selector: string): Promise<boolean> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${selector}');
-            if(els.length == 0) { return false; }
-            const lastEl = els[els.length - 1];
-            lastEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, cancelable: true, view: window }));
-            return true;
-        })()
-        `;
-    await this.sleep(250);
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  async scriptGetInnerText(selector: string): Promise<null | string> {
-    const code = `
-        (() => {
-            let el = document.querySelector('${selector}');
-            if(el === null) { return null; }
-            return el.innerText;
-        })()
-        `;
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  async scriptGetAllInnerHTML(selector: string): Promise<string[]> {
-    const code = `
-        (() => {
-            const els = document.querySelectorAll('${selector}');
-            const elsHTML = Array.from(els).map(el => el.innerHTML);
-            return elsHTML;
-        })()
-        `;
-    return await this.getWebview()?.executeJavaScript(code);
-  }
-
-  /**
-   * Click an element by XPath
-   * Returns true if the element was found and clicked, false otherwise
-   */
-  async clickElementByXPath(xpath: string): Promise<boolean> {
-    const webview = this.getWebview();
-    if (!webview) return false;
-
-    try {
-      return await webview.executeJavaScript(`
-        (() => {
-          const result = document.evaluate(
-            '${xpath}',
-            document,
-            null,
-            XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
-          );
-          const element = result.singleNodeValue;
-          if (element) {
-            element.click();
-            return true;
-          }
-          return false;
-        })()
-      `);
-    } catch (error) {
-      this.log("clickElementByXPath", `Error clicking element: ${error}`);
-      return false;
-    }
-  }
-
   // Pause and resume the jobs
 
   pause() {
@@ -917,29 +293,6 @@ export class BaseViewModel {
   resume() {
     this.isPaused = false;
     this.log("resume", "resumed");
-  }
-
-  async scriptSendClickInputEvent(selector: string): Promise<void> {
-    // Get the coordinates of the element
-    const code = `
-        (() => {
-            const el = document.querySelector('${selector}');
-            const rect = el.getBoundingClientRect();
-            return rect;
-        })()
-        `;
-    const rect: DOMRect = await this.getWebview()?.executeJavaScript(code);
-    const centerX = Math.round(rect.x + rect.width / 2);
-    const centerY = Math.round(rect.y + rect.height / 2);
-
-    // Create a new mouse event
-    await this.getWebview()?.sendInputEvent({
-      type: "mouseDown",
-      x: centerX,
-      y: centerY,
-      button: "left",
-      clickCount: 1,
-    });
   }
 
   async waitForPause() {

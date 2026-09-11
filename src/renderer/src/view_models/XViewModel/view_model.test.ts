@@ -13,6 +13,7 @@ import { xHasSomeData } from "../../util_x";
 import { getJobsType } from "../../util";
 import type { Account, XJob } from "../../../../shared_types";
 import { createTestTranslator } from "../../test_util";
+import { AutomationErrorType } from "../../automation_errors";
 
 // Mock all helper modules
 vi.mock("./auth");
@@ -870,6 +871,23 @@ describe("XViewModel", () => {
       vi.mocked(Helpers.syncProgress).mockResolvedValue(undefined);
       await vm.syncProgress();
       expect(Helpers.syncProgress).toHaveBeenCalledWith(vm);
+    });
+  });
+  describe("error reports", () => {
+    it("names the X account the report is about by its username", async () => {
+      const createErrorReport = vi.fn().mockResolvedValue(undefined);
+      (
+        window.electron.database as unknown as {
+          createErrorReport: typeof createErrorReport;
+        }
+      ).createErrorReport = createErrorReport;
+      const model = new XViewModel(mockAccount, null, translate);
+      model.log = vi.fn();
+
+      await model.error(AutomationErrorType.x_unknownError, null, null, true);
+
+      const [, , , , username] = createErrorReport.mock.calls[0];
+      expect(username).toBe("testuser");
     });
   });
 });

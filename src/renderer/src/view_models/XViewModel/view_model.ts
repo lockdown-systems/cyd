@@ -1,5 +1,5 @@
 import { WebviewTag } from "electron";
-import { BaseViewModel } from "../BaseViewModel";
+import { BrowserViewModel } from "../BrowserViewModel";
 import {
   ArchiveInfo,
   emptyArchiveInfo,
@@ -30,7 +30,7 @@ import * as DeleteJobs from "./jobs_delete/index";
 import * as MigrateJobs from "./jobs_migrate_to_bluesky";
 import * as TombstoneJobs from "./jobs_tombstone";
 
-export class XViewModel extends BaseViewModel {
+export class XViewModel extends BrowserViewModel {
   public progress: XProgress = emptyXProgress();
   public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
   public progressInfo: XProgressInfo = emptyXProgressInfo();
@@ -46,6 +46,11 @@ export class XViewModel extends BaseViewModel {
 
   // Variables related to debugging
   public debugAutopauseEndOfStep: boolean = false;
+
+  /** X error reports are about an X account, which a username names. */
+  protected get errorReportAccountLabel(): string {
+    return this.account?.xAccount?.username ?? "";
+  }
 
   async init(webview: WebviewTag) {
     if (
