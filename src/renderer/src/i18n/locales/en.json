@@ -102,6 +102,14 @@
       "updateAvailableMessage": "You are running Cyd {currentVersion}. Cyd {latestVersion} is the latest version, and you should upgrade.",
       "noUpdatesAvailableTitle": "No updates are available",
       "noUpdatesAvailableMessage": "You are running Cyd {currentVersion}, which is the latest version."
+    },
+    "credentialStore": {
+      "unprotectedTitle": "Your saved logins are not protected on this computer.",
+      "noKeyring": "No system keyring found, so Cyd stores your logins unencrypted. Anyone who can read your files can use them. Install GNOME Keyring (libsecret) or KWallet, then restart Cyd.",
+      "unrecognizedKeyring": "Cyd does not recognize your desktop's password store, so it stores your logins unencrypted. Install GNOME Keyring (libsecret) or KWallet, then restart Cyd.",
+      "unavailable": "Cyd found no way to protect credentials here, so it stores your logins unencrypted. Anyone who can read your files can use them.",
+      "backendLabel": "Password store: {backend}",
+      "dismiss": "Dismiss"
     }
   },
   "signIn": {

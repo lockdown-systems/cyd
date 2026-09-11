@@ -33,6 +33,12 @@ import {
   deleteConfig as globalDeleteConfig,
 } from "../../../database";
 import {
+  BLUESKY_OAUTH_SESSION_PREFIX,
+  BLUESKY_OAUTH_STATE_PREFIX,
+  accountCredentials,
+  type AccountCredentials,
+} from "../../../credentials";
+import {
   XTweetRow,
   XTweetMediaRow,
   XTweetURLRow,
@@ -62,10 +68,19 @@ export class BlueskyService {
     private updateRateLimitInfo: (info: Partial<XRateLimitInfo>) => void,
   ) {}
 
+  private credentials(): AccountCredentials {
+    return accountCredentials(this.accountID);
+  }
+
   private async clientFromClientID(
     host: string,
     path: string,
   ): Promise<NodeOAuthClient> {
+    // The OAuth state holds the PKCE verifier and the session holds access and
+    // refresh tokens plus a private DPoP key. Both are account-control
+    // credentials, so they live in protected storage and never in this
+    // account's SQLite config table.
+    const credentials = this.credentials();
     const options: NodeOAuthClientFromMetadataOptions = {
       clientId: `https://${host}/${path}`,
       stateStore: {
@@ -73,34 +88,36 @@ export class BlueskyService {
           key: string,
           internalState: NodeSavedState,
         ): Promise<void> => {
-          await this.setConfig(
-            `blueskyStateStore-${key}`,
+          credentials.set(
+            `${BLUESKY_OAUTH_STATE_PREFIX}${key}`,
             JSON.stringify(internalState),
           );
         },
         get: async (key: string): Promise<NodeSavedState | undefined> => {
-          const stateStore = await this.getConfig(`blueskyStateStore-${key}`);
+          const stateStore = credentials.get(
+            `${BLUESKY_OAUTH_STATE_PREFIX}${key}`,
+          );
           return stateStore ? JSON.parse(stateStore) : undefined;
         },
         del: async (key: string): Promise<void> => {
-          await this.setConfig(`blueskyStateStore-${key}`, "");
+          credentials.delete(`${BLUESKY_OAUTH_STATE_PREFIX}${key}`);
         },
       },
       sessionStore: {
         set: async (sub: string, session: NodeSavedSession): Promise<void> => {
-          await this.setConfig(
-            `blueskySessionStore-${sub}`,
+          credentials.set(
+            `${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`,
             JSON.stringify(session),
           );
         },
         get: async (sub: string): Promise<NodeSavedSession | undefined> => {
-          const sessionStore = await this.getConfig(
-            `blueskySessionStore-${sub}`,
+          const sessionStore = credentials.get(
+            `${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`,
           );
           return sessionStore ? JSON.parse(sessionStore) : undefined;
         },
         del: async (sub: string): Promise<void> => {
-          await this.setConfig(`blueskySessionStore-${sub}`, "");
+          credentials.delete(`${BLUESKY_OAUTH_SESSION_PREFIX}${sub}`);
         },
       },
     };
@@ -221,9 +238,9 @@ export class BlueskyService {
     // Finish the callback
     const { session, state } = await this.blueskyClient.callback(params);
 
+    // The OAuth state is authorization material, so it is never logged.
     log.info(
-      "BlueskyService.callback: authorize() was called with state",
-      state,
+      `BlueskyService.callback: authorize() returned a state: ${state !== undefined}`,
     );
     log.info("BlueskyService.callback: user authenticated as", session.did);
 
@@ -260,10 +277,19 @@ export class BlueskyService {
     // Delete from global config
     await globalDeleteConfig("blueskyOAuthAccountID");
 
-    // Delete from account config
+    // Delete from account config. The DID is a public identifier, but it is
+    // what points at the credentials, so it goes too.
     await this.deleteConfig("blueskyDID");
-    await this.deleteConfigLike("blueskyStateStore-%");
-    await this.deleteConfigLike("blueskySessionStore-%");
+
+    // Delete the OAuth state and session from protected storage
+    const credentials = this.credentials();
+    credentials.deleteWithPrefix(BLUESKY_OAUTH_STATE_PREFIX);
+    credentials.deleteWithPrefix(BLUESKY_OAUTH_SESSION_PREFIX);
+
+    // Older versions of Cyd kept these in the account's config table. Sweep
+    // them here too, in case a database predates the credential facility.
+    await this.deleteConfigLike(`${BLUESKY_OAUTH_STATE_PREFIX}%`);
+    await this.deleteConfigLike(`${BLUESKY_OAUTH_SESSION_PREFIX}%`);
   }
 
   async getTweetCounts(): Promise<XMigrateTweetCounts> {

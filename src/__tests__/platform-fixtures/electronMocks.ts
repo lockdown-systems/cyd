@@ -19,6 +19,26 @@ const shellMockImpl = {
   openExternal: vi.fn(async () => Promise.resolve()),
 };
 
+// Tests run without a real OS credential facility, so safeStorage is a
+// reversible stand-in. Tests that care about an unprotected or missing
+// backend override these mocks.
+//
+// Real Electron couples these two on Linux: whenever Chromium falls back to
+// the basic_text password store, isEncryptionAvailable() returns false. A test
+// that overrides only the backend name describes a machine that cannot exist.
+const safeStorageMockImpl = {
+  isEncryptionAvailable: vi.fn(() => true),
+  getSelectedStorageBackend: vi.fn(() => "gnome_libsecret"),
+  encryptString: vi.fn((plaintext: string) => Buffer.from(`enc:${plaintext}`)),
+  decryptString: vi.fn((ciphertext: Buffer) => {
+    const text = ciphertext.toString();
+    if (!text.startsWith("enc:")) {
+      throw new Error("Unable to decrypt");
+    }
+    return text.slice("enc:".length);
+  }),
+};
+
 const createHandlerStore = (): HandlerStore => ({
   onCompleted: [],
   onSendHeaders: [],
@@ -89,6 +109,7 @@ vi.mock("electron", () => {
       on: vi.fn(),
     },
     shell: shellMockImpl,
+    safeStorage: safeStorageMockImpl,
   };
 });
 
@@ -107,3 +128,4 @@ export const electronMockHelpers = {
 };
 
 export const shellMock = shellMockImpl;
+export const safeStorageMock = safeStorageMockImpl;

@@ -101,7 +101,9 @@ const loadTweetCounts = async () => {
 };
 
 const oauthCallback = async (queryString: string) => {
-  console.log("Bluesky OAuth callback", queryString);
+  // The query string carries the OAuth authorization code, so it is never
+  // logged.
+  console.log("Bluesky OAuth callback received");
   try {
     const ret: boolean | string = await window.electron.X.blueskyCallback(
       props.model.account.id,
