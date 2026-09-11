@@ -393,6 +393,10 @@ export function mockElectronAPI() {
     // Power monitor (used by all view models)
     onPowerMonitorSuspend: vi.fn(),
     onPowerMonitorResume: vi.fn(),
+
+    // Power save blocker (held while an account has work running)
+    startPowerSaveBlocker: vi.fn().mockResolvedValue(1),
+    stopPowerSaveBlocker: vi.fn().mockResolvedValue(undefined),
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

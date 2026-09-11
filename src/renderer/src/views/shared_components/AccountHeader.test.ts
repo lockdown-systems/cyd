@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import AccountHeader from "./AccountHeader.vue";
-import { createMockAccount, createMockXAccount } from "../../test_util";
+import {
+  createMockAccount,
+  createMockXAccount,
+  createMockBlueskyLocalAccount,
+} from "../../test_util";
 import i18n from "../../i18n";
 
 describe("AccountHeader", () => {
@@ -262,5 +266,46 @@ describe("AccountHeader", () => {
     wrapper.find(".remove-btn").element.dispatchEvent(mouseleaveEvent);
     await nextTick();
     expect(wrapper.find(".info-popup-remove").exists()).toBe(false);
+  });
+  it("should display the Bluesky handle a local account captured", () => {
+    const account = createMockAccount({
+      type: "Bluesky",
+      xAccount: null,
+      blueskyLocalAccount: createMockBlueskyLocalAccount({
+        did: "did:plc:examplealice",
+        handle: "alice.bsky.social",
+        displayName: "Alice",
+      }),
+    });
+    const wrapper = mount(AccountHeader, {
+      props: {
+        account,
+        showRefreshButton: false,
+      },
+      global: {
+        plugins: [i18n],
+      },
+    });
+
+    expect(wrapper.find(".label-text").text()).toBe("@alice.bsky.social");
+  });
+
+  it("should name the platform for a Bluesky account with no profile yet", () => {
+    const account = createMockAccount({
+      type: "Bluesky",
+      xAccount: null,
+      blueskyLocalAccount: createMockBlueskyLocalAccount(),
+    });
+    const wrapper = mount(AccountHeader, {
+      props: {
+        account,
+        showRefreshButton: false,
+      },
+      global: {
+        plugins: [i18n],
+      },
+    });
+
+    expect(wrapper.find(".label-text").text()).toBe("Bluesky");
   });
 });

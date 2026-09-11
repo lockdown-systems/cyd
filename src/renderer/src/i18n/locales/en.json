@@ -412,7 +412,6 @@
     "xDescription": "Formerly Twitter, owned by billionaire Elon Musk",
     "bluesky": "Bluesky",
     "blueskyDescription": "Open source social media platform based on AT Protocol",
-    "blueskyLocalStorageReady": "This Bluesky account's private local storage is ready. Connecting an identity and saving data are coming next.",
     "facebookDescription": "A subsidiary of Meta, owned by billionaire Mark Zuckerberg",
     "facebookDevelopmentNote": "<strong>Facebook</strong> support is under active development.",
     "blueskyMobilePromo": "Want to clean up your <strong>Bluesky</strong> data? Use the Cyd mobile app!",
@@ -472,6 +471,18 @@
     "premium": {
       "readyToDelete": "You're all set! Let's continue to configure what you want to delete.",
       "continueToDeleteOptions": "Continue to Delete Options"
+    }
+  },
+  "bluesky": {
+    "dashboard": {
+      "noIdentity": "No Bluesky identity is linked to this account yet, and Cyd hasn't saved any Bluesky data for it.",
+      "comingSoon": "Coming soon",
+      "connectTitle": "Connect to Bluesky",
+      "connectDescription": "Authorize Cyd to act on your Bluesky identity so it can save and manage your data.",
+      "saveTitle": "Save My Data",
+      "saveDescription": "Save your Bluesky posts, media, and conversations to this computer.",
+      "browseTitle": "Browse My Data",
+      "browseDescription": "Read your Bluesky saved data inside Cyd, with no Bluesky connection and no network access."
     }
   },
   "review": {
@@ -682,6 +693,11 @@
       },
       "progress": {
         "wallPostsProgress": "Deleted **{deleteCount}**, untagged **{untagCount}**, and hid **{hideCount}** wall posts."
+      }
+    },
+    "bluesky": {
+      "wizard": {
+        "dashboard": "\n# This is your Bluesky account in Cyd.\n\nIts private local storage is ready. Connecting your account, saving your data, and browsing it offline are all coming soon."
       }
     }
   }

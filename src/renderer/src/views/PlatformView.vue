@@ -57,7 +57,8 @@ const props = defineProps<{
     showBrowser: boolean;
     showAutomationNotice: boolean;
   };
-  webviewProps: Record<string, unknown>;
+  /** Only platforms that use a webview supply these. */
+  webviewProps?: Record<string, unknown>;
   // Platform-specific props
   displayContentProps?: Record<string, unknown>;
   wizardPageProps?: Record<string, unknown>;
@@ -181,8 +182,12 @@ const currentJobsLength = computed(() => props.currentJobs.length);
       <AutomationNotice v-bind="automationNoticeProps" />
     </template>
 
-    <!-- Webview -->
-    <webview ref="webviewComponent" v-bind="webviewProps" />
+    <!-- Webview, only for platforms that are automated through a browser -->
+    <webview
+      v-if="config.features.usesWebview"
+      ref="webviewComponent"
+      v-bind="webviewProps"
+    />
 
     <template v-if="modelState != PlatformStates.WizardStart">
       <!-- RunJobs display content (platform-specific) -->

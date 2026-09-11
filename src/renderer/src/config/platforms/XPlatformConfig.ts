@@ -33,6 +33,7 @@ export const XPlatformConfig: PlatformConfig = {
     hasComplexImport: true, // X supports multi-step import workflows (zip files, etc.)
     hasMigration: true, // X supports migration to Bluesky
     hasU2FSupport: true, // X supports U2F security keys for 2FA
+    usesWebview: true, // X is automated through an embedded browser
   },
 
   urls: {

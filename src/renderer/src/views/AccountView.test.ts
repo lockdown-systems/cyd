@@ -28,6 +28,15 @@ vi.mock("./x/XView.vue", () => ({
   },
 }));
 
+vi.mock("./bluesky/BlueskyView.vue", () => ({
+  default: {
+    name: "BlueskyView",
+    template: "<div>BlueskyView</div>",
+    props: ["account"],
+    emits: ["onRefreshClicked", "onRemoveClicked"],
+  },
+}));
+
 vi.mock("./facebook/FacebookView.vue", () => ({
   default: {
     name: "FacebookView",
@@ -415,7 +424,7 @@ describe("AccountView", () => {
     });
   });
 
-  describe("Bluesky local accounts", () => {
+  describe("Bluesky account type", () => {
     const mountBlueskyAccount = (handle: string | null) => {
       const account: Account = createMockAccount({
         id: 7,
@@ -434,30 +443,32 @@ describe("AccountView", () => {
       });
     };
 
-    it("opens the account's private local storage", async () => {
+    it("should render BlueskyView when account type is Bluesky", async () => {
       wrapper = mountBlueskyAccount("alice.bsky.social");
       await flushPromises();
 
-      expect(window.electron.Bluesky.openLocalAccount).toHaveBeenCalledWith(7);
+      expect(wrapper.findComponent({ name: "BlueskyView" }).exists()).toBe(
+        true,
+      );
     });
 
-    it("shows the account's current profile once its storage is ready", async () => {
+    it("should pass account prop to BlueskyView", async () => {
       wrapper = mountBlueskyAccount("alice.bsky.social");
       await flushPromises();
 
-      const panel = wrapper.find(".bluesky-local-account");
-      expect(panel.exists()).toBe(true);
-      expect(panel.text()).toContain("Alice");
-      expect(panel.text()).toContain("@alice.bsky.social");
+      const blueskyView = wrapper.findComponent({ name: "BlueskyView" });
+      expect(blueskyView.props("account")).toMatchObject({
+        id: 7,
+        type: "Bluesky",
+      });
     });
 
-    it("asks to remove the account when the remove button is clicked", async () => {
+    it("should forward onRemoveClicked from BlueskyView", async () => {
       wrapper = mountBlueskyAccount(null);
       await flushPromises();
 
-      const removeButton = wrapper.find(".bluesky-local-account button");
-      (removeButton.element as HTMLElement).click();
-      await wrapper.vm.$nextTick();
+      const blueskyView = wrapper.findComponent({ name: "BlueskyView" });
+      await blueskyView.vm.$emit("onRemoveClicked");
 
       expect(wrapper.emitted("onRemoveClicked")).toHaveLength(1);
     });

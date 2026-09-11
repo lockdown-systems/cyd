@@ -18,6 +18,12 @@ export interface PlatformFeatures {
 
   /** Does platform support U2F security keys for 2FA? */
   hasU2FSupport: boolean;
+
+  /**
+   * Does platform drive an embedded browser? Platforms that talk to an API
+   * directly (Bluesky) never need one, so no webview is created for them.
+   */
+  usesWebview: boolean;
 }
 
 /**

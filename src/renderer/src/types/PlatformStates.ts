@@ -133,4 +133,13 @@ export const PlatformStates = {
 
   /** Facebook: Display dashboard wizard page */
   FacebookWizardDashboardDisplay: "FacebookWizardDashboardDisplay",
+
+  // ==========================================================================
+  // BLUESKY-SPECIFIC STATES
+  // ==========================================================================
+  /** Bluesky: Dashboard wizard page */
+  BlueskyWizardDashboard: "BlueskyWizardDashboard",
+
+  /** Bluesky: Display dashboard wizard page */
+  BlueskyWizardDashboardDisplay: "BlueskyWizardDashboardDisplay",
 } as const;
