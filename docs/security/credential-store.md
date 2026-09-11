@@ -144,6 +144,19 @@ Protected against, on every platform:
   revocation that fails, because the machine is offline, never blocks the
   deletion the user asked for.
 
+  Revocation kills the grant, not every token already minted from it.
+  Verified against `bsky.social`: after a disconnect the refresh token is
+  rejected immediately with `Invalid refresh token`, so a copied session
+  cannot be renewed. An access token issued before the disconnect keeps
+  working until it expires, an hour at most on Bluesky, because an
+  authorization server cannot retract one it has already signed. That window
+  is the limit of what revocation can offer anywhere, not a Cyd behavior.
+
+  A revocation that fails is not detectable locally. The AT Protocol client
+  discards the outcome of the revocation request, so Cyd cannot log it,
+  retry it, or tell the user. A disconnect looks identical whether the
+  server honored it or never received it; only the token itself can say.
+
 Protected against only where the operating system offers a keyring:
 
 - Casual inspection of a copied profile directory. On macOS, Windows, and
@@ -233,10 +246,20 @@ Checked against the real `safeStorage` on Windows 11 26200 with Electron
       the wrapped key with "Key not valid for use in specified state". A
       readable file and an unusable credential is the guarantee this platform
       actually offers.
-- [ ] Connect through the app, and confirm no warning bar appears.
-- [ ] Disconnect. The vault entries are gone, and the session is revoked at
-      the authorization server rather than only forgotten locally.
-- [ ] Delete the account. The vault file is gone.
+- [x] Connect through the app. The vault appears, holds only the session
+      entry once the callback completes, and the account database's `config`
+      table holds `blueskyDID` and nothing else. No warning bar appears.
+- [x] Disconnect. The vault file is removed, and the session is revoked at
+      the authorization server rather than only forgotten locally: the
+      refresh token is rejected with `Invalid refresh token` on the next
+      attempt. Do not test this with the access token, which stays valid
+      until it expires; back-date the saved token set's expiry so the client
+      is forced to use the refresh token, and watch for `POST /oauth/token`.
+- [ ] Delete the account, and confirm the vault file is gone. Revocation here
+      is the same code path rather than a second implementation:
+      `revokeAccountConnections` calls `revokeXBlueskyConnection`, which calls
+      `blueskyDisconnect()` and so reaches the `disconnect()` verified above.
+      It returns early when the account has no stored `blueskyDID`.
 
 ### Linux, GNOME (libsecret)
 
