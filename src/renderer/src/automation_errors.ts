@@ -95,6 +95,10 @@ export enum AutomationErrorType {
   facebook_runJob_deleteWallPosts_SelectHideOptionFailed = "facebook_runJob_deleteWallPosts_SelectHideOptionFailed",
   facebook_runJob_deleteWallPosts_ClickDoneFailed = "facebook_runJob_deleteWallPosts_ClickDoneFailed",
   facebook_runJob_deleteWallPosts_CompletionTimeout = "facebook_runJob_deleteWallPosts_CompletionTimeout",
+
+  // Bluesky
+  bluesky_runError = "bluesky_runError",
+  bluesky_openLocalAccountError = "bluesky_openLocalAccountError",
 }
 
 export const AutomationErrorTypeToMessage = {
@@ -279,4 +283,10 @@ export const AutomationErrorTypeToMessage = {
     "Failed to click Done while deleting Facebook posts",
   [AutomationErrorType.facebook_runJob_deleteWallPosts_CompletionTimeout]:
     "Timed out waiting for Facebook to finish deleting posts",
+
+  // Bluesky
+  [AutomationErrorType.bluesky_runError]:
+    "An error occurred in your Bluesky account",
+  [AutomationErrorType.bluesky_openLocalAccountError]:
+    "Failed to open this Bluesky account's local storage",
 };

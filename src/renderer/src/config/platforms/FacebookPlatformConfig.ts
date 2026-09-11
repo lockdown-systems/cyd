@@ -17,6 +17,7 @@ export const FacebookPlatformConfig: PlatformConfig = {
     hasComplexImport: false,
     hasMigration: false,
     hasU2FSupport: true,
+    usesWebview: true,
   },
   urls: {
     helpDocs: "https://docs.cyd.social/docs/facebook",
