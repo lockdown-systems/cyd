@@ -26,7 +26,7 @@ const emit = defineEmits<{
  */
 enum ConnectState {
   NotConnected,
-  Starting,
+  Connecting,
   FinishInBrowser,
   Connected,
 }
@@ -40,13 +40,13 @@ const profile = computed(() => props.model.profile);
 const connectError = computed(() => props.model.connectError);
 
 const connectButtonText = computed(() =>
-  connectState.value === ConnectState.Starting
+  connectState.value === ConnectState.Connecting
     ? t("bluesky.connect.connecting")
     : t("bluesky.connect.connect"),
 );
 
 const connectClicked = async () => {
-  connectState.value = ConnectState.Starting;
+  connectState.value = ConnectState.Connecting;
   const started = await props.model.connect(handle.value);
   if (started.status === "reused") {
     // Cyd already held a session for this identity — authorized here before,
@@ -141,7 +141,7 @@ onUnmounted(() => {
         <template
           v-if="
             connectState == ConnectState.NotConnected ||
-            connectState == ConnectState.Starting
+            connectState == ConnectState.Connecting
           "
         >
           <form @submit.prevent="connectClicked">

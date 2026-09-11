@@ -21,6 +21,7 @@ import {
 } from "../../../shared_types";
 import { exec, Sqlite3Count } from "../../../database";
 import {
+  BLUESKY_DID_CONFIG_KEY,
   BLUESKY_OAUTH_SESSION_PREFIX,
   BLUESKY_OAUTH_STATE_PREFIX,
   accountCredentials,
@@ -69,7 +70,7 @@ export class BlueskyService {
    * account for the same identity can reach them too.
    */
   private async connectedDID(): Promise<string | null> {
-    return this.getConfig("blueskyDID");
+    return this.getConfig(BLUESKY_DID_CONFIG_KEY);
   }
 
   /** The live session for the identity this migration is connected to. */
@@ -101,8 +102,22 @@ export class BlueskyService {
       platform: "X",
       accountID: this.accountID,
     });
-    if (start.status === "reused") {
-      await this.setConfig("blueskyDID", start.did);
+    if (start.status !== "reused") {
+      return start;
+    }
+
+    // Reusing a session still has to bind the identity and confirm Cyd can
+    // read its profile, exactly as finishing a browser authorization does.
+    // Binding first is deliberate: an account that claims the identity is a
+    // holder of its session, and a profile call that fails must not leave the
+    // session with one fewer holder than it really has.
+    await this.setConfig(BLUESKY_DID_CONFIG_KEY, start.did);
+    const profile = await getBlueskyProfile(start.did);
+    if (!profile) {
+      return {
+        status: "error",
+        error: "Could not read the Bluesky profile for the authorized identity",
+      };
     }
     return start;
   }
@@ -120,7 +135,7 @@ export class BlueskyService {
       return authorization.error;
     }
 
-    await this.setConfig("blueskyDID", authorization.did);
+    await this.setConfig(BLUESKY_DID_CONFIG_KEY, authorization.did);
 
     const profile = await getBlueskyProfile(authorization.did);
     if (!profile) {
@@ -143,7 +158,7 @@ export class BlueskyService {
 
     // The DID is what points at the credentials, so the account stops
     // claiming a connection before anything else happens.
-    await this.deleteConfig("blueskyDID");
+    await this.deleteConfig(BLUESKY_DID_CONFIG_KEY);
 
     // Older versions of Cyd kept the OAuth state and session in this account's
     // config table and its own credential vault. Sweep both, in case a

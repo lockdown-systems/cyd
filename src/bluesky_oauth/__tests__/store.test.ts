@@ -21,12 +21,18 @@ import {
   credentialsDirectoryPath,
 } from "../../credentials";
 import {
+  createAccount,
+  runMainMigrations,
+  selectAccountType,
+} from "../../database";
+import {
   blueskyOAuthCredentials,
   blueskyOAuthSessionStore,
   blueskyOAuthStateStore,
   deleteStoredBlueskyOAuthSession,
   hasStoredBlueskyOAuthSession,
   migrateAccountBlueskyOAuthCredentials,
+  migrateAllAccountBlueskyOAuthCredentials,
   storedBlueskyOAuthAppState,
   storedBlueskyOAuthDIDs,
   storedBlueskyOAuthStateKeys,
@@ -170,6 +176,30 @@ describe("shared Bluesky OAuth credential store", () => {
     await expect(sessionStore().get("did:plc:migrated")).resolves.toEqual(
       SESSION,
     );
+  });
+
+  test("carries every account forward, not just the one being opened", () => {
+    runMainMigrations();
+    const first = selectAccountType(createAccount().id, "X");
+    const second = selectAccountType(createAccount().id, "X");
+    accountCredentials(first.id).set(
+      "blueskySessionStore-did:plc:one",
+      JSON.stringify(SESSION),
+    );
+    accountCredentials(second.id).set(
+      "blueskySessionStore-did:plc:two",
+      JSON.stringify(SESSION),
+    );
+
+    // Someone who upgrades and adds a Bluesky account before ever opening the
+    // X account that authorized the identity must still find the session.
+    const moved = migrateAllAccountBlueskyOAuthCredentials();
+
+    expect(moved).toBe(2);
+    expect(storedBlueskyOAuthDIDs().sort()).toEqual([
+      "did:plc:one",
+      "did:plc:two",
+    ]);
   });
 
   test("leaves an account's other credentials where they are", () => {

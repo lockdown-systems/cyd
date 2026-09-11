@@ -145,6 +145,41 @@ describe("one authorization, every platform", () => {
     expect(blueskyHolders(DID)).toHaveLength(2);
   });
 
+  test("reusing a session in the X migration still refreshes the profile", async () => {
+    const local = bluesky!.createLocalAccount();
+    await local.controller.completeConnection("code=abc&state=s");
+    await storeSession(DID);
+
+    await xService().authorize(HANDLE);
+
+    // Binding and reading the identity's current profile happen on the reuse
+    // path exactly as they do after a browser authorization.
+    expect(oauthMock.restore).toHaveBeenCalledWith(DID);
+    expect(await xService().getProfile()).toMatchObject({
+      did: DID,
+      handle: "alice.bsky.social",
+    });
+  });
+
+  test("a profile Cyd cannot read is reported rather than silently connected", async () => {
+    await storeSession(DID);
+    // The session restores well enough to be reused, then the profile call
+    // fails: a half-connected migration must say so.
+    oauthMock.restore.mockImplementationOnce(
+      async (did: string) => ({ did }) as never,
+    );
+    oauthMock.restore.mockImplementationOnce(async () => {
+      throw new Error("PDS unreachable");
+    });
+
+    const started = await xService().authorize(HANDLE);
+
+    expect(started).toEqual({
+      status: "error",
+      error: "Could not read the Bluesky profile for the authorized identity",
+    });
+  });
+
   test("an identity with no stored session still opens a browser", async () => {
     const local = bluesky!.createLocalAccount();
 

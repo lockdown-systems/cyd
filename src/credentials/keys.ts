@@ -16,6 +16,18 @@ export const BLUESKY_OAUTH_STATE_PREFIX = "blueskyStateStore-";
 // of Cyd that acts on that identity.
 export const BLUESKY_OAUTH_SESSION_PREFIX = "blueskySessionStore-";
 
+/**
+ * Where an X account records the Bluesky identity its migration is connected
+ * to.
+ *
+ * A DID is a public identifier, not a credential, so this key holds nothing
+ * secret and the config table is free to store it. It lives here anyway,
+ * beside the credential names, because it is the thing that points at them:
+ * the legacy sweep, the migration service, and the holder derivation all have
+ * to agree on it, and they sit in three different layers.
+ */
+export const BLUESKY_DID_CONFIG_KEY = "blueskyDID";
+
 export const CREDENTIAL_KEY_PREFIXES = [
   BLUESKY_OAUTH_STATE_PREFIX,
   BLUESKY_OAUTH_SESSION_PREFIX,

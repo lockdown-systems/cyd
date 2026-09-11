@@ -31,13 +31,6 @@ export type BlueskyLocalAccountPaths = {
   mediaPath: string;
   /** Scratch space for in-progress work, safe to delete when idle. */
   stagingPath: string;
-  /**
-   * Reserved for connection material this account alone would own. Bluesky
-   * OAuth sessions are not that: they are keyed by DID and shared across every
-   * platform that acts on the identity, so they live in Cyd's credential
-   * store, outside every account directory and archive.
-   */
-  connectionPath: string;
 };
 
 /** A media asset stored in one account's content-addressed media store. */

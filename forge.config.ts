@@ -12,6 +12,11 @@ import { PublisherS3 } from "@electron-forge/publisher-s3";
 import { type OsxSignOptions } from "@electron/packager/dist/types";
 import { type NotaryToolCredentials } from "@electron/notarize/lib/types";
 
+import {
+  blueskyOAuthCallbackSchemeForMode,
+  blueskyOAuthSchemeHandlerMimeTypeForMode,
+} from "./src/bluesky_oauth/constants";
+
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -137,23 +142,19 @@ function removeCodeSignatures(dir: string) {
   });
 }
 
-// For social.cyd.api and social.cyd.dev-api URLs
-const protocols = [];
-if (process.env.CYD_ENV == "prod") {
-  protocols.push({
-    name: "Cyd",
-    schemes: ["social.cyd.api"],
-  });
-} else {
-  protocols.push({
-    name: "Cyd Dev",
-    schemes: ["social.cyd.dev-api"],
-  });
-}
-const mimeTypeScheme =
-  process.env.CYD_ENV == "prod"
-    ? "x-scheme-handler/social.cyd.api"
-    : "x-scheme-handler/social.cyd.dev-api";
+// The scheme a Bluesky authorization comes back on. It is derived rather than
+// spelled out, because the app matches incoming callbacks against the same
+// derivation: the two disagreeing is what broke the callback in #699.
+const callbackScheme = blueskyOAuthCallbackSchemeForMode(process.env.CYD_ENV);
+const protocols = [
+  {
+    name: process.env.CYD_ENV == "prod" ? "Cyd" : "Cyd Dev",
+    schemes: [callbackScheme],
+  },
+];
+const mimeTypeScheme = blueskyOAuthSchemeHandlerMimeTypeForMode(
+  process.env.CYD_ENV,
+);
 
 // macOS signing and notarization options
 let osxSign: OsxSignOptions | undefined;

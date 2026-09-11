@@ -45,7 +45,6 @@ describe("Bluesky local account storage", () => {
       paths.databasePath,
       paths.mediaPath,
       paths.stagingPath,
-      paths.connectionPath,
     ]) {
       expect(path.dirname(resource)).toEqual(paths.accountPath);
     }

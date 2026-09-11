@@ -1,10 +1,7 @@
-import log from "electron-log/main";
-
-import { getAccounts } from "../database/account";
 import { getConnectedBlueskyLocalAccountIDs } from "../database/bluesky_account";
-import { xBlueskyMigrationDID } from "../account_x/bluesky_holder";
+import { xBlueskyHolderAccountIDs } from "../account_x/bluesky_holder";
 
-import type { BlueskyOAuthFlow, BlueskyOAuthPlatform } from "../shared_types";
+import type { BlueskyOAuthPlatform } from "../shared_types";
 
 /**
  * Who still depends on one Bluesky identity's authorization.
@@ -19,57 +16,35 @@ import type { BlueskyOAuthFlow, BlueskyOAuthPlatform } from "../shared_types";
  * high by a crash, stranding a session nothing can ever revoke, or one too low
  * by a partial delete, signing out an account that is still connected. Account
  * state cannot drift from itself.
+ *
+ * A holder names the same pair as a flow does, but it is not one: a flow is an
+ * authorization in progress, and a holder is an account depending on one that
+ * finished.
  */
-export type BlueskyHolder = BlueskyOAuthFlow;
-
-const holderKey = (holder: BlueskyHolder): string =>
-  `${holder.platform}:${holder.accountID}`;
-
-const xHolders = (did: string): BlueskyHolder[] => {
-  const holders: BlueskyHolder[] = [];
-  for (const account of getAccounts()) {
-    if (account.type !== "X" || !account.xAccount?.username) {
-      continue;
-    }
-    if (xBlueskyMigrationDID(account.xAccount.username) === did) {
-      holders.push({ platform: "X", accountID: account.id });
-    }
-  }
-  return holders;
+export type BlueskyHolder = {
+  platform: BlueskyOAuthPlatform;
+  accountID: number;
 };
-
-const blueskyPlatformHolders = (did: string): BlueskyHolder[] =>
-  getConnectedBlueskyLocalAccountIDs(did).map((accountID) => ({
-    platform: "Bluesky" as BlueskyOAuthPlatform,
-    accountID,
-  }));
 
 /**
  * Every account that currently depends on this identity's session.
+ *
+ * Each platform is asked about its own accounts, because how an X account
+ * records a connected migration and how a Bluesky local account records a
+ * connection are each that platform's business.
  *
  * This reads account state and nothing else, so it is safe to ask at any
  * moment. Callers release a hold by first making the holder's own state say it
  * is disconnected — or by deleting the account outright — and only then asking
  * again.
  */
-export const blueskyHolders = (did: string): BlueskyHolder[] => {
-  const holders = [...xHolders(did), ...blueskyPlatformHolders(did)];
-  const seen = new Set<string>();
-  return holders.filter((holder) => {
-    const key = holderKey(holder);
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-};
-
-/** Whether any account still depends on this identity's session. */
-export const blueskyIdentityIsHeld = (did: string): boolean => {
-  const holders = blueskyHolders(did);
-  // Holders are never named in a log line: a DID and a handle both identify a
-  // person, and an account ID points straight at one.
-  log.info(`blueskyOAuth: identity has ${holders.length} holder(s)`);
-  return holders.length > 0;
-};
+export const blueskyHolders = (did: string): BlueskyHolder[] => [
+  ...xBlueskyHolderAccountIDs(did).map((accountID) => ({
+    platform: "X" as BlueskyOAuthPlatform,
+    accountID,
+  })),
+  ...getConnectedBlueskyLocalAccountIDs(did).map((accountID) => ({
+    platform: "Bluesky" as BlueskyOAuthPlatform,
+    accountID,
+  })),
+];

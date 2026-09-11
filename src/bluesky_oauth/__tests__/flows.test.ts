@@ -17,8 +17,10 @@ vi.mock("../../util", async () => {
 import {
   BLUESKY_OAUTH_CALLBACK_PATH,
   blueskyOAuthCallbackScheme,
+  blueskyOAuthCallbackSchemeForMode,
   blueskyOAuthCallbackURL,
   blueskyOAuthClientID,
+  blueskyOAuthSchemeHandlerMimeTypeForMode,
 } from "../constants";
 import {
   blueskyOAuthCallbackEventName,
@@ -59,6 +61,21 @@ describe("Bluesky OAuth callback names", () => {
       process.env.CYD_MODE = mode;
       expect(blueskyOAuthClientID()).toBe(
         "https://dev-api.cyd.social/bluesky/client-metadata.json",
+      );
+    }
+  });
+
+  test("the packaging config and the app derive the same scheme", () => {
+    // forge.config.ts registers the scheme with the operating system from
+    // `CYD_ENV` at build time; the app matches callbacks against `CYD_MODE` at
+    // runtime. Two spellings of this is what broke the callback in #699.
+    for (const mode of ["prod", "dev", "local", "open", undefined]) {
+      process.env.CYD_MODE = mode;
+      expect(blueskyOAuthCallbackSchemeForMode(mode)).toBe(
+        blueskyOAuthCallbackScheme(),
+      );
+      expect(blueskyOAuthSchemeHandlerMimeTypeForMode(mode)).toBe(
+        `x-scheme-handler/${blueskyOAuthCallbackScheme()}`,
       );
     }
   });

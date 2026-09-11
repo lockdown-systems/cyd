@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import log from "electron-log/main";
 
 import { exec } from "../database/common";
-import { CREDENTIAL_KEY_PREFIXES } from "./keys";
+import { BLUESKY_DID_CONFIG_KEY, CREDENTIAL_KEY_PREFIXES } from "./keys";
 import { accountCredentials } from "./store";
 
 // Cyd once serialized the X-to-Bluesky migration's OAuth state and session,
@@ -11,11 +11,6 @@ import { accountCredentials } from "./store";
 const LEGACY_CREDENTIAL_KEY_PATTERNS = CREDENTIAL_KEY_PREFIXES.map(
   (prefix) => `${prefix}%`,
 );
-
-// The DID names the Bluesky identity a session belonged to. When credentials
-// are discarded rather than saved, this goes too, so the account does not
-// keep claiming a connection it can no longer use.
-const BLUESKY_DID_KEY = "blueskyDID";
 
 export type LegacyCredentialSweep = {
   // Keys that now live in protected storage.
@@ -126,7 +121,10 @@ export const sweepLegacyOAuthCredentials = (
     // Cyd cannot revoke a credential it just refused to hold, so the least it
     // can do is stop presenting the account as connected. Reconnecting
     // replaces the session Cyd threw away.
-    exec(db, "DELETE FROM config WHERE key = ?", [BLUESKY_DID_KEY]);
+    // The DID names the Bluesky identity a session belonged to. When the
+    // credentials are discarded rather than saved, it goes too, so the account
+    // does not keep claiming a connection it can no longer use.
+    exec(db, "DELETE FROM config WHERE key = ?", [BLUESKY_DID_CONFIG_KEY]);
   }
 
   purgeDeletedRowRemnants(db);

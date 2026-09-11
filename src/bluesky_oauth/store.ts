@@ -7,6 +7,7 @@ import type {
   NodeSavedStateStore,
 } from "@atproto/oauth-client-node";
 
+import { getAccounts } from "../database/account";
 import {
   BLUESKY_OAUTH_SESSION_PREFIX,
   BLUESKY_OAUTH_STATE_PREFIX,
@@ -141,10 +142,10 @@ export const deleteStoredBlueskyOAuthState = (key: string): void => {
  *
  * Before the store was shared, the X migration wrote its sessions into the
  * account's own vault, where a Bluesky local account for the same identity
- * could not see them. Running this when an account database opens carries
- * those sessions forward, so nobody has to authorize an identity Cyd already
- * holds a live session for. It is idempotent, and it never overwrites a
- * shared entry: whatever is already shared is at least as fresh.
+ * could not see them. Carrying those sessions forward is what stops anyone
+ * being asked to authorize an identity Cyd already holds a live session for.
+ * It is idempotent, and it never overwrites a shared entry: whatever is
+ * already shared is at least as fresh.
  */
 export const migrateAccountBlueskyOAuthCredentials = (
   accountID: number,
@@ -172,8 +173,35 @@ export const migrateAccountBlueskyOAuthCredentials = (
     from.delete(key);
   }
 
+  // The account is not named: an account ID points straight at a person, the
+  // same way a handle or a DID does.
   log.info(
-    `blueskyOAuth: moved ${moved} of ${keys.length} Bluesky OAuth credentials for account ${accountID} into the shared store`,
+    `blueskyOAuth: moved ${moved} of ${keys.length} Bluesky OAuth credentials into the shared store`,
   );
+  return moved;
+};
+
+/**
+ * Carry every account's Bluesky OAuth credentials into the shared store.
+ *
+ * Run at startup, before anything asks who holds a session. Doing this per
+ * account as its database opens is not enough: someone who upgrades and adds a
+ * Bluesky account before ever opening the X account that authorized the
+ * identity would be sent back to a browser for a session Cyd already had —
+ * which is the papercut the shared store exists to remove.
+ */
+export const migrateAllAccountBlueskyOAuthCredentials = (): number => {
+  let moved = 0;
+  for (const account of getAccounts()) {
+    try {
+      moved += migrateAccountBlueskyOAuthCredentials(account.id);
+    } catch (error) {
+      // One unreadable vault must not stop the rest from moving forward.
+      log.error(
+        "blueskyOAuth: could not carry an account's Bluesky OAuth credentials forward",
+        error instanceof Error ? error.name : typeof error,
+      );
+    }
+  }
   return moved;
 };

@@ -15,17 +15,41 @@
 const PROD_API_HOST = "api.cyd.social";
 const DEV_API_HOST = "dev-api.cyd.social";
 
-// Only production talks to the production authorization server. Every other
-// mode Cyd ships — dev, local, and open — uses the development one.
-const isProdMode = (): boolean => process.env.CYD_MODE === "prod";
+/**
+ * The API host whose client metadata identifies Cyd to Bluesky.
+ *
+ * Only production talks to the production authorization server. Every other
+ * mode Cyd ships — dev, local, and open — uses the development one.
+ *
+ * The mode is passed in rather than read here, because the two callers read it
+ * from different places: the app reads `CYD_MODE` at runtime, and the packaging
+ * config reads `CYD_ENV` at build time. They still have to arrive at the same
+ * scheme, so they share the derivation instead of the lookup.
+ */
+export const blueskyOAuthAPIHostForMode = (mode: string | undefined): string =>
+  mode === "prod" ? PROD_API_HOST : DEV_API_HOST;
 
-/** The API host whose client metadata identifies Cyd to Bluesky. */
 export const blueskyOAuthAPIHost = (): string =>
-  isProdMode() ? PROD_API_HOST : DEV_API_HOST;
+  blueskyOAuthAPIHostForMode(process.env.CYD_MODE);
 
-/** The custom URL scheme the authorization callback arrives on. */
+/**
+ * The custom URL scheme the authorization callback arrives on.
+ *
+ * The packaging config registers this scheme with the operating system and the
+ * app matches callbacks against it, so both build it from here. #699 was those
+ * two spelling it separately.
+ */
+export const blueskyOAuthCallbackSchemeForMode = (
+  mode: string | undefined,
+): string => blueskyOAuthAPIHostForMode(mode).split(".").reverse().join(".");
+
 export const blueskyOAuthCallbackScheme = (): string =>
-  blueskyOAuthAPIHost().split(".").reverse().join(".");
+  blueskyOAuthCallbackSchemeForMode(process.env.CYD_MODE);
+
+/** The desktop-entry MIME type that registers the scheme on Linux. */
+export const blueskyOAuthSchemeHandlerMimeTypeForMode = (
+  mode: string | undefined,
+): string => `x-scheme-handler/${blueskyOAuthCallbackSchemeForMode(mode)}`;
 
 /**
  * The path of the authorization callback, with its trailing slash.

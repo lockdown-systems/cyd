@@ -266,6 +266,28 @@ describe("Bluesky session lifetime", () => {
       ]);
     });
 
+    test("keeps sweeping when one account's state cannot be read", async () => {
+      await storeSession("did:plc:unreadable");
+      await storeSession(DID);
+      const holders = await import("../holders");
+      const realHolders = holders.blueskyHolders;
+      vi.spyOn(holders, "blueskyHolders").mockImplementation((did) => {
+        if (did === "did:plc:unreadable") {
+          throw new Error("database is locked");
+        }
+        return realHolders(did);
+      });
+
+      const swept = await sweepOrphanedBlueskyOAuth();
+
+      // The unreadable identity might still be held, so it keeps its session;
+      // the readable one nobody holds is still revoked.
+      expect(swept).toBe(1);
+      expect(hasStoredBlueskyOAuthSession("did:plc:unreadable")).toBe(true);
+      expect(hasStoredBlueskyOAuthSession(DID)).toBe(false);
+      vi.restoreAllMocks();
+    });
+
     test("discards an authorization whose account no longer exists", async () => {
       await storeSession(DID);
       await connectX(DID);

@@ -33,6 +33,7 @@ import {
   BLUESKY_OAUTH_CALLBACK_PATH,
   blueskyOAuthCallbackEventName,
   blueskyOAuthCallbackScheme,
+  migrateAllAccountBlueskyOAuthCredentials,
   resolveBlueskyOAuthFlow,
   sweepOrphanedBlueskyOAuth,
 } from "./bluesky_oauth";
@@ -138,8 +139,15 @@ const openCydURL = async (cydURL: string) => {
     const flow = resolveBlueskyOAuthFlow(url.search);
     if (!flow) {
       // Cyd holds no authorization state matching this callback: it is stale,
-      // already spent, or was not started here. Nothing is dispatched.
+      // already spent, or was not started here. Nothing is dispatched, and the
+      // person is told rather than left watching an app that did nothing.
       log.warn("Ignoring a Bluesky OAuth callback Cyd did not start");
+      dialog.showMessageBoxSync({
+        title: "Cyd",
+        message: "This Bluesky sign-in link has already been used or expired.",
+        detail: "Start connecting again from the account you want to connect.",
+        type: "info",
+      });
       return;
     }
 
@@ -244,10 +252,19 @@ async function initializeApp() {
   // Dismiss any stale error reports
   database.dismissAllNewErrorReports();
 
-  // A Bluesky session whose last holder went away during an interrupted quit
-  // would otherwise stay alive at its PDS forever. Sweeping at startup makes
-  // that self-correcting rather than permanent, and costs nothing when there
-  // is nothing to sweep.
+  // Bluesky OAuth sessions used to live in per-account vaults. They are carried
+  // into the shared store before anything asks who holds one, so an upgraded
+  // install finds every session it already has.
+  //
+  // Sweeping follows: a session whose last holder went away during an
+  // interrupted quit would otherwise stay alive at its PDS forever, and
+  // sweeping before the migration would mistake a not-yet-moved session for an
+  // unheld one.
+  try {
+    migrateAllAccountBlueskyOAuthCredentials();
+  } catch (error) {
+    log.error("Failed to migrate Bluesky OAuth credentials forward:", error);
+  }
   sweepOrphanedBlueskyOAuth().catch((error) => {
     log.error("Failed to sweep orphaned Bluesky OAuth material:", error);
   });

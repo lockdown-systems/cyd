@@ -77,7 +77,6 @@ export const blueskyAccountPaths = (
     databasePath: path.join(accountPath, "data.sqlite3"),
     mediaPath: path.join(accountPath, "media"),
     stagingPath: path.join(accountPath, "staging"),
-    connectionPath: path.join(accountPath, "connection"),
   };
 };
 
@@ -89,7 +88,6 @@ export const ensureBlueskyAccountStorage = (
   ensureOwnerOnlyDirectory(paths.accountPath);
   ensureOwnerOnlyDirectory(paths.mediaPath);
   ensureOwnerOnlyDirectory(paths.stagingPath);
-  ensureOwnerOnlyDirectory(paths.connectionPath);
   return paths;
 };
 

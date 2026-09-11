@@ -16,7 +16,6 @@ import {
 } from "../database";
 import {
   authorizeBlueskyIdentity,
-  blueskySessionIsUsable,
   completeBlueskyAuthorization,
   getBlueskyProfile,
   releaseBlueskyHold,
@@ -188,19 +187,6 @@ export class BlueskyAccountController {
       }
     }
     return start;
-  }
-
-  /**
-   * Bind this account to an identity Cyd already holds a session for, without
-   * sending anyone back to a browser. Returns false when there is no usable
-   * session, which is the caller's cue to authorize.
-   */
-  async connectWithExistingSession(did: string): Promise<boolean> {
-    if (!(await blueskySessionIsUsable(did))) {
-      return false;
-    }
-    await this.bindIdentity(did);
-    return true;
   }
 
   /**

@@ -84,21 +84,6 @@ export const defineIPCBluesky = () => {
     },
   );
 
-  // Adopt an identity Cyd already holds a session for, with no browser round
-  // trip. Returns false when there is no usable session to adopt.
-  ipcMain.handle(
-    "Bluesky:connectWithExistingSession",
-    async (_, accountID: number, did: string): Promise<boolean> => {
-      try {
-        return await getBlueskyAccountController(
-          accountID,
-        ).connectWithExistingSession(did);
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
   // The identity's current profile, or null when this account is not
   // connected to one.
   ipcMain.handle(

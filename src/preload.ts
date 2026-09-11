@@ -531,16 +531,6 @@ const electronAPI = {
         queryString,
       );
     },
-    connectWithExistingSession: (
-      accountID: number,
-      did: string,
-    ): Promise<boolean> => {
-      return ipcRenderer.invoke(
-        "Bluesky:connectWithExistingSession",
-        accountID,
-        did,
-      );
-    },
     getProfile: (accountID: number): Promise<BlueskyIdentityProfile | null> => {
       return ipcRenderer.invoke("Bluesky:getProfile", accountID);
     },

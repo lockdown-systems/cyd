@@ -205,25 +205,6 @@ describe("Bluesky local account connection", () => {
     expect(controller.account?.did).toBe(DID);
   });
 
-  test("adopts an identity Cyd already holds a session for, with no browser", async () => {
-    await storeSession(DID);
-    const { controller } = context!.createLocalAccount();
-
-    const adopted = await controller.connectWithExistingSession(DID);
-
-    expect(adopted).toBe(true);
-    expect(controller.isConnected).toBe(true);
-    expect(controller.account?.handle).toBe("alice.bsky.social");
-    expect(oauthMock.authorize).not.toHaveBeenCalled();
-  });
-
-  test("refuses to adopt an identity Cyd holds no session for", async () => {
-    const { controller } = context!.createLocalAccount();
-
-    expect(await controller.connectWithExistingSession(DID)).toBe(false);
-    expect(controller.isConnected).toBe(false);
-  });
-
   test("connect reuses a stored session rather than opening a browser", async () => {
     await storeSession(DID);
     oauthMock.resolve.mockResolvedValueOnce({ did: DID } as never);

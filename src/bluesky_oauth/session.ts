@@ -269,7 +269,21 @@ export const sweepOrphanedBlueskyOAuth = async (): Promise<number> => {
   let swept = 0;
 
   for (const did of storedBlueskyOAuthDIDs()) {
-    if (blueskyHolders(did).length > 0) {
+    let holderCount: number;
+    try {
+      holderCount = blueskyHolders(did).length;
+    } catch (error) {
+      // An account whose state cannot be read might still be holding this
+      // identity, so it is left alone. One unreadable account must not stop
+      // the sweep for every other identity, which is why this is caught per
+      // DID rather than around the loop.
+      log.error(
+        "blueskyOAuth: could not decide whether an identity is still held, leaving it alone",
+        errorMessage(error),
+      );
+      continue;
+    }
+    if (holderCount > 0) {
       continue;
     }
     log.info("blueskyOAuth: sweeping a session with no holders");

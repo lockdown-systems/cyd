@@ -4,6 +4,8 @@ import path from "path";
 import Database from "better-sqlite3";
 import log from "electron-log/main";
 
+import { getAccounts } from "../database/account";
+import { BLUESKY_DID_CONFIG_KEY } from "../credentials";
 import { getAccountDataPath } from "../util";
 
 /**
@@ -16,11 +18,6 @@ import { getAccountDataPath } from "../util";
  * read-only and applies no migrations: asking who holds a session must not
  * have side effects on an account nobody opened.
  */
-
-// The X account's own config table names the identity its migration is
-// connected to. It is a public identifier, not a credential; the credentials
-// it points at live in the shared Bluesky OAuth store.
-export const X_BLUESKY_DID_KEY = "blueskyDID";
 
 export const xAccountDatabasePath = (username: string): string =>
   path.join(getAccountDataPath("X", username), "data.sqlite3");
@@ -51,18 +48,37 @@ export const xBlueskyMigrationDID = (username: string): string | null => {
     }
     const row = db
       .prepare("SELECT value FROM config WHERE key = ?")
-      .get(X_BLUESKY_DID_KEY) as { value: string | null } | undefined;
+      .get(BLUESKY_DID_CONFIG_KEY) as { value: string | null } | undefined;
     return row?.value ? row.value : null;
   } catch (error) {
     // A database Cyd cannot read cannot be shown to hold anything. Saying so
     // out loud matters: an unreadable account here would otherwise look like
-    // a released hold and could take a live session down with it.
+    // a released hold and could take a live session down with it. Only the
+    // error's class is logged, because a SQLite message carries the path.
     log.error(
-      `xBlueskyMigrationDID: could not read the Bluesky migration state for an X account`,
-      error instanceof Error ? error.message : error,
+      "xBlueskyMigrationDID: could not read an X account's Bluesky migration state",
+      error instanceof Error ? error.name : typeof error,
     );
     throw error;
   } finally {
     db?.close();
   }
+};
+
+/**
+ * The Cyd account IDs of every X account whose migration is connected to this
+ * identity. Which accounts exist and how an X account records its migration
+ * both belong to X, so the shared OAuth module asks rather than looks.
+ */
+export const xBlueskyHolderAccountIDs = (did: string): number[] => {
+  const accountIDs: number[] = [];
+  for (const account of getAccounts()) {
+    if (account.type !== "X" || !account.xAccount?.username) {
+      continue;
+    }
+    if (xBlueskyMigrationDID(account.xAccount.username) === did) {
+      accountIDs.push(account.id);
+    }
+  }
+  return accountIDs;
 };
