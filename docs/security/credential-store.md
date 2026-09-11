@@ -31,10 +31,12 @@ preferences, not credentials. They stay in Cyd's ordinary storage.
 | X login cookies                      | Electron/Chromium `persist:account-{id}` partition | The platform password backend Chromium selects               |
 | X-to-Bluesky OAuth session and state | Cyd credential store (`src/credentials`)           | Electron `safeStorage`, which uses the same platform backend |
 
-The Cyd credential store keeps one owner-only vault file per account under
-`<settings>/credentials/account-{id}.json`. It lives outside every account
-database, media directory, and archive, so exporting or copying account data
-cannot carry a credential along.
+The Cyd credential store keeps one vault file per account under
+`<settings>/credentials/account-{id}.json`, owner-only where the platform has
+POSIX permissions. It lives outside every account database, media directory,
+and archive, so exporting or copying account data cannot carry a credential
+along. What "owner-only" means on Windows is narrower than on macOS and Linux;
+see the threat model below.
 
 Each value in the vault records whether it is protected:
 
@@ -90,6 +92,19 @@ Two Electron behaviors are worth knowing when reading this code:
   nothing answers on the bus, so `osProtected` requires both the name and
   working encryption.
 
+A third is specific to Windows, and shapes how that platform must be tested.
+`safeStorage` there is not a separate OS vault the way the macOS Keychain is.
+Chromium encrypts with a random AES-256-GCM key of its own, hands Cyd the
+ciphertext to store wherever it likes — a `v10`-prefixed blob in the vault —
+and keeps that key in the profile's `Local State` file, under
+`os_crypt.encrypted_key`, wrapped with DPAPI. Both halves therefore sit inside
+the profile directory as ordinary files, and DPAPI's per-user key is the only
+thing standing between another account on the machine and a copied profile.
+That is why the Windows check below copies `Local State` along with the vault:
+a vault copied on its own fails to decrypt merely because the receiving
+profile minted a different AES key, which would happen even if DPAPI were
+doing nothing at all.
+
 Where nothing protects credentials, Cyd says so rather than failing: the
 warning bar names the password store, and `logCredentialProtection()` records
 the same fact at startup. The user stays connected. X login cookies are a
@@ -111,8 +126,17 @@ Protected against, on every platform:
   length before they reach any log or error report, so a credential cannot
   ride along in a debug line or a support bundle. The vault sits outside
   everything Cyd exports.
-- Another account on the same machine reading Cyd's files: the vault directory
-  is `0700` and each vault file `0600`.
+- Another account on the same machine reading Cyd's files. On macOS and Linux
+  the vault directory is `0700` and each vault file `0600`. Windows has no
+  POSIX mode bits, and Cyd sets no explicit ACL there, so the vault inherits
+  the permissions of whatever directory holds it. At the default location
+  under `%APPDATA%` that inheritance is owner-only — the user, `SYSTEM`, and
+  `Administrators`, measured with `icacls` — but a profile placed somewhere
+  permissive with `--user-data-dir`, such as under `C:\temp`, inherits
+  `BUILTIN\Users:(RX)` and `NT AUTHORITY\Authenticated Users:(M)` and is then
+  readable, and writable, by every local account. On Windows it is DPAPI, not
+  the file permissions, that stops another user from using a credential they
+  can read.
 - Credentials outliving the account. Cyd revokes before it discards:
   disconnecting a Bluesky migration and deleting an account both ask the
   authorization server to invalidate the session first, then delete the
@@ -180,11 +204,34 @@ storage. "Connect" means completing the X-to-Bluesky migration OAuth flow.
 
 ### Windows (OS-backed protection)
 
-- [ ] Connect. The app logs `backend: windows_dpapi`, and no warning bar
-      appears.
-- [ ] The vault file exists and contains no readable token.
-- [ ] Copy the vault to another Windows user account and confirm Cyd there
-      cannot decrypt it.
+Checked against the real `safeStorage` on Windows 11 26200 with Electron
+41.7.1, not against the test double.
+
+- [x] The app logs
+      `{"platform":"win32","backend":"windows_dpapi","rawBackend":null,"osProtected":true}`.
+      `rawBackend` is `null` by design: `getSelectedStorageBackend()` is
+      `undefined` off Linux.
+- [x] The vault is version 2 and every entry is `"protected": true`. The
+      stored value is a `v10` AES-256-GCM blob: it holds no readable fragment
+      of the credential, its length differs from the plaintext, and encrypting
+      the same value twice yields different ciphertext.
+- [x] A credential written by one launch is readable by the next. The
+      `Local State` file is written during shutdown, so a profile that never
+      quits cleanly loses the AES key, and with it every entry in the vault.
+- [x] An entry that cannot be decrypted is logged, dropped, and leaves the
+      rest of the vault intact.
+- [x] The legacy sweep migrates on this platform too, and the canary is gone
+      from `.sqlite3`, `-wal`, and `-shm` afterwards.
+- [x] Record `icacls` for the vault and its directory. Owner-only under the
+      default `%APPDATA%` profile; see the threat model for what a permissive
+      `--user-data-dir` inherits instead.
+- [ ] Copy **both** the vault and `<userData>\Local State` to another Windows
+      user account, and confirm Cyd there cannot decrypt. Copying the vault
+      alone does not test this: it fails because the receiving profile minted
+      a different AES key, whether or not DPAPI held.
+- [ ] Connect through the app, and confirm no warning bar appears.
+- [ ] Disconnect. The vault entries are gone, and the session is revoked at
+      the authorization server rather than only forgotten locally.
 - [ ] Delete the account. The vault file is gone.
 
 ### Linux, GNOME (libsecret)
