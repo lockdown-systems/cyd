@@ -225,10 +225,14 @@ Checked against the real `safeStorage` on Windows 11 26200 with Electron
 - [x] Record `icacls` for the vault and its directory. Owner-only under the
       default `%APPDATA%` profile; see the threat model for what a permissive
       `--user-data-dir` inherits instead.
-- [ ] Copy **both** the vault and `<userData>\Local State` to another Windows
+- [x] Copy **both** the vault and `<userData>\Local State` to another Windows
       user account, and confirm Cyd there cannot decrypt. Copying the vault
       alone does not test this: it fails because the receiving profile minted
-      a different AES key, whether or not DPAPI held.
+      a different AES key, whether or not DPAPI held. Confirmed against a
+      second local account: both files were readable, and DPAPI still refused
+      the wrapped key with "Key not valid for use in specified state". A
+      readable file and an unusable credential is the guarantee this platform
+      actually offers.
 - [ ] Connect through the app, and confirm no warning bar appears.
 - [ ] Disconnect. The vault entries are gone, and the session is revoked at
       the authorization server rather than only forgotten locally.
