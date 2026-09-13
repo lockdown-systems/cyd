@@ -13,6 +13,7 @@ import { BlueskyMediaFetchError } from "../at_protocol";
 import { storeBlueskyMediaFileVia } from "../storage";
 import type { BlueskyAssetRow } from "../types";
 import { blueskyCategoryCollector } from "./categories";
+import { blueskyAssetSourceFromAddress } from "./mapping";
 import { blueskyRateLimitResumeAt } from "./rate_limit";
 import {
   getBlueskyCheckpoint,
@@ -233,7 +234,12 @@ export const runBlueskyCollection = async (
             );
           }
           for (const selection of page.selections) {
-            saveBlueskySelection(db, category, selection, observedAt);
+            saveBlueskySelection(
+              db,
+              category,
+              selection.subjectID,
+              selection.selectedAt ?? observedAt,
+            );
           }
 
           cursor = page.cursor;
@@ -268,8 +274,17 @@ export const runBlueskyCollection = async (
     return { outcome: "finished", progress: { ...progress }, errorClass: null };
   } catch (error) {
     // Whatever stopped the run, everything committed so far stays committed and
-    // the checkpoint says where to pick up.
-    db.transaction(checkpoint)();
+    // the checkpoint says where to pick up. A full disk can defeat even this
+    // one-row write, and losing the checkpoint only costs the next run a repeat
+    // of the current page — so it must not turn a reported outcome into a
+    // thrown one.
+    try {
+      db.transaction(checkpoint)();
+    } catch (checkpointError) {
+      log.error(
+        `Bluesky: a collection run could not record where it stopped (${errorClassOf(checkpointError)})`,
+      );
+    }
 
     if (error instanceof BlueskyCollectionCancelled) {
       progress.cancelled = true;
@@ -304,23 +319,6 @@ export const runBlueskyCollection = async (
   }
 };
 
-/** A source URL, or the repository blob an asset row points at. */
-const assetSource = (
-  asset: BlueskyAssetRow,
-):
-  | { type: "url"; url: string }
-  | { type: "blob"; did: string; cid: string }
-  | null => {
-  if (!asset.sourceURL) {
-    return null;
-  }
-  const blob = /^blob:([^/]+)\/(.+)$/.exec(asset.sourceURL);
-  if (blob) {
-    return { type: "blob", did: blob[1], cid: blob[2] };
-  }
-  return { type: "url", url: asset.sourceURL };
-};
-
 /**
  * Fetch one asset and store it content-addressably.
  *
@@ -337,7 +335,7 @@ const fetchAsset = async (
   asset: BlueskyAssetRow,
   progress: BlueskyCollectionProgress,
 ): Promise<void> => {
-  const source = assetSource(asset);
+  const source = blueskyAssetSourceFromAddress(asset.sourceURL ?? "");
   if (!source) {
     markBlueskyAssetFailed(
       context.db,

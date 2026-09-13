@@ -553,6 +553,57 @@ describe("BlueskyViewModel", () => {
     });
   });
 
+  describe("carrying on an interrupted save", () => {
+    const pendingJob = () => ({
+      id: 1,
+      jobType: "savePosts",
+      status: "pending",
+      scheduledAt: new Date(),
+      startedAt: null,
+      finishedAt: null,
+      progressJSON: "",
+      error: null,
+    });
+
+    it("picks up work an earlier session left unfinished", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getJobs).mockResolvedValue([
+        pendingJob(),
+      ]);
+
+      await model.init();
+
+      expect(window.electron.Bluesky.getJobs).toHaveBeenCalledWith(
+        7,
+        "pending",
+      );
+      expect(model.hasUnfinishedSave).toBe(true);
+    });
+
+    it("carrying on runs the existing jobs instead of choosing again", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getJobs).mockResolvedValue([
+        pendingJob(),
+      ]);
+      await model.init();
+
+      await model.resumeSaving();
+
+      expect(model.state).toBe(State.RunJobs);
+      expect(window.electron.Bluesky.createJobs).not.toHaveBeenCalled();
+    });
+
+    it("offers nothing to carry on when there is no unfinished work", async () => {
+      const model = createViewModel();
+
+      await model.init();
+      await model.resumeSaving();
+
+      expect(model.hasUnfinishedSave).toBe(false);
+      expect(model.state).toBe(State.BlueskyWizardDashboard);
+    });
+  });
+
   describe("browsing saved data", () => {
     const page = (overrides = {}) => ({
       category: "posts" as const,

@@ -490,7 +490,9 @@
       "notConnected": "Cyd isn't authorized to act on this Bluesky identity right now. Your saved data is still here, and connecting again doesn't change it.",
       "savedRecords": "{count} records saved",
       "incomplete": "Some media is still missing. Saving again retries it.",
-      "connectFirst": "Connect your Bluesky account first, and Cyd can start saving it."
+      "connectFirst": "Connect your Bluesky account first, and Cyd can start saving it.",
+      "unfinishedSave": "A save was interrupted. Cyd can carry on from where it stopped.",
+      "resumeSave": "Carry on saving"
     },
     "connect": {
       "title": "Connect to Bluesky",
@@ -566,7 +568,6 @@
       "linkTo": "Link",
       "reposted": "Reposted",
       "liked": "Liked",
-      "bookmarked": "Bookmarked",
       "unknownAuthor": "An account Cyd didn't capture a handle for"
     }
   },

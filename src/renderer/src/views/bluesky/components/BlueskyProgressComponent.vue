@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { BlueskyViewModel } from "../../../view_models/BlueskyViewModel";
+import BlueskySaveTotals from "./BlueskySaveTotals.vue";
 
 const { t } = useI18n();
 
@@ -63,34 +64,12 @@ const rateLimitedUntil = computed(() =>
       }}
     </p>
 
-    <ul class="counts list-unstyled small text-muted mb-0">
-      <li class="records-saved">
-        {{
-          t("bluesky.progress.recordsSaved", {
-            count: model.progress.recordsSaved,
-          })
-        }}
-      </li>
-      <li class="media-saved">
-        {{
-          t("bluesky.progress.mediaSaved", { count: model.progress.mediaSaved })
-        }}
-      </li>
-      <li
-        v-if="collection && collection.mediaPending > 0"
-        class="media-pending"
-      >
-        {{
-          t("bluesky.progress.mediaPending", { count: collection.mediaPending })
-        }}
-      </li>
-      <li v-if="model.progress.mediaFailed > 0" class="media-failed">
-        {{
-          t("bluesky.progress.mediaFailed", {
-            count: model.progress.mediaFailed,
-          })
-        }}
-      </li>
-    </ul>
+    <BlueskySaveTotals
+      class="text-muted"
+      :records-saved="model.progress.recordsSaved"
+      :media-saved="model.progress.mediaSaved"
+      :media-failed="model.progress.mediaFailed"
+      :media-pending="collection?.mediaPending"
+    />
   </div>
 </template>

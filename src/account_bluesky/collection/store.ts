@@ -8,19 +8,14 @@ import type {
   BlueskyCollectionCheckpoint,
   BlueskyCollectionStage,
 } from "../../shared_types";
-import type {
-  BlueskyAssetRow,
-  BlueskyCheckpointRow,
-  BlueskyProfileRow,
-  BlueskyRecordRow,
-} from "../types";
+import type { BlueskyAssetRow, BlueskyCheckpointRow } from "../types";
 import type {
   BlueskyContextObservation,
   BlueskyExpectedAsset,
   BlueskyProfileObservation,
   BlueskyRecordObservation,
 } from "./mapping";
-import { profileAssets } from "./mapping";
+import { blueskyAssetAddress, profileAssets } from "./mapping";
 
 /**
  * Writing Bluesky saved data into one account's runtime database.
@@ -33,10 +28,9 @@ import { profileAssets } from "./mapping";
 
 const AVAILABILITY_MISSING = "missing";
 const AVAILABILITY_AVAILABLE = "available";
-const AVAILABILITY_UNAVAILABLE = "unavailable";
 
 /** An asset that has been enumerated but not fetched yet. */
-export const BLUESKY_ASSET_NOT_FETCHED = "not fetched yet";
+const BLUESKY_ASSET_NOT_FETCHED = "not fetched yet";
 
 const digestOf = (...parts: (string | number)[]): string =>
   crypto.createHash("sha256").update(parts.join("\u0000")).digest("hex");
@@ -77,10 +71,7 @@ const upsertAsset = (
   asset: BlueskyExpectedAsset,
 ) => {
   const id = blueskyAssetID(ownerType, ownerID, asset.role, asset.position);
-  const sourceURL =
-    asset.source.type === "url"
-      ? asset.source.url
-      : `blob:${asset.source.did}/${asset.source.cid}`;
+  const sourceURL = blueskyAssetAddress(asset.source);
 
   // An asset whose bytes are already here keeps them: re-observing a record
   // must not throw away media that was successfully saved. Only its
@@ -180,19 +171,6 @@ export const setBlueskyCurrentProfile = (
   );
 };
 
-export const getBlueskyCurrentProfile = (
-  db: Database.Database,
-  did: string,
-): BlueskyProfileRow | null =>
-  (exec(
-    db,
-    `SELECT profile.* FROM identity
-     JOIN profile ON profile.id = identity.currentProfileID
-     WHERE identity.did = ?`,
-    [did],
-    "get",
-  ) as BlueskyProfileRow | undefined) ?? null;
-
 /**
  * Save the latest observation of one record.
  *
@@ -218,7 +196,17 @@ export const saveBlueskyRecord = (
      ON CONFLICT(uri) DO UPDATE SET
        cid = excluded.cid,
        recordType = excluded.recordType,
-       authorProfileID = excluded.authorProfileID,
+       -- The author a record was captured with is kept, so re-collecting after
+       -- a rename does not rewrite history: the identity's current profile
+       -- moves on and every record still shows who it was saved with. The one
+       -- exception is a record Cyd could not read when it first saw it, whose
+       -- author is a bare DID with no labels; reading it later fills that in
+       -- rather than leaving a placeholder forever.
+       authorProfileID = CASE
+         WHEN (SELECT handle FROM profile WHERE id = record.authorProfileID) IS NULL
+           THEN excluded.authorProfileID
+         ELSE record.authorProfileID
+       END,
        indexedAt = excluded.indexedAt,
        createdAt = excluded.createdAt,
        observedAt = excluded.observedAt,
@@ -295,22 +283,6 @@ export const saveBlueskyRecordContext = (
   }
 };
 
-/**
- * Note that a record Cyd has saved is no longer at its source. The saved
- * record and its media stay exactly where they are.
- */
-export const markBlueskyRecordSourceDeleted = (
-  db: Database.Database,
-  uri: string,
-  observedAt: string,
-) => {
-  exec(
-    db,
-    `UPDATE record SET observedAt = ?, sourceDeletedAt = COALESCE(sourceDeletedAt, ?) WHERE uri = ?`,
-    [observedAt, observedAt, uri],
-  );
-};
-
 export const saveBlueskySelection = (
   db: Database.Database,
   category: BlueskyCategory,
@@ -338,16 +310,6 @@ export const saveBlueskyRecordSubject = (
   );
 };
 
-export const blueskyRecordExists = (
-  db: Database.Database,
-  uri: string,
-): boolean =>
-  Boolean(
-    exec(db, "SELECT uri FROM record WHERE uri = ?", [uri], "get") as
-      | { uri: string }
-      | undefined,
-  );
-
 // Assets as a work queue
 
 /**
@@ -363,6 +325,10 @@ export const blueskyRecordExists = (
  * subjects those relationships point at, and the bounded context captured for
  * either. Context is one level deep, which is what keeps a category from
  * dragging in a whole thread.
+ *
+ * Both the engine's queue of media still to fetch and the completeness a Browse
+ * view reports are derived from this one definition, so they cannot disagree
+ * about what a category contains.
  */
 const CATEGORY_RECORDS_CTE = `
   WITH selected AS (
@@ -387,9 +353,9 @@ const CATEGORY_RECORDS_CTE = `
  * The assets a category's saved records still have no bytes for.
  *
  * The queue of media left to fetch is derived from the saved data rather than
- * kept beside it, so it cannot disagree with what is committed: after a
- * restart this returns exactly the work that remains, and after a failure it
- * returns exactly what can be retried.
+ * kept beside it, so it cannot disagree with what is committed: after a restart
+ * this returns exactly the work that remains, and after a failure it returns
+ * exactly what can be retried.
  */
 export const pendingBlueskyAssets = (
   db: Database.Database,
@@ -404,12 +370,43 @@ export const pendingBlueskyAssets = (
      AND (
        (assetOwner.ownerType = 'record' AND assetOwner.ownerID IN (SELECT uri FROM categoryRecords))
        OR (assetOwner.ownerType = 'profile' AND assetOwner.ownerID IN (
-             SELECT authorProfileID FROM record WHERE uri IN (SELECT uri FROM categoryRecords)))
+             SELECT authorProfileID FROM record WHERE uri IN (SELECT uri FROM categoryRecords)
+             UNION
+             -- The account's own profile picture is part of its saved data
+             -- whichever category is running, including one where it authored
+             -- nothing itself, as bookmarks are.
+             SELECT currentProfileID FROM identity))
      )
      ORDER BY asset.id`,
     [category, AVAILABILITY_AVAILABLE],
     "all",
   ) as BlueskyAssetRow[];
+
+/**
+ * How many assets one category expects and how many are here, over exactly the
+ * records the engine would fetch media for.
+ */
+export const blueskyCategoryAssetCounts = (
+  db: Database.Database,
+  category: BlueskyCategory,
+): { expected: number; available: number } => {
+  const row = exec(
+    db,
+    `${CATEGORY_RECORDS_CTE}
+     SELECT COUNT(DISTINCT asset.id) AS expected,
+            COUNT(DISTINCT CASE WHEN asset.availability = ? THEN asset.id END) AS available
+     FROM asset
+     JOIN assetOwner ON assetOwner.assetID = asset.id
+     WHERE (assetOwner.ownerType = 'record' AND assetOwner.ownerID IN (SELECT uri FROM categoryRecords))
+     OR (assetOwner.ownerType = 'profile' AND assetOwner.ownerID IN (
+           SELECT authorProfileID FROM record WHERE uri IN (SELECT uri FROM categoryRecords)
+           UNION
+           SELECT currentProfileID FROM identity))`,
+    [category, AVAILABILITY_AVAILABLE],
+    "get",
+  ) as { expected: number; available: number | null };
+  return { expected: row.expected, available: row.available ?? 0 };
+};
 
 export const markBlueskyAssetAvailable = (
   db: Database.Database,
@@ -449,12 +446,6 @@ export const markBlueskyAssetFailed = (
     [availability, reason, new Date().toISOString(), id],
   );
 };
-
-export const BLUESKY_AVAILABILITY = {
-  available: AVAILABILITY_AVAILABLE,
-  missing: AVAILABILITY_MISSING,
-  unavailable: AVAILABILITY_UNAVAILABLE,
-} as const;
 
 // Checkpoints
 
@@ -532,25 +523,3 @@ export const blueskyCategoryRecordCount = (
       "get",
     ) as { count: number }
   ).count;
-
-export const blueskyAssetCounts = (
-  db: Database.Database,
-): { expected: number; available: number } => {
-  const row = exec(
-    db,
-    `SELECT COUNT(*) AS expected,
-            SUM(CASE WHEN availability = ? THEN 1 ELSE 0 END) AS available
-     FROM asset`,
-    [AVAILABILITY_AVAILABLE],
-    "get",
-  ) as { expected: number; available: number | null };
-  return { expected: row.expected, available: row.available ?? 0 };
-};
-
-export const getBlueskyRecordRow = (
-  db: Database.Database,
-  uri: string,
-): BlueskyRecordRow | null =>
-  (exec(db, "SELECT * FROM record WHERE uri = ?", [uri], "get") as
-    | BlueskyRecordRow
-    | undefined) ?? null;

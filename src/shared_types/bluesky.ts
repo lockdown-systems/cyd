@@ -62,6 +62,15 @@ export type BlueskyDeleteConfirmation = {
   confirmedAccountUUID: string;
 };
 
+/**
+ * The AT Protocol collections Cyd saves from, which are also the record types a
+ * saved record carries. Shared by both processes so the renderer recognizes a
+ * repost or a like by the same name the collection engine wrote.
+ */
+export const BLUESKY_POST_COLLECTION = "app.bsky.feed.post";
+export const BLUESKY_REPOST_COLLECTION = "app.bsky.feed.repost";
+export const BLUESKY_LIKE_COLLECTION = "app.bsky.feed.like";
+
 // Collection: the categories of public Bluesky records Cyd can save.
 
 /**
@@ -148,19 +157,6 @@ export type BlueskyCollectionCheckpoint = {
   mediaSaved: number;
   mediaFailed: number;
   updatedAt: Date;
-};
-
-/**
- * A rate limit Cyd is currently waiting out.
- *
- * Bluesky's rate limits are normal operation, not a failure, so a waiting job
- * says what it is waiting for and when it resumes rather than looking hung.
- */
-export type BlueskyRateLimitWait = {
-  /** When Cyd will try again. */
-  resumeAt: Date;
-  /** How many times this run has been rate limited. */
-  occurrences: number;
 };
 
 /**

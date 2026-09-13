@@ -58,8 +58,8 @@ One pass over one Bluesky record category, listing its records and then fetching
 _Avoid_: sync, scrape, import, download
 
 **Bluesky collection checkpoint**:
-How far a Bluesky collection run has got in one category, written in the same transaction as the work it describes. It is private runtime state and never travels in a Cyd Bluesky archive.
-_Avoid_: cursor, progress, sync state
+How far a Bluesky collection run has got in one category, written in the same transaction as the work it describes. It is private runtime state and never travels in a Cyd Bluesky archive. A checkpoint is durable and a run's reported progress is not, so the two are named apart even though they carry the same counts.
+_Avoid_: sync state, resume point
 
 **Bluesky expected asset**:
 One media file a Bluesky saved record or captured profile is known to need, present or not. An asset that is not here is explicit, carries a reason, stays retryable, and makes the backup incomplete without calling the record it belongs to into question.

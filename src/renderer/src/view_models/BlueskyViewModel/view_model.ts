@@ -26,12 +26,10 @@ import { blueskyDiagnostic } from "./diagnostics";
 /** How often a running job's progress is read while it runs. */
 const PROGRESS_POLL_MS = 500;
 
-const emptyCategorySettings = (): BlueskyCategorySettings => ({
-  posts: false,
-  reposts: false,
-  likes: false,
-  bookmarks: false,
-});
+const emptyCategorySettings = (): BlueskyCategorySettings =>
+  Object.fromEntries(
+    blueskyPublicCategories.map((category) => [category, false]),
+  ) as BlueskyCategorySettings;
 
 /**
  * Renderer-side owner of one Bluesky local account's view state.
@@ -79,8 +77,8 @@ export class BlueskyViewModel extends BaseViewModel {
   /** The last save failure, as a class of error and nothing more. */
   public saveError: string = "";
 
-  /** Cursors of the older pages walked into, so going back is possible. */
-  private browseCursors: string[] = [];
+  /** Whether the open Browse page is the newest one of its category. */
+  private browsingOlderPages = false;
 
   constructor(
     account: Account,
@@ -142,6 +140,7 @@ export class BlueskyViewModel extends BaseViewModel {
       await this.refreshProfile();
       await this.loadCategorySettings();
       await this.refreshSavedData();
+      await this.loadPendingJobs();
     } catch (e) {
       await this.error(
         AutomationErrorType.bluesky_openLocalAccountError,
@@ -285,6 +284,34 @@ export class BlueskyViewModel extends BaseViewModel {
   }
 
   // Saving
+
+  /**
+   * Pick up save work left unfinished by an earlier session.
+   *
+   * Opening the account has already returned anything interrupted to the
+   * pending queue, so this is what lets the dashboard offer to carry on instead
+   * of making someone choose their categories again.
+   */
+  async loadPendingJobs(): Promise<void> {
+    this.jobs = await window.electron.Bluesky.getJobs(
+      this.account.id,
+      "pending",
+    );
+  }
+
+  get hasUnfinishedSave(): boolean {
+    return this.jobs.some((job) => job.status === "pending");
+  }
+
+  /** Carry on with the save this account left unfinished. */
+  async resumeSaving(): Promise<void> {
+    this.saveError = "";
+    this.progress = emptyBlueskyProgress();
+    if (!this.hasUnfinishedSave) {
+      return;
+    }
+    this.state = State.RunJobs;
+  }
 
   /** Pick up which categories this account saves. */
   async loadCategorySettings(): Promise<void> {
@@ -479,10 +506,10 @@ export class BlueskyViewModel extends BaseViewModel {
     category: BlueskyCategory,
     before: string | null = null,
   ): Promise<void> {
-    if (category !== this.browseCategory) {
-      this.browseCursors = [];
-    }
     this.browseCategory = category;
+    // Asking for a page by cursor is what it means to have walked past the
+    // newest one, so the two cannot disagree.
+    this.browsingOlderPages = Boolean(before);
     try {
       this.browsePage = await window.electron.Bluesky.browse(
         this.account.id,
@@ -507,18 +534,16 @@ export class BlueskyViewModel extends BaseViewModel {
     if (!cursor) {
       return;
     }
-    this.browseCursors.push(cursor);
     await this.browse(this.browseCategory, cursor);
   }
 
   /** Back to the newest page of the category being browsed. */
   async browseNewest(): Promise<void> {
-    this.browseCursors = [];
     await this.browse(this.browseCategory);
   }
 
   get isBrowsingNewest(): boolean {
-    return this.browseCursors.length === 0;
+    return !this.browsingOlderPages;
   }
 
   /**

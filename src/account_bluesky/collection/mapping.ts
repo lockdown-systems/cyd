@@ -1,10 +1,9 @@
-import type { BlueskyPostView, BlueskyRepoRecord } from "../at_protocol";
 import {
-  BLUESKY_BOOKMARK_COLLECTION,
   BLUESKY_LIKE_COLLECTION,
   BLUESKY_POST_COLLECTION,
   BLUESKY_REPOST_COLLECTION,
-} from "../at_protocol";
+} from "../../shared_types";
+import type { BlueskyPostView, BlueskyRepoRecord } from "../at_protocol";
 
 /**
  * Turning AT Protocol shapes into Bluesky saved records.
@@ -30,6 +29,28 @@ export type BlueskyAssetSource =
   | { type: "url"; url: string }
   /** A blob, which is the only place a full video's bytes exist. */
   | { type: "blob"; did: string; cid: string };
+
+/**
+ * How an asset's source is written down for storage, and read back.
+ *
+ * A stored asset keeps one address rather than a column per kind of source, so
+ * encoding and decoding it are defined together here: splitting them across the
+ * writer and the reader is how the two drift apart.
+ */
+export const blueskyAssetAddress = (source: BlueskyAssetSource): string =>
+  source.type === "url" ? source.url : `blob:${source.did}/${source.cid}`;
+
+export const blueskyAssetSourceFromAddress = (
+  address: string,
+): BlueskyAssetSource | null => {
+  if (!address) {
+    return null;
+  }
+  const blob = /^blob:([^/]+)\/(.+)$/.exec(address);
+  return blob
+    ? { type: "blob", did: blob[1], cid: blob[2] }
+    : { type: "url", url: address };
+};
 
 /** An asset a saved record or profile is expected to have. */
 export type BlueskyExpectedAsset = {
@@ -494,45 +515,3 @@ export const observationFromRelationshipRecord = (
     subjectURI: subject ? asString(subject.uri) : null,
   };
 };
-
-/**
- * A bookmark, which Bluesky keeps in a private stash rather than in the
- * repository and therefore gives no AT URI of its own.
- *
- * Cyd mints one from the bookmarked post's URI, so the bookmark has the stable
- * identifier every saved record needs and collecting the same bookmark twice
- * recognizes it instead of saving a second one.
- */
-export const blueskyBookmarkURI = (
-  ownerDID: string,
-  subjectURI: string,
-): string =>
-  `at://${ownerDID}/${BLUESKY_BOOKMARK_COLLECTION}/${bookmarkRecordKey(subjectURI)}`;
-
-/**
- * A record key derived from the subject, so it is stable across runs. It uses
- * only the characters an AT Protocol record key allows.
- */
-const bookmarkRecordKey = (subjectURI: string): string =>
-  subjectURI.replace(/^at:\/\//, "").replace(/[^A-Za-z0-9.-]/g, "-");
-
-export const observationFromBookmark = (
-  bookmark: { subject: { uri: string; cid?: string }; createdAt?: string },
-  author: BlueskyProfileObservation,
-): { observation: BlueskyRecordObservation; subjectURI: string } => ({
-  observation: {
-    uri: blueskyBookmarkURI(author.did, bookmark.subject.uri),
-    cid: null,
-    recordType: BLUESKY_BOOKMARK_COLLECTION,
-    author,
-    createdAt: bookmark.createdAt ?? new Date().toISOString(),
-    indexedAt: null,
-    sourceDeletedAt: null,
-    text: null,
-    facets: null,
-    payload: { subject: bookmark.subject },
-    assets: [],
-    context: [],
-  },
-  subjectURI: bookmark.subject.uri,
-});

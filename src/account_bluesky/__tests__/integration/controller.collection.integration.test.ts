@@ -50,6 +50,7 @@ import {
 import {
   ALICE_AVATAR_URL,
   ALICE_DID,
+  BOB_AVATAR_URL,
   BOB_URIS,
   EXTERNAL_PREVIEW_BLOB,
   LIKED_VIDEO_BLOB,
@@ -179,14 +180,14 @@ describe("BlueskyAccountController - collecting public records", () => {
     });
 
     controller.setCategoryEnabled("posts", true);
-    expect(controller.enabledCategories()).toEqual(["posts"]);
+    expect(controller.getCategorySettings().posts).toBe(true);
 
     await collectEverything(controller, client, "posts");
     const before = savedState(controller, "posts");
 
     controller.setCategoryEnabled("posts", false);
 
-    expect(controller.enabledCategories()).toEqual([]);
+    expect(controller.getCategorySettings().posts).toBe(false);
     expect(savedState(controller, "posts")).toEqual(before);
   });
 
@@ -263,6 +264,28 @@ describe("BlueskyAccountController - collecting public records", () => {
     expect(live.subject?.sourceDeletedAt).toBeNull();
   });
 
+  test("a bookmark selects the bookmarked post, as Cyd Mobile writes it", async () => {
+    await collectEverything(controller, client, "bookmarks");
+
+    const records = allRecords(controller, "bookmarks");
+
+    // Bluesky gives a bookmark no AT URI of its own, so the selection names the
+    // post. Minting an identifier here would make a Cyd Bluesky archive mean
+    // one thing on desktop and another on mobile.
+    expect(records.map((record) => record.uri)).toEqual([BOB_URIS.bookmarked]);
+    expect(records[0].recordType).toEqual("app.bsky.feed.post");
+    expect(records[0].text).toEqual("Bob's post that Alice bookmarked");
+    expect(records[0].subject).toBeNull();
+    expect(records[0].sourceURL).toEqual(
+      `https://bsky.app/profile/${"did:plc:examplebob"}/post/bookmarked`,
+    );
+
+    // Nothing invented an `app.cyd.*` record for it.
+    for (const record of records) {
+      expect(record.recordType.startsWith("app.cyd.")).toBe(false);
+    }
+  });
+
   test("a liked video is saved whole, not just the thumbnail a client would show", async () => {
     await collectEverything(controller, client, "likes");
 
@@ -286,33 +309,89 @@ describe("BlueskyAccountController - collecting public records", () => {
   test("refreshing a profile does not rewrite the author a record was captured with", async () => {
     await collectEverything(controller, client, "posts");
 
-    const capturedProfileID = allRecords(controller, "posts")[0].author!
-      .profileID;
-    expect(allRecords(controller, "posts")[0].author!.handle).toEqual(
-      "alice.test",
-    );
+    const captured = allRecords(controller, "posts")[0].author!;
+    expect(captured.handle).toEqual("alice.test");
 
-    // The identity keeps its DID and changes its handle, as a rename does.
+    // The identity keeps its DID and changes its handle, as a rename does, and
+    // the account is collected again afterwards.
     client.setProfile({
       handle: "alice.example.com",
       displayName: "Alice Again",
     });
     await collectEverything(controller, client, "posts");
 
-    const author = allRecords(controller, "posts")[0].author!;
-    expect(author.handle).toEqual("alice.example.com");
-    expect(author.profileID).not.toEqual(capturedProfileID);
+    // Every saved record still shows the author it was captured with.
+    for (const record of allRecords(controller, "posts")) {
+      expect(record.author?.handle).toEqual("alice.test");
+      expect(record.author?.profileID).toEqual(captured.profileID);
+    }
+  });
 
-    // The labels captured earlier are still there, exactly as captured.
-    const page = controller.browse({ category: "posts", limit: 25 });
-    const capturedStillThere = page.records.some(
-      (record) => record.author?.profileID === capturedProfileID,
-    );
-    expect(capturedStillThere).toBe(false);
+  test("a record Cyd could not read at first takes its real author once it can", async () => {
+    // The repost of a deleted post is saved with a bare DID for an author.
+    await collectEverything(controller, client, "reposts");
+
+    const beforeAuthor = allRecords(controller, "reposts").find(
+      (record) => record.uri === REPOST_URIS.gone,
+    )!.subject?.author;
+    expect(beforeAuthor?.handle).toBeNull();
+    expect(beforeAuthor?.did).toEqual("did:plc:examplebob");
+
+    // Bluesky starts answering for it, so the placeholder is filled in rather
+    // than kept forever.
+    const readable = createFakeATClient({
+      ...fullAccountFixture(),
+      postViews: [
+        ...(fullAccountFixture().postViews ?? []),
+        {
+          uri: BOB_URIS.deleted,
+          cid: "bafydeleted",
+          author: {
+            did: "did:plc:examplebob",
+            handle: "bob.test",
+            displayName: "Bob",
+          },
+          record: {
+            $type: "app.bsky.feed.post",
+            text: "Back again",
+            createdAt: "2026-01-02T09:00:00.000Z",
+          },
+        },
+      ],
+    });
+    await collectEverything(controller, readable, "reposts");
+
+    const subject = allRecords(controller, "reposts").find(
+      (record) => record.uri === REPOST_URIS.gone,
+    )!.subject;
+    expect(subject?.author?.handle).toEqual("bob.test");
+    expect(subject?.text).toEqual("Back again");
+    // Reading it again means it is there, so it is no longer marked as gone.
+    expect(subject?.sourceDeletedAt).toBeNull();
+  });
+
+  test("a save interrupted mid-run is offered back, and carries on", async () => {
+    const [job] = controller.createJobs(["savePosts"]);
+    job.status = "running";
+    job.startedAt = new Date();
+    controller.updateJob(job);
+
+    // Cyd stops while the job is running, then the account is opened again.
+    const accountID = controller.accountID;
+    controller.cleanup();
+    const reopened = context.reopenLocalAccount(accountID);
+
+    const pending = reopened.resumeInterruptedJobs();
+    expect(pending.map((each) => each.jobType)).toEqual(["savePosts"]);
+    expect(pending[0].startedAt).toBeNull();
+
+    // Nothing is left claiming to be running, so nothing is stranded.
     expect(
-      controller.getMedia(author.avatar?.digest ?? "") ??
-        author.avatar?.availability,
-    ).toBeTruthy();
+      reopened.getJobs().filter((each) => each.status === "running"),
+    ).toEqual([]);
+
+    const result = await collectEverything(reopened, client, "posts");
+    expect(result.outcome).toEqual("finished");
   });
 
   test("progress carries operational metadata only", async () => {
@@ -417,8 +496,10 @@ describe.each(blueskyPublicCategories)(
     test("a failed asset stays explicit and retryable, and a retry upgrades completeness", async () => {
       const expected = await referenceState();
 
-      const firstAsset = Object.keys(fullAccountFixture().assets ?? {})[0];
-      client.failAsset(firstAsset, 500);
+      // Bob authors the record every category reaches — the reply parent and
+      // quote for posts, the subject for reposts, likes, and bookmarks — so his
+      // avatar is an asset all four are expected to have.
+      client.failAsset(BOB_AVATAR_URL, 500);
 
       const failed = await collectEverything(controller, client, category);
       expect(failed.outcome).toEqual("finished");
@@ -435,7 +516,7 @@ describe.each(blueskyPublicCategories)(
         expect(asset.unavailableReason).not.toContain("http");
       }
 
-      client.allowAsset(firstAsset);
+      client.allowAsset(BOB_AVATAR_URL);
       const retried = await collectEverything(controller, client, category);
 
       expect(retried.progress.mediaFailed).toEqual(0);
@@ -444,8 +525,7 @@ describe.each(blueskyPublicCategories)(
     });
 
     test("an asset Bluesky says is gone is recorded as unavailable, not as missing", async () => {
-      const firstAsset = Object.keys(fullAccountFixture().assets ?? {})[0];
-      client.failAsset(firstAsset, 410);
+      client.failAsset(BOB_AVATAR_URL, 410);
 
       await collectEverything(controller, client, category);
 

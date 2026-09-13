@@ -2,7 +2,7 @@ import log from "electron-log/main";
 
 import { Agent } from "@atproto/api";
 
-import { restoreBlueskySession } from "../bluesky_oauth";
+import { getBlueskyOAuthClient, restoreBlueskySession } from "../bluesky_oauth";
 
 /**
  * The AT Protocol surface the Bluesky collection engine uses.
@@ -113,23 +113,46 @@ export interface BlueskyATClient {
   fetchBlob(did: string, cid: string): Promise<BlueskyFetchedMedia>;
 }
 
-/** Collections in a repository, one per category of public record. */
-export const BLUESKY_POST_COLLECTION = "app.bsky.feed.post";
-export const BLUESKY_REPOST_COLLECTION = "app.bsky.feed.repost";
-export const BLUESKY_LIKE_COLLECTION = "app.bsky.feed.like";
+const DEFAULT_MEDIA_TYPE = "application/octet-stream";
 
 /**
- * Cyd's own record type for a bookmark.
+ * Where a repository lives, from its own DID document.
  *
- * Bookmarks live in a private stash rather than the repository, so Bluesky
- * gives the bookmark itself no AT URI — only the post it points at. Cyd mints
- * one deterministically from the subject so the bookmark still has the stable
- * identifier every saved record needs, and so collecting twice recognizes the
- * same bookmark instead of saving a second one.
+ * A blob exists only in the repository that holds it, and for most of what Cyd
+ * saves that is somebody else's: a liked video belongs to whoever posted it. So
+ * the owning server is resolved rather than assumed to be this account's, which
+ * would answer for no repository but its own.
  */
-export const BLUESKY_BOOKMARK_COLLECTION = "app.cyd.bookmark";
-
-const DEFAULT_MEDIA_TYPE = "application/octet-stream";
+const blueskyPDSEndpoint = async (did: string): Promise<string | null> => {
+  try {
+    const client = await getBlueskyOAuthClient();
+    const { didDoc } = await client.identityResolver.resolve(did);
+    const services = (didDoc as { service?: unknown }).service;
+    if (!Array.isArray(services)) {
+      return null;
+    }
+    for (const service of services) {
+      const entry = service as { id?: unknown; serviceEndpoint?: unknown };
+      if (
+        typeof entry.id === "string" &&
+        entry.id.endsWith("#atproto_pds") &&
+        typeof entry.serviceEndpoint === "string"
+      ) {
+        return entry.serviceEndpoint;
+      }
+    }
+    return null;
+  } catch (error) {
+    // A document Cyd cannot read is not a reason to abandon the asset: the
+    // caller still has this identity's own session to try. Logged without the
+    // identity.
+    log.info(
+      "Bluesky: could not resolve where a repository lives",
+      error instanceof Error ? error.name : typeof error,
+    );
+    return null;
+  }
+};
 
 const fetchedMedia = async (
   response: Response,
@@ -227,22 +250,26 @@ export const createBlueskyATClient = async (
     fetchMedia: async (url) => fetchedMedia(await fetch(url)),
 
     fetchBlob: async (blobDID, cid) => {
-      try {
-        const response = await agent.com.atproto.sync.getBlob({
-          did: blobDID,
-          cid,
-        });
-        return {
-          bytes: Buffer.from(response.data),
-          mediaType: response.headers["content-type"] ?? DEFAULT_MEDIA_TYPE,
-        };
-      } catch (error) {
-        // The blob's own repository is the only place it exists, so a refusal
-        // here is the asset being unavailable rather than a bug. The error is
-        // logged without the identity or the CID.
-        log.info("Bluesky: a blob could not be fetched");
-        throw error;
+      // Blobs are public, so fetching one from the server that holds it needs
+      // no authorization — only knowing which server that is.
+      const endpoint = await blueskyPDSEndpoint(blobDID);
+      if (endpoint) {
+        const url = new URL(`${endpoint}/xrpc/com.atproto.sync.getBlob`);
+        url.searchParams.set("did", blobDID);
+        url.searchParams.set("cid", cid);
+        return fetchedMedia(await fetch(url));
       }
+
+      // With no resolvable document, the one repository Cyd can still ask is
+      // this identity's own, through its authorized session.
+      const response = await agent.com.atproto.sync.getBlob({
+        did: blobDID,
+        cid,
+      });
+      return {
+        bytes: Buffer.from(response.data),
+        mediaType: response.headers["content-type"] ?? DEFAULT_MEDIA_TYPE,
+      };
     },
   };
 };

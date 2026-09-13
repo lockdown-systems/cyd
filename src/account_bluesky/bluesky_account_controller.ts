@@ -409,6 +409,23 @@ export class BlueskyAccountController {
     return rows.map((row) => this.blueskyJobFromRow(row));
   }
 
+  /**
+   * Return jobs that were running when Cyd stopped to the pending queue.
+   *
+   * A job only ever says "running" while this process is running it, so one
+   * found in that state on open was interrupted — by a quit, a crash, or a
+   * power cut. The engine's checkpoint means running it again continues from
+   * where it stopped rather than starting the category over, so the honest
+   * thing is to offer it back rather than leave a row nobody will ever finish.
+   */
+  resumeInterruptedJobs(): BlueskyJob[] {
+    exec(
+      this.requireDB(),
+      "UPDATE job SET status = 'pending', startedAt = NULL WHERE status = 'running'",
+    );
+    return this.getJobs("pending");
+  }
+
   updateJob(job: BlueskyJob) {
     exec(
       this.requireDB(),
@@ -455,12 +472,6 @@ export class BlueskyAccountController {
 
   setCategoryEnabled(category: BlueskyCategory, enabled: boolean) {
     this.setConfig(categorySettingKey(category), enabled ? "true" : "false");
-  }
-
-  /** The categories currently enabled, in a stable order. */
-  enabledCategories(): BlueskyCategory[] {
-    const settings = this.getCategorySettings();
-    return blueskyPublicCategories.filter((category) => settings[category]);
   }
 
   // Collection

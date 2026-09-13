@@ -1,16 +1,15 @@
 import type { BlueskyCategory } from "../../shared_types";
-import type { BlueskyATClient, BlueskyPostView } from "../at_protocol";
 import {
   BLUESKY_LIKE_COLLECTION,
   BLUESKY_POST_COLLECTION,
   BLUESKY_REPOST_COLLECTION,
-} from "../at_protocol";
+} from "../../shared_types";
+import type { BlueskyATClient, BlueskyPostView } from "../at_protocol";
 import type {
   BlueskyProfileObservation,
   BlueskyRecordObservation,
 } from "./mapping";
 import {
-  observationFromBookmark,
   observationFromPostView,
   observationFromRelationshipRecord,
   observationFromRepoPost,
@@ -33,8 +32,12 @@ export type BlueskyCategoryPage = {
    * the order is what makes a single pass enough.
    */
   records: BlueskyRecordObservation[];
-  /** The records this category selected on this page. */
-  selections: string[];
+  /**
+   * What this category selected on this page, and when. Most categories select
+   * a record they just observed; a bookmark has no record of its own, so the
+   * time it was bookmarked is carried on the selection instead.
+   */
+  selections: { subjectID: string; selectedAt?: string }[];
   /** Relationships and the records they are about. */
   subjects: { relationshipURI: string; subjectRecordURI: string }[];
   /** Where the next page starts, or null at the end of the category. */
@@ -182,7 +185,7 @@ const postsCollector: BlueskyCategoryCollector = {
 
     return {
       records: [...context, ...posts],
-      selections: posts.map((post) => post.uri),
+      selections: posts.map((post) => ({ subjectID: post.uri })),
       subjects: [],
       cursor: page.cursor ?? null,
     };
@@ -243,7 +246,9 @@ const relationshipCollector = (
         ...subjects,
         ...relationships.map((each) => each.observation),
       ],
-      selections: relationships.map((each) => each.observation.uri),
+      selections: relationships.map((each) => ({
+        subjectID: each.observation.uri,
+      })),
       subjects: relationships.flatMap((each) =>
         each.subjectURI
           ? [
@@ -259,50 +264,51 @@ const relationshipCollector = (
   },
 });
 
+/**
+ * Bookmarks, which Cyd knows only by what they point at.
+ *
+ * Bluesky keeps bookmarks in a private stash rather than in the repository and
+ * gives the bookmark itself no AT URI — only a strong ref to the post. So the
+ * selection names the bookmarked post directly and carries the time it was
+ * bookmarked, which is exactly what Cyd Mobile writes. Minting an identifier
+ * Bluesky does not have would make the two clients disagree about what a
+ * bookmark selection means, and a Cyd Bluesky archive has to mean one thing.
+ */
 const bookmarksCollector: BlueskyCategoryCollector = {
   category: "bookmarks",
 
-  listPage: async ({ client, author, cursor, limit }) => {
-    // Bookmarks are private and come back with the bookmarked post already
-    // hydrated, so this needs no second call to read the subjects.
+  listPage: async ({ client, cursor, limit }) => {
+    // Bookmarks come back with the bookmarked post already hydrated, so this
+    // needs no second call to read the subjects.
     const page = await client.listBookmarks({
       cursor: cursor ?? undefined,
       limit,
     });
 
-    const bookmarks = page.bookmarks.map((bookmark) => ({
-      ...observationFromBookmark(bookmark, author),
-      post: bookmark.post,
-    }));
-
     const subjects: BlueskyRecordObservation[] = [];
-    for (const bookmark of bookmarks) {
-      if (bookmark.post) {
-        subjects.push(observationFromPostView(bookmark.post));
+    const selections: { subjectID: string; selectedAt?: string }[] = [];
+
+    for (const bookmark of page.bookmarks) {
+      const bookmarkedAt = bookmark.createdAt ?? new Date().toISOString();
+      const observation = bookmark.post
+        ? observationFromPostView(bookmark.post)
+        : tombstoneObservation(bookmark.subject.uri, bookmarkedAt);
+      if (!observation) {
         continue;
       }
-      const tombstone = tombstoneObservation(
-        bookmark.subjectURI,
-        bookmark.observation.createdAt,
-      );
-      if (tombstone) {
-        subjects.push(tombstone);
-      }
+      subjects.push(observation);
+      selections.push({
+        subjectID: bookmark.subject.uri,
+        selectedAt: bookmarkedAt,
+      });
     }
 
     const context = await hydrateContext(client, subjects);
 
     return {
-      records: [
-        ...context,
-        ...subjects,
-        ...bookmarks.map((each) => each.observation),
-      ],
-      selections: bookmarks.map((each) => each.observation.uri),
-      subjects: bookmarks.map((each) => ({
-        relationshipURI: each.observation.uri,
-        subjectRecordURI: each.subjectURI,
-      })),
+      records: [...context, ...subjects],
+      selections,
+      subjects: [],
       cursor: page.cursor ?? null,
     };
   },

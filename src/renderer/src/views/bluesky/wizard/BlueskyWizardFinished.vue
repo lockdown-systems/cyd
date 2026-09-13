@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { BlueskyViewModel } from "../../../view_models/BlueskyViewModel";
 import { State } from "../../../view_models/BlueskyViewModel";
+import BlueskySaveTotals from "../components/BlueskySaveTotals.vue";
 
 const { t } = useI18n();
 
@@ -41,29 +42,12 @@ const incomplete = computed(() => props.model.savedData?.complete === false);
 <template>
   <div class="wizard-content bluesky-finished">
     <div class="wizard-scroll-content">
-      <ul class="totals list-unstyled">
-        <li class="records-saved">
-          {{
-            t("bluesky.progress.recordsSaved", {
-              count: model.progress.recordsSaved,
-            })
-          }}
-        </li>
-        <li class="media-saved">
-          {{
-            t("bluesky.progress.mediaSaved", {
-              count: model.progress.mediaSaved,
-            })
-          }}
-        </li>
-        <li v-if="model.progress.mediaFailed > 0" class="media-failed">
-          {{
-            t("bluesky.progress.mediaFailed", {
-              count: model.progress.mediaFailed,
-            })
-          }}
-        </li>
-      </ul>
+      <BlueskySaveTotals
+        class="mb-3"
+        :records-saved="model.progress.recordsSaved"
+        :media-saved="model.progress.mediaSaved"
+        :media-failed="model.progress.mediaFailed"
+      />
 
       <p v-if="outcomeMessage" class="outcome text-warning small">
         {{ outcomeMessage }}

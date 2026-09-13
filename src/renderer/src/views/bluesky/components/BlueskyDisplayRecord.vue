@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type {
-  BlueskyAsset,
-  BlueskySavedRecord,
-  BlueskySavedRecordSummary,
+import {
+  BLUESKY_LIKE_COLLECTION,
+  BLUESKY_REPOST_COLLECTION,
+  type BlueskyAsset,
+  type BlueskySavedRecord,
+  type BlueskySavedRecordSummary,
 } from "../../../../../shared_types";
 import { openURL } from "../../../util";
 
@@ -19,19 +21,19 @@ const props = defineProps<{
 /**
  * One saved record, rendered from this computer alone.
  *
- * A relationship — a repost, like, or bookmark — has nothing of its own to
- * show, so what is rendered is the record it is about, labelled by the
- * relationship. Media Cyd could not fetch is shown as absent rather than
- * quietly left out, because a gap in a backup is something to see.
+ * A repost or a like has nothing of its own to show, so what is rendered is the
+ * record it is about, labelled by the relationship. A bookmark has no record at
+ * all — the selection names the post — so it renders as the post, inside the
+ * Bookmarks view that already says what it is. Media Cyd could not fetch is
+ * shown as absent rather than quietly left out, because a gap in a backup is
+ * something to see.
  */
 const relationshipLabel = computed(() => {
   switch (props.record.recordType) {
-    case "app.bsky.feed.repost":
+    case BLUESKY_REPOST_COLLECTION:
       return t("bluesky.browse.reposted");
-    case "app.bsky.feed.like":
+    case BLUESKY_LIKE_COLLECTION:
       return t("bluesky.browse.liked");
-    case "app.cyd.bookmark":
-      return t("bluesky.browse.bookmarked");
     default:
       return "";
   }

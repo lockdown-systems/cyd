@@ -90,6 +90,19 @@ const hasBlueskyIdentity = computed(() =>
         {{ t("bluesky.dashboard.notConnected") }}
       </p>
 
+      <div
+        v-if="model.hasUnfinishedSave"
+        class="unfinished-save alert alert-info"
+      >
+        <span>{{ t("bluesky.dashboard.unfinishedSave") }}</span>
+        <button
+          class="btn btn-sm btn-primary ms-3 resume-save"
+          @click="model.resumeSaving()"
+        >
+          {{ t("bluesky.dashboard.resumeSave") }}
+        </button>
+      </div>
+
       <p
         v-if="savedRecords > 0"
         class="saved-records text-muted small text-center"

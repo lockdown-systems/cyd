@@ -14,9 +14,14 @@ import type {
   BlueskySavedRecord,
   BlueskySavedRecordSummary,
 } from "../shared_types";
-import { blueskyPublicCategories } from "../shared_types";
-import { BLUESKY_POST_COLLECTION } from "./at_protocol";
-import { blueskyCategoryRecordCount } from "./collection/store";
+import {
+  BLUESKY_POST_COLLECTION,
+  blueskyPublicCategories,
+} from "../shared_types";
+import {
+  blueskyCategoryAssetCounts,
+  blueskyCategoryRecordCount,
+} from "./collection/store";
 import { blueskyMediaPath } from "./storage";
 import type {
   BlueskyAssetRow,
@@ -298,32 +303,12 @@ export const blueskySavedDataSummary = (
   db: Database.Database,
 ): BlueskySavedDataSummary => {
   const categories = blueskyPublicCategories.map((category) => {
-    const counts = exec(
-      db,
-      `WITH selected AS (
-         SELECT subjectID AS uri FROM selection WHERE category = ?
-       ),
-       categoryRecords AS (
-         SELECT uri FROM selected
-         UNION
-         SELECT subjectRecordURI FROM recordSubject
-         WHERE relationshipURI IN (SELECT uri FROM selected)
-       )
-       SELECT COUNT(*) AS expected,
-              SUM(CASE WHEN asset.availability = 'available' THEN 1 ELSE 0 END) AS available
-       FROM assetOwner
-       JOIN asset ON asset.id = assetOwner.assetID
-       WHERE assetOwner.ownerType = 'record'
-       AND assetOwner.ownerID IN (SELECT uri FROM categoryRecords)`,
-      [category],
-      "get",
-    ) as { expected: number; available: number | null };
-
+    const assets = blueskyCategoryAssetCounts(db, category);
     return {
       category,
       recordCount: blueskyCategoryRecordCount(db, category),
-      assetsExpected: counts.expected,
-      assetsAvailable: counts.available ?? 0,
+      assetsExpected: assets.expected,
+      assetsAvailable: assets.available,
     };
   });
 

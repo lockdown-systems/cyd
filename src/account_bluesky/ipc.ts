@@ -41,6 +41,9 @@ export const defineIPCBluesky = () => {
       try {
         const controller = getBlueskyAccountController(accountID);
         controller.initDB();
+        // Opening the account is when a save interrupted by a quit becomes
+        // available to carry on.
+        controller.resumeInterruptedJobs();
         return controller.account;
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
@@ -249,9 +252,9 @@ export const defineIPCBluesky = () => {
    * Run one save job to completion, or until it is cancelled, rate limited past
    * patience, or out of disk.
    *
-   * The job's own row is what survives a restart: a job left running when Cyd
-   * quit is picked up as pending again, and the engine's checkpoint means
-   * running it again continues rather than starts over.
+   * The job row is what survives a restart. A job still marked running when the
+   * account is next opened is returned to the pending queue, and the engine's
+   * checkpoint means running it again continues rather than starts over.
    */
   ipcMain.handle(
     "Bluesky:runJob",
