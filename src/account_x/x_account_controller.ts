@@ -27,6 +27,7 @@ import {
   XImportArchiveResponse,
   XMigrateTweetCounts,
   BlueskyMigrationProfile,
+  BlueskyConnectStart,
 } from "../shared_types";
 import {
   runMigrations,
@@ -60,6 +61,7 @@ import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithM
 import { migrations } from "./controller/migrations";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
 import { sweepLegacyOAuthCredentials } from "../credentials";
+import { migrateAccountBlueskyOAuthCredentials } from "../bluesky_oauth";
 
 export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
@@ -197,6 +199,13 @@ export class XAccountController extends BaseAccountController<XProgress> {
     // moment Cyd is guaranteed to be able to move them somewhere protected
     // and erase what is left behind.
     sweepLegacyOAuthCredentials(this.db, this.accountID);
+
+    // Older versions also kept those credentials in this account's own vault,
+    // where a Bluesky local account for the same identity could not see them.
+    // Carrying them into the shared store is what lets an identity authorized
+    // through the migration wizard be added as a Bluesky account without a
+    // second browser sign-in.
+    migrateAccountBlueskyOAuthCredentials(this.accountID);
 
     log.info("XAccountController.initDB: database initialized");
   }
@@ -479,7 +488,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return this.getBlueskyService().getProfile();
   }
 
-  async blueskyAuthorize(handle: string): Promise<boolean | string> {
+  async blueskyAuthorize(handle: string): Promise<BlueskyConnectStart> {
     return this.getBlueskyService().authorize(handle);
   }
 

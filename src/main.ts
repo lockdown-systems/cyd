@@ -30,6 +30,14 @@ import {
 import { defineIPCArchive } from "./archive";
 import { defineIPCCredentials, logCredentialProtection } from "./credentials";
 import {
+  BLUESKY_OAUTH_CALLBACK_PATH,
+  blueskyOAuthCallbackEventName,
+  blueskyOAuthCallbackScheme,
+  migrateAllAccountBlueskyOAuthCredentials,
+  resolveBlueskyOAuthFlow,
+  sweepOrphanedBlueskyOAuth,
+} from "./bluesky_oauth";
+import {
   getUpdatesBaseURL,
   getAccountDataPath,
   getResourcesPath,
@@ -90,7 +98,8 @@ log.info("User data folder is at:", app.getPath("userData"));
 // The main window
 let win: BrowserWindow | null = null;
 
-// Handle a cyd URLs (such as social.cyd.dev-api:/atproto-oauth-callback or social.cyd.api:/atproto-oauth-callback)
+// Handle a cyd URL (such as social.cyd.dev-api:/atproto-oauth-callback/ or
+// social.cyd.api:/atproto-oauth-callback/)
 const openCydURL = async (cydURL: string) => {
   if (!isAppReady) {
     log.debug("Adding cyd URL to queue:", cydURL);
@@ -123,22 +132,29 @@ const openCydURL = async (cydURL: string) => {
     return;
   }
 
-  // If pathname is "/atproto-oauth-callback/", this means finish the Bluesky OAuth flow
-  if (url.pathname === "/atproto-oauth-callback/") {
-    // Get the account ID that's in the middle of the OAuth flow
-    const accountID = database.getConfig("blueskyOAuthAccountID");
-    const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${accountID}`;
+  // A Bluesky authorization coming back from the browser. The flow identifier
+  // travels inside the OAuth request, so the answer reaches whichever platform
+  // started it, however many flows are in the air.
+  if (url.pathname === BLUESKY_OAUTH_CALLBACK_PATH) {
+    const flow = resolveBlueskyOAuthFlow(url.search);
+    if (!flow) {
+      // Cyd holds no authorization state matching this callback: it is stale,
+      // already spent, or was not started here. Nothing is dispatched, and the
+      // person is told rather than left watching an app that did nothing.
+      log.warn("Ignoring a Bluesky OAuth callback Cyd did not start");
+      dialog.showMessageBoxSync({
+        title: "Cyd",
+        message: "This Bluesky sign-in link has already been used or expired.",
+        detail: "Start connecting again from the account you want to connect.",
+        type: "info",
+      });
+      return;
+    }
 
-    // Reset the config value
-    database.deleteConfig("blueskyOAuthAccountID");
-
-    // Send the event to the renderer
+    const eventName = blueskyOAuthCallbackEventName(flow);
     if (win) {
-      log.info(
-        "Sending Bluesky OAuth callback event to renderer:",
-        blueskyOAuthCallbackEventName,
-      );
-      win.webContents.send(blueskyOAuthCallbackEventName, url.search);
+      log.info("Sending Bluesky OAuth callback event to renderer:", eventName);
+      win.webContents.send(eventName, url.search);
     }
     return;
   }
@@ -152,10 +168,18 @@ const openCydURL = async (cydURL: string) => {
   return;
 };
 
-// Register the social.cyd.api: (or social.cyd.dev-api:/) protocol (reverse-domain of the API host)
-const protocolString =
-  config.mode == "prod" ? "social.cyd.api" : "social.cyd.dev-api";
-app.setAsDefaultProtocolClient(protocolString);
+// Register the callback scheme (the reverse-domain form of the API host) that
+// Cyd's published OAuth client metadata redirects to.
+const protocolString = blueskyOAuthCallbackScheme();
+if (!app.setAsDefaultProtocolClient(protocolString)) {
+  // A run from the source tree has no desktop entry or bundle to register, so
+  // the browser will refuse the authorization handoff and the callback will
+  // appear to vanish. Say which scheme went unclaimed: `npm run finish-oauth`
+  // delivers a callback by hand.
+  log.warn(
+    `Could not register ${protocolString}: as the default protocol client`,
+  );
+}
 
 // In Linux and Windows, handle cyd URLs passed in via the CLI
 const lastArg =
@@ -235,6 +259,23 @@ async function initializeApp() {
 
   // Dismiss any stale error reports
   database.dismissAllNewErrorReports();
+
+  // Bluesky OAuth sessions used to live in per-account vaults. They are carried
+  // into the shared store before anything asks who holds one, so an upgraded
+  // install finds every session it already has.
+  //
+  // Sweeping follows: a session whose last holder went away during an
+  // interrupted quit would otherwise stay alive at its PDS forever, and
+  // sweeping before the migration would mistake a not-yet-moved session for an
+  // unheld one.
+  try {
+    migrateAllAccountBlueskyOAuthCredentials();
+  } catch (error) {
+    log.error("Failed to migrate Bluesky OAuth credentials forward:", error);
+  }
+  sweepOrphanedBlueskyOAuth().catch((error) => {
+    log.error("Failed to sweep orphaned Bluesky OAuth material:", error);
+  });
 
   // If a device description has not been created yet, make one now
   const deviceDescription = database.getConfig("deviceDescription");

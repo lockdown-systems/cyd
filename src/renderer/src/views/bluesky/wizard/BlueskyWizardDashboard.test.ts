@@ -85,14 +85,17 @@ describe("BlueskyWizardDashboard", () => {
       "Browse My Data",
     ]);
 
-    for (const card of cards) {
+    // Connecting is built; saving and browsing arrive in #676 and #677.
+    expect(cards[0].classes()).not.toContain("disabled-card");
+    expect(cards[0].find(".coming-soon-badge").exists()).toBe(false);
+    for (const card of cards.slice(1)) {
       expect(card.classes()).toContain("disabled-card");
       expect(card.attributes("aria-disabled")).toBe("true");
       expect(card.find(".coming-soon-badge").text()).toBe("Coming soon");
     }
   });
 
-  it("has nothing to click, so it cannot navigate to an unbuilt wizard page", async () => {
+  it("opens the connect page and nothing else", async () => {
     wrapper = mountDashboard();
 
     for (const card of wrapper.findAll(".dashboard .card")) {
@@ -100,6 +103,31 @@ describe("BlueskyWizardDashboard", () => {
     }
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.emitted("setState")).toBeUndefined();
+    expect(wrapper.emitted("setState")).toEqual([["BlueskyWizardConnect"]]);
+  });
+
+  it("says an account is linked but not connected", () => {
+    wrapper = mountDashboard({
+      did: "did:plc:examplealice",
+      handle: "alice.bsky.social",
+      connectedAt: null,
+    });
+
+    expect(wrapper.find(".not-connected").text()).toContain(
+      "isn't authorized to act on this Bluesky identity",
+    );
+  });
+
+  it("says nothing about connecting once the account holds an authorization", () => {
+    wrapper = mountDashboard({
+      did: "did:plc:examplealice",
+      handle: "alice.bsky.social",
+      connectedAt: new Date(),
+    });
+
+    expect(wrapper.find(".not-connected").exists()).toBe(false);
+    expect(wrapper.findAll(".dashboard .card")[0].find("h2").text()).toBe(
+      "Bluesky Connection",
+    );
   });
 });

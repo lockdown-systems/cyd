@@ -10,6 +10,7 @@ import { XViewModel, State as XState } from "../../../view_models/XViewModel";
 import {
   BlueskyMigrationProfile,
   XMigrateTweetCounts,
+  blueskyOAuthCallbackEventName,
 } from "../../../../../shared_types";
 import { getBreadcrumbIcon, setJobsType } from "../../../util";
 import {
@@ -69,17 +70,25 @@ const connectClicked = async () => {
   }
 
   try {
-    const ret: boolean | string = await window.electron.X.blueskyAuthorize(
+    const started = await window.electron.X.blueskyAuthorize(
       props.model.account.id,
       blueskyHandle.value,
     );
-    if (ret !== true) {
+    if (started.status === "error") {
       await window.electron.X.blueskyDisconnect(props.model.account.id);
       await window.electron.showMessage(
         t("wizard.failedToConnectToBluesky"),
-        `${ret}`,
+        started.error,
       );
       state.value = State.NotConnected;
+    } else if (started.status === "reused") {
+      // Cyd already holds a session for this identity, so there is no browser
+      // round trip and no callback to wait for.
+      blueskyProfile.value = await window.electron.X.blueskyGetProfile(
+        props.model.account.id,
+      );
+      state.value = State.Connected;
+      await loadTweetCounts();
     } else {
       state.value = State.FinishInBrowser;
     }
@@ -164,7 +173,12 @@ const deleteClicked = async () => {
   emit("setState", XState.WizardReview);
 };
 
-const blueskyOAuthCallbackEventName = `blueskyOAuthCallback-${props.model.account.id}`;
+// The authorization comes back on this account's own flow, so two accounts
+// connecting at once never hear each other's callback.
+const oauthCallbackEventName = blueskyOAuthCallbackEventName({
+  platform: "X",
+  accountID: props.model.account.id,
+});
 
 const isArchiveOld = computed(() => {
   // The date before media was added to the Cyd archive, February 18, 2025
@@ -201,12 +215,8 @@ onMounted(async () => {
   }
 
   // Listen for OAuth callback event
-  console.log(
-    "Bluesky OAuth callback event name",
-    blueskyOAuthCallbackEventName,
-  );
   window.electron.ipcRenderer.on(
-    blueskyOAuthCallbackEventName,
+    oauthCallbackEventName,
     async (_event: IpcRendererEvent, queryString: string) => {
       await oauthCallback(queryString);
     },
@@ -215,7 +225,7 @@ onMounted(async () => {
 
 onUnmounted(async () => {
   // Remove OAuth callback event listener
-  window.electron.ipcRenderer.removeAllListeners(blueskyOAuthCallbackEventName);
+  window.electron.ipcRenderer.removeAllListeners(oauthCallbackEventName);
 });
 </script>
 

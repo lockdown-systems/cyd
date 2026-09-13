@@ -17,8 +17,10 @@ import {
   XDeleteReviewStats,
   XImportArchiveResponse,
   BlueskyMigrationProfile,
+  BlueskyConnectStart,
   XMigrateTweetCounts,
 } from "../shared_types";
+import { BLUESKY_DID_CONFIG_KEY } from "../credentials";
 import { getMITMController } from "../mitm";
 import { packageExceptionForReport } from "../util";
 
@@ -56,7 +58,7 @@ export const revokeXBlueskyConnection = async (
     // No account database means this account never connected to anything.
     return;
   }
-  const did = await controller.getConfig("blueskyDID");
+  const did = await controller.getConfig(BLUESKY_DID_CONFIG_KEY);
   if (!did) {
     return;
   }
@@ -623,7 +625,11 @@ export const defineIPCX = () => {
 
   ipcMain.handle(
     "X:blueskyAuthorize",
-    async (_, accountID: number, handle: string): Promise<boolean | string> => {
+    async (
+      _,
+      accountID: number,
+      handle: string,
+    ): Promise<BlueskyConnectStart> => {
       try {
         const controller = getXAccountController(accountID);
         return await controller.blueskyAuthorize(handle);

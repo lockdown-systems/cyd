@@ -139,6 +139,154 @@ describe("BlueskyViewModel", () => {
 
       expect(model.state).toBe(State.BlueskyWizardDashboard);
     });
+
+    it("moves from connect to its display state", async () => {
+      const model = createViewModel();
+      model.state = State.BlueskyWizardConnect;
+
+      await model.run();
+
+      expect(model.state).toBe(State.BlueskyWizardConnectDisplay);
+      expect(model.instructions).not.toBe("");
+    });
+  });
+
+  describe("connecting", () => {
+    it("listens on its own account's flow, not a global one", () => {
+      expect(createViewModel().oauthCallbackEventName).toBe(
+        "blueskyOAuthCallback-Bluesky:7",
+      );
+    });
+
+    it("reads connection state from the account, not from the DID", () => {
+      expect(createViewModel({ did: "did:plc:examplealice" }).isConnected).toBe(
+        false,
+      );
+      expect(
+        createViewModel({
+          did: "did:plc:examplealice",
+          connectedAt: new Date(),
+        }).isConnected,
+      ).toBe(true);
+    });
+
+    it("starts a browser authorization for a handle", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.connect).mockResolvedValue({
+        status: "browser",
+      });
+
+      const started = await model.connect("alice.bsky.social");
+
+      expect(started).toEqual({ status: "browser" });
+      expect(window.electron.Bluesky.connect).toHaveBeenCalledWith(
+        7,
+        "alice.bsky.social",
+      );
+      expect(model.connectError).toBe("");
+    });
+
+    it("shows a failure beside the handle rather than throwing it away", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.connect).mockResolvedValue({
+        status: "error",
+        error: "Could not resolve handle",
+      });
+
+      await model.connect("nobody.bsky.social");
+
+      expect(model.connectError).toBe("Could not resolve handle");
+    });
+
+    it("connects with no browser round trip when a session already exists", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.connect).mockResolvedValue({
+        status: "reused",
+        did: "did:plc:examplealice",
+      });
+      vi.mocked(window.electron.Bluesky.openLocalAccount).mockResolvedValue(
+        createMockBlueskyLocalAccount({
+          uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+          did: "did:plc:examplealice",
+          handle: "alice.bsky.social",
+          connectedAt: new Date(),
+        }),
+      );
+
+      const started = await model.connect("alice.bsky.social");
+
+      expect(started).toEqual({
+        status: "reused",
+        did: "did:plc:examplealice",
+      });
+      expect(model.isConnected).toBe(true);
+    });
+
+    it("binds the identity when the browser authorization comes back", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.completeConnection).mockResolvedValue(
+        true,
+      );
+      vi.mocked(window.electron.Bluesky.openLocalAccount).mockResolvedValue(
+        createMockBlueskyLocalAccount({
+          uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+          did: "did:plc:examplealice",
+          handle: "alice.bsky.social",
+          connectedAt: new Date(),
+        }),
+      );
+      vi.mocked(window.electron.Bluesky.getProfile).mockResolvedValue({
+        did: "did:plc:examplealice",
+        handle: "alice.bsky.social",
+        displayName: "Alice",
+      });
+
+      expect(await model.completeConnection("code=abc")).toBe(true);
+      expect(model.isConnected).toBe(true);
+      expect(model.profile?.handle).toBe("alice.bsky.social");
+    });
+
+    it("reports a refused authorization without connecting", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.completeConnection).mockResolvedValue(
+        "denied",
+      );
+
+      expect(await model.completeConnection("error=access_denied")).toBe(false);
+      expect(model.connectError).toBe("denied");
+      expect(model.isConnected).toBe(false);
+    });
+
+    it("releases only this account's hold when disconnecting", async () => {
+      const model = createViewModel({
+        did: "did:plc:examplealice",
+        connectedAt: new Date(),
+      });
+      vi.mocked(window.electron.Bluesky.openLocalAccount).mockResolvedValue(
+        createMockBlueskyLocalAccount({
+          uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+          did: "did:plc:examplealice",
+          connectedAt: null,
+        }),
+      );
+
+      await model.disconnect();
+
+      expect(window.electron.Bluesky.disconnect).toHaveBeenCalledWith(7);
+      expect(model.isConnected).toBe(false);
+      expect(model.profile).toBeNull();
+      // The local account and its identity binding survive the disconnection.
+      expect(model.localAccount?.did).toBe("did:plc:examplealice");
+    });
+
+    it("asks for no profile while the account is disconnected", async () => {
+      const model = createViewModel({ did: "did:plc:examplealice" });
+
+      await model.refreshProfile();
+
+      expect(window.electron.Bluesky.getProfile).not.toHaveBeenCalled();
+      expect(model.profile).toBeNull();
+    });
   });
 
   describe("automatic diagnostics", () => {

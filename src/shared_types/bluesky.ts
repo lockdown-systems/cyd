@@ -7,6 +7,20 @@ import type { PlatformJob } from "./common";
 // Bluesky DID is the durable social identity. Handles and display names are
 // mutable profile data and never appear in storage paths.
 
+/**
+ * Current profile data for a Bluesky identity, as fetched from its PDS.
+ *
+ * The DID is the identity; the handle, display name, and avatar are mutable
+ * and are refreshed on every connection. None of them ever determines where
+ * anything is stored.
+ */
+export type BlueskyIdentityProfile = {
+  did: string;
+  handle: string;
+  displayName?: string;
+  avatar?: string;
+};
+
 /** Where one Bluesky local account keeps its isolated local resources. */
 export type BlueskyLocalAccountPaths = {
   /** UUID-keyed root directory that owns everything below it. */
@@ -17,8 +31,6 @@ export type BlueskyLocalAccountPaths = {
   mediaPath: string;
   /** Scratch space for in-progress work, safe to delete when idle. */
   stagingPath: string;
-  /** Connection material, kept outside exportable account data. */
-  connectionPath: string;
 };
 
 /** A media asset stored in one account's content-addressed media store. */

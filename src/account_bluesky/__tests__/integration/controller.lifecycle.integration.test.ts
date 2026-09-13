@@ -69,7 +69,6 @@ describe("BlueskyAccountController - local account lifecycle", () => {
     expect(fs.existsSync(paths.databasePath)).toBe(true);
     expect(fs.existsSync(paths.mediaPath)).toBe(true);
     expect(fs.existsSync(paths.stagingPath)).toBe(true);
-    expect(fs.existsSync(paths.connectionPath)).toBe(true);
   });
 
   test("storage is keyed by UUID, so a handle change moves nothing", () => {
@@ -212,7 +211,6 @@ describe("BlueskyAccountController - local account lifecycle", () => {
     expect(permissionsOf(paths.accountPath)).toEqual(0o700);
     expect(permissionsOf(paths.mediaPath)).toEqual(0o700);
     expect(permissionsOf(paths.stagingPath)).toEqual(0o700);
-    expect(permissionsOf(paths.connectionPath)).toEqual(0o700);
     expect(permissionsOf(staging)).toEqual(0o700);
     expect(permissionsOf(paths.databasePath)).toEqual(0o600);
     expect(permissionsOf(media.path)).toEqual(0o600);
@@ -245,16 +243,12 @@ describe("BlueskyAccountController - local account lifecycle", () => {
     );
     alice.controller.saveMedia(Buffer.from("alice's picture"), "image/jpeg");
     alice.controller.createStagingArea("import-1");
-    fs.writeFileSync(
-      path.join(alicePaths.connectionPath, "session.json"),
-      "connection material",
-    );
 
     alice.controller.deleteLocalAccount({
       confirmedAccountUUID: alice.account.uuid,
     });
 
-    // Alice's connection material, database, media, jobs, and staging are gone.
+    // Alice's database, media, jobs, and staging are gone.
     expect(fs.existsSync(alicePaths.accountPath)).toBe(false);
     expect(getAccount(alice.account.id)).toBeNull();
     expect(getAccounts().map((each) => each.id)).toEqual([bob.account.id]);

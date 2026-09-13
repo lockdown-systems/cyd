@@ -3,6 +3,7 @@ import { PlatformStates } from "../../types/PlatformStates";
 import BlueskyJobStatusComponent from "../../views/bluesky/components/BlueskyJobStatusComponent.vue";
 import BlueskyWizardSidebar from "../../views/bluesky/wizard/BlueskyWizardSidebar.vue";
 import BlueskyWizardDashboard from "../../views/bluesky/wizard/BlueskyWizardDashboard.vue";
+import BlueskyWizardConnect from "../../views/bluesky/wizard/BlueskyWizardConnect.vue";
 
 export const BlueskyPlatformConfig: PlatformConfig = {
   name: "Bluesky",
@@ -27,6 +28,7 @@ export const BlueskyPlatformConfig: PlatformConfig = {
     wizardSidebar: BlueskyWizardSidebar,
     wizardPages: {
       [PlatformStates.BlueskyWizardDashboardDisplay]: BlueskyWizardDashboard,
+      [PlatformStates.BlueskyWizardConnectDisplay]: BlueskyWizardConnect,
     },
   },
 };

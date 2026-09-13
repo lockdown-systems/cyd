@@ -72,6 +72,11 @@ export type BlueskyLocalAccount = {
   handle: string | null;
   displayName: string | null;
   profileImageDataURI: string | null;
+  /**
+   * When this installation was last authorized to act on the identity, or null
+   * when it is not. The DID outlives a disconnection; this does not.
+   */
+  connectedAt: Date | null;
 };
 
 export type FacebookAccount = {

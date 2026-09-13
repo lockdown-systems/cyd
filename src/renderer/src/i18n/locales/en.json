@@ -482,7 +482,26 @@
       "saveTitle": "Save My Data",
       "saveDescription": "Save your Bluesky posts, media, and conversations to this computer.",
       "browseTitle": "Browse My Data",
-      "browseDescription": "Read your Bluesky saved data inside Cyd, with no Bluesky connection and no network access."
+      "browseDescription": "Read your Bluesky saved data inside Cyd, with no Bluesky connection and no network access.",
+      "connectedTitle": "Bluesky Connection",
+      "connectedDescription": "Cyd is authorized to act on your Bluesky identity. Review or remove that authorization.",
+      "notConnected": "Cyd isn't authorized to act on this Bluesky identity right now. Your saved data is still here, and connecting again doesn't change it."
+    },
+    "connect": {
+      "title": "Connect to Bluesky",
+      "dashboard": "Dashboard",
+      "backToDashboard": "Back to dashboard",
+      "description": "Authorize Cyd to act on your Bluesky identity so it can save and manage your data.",
+      "handle": "Bluesky handle",
+      "handlePlaceholder": "you.bsky.social",
+      "connect": "Connect",
+      "connecting": "Connecting...",
+      "oauthOnly": "Cyd signs in with Bluesky's official OAuth and talks to the AT Protocol directly. It never asks for your password or an app password.",
+      "finishInBrowser": "Finish connecting in your browser.",
+      "cancel": "Cancel",
+      "connectedTo": "Cyd is connected to:",
+      "disconnect": "Disconnect",
+      "disconnectKeepsData": "Disconnecting removes Cyd's authorization. Your Bluesky account in Cyd and everything Cyd has saved for it stay exactly as they are. If you also migrate to this identity from an X account, that stays connected too."
     }
   },
   "review": {
@@ -697,7 +716,8 @@
     },
     "bluesky": {
       "wizard": {
-        "dashboard": "\n# This is your Bluesky account in Cyd.\n\nIts private local storage is ready. Connecting your account, saving your data, and browsing it offline are all coming soon."
+        "dashboard": "\n# This is your Bluesky account in Cyd.\n\nIts private local storage is ready. Connect your account to start; saving your data and browsing it offline are coming soon.",
+        "connect": "\n# Connect your Bluesky account.\n\nAuthorize Cyd in your browser and it can start saving and managing your Bluesky data."
       }
     }
   }

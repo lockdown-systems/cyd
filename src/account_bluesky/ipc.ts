@@ -2,7 +2,9 @@ import { ipcMain } from "electron";
 import log from "electron-log/main";
 
 import { BlueskyAccountController } from "./bluesky_account_controller";
+import { releaseBlueskyHold, type BlueskyConnectStart } from "../bluesky_oauth";
 import type {
+  BlueskyIdentityProfile,
   BlueskyLocalAccount,
   BlueskyLocalAccountPaths,
 } from "../shared_types";
@@ -48,6 +50,79 @@ export const defineIPCBluesky = () => {
     },
   );
 
+  // Start a browser authorization for a Bluesky handle.
+  ipcMain.handle(
+    "Bluesky:connect",
+    async (
+      _,
+      accountID: number,
+      handle: string,
+    ): Promise<BlueskyConnectStart> => {
+      try {
+        return await getBlueskyAccountController(accountID).connect(handle);
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  // Finish an authorization that came back through the callback URL.
+  ipcMain.handle(
+    "Bluesky:completeConnection",
+    async (
+      _,
+      accountID: number,
+      queryString: string,
+    ): Promise<true | string> => {
+      try {
+        return await getBlueskyAccountController(accountID).completeConnection(
+          queryString,
+        );
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  // The identity's current profile, or null when this account is not
+  // connected to one.
+  ipcMain.handle(
+    "Bluesky:getProfile",
+    async (_, accountID: number): Promise<BlueskyIdentityProfile | null> => {
+      try {
+        const controller = getBlueskyAccountController(accountID);
+        if (!controller.isConnected || !controller.account?.did) {
+          return null;
+        }
+        await controller.refreshProfile();
+        const account = controller.account;
+        return account?.did && account.handle
+          ? {
+              did: account.did,
+              handle: account.handle,
+              displayName: account.displayName ?? undefined,
+              avatar: account.profileImageDataURI ?? undefined,
+            }
+          : null;
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  // Remove this installation's authorization, keeping the local account and
+  // all its Bluesky saved data.
+  ipcMain.handle(
+    "Bluesky:disconnect",
+    async (_, accountID: number): Promise<void> => {
+      try {
+        await getBlueskyAccountController(accountID).disconnect();
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
   // Permanently delete a Bluesky local account. The renderer confirms with the
   // person first and passes back the account UUID it means to destroy.
   ipcMain.handle(
@@ -59,8 +134,15 @@ export const defineIPCBluesky = () => {
     ): Promise<void> => {
       try {
         const controller = getBlueskyAccountController(accountID);
+        // The account is about to stop existing, which is what releases its
+        // hold. Remember the identity first so the hold can be released once
+        // it is gone.
+        const did = controller.account?.did ?? null;
         controller.deleteLocalAccount({ confirmedAccountUUID });
         delete controllers[accountID];
+        if (did) {
+          await releaseBlueskyHold(did);
+        }
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
