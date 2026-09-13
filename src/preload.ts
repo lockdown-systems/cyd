@@ -20,10 +20,18 @@ import {
   XMigrateTweetCounts,
   XAccount,
   // Bluesky
+  BlueskyBrowsePage,
+  BlueskyCategory,
+  BlueskyCategorySettings,
+  BlueskyCollectionProgress,
+  BlueskyCollectionResult,
   BlueskyConnectStart,
   BlueskyIdentityProfile,
+  BlueskyJob,
   BlueskyLocalAccount,
   BlueskyLocalAccountPaths,
+  BlueskySavedDataSummary,
+  BlueskyStoragePreflight,
   // Facebook
   FacebookJob,
   FacebookProgressInfo,
@@ -549,6 +557,81 @@ const electronAPI = {
     },
     clearStagingAreas: (accountID: number): Promise<void> => {
       return ipcRenderer.invoke("Bluesky:clearStagingAreas", accountID);
+    },
+    getCategorySettings: (
+      accountID: number,
+    ): Promise<BlueskyCategorySettings> => {
+      return ipcRenderer.invoke("Bluesky:getCategorySettings", accountID);
+    },
+    setCategoryEnabled: (
+      accountID: number,
+      category: BlueskyCategory,
+      enabled: boolean,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Bluesky:setCategoryEnabled",
+        accountID,
+        category,
+        enabled,
+      );
+    },
+    storagePreflight: (
+      accountID: number,
+      categories: BlueskyCategory[],
+    ): Promise<BlueskyStoragePreflight> => {
+      return ipcRenderer.invoke(
+        "Bluesky:storagePreflight",
+        accountID,
+        categories,
+      );
+    },
+    createJobs: (
+      accountID: number,
+      jobTypes: string[],
+    ): Promise<BlueskyJob[]> => {
+      return ipcRenderer.invoke("Bluesky:createJobs", accountID, jobTypes);
+    },
+    getJobs: (accountID: number, status?: string): Promise<BlueskyJob[]> => {
+      return ipcRenderer.invoke("Bluesky:getJobs", accountID, status);
+    },
+    runJob: (
+      accountID: number,
+      jobID: number,
+    ): Promise<BlueskyCollectionResult> => {
+      return ipcRenderer.invoke("Bluesky:runJob", accountID, jobID);
+    },
+    getCollectionProgress: (
+      accountID: number,
+    ): Promise<BlueskyCollectionProgress | null> => {
+      return ipcRenderer.invoke("Bluesky:getCollectionProgress", accountID);
+    },
+    cancelCollection: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Bluesky:cancelCollection", accountID);
+    },
+    browse: (
+      accountID: number,
+      category: BlueskyCategory,
+      before: string | null,
+      limit?: number,
+    ): Promise<BlueskyBrowsePage> => {
+      return ipcRenderer.invoke(
+        "Bluesky:browse",
+        accountID,
+        category,
+        before,
+        limit,
+      );
+    },
+    getSavedDataSummary: (
+      accountID: number,
+    ): Promise<BlueskySavedDataSummary> => {
+      return ipcRenderer.invoke("Bluesky:getSavedDataSummary", accountID);
+    },
+    getMediaPath: (
+      accountID: number,
+      digest: string,
+    ): Promise<string | null> => {
+      return ipcRenderer.invoke("Bluesky:getMediaPath", accountID, digest);
     },
   },
 

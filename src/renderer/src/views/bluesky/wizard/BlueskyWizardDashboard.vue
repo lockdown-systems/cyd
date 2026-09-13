@@ -15,9 +15,11 @@ const emit = defineEmits<{
 }>();
 
 /**
- * Saving data and browsing it offline arrive in #676 and #677. They are shown
- * as unavailable rather than hidden, so the dashboard describes what this
- * account will be able to do.
+ * What this account can do.
+ *
+ * Saving needs a Bluesky connection, because it reads from Bluesky. Browsing
+ * does not: it reads what Cyd has already saved off this computer, so it stays
+ * available after disconnecting.
  *
  * Nothing here reads the network, so the dashboard renders for an account with
  * no Bluesky connection and no saved data.
@@ -37,16 +39,30 @@ const cards = computed(() => [
   {
     icon: new URL("/assets/icon-database.png", import.meta.url).href,
     title: t("bluesky.dashboard.saveTitle"),
-    description: t("bluesky.dashboard.saveDescription"),
-    disabled: true,
+    description: props.model.isConnected
+      ? t("bluesky.dashboard.saveDescription")
+      : t("bluesky.dashboard.connectFirst"),
+    disabled: !props.model.isConnected,
+    action: () => emit("setState", State.BlueskyWizardSave),
   },
   {
     icon: new URL("/assets/icon-import.png", import.meta.url).href,
     title: t("bluesky.dashboard.browseTitle"),
     description: t("bluesky.dashboard.browseDescription"),
-    disabled: true,
+    // Browsing reads local storage only, so it needs no connection: what it
+    // needs is something saved to read.
+    disabled: !props.model.hasSavedData,
+    action: () => emit("setState", State.BlueskyWizardBrowse),
   },
 ]);
+
+/** How much this account has saved, shown once there is anything to say. */
+const savedRecords = computed(() =>
+  (props.model.savedData?.categories ?? []).reduce(
+    (total, each) => total + each.recordCount,
+    0,
+  ),
+);
 
 /**
  * A Bluesky connection is this installation's authorization to act on an
@@ -74,6 +90,16 @@ const hasBlueskyIdentity = computed(() =>
         {{ t("bluesky.dashboard.notConnected") }}
       </p>
 
+      <p
+        v-if="savedRecords > 0"
+        class="saved-records text-muted small text-center"
+      >
+        {{ t("bluesky.dashboard.savedRecords", { count: savedRecords }) }}
+        <span v-if="model.savedData?.complete === false" class="incomplete">
+          {{ t("bluesky.dashboard.incomplete") }}
+        </span>
+      </p>
+
       <div class="dashboard row align-items-stretch g-3 justify-content-center">
         <div
           v-for="card in cards"
@@ -84,13 +110,8 @@ const hasBlueskyIdentity = computed(() =>
             class="card h-100"
             :class="{ 'disabled-card': card.disabled }"
             :aria-disabled="card.disabled"
-            @click="card.action && card.action()"
+            @click="!card.disabled && card.action && card.action()"
           >
-            <span
-              v-if="card.disabled"
-              class="coming-soon-badge badge bg-secondary"
-              >{{ t("bluesky.dashboard.comingSoon") }}</span
-            >
             <div class="card-body align-items-center">
               <img :src="card.icon" :alt="card.title" />
               <h2>{{ card.title }}</h2>
@@ -110,16 +131,5 @@ const hasBlueskyIdentity = computed(() =>
 .not-connected {
   margin-bottom: 0;
   padding: 0 2rem;
-}
-
-.coming-soon-badge {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 2;
-  font-size: 0.8rem;
-  padding: 0.4em 0.9em;
-  font-weight: 600;
-  letter-spacing: 0.03em;
 }
 </style>

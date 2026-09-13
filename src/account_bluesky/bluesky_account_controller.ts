@@ -24,12 +24,20 @@ import {
 import { getImageDataURI } from "../shared/utils/image-utils";
 import type {
   BlueskyLocalAccount,
+  BlueskyBrowsePage,
+  BlueskyCategory,
+  BlueskyCategorySettings,
+  BlueskyCollectionProgress,
+  BlueskyCollectionResult,
   BlueskyDeleteConfirmation,
   BlueskyJob,
   BlueskyLocalAccountPaths,
+  BlueskySavedDataSummary,
   BlueskySavedMedia,
+  BlueskyStoragePreflight,
   BlueskyStoredMedia,
 } from "../shared_types";
+import { blueskyPublicCategories } from "../shared_types";
 import {
   blueskyMediaPath,
   clearBlueskyStagingAreas,
@@ -40,6 +48,15 @@ import {
 } from "./storage";
 import { migrations } from "./controller/migrations";
 import type { BlueskyJobRow, BlueskyMediaRow } from "./types";
+import type { BlueskyATClient } from "./at_protocol";
+import { createBlueskyATClient } from "./at_protocol";
+import {
+  runBlueskyCollection,
+  type BlueskyCollectionSignal,
+} from "./collection/engine";
+import { blueskyStoragePreflight } from "./collection/preflight";
+import { blueskyBrowsePage, blueskySavedDataSummary } from "./browse";
+import type { BlueskyBrowseQuery } from "./browse";
 
 /**
  * Owns one Bluesky local account's isolated local resources: its private
@@ -56,7 +73,11 @@ export class BlueskyAccountController {
   public account: BlueskyLocalAccount | null = null;
   public db: Database.Database | null = null;
 
+  /** The progress of the collection run in flight, if there is one. */
+  public collectionProgress: BlueskyCollectionProgress | null = null;
+
   private paths: BlueskyLocalAccountPaths | null = null;
+  private collectionSignal: BlueskyCollectionSignal | null = null;
 
   constructor(accountID: number) {
     this.accountID = accountID;
@@ -415,6 +436,137 @@ export class BlueskyAccountController {
     clearBlueskyStagingAreas(this.getPaths().stagingPath);
   }
 
+  // Categories
+
+  /**
+   * Which categories this account saves.
+   *
+   * Every category is off until it is chosen, and turning one off only stops
+   * future collection: Bluesky saved data is never deleted by a setting.
+   */
+  getCategorySettings(): BlueskyCategorySettings {
+    const settings = {} as BlueskyCategorySettings;
+    for (const category of blueskyPublicCategories) {
+      settings[category] =
+        this.getConfig(categorySettingKey(category)) === "true";
+    }
+    return settings;
+  }
+
+  setCategoryEnabled(category: BlueskyCategory, enabled: boolean) {
+    this.setConfig(categorySettingKey(category), enabled ? "true" : "false");
+  }
+
+  /** The categories currently enabled, in a stable order. */
+  enabledCategories(): BlueskyCategory[] {
+    const settings = this.getCategorySettings();
+    return blueskyPublicCategories.filter((category) => settings[category]);
+  }
+
+  // Collection
+
+  /**
+   * An AT Protocol client for this account's identity, made from the shared
+   * Bluesky OAuth session. Collection calls the AT Protocol directly: there is
+   * nothing to scrape and no app password anywhere.
+   */
+  async getATClient(): Promise<BlueskyATClient> {
+    const did = this.account?.did;
+    if (!did || !this.isConnected) {
+      throw new Error(
+        "Saving Bluesky data needs a connected Bluesky local account",
+      );
+    }
+    return createBlueskyATClient(did);
+  }
+
+  /** What a run over these categories is expected to need on disk. */
+  async storagePreflight(
+    client: BlueskyATClient,
+    categories: BlueskyCategory[],
+  ): Promise<BlueskyStoragePreflight> {
+    return blueskyStoragePreflight(
+      this.requireDB(),
+      this.getPaths().accountPath,
+      client,
+      categories,
+    );
+  }
+
+  /**
+   * Save one category, resuming whatever an earlier run left unfinished.
+   *
+   * The run is durable and incremental, so stopping it — by cancelling, by
+   * quitting Cyd, or by filling the disk — keeps everything saved so far and
+   * the next run continues from there.
+   */
+  async collect(
+    category: BlueskyCategory,
+    options: {
+      client: BlueskyATClient;
+      onProgress?: (progress: BlueskyCollectionProgress) => void;
+      pageLimit?: number;
+      wait?: (milliseconds: number) => Promise<void>;
+    },
+  ): Promise<BlueskyCollectionResult> {
+    const db = this.requireDB();
+    const paths = this.getPaths();
+
+    this.collectionSignal = { cancelled: false };
+    this.collectionProgress = null;
+
+    try {
+      return await runBlueskyCollection(
+        {
+          db,
+          mediaPath: paths.mediaPath,
+          // Media lands in a staging area before it is committed to the media
+          // store, so an interrupted fetch leaves only disposable data.
+          stagingDirectory: this.createStagingArea(`collect-${category}`),
+        },
+        category,
+        {
+          client: options.client,
+          signal: this.collectionSignal,
+          pageLimit: options.pageLimit,
+          wait: options.wait,
+          onProgress: (progress) => {
+            this.collectionProgress = progress;
+            options.onProgress?.(progress);
+          },
+        },
+      );
+    } finally {
+      this.collectionSignal = null;
+    }
+  }
+
+  /**
+   * Ask a running collection to stop at the next safe point. Everything
+   * committed stays committed.
+   */
+  cancelCollection() {
+    if (this.collectionSignal) {
+      this.collectionSignal.cancelled = true;
+    }
+  }
+
+  // Browse
+
+  /** One chronological page of a category, readable with no connection. */
+  browse(query: BlueskyBrowseQuery): BlueskyBrowsePage {
+    return blueskyBrowsePage(
+      this.requireDB(),
+      this.getPaths().mediaPath,
+      query,
+    );
+  }
+
+  /** What this account has saved, and whether the backup is complete. */
+  savedDataSummary(): BlueskySavedDataSummary {
+    return blueskySavedDataSummary(this.requireDB());
+  }
+
   // Config
 
   getConfig(key: string): string | null {
@@ -455,3 +607,10 @@ export class BlueskyAccountController {
     this.accountUUID = "";
   }
 }
+
+/**
+ * Category settings are per account, so they live in the account's own
+ * database rather than in a shared setting.
+ */
+const categorySettingKey = (category: BlueskyCategory): string =>
+  `saveCategory.${category}`;
