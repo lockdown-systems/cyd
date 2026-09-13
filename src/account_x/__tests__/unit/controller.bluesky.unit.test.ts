@@ -40,7 +40,10 @@ vi.mock("@atproto/oauth-client-node", () => {
   return { NodeOAuthClient: MockNodeOAuthClient };
 });
 
-import { resetBlueskyOAuthClient } from "../../../bluesky_oauth";
+import {
+  blueskyOAuthCallbackURL,
+  resetBlueskyOAuthClient,
+} from "../../../bluesky_oauth";
 import type { XRateLimitInfo } from "../../../shared_types";
 import type { XAccountController } from "../../x_account_controller";
 import {
@@ -225,6 +228,7 @@ describe("BlueskyService", () => {
     // The flow identifier travels with the request, so the callback comes back
     // to this X account rather than to whoever authorized most recently.
     expect(oauthMock.authorize).toHaveBeenCalledWith("example", {
+      redirect_uri: blueskyOAuthCallbackURL(),
       state: `X:${controllerContext!.account.id}`,
     });
     expect(shellMock.openExternal).toHaveBeenCalledWith(

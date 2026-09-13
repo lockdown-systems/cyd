@@ -72,7 +72,10 @@ vi.mock("../../../shared/utils/image-utils", () => ({
   getImageDimensions: vi.fn(async () => null),
 }));
 
-import { resetBlueskyOAuthClient } from "../../../bluesky_oauth";
+import {
+  blueskyOAuthCallbackURL,
+  resetBlueskyOAuthClient,
+} from "../../../bluesky_oauth";
 import {
   blueskyOAuthCredentials,
   blueskyOAuthSessionStore,
@@ -120,6 +123,7 @@ describe("Bluesky local account connection", () => {
 
     expect(started).toEqual({ status: "browser" });
     expect(oauthMock.authorize).toHaveBeenCalledWith("alice.bsky.social", {
+      redirect_uri: blueskyOAuthCallbackURL(),
       state: `Bluesky:${account.id}`,
     });
   });

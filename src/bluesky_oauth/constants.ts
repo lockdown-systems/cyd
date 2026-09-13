@@ -60,9 +60,19 @@ export const blueskyOAuthSchemeHandlerMimeTypeForMode = (
  */
 export const BLUESKY_OAUTH_CALLBACK_PATH = "/atproto-oauth-callback/";
 
-/** The full redirect URI registered in Cyd's client metadata. */
-export const blueskyOAuthCallbackURL = (): string =>
-  `${blueskyOAuthCallbackScheme()}:${BLUESKY_OAUTH_CALLBACK_PATH}`;
+/** The shape `@atproto/oauth-client` recognizes a private-use redirect URI by. */
+type PrivateUseURI = `${string}.${string}:/${string}`;
+
+/**
+ * The redirect URI Cyd authorizes with: where the authorization server sends
+ * the browser once the person is done.
+ *
+ * A single slash follows the colon because a private-use URI scheme has no
+ * naming authority (RFC 8252 section 7.1). The cast asserts that shape, which
+ * cannot be proven from a scheme the compiler only knows as a string.
+ */
+export const blueskyOAuthCallbackURL = (): PrivateUseURI =>
+  `${blueskyOAuthCallbackScheme()}:${BLUESKY_OAUTH_CALLBACK_PATH}` as PrivateUseURI;
 
 // Where the API host publishes the client metadata document that describes Cyd
 // to a Bluesky authorization server.

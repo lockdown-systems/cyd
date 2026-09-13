@@ -14,6 +14,7 @@ import {
 import { getAccount } from "../database/account";
 
 import { getBlueskyOAuthClient, resetBlueskyOAuthClient } from "./client";
+import { blueskyOAuthCallbackURL } from "./constants";
 import { blueskyHolders } from "./holders";
 import {
   deleteStoredBlueskyOAuthSession,
@@ -127,6 +128,7 @@ export const authorizeBlueskyIdentity = async (
   try {
     const client = await getBlueskyOAuthClient();
     const url = await client.authorize(normalizedHandle, {
+      redirect_uri: blueskyOAuthCallbackURL(),
       state: blueskyOAuthFlowID(flow),
     });
     await shell.openExternal(url.toString());
@@ -165,7 +167,11 @@ export const completeBlueskyAuthorization = async (
 
   try {
     const client = await getBlueskyOAuthClient();
-    const { session, state } = await client.callback(params);
+    // The token exchange has to name the same redirect URI the authorization
+    // was requested with, or the authorization server refuses it.
+    const { session, state } = await client.callback(params, {
+      redirect_uri: blueskyOAuthCallbackURL(),
+    });
     // The authorization code and the OAuth state are authorization material,
     // so neither is ever logged.
     log.info("blueskyOAuth: an identity completed authorization");

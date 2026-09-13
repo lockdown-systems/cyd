@@ -67,6 +67,7 @@ import {
   type BlueskyControllerTestContext,
 } from "../../account_bluesky/__tests__/fixtures/accountTestHarness";
 import { resetBlueskyOAuthClient } from "../client";
+import { blueskyOAuthCallbackURL } from "../constants";
 import { blueskyHolders } from "../holders";
 import { blueskyOAuthCredentials, blueskyOAuthSessionStore } from "../store";
 
@@ -137,6 +138,13 @@ describe("one authorization, every platform", () => {
     await local.controller.completeConnection("code=abc&state=s");
     await storeSession(DID);
 
+    // The token exchange names the same redirect URI the authorization did, or
+    // the authorization server refuses it.
+    expect(oauthMock.callback).toHaveBeenCalledWith(
+      expect.any(URLSearchParams),
+      { redirect_uri: blueskyOAuthCallbackURL() },
+    );
+
     const started = await xService().authorize(HANDLE);
 
     expect(started).toEqual({ status: "reused", did: DID });
@@ -187,6 +195,13 @@ describe("one authorization, every platform", () => {
 
     expect(started).toEqual({ status: "browser" });
     expect(oauthMock.authorize).toHaveBeenCalledTimes(1);
+    // Naming Cyd's own redirect URI is what brings the browser back to the app
+    // directly. Without it the authorization takes the first URI in the client
+    // metadata, which is the compatibility redirect older releases go through.
+    expect(oauthMock.authorize).toHaveBeenCalledWith(
+      HANDLE,
+      expect.objectContaining({ redirect_uri: blueskyOAuthCallbackURL() }),
+    );
   });
 
   test("a stored session that cannot be restored is not reused", async () => {
