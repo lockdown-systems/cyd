@@ -79,6 +79,13 @@ onUnmounted(async () => {
         />
         <i v-else :class="getAccountIcon(account.type)" />
       </template>
+      <template v-else-if="props.account.type == 'Bluesky'">
+        <img
+          v-if="props.account.blueskyLocalAccount?.profileImageDataURI"
+          :src="props.account.blueskyLocalAccount?.profileImageDataURI"
+        />
+        <i v-else :class="getAccountIcon(account.type)" />
+      </template>
       <i v-else :class="getAccountIcon(account.type)" />
     </div>
     <div v-if="showInfo" class="info-popup">
@@ -101,6 +108,15 @@ onUnmounted(async () => {
         <template v-else>
           <i :class="getAccountIcon(account.type)" />
           {{ props.account.facebookAccount?.username }}
+        </template>
+      </template>
+      <template v-else-if="props.account.type == 'Bluesky'">
+        <template v-if="props.account.blueskyLocalAccount?.handle == null">
+          Connect your Bluesky account
+        </template>
+        <template v-else>
+          <i :class="getAccountIcon(account.type)" />
+          @{{ props.account.blueskyLocalAccount?.handle }}
         </template>
       </template>
     </div>
