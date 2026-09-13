@@ -171,7 +171,15 @@ const openCydURL = async (cydURL: string) => {
 // Register the callback scheme (the reverse-domain form of the API host) that
 // Cyd's published OAuth client metadata redirects to.
 const protocolString = blueskyOAuthCallbackScheme();
-app.setAsDefaultProtocolClient(protocolString);
+if (!app.setAsDefaultProtocolClient(protocolString)) {
+  // A run from the source tree has no desktop entry or bundle to register, so
+  // the browser will refuse the authorization handoff and the callback will
+  // appear to vanish. Say which scheme went unclaimed: `npm run finish-oauth`
+  // delivers a callback by hand.
+  log.warn(
+    `Could not register ${protocolString}: as the default protocol client`,
+  );
+}
 
 // In Linux and Windows, handle cyd URLs passed in via the CLI
 const lastArg =

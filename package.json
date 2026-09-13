@@ -13,6 +13,7 @@
     "postinstall": "node scripts/postinstall.js",
     "start": "electron-forge start",
     "dev": "electron-forge start",
+    "finish-oauth": "node ./scripts/finish-oauth.mjs",
     "make-local": "node ./scripts/make.js make local",
     "make-dev": "node ./scripts/make.js make dev",
     "make-prod": "node ./scripts/make.js make prod",
