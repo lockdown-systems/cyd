@@ -258,6 +258,36 @@ export function buildSeedPlan(options: SeedPlanOptions): SeedAction[] {
   return actions;
 }
 
+/** Matches the numbering `fillerText` writes into every filler post. */
+export const SEED_POST_PATTERN = /Cyd seed post (\d{3}) of (\d{8})/g;
+
+/**
+ * Reads the numbers of the filler posts that actually exist, from the text of
+ * a profile timeline. Clicking post is not evidence that a post was made, so
+ * what is on the timeline is the only reliable count.
+ */
+export function seedPostNumbers(texts: string[]): number[] {
+  const numbers = new Set<number>();
+  for (const text of texts) {
+    for (const match of text.matchAll(SEED_POST_PATTERN)) {
+      numbers.add(Number(match[1]));
+    }
+  }
+  return [...numbers].sort((a, b) => a - b);
+}
+
+/** The filler posts the plan wanted that the timeline does not have. */
+export function missingSeedPosts(found: number[], expected: number): string[] {
+  const present = new Set(found);
+  const missing: string[] = [];
+  for (let index = 0; index < expected; index++) {
+    if (!present.has(index + 1)) {
+      missing.push(actionId("post", index));
+    }
+  }
+  return missing;
+}
+
 export function summarizePlan(actions: SeedAction[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const action of actions) {

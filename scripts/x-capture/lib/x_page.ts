@@ -46,6 +46,10 @@ export const SELECTORS = {
   // pointer events aimed at whatever it is covering.
   modalMask: '[data-testid="mask"]',
 
+  // X reports the daily post cap inside the composer, leaving the composer
+  // open and the post unmade.
+  dailyLimitText: /daily post limit/i,
+
   // Session state
   loggedIn: '[data-testid="SideNav_NewTweet_Button"]',
   loginForm: 'input[autocomplete="username"]',
@@ -62,6 +66,9 @@ export class BlockedError extends Error {}
 
 /** A step only a person can do, such as one needing a second account. */
 export class ManualActionError extends Error {}
+
+/** X refused the post because the account has posted enough for one day. */
+export class DailyLimitError extends Error {}
 
 export class SelectorMissingError extends Error {
   constructor(public selector: string) {
@@ -150,6 +157,14 @@ export async function openComposer(page: Page) {
   await assertNotBlocked(page);
 }
 
+/**
+ * Posts what is in the composer, and confirms X accepted it.
+ *
+ * The composer closing is the only evidence that a post was actually made.
+ * Clicking the button and assuming it worked records posts that do not exist:
+ * when X refuses — the daily cap being the way it refuses in practice — it
+ * leaves the composer open with the text still in it and says so in a banner.
+ */
 async function submitComposer(page: Page) {
   try {
     await click(page, SELECTORS.composerPostButton, 10000);
@@ -159,8 +174,35 @@ async function submitComposer(page: Page) {
     }
     await click(page, SELECTORS.composerPostButtonInline, 10000);
   }
-  // The composer closes once the post is accepted.
-  await page.waitForTimeout(3000);
+
+  const composerClosed = page
+    .locator(SELECTORS.composerTextarea)
+    .first()
+    .waitFor({ state: "detached", timeout: 20000 })
+    .then(() => "closed" as const)
+    .catch(() => "open" as const);
+
+  const limitReported = page
+    .getByText(SELECTORS.dailyLimitText)
+    .first()
+    .waitFor({ state: "visible", timeout: 20000 })
+    .then(() => "limited" as const)
+    .catch(() => "open" as const);
+
+  const outcome = await Promise.race([composerClosed, limitReported]);
+
+  if (outcome === "limited") {
+    throw new DailyLimitError(
+      "X refused the post: the account has hit its daily post limit. Nothing more can be posted from it until the limit resets, roughly a day.",
+    );
+  }
+  if (outcome === "open") {
+    throw new Error(
+      "The composer did not close, so the post was probably not made.",
+    );
+  }
+
+  await page.waitForTimeout(1500);
 }
 
 export async function postSimple(page: Page, text: string) {

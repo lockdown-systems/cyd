@@ -6,6 +6,8 @@ import { test, expect, describe } from "vitest";
 
 import {
   buildSeedPlan,
+  missingSeedPosts,
+  seedPostNumbers,
   defaultSeedPlanOptions,
   isBulkKind,
   isManualKind,
@@ -42,6 +44,31 @@ describe("defaultSeedPlanOptions", () => {
 
   test("follows enough accounts for the following list to page", () => {
     expect(defaultSeedPlanOptions("20260914").follows).toBeGreaterThan(20);
+  });
+});
+
+describe("reading seeded posts back", () => {
+  test("finds the filler posts that exist on a timeline", () => {
+    expect(
+      seedPostNumbers([
+        "Cyd seed post 001 of 20260914. Test account content, safe to delete.",
+        "Cyd seed post 019 of 20260914. Test account content, safe to delete.",
+        "something else entirely",
+      ]),
+    ).toEqual([1, 19]);
+  });
+
+  test("counts a post once however often it appears", () => {
+    const text = "Cyd seed post 007 of 20260914.";
+    expect(seedPostNumbers([text, text])).toEqual([7]);
+  });
+
+  test("names the posts the plan wanted but the timeline lacks", () => {
+    expect(missingSeedPosts([1, 2, 4], 5)).toEqual(["post-003", "post-005"]);
+  });
+
+  test("names nothing when every post landed", () => {
+    expect(missingSeedPosts([1, 2, 3], 3)).toEqual([]);
   });
 });
 

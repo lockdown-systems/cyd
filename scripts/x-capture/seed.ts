@@ -34,6 +34,7 @@ import {
   actOnNextPost,
   assertNotBlocked,
   BlockedError,
+  DailyLimitError,
   ManualActionError,
   followNextAccount,
   isLoggedIn,
@@ -381,6 +382,17 @@ async function main() {
           await page.screenshot({ path: screenshot }).catch(() => {});
         }
 
+        if (error instanceof DailyLimitError) {
+          console.log(`\n✗ ${action.id} ${action.kind}: ${message}`);
+          console.log(
+            "  Stopping: everything after this would be refused the same way.",
+          );
+          progress.record(action.id, "failed", message);
+          await context.close();
+          process.exitCode = 3;
+          return;
+        }
+
         if (error instanceof ManualActionError) {
           console.log(`\n⏸ ${action.id} ${action.kind}: do this one by hand.`);
           console.log(`  ${message}`);
@@ -436,9 +448,16 @@ async function main() {
             break;
           }
           console.log(`  Retrying ${action.id} (try ${attempts + 1} of 3).`);
+          await page
+            .goto("https://x.com/home", { waitUntil: "domcontentloaded" })
+            .catch(() => {});
           await new Promise((resolve) => setTimeout(resolve, 15000));
           continue;
         }
+
+        await page
+          .goto("https://x.com/home", { waitUntil: "domcontentloaded" })
+          .catch(() => {});
 
         const answer = await ask("  [r]etry, [s]kip, [q]uit? ");
         if (answer === "s") {
