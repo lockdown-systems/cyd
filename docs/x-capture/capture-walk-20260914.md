@@ -31,7 +31,11 @@ the decoder takes several HARs.
 Scroll each timeline to the _very bottom_, so that pagination is exercised past
 the first cursor.
 
-- [ ] Profile timeline: `x.com/<username>` — scroll to the bottom
+- [ ] Profile timeline: `x.com/<username>` — scroll to the bottom. This is the
+      route that carries original posts, and it issues `UserOriginalsTimeline`
+- [ ] Run `npx tsx scripts/x-capture/list-permalinks.ts --account <handle>`
+      first, so the permalinks below are to hand. Deleting makes them
+      unrecoverable
 - [ ] Profile timeline with replies: `x.com/<username>/with_replies` — scroll to
       the bottom
 - [ ] Likes: `x.com/<username>/likes` — scroll to the bottom
@@ -44,9 +48,11 @@ the first cursor.
 - [ ] Open the permalink of the post with four images
 - [ ] Open the permalink of the video post
 - [ ] Open the permalink of the poll
-- [ ] Open the permalink of the long-form post
+- [ ] Open the permalink of the long-form post, if one was seeded
 - [ ] Open the permalink of the link-card post
-- [ ] Open the permalink of the retweet whose original was deleted
+- [ ] Open the permalink of the retweet whose original was deleted — if it is
+      not on the timeline at all, that is the finding, and the decoded type
+      census settles whether X returned anything for it
 - [ ] Reload `x.com/home` once, to capture the user lookup (`Viewer`)
 
 Save the HAR as `capture/<date>/raw/01-read-main.har`.

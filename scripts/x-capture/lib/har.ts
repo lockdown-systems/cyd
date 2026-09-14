@@ -63,6 +63,8 @@ export interface CapturedCall {
   emptyStateMarkers: string[];
   /** Actions X has refused on a post, with the reason it gives. */
   limitedActions: string[];
+  /** Every GraphQL type in the response, with how often it appears. */
+  typenames: Record<string, number>;
   entryCounts: Record<string, number>;
 }
 
@@ -213,6 +215,22 @@ export function countTimelineEntries(body: unknown): Record<string, number> {
     }
     const prefix = value.split("-")[0] || "unknown";
     counts[prefix] = (counts[prefix] ?? 0) + 1;
+  });
+  return counts;
+}
+
+/**
+ * Counts the GraphQL types in a response. This is the cheapest description of
+ * a response's shape, and it answers questions a count of entries cannot:
+ * whether a deleted post leaves a `TweetTombstone` or `TweetUnavailable`
+ * behind, and whether posts still arrive as the type the parser expects.
+ */
+export function countTypenames(body: unknown): Record<string, number> {
+  const counts: Record<string, number> = {};
+  walkJSON(body, (key, value) => {
+    if (key === "__typename" && typeof value === "string") {
+      counts[value] = (counts[value] ?? 0) + 1;
+    }
   });
   return counts;
 }
@@ -368,6 +386,7 @@ function decodeEntry(entry: HarEntry, index: number): CapturedCall | null {
     rateLimit: readRateLimit(entry.response.headers),
     emptyStateMarkers: collectEmptyStateMarkers(responseBody),
     limitedActions: collectLimitedActions(responseBody),
+    typenames: countTypenames(responseBody),
     entryCounts: countTimelineEntries(responseBody),
   };
 }

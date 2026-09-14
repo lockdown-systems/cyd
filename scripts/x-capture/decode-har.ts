@@ -92,6 +92,7 @@ function writeOperationBodies(report: CaptureReport, outDir: string) {
         rateLimit: call.rateLimit,
         emptyStateMarkers: call.emptyStateMarkers,
         limitedActions: call.limitedActions,
+        typenames: call.typenames,
         entryCounts: call.entryCounts,
         suggestedFixtureName: fixtureFilename(
           operationName,
@@ -183,6 +184,26 @@ function summaryMarkdown(report: CaptureReport): string {
       lines.push(
         `- \`${call.operationName}\`: ${call.limitedActions.join("; ")}`,
       );
+    }
+  }
+  lines.push("");
+
+  lines.push("## Response types seen");
+  lines.push("");
+  const allTypes: Record<string, number> = {};
+  for (const call of report.calls) {
+    for (const [name, count] of Object.entries(call.typenames)) {
+      allTypes[name] = (allTypes[name] ?? 0) + count;
+    }
+  }
+  const typeNames = Object.keys(allTypes).sort();
+  if (typeNames.length === 0) {
+    lines.push("None captured.");
+  } else {
+    lines.push("| Type | Count |");
+    lines.push("| --- | --- |");
+    for (const name of typeNames) {
+      lines.push(`| ${name} | ${allTypes[name]} |`);
     }
   }
   lines.push("");

@@ -288,6 +288,36 @@ export function missingSeedPosts(found: number[], expected: number): string[] {
   return missing;
 }
 
+/**
+ * How each seeded shape is recognised on a timeline. The seed text is written
+ * to be distinctive precisely so the posts can be found again: the capture walk
+ * needs a permalink per shape, and nothing records them at posting time.
+ */
+export const SHAPE_MARKERS: { label: string; pattern: RegExp }[] = [
+  { label: "Ordinary post", pattern: /Cyd seed post 001 of/ },
+  {
+    label: "Self-thread (first of three)",
+    pattern: /Cyd seed thread \d+ 1\/3/,
+  },
+  { label: "One image", pattern: /Cyd seed media \d+: one image/ },
+  { label: "Four images", pattern: /Cyd seed media \d+: four images/ },
+  { label: "Video", pattern: /Cyd seed media \d+: video/ },
+  { label: "Poll", pattern: /Cyd seed poll/ },
+  { label: "Link card", pattern: /Cyd seed link card/ },
+  { label: "Quote post", pattern: /Cyd seed quote post/ },
+  { label: "Long-form", pattern: /Cyd seed long-form/ },
+];
+
+/** The shape a timeline entry is, or null if it is not a seeded shape. */
+export function shapeLabelFor(text: string): string | null {
+  for (const marker of SHAPE_MARKERS) {
+    if (marker.pattern.test(text)) {
+      return marker.label;
+    }
+  }
+  return null;
+}
+
 export function summarizePlan(actions: SeedAction[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const action of actions) {

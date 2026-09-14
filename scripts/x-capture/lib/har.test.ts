@@ -7,6 +7,7 @@ import { test, expect, describe } from "vitest";
 import {
   collectEmptyStateMarkers,
   collectLimitedActions,
+  countTypenames,
   countTimelineEntries,
   decodeHar,
   fixtureFilename,
@@ -125,6 +126,26 @@ describe("collectEmptyStateMarkers", () => {
     expect(
       collectEmptyStateMarkers({ entries: [{ entryId: "tweet-1" }] }),
     ).toEqual([]);
+  });
+});
+
+describe("countTypenames", () => {
+  test("counts the GraphQL types in a response", () => {
+    const body = {
+      entries: [
+        { content: { __typename: "TimelineTweet" } },
+        { content: { __typename: "TimelineTweet" } },
+        { content: { __typename: "TweetTombstone" } },
+      ],
+    };
+    expect(countTypenames(body)).toEqual({
+      TimelineTweet: 2,
+      TweetTombstone: 1,
+    });
+  });
+
+  test("returns nothing for a response with no types", () => {
+    expect(countTypenames({ data: {} })).toEqual({});
   });
 });
 

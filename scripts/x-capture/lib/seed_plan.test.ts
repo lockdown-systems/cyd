@@ -6,6 +6,7 @@ import { test, expect, describe } from "vitest";
 
 import {
   buildSeedPlan,
+  shapeLabelFor,
   missingSeedPosts,
   seedPostNumbers,
   defaultSeedPlanOptions,
@@ -69,6 +70,29 @@ describe("reading seeded posts back", () => {
 
   test("names nothing when every post landed", () => {
     expect(missingSeedPosts([1, 2, 3], 3)).toEqual([]);
+  });
+});
+
+describe("shapeLabelFor", () => {
+  test("recognises each seeded shape by its text", () => {
+    expect(shapeLabelFor("Cyd seed poll 20260914. Which one?")).toBe("Poll");
+    expect(shapeLabelFor("Cyd seed media 20260914: four images.")).toBe(
+      "Four images",
+    );
+    expect(shapeLabelFor("Cyd seed thread 20260914 1/3. Start of it.")).toBe(
+      "Self-thread (first of three)",
+    );
+  });
+
+  test("tells the single image apart from the four", () => {
+    expect(shapeLabelFor("Cyd seed media 20260914: one image.")).toBe(
+      "One image",
+    );
+  });
+
+  test("ignores filler and anything else", () => {
+    expect(shapeLabelFor("Cyd seed post 042 of 20260914.")).toBeNull();
+    expect(shapeLabelFor("a post by somebody else")).toBeNull();
   });
 });
 
