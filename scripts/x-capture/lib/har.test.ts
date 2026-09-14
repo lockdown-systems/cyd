@@ -6,6 +6,7 @@ import { test, expect, describe } from "vitest";
 
 import {
   collectEmptyStateMarkers,
+  collectLimitedActions,
   countTimelineEntries,
   decodeHar,
   fixtureFilename,
@@ -124,6 +125,37 @@ describe("collectEmptyStateMarkers", () => {
     expect(
       collectEmptyStateMarkers({ entries: [{ entryId: "tweet-1" }] }),
     ).toEqual([]);
+  });
+});
+
+describe("collectLimitedActions", () => {
+  test("names the actions X has disabled, with its own reason", () => {
+    const body = {
+      legacy: {
+        limitedActionResults: {
+          limited_actions: [
+            {
+              action: "Retweet",
+              prompt: {
+                __typename: "LimitedActionPrompt",
+                headline: { text: "Who can repost this post?" },
+              },
+            },
+            { action: "ShowRetweetActionMenu" },
+          ],
+        },
+      },
+    };
+    expect(collectLimitedActions(body)).toEqual([
+      "Retweet: Who can repost this post?",
+      "ShowRetweetActionMenu",
+    ]);
+  });
+
+  test("finds nothing on an unrestricted post", () => {
+    expect(collectLimitedActions({ legacy: { full_text: "hello" } })).toEqual(
+      [],
+    );
   });
 });
 

@@ -61,6 +61,8 @@ export interface CapturedCall {
   successWithErrors: boolean;
   rateLimit: CapturedRateLimit | null;
   emptyStateMarkers: string[];
+  /** Actions X has refused on a post, with the reason it gives. */
+  limitedActions: string[];
   entryCounts: Record<string, number>;
 }
 
@@ -237,6 +239,40 @@ export function collectEmptyStateMarkers(body: unknown): string[] {
   return [...markers].sort();
 }
 
+/**
+ * Collects the actions X has disabled on a post. X carries these in
+ * `limitedActionResults.limited_actions[]`, naming actions such as `Retweet`
+ * and `QuoteTweet` alongside the prompt it shows the user. This is the
+ * server-side reason a control is greyed out, and a mutation against such a
+ * post is one X will refuse.
+ */
+export function collectLimitedActions(body: unknown): string[] {
+  const limited = new Set<string>();
+
+  walkJSON(body, (key, value) => {
+    if (key !== "limited_actions" || !Array.isArray(value)) {
+      return;
+    }
+    for (const entry of value) {
+      if (entry === null || typeof entry !== "object") {
+        continue;
+      }
+      const action = (entry as { action?: unknown }).action;
+      if (typeof action !== "string") {
+        continue;
+      }
+      const prompt = (entry as { prompt?: { headline?: { text?: unknown } } })
+        .prompt;
+      const headline = prompt?.headline?.text;
+      limited.add(
+        typeof headline === "string" ? `${action}: ${headline}` : action,
+      );
+    }
+  });
+
+  return [...limited].sort();
+}
+
 function collectErrorMessages(body: unknown): string[] {
   if (body === null || typeof body !== "object") {
     return [];
@@ -331,6 +367,7 @@ function decodeEntry(entry: HarEntry, index: number): CapturedCall | null {
       status >= 200 && status < 300 && errorMessages.length > 0,
     rateLimit: readRateLimit(entry.response.headers),
     emptyStateMarkers: collectEmptyStateMarkers(responseBody),
+    limitedActions: collectLimitedActions(responseBody),
     entryCounts: countTimelineEntries(responseBody),
   };
 }

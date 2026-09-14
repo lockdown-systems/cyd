@@ -91,6 +91,7 @@ function writeOperationBodies(report: CaptureReport, outDir: string) {
         successWithErrors: call.successWithErrors,
         rateLimit: call.rateLimit,
         emptyStateMarkers: call.emptyStateMarkers,
+        limitedActions: call.limitedActions,
         entryCounts: call.entryCounts,
         suggestedFixtureName: fixtureFilename(
           operationName,
@@ -172,6 +173,20 @@ function summaryMarkdown(report: CaptureReport): string {
   }
   lines.push("");
 
+  lines.push("## Actions X has disabled on captured posts");
+  lines.push("");
+  const limited = report.calls.filter((call) => call.limitedActions.length > 0);
+  if (limited.length === 0) {
+    lines.push("None captured.");
+  } else {
+    for (const call of limited) {
+      lines.push(
+        `- \`${call.operationName}\`: ${call.limitedActions.join("; ")}`,
+      );
+    }
+  }
+  lines.push("");
+
   lines.push("## Timeline entry counts");
   lines.push("");
   lines.push("| Operation | Call | Entries |");
@@ -216,6 +231,7 @@ function main() {
       referrer: call.referrer,
       successWithErrors: call.successWithErrors,
       emptyStateMarkers: call.emptyStateMarkers,
+      limitedActions: call.limitedActions,
       entryCounts: call.entryCounts,
     })),
   });
