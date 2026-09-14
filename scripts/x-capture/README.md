@@ -39,6 +39,19 @@ Generate the media the seed plan attaches to posts:
 ./scripts/x-capture/make-media.sh
 ```
 
+## Three test accounts
+
+The walk needs three, with different jobs:
+
+| Role            | What it is for                                                                                                          | What happens to it                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Capture account | Seeded with everything, then walked and deleted                                                                         | Destroyed by the walk, so use one you can re-seed                  |
+| Source account  | Owns the posts the capture account likes, bookmarks, quotes, and retweets, and the original behind the orphaned retweet | Left intact, apart from the one post deleted to orphan the retweet |
+| Empty account   | Supplies the empty-state signal for every timeline                                                                      | Never post to it — being empty is its whole value                  |
+
+Keep the source account's content: it is what makes re-seeding the capture
+account cheap next time.
+
 ## Seeding
 
 Use test accounts, never a real one. The seeder posts, likes, bookmarks, and
@@ -76,13 +89,20 @@ Then seed. Doing it in stages is easier to supervise than one long run:
 ```
 npx tsx scripts/x-capture/seed.ts --account <handle> --task shapes --targets https://x.com/someone/status/123,https://x.com/else/status/456
 npx tsx scripts/x-capture/seed.ts --account <handle> --task posts
-npx tsx scripts/x-capture/seed.ts --account <handle> --task likes
-npx tsx scripts/x-capture/seed.ts --account <handle> --task bookmarks
+npx tsx scripts/x-capture/seed.ts --account <handle> --task likes --feed https://x.com/<source-account>
+npx tsx scripts/x-capture/seed.ts --account <handle> --task bookmarks --feed https://x.com/<source-account>
 npx tsx scripts/x-capture/seed.ts --account <handle> --task follows
 ```
 
 `--targets` are live posts by other accounts, used for the quote posts and
-retweets. `--count N` overrides how many filler posts, likes, and bookmarks to
+retweets. Take them from the source account.
+
+`--feed` is where likes and bookmarks come from. It defaults to the home
+timeline, which on a fresh account is thin and algorithmic — point it at the
+source account's profile instead, so there is a known, deep supply of posts to
+work down. Already-liked posts drop out of the selector as they are liked, so
+reloading the feed picks up where it left off rather than fighting over the top
+post. `--count N` overrides how many filler posts, likes, and bookmarks to
 make; the default is 61 each, which clears three pages of twenty. The default
 follow count is 21, enough for the following list to page once.
 
@@ -117,6 +137,15 @@ off every fifteen. Seeding an account takes a couple of hours. Leave it running
 and check on it.
 
 ## Capturing
+
+Each account's session lives in its own profile directory, so the simplest way
+to keep three logins apart during the walk is to reuse them:
+
+```
+chromium --user-data-dir="$PWD/capture/profiles/<handle>"
+```
+
+Only one process at a time per directory — close the seeder first.
 
 Walk `docs/x-capture/capture-walk-20260914.md` in a browser with DevTools open
 on the Network tab, **Preserve log** and **Disable cache** ticked. Export with

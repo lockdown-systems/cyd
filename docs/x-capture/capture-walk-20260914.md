@@ -15,8 +15,9 @@ happens until parts 1 and 2 are done and the HAR is saved.
 - [ ] Have a third test account that is completely empty, for the empty states
 - [ ] Confirm the main account shows three or more pages on posts, likes, and
       bookmarks by scrolling each to the bottom yourself
-- [ ] Open Chromium, open DevTools on the Network tab, tick **Preserve log** and
-      **Disable cache**
+- [ ] Open Chromium on the capture account's profile
+      (`chromium --user-data-dir="$PWD/capture/profiles/<handle>"`), open
+      DevTools on the Network tab, tick **Preserve log** and **Disable cache**
 
 Keep one HAR per part. If DevTools gets slow, save and clear, then keep going —
 the decoder takes several HARs.
@@ -52,8 +53,12 @@ fill in the **Observed** column for every read-side element.
 
 ## 2. Empty states, empty account
 
-Log in as the empty test account in a separate browser profile, so the main
-account's session is not disturbed.
+Open the empty account's own profile directory, so the capture account's
+session is not disturbed:
+
+```
+chromium --user-data-dir="$PWD/capture/profiles/<empty-handle>"
+```
 
 - [ ] Profile timeline: `x.com/<empty-username>` — this is the one the ticket
       most needs, since the posts job currently has no explicit empty-state
