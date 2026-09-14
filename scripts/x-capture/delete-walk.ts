@@ -194,7 +194,8 @@ async function runStep(
     }
 
     case "undo-retweet": {
-      await open(page, `https://x.com/${account}`);
+      // Reposts have their own route now; the profile timeline has none.
+      await open(page, `https://x.com/${account}/reposts`);
       let done = 0;
       for (let i = 0; i < step.count; i++) {
         // Retweets sit wherever they were made, which is rarely the top of the

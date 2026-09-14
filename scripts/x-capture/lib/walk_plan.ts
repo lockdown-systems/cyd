@@ -54,6 +54,13 @@ export function buildReadWalk(
       url: `https://x.com/${account}/with_replies`,
       scroll: true,
     },
+    {
+      // X moved reposts off the profile timeline onto their own route, which
+      // is why `UserOriginalsTimeline` contains none.
+      label: "Reposts",
+      url: `https://x.com/${account}/reposts`,
+      scroll: true,
+    },
     { label: "Likes", url: `https://x.com/${account}/likes`, scroll: true },
     { label: "Bookmarks", url: "https://x.com/i/bookmarks", scroll: true },
     {

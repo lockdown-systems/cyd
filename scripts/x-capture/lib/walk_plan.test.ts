@@ -43,17 +43,18 @@ describe("buildReadWalk", () => {
     });
   });
 
-  test("covers both profile routes, since they return different things", () => {
+  test("covers every profile route, since they return different things", () => {
     const urls = buildReadWalk("someone").map((step) => step.url);
     expect(urls).toContain("https://x.com/someone");
     expect(urls).toContain("https://x.com/someone/with_replies");
+    expect(urls).toContain("https://x.com/someone/reposts");
   });
 
   test("scrolls every timeline and no permalink", () => {
     const steps = buildReadWalk("someone", [
       { label: "Poll", url: "https://x.com/someone/status/1" },
     ]);
-    expect(steps.filter((step) => step.scroll).length).toBe(5);
+    expect(steps.filter((step) => step.scroll).length).toBe(6);
     expect(steps[steps.length - 1]).toMatchObject({
       label: "Permalink: Poll",
       scroll: false,
@@ -61,7 +62,7 @@ describe("buildReadWalk", () => {
   });
 
   test("works with no permalinks at all", () => {
-    expect(buildReadWalk("someone")).toHaveLength(6);
+    expect(buildReadWalk("someone")).toHaveLength(7);
   });
 });
 
