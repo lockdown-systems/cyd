@@ -38,6 +38,13 @@ export const SELECTORS = {
   unretweet: '[data-testid="unretweet"]',
   quoteMenuItem: 'a[href$="/compose/post"], [role="menuitem"]',
 
+  // Deleting
+  postMenu: '[data-testid="caret"]',
+  unretweetConfirm: '[data-testid="unretweetConfirm"]',
+  confirmSheet: 'button[data-testid="confirmationSheetConfirm"]',
+  profileSaveButton: 'button[data-testid="Profile_Save_Button"]',
+  bioTextarea: 'div[role="dialog"] textarea',
+
   // Accounts
   follow: '[data-testid$="-follow"]',
   unfollow: '[data-testid$="-unfollow"]',

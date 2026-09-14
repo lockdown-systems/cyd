@@ -105,3 +105,79 @@ export function formatCensus(rows: CensusRow[]): string {
 
   return lines.join("\n");
 }
+
+export type DeleteStepKind =
+  | "delete-post"
+  | "undo-retweet"
+  | "unlike"
+  | "unbookmark"
+  | "unfollow"
+  | "replay-delete"
+  | "update-bio"
+  | "lock-account"
+  | "provoke-rate-limit";
+
+export interface DeleteStep {
+  kind: DeleteStepKind;
+  /** How many times to do it, for the ones done more than once. */
+  count: number;
+  note: string;
+}
+
+/**
+ * The destructive walk, least destructive first.
+ *
+ * Order is the whole point: each step destroys data a later capture might have
+ * wanted, so the cheapest and most reversible go first, and the account is only
+ * locked at the very end.
+ */
+export function buildDeleteWalk(
+  counts?: Partial<Record<DeleteStepKind, number>>,
+): DeleteStep[] {
+  const count = (kind: DeleteStepKind, fallback: number) =>
+    counts?.[kind] ?? fallback;
+
+  return [
+    {
+      kind: "delete-post",
+      count: count("delete-post", 3),
+      note: "Delete a few posts",
+    },
+    {
+      kind: "undo-retweet",
+      count: count("undo-retweet", 1),
+      note: "Undo a retweet",
+    },
+    { kind: "unlike", count: count("unlike", 3), note: "Unlike a few posts" },
+    {
+      kind: "unbookmark",
+      count: count("unbookmark", 3),
+      note: "Remove a few bookmarks",
+    },
+    {
+      kind: "unfollow",
+      count: count("unfollow", 2),
+      note: "Unfollow an account or two",
+    },
+    {
+      kind: "replay-delete",
+      count: count("replay-delete", 1),
+      note: "Repeat a delete that already succeeded, to see what X says about a post that is gone",
+    },
+    {
+      kind: "update-bio",
+      count: count("update-bio", 1),
+      note: "Change the bio",
+    },
+    {
+      kind: "lock-account",
+      count: count("lock-account", 1),
+      note: "Lock the account, then unlock it",
+    },
+    {
+      kind: "provoke-rate-limit",
+      count: count("provoke-rate-limit", 12),
+      note: "Reload a timeline hard, to try to provoke a rate limit",
+    },
+  ];
+}

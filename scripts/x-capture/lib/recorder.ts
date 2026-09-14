@@ -56,6 +56,11 @@ export class Recorder {
     return this.entries.length;
   }
 
+  /** What has been captured so far, for a walk that needs to look back. */
+  get entriesSent(): HarEntryOut[] {
+    return this.entries;
+  }
+
   /**
    * GraphQL calls only. X polls its own endpoints for badge counts and the
    * like the whole time a page is open, so the total is never still and cannot

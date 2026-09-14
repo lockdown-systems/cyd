@@ -4,7 +4,12 @@
 
 import { test, expect, describe } from "vitest";
 
-import { buildReadWalk, formatCensus, parsePermalinks } from "./walk_plan";
+import {
+  buildDeleteWalk,
+  buildReadWalk,
+  formatCensus,
+  parsePermalinks,
+} from "./walk_plan";
 
 describe("parsePermalinks", () => {
   test("reads the permalinks the lister wrote", () => {
@@ -81,5 +86,33 @@ describe("formatCensus", () => {
     ]);
     expect(markdown).toContain("## /a");
     expect(markdown).toContain("## /b");
+  });
+});
+
+describe("buildDeleteWalk", () => {
+  test("goes least destructive first, and locks the account last of the changes", () => {
+    const kinds = buildDeleteWalk().map((step) => step.kind);
+    expect(kinds.indexOf("delete-post")).toBeLessThan(
+      kinds.indexOf("unfollow"),
+    );
+    expect(kinds.indexOf("update-bio")).toBeLessThan(
+      kinds.indexOf("lock-account"),
+    );
+    expect(kinds.indexOf("lock-account")).toBeLessThan(
+      kinds.indexOf("provoke-rate-limit"),
+    );
+  });
+
+  test("repeats a delete only after one has succeeded", () => {
+    const kinds = buildDeleteWalk().map((step) => step.kind);
+    expect(kinds.indexOf("delete-post")).toBeLessThan(
+      kinds.indexOf("replay-delete"),
+    );
+  });
+
+  test("takes counts from the caller", () => {
+    const steps = buildDeleteWalk({ "delete-post": 1, unlike: 0 });
+    expect(steps.find((s) => s.kind === "delete-post")?.count).toBe(1);
+    expect(steps.find((s) => s.kind === "unlike")?.count).toBe(0);
   });
 });
