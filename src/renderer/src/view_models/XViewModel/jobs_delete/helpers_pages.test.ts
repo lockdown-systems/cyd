@@ -39,7 +39,7 @@ describe("helpers_pages.ts", () => {
       await DeleteHelpers.deleteDMsLoadDMsPage(vm);
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/messages",
+        "https://x.com/i/chat",
       );
     });
 
@@ -48,7 +48,7 @@ describe("helpers_pages.ts", () => {
 
       expect(vm.waitForSelector).toHaveBeenCalledWith(
         'section input[type="text"]',
-        "https://x.com/messages",
+        "https://x.com/i/chat",
         30000,
       );
     });
@@ -58,7 +58,7 @@ describe("helpers_pages.ts", () => {
 
       expect(vm.waitForSelector).toHaveBeenCalledWith(
         'section div div[role="tablist"] div[data-testid="cellInnerDiv"]',
-        "https://x.com/messages",
+        "https://x.com/i/chat",
       );
     });
 

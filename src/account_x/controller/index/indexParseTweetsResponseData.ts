@@ -149,8 +149,6 @@ export function indexParseTweetsResponseData(
             entries.content.itemContent.tweet_results.result.core.user_results
               .result &&
             entries.content.itemContent.tweet_results.result.core.user_results
-              .result.legacy &&
-            entries.content.itemContent.tweet_results.result.core.user_results
               .result.core &&
             entries.content.itemContent.tweet_results.result.legacy
           ) {
@@ -171,8 +169,6 @@ export function indexParseTweetsResponseData(
               .user_results &&
             entries.content.itemContent.tweet_results.result.tweet.core
               .user_results.result &&
-            entries.content.itemContent.tweet_results.result.tweet.core
-              .user_results.result.legacy &&
             entries.content.itemContent.tweet_results.result.tweet.core
               .user_results.result.core &&
             entries.content.itemContent.tweet_results.result.tweet.legacy

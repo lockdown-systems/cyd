@@ -468,7 +468,7 @@ describe("jobs_index.ts", () => {
       vi.spyOn(vm, "waitForSelector")
         .mockResolvedValueOnce(undefined) // search field
         .mockRejectedValueOnce(
-          new URLChangedError("https://x.com/messages", "https://x.com/other"),
+          new URLChangedError("https://x.com/i/chat", "https://x.com/other"),
         );
 
       const result = await IndexJobs.runJobIndexConversations(vm, 0);
@@ -629,10 +629,10 @@ describe("jobs_index.ts", () => {
       await IndexJobs.runJobIndexMessages(vm, 0);
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/messages/conv1",
+        "https://x.com/i/chat/conv1",
       );
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/messages/conv2",
+        "https://x.com/i/chat/conv2",
       );
       expect(mockElectron.X.indexConversationFinished).toHaveBeenCalledTimes(2);
     });
@@ -668,7 +668,7 @@ describe("jobs_index.ts", () => {
       mockElectron.X.indexMessagesStart.mockResolvedValue(mockMessagesData);
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new URLChangedError(
-          "https://x.com/messages/conv1",
+          "https://x.com/i/chat/conv1",
           "https://x.com/i/verified-get-verified",
         ),
       );
