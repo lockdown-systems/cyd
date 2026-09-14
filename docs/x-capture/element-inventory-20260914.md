@@ -55,6 +55,12 @@ each during the walk.
 Each identifier appears twice per call — once in the URL and once as `queryId`
 in the body.
 
+Observed 2026-09-14: the profile timeline issues **`UserOriginalsTimeline`**.
+Cyd matches timeline responses on `/UserTweetsAndReplies?`, `/Likes?`, and
+`/Bookmarks?` only
+(`src/account_x/controller/index/indexParseTweetsResponseData.ts:40`), so those
+responses are captured and discarded. See `findings-20260914.md`.
+
 The read operations are never named in Cyd's code: they are whatever X's own
 client issues while the automation scrolls. Record their names and identifiers
 from the capture: the profile timeline, likes, bookmarks, the user lookup, the
