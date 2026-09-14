@@ -42,6 +42,10 @@ export const SELECTORS = {
   follow: '[data-testid$="-follow"]',
   unfollow: '[data-testid$="-unfollow"]',
 
+  // X's modal backdrop, which sits in the #layers subtree and swallows
+  // pointer events aimed at whatever it is covering.
+  modalMask: '[data-testid="mask"]',
+
   // Session state
   loggedIn: '[data-testid="SideNav_NewTweet_Button"]',
   loginForm: 'input[autocomplete="username"]',
@@ -103,9 +107,19 @@ async function fill(page: Page, selector: string, text: string) {
   } catch {
     throw new SelectorMissingError(selector);
   }
+
+  // Focused directly rather than clicked: when a composer opens as a modal,
+  // X keeps a mask in its #layers subtree that intercepts pointer events aimed
+  // at the field underneath, and a click can never land however long it waits.
+  await page
+    .locator(SELECTORS.modalMask)
+    .first()
+    .waitFor({ state: "detached", timeout: 3000 })
+    .catch(() => {});
+  await element.evaluate((node) => (node as HTMLElement).focus());
+
   // Typed rather than set, because the composer's post button stays disabled
   // until it sees input events.
-  await element.click();
   await element.type(text, { delay: 12 });
 }
 
