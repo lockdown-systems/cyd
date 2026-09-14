@@ -201,10 +201,11 @@ export async function postThread(page: Page, texts: string[]) {
 }
 
 /**
- * X disables the repost control outright on posts it will not let anyone
- * repost — a protected account's posts, most often. Clicking it would spend
- * the full timeout waiting for a button that is never going to enable, so say
- * what is actually wrong.
+ * X disables the repost control outright on some posts, marking them with a
+ * slashed-repost badge in the post header. Observed on a test account's video
+ * post; the cause is X's, not ours, and it survived unprotecting the acting
+ * account. Clicking would spend the full timeout waiting for a button that is
+ * never going to enable, so say what is actually wrong.
  */
 async function assertRepostable(page: Page) {
   const button = page.locator(SELECTORS.retweet).first();
@@ -215,7 +216,7 @@ async function assertRepostable(page: Page) {
   }
   if (await button.isDisabled()) {
     throw new Error(
-      "X has disabled reposting on this post. Its author's account is probably protected; pick a target from an unprotected account.",
+      "X has disabled reposting on this post — look for the slashed-repost badge in the post header. Pick a different target post, ideally a plain text one.",
     );
   }
 }
