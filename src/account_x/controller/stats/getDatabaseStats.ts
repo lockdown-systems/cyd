@@ -66,9 +66,6 @@ export async function getDatabaseStats(
     [1],
     "get",
   ) as Sqlite3Count;
-  const conversationsDeleted = parseInt(
-    (await controller.getConfig("totalConversationsDeleted")) || "0",
-  );
   const accountsUnfollowed = parseInt(
     (await controller.getConfig("totalAccountsUnfollowed")) || "0",
   );
@@ -87,7 +84,6 @@ export async function getDatabaseStats(
   databaseStats.likesDeleted = likesDeleted.count;
   databaseStats.bookmarksSaved = bookmarksSaved.count;
   databaseStats.bookmarksDeleted = bookmarksDeleted.count;
-  databaseStats.conversationsDeleted = conversationsDeleted;
   databaseStats.accountsUnfollowed = accountsUnfollowed;
   databaseStats.tweetsMigratedToBluesky = tweetsMigratedToBluesky.count;
   return databaseStats;

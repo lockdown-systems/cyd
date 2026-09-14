@@ -341,7 +341,7 @@
     "unlessTheyHaveAtLeast": "unless they have at least",
     "likesDescription": "Likes are only visible to you on X. Cyd will delete all of the likes it can, but it can't delete ghost likes.",
     "bookmarksDescription": "Bookmarks are only visible to you on X.",
-    "directMessagesWithdrawn": "X replaced direct messages with X Chat, and Cyd can't save or delete X Chat messages. Any direct messages Cyd already saved are still in your Cyd X archive, and you can still browse them.",
+    "directMessagesWithdrawn": "X replaced direct messages with X Chat, and Cyd can't currently save or delete X Chat messages. Any direct messages Cyd already saved are still in your Cyd X archive, and you can still browse them.",
     "saveHTMLTweetsBookmarks": "Save HTML tweets and/or bookmarks",
     "saveHTMLTweetsBookmarksDescription": "Cyd can save an HTML version of each tweet, and your bookmarks.",
     "buildFromScratchRecommended": "You don't have a lot of data in your X account, so having Cyd scroll through your profile will be faster.",

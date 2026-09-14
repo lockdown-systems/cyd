@@ -49,7 +49,6 @@ export type XProgress = {
 
   tweetsIndexed: number;
   retweetsIndexed: number;
-  usersIndexed: number;
   likesIndexed: number;
   unknownIndexed: number;
 
@@ -102,7 +101,6 @@ export function emptyXProgress(): XProgress {
 
     tweetsIndexed: 0,
     retweetsIndexed: 0,
-    usersIndexed: 0,
     likesIndexed: 0,
     unknownIndexed: 0,
 

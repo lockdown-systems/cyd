@@ -7,6 +7,7 @@ import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
 import XLastImportOrBuildComponent from "../components/XLastImportOrBuildComponent.vue";
+import XDirectMessagesWithdrawnComponent from "../components/XDirectMessagesWithdrawnComponent.vue";
 
 const { t } = useI18n();
 
@@ -241,12 +242,7 @@ onMounted(async () => {
               </label>
             </div>
           </div>
-          <!-- X replaced direct messages with X Chat -->
-          <div class="mb-3">
-            <small class="form-text text-muted">
-              {{ t("wizard.directMessagesWithdrawn") }}
-            </small>
-          </div>
+          <XDirectMessagesWithdrawnComponent />
         </form>
       </div>
     </template>

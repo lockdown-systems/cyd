@@ -252,7 +252,6 @@ export function mockElectronAPI() {
         isUnfollowEveryoneFinished: false,
         tweetsIndexed: 0,
         retweetsIndexed: 0,
-        usersIndexed: 0,
         likesIndexed: 0,
         unknownIndexed: 0,
         totalTweetsToArchive: 0,
