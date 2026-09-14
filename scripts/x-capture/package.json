@@ -1,0 +1,9 @@
+{
+  "name": "cyd-x-capture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capture-session tooling for X: seeds test accounts and decodes HAR exports. Not part of the Cyd build.",
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}

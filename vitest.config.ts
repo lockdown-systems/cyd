@@ -18,7 +18,10 @@ export default defineConfig({
       tsconfig: "./tsconfig.test.json",
     },
     environment: "jsdom",
-    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    include: [
+      "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "scripts/**/*.{test,spec}.ts",
+    ],
     root: "./",
     setupFiles: ["src/renderer/src/test-setup.ts"],
     globalSetup: ["src/vitest-global-setup.ts"],
