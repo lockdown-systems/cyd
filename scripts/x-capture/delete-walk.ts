@@ -30,6 +30,9 @@ interface Options {
   account: string;
   label: string;
   dryRun: boolean;
+  /** Run one step rather than the whole walk, for filling a gap. */
+  only: string | null;
+  count: number | null;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -38,6 +41,8 @@ function parseArgs(argv: string[]): Options {
     account: "",
     label: "03-destructive",
     dryRun: false,
+    only: null,
+    count: null,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -50,6 +55,12 @@ function parseArgs(argv: string[]): Options {
         break;
       case "--dry-run":
         options.dryRun = true;
+        break;
+      case "--only":
+        options.only = args[++i] ?? null;
+        break;
+      case "--count":
+        options.count = Number(args[++i]);
         break;
       default:
         throw new Error(`Unknown option: ${args[i]}`);
@@ -186,6 +197,18 @@ async function runStep(
       await open(page, `https://x.com/${account}`);
       let done = 0;
       for (let i = 0; i < step.count; i++) {
+        // Retweets sit wherever they were made, which is rarely the top of the
+        // timeline, so scroll until one is rendered.
+        let found = false;
+        for (let scroll = 0; scroll < 25 && !found; scroll++) {
+          if ((await page.locator(SELECTORS.unretweet).count()) > 0) {
+            found = true;
+            break;
+          }
+          await page.mouse.wheel(0, 2500);
+          await page.waitForTimeout(1200);
+        }
+        if (!found) break;
         if (!(await clickFirst(page, SELECTORS.unretweet))) break;
         await clickFirst(page, SELECTORS.unretweetConfirm);
         done += 1;
@@ -282,7 +305,16 @@ async function runStep(
 
 async function main() {
   const options = parseArgs(process.argv);
-  const steps = buildDeleteWalk();
+  let steps = buildDeleteWalk();
+  if (options.only !== null) {
+    steps = steps.filter((step) => step.kind === options.only);
+    if (steps.length === 0) {
+      throw new Error(`No such step: ${options.only}`);
+    }
+  }
+  if (options.count !== null) {
+    steps = steps.map((step) => ({ ...step, count: options.count as number }));
+  }
 
   if (options.dryRun) {
     for (const step of steps) {
