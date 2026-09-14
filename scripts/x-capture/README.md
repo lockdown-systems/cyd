@@ -152,21 +152,26 @@ and check on it.
 
 ## Capturing
 
-Each account's session lives in its own profile directory, so the simplest way
-to keep three logins apart during the walk is to reuse them:
-
 ```
-chromium --user-data-dir="$PWD/capture/profiles/<handle>"
+npx tsx scripts/x-capture/record-walk.ts --account <handle> --label 01-read-main
 ```
 
-Only one process at a time per directory — close the seeder first.
+This opens the account's profile, hands the browser to you, and writes
+`capture/<date>/raw/<label>.har` when you press Enter in the terminal. You do
+the walking; it only records. Run it once per part of
+`docs/x-capture/capture-walk-20260914.md`, with a different label each time.
 
-Walk `docs/x-capture/capture-walk-20260914.md` in a browser with DevTools open
-on the Network tab, **Preserve log** and **Disable cache** ticked. Export with
-right-click → **Copy all as HAR (with sensitive data)**, which is the one that
-includes request headers, so the referrers survive.
+Only X's API traffic is recorded. That is deliberate: an hour of X produces
+thousands of requests and hundreds of megabytes of fonts, images, and
+analytics, which is enough that DevTools' own "Copy all as HAR" fails silently
+and its export ignores whatever filter is showing.
 
-Save the HARs under `capture/<date>/raw/`.
+Only one browser at a time per profile directory, so close the seeder first.
+
+DevTools remains a fallback: Network tab, **Preserve log** and **Disable
+cache**, then the export arrow in the toolbar. Sanitized is fine — it redacts
+cookies and authorization but keeps `Referer`, which is the request header the
+capture actually needs.
 
 ## Decoding
 

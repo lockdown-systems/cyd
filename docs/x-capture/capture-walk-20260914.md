@@ -19,12 +19,22 @@ happens until parts 1 and 2 are done and the HAR is saved.
       step in part 3 captures a transition rather than a state it was already in
 - [ ] Confirm the posts being quoted and reposted can be reposted at all: X
       disables reposting on some posts and badges them in the post header
-- [ ] Open Chromium on the capture account's profile
-      (`chromium --user-data-dir="$PWD/capture/profiles/<handle>"`), open
-      DevTools on the Network tab, tick **Preserve log** and **Disable cache**
+- [ ] Start the recorder, which opens the browser and hands it to you:
 
-Keep one HAR per part. If DevTools gets slow, save and clear, then keep going —
-the decoder takes several HARs.
+      ```
+      npx tsx scripts/x-capture/record-walk.ts --account <handle> --label 01-read-main
+      ```
+
+      It records X's API traffic only and writes the HAR when you press Enter
+      in the terminal. Nothing is clicked for you — the walk is still yours.
+
+Run the recorder once per part, with a different `--label` each time, so each
+phase is its own HAR. The decoder takes several.
+
+DevTools is the fallback if the recorder cannot be used, but exporting from it
+is awkward: an hour of X produces thousands of requests and hundreds of
+megabytes, "Copy all as HAR" silently fails at that size, and the export
+ignores the filter. The recorder keeps only X's API calls.
 
 ## 1. Non-destructive flows, main account
 
@@ -55,7 +65,8 @@ the first cursor.
       census settles whether X returned anything for it
 - [ ] Reload `x.com/home` once, to capture the user lookup (`Viewer`)
 
-Save the HAR as `capture/<date>/raw/01-read-main.har`.
+Press Enter in the recorder's terminal to write
+`capture/<date>/raw/01-read-main.har`.
 
 While you are here, work down
 `docs/x-capture/element-inventory-20260914.md` with the page inspector open and
@@ -63,11 +74,11 @@ fill in the **Observed** column for every read-side element.
 
 ## 2. Empty states, empty account
 
-Open the empty account's own profile directory, so the capture account's
-session is not disturbed:
+Record this part against the empty account's own profile, so the capture
+account's session is not disturbed:
 
 ```
-chromium --user-data-dir="$PWD/capture/profiles/<empty-handle>"
+npx tsx scripts/x-capture/record-walk.ts --account <empty-handle> --label 02-empty
 ```
 
 - [ ] Profile timeline: `x.com/<empty-username>` — this is the one the ticket
@@ -82,7 +93,7 @@ Fill in the **Empty states, per timeline** table in the element inventory as you
 go: both what the response body carries and what the rendered page carries. The
 index jobs check the page; the save work needs the response.
 
-Save the HAR as `capture/<date>/raw/02-empty.har`.
+Press Enter to write `capture/<date>/raw/02-empty.har`.
 
 For each, note in the inventory which explicit marker X returns, and whether
 the marker is in the response body, in the rendered DOM, or in both.
@@ -101,7 +112,7 @@ Only after parts 1 and 2 are saved.
 - [ ] Lock the account, then unlock it — note what happens to the repost
       control while it is locked
 
-Save the HAR as `capture/<date>/raw/03-destructive.har`.
+Record this part with `--label 03-destructive`, and press Enter to write it.
 
 For every one of these, the thing being captured is as much the **referrer** X's
 own client sends as the mutation itself. The decoder reports referrers per

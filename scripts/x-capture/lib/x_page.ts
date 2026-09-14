@@ -55,6 +55,32 @@ export const SELECTORS = {
   loginForm: 'input[autocomplete="username"]',
 } as const;
 
+/**
+ * Every selector Cyd's automation depends on, checked against each surface
+ * during the walk. A selector matching nothing on the surface that depends on
+ * it is the silent breakage the capture exists to find.
+ */
+export const INVENTORY_SELECTORS = [
+  "section article",
+  'article[data-testid="tweet"]',
+  'section [data-testid="cellInnerDiv"]',
+  'div[data-testid="emptyState"]',
+  'main[role="main"] nav[role="navigation"] + section div[data-testid=cellInnerDiv]',
+  'div[data-testid="cellInnerDiv"] button button',
+  'article[tabindex="-1"]',
+  'div[data-testid="primaryColumn"] div[data-testid="error-detail"]',
+  'div[data-testid="BottomBar"]',
+  '[data-testid="like"]',
+  '[data-testid="unlike"]',
+  '[data-testid="bookmark"]',
+  '[data-testid="removeBookmark"]',
+  '[data-testid="retweet"]',
+  '[data-testid="unretweet"]',
+  '[data-testid$="-follow"]',
+  '[data-testid$="-unfollow"]',
+  'button[data-testid="confirmationSheetConfirm"]',
+] as const;
+
 /** X's anti-automation interstitials, which end a run rather than retry it. */
 const BLOCKED_MARKERS = [
   "/account/access",
