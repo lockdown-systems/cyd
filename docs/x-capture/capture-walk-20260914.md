@@ -15,6 +15,9 @@ happens until parts 1 and 2 are done and the HAR is saved.
 - [ ] Have a third test account that is completely empty, for the empty states
 - [ ] Confirm the main account shows three or more pages on posts, likes, and
       bookmarks by scrolling each to the bottom yourself
+- [ ] Confirm the main account is **not** protected — X disables reposting for
+      protected accounts, so the retweet and quote shapes cannot exist on one.
+      The account-lock step in part 3 is where it gets locked
 - [ ] Open Chromium on the capture account's profile
       (`chromium --user-data-dir="$PWD/capture/profiles/<handle>"`), open
       DevTools on the Network tab, tick **Preserve log** and **Disable cache**
@@ -88,7 +91,8 @@ Only after parts 1 and 2 are saved.
 - [ ] Unfollow one or two accounts
 - [ ] Change the profile banner
 - [ ] Change the bio
-- [ ] Lock the account, then unlock it
+- [ ] Lock the account, then unlock it — note what happens to the repost
+      control while it is locked
 
 Save the HAR as `capture/<date>/raw/03-destructive.har`.
 

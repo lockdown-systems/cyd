@@ -65,6 +65,12 @@ Cyd's terms that is an account-control credential, so treat the directory as
 one: test accounts only, and delete the profile when the capture is done. It is
 git-ignored, but git-ignored is not the same as protected.
 
+**The capture account must not be protected.** X disables reposting for
+protected accounts, so the repost control is greyed out on every post,
+including public ones, and the retweet, quote, and orphaned-retweet shapes
+cannot be seeded at all. Unprotect it before seeding. The walk locks it again
+at the end, as the tombstone step — that transition is itself worth capturing.
+
 **Automating X risks the account.** #709 says the capture walk cannot be
 automated because X's anti-automation measures require a human, and that is
 true of the walk. Seeding is automated here as a deliberate trade: doing ~200
