@@ -95,7 +95,10 @@ npx tsx scripts/x-capture/seed.ts --account <handle> --task follows
 ```
 
 `--targets` are live posts by other accounts, used for the quote posts and
-retweets. Take them from the source account.
+retweets. Take them from the source account — and make sure that account is
+**not protected**, since X disables reposting and quoting on a protected
+account's posts entirely. The orphaned retweet needs the same thing: it cannot
+be made from a post nobody is allowed to repost.
 
 `--feed` is where likes and bookmarks come from. It defaults to the home
 timeline, which on a fresh account is thin and algorithmic — point it at the

@@ -200,8 +200,29 @@ export async function postThread(page: Page, texts: string[]) {
   await submitComposer(page);
 }
 
+/**
+ * X disables the repost control outright on posts it will not let anyone
+ * repost — a protected account's posts, most often. Clicking it would spend
+ * the full timeout waiting for a button that is never going to enable, so say
+ * what is actually wrong.
+ */
+async function assertRepostable(page: Page) {
+  const button = page.locator(SELECTORS.retweet).first();
+  try {
+    await button.waitFor({ state: "visible", timeout: 15000 });
+  } catch {
+    throw new SelectorMissingError(SELECTORS.retweet);
+  }
+  if (await button.isDisabled()) {
+    throw new Error(
+      "X has disabled reposting on this post. Its author's account is probably protected; pick a target from an unprotected account.",
+    );
+  }
+}
+
 export async function quotePost(page: Page, targetUrl: string, text: string) {
   await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
+  await assertRepostable(page);
   await click(page, SELECTORS.retweet);
   // The repost menu offers "Repost" and "Quote"; the quote entry opens the
   // composer rather than posting immediately.
@@ -212,6 +233,7 @@ export async function quotePost(page: Page, targetUrl: string, text: string) {
 
 export async function retweetPost(page: Page, targetUrl: string) {
   await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
+  await assertRepostable(page);
   await click(page, SELECTORS.retweet);
   await click(page, SELECTORS.retweetConfirm);
   await page.waitForTimeout(2000);
