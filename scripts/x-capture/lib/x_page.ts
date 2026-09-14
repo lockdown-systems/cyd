@@ -18,6 +18,11 @@ export const SELECTORS = {
   composerFileInput: 'input[data-testid="fileInput"]',
   composerPollButton: '[data-testid="createPollButton"]',
   composerPollChoice: (index: number) => `input[name="Choice${index + 1}"]`,
+  // The control that adds a third and fourth choice carries no test
+  // identifier, so it is reached by its accessible name. "Remove poll" is the
+  // other button in the poll editor, hence matching on "choice" rather than
+  // "poll".
+  composerAddPollChoiceName: /choice/i,
   composerAddToThread: '[data-testid="addButton"]',
   composerPostButton: '[data-testid="tweetButton"]',
   composerPostButtonInline: '[data-testid="tweetButtonInline"]',
@@ -104,6 +109,26 @@ async function fill(page: Page, selector: string, text: string) {
   await element.type(text, { delay: 12 });
 }
 
+async function doesExist(page: Page, selector: string): Promise<boolean> {
+  return (await page.locator(selector).count()) > 0;
+}
+
+/** X's poll editor opens with two choices; further ones are added one at a
+ * time, and each field only exists once it has been added. */
+async function addPollChoice(page: Page): Promise<boolean> {
+  const button = page
+    .getByRole("button", { name: SELECTORS.composerAddPollChoiceName })
+    .first();
+  try {
+    await button.waitFor({ state: "visible", timeout: 5000 });
+  } catch {
+    return false;
+  }
+  await button.click();
+  await page.waitForTimeout(500);
+  return true;
+}
+
 export async function openComposer(page: Page) {
   await page.goto("https://x.com/compose/post", {
     waitUntil: "domcontentloaded",
@@ -148,9 +173,19 @@ export async function postPoll(page: Page, text: string, choices: string[]) {
   await openComposer(page);
   await fill(page, SELECTORS.composerTextarea, text);
   await click(page, SELECTORS.composerPollButton);
+
   for (let index = 0; index < choices.length; index++) {
-    await fill(page, SELECTORS.composerPollChoice(index), choices[index]);
+    const selector = SELECTORS.composerPollChoice(index);
+
+    if (!(await doesExist(page, selector)) && !(await addPollChoice(page))) {
+      // Two choices is still a poll, and the poll is the shape being seeded.
+      // Losing the third choice is not worth losing the post.
+      break;
+    }
+
+    await fill(page, selector, choices[index]);
   }
+
   await submitComposer(page);
 }
 
