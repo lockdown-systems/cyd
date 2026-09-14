@@ -86,20 +86,24 @@ function parseArgs(argv: string[]): Options {
 }
 
 /**
- * Scrolls until X stops fetching. New pages arriving is the only reliable
- * signal that there is more: the page height does not grow predictably,
- * because X recycles the rows it has rendered.
+ * Scrolls until X stops fetching pages. A new page arriving is the only
+ * reliable signal that there is more, since X recycles the rows it has
+ * rendered rather than growing the page.
+ *
+ * Only GraphQL calls count. X polls its own endpoints for badge counts and
+ * notifications the whole time a page is open, so the total number of calls is
+ * never still, and waiting for it to be still means scrolling forever.
  */
 async function scrollToBottom(page: Page, recorder: Recorder) {
   let idleRounds = 0;
   let rounds = 0;
 
-  while (idleRounds < 3 && rounds < 80) {
-    const before = recorder.count;
+  while (idleRounds < 4 && rounds < 80) {
+    const before = recorder.graphqlCount;
     await page.mouse.wheel(0, 3000);
     await page.waitForTimeout(1800);
     rounds += 1;
-    idleRounds = recorder.count === before ? idleRounds + 1 : 0;
+    idleRounds = recorder.graphqlCount === before ? idleRounds + 1 : 0;
   }
 
   return rounds;
@@ -128,15 +132,15 @@ async function runStep(
   await page.waitForTimeout(3000);
   await assertNotBlocked(page);
 
-  const before = recorder.count;
+  const before = recorder.graphqlCount;
   let rounds = 0;
   if (step.scroll) {
     rounds = await scrollToBottom(page, recorder);
   }
 
-  const calls = recorder.count - before;
+  const pages = recorder.graphqlCount - before;
   console.log(
-    `\n✓ ${step.label}: ${calls} API calls${step.scroll ? `, ${rounds} scrolls` : ""}`,
+    `\n✓ ${step.label}: ${pages} GraphQL calls${step.scroll ? `, ${rounds} scrolls` : ""}`,
   );
 
   return census(page, step.label);

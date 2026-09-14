@@ -45,6 +45,7 @@ function toHeaders(headers: Record<string, string>): HarHeaderOut[] {
 export class Recorder {
   private entries: HarEntryOut[] = [];
   private sinceFlush = 0;
+  private graphql = 0;
 
   constructor(private harPath: string) {
     fs.mkdirSync(path.dirname(harPath), { recursive: true });
@@ -55,8 +56,20 @@ export class Recorder {
     return this.entries.length;
   }
 
+  /**
+   * GraphQL calls only. X polls its own endpoints for badge counts and the
+   * like the whole time a page is open, so the total is never still and cannot
+   * be used to tell whether a timeline has stopped fetching pages.
+   */
+  get graphqlCount(): number {
+    return this.graphql;
+  }
+
   add(entry: HarEntryOut) {
     this.entries.push(entry);
+    if (entry.request.url.includes("/graphql/")) {
+      this.graphql += 1;
+    }
     this.sinceFlush += 1;
     if (this.sinceFlush >= FLUSH_EVERY) {
       this.write();
@@ -124,7 +137,9 @@ function watch(page: Page, recorder: Recorder) {
       },
     });
 
-    process.stdout.write(`\r  captured ${recorder.count} X API calls   `);
+    if (process.stdout.isTTY) {
+      process.stdout.write(`\r  captured ${recorder.count} X API calls   `);
+    }
   });
 }
 

@@ -55,7 +55,19 @@ each during the walk.
 Each identifier appears twice per call — once in the URL and once as `queryId`
 in the body.
 
-Observed 2026-09-14: the profile timeline issues **`UserOriginalsTimeline`**.
+Observed 2026-09-14, read operations actually issued:
+
+| Operation               | Identifier               | Surface          |
+| ----------------------- | ------------------------ | ---------------- |
+| `UserOriginalsTimeline` | `z_JDHIa1yBS42jLdUH1j3A` | profile timeline |
+| `UserRepliesTimeline`   | `fTdkOgyI3EJPk0Qjlv8qUw` | `/with_replies`  |
+| `Likes`                 | `o000A_Cp4JPOihhbeEgi0g` | likes            |
+| `Bookmarks`             | `tF6KOjmZM0WGcB2Q0mfwhw` | bookmarks        |
+| `Following`             | `4EQGMEhtdVw8NeVBDQHESQ` | following list   |
+| `TweetDetail`           | `FyR-GrebyjdkRoW1z6uCgQ` | post permalink   |
+| `TweetResultByRestId`   | `snmujSvB_9WXyd8yjvZ24Q` | post permalink   |
+
+`UserTweetsAndReplies` was not issued once.
 Cyd matches timeline responses on `/UserTweetsAndReplies?`, `/Likes?`, and
 `/Bookmarks?` only
 (`src/account_x/controller/index/indexParseTweetsResponseData.ts:40`), so those
