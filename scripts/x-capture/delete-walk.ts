@@ -112,6 +112,23 @@ async function deleteOnePost(page: Page): Promise<boolean> {
   return true;
 }
 
+/**
+ * Clicks through X's own JavaScript rather than with the pointer, which is how
+ * Cyd does it too. The settings dialogs keep a mask in their #layers subtree
+ * that swallows pointer events aimed at what it covers.
+ */
+async function jsClick(page: Page, selector: string): Promise<boolean> {
+  const target = page.locator(selector).first();
+  try {
+    await target.waitFor({ state: "attached", timeout: 15000 });
+  } catch {
+    return false;
+  }
+  await target.evaluate((node) => (node as HTMLElement).click());
+  await pause(page, 2500);
+  return true;
+}
+
 async function clickFirst(page: Page, selector: string): Promise<boolean> {
   const target = page.locator(selector).first();
   if ((await target.count()) === 0) {
@@ -129,32 +146,30 @@ async function clickFirst(page: Page, selector: string): Promise<boolean> {
  * longer there — the case an orphaned retweet would have produced, which no
  * timeline read can supply.
  */
-async function replayDelete(page: Page, recorder: Recorder): Promise<boolean> {
+async function replayDelete(page: Page, recorder: Recorder): Promise<string> {
   const sent = recorder.entriesSent.find(
     (entry) =>
       entry.request.method === "POST" &&
       entry.request.url.includes("/DeleteTweet"),
   );
   if (sent === undefined) {
-    return false;
+    return "no delete was captured to repeat";
   }
 
-  const body = sent.request.postData?.text ?? "";
-  const referrer =
+  const header = (name: string) =>
     sent.request.headers.find(
-      (header) => header.name.toLowerCase() === "referer",
-    )?.value ?? `https://x.com/${""}`;
+      (candidate) => candidate.name.toLowerCase() === name,
+    )?.value ?? "";
 
-  await page.evaluate(
-    async ({ url, body, referrer }) => {
+  const replayed = await page.evaluate(
+    async ({ url, body, referrer, authorization }) => {
       const csrf = document.cookie
         .split("; ")
         .find((entry) => entry.startsWith("ct0="))
         ?.slice(4);
-      await fetch(url, {
+      const response = await fetch(url, {
         headers: {
-          authorization:
-            "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+          authorization,
           "content-type": "application/json",
           "x-csrf-token": csrf ?? "",
           "x-twitter-active-user": "yes",
@@ -166,12 +181,20 @@ async function replayDelete(page: Page, recorder: Recorder): Promise<boolean> {
         mode: "cors",
         credentials: "include",
       });
+      // Read it here: a body the page never reads is one Chromium discards,
+      // leaving the recorder with nothing to capture.
+      return { status: response.status, body: await response.text() };
     },
-    { url: sent.request.url, body, referrer },
+    {
+      url: sent.request.url,
+      body: sent.request.postData?.text ?? "",
+      referrer: header("referer"),
+      authorization: header("authorization"),
+    },
   );
 
   await pause(page, 3000);
-  return true;
+  return `repeat answered ${replayed.status}: ${replayed.body.slice(0, 160) || "(empty body)"}`;
 }
 
 async function runStep(
@@ -249,9 +272,81 @@ async function runStep(
     }
 
     case "replay-delete":
-      return (await replayDelete(page, recorder))
-        ? "repeated a delete that already succeeded"
-        : "no delete was captured to repeat";
+      return replayDelete(page, recorder);
+
+    case "check-viewer": {
+      // X's own client no longer calls this, so the only way to learn whether
+      // it still answers is to ask it, exactly as Cyd does.
+      const anyGraphql = recorder.entriesSent.find((entry) =>
+        entry.request.url.includes("/graphql/"),
+      );
+      const authorization =
+        anyGraphql?.request.headers.find(
+          (header) => header.name.toLowerCase() === "authorization",
+        )?.value ?? "";
+      if (authorization === "") {
+        return "no authorization captured yet to ask with";
+      }
+
+      const url =
+        "https://api.x.com/graphql/WBT8ommFCSHiy3z2_4k1Vg/Viewer?variables=%7B%22withCommunitiesMemberships%22%3Atrue%7D&features=%7B%22profile_label_improvements_pcf_label_in_post_enabled%22%3Atrue%2C%22rweb_tipjar_consumption_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%7D&fieldToggles=%7B%22isDelegate%22%3Afalse%2C%22withAuxiliaryUserLabels%22%3Afalse%7D";
+
+      const answer = await page.evaluate(
+        async ({ url, authorization }) => {
+          const csrf = document.cookie
+            .split("; ")
+            .find((entry) => entry.startsWith("ct0="))
+            ?.slice(4);
+          const response = await fetch(url, {
+            headers: {
+              authorization,
+              "content-type": "application/json",
+              "x-csrf-token": csrf ?? "",
+              "x-twitter-active-user": "yes",
+              "x-twitter-auth-type": "OAuth2Session",
+            },
+            referrer: "https://x.com/",
+            method: "GET",
+            mode: "cors",
+            credentials: "include",
+          });
+          return { status: response.status, body: await response.text() };
+        },
+        { url, authorization },
+      );
+
+      const outPath = path.join(
+        CAPTURE_DIR,
+        dateStampFrom(new Date()),
+        "raw",
+        "viewer-response.json",
+      );
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, answer.body);
+
+      await pause(page, 2000);
+      return `Viewer answered ${answer.status}, ${answer.body.length} bytes, written to ${outPath}`;
+    }
+
+    case "update-banner": {
+      await open(page, "https://x.com/settings/profile");
+
+      const fileInput = page.locator('input[data-testid="fileInput"]').first();
+      if ((await fileInput.count()) === 0) {
+        return "no file input on the profile settings page";
+      }
+      await fileInput.setInputFiles("capture/seed-media/image-2.png");
+      await pause(page, 4000);
+
+      // X crops the image first, behind a mask that eats pointer events.
+      if (!(await jsClick(page, '[data-testid="applyButton"]'))) {
+        return "upload accepted but no apply button appeared";
+      }
+
+      return (await jsClick(page, SELECTORS.profileSaveButton))
+        ? "banner saved"
+        : "save button not found after applying";
+    }
 
     case "update-bio": {
       await open(page, "https://x.com/settings/profile");

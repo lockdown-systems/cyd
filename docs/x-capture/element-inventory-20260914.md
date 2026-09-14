@@ -172,8 +172,19 @@ the codebase. Record whether the Following button now carries a
 ### Tombstone: banner
 
 Not implemented. `runJobTombstoneUpdateBanner` loads the profile settings page,
-sleeps two seconds, and reports success (`jobs_tombstone.ts:19-26`). Record
-what the banner change actually requires so the job can be written.
+sleeps two seconds, and reports success (`jobs_tombstone.ts:19-26`).
+
+Observed 2026-09-14: the change is a single `POST` to
+`/1.1/account/update_profile_banner.json` with referrer `https://x.com/`.
+
+| Step             | Selector                                    | Kind   | Observed                           |
+| ---------------- | ------------------------------------------- | ------ | ---------------------------------- |
+| Set the image    | `input[data-testid="fileInput"]`            | testid | present, 3 file inputs on the page |
+| Confirm the crop | `[data-testid="applyButton"]`               | testid | appears only after an upload       |
+| Save             | `button[data-testid="Profile_Save_Button"]` | testid | present                            |
+
+Both clicks must go through the element's own `click()`: a mask in the
+`#layers` subtree swallows pointer events aimed at the dialog.
 
 ### Direct messages
 

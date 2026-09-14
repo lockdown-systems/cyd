@@ -121,6 +121,8 @@ export type DeleteStepKind =
   | "unfollow"
   | "replay-delete"
   | "update-bio"
+  | "update-banner"
+  | "check-viewer"
   | "lock-account"
   | "provoke-rate-limit";
 
@@ -170,6 +172,16 @@ export function buildDeleteWalk(
       kind: "replay-delete",
       count: count("replay-delete", 1),
       note: "Repeat a delete that already succeeded, to see what X says about a post that is gone",
+    },
+    {
+      kind: "check-viewer",
+      count: count("check-viewer", 1),
+      note: "Ask whether the Viewer operation Cyd depends on still answers, since X's own client no longer calls it",
+    },
+    {
+      kind: "update-banner",
+      count: count("update-banner", 1),
+      note: "Change the profile banner, which Cyd's tombstone job never implemented",
     },
     {
       kind: "update-bio",
