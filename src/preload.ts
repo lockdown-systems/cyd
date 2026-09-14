@@ -10,7 +10,6 @@ import {
   XJob,
   XProgress,
   XArchiveStartResponse,
-  XIndexMessagesStartResponse,
   XDeleteTweetsStartResponse,
   XRateLimitInfo,
   XProgressInfo,
@@ -272,32 +271,11 @@ const electronAPI = {
     indexParseBookmarks: (accountID: number): Promise<XProgress> => {
       return ipcRenderer.invoke("X:indexParseBookmarks", accountID);
     },
-    indexParseConversations: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseConversations", accountID);
-    },
     indexIsThereMore: (accountID: number): Promise<boolean> => {
       return ipcRenderer.invoke("X:indexIsThereMore", accountID);
     },
     resetThereIsMore: (accountID: number) => {
       ipcRenderer.invoke("X:resetThereIsMore", accountID);
-    },
-    indexMessagesStart: (
-      accountID: number,
-    ): Promise<XIndexMessagesStartResponse> => {
-      return ipcRenderer.invoke("X:indexMessagesStart", accountID);
-    },
-    indexParseMessages: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseMessages", accountID);
-    },
-    indexConversationFinished: (
-      accountID: number,
-      conversationID: string,
-    ): Promise<void> => {
-      return ipcRenderer.invoke(
-        "X:indexConversationFinished",
-        accountID,
-        conversationID,
-      );
     },
     archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
       return ipcRenderer.invoke("X:archiveTweetsStart", accountID);
@@ -387,12 +365,6 @@ const electronAPI = {
         tweetID,
         deleteType,
       );
-    },
-    deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("X:deleteDMsMarkAllDeleted", accountID);
-    },
-    deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("X:deleteDMsScrollToBottom", accountID);
     },
     unzipXArchive: (
       accountID: number,

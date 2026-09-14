@@ -61,8 +61,6 @@ describe("XViewModel", () => {
         likesDeleted: 0,
         bookmarksSaved: 0,
         bookmarksDeleted: 0,
-        conversationsSaved: 0,
-        conversationsDeleted: 0,
         messagesSaved: 0,
         messagesDeleted: 0,
       }),
@@ -77,9 +75,6 @@ describe("XViewModel", () => {
         likesDeleted: 0,
         bookmarksIndexed: 0,
         bookmarksDeleted: 0,
-        conversationsIndexed: 0,
-        conversationsDeleted: 0,
-        messagesIndexed: 0,
         messagesDeleted: 0,
         tweetsArchived: 0,
         tweetsToArchive: 0,
@@ -475,7 +470,7 @@ describe("XViewModel", () => {
 
       await vm.defineJobs();
 
-      // Should only have login and unfollowEveryone/deleteDMs (which don't require hasSomeData)
+      // Should only have login and unfollowEveryone (which doesn't require hasSomeData)
       expect(mockElectronX.createJobs).toHaveBeenCalledWith(1, ["login"]);
     });
 

@@ -18,7 +18,6 @@ import {
   XArchiveStartResponse,
   XRateLimitInfo,
   emptyXRateLimitInfo,
-  XIndexMessagesStartResponse,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -43,9 +42,6 @@ import {
   XAPILegacyTweet,
   XAPILegacyTweetMedia,
   XAPIUserCore,
-  XAPIConversation,
-  XAPIMessage,
-  XAPIUser,
   XArchiveTweet,
 } from "./types";
 
@@ -67,9 +63,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
   // Making this public so it can be accessed in tests
   public account: XAccount | null = null;
   private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
-
-  // Temp variable for accurately counting message progress
-  public messageIDsIndexed: string[] = [];
 
   protected cookies: Record<string, Record<string, string>> = {};
 
@@ -95,18 +88,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
           this.rateLimitInfo.rateLimitReset =
             Math.floor(Date.now() / 1000) + 900;
         }
-      }
-
-      // Monitor for deleting conversations
-      if (
-        details.url.startsWith("https://x.com/i/api/1.1/dm/conversation/") &&
-        details.url.endsWith("/delete.json") &&
-        details.method == "POST" &&
-        details.statusCode == 204
-      ) {
-        const urlParts = details.url.split("/");
-        const conversationID = urlParts[urlParts.length - 2];
-        Deletion.deleteDMsMarkDeleted(this, conversationID);
       }
     });
   }
@@ -257,11 +238,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   protected getMITMURLs(): string[] {
-    return [
-      "x.com/i/api/graphql",
-      "x.com/i/api/1.1/dm",
-      "x.com/i/api/2/notifications/all.json",
-    ];
+    return ["x.com/i/api/graphql"];
   }
 
   indexTweet(
@@ -292,52 +269,12 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return Index.indexTweetURLs(this, tweetLegacy);
   }
 
-  async indexUser(user: XAPIUser): Promise<void> {
-    return Index.indexUser(this, user);
-  }
-
-  indexConversation(conversation: XAPIConversation): void {
-    return Index.indexConversation(this, conversation);
-  }
-
-  async indexParseConversationsResponseData(
-    responseIndex: number,
-  ): Promise<boolean> {
-    return Index.indexParseConversationsResponseData(this, responseIndex);
-  }
-
-  async indexParseConversations(): Promise<XProgress> {
-    return Index.indexParseConversations(this);
-  }
-
   async indexIsThereMore(): Promise<boolean> {
     return Index.indexIsThereMore(this);
   }
 
   async resetThereIsMore(): Promise<void> {
     return Index.resetThereIsMore(this);
-  }
-
-  async indexMessagesStart(): Promise<XIndexMessagesStartResponse> {
-    return Index.indexMessagesStart(this);
-  }
-
-  indexMessage(message: XAPIMessage): void {
-    return Index.indexMessage(this, message);
-  }
-
-  async indexParseMessagesResponseData(
-    responseIndex: number,
-  ): Promise<boolean> {
-    return Index.indexParseMessagesResponseData(this, responseIndex);
-  }
-
-  async indexParseMessages(): Promise<XProgress> {
-    return Index.indexParseMessages(this);
-  }
-
-  async indexConversationFinished(conversationID: string): Promise<void> {
-    return Index.indexConversationFinished(this, conversationID);
   }
 
   // When you start archiving tweets you:
@@ -385,14 +322,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
   async deleteTweet(tweetID: string, deleteType: string): Promise<void> {
     return Deletion.deleteTweet(this, tweetID, deleteType);
-  }
-
-  deleteDMsMarkDeleted(conversationID: string): void {
-    return Deletion.deleteDMsMarkDeleted(this, conversationID);
-  }
-
-  async deleteDMsMarkAllDeleted(): Promise<void> {
-    return Deletion.deleteDMsMarkAllDeleted(this);
   }
 
   async resetRateLimitInfo(): Promise<void> {

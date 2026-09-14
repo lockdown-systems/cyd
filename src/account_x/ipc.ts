@@ -9,7 +9,6 @@ import {
   XProgress,
   XArchiveStartResponse,
   XRateLimitInfo,
-  XIndexMessagesStartResponse,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -146,18 +145,6 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
-    "X:indexParseConversations",
-    async (_, accountID: number): Promise<XProgress> => {
-      try {
-        const controller = getXAccountController(accountID);
-        return await controller.indexParseConversations();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
     "X:indexIsThereMore",
     async (_, accountID: number): Promise<boolean> => {
       try {
@@ -175,42 +162,6 @@ export const defineIPCX = () => {
       try {
         const controller = getXAccountController(accountID);
         await controller.resetThereIsMore();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "X:indexMessagesStart",
-    async (_, accountID: number): Promise<XIndexMessagesStartResponse> => {
-      try {
-        const controller = getXAccountController(accountID);
-        return await controller.indexMessagesStart();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "X:indexParseMessages",
-    async (_, accountID: number): Promise<XProgress> => {
-      try {
-        const controller = getXAccountController(accountID);
-        return await controller.indexParseMessages();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "X:indexConversationFinished",
-    async (_, accountID: number, conversationID: string): Promise<void> => {
-      try {
-        const controller = getXAccountController(accountID);
-        await controller.indexConversationFinished(conversationID);
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
@@ -456,18 +407,6 @@ export const defineIPCX = () => {
       try {
         const controller = getXAccountController(accountID);
         await controller.deleteTweet(tweetID, deleteType);
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "X:deleteDMsMarkAllDeleted",
-    async (_, accountID: number): Promise<void> => {
-      try {
-        const controller = getXAccountController(accountID);
-        await controller.deleteDMsMarkAllDeleted();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }

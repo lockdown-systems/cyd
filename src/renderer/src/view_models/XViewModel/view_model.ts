@@ -259,11 +259,6 @@ export class XViewModel extends BrowserViewModel {
     return Helpers.errorJob(this, jobIndex);
   }
 
-  // Load the DMs page, and return true if an error was triggered
-  async deleteDMsLoadDMsPage(): Promise<boolean> {
-    return DeleteJobs.deleteDMsLoadDMsPage(this);
-  }
-
   // Load the following page, and return true if an error was triggered
   async unfollowEveryoneLoadPage(): Promise<boolean> {
     return DeleteJobs.unfollowEveryoneLoadPage(this);
@@ -315,14 +310,6 @@ export class XViewModel extends BrowserViewModel {
         await IndexJobs.runJobArchiveTweets(this, jobIndex);
         break;
 
-      case "indexConversations":
-        await IndexJobs.runJobIndexConversations(this, jobIndex);
-        break;
-
-      case "indexMessages":
-        await IndexJobs.runJobIndexMessages(this, jobIndex);
-        break;
-
       case "archiveBuild":
         await Helpers.runJobArchiveBuild(this, jobIndex);
         break;
@@ -353,10 +340,6 @@ export class XViewModel extends BrowserViewModel {
 
       case "unfollowEveryone":
         await DeleteJobs.runJobUnfollowEveryone(this, jobIndex);
-        break;
-
-      case "deleteDMs":
-        await DeleteJobs.runJobDeleteDMs(this, jobIndex);
         break;
 
       case "migrateBluesky":

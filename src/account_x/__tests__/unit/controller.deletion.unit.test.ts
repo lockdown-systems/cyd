@@ -10,11 +10,7 @@ import {
   createXControllerTestContext,
   type XControllerTestContext,
 } from "../fixtures/accountTestHarness";
-import {
-  seedTweet,
-  seedConversation,
-  seedMessage,
-} from "../fixtures/tweetFactory";
+import { seedTweet } from "../fixtures/tweetFactory";
 import { createPlatformPathMocks } from "../../../__tests__/platform-fixtures/tempPaths";
 
 // Mock the util module with unique paths per test run
@@ -280,79 +276,6 @@ describe("XAccountController - Deletion", () => {
       const count = await controller.deleteTweetsCountNotArchived(false);
 
       expect(count).toBe(1);
-    });
-  });
-
-  describe("deleteDMsMarkDeleted", () => {
-    test("marks a conversation and its messages as deleted", () => {
-      seedConversation(controller, { conversationID: "conv1" });
-      seedMessage(controller, {
-        messageID: "msg1",
-        conversationID: "conv1",
-      });
-      seedMessage(controller, {
-        messageID: "msg2",
-        conversationID: "conv1",
-      });
-
-      controller.deleteDMsMarkDeleted("conv1");
-
-      const conversation = exec(
-        controller.db!,
-        "SELECT deletedAt FROM conversation WHERE conversationID = ?",
-        ["conv1"],
-        "get",
-      ) as { deletedAt: string | null };
-      const messages = exec(
-        controller.db!,
-        "SELECT messageID, deletedAt FROM message WHERE conversationID = ?",
-        ["conv1"],
-        "all",
-      ) as { messageID: string; deletedAt: string | null }[];
-
-      expect(conversation.deletedAt).not.toBeNull();
-      expect(messages.every((message) => message.deletedAt)).toBe(true);
-      expect(controller.progress.conversationsDeleted).toBe(1);
-    });
-  });
-
-  describe("deleteDMsMarkAllDeleted", () => {
-    test("marks every remaining conversation and message as deleted", async () => {
-      seedConversation(controller, { conversationID: "conv1" });
-      seedConversation(controller, { conversationID: "conv2" });
-      seedConversation(controller, {
-        conversationID: "conv3",
-        deletedAt: new Date().toISOString(),
-      });
-      seedMessage(controller, {
-        messageID: "msg1",
-        conversationID: "conv1",
-      });
-      seedMessage(controller, {
-        messageID: "msg2",
-        conversationID: "conv2",
-      });
-
-      await controller.deleteDMsMarkAllDeleted();
-
-      const conversations = exec(
-        controller.db!,
-        "SELECT conversationID, deletedAt FROM conversation",
-        [],
-        "all",
-      ) as { conversationID: string; deletedAt: string | null }[];
-      const messages = exec(
-        controller.db!,
-        "SELECT messageID, deletedAt FROM message",
-        [],
-        "all",
-      ) as { messageID: string; deletedAt: string | null }[];
-
-      expect(
-        conversations.every((conversation) => conversation.deletedAt),
-      ).toBe(true);
-      expect(messages.every((message) => message.deletedAt)).toBe(true);
-      expect(controller.progress.conversationsDeleted).toBe(2);
     });
   });
 });
