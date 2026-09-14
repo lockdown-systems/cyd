@@ -77,7 +77,6 @@ const deleteRetweetsDaysOldEnabled = ref(false);
 const deleteRetweetsDaysOld = ref(0);
 const deleteLikes = ref(false);
 const deleteBookmarks = ref(false);
-const deleteDMs = ref(false);
 const unfollowEveryone = ref(false);
 
 const hasSomeData = ref(false);
@@ -102,9 +101,8 @@ const hasValidSelection = computed(() => {
         deleteRetweets.value ||
         deleteLikes.value ||
         deleteBookmarks.value ||
-        unfollowEveryone.value ||
-        deleteDMs.value)) ||
-    (!hasSomeData.value && (unfollowEveryone.value || deleteDMs.value))
+        unfollowEveryone.value)) ||
+    (!hasSomeData.value && unfollowEveryone.value)
   );
 });
 
@@ -139,7 +137,6 @@ const loadSettings = async () => {
       deleteRetweetsDaysOld.value = account.xAccount.deleteRetweetsDaysOld;
       deleteLikes.value = account.xAccount.deleteLikes;
       deleteBookmarks.value = account.xAccount.deleteBookmarks;
-      deleteDMs.value = account.xAccount.deleteDMs;
       unfollowEveryone.value = account.xAccount.unfollowEveryone;
     }
 
@@ -203,7 +200,6 @@ const saveSettings = async () => {
       account.xAccount.deleteRetweetsDaysOld = deleteRetweetsDaysOld.value;
       account.xAccount.deleteLikes = deleteLikes.value;
       account.xAccount.deleteBookmarks = deleteBookmarks.value;
-      account.xAccount.deleteDMs = deleteDMs.value;
       account.xAccount.unfollowEveryone = unfollowEveryone.value;
 
       await window.electron.database.saveAccount(JSON.stringify(account));
@@ -642,37 +638,11 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- deleteDMs -->
+          <!-- X replaced direct messages with X Chat -->
           <div class="mb-3">
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="d-flex align-items-center">
-                <div class="form-check">
-                  <input
-                    id="deleteDMs"
-                    v-model="deleteDMs"
-                    type="checkbox"
-                    class="form-check-input"
-                    @change="updateProceedState"
-                  />
-                  <label
-                    class="form-check-label mr-1 text-nowrap"
-                    for="deleteDMs"
-                  >
-                    {{ t("wizard.deleteMyDMs") }}
-                  </label>
-                </div>
-              </div>
-              <span
-                v-if="!userAuthenticated || !userPremium"
-                class="premium badge badge-primary"
-                >{{ t("wizard.premium") }}</span
-              >
-            </div>
-            <div class="indent">
-              <small class="form-text text-muted">
-                {{ t("wizard.dmsDescription") }}
-              </small>
-            </div>
+            <small class="form-text text-muted">
+              {{ t("wizard.directMessagesWithdrawn") }}
+            </small>
           </div>
         </form>
       </div>

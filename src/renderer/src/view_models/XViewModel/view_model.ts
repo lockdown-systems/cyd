@@ -127,10 +127,6 @@ export class XViewModel extends BrowserViewModel {
         if (this.account.xAccount?.archiveBookmarks) {
           jobTypes.push("indexBookmarks");
         }
-        if (this.account.xAccount?.archiveDMs) {
-          jobTypes.push("indexConversations");
-          jobTypes.push("indexMessages");
-        }
       }
 
       if (this.account.xAccount?.archiveMyData) {
@@ -140,10 +136,6 @@ export class XViewModel extends BrowserViewModel {
         }
         if (this.account.xAccount?.archiveBookmarks) {
           jobTypes.push("indexBookmarks");
-        }
-        if (this.account.xAccount?.archiveDMs) {
-          jobTypes.push("indexConversations");
-          jobTypes.push("indexMessages");
         }
       }
 
@@ -166,9 +158,6 @@ export class XViewModel extends BrowserViewModel {
         }
         if (this.account.xAccount?.unfollowEveryone) {
           jobTypes.push("unfollowEveryone");
-        }
-        if (this.account.xAccount?.deleteDMs) {
-          jobTypes.push("deleteDMs");
         }
       }
     }

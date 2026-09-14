@@ -162,11 +162,6 @@ emitter?.on("account-updated", async () => {
           :stat="databaseStats.bookmarksDeleted"
         />
         <SidebarCard
-          v-if="databaseStats.conversationsDeleted > 0"
-          header="Conversations Deleted"
-          :stat="databaseStats.conversationsDeleted"
-        />
-        <SidebarCard
           v-if="databaseStats.accountsUnfollowed > 0"
           header="Accounts Unfollowed"
           :stat="databaseStats.accountsUnfollowed"

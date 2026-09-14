@@ -401,7 +401,7 @@ describe("XViewModel", () => {
       ]);
     });
 
-    it("should create save jobs (tweets, likes, bookmarks, DMs)", async () => {
+    it("should create save jobs (tweets, likes, bookmarks) but no direct-message jobs", async () => {
       vi.mocked(getJobsType).mockReturnValue("saveDeleteData");
       vm.account.xAccount!.saveMyData = true;
       vm.account.xAccount!.archiveTweets = true;
@@ -418,13 +418,11 @@ describe("XViewModel", () => {
         "archiveTweets",
         "indexLikes",
         "indexBookmarks",
-        "indexConversations",
-        "indexMessages",
         "archiveBuild",
       ]);
     });
 
-    it("should create archive jobs (HTML tweets, bookmarks, DMs)", async () => {
+    it("should create archive jobs (HTML tweets, bookmarks) but no direct-message jobs", async () => {
       vi.mocked(getJobsType).mockReturnValue("saveDeleteData");
       vm.account.xAccount!.archiveMyData = true;
       vm.account.xAccount!.archiveTweetsHTML = true;
@@ -437,13 +435,11 @@ describe("XViewModel", () => {
         "login",
         "archiveTweets",
         "indexBookmarks",
-        "indexConversations",
-        "indexMessages",
         "archiveBuild",
       ]);
     });
 
-    it("should create delete jobs (tweets, retweets, likes, bookmarks, unfollowEveryone, DMs)", async () => {
+    it("should create delete jobs (tweets, retweets, likes, bookmarks, unfollowEveryone) but no direct-message job", async () => {
       vi.mocked(getJobsType).mockReturnValue("saveDeleteData");
       vi.mocked(xHasSomeData).mockResolvedValue(true);
       vm.account.xAccount!.deleteMyData = true;
@@ -464,7 +460,6 @@ describe("XViewModel", () => {
         "deleteLikes",
         "deleteBookmarks",
         "unfollowEveryone",
-        "deleteDMs",
         "archiveBuild",
       ]);
     });

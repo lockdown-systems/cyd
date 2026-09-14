@@ -58,8 +58,7 @@ const buttonProps = computed(() => ({
       action: importClicked,
       disabled: !(
         props.model.account?.xAccount?.archiveTweets ||
-        props.model.account?.xAccount?.archiveLikes ||
-        props.model.account?.xAccount?.archiveDMs
+        props.model.account?.xAccount?.archiveLikes
       ),
     },
   ],
