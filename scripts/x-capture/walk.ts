@@ -27,7 +27,11 @@ import {
   type CensusRow,
   type WalkStep,
 } from "./lib/walk_plan";
-import { assertNotBlocked, INVENTORY_SELECTORS } from "./lib/x_page";
+import {
+  assertNotBlocked,
+  INVENTORY_SELECTORS,
+  isLoggedIn,
+} from "./lib/x_page";
 
 const CHROMIUM_PATH = process.env.CHROMIUM_PATH ?? "/usr/bin/chromium";
 const CAPTURE_DIR = "capture";
@@ -183,6 +187,18 @@ async function main() {
   context.on("close", () => recorder.write());
 
   const page = context.pages()[0] ?? (await context.newPage());
+
+  // A logged-out session answers every timeline query with a 404, which looks
+  // from the outside like a walk that simply found nothing.
+  if (!(await isLoggedIn(page))) {
+    console.log(
+      `Not logged in as @${options.account}. Log in first:\n` +
+        `  npx tsx scripts/x-capture/seed.ts --account ${options.account} --task login`,
+    );
+    await context.close().catch(() => {});
+    process.exitCode = 2;
+    return;
+  }
 
   console.log(`Walking ${steps.length} surfaces as @${options.account}.`);
   console.log(`Recording to ${harPath}\n`);
