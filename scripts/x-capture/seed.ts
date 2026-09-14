@@ -451,6 +451,7 @@ async function main() {
           await page
             .goto("https://x.com/home", { waitUntil: "domcontentloaded" })
             .catch(() => {});
+          feed.actionsSinceReload = 0;
           await new Promise((resolve) => setTimeout(resolve, 15000));
           continue;
         }
@@ -458,6 +459,7 @@ async function main() {
         await page
           .goto("https://x.com/home", { waitUntil: "domcontentloaded" })
           .catch(() => {});
+        feed.actionsSinceReload = 0;
 
         const answer = await ask("  [r]etry, [s]kip, [q]uit? ");
         if (answer === "s") {
