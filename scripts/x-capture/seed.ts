@@ -4,7 +4,7 @@
  *
  * Usage:
  *   npx tsx scripts/x-capture/seed.ts --account <handle> [--task all|shapes|posts|likes|bookmarks|follows]
- *     [--count N] [--targets url,url] [--feed URL] [--dry-run]
+ *     [--count N] [--targets url,url] [--feed URL] [--dry-run] [--unattended]
  *
  * The browser is a real system Chromium with a persistent profile, driven
  * slowly and visibly. It stops and hands control back whenever X shows
@@ -56,6 +56,8 @@ interface Options {
   targets: string[];
   feed: string;
   dryRun: boolean;
+  /** Never prompt: skip what cannot be done and keep going. */
+  unattended: boolean;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -67,6 +69,7 @@ function parseArgs(argv: string[]): Options {
     targets: [],
     feed: "https://x.com/home",
     dryRun: false,
+    unattended: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -88,6 +91,9 @@ function parseArgs(argv: string[]): Options {
         break;
       case "--dry-run":
         options.dryRun = true;
+        break;
+      case "--unattended":
+        options.unattended = true;
         break;
       default:
         throw new Error(`Unknown option: ${args[i]}`);
@@ -317,6 +323,14 @@ async function main() {
   const page = context.pages()[0] ?? (await context.newPage());
 
   if (!(await isLoggedIn(page))) {
+    if (options.unattended) {
+      console.log(
+        `Not logged in as @${options.account}, and an unattended run cannot log in. Stopping.`,
+      );
+      await context.close();
+      process.exitCode = 2;
+      return;
+    }
     console.log(
       `\nLog in as @${options.account} in the browser window that just opened.`,
     );
@@ -370,6 +384,11 @@ async function main() {
         if (error instanceof ManualActionError) {
           console.log(`\n⏸ ${action.id} ${action.kind}: do this one by hand.`);
           console.log(`  ${message}`);
+          if (options.unattended) {
+            console.log("  Skipped: nobody is watching this run.");
+            progress.record(action.id, "skipped", message);
+            break;
+          }
           const manual = await ask("  [d]one, [s]kip, [q]uit? ");
           if (manual === "q") {
             await context.close();
@@ -401,6 +420,26 @@ async function main() {
           console.log("  X interrupted the session. Clear it in the window.");
         }
 
+        if (options.unattended) {
+          // X interrupting the session needs a person, so stop rather than
+          // grind against it. Anything else gets a few tries, then is left for
+          // whoever reads the log.
+          if (error instanceof BlockedError) {
+            progress.record(action.id, "failed", message);
+            await context.close();
+            process.exitCode = 2;
+            return;
+          }
+          if (attempts >= 3) {
+            console.log(`  Giving up on ${action.id} after ${attempts} tries.`);
+            progress.record(action.id, "skipped", message);
+            break;
+          }
+          console.log(`  Retrying ${action.id} (try ${attempts + 1} of 3).`);
+          await new Promise((resolve) => setTimeout(resolve, 15000));
+          continue;
+        }
+
         const answer = await ask("  [r]etry, [s]kip, [q]uit? ");
         if (answer === "s") {
           progress.record(action.id, "skipped", message);
@@ -429,7 +468,9 @@ async function main() {
   if (fs.existsSync(issuesPath)) {
     console.log(`Selectors that did not match: ${issuesPath}`);
   }
-  await ask("Press Enter to close the browser: ");
+  if (!options.unattended) {
+    await ask("Press Enter to close the browser: ");
+  }
   await context.close();
 }
 
