@@ -8,6 +8,7 @@ import { getBreadcrumbIcon, setJobsType } from "../../../util";
 import type { StandardWizardPageProps } from "../../../types/WizardPage";
 import { useWizardPage } from "../../../composables/useWizardPage";
 import BaseWizardPage from "../../shared_components/wizard/BaseWizardPage.vue";
+import XDirectMessagesWithdrawnComponent from "../components/XDirectMessagesWithdrawnComponent.vue";
 
 const { t } = useI18n();
 
@@ -46,7 +47,6 @@ const setProceedEnabled = (enabled: boolean) => {
 // Settings
 const archiveTweetsHTML = ref(false);
 const archiveBookmarks = ref(false);
-const archiveDMs = ref(false);
 
 const databaseStats = ref<XDatabaseStats>(emptyXDatabaseStats());
 const deleteTweetsCountNotArchived = ref(0);
@@ -66,7 +66,7 @@ const backClicked = async () => {
 
 // Check if any archive option is selected
 const hasValidSelection = computed(() => {
-  return archiveTweetsHTML.value || archiveBookmarks.value || archiveDMs.value;
+  return archiveTweetsHTML.value || archiveBookmarks.value;
 });
 
 // Update proceed state when selection changes
@@ -84,7 +84,6 @@ const loadSettings = async () => {
     if (account && account.xAccount) {
       archiveTweetsHTML.value = account.xAccount.archiveTweetsHTML;
       archiveBookmarks.value = account.xAccount.archiveBookmarks;
-      archiveDMs.value = account.xAccount.archiveDMs;
 
       updateProceedState();
     }
@@ -116,7 +115,6 @@ const saveSettings = async () => {
 
       account.xAccount.archiveTweetsHTML = archiveTweetsHTML.value;
       account.xAccount.archiveBookmarks = archiveBookmarks.value;
-      account.xAccount.archiveDMs = archiveDMs.value;
       await window.electron.database.saveAccount(JSON.stringify(account));
       emit("updateAccount");
     }
@@ -233,20 +231,7 @@ onMounted(async () => {
               }}</label>
             </div>
           </div>
-          <div class="mb-3">
-            <div class="form-check">
-              <input
-                id="archiveDMs"
-                v-model="archiveDMs"
-                type="checkbox"
-                class="form-check-input"
-                @change="updateProceedState"
-              />
-              <label class="form-check-label" for="archiveDMs">{{
-                t("wizard.saveMyDMs")
-              }}</label>
-            </div>
-          </div>
+          <XDirectMessagesWithdrawnComponent />
         </form>
       </div>
     </template>

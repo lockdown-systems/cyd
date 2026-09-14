@@ -27,6 +27,4 @@ export {
   runJobIndexLikes,
   runJobIndexBookmarks,
   runJobArchiveTweets,
-  runJobIndexConversations,
-  runJobIndexMessages,
 } from "../jobs_index";

@@ -1,7 +1,6 @@
 /**
  * Integration tests for XAccountController indexing workflows:
  * - End-to-end tweet indexing with real data
- * - Conversation and message parsing
  * - Bookmarks indexing
  * - Media and URL extraction
  * - Automation error handling
@@ -12,15 +11,7 @@ import "../../../__tests__/platform-fixtures/network";
 
 import { beforeEach, afterEach, test, expect, vi } from "vitest";
 
-import {
-  XTweetRow,
-  XTweetMediaRow,
-  XTweetURLRow,
-  XUserRow,
-  XConversationRow,
-  XConversationParticipantRow,
-  XMessageRow,
-} from "../../types";
+import { XTweetRow, XTweetMediaRow, XTweetURLRow } from "../../types";
 import { XProgress } from "../../../shared_types";
 import { XAccountController } from "../../x_account_controller";
 import { createPlatformPathMocks } from "../../../__tests__/platform-fixtures/tempPaths";
@@ -90,159 +81,6 @@ test("XAccountController.indexParsedTweets() should add all the test tweets", as
     "all",
   ) as XTweetRow[];
   expect(rows.length).toBe(60);
-});
-
-test(
-  "XAccountController.indexParseConversations() should add all the conversations and users",
-  { timeout: 20000 },
-  async () => {
-    mitmController.setTestdata("indexDMs");
-
-    const progress: XProgress = await controller.indexParseConversations();
-    expect(progress.usersIndexed).toBe(78);
-    expect(progress.conversationsIndexed).toBe(44);
-
-    const userRows = database.exec(
-      controller.db,
-      "SELECT * FROM user",
-      [],
-      "all",
-    ) as XUserRow[];
-    expect(userRows.length).toBe(78);
-
-    const conversationRows = database.exec(
-      controller.db,
-      "SELECT * FROM conversation",
-      [],
-      "all",
-    ) as XConversationRow[];
-    expect(conversationRows.length).toBe(44);
-
-    const participantRows = database.exec(
-      controller.db,
-      "SELECT * FROM conversation_participant",
-      [],
-      "all",
-    ) as XConversationParticipantRow[];
-    expect(participantRows.length).toBe(126);
-  },
-);
-
-test(
-  "XAccountController.indexParseConversations() should not crash with empty response data",
-  { timeout: 20000 },
-  async () => {
-    mitmController.setTestdata("indexDMs");
-    // https://dev-admin.cyd.social/#/error/4
-    controller.mitmController.responseData = [
-      {
-        host: "x.com",
-        url: "/i/api/1.1/dm/user_updates.json?nsfw_filtering_enabled=false&cursor=GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&supports_edit=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-        status: 200,
-        requestBody: "",
-        responseHeaders: {
-          date: "Fri, 04 Oct 2024 22:48:40 GMT",
-          perf: "7402827104",
-          pragma: "no-cache",
-          server: "tsa_p",
-          status: "200 OK",
-          expires: "Tue, 31 Mar 1981 05:00:00 GMT",
-          "content-type": "application/json;charset=utf-8",
-          "cache-control":
-            "no-cache, no-store, must-revalidate, pre-check=0, post-check=0",
-          "last-modified": "Fri, 04 Oct 2024 22:48:40 GMT",
-          "x-transaction": "ee80ad0ceaefe304",
-          "x-access-level": "read-write-directmessages",
-          "x-frame-options": "SAMEORIGIN",
-          "content-encoding": "gzip",
-          "x-transaction-id": "ee80ad0ceaefe304",
-          "x-xss-protection": "0",
-          "x-rate-limit-limit": "450",
-          "x-rate-limit-reset": "1728083012",
-          "content-disposition": "attachment; filename=json.json",
-          "x-client-event-enabled": "true",
-          "x-content-type-options": "nosniff",
-          "x-rate-limit-remaining": "448",
-          "x-twitter-response-tags": "BouncerCompliant",
-          "strict-transport-security": "max-age=631138519",
-          "x-response-time": "18",
-          "x-connection-hash":
-            "0de2c8598c4078c96f84213b3d9deb7d78ae88a1c6c09d87acf21d17fc8f7d84",
-          "transfer-encoding": "chunked",
-          connection: "close",
-        },
-        responseBody:
-          '{"user_events":{"cursor":"GRwmgIC96Za7148zFoCAvemWu9ePMyUAAAA","last_seen_event_id":"1813903699145637988","trusted_last_seen_event_id":"1813903699145637988","untrusted_last_seen_event_id":"1653160237711384581"}}',
-        processed: false,
-      },
-    ];
-
-    const progress: XProgress = await controller.indexParseConversations();
-    expect(progress.usersIndexed).toBe(0);
-    expect(progress.conversationsIndexed).toBe(0);
-
-    const userRows = database.exec(
-      controller.db,
-      "SELECT * FROM user",
-      [],
-      "all",
-    ) as XUserRow[];
-    expect(userRows.length).toBe(0);
-
-    const conversationRows = database.exec(
-      controller.db,
-      "SELECT * FROM conversation",
-      [],
-      "all",
-    ) as XConversationRow[];
-    expect(conversationRows.length).toBe(0);
-
-    const participantRows = database.exec(
-      controller.db,
-      "SELECT * FROM conversation_participant",
-      [],
-      "all",
-    ) as XConversationParticipantRow[];
-    expect(participantRows.length).toBe(0);
-  },
-);
-
-test("XAccountController.indexParseMessages() should add all the messages", async () => {
-  mitmController.setTestdata("indexDMs");
-
-  const progress: XProgress = await controller.indexParseMessages();
-  expect(progress.messagesIndexed).toBe(116);
-
-  const rows: XMessageRow[] = database.exec(
-    controller.db,
-    "SELECT * FROM message",
-    [],
-    "all",
-  ) as XMessageRow[];
-  expect(rows.length).toBe(116);
-});
-
-test("XAccountController.indexParseMessages() should add all the messages, on re-index", async () => {
-  // Index messages the first time
-  mitmController.setTestdata("indexDMs");
-  controller.indexMessagesStart();
-  let progress: XProgress = await controller.indexParseMessages();
-  expect(progress.messagesIndexed).toBe(116);
-
-  // Index them again, the progress should still be the same
-  controller.resetProgress();
-  mitmController.setTestdata("indexDMs");
-  controller.indexMessagesStart();
-  progress = await controller.indexParseMessages();
-  expect(progress.messagesIndexed).toBe(116);
-
-  const rows: XMessageRow[] = database.exec(
-    controller.db,
-    "SELECT * FROM message",
-    [],
-    "all",
-  ) as XMessageRow[];
-  expect(rows.length).toBe(116);
 });
 
 test("XAccountController.indexParseTweets() should succeed with automation error dev-4", async () => {

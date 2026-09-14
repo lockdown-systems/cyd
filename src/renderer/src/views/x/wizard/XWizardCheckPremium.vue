@@ -172,17 +172,6 @@ onMounted(async () => {
           </small>
         </div>
       </li>
-      <li
-        v-if="jobsType == 'delete' && model.account.xAccount?.deleteDMs"
-        class="mb-1"
-      >
-        <div class="card">
-          <small class="card-body">
-            <i class="fa-solid fa-envelope me-2" />
-            {{ t("premium.deleteDMs") }}
-          </small>
-        </div>
-      </li>
       <!-- other tasks -->
       <li v-for="task in tasks" :key="task" class="mb-1">
         <div class="card">
