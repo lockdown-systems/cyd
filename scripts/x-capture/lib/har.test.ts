@@ -10,6 +10,7 @@ import {
   countTypenames,
   countTimelineEntries,
   decodeHar,
+  fixtureAccessorName,
   fixtureFilename,
   isXApiUrl,
   parseXOperation,
@@ -196,6 +197,23 @@ describe("fixtureFilename", () => {
   test("does not double the X prefix", () => {
     expect(fixtureFilename("XBookmarks", "20260914")).toBe(
       "XBookmarks_20260914.json",
+    );
+  });
+});
+
+describe("fixtureAccessorName", () => {
+  test("camel-cases the operation and carries the date", () => {
+    expect(fixtureAccessorName("UserOriginalsTimeline", "20260914")).toBe(
+      "userOriginalsTimeline_20260914",
+    );
+  });
+
+  test("numbers pages the same way the filename does", () => {
+    expect(fixtureAccessorName("Bookmarks", "20260914", 1, 3)).toBe(
+      "bookmarks_20260914_2",
+    );
+    expect(fixtureFilename("Bookmarks", "20260914", 1, 3)).toBe(
+      "XBookmarks_20260914_2.json",
     );
   });
 });

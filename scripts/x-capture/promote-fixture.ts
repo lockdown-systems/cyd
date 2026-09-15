@@ -11,7 +11,7 @@
 import fs from "fs";
 import path from "path";
 
-import { fixtureFilename } from "./lib/har";
+import { fixtureAccessorName, fixtureFilename } from "./lib/har";
 
 interface Options {
   sources: string[];
@@ -103,7 +103,7 @@ function main() {
     fs.copyFileSync(source, destination);
     console.log(`${source} -> ${destination}`);
     console.log(
-      `  add to test_fixtures.ts: ${operationName.charAt(0).toLowerCase()}${operationName.slice(1)}_${dateStamp}: () => loadFixture("${filename}"),`,
+      `  add to test_fixtures.ts: ${fixtureAccessorName(operationName, dateStamp, index, total)}: () => loadFixture("${filename}"),`,
     );
   });
 }

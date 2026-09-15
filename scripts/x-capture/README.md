@@ -199,3 +199,29 @@ Names the file `testdata/x/XBookmarks_<date>.json` and prints the accessor line
 for `src/renderer/src/view_models/XViewModel/test_fixtures.ts`. Pass several
 files from one operation to number them, `--name` to rename the operation, and
 `--force` to replace an existing fixture.
+
+### What was promoted from 2026-09-14
+
+Twenty-four fixtures, about 2.7 MB, listed in `test_fixtures.ts` under
+`XAPIFixtures`:
+
+| What                                      | Fixtures                                          |
+| ----------------------------------------- | ------------------------------------------------- |
+| Posts, likes, bookmarks                   | 3 populated pages each, plus the cursor-only page |
+| Replies, reposts                          | one page each                                     |
+| Every timeline when empty                 | one page each, from the empty account             |
+| Delete, unfavorite, unbookmark, unretweet | the mutation response                             |
+| Account lookup                            | the `Viewer` response                             |
+
+Two shapes were deliberately **not** promoted:
+
+- **The rate limit.** X answers 429 with the plain text `Rate limit exceeded`,
+  so there is no JSON body to promote. The status and the `x-rate-limit-*`
+  headers are what a test needs, and they are in
+  `GraphQLResponses.rateLimitError`.
+- **The long-form post, and a rate limit disguised as a success.** Neither was
+  observed, so neither has a fixture. Inventing one would assert a shape this
+  capture cannot vouch for.
+
+`src/renderer/src/view_models/XViewModel/test_fixtures.test.ts` asserts what
+each fixture shows, so the findings do not drift away from the files.

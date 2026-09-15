@@ -352,6 +352,24 @@ export function fixtureFilename(
   return `${base}_${dateStamp}_${index + 1}.json`;
 }
 
+/**
+ * The `test_fixtures.ts` accessor for a promoted fixture. It has to number
+ * pages the same way `fixtureFilename` does, or every page of a multi-page
+ * promotion is offered the same key.
+ */
+export function fixtureAccessorName(
+  operationName: string,
+  dateStamp: string,
+  index = 0,
+  total = 1,
+): string {
+  const camel = `${operationName.charAt(0).toLowerCase()}${operationName.slice(1)}`;
+  if (total <= 1) {
+    return `${camel}_${dateStamp}`;
+  }
+  return `${camel}_${dateStamp}_${index + 1}`;
+}
+
 function decodeEntry(entry: HarEntry, index: number): CapturedCall | null {
   const operation = parseXOperation(entry.request.url);
   if (operation === null) {
