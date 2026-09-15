@@ -54,6 +54,9 @@ export enum AutomationErrorType {
   x_runJob_unfollowEveryone_WaitForConfirmButtonFailed = "x_runJob_unfollowEveryone_WaitForConfirmButtonFailed",
   x_runJob_unfollowEveryone_ClickConfirmFailed = "x_runJob_unfollowEveryone_ClickConfirmFailed",
   x_runJob_tombstoneUpdateBanner_FailedToSetBanner = "x_runJob_tombstoneUpdateBanner_FailedToSetBanner",
+  x_runJob_tombstoneUpdateBanner_FailedToSave = "x_runJob_tombstoneUpdateBanner_FailedToSave",
+  x_runJob_tombstoneUpdateBio_FailedToSave = "x_runJob_tombstoneUpdateBio_FailedToSave",
+  x_runJob_tombstoneLockAccount_FailedToLock = "x_runJob_tombstoneLockAccount_FailedToLock",
   x_runJob_UnknownError = "x_runJob_UnknownError",
   x_runError = "x_runError",
   x_unknownError = "x_unknown",
@@ -194,6 +197,12 @@ export const AutomationErrorTypeToMessage = {
     "Failed to click confirm while unfollowing everyone",
   [AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSetBanner]:
     "Failed to set the tombstone banner image",
+  [AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave]:
+    "Failed to save the tombstone banner image",
+  [AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave]:
+    "Failed to save the tombstone bio text",
+  [AutomationErrorType.x_runJob_tombstoneLockAccount_FailedToLock]:
+    "Failed to lock the account",
   [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occurred",
   [AutomationErrorType.x_runError]: "Error while in X run function",
   [AutomationErrorType.x_unknownError]: "An unknown error occurred",

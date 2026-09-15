@@ -15,17 +15,76 @@ const APPLY_BUTTON_SELECTOR = '[data-testid="applyButton"]';
 
 const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
 
+const AUDIENCE_SETTINGS_URL = "https://x.com/settings/audience_and_tagging";
+
+// The "Protect your posts" box is the first checkbox on the audience settings
+// page
+const PROTECT_POSTS_SELECTOR = 'input[type="checkbox"]';
+
+const CONFIRM_BUTTON_SELECTOR =
+  'button[data-testid="confirmationSheetConfirm"]';
+
+// X keeps the profile dialog's Save button disabled until it has taken the
+// change, and clicking a disabled button does nothing at all. Clicking it
+// blind is how a run can report success having saved nothing, so wait for the
+// button to come alive first and treat it never doing so as a failure.
+async function saveProfile(
+  vm: XViewModel,
+  errorType: AutomationErrorType,
+): Promise<boolean> {
+  const isEnabledScript = `
+        (() => {
+            const button = document.querySelector('${SAVE_BUTTON_SELECTOR}');
+            if(!button) { return false; }
+            return !button.disabled && button.getAttribute('aria-disabled') !== 'true';
+        })();
+    `;
+
+  let isEnabled = false;
+  for (let i = 0; i < 30; i++) {
+    isEnabled = await vm.getWebview()?.executeJavaScript(isEnabledScript);
+    if (isEnabled) {
+      break;
+    }
+    await vm.sleep(200);
+  }
+
+  if (!isEnabled) {
+    vm.log("saveProfile", "the save button never became clickable");
+    await vm.error(errorType, { reason: "save button never became enabled" });
+    return false;
+  }
+
+  if (!(await vm.scriptClickElement(SAVE_BUTTON_SELECTOR))) {
+    vm.log("saveProfile", "failed to click the save button");
+    await vm.error(errorType, { reason: "failed to click the save button" });
+    return false;
+  }
+
+  await vm.waitForLoadingToFinish();
+  return true;
+}
+
 // Put the banner on the page's first file input, the way a person choosing a
 // file would. The input takes a File, not a data URL, so the image is decoded
 // in the page and handed over as one.
+//
+// The decoding is done by hand rather than by fetching the data URL: X's
+// content security policy has no data: in connect-src, so fetch() of one is
+// blocked, and all the page reports back is "Failed to fetch".
 function setBannerScript(bannerDataURL: string): string {
   return `
-        (async () => {
+        (() => {
             const input = document.querySelectorAll('${FILE_INPUT_SELECTOR}')[0];
             if(!input) { return false; }
-            const response = await fetch('${bannerDataURL}');
-            const blob = await response.blob();
-            const file = new File([blob], 'banner.png', { type: 'image/png' });
+            const base64 = '${bannerDataURL}'.split(',')[1];
+            if(!base64) { return false; }
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for(let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const file = new File([bytes], 'banner.png', { type: 'image/png' });
             const transfer = new DataTransfer();
             transfer.items.add(file);
             input.files = transfer.files;
@@ -74,9 +133,22 @@ export async function runJobTombstoneUpdateBanner(
   // Confirm the crop X offers, then save. Both clicks go through the element's
   // own click(), because the dialog keeps a mask that swallows pointer events.
   await vm.waitForSelector(APPLY_BUTTON_SELECTOR, PROFILE_SETTINGS_URL);
-  await vm.scriptClickElement(APPLY_BUTTON_SELECTOR);
-  await vm.scriptClickElement(SAVE_BUTTON_SELECTOR);
-  await vm.waitForLoadingToFinish();
+  if (!(await vm.scriptClickElement(APPLY_BUTTON_SELECTOR))) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+      { reason: "failed to click the crop's apply button" },
+    );
+    return false;
+  }
+
+  if (
+    !(await saveProfile(
+      vm,
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+    ))
+  ) {
+    return false;
+  }
 
   await vm.finishJob(jobIndex);
   return true;
@@ -163,9 +235,6 @@ export async function runJobTombstoneUpdateBio(
   });
   await vm.sleep(10);
 
-  vm.pause();
-  await vm.waitForPause();
-
   // Type the new bio character by character
   let bioText = vm.account.xAccount?.tombstoneUpdateBioText ?? "";
   if (vm.account.xAccount?.tombstoneUpdateBioCreditCyd) {
@@ -251,16 +320,14 @@ export async function runJobTombstoneUpdateBio(
     await vm.sleep(10);
   }
 
-  vm.pause();
-  await vm.waitForPause();
-
-  // Click save
-  await vm.scriptClickElement(SAVE_BUTTON_SELECTOR);
-  await vm.sleep(200);
-  await vm.waitForLoadingToFinish();
-
-  vm.pause();
-  await vm.waitForPause();
+  if (
+    !(await saveProfile(
+      vm,
+      AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+    ))
+  ) {
+    return false;
+  }
 
   await vm.finishJob(jobIndex);
   return true;
@@ -280,36 +347,53 @@ export async function runJobTombstoneLockAccount(
   vm.showAutomationNotice = true;
 
   // Load the audience, media and tagging settings page
-  await vm.loadURLWithRateLimit("https://x.com/settings/audience_and_tagging");
+  await vm.loadURLWithRateLimit(AUDIENCE_SETTINGS_URL);
 
-  // Is the "Protect your tweets" box already checked?
-  if (
-    await vm.getWebview()
-      ?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].checked
-`)
-  ) {
+  // X renders the settings after the page loads, so wait for the checkbox
+  // rather than reaching into a list that is still empty
+  await vm.waitForSelector(PROTECT_POSTS_SELECTOR, AUDIENCE_SETTINGS_URL);
+
+  // Is the "Protect your posts" box already checked?
+  const isLocked = await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const box = document.querySelectorAll('${PROTECT_POSTS_SELECTOR}')[0];
+            return box ? box.checked : false;
+        })();
+    `);
+
+  if (isLocked) {
     vm.log("runJobTombstoneLockAccount", "account is already locked");
+    await vm.finishJob(jobIndex);
+    return true;
   }
-  // Check the "Protect your tweets" box
-  else {
-    vm.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
-    await vm
-      .getWebview()
-      ?.executeJavaScript(
-        `document.querySelectorAll('input[type="checkbox"]')[0].click()`,
-      );
-    await vm.sleep(200);
-    await vm.waitForSelector(
-      'button[data-testid="confirmationSheetConfirm"]',
-      "https://x.com/settings/audience_and_tagging",
+
+  // Check the "Protect your posts" box
+  vm.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
+  const wasClicked = await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const box = document.querySelectorAll('${PROTECT_POSTS_SELECTOR}')[0];
+            if(!box) { return false; }
+            box.click();
+            return true;
+        })();
+    `);
+  if (!wasClicked) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneLockAccount_FailedToLock,
+      { reason: "failed to click the protect your posts checkbox" },
     );
-    await vm.sleep(200);
-    await vm.scriptClickElement(
-      'button[data-testid="confirmationSheetConfirm"]',
-    );
-    await vm.sleep(200);
-    await vm.waitForLoadingToFinish();
+    return false;
   }
+
+  await vm.waitForSelector(CONFIRM_BUTTON_SELECTOR, AUDIENCE_SETTINGS_URL);
+  if (!(await vm.scriptClickElement(CONFIRM_BUTTON_SELECTOR))) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneLockAccount_FailedToLock,
+      { reason: "failed to click the confirm button" },
+    );
+    return false;
+  }
+  await vm.waitForLoadingToFinish();
 
   await vm.finishJob(jobIndex);
   return true;
