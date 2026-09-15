@@ -12,6 +12,7 @@ import {
   XArchiveStartResponse,
   XDeleteTweetsStartResponse,
   XRateLimitInfo,
+  XIndexTimelineStats,
   XProgressInfo,
   XDatabaseStats,
   XDeleteReviewStats,
@@ -265,17 +266,17 @@ const electronAPI = {
     indexParseTweets: (accountID: number): Promise<XProgress> => {
       return ipcRenderer.invoke("X:indexParseTweets", accountID);
     },
-    indexParseLikes: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseLikes", accountID);
-    },
-    indexParseBookmarks: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseBookmarks", accountID);
-    },
     indexIsThereMore: (accountID: number): Promise<boolean> => {
       return ipcRenderer.invoke("X:indexIsThereMore", accountID);
     },
     resetThereIsMore: (accountID: number) => {
       ipcRenderer.invoke("X:resetThereIsMore", accountID);
+    },
+    indexTimelineStats: (accountID: number): Promise<XIndexTimelineStats> => {
+      return ipcRenderer.invoke("X:indexTimelineStats", accountID);
+    },
+    resetIndexTimelineStats: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("X:resetIndexTimelineStats", accountID);
     },
     archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
       return ipcRenderer.invoke("X:archiveTweetsStart", accountID);

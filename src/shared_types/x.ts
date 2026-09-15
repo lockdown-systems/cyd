@@ -182,6 +182,26 @@ export function emptyXRateLimitInfo(): XRateLimitInfo {
   };
 }
 
+// How long to wait out a rate limit X reports without saying when it lifts
+export const DEFAULT_X_RATE_LIMIT_SECONDS = 900;
+
+export type XIndexTimelineStats = {
+  // Timeline responses recognized as one of X's timeline operations
+  recognizedResponses: number;
+  // Tweet entries found in those responses
+  tweetEntries: number;
+  // Tweet entries that produced a row in the database
+  tweetsSaved: number;
+};
+
+export function emptyXIndexTimelineStats(): XIndexTimelineStats {
+  return {
+    recognizedResponses: 0,
+    tweetEntries: 0,
+    tweetsSaved: 0,
+  };
+}
+
 export type XProgressInfo = {
   accountUUID: string;
   totalTweetsIndexed: number;

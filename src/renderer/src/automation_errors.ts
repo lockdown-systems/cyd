@@ -10,11 +10,13 @@ export enum AutomationErrorType {
   x_runJob_indexTweets_OtherError = "x_runJob_indexTweets_OtherError",
   x_runJob_indexTweets_ParseTweetsError = "x_runJob_indexTweets_ParseTweetsError",
   x_runJob_indexTweets_VerifyThereIsNoMoreError = "x_runJob_indexTweets_VerifyThereIsNoMoreError",
+  x_runJob_indexTweets_TimelineUnreadable = "x_runJob_indexTweets_TimelineUnreadable",
   x_runJob_indexLikes_Timeout = "x_runJob_indexLikes_Timeout",
   x_runJob_indexLikes_URLChanged = "x_runJob_indexLikes_URLChanged",
   x_runJob_indexLikes_OtherError = "x_runJob_indexLikes_OtherError",
   x_runJob_indexLikes_ParseTweetsError = "x_runJob_indexLikes_ParseTweetsError",
   x_runJob_indexLikes_VerifyThereIsNoMoreError = "x_runJob_indexLikes_VerifyThereIsNoMoreError",
+  x_runJob_indexLikes_TimelineUnreadable = "x_runJob_indexLikes_TimelineUnreadable",
   x_runJob_archiveTweets_FailedToStart = "x_runJob_archiveTweets_FailedToStart",
   x_runJob_archiveTweets_FailedToCheckDate = "x_runJob_archiveTweets_FailedToCheckDate",
   x_runJob_archiveTweets_FailedToArchive = "x_runJob_archiveTweets_FailedToArchive",
@@ -24,6 +26,7 @@ export enum AutomationErrorType {
   x_runJob_indexBookmarks_OtherError = "x_runJob_indexBookmarks_OtherError",
   x_runJob_indexBookmarks_ParseTweetsError = "x_runJob_indexBookmarks_ParseTweetsError",
   x_runJob_indexBookmarks_VerifyThereIsNoMoreError = "x_runJob_indexBookmarks_VerifyThereIsNoMoreError",
+  x_runJob_indexBookmarks_TimelineUnreadable = "x_runJob_indexBookmarks_TimelineUnreadable",
   x_runJob_archiveBuild_ArchiveBuildError = "x_runJob_archiveBuild_ArchiveBuildError",
   x_runJob_deleteTweets_FailedToStart = "x_runJob_deleteTweets_FailedToStart",
   x_runJob_deleteTweets_Ct0CookieNotFound = "x_runJob_deleteTweets_Ct0CookieNotFound",
@@ -102,6 +105,8 @@ export const AutomationErrorTypeToMessage = {
     "Failed to parse tweets while indexing tweets",
   [AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError]:
     "Failed to verify you finished saving tweets while indexing tweets",
+  [AutomationErrorType.x_runJob_indexTweets_TimelineUnreadable]:
+    "X did not return a timeline Cyd could read while indexing tweets",
   [AutomationErrorType.x_runJob_indexLikes_Timeout]:
     "Timeout while indexing likes",
   [AutomationErrorType.x_runJob_indexLikes_URLChanged]:
@@ -112,6 +117,8 @@ export const AutomationErrorTypeToMessage = {
     "Failed to parse tweets while indexing likes",
   [AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError]:
     "Failed to verify you finished saving likes while indexing likes",
+  [AutomationErrorType.x_runJob_indexLikes_TimelineUnreadable]:
+    "X did not return a timeline Cyd could read while indexing likes",
   [AutomationErrorType.x_runJob_archiveTweets_FailedToStart]:
     "Failed to start archiving tweets",
   [AutomationErrorType.x_runJob_archiveTweets_FailedToCheckDate]:
@@ -130,6 +137,8 @@ export const AutomationErrorTypeToMessage = {
     "Failed to parse tweets while indexing bookmarks",
   [AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError]:
     "Failed to verify you finished saving bookmarks while indexing bookmarks",
+  [AutomationErrorType.x_runJob_indexBookmarks_TimelineUnreadable]:
+    "X did not return a timeline Cyd could read while indexing bookmarks",
   [AutomationErrorType.x_runJob_archiveBuild_ArchiveBuildError]:
     "Failed to archive build",
   [AutomationErrorType.x_runJob_deleteTweets_FailedToStart]:

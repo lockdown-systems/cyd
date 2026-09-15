@@ -9,6 +9,7 @@ import {
   XProgress,
   XArchiveStartResponse,
   XRateLimitInfo,
+  XIndexTimelineStats,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -162,6 +163,30 @@ export const defineIPCX = () => {
       try {
         const controller = getXAccountController(accountID);
         await controller.resetThereIsMore();
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "X:indexTimelineStats",
+    async (_, accountID: number): Promise<XIndexTimelineStats> => {
+      try {
+        const controller = getXAccountController(accountID);
+        return await controller.indexTimelineStats();
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "X:resetIndexTimelineStats",
+    async (_, accountID: number): Promise<void> => {
+      try {
+        const controller = getXAccountController(accountID);
+        await controller.resetIndexTimelineStats();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
