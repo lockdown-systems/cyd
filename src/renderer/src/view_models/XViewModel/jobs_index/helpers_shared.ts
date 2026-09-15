@@ -10,59 +10,61 @@ import {
 
 // Shared helpers for indexing content
 
-export async function indexContentCheckIfEmpty(
+/**
+ * What the parser made of the responses X returned for a timeline.
+ *
+ * - `saved`: tweets arrived and were saved.
+ * - `empty`: X answered with a timeline that carries no tweets. The account
+ *   really is empty, and the run should finish quietly.
+ * - `unreadable`: X never answered with a timeline Cyd recognizes, or the
+ *   tweets in it were in a shape Cyd could not read. Indistinguishable from
+ *   success to the user, so it has to be reported.
+ */
+export type IndexContentOutcome = "saved" | "empty" | "unreadable";
+
+export async function indexContentCheckOutcome(
   vm: XViewModel,
-  emptySelector: string | null,
-  articleSelector: string,
-  progressKey: string,
-  countKey: string,
-): Promise<boolean> {
-  // Check for explicit empty state selector
-  if (emptySelector && (await vm.doesSelectorExist(emptySelector))) {
-    vm.log("indexContentCheckIfEmpty", `found empty state: ${emptySelector}`);
-    (vm.progress as Record<string, unknown>)[progressKey] = true;
-    (vm.progress as Record<string, unknown>)[countKey] = 0;
-    await vm.syncProgress();
-    return true;
-  }
+): Promise<IndexContentOutcome> {
+  const stats = await window.electron.X.indexTimelineStats(vm.account.id);
+  vm.log("indexContentCheckOutcome", stats);
 
-  // Check if there's a section but no articles
-  if (await vm.doesSelectorExist("section")) {
-    if ((await vm.countSelectorsFound(articleSelector)) == 0) {
-      vm.log("indexContentCheckIfEmpty", `no content found`);
-      (vm.progress as Record<string, unknown>)[progressKey] = true;
-      (vm.progress as Record<string, unknown>)[countKey] = 0;
-      await vm.syncProgress();
-      return true;
-    }
+  if (stats.recognizedResponses == 0) {
+    return "unreadable";
   }
+  if (stats.tweetEntries == 0) {
+    return "empty";
+  }
+  if (stats.tweetsSaved == 0) {
+    return "unreadable";
+  }
+  return "saved";
+}
 
-  return false;
+export interface IndexContentLoadResult {
+  // Content appeared on the page
+  loaded: boolean;
+  // An automation error was raised, so the job is over
+  errorTriggered: boolean;
+  // A rate limit was waited out, so the route is worth another try
+  rateLimited: boolean;
 }
 
 /**
- * Wait for initial content to load
+ * Wait for content to appear on the timeline that is already loaded.
  * @param vm - XViewModel instance
  * @param selector - Selector to wait for
- * @param url - URL being loaded
- * @param progressKey - Key to update in progress
- * @param countKey - Key to update count in progress
  * @param errorTypeURLChanged - Error type for URL changed
  * @param errorTypeOther - Error type for other errors
- * @returns {success, errorTriggered}
  */
 export async function indexContentWaitForInitialLoad(
   vm: XViewModel,
   selector: string,
-  url: string,
-  progressKey: string,
-  countKey: string,
   errorTypeURLChanged: AutomationErrorType,
   errorTypeOther: AutomationErrorType,
-): Promise<{ success: boolean; errorTriggered: boolean }> {
+): Promise<IndexContentLoadResult> {
   try {
-    await vm.waitForSelector(selector, url);
-    return { success: true, errorTriggered: false };
+    await vm.waitForSelector(selector);
+    return { loaded: true, errorTriggered: false, rateLimited: false };
   } catch (e) {
     vm.log("indexContentWaitForInitialLoad", [`selector never appeared`, e]);
     if (e instanceof TimeoutError) {
@@ -70,14 +72,13 @@ export async function indexContentWaitForInitialLoad(
       vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
       if (vm.rateLimitInfo.isRateLimited) {
         await vm.waitForRateLimit();
-      } else {
-        // If the page isn't loading, assume there's no content yet
-        await vm.waitForLoadingToFinish();
-        (vm.progress as Record<string, unknown>)[progressKey] = true;
-        (vm.progress as Record<string, unknown>)[countKey] = 0;
-        await vm.syncProgress();
+        return { loaded: false, errorTriggered: false, rateLimited: true };
       }
-      return { success: false, errorTriggered: false };
+
+      // Nothing rendered. Whether that means the account is empty or that
+      // something is wrong is for the caller to decide, from what X returned.
+      await vm.waitForLoadingToFinish();
+      return { loaded: false, errorTriggered: false, rateLimited: false };
     } else if (e instanceof URLChangedError) {
       const newURL = vm.webview?.getURL();
       await vm.error(
@@ -90,7 +91,7 @@ export async function indexContentWaitForInitialLoad(
           currentURL: vm.webview?.getURL(),
         },
       );
-      return { success: false, errorTriggered: true };
+      return { loaded: false, errorTriggered: true, rateLimited: false };
     } else {
       await vm.error(
         errorTypeOther,
@@ -101,7 +102,7 @@ export async function indexContentWaitForInitialLoad(
           currentURL: vm.webview?.getURL(),
         },
       );
-      return { success: false, errorTriggered: true };
+      return { loaded: false, errorTriggered: true, rateLimited: false };
     }
   }
 }
@@ -285,6 +286,20 @@ export async function indexContentProcessIteration(
   );
   if (!parseResult.success) {
     return { shouldContinue: false, errorTriggered: true };
+  }
+
+  // X also reports rate limits inside responses that look successful, which
+  // the parser notices rather than the status code. Back off for those too.
+  vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
+  if (vm.rateLimitInfo.isRateLimited) {
+    const rateResult = await indexContentProcessRateLimit(
+      vm,
+      config.failureStateKey,
+    );
+    if (!rateResult.shouldContinue) {
+      return { shouldContinue: false, errorTriggered: false };
+    }
+    return { shouldContinue: true, errorTriggered: false };
   }
 
   // Check if we're done

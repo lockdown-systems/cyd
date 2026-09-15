@@ -6,7 +6,8 @@ import { formatError } from "../../util";
 import { FailureState } from "./types";
 import { archiveSaveTweet } from "./jobs_index/helpers_archive";
 import {
-  indexContentCheckIfEmpty,
+  indexContentCheckOutcome,
+  indexContentParsePage,
   indexContentWaitForInitialLoad,
   indexContentProcessIteration,
 } from "./jobs_index/helpers_shared";
@@ -16,17 +17,148 @@ import {
 // - helpers_archive.ts: Archive helper
 // - helpers_shared.ts: Shared indexing helpers
 
-export async function runJobIndexTweets(
+// How many times to load a timeline that answers with nothing Cyd can read
+// before reporting it. X sometimes just needs another go.
+const MAX_TIMELINE_ATTEMPTS = 3;
+
+interface XTimelineRoute {
+  url: string;
+  // X redirects some of its timelines; a change to one of these is expected
+  expectedURLs?: (string | RegExp)[];
+  // The page's own empty-state marker, where X shows one
+  emptySelector?: string;
+}
+
+interface XIndexTimelineErrors {
+  urlChanged: AutomationErrorType;
+  other: AutomationErrorType;
+  parse: AutomationErrorType;
+  verify: AutomationErrorType;
+  // X answered with nothing Cyd could read
+  unreadable: AutomationErrorType;
+}
+
+interface XIndexTimelineConfig {
+  event: (typeof PlausibleEvents)[keyof typeof PlausibleEvents];
+  instructionsKey: string;
+  routes: XTimelineRoute[];
+  contentSelector: string;
+  progressKey: string;
+  countKey: string;
+  failureStateKey: FailureState;
+  errors: XIndexTimelineErrors;
+}
+
+type XTimelineRouteResult =
+  | { status: "done" }
+  // X answered with nothing Cyd could read, so this route is worth another try
+  | { status: "unreadable" }
+  // The job is over, with or without an automation error having been raised
+  | { status: "stop"; errorTriggered: boolean };
+
+async function routeResultFromOutcome(
+  vm: XViewModel,
+): Promise<XTimelineRouteResult> {
+  return (await indexContentCheckOutcome(vm)) == "unreadable"
+    ? { status: "unreadable" }
+    : { status: "done" };
+}
+
+// Load one timeline and save everything on it
+async function indexTimelineRoute(
   vm: XViewModel,
   jobIndex: number,
-): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS,
-    navigator.userAgent,
+  route: XTimelineRoute,
+  config: XIndexTimelineConfig,
+): Promise<XTimelineRouteResult> {
+  // Each route is judged on the responses it produces itself
+  await window.electron.X.resetIndexTimelineStats(vm.account.id);
+  await window.electron.X.resetThereIsMore(vm.account.id);
+  (vm.progress as Record<string, unknown>)[config.progressKey] = false;
+
+  await vm.waitForPause();
+  await window.electron.X.resetRateLimitInfo(vm.account.id);
+  await vm.loadURLWithRateLimit(route.url, route.expectedURLs ?? []);
+  await vm.sleep(2000);
+
+  // Does the page say it is empty? X shows a marker on likes, bookmarks, and
+  // reposts, but not on the profile timeline.
+  if (
+    route.emptySelector &&
+    (await vm.doesSelectorExist(route.emptySelector))
+  ) {
+    vm.log("indexTimelineRoute", ["empty state found", route.url]);
+    return { status: "done" };
+  }
+
+  // Wait for content to appear
+  const loadResult = await indexContentWaitForInitialLoad(
+    vm,
+    config.contentSelector,
+    config.errors.urlChanged,
+    config.errors.other,
   );
+  if (loadResult.errorTriggered) {
+    return { status: "stop", errorTriggered: true };
+  }
+  if (loadResult.rateLimited) {
+    // The limit has lifted by now, so load the timeline again
+    return { status: "unreadable" };
+  }
+
+  if (!loadResult.loaded) {
+    // Nothing rendered. An account with nothing in it looks exactly like a
+    // timeline that never loaded, so ask what X returned rather than guessing.
+    const parseResult = await indexContentParsePage(
+      vm,
+      jobIndex,
+      config.errors.parse,
+    );
+    if (!parseResult.success) {
+      return { status: "stop", errorTriggered: true };
+    }
+    return routeResultFromOutcome(vm);
+  }
+
+  // Main indexing loop
+  while (
+    (vm.progress as Record<string, unknown>)[config.progressKey] === false
+  ) {
+    const iterationResult = await indexContentProcessIteration(vm, jobIndex, {
+      failureStateKey: config.failureStateKey,
+      parseErrorType: config.errors.parse,
+      verifyErrorType: config.errors.verify,
+      progressKey: config.progressKey,
+    });
+
+    if (!iterationResult.shouldContinue) {
+      if (iterationResult.errorTriggered) {
+        return { status: "stop", errorTriggered: true };
+      }
+      break;
+    }
+  }
+
+  if (!(vm.progress as Record<string, unknown>)[config.progressKey]) {
+    // The loop gave up without finishing, having already recorded why
+    return { status: "stop", errorTriggered: false };
+  }
+
+  // The timeline was walked to the end. If X never answered with a timeline
+  // Cyd could read, the run saved nothing and would otherwise report success.
+  return routeResultFromOutcome(vm);
+}
+
+// Save everything on each of a category's timelines
+async function runIndexTimelineJob(
+  vm: XViewModel,
+  jobIndex: number,
+  config: XIndexTimelineConfig,
+): Promise<boolean> {
+  await window.electron.trackEvent(config.event, navigator.userAgent);
 
   vm.showBrowser = true;
-  vm.instructions = vm.t("viewModels.x.jobs.index.tweets");
+  vm.instructions = vm.t(config.instructionsKey);
   vm.showAutomationNotice = true;
 
   // Start monitoring network requests
@@ -35,69 +167,39 @@ export async function runJobIndexTweets(
   await vm.sleep(2000);
 
   // Start the progress
-  vm.progress.isIndexTweetsFinished = false;
-  vm.progress.tweetsIndexed = 0;
+  (vm.progress as Record<string, unknown>)[config.progressKey] = false;
+  (vm.progress as Record<string, unknown>)[config.countKey] = 0;
   await vm.syncProgress();
-  await window.electron.X.resetRateLimitInfo(vm.account.id);
 
-  // Load the timeline
-  const username = vm.account.xAccount?.username || "";
-  const url = `https://x.com/${username}/with_replies`;
-  await vm.loadURLWithRateLimit(url);
-  await vm.sleep(2000);
-
-  // Check if tweets list is empty
-  if (
-    await indexContentCheckIfEmpty(
-      vm,
-      null,
-      "section article",
-      "isIndexTweetsFinished",
-      "tweetsIndexed",
-    )
-  ) {
-    await window.electron.X.indexStop(vm.account.id);
-    await vm.finishJob(jobIndex);
-    return true;
-  }
-
-  // Wait for tweets to appear
-  if (!vm.progress.isIndexTweetsFinished) {
-    const loadResult = await indexContentWaitForInitialLoad(
-      vm,
-      "article",
-      url,
-      "isIndexTweetsFinished",
-      "tweetsIndexed",
-      AutomationErrorType.x_runJob_indexTweets_URLChanged,
-      AutomationErrorType.x_runJob_indexTweets_OtherError,
-    );
-
-    if (loadResult.errorTriggered) {
-      await window.electron.X.indexStop(vm.account.id);
-      return false;
-    }
-
-    if (!loadResult.success) {
-      await window.electron.X.indexStop(vm.account.id);
-      await vm.finishJob(jobIndex);
-      return true;
-    }
-  }
-
-  // Main indexing loop
   let errorTriggered = false;
-  while (vm.progress.isIndexTweetsFinished === false) {
-    const iterationResult = await indexContentProcessIteration(vm, jobIndex, {
-      failureStateKey: FailureState.indexTweets_FailedToRetryAfterRateLimit,
-      parseErrorType: AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
-      verifyErrorType:
-        AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
-      progressKey: "isIndexTweetsFinished",
-    });
+  for (const route of config.routes) {
+    let result: XTimelineRouteResult = { status: "unreadable" };
+    for (let attempt = 1; attempt <= MAX_TIMELINE_ATTEMPTS; attempt++) {
+      result = await indexTimelineRoute(vm, jobIndex, route, config);
+      if (result.status !== "unreadable") {
+        break;
+      }
+      vm.log("runIndexTimelineJob", [
+        "no timeline response to read, trying again",
+        route.url,
+        attempt,
+      ]);
+    }
 
-    if (!iterationResult.shouldContinue) {
-      errorTriggered = iterationResult.errorTriggered;
+    if (result.status === "unreadable") {
+      // Finishing cleanly here would report success having saved nothing, and
+      // automated error reports are the only way an outage is noticed at all.
+      await vm.error(
+        config.errors.unreadable,
+        { url: route.url },
+        { currentURL: vm.webview?.getURL() },
+      );
+      errorTriggered = true;
+      break;
+    }
+
+    if (result.status === "stop") {
+      errorTriggered = result.errorTriggered;
       break;
     }
   }
@@ -109,8 +211,106 @@ export async function runJobIndexTweets(
     return false;
   }
 
+  (vm.progress as Record<string, unknown>)[config.progressKey] = true;
+  await vm.syncProgress();
   await vm.finishJob(jobIndex);
   return true;
+}
+
+export async function runJobIndexTweets(
+  vm: XViewModel,
+  jobIndex: number,
+): Promise<boolean> {
+  const username = vm.account.xAccount?.username || "";
+  return runIndexTimelineJob(vm, jobIndex, {
+    event: PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS,
+    instructionsKey: "viewModels.x.jobs.index.tweets",
+    // X split the profile timeline in three on 2026-09-14: the profile route
+    // carries original posts only, /with_replies carries replies, and reposts
+    // moved to /reposts. See docs/x-capture/findings-20260914.md.
+    routes: [
+      { url: `https://x.com/${username}` },
+      { url: `https://x.com/${username}/with_replies` },
+      {
+        url: `https://x.com/${username}/reposts`,
+        emptySelector: 'div[data-testid="emptyState"]',
+      },
+    ],
+    contentSelector: "section article",
+    progressKey: "isIndexTweetsFinished",
+    countKey: "tweetsIndexed",
+    failureStateKey: FailureState.indexTweets_FailedToRetryAfterRateLimit,
+    errors: {
+      urlChanged: AutomationErrorType.x_runJob_indexTweets_URLChanged,
+      other: AutomationErrorType.x_runJob_indexTweets_OtherError,
+      parse: AutomationErrorType.x_runJob_indexTweets_ParseTweetsError,
+      verify: AutomationErrorType.x_runJob_indexTweets_VerifyThereIsNoMoreError,
+      unreadable: AutomationErrorType.x_runJob_indexTweets_TimelineUnreadable,
+    },
+  });
+}
+
+export async function runJobIndexLikes(
+  vm: XViewModel,
+  jobIndex: number,
+): Promise<boolean> {
+  const username = vm.account.xAccount?.username || "";
+  return runIndexTimelineJob(vm, jobIndex, {
+    event: PlausibleEvents.X_JOB_STARTED_INDEX_LIKES,
+    instructionsKey: "viewModels.x.jobs.index.likes",
+    // Likes moved into X's /i/ namespace; the old route redirects there
+    routes: [
+      {
+        url: "https://x.com/i/history/likes",
+        expectedURLs: [
+          `https://x.com/${username}/likes`,
+          "https://x.com/i/history",
+        ],
+        emptySelector: 'div[data-testid="emptyState"]',
+      },
+    ],
+    contentSelector: "article",
+    progressKey: "isIndexLikesFinished",
+    countKey: "likesIndexed",
+    failureStateKey: FailureState.indexLikes_FailedToRetryAfterRateLimit,
+    errors: {
+      urlChanged: AutomationErrorType.x_runJob_indexLikes_URLChanged,
+      other: AutomationErrorType.x_runJob_indexLikes_OtherError,
+      parse: AutomationErrorType.x_runJob_indexLikes_ParseTweetsError,
+      verify: AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError,
+      unreadable: AutomationErrorType.x_runJob_indexLikes_TimelineUnreadable,
+    },
+  });
+}
+
+export async function runJobIndexBookmarks(
+  vm: XViewModel,
+  jobIndex: number,
+): Promise<boolean> {
+  return runIndexTimelineJob(vm, jobIndex, {
+    event: PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS,
+    instructionsKey: "viewModels.x.jobs.index.bookmarks",
+    routes: [
+      {
+        url: "https://x.com/i/bookmarks",
+        expectedURLs: ["https://x.com/i/history"],
+        emptySelector: 'div[data-testid="emptyState"]',
+      },
+    ],
+    contentSelector: "article",
+    progressKey: "isIndexBookmarksFinished",
+    countKey: "bookmarksIndexed",
+    failureStateKey: FailureState.indexBookmarks_FailedToRetryAfterRateLimit,
+    errors: {
+      urlChanged: AutomationErrorType.x_runJob_indexBookmarks_URLChanged,
+      other: AutomationErrorType.x_runJob_indexBookmarks_OtherError,
+      parse: AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError,
+      verify:
+        AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError,
+      unreadable:
+        AutomationErrorType.x_runJob_indexBookmarks_TimelineUnreadable,
+    },
+  });
 }
 
 export async function runJobArchiveTweets(
@@ -170,202 +370,6 @@ export async function runJobArchiveTweets(
   }
 
   await vm.syncProgress();
-  await vm.finishJob(jobIndex);
-  return true;
-}
-
-export async function runJobIndexLikes(
-  vm: XViewModel,
-  jobIndex: number,
-): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_INDEX_LIKES,
-    navigator.userAgent,
-  );
-
-  vm.showBrowser = true;
-  vm.instructions = vm.t("viewModels.x.jobs.index.likes");
-  vm.showAutomationNotice = true;
-
-  // Start monitoring network requests
-  await vm.loadBlank();
-  await window.electron.X.indexStart(vm.account.id);
-  await vm.sleep(2000);
-
-  // Start the progress
-  vm.progress.isIndexLikesFinished = false;
-  vm.progress.likesIndexed = 0;
-  await vm.syncProgress();
-
-  // Load the likes
-  await vm.waitForPause();
-  await window.electron.X.resetRateLimitInfo(vm.account.id);
-  const username = vm.account.xAccount?.username || "";
-  const url = `https://x.com/${username}/likes`;
-  await vm.loadURLWithRateLimit(url);
-  await vm.sleep(2000);
-
-  // Check if likes list is empty
-  if (
-    await indexContentCheckIfEmpty(
-      vm,
-      'div[data-testid="emptyState"]',
-      "article",
-      "isIndexLikesFinished",
-      "likesIndexed",
-    )
-  ) {
-    await window.electron.X.indexStop(vm.account.id);
-    await vm.finishJob(jobIndex);
-    return true;
-  }
-
-  // Wait for likes to appear
-  if (!vm.progress.isIndexLikesFinished) {
-    const loadResult = await indexContentWaitForInitialLoad(
-      vm,
-      "article",
-      url,
-      "isIndexLikesFinished",
-      "likesIndexed",
-      AutomationErrorType.x_runJob_indexLikes_URLChanged,
-      AutomationErrorType.x_runJob_indexLikes_OtherError,
-    );
-
-    if (loadResult.errorTriggered) {
-      await window.electron.X.indexStop(vm.account.id);
-      return false;
-    }
-
-    if (!loadResult.success) {
-      await window.electron.X.indexStop(vm.account.id);
-      await vm.finishJob(jobIndex);
-      return true;
-    }
-  }
-
-  // Main indexing loop
-  let errorTriggered = false;
-  while (vm.progress.isIndexLikesFinished === false) {
-    const iterationResult = await indexContentProcessIteration(vm, jobIndex, {
-      failureStateKey: FailureState.indexLikes_FailedToRetryAfterRateLimit,
-      parseErrorType: AutomationErrorType.x_runJob_indexLikes_ParseTweetsError,
-      verifyErrorType:
-        AutomationErrorType.x_runJob_indexLikes_VerifyThereIsNoMoreError,
-      progressKey: "isIndexLikesFinished",
-    });
-
-    if (!iterationResult.shouldContinue) {
-      errorTriggered = iterationResult.errorTriggered;
-      break;
-    }
-  }
-
-  // Stop monitoring network requests
-  await window.electron.X.indexStop(vm.account.id);
-
-  if (errorTriggered) {
-    return false;
-  }
-
-  await vm.finishJob(jobIndex);
-  return true;
-}
-
-export async function runJobIndexBookmarks(
-  vm: XViewModel,
-  jobIndex: number,
-): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS,
-    navigator.userAgent,
-  );
-
-  vm.showBrowser = true;
-  vm.instructions = vm.t("viewModels.x.jobs.index.bookmarks");
-  vm.showAutomationNotice = true;
-
-  // Start monitoring network requests
-  await vm.loadBlank();
-  await window.electron.X.indexStart(vm.account.id);
-  await vm.sleep(2000);
-
-  // Start the progress
-  vm.progress.isIndexBookmarksFinished = false;
-  vm.progress.bookmarksIndexed = 0;
-  await vm.syncProgress();
-
-  // Load the bookmarks
-  await vm.waitForPause();
-  await window.electron.X.resetRateLimitInfo(vm.account.id);
-  const url = "https://x.com/i/bookmarks";
-  await vm.loadURLWithRateLimit(url);
-  await vm.sleep(2000);
-
-  // Check if bookmarks list is empty
-  if (
-    await indexContentCheckIfEmpty(
-      vm,
-      'div[data-testid="emptyState"]',
-      "article",
-      "isIndexBookmarksFinished",
-      "bookmarksIndexed",
-    )
-  ) {
-    await window.electron.X.indexStop(vm.account.id);
-    await vm.finishJob(jobIndex);
-    return true;
-  }
-
-  // Wait for bookmarks to appear
-  if (!vm.progress.isIndexBookmarksFinished) {
-    const loadResult = await indexContentWaitForInitialLoad(
-      vm,
-      "article",
-      url,
-      "isIndexBookmarksFinished",
-      "bookmarksIndexed",
-      AutomationErrorType.x_runJob_indexBookmarks_URLChanged,
-      AutomationErrorType.x_runJob_indexBookmarks_OtherError,
-    );
-
-    if (loadResult.errorTriggered) {
-      await window.electron.X.indexStop(vm.account.id);
-      return false;
-    }
-
-    if (!loadResult.success) {
-      await window.electron.X.indexStop(vm.account.id);
-      await vm.finishJob(jobIndex);
-      return true;
-    }
-  }
-
-  // Main indexing loop
-  let errorTriggered = false;
-  while (vm.progress.isIndexBookmarksFinished === false) {
-    const iterationResult = await indexContentProcessIteration(vm, jobIndex, {
-      failureStateKey: FailureState.indexBookmarks_FailedToRetryAfterRateLimit,
-      parseErrorType:
-        AutomationErrorType.x_runJob_indexBookmarks_ParseTweetsError,
-      verifyErrorType:
-        AutomationErrorType.x_runJob_indexBookmarks_VerifyThereIsNoMoreError,
-      progressKey: "isIndexBookmarksFinished",
-    });
-
-    if (!iterationResult.shouldContinue) {
-      errorTriggered = iterationResult.errorTriggered;
-      break;
-    }
-  }
-
-  // Stop monitoring network requests
-  await window.electron.X.indexStop(vm.account.id);
-
-  if (errorTriggered) {
-    return false;
-  }
-
   await vm.finishJob(jobIndex);
   return true;
 }

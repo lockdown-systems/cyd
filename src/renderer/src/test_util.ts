@@ -298,6 +298,13 @@ export function mockElectronAPI() {
       }),
       indexIsThereMore: vi.fn().mockResolvedValue(false),
       resetThereIsMore: vi.fn().mockResolvedValue(undefined),
+      // By default, X answered with a timeline that carried posts
+      indexTimelineStats: vi.fn().mockResolvedValue({
+        recognizedResponses: 1,
+        tweetEntries: 1,
+        tweetsSaved: 1,
+      }),
+      resetIndexTimelineStats: vi.fn().mockResolvedValue(undefined),
       getLatestResponseData: vi.fn().mockResolvedValue(""),
       archiveTweetsStart: vi.fn().mockResolvedValue({
         outputPath: "/test/path",
@@ -469,6 +476,7 @@ export function spyOnElectronAPI() {
       getConfig: vi.spyOn(electron.X, "getConfig"),
       getCookie: vi.spyOn(electron.X, "getCookie"),
       indexParseTweets: vi.spyOn(electron.X, "indexParseTweets"),
+      indexTimelineStats: vi.spyOn(electron.X, "indexTimelineStats"),
       deleteTweet: vi.spyOn(electron.X, "deleteTweet"),
     },
     archive: {

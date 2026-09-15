@@ -189,91 +189,41 @@ export interface XAPIUserCore {
   screen_name: string;
 }
 
-export interface XAPILegacyUser {
-  default_profile: boolean;
-  default_profile_image: boolean;
-  description: string;
-  entities: any;
-  fast_followers_count: number;
-  favourites_count: number;
-  followers_count: number;
-  friends_count: number;
-  has_custom_timelines: boolean;
-  is_translator: boolean;
-  listed_count: number;
-  media_count: number;
-  needs_phone_verification: boolean;
-  normal_followers_count: number;
-  pinned_tweet_ids_str: any;
-  possibly_sensitive: boolean;
-  profile_banner_url: string;
-  profile_interstitial_type: string;
-  statuses_count: number;
-  translator_type: string;
-  verified?: boolean;
-  want_retweets: boolean;
-  withheld_in_countries: any;
+export interface XAPITimelineUser {
+  __typename?: string;
+  has_graduated_access?: boolean;
+  id?: string;
+  is_blue_verified?: boolean;
+  profile_image_shape?: string;
+  rest_id?: string;
+  tipjar_settings?: any;
+  affiliates_highlighted_label?: any;
+  avatar?: any;
+  dm_permissions?: any;
+  // A timeline user's fields are in `core`
+  core?: XAPIUserCore;
+}
+
+export interface XAPITweet {
+  __typename?: string; // "Tweet", "TweetWithVisibilityResults"
+  core?: {
+    user_results: {
+      result?: XAPITimelineUser;
+    };
+  };
+  legacy?: XAPILegacyTweet;
+  rest_id?: string;
+  is_translatable?: boolean;
+  source?: string;
+  edit_control?: any;
+  unmention_data?: any;
+  views?: any;
+  limitedActionResults?: any;
 }
 
 export interface XAPITweetResults {
-  result: {
-    __typename?: string; // "Tweet", "TweetWithVisibilityResults"
-    // __typename == "Tweet"
-    core?: {
-      user_results: {
-        result?: {
-          __typename?: string;
-          has_graduated_access?: boolean;
-          id?: string;
-          is_blue_verified?: boolean;
-          legacy: XAPILegacyUser;
-          profile_image_shape?: string;
-          rest_id?: string;
-          tipjar_settings?: any;
-          affiliates_highlighted_label?: any;
-          avatar?: any;
-          core: XAPIUserCore;
-          dm_permissions?: any;
-        };
-      };
-    };
-    // __typename == "TweetWithVisibilityResults"
-    tweet?: {
-      rest_id: string;
-      core: {
-        user_results: {
-          result?: {
-            __typename?: string;
-            has_graduated_access?: boolean;
-            id?: string;
-            is_blue_verified?: boolean;
-            legacy: XAPILegacyUser;
-            profile_image_shape?: string;
-            rest_id?: string;
-            tipjar_settings?: any;
-            affiliates_highlighted_label?: any;
-            avatar?: any;
-            core: XAPIUserCore;
-            dm_permissions?: any;
-          };
-        };
-      };
-      unmention_data?: any;
-      edit_control?: any;
-      is_translatable?: boolean;
-      views?: any;
-      source?: string;
-      legacy?: XAPILegacyTweet;
-      limitedActionResults?: any;
-    };
-    is_translatable?: boolean;
-    legacy?: XAPILegacyTweet;
-    rest_id?: string;
-    source?: string;
-    edit_control?: any;
-    unmention_data?: any;
-    views?: any;
-  };
+  // __typename == "TweetWithVisibilityResults" nests the post under `tweet`
+  result?: XAPITweet & { tweet?: XAPITweet };
 }
 
 export interface XAPIItemContent {
@@ -316,24 +266,27 @@ export interface XAPITimeline {
   };
 }
 
-export interface XAPIData {
-  errors?: [
-    {
-      message: string;
-      locations: {
-        line: number;
-        column: number;
-      }[];
-      path: string[];
-      extensions: any;
-      code: number;
-      kind: string;
-      name: string;
-      source: string;
-      retry_after: number;
-      tracing: any;
-    },
-  ];
+export interface XAPIErrorItem {
+  message?: string;
+  locations?: {
+    line: number;
+    column: number;
+  }[];
+  path?: string[];
+  extensions?: any;
+  code?: number;
+  kind?: string;
+  name?: string;
+  source?: string;
+  retry_after?: number;
+  tracing?: any;
+}
+
+export interface XAPIError {
+  errors?: XAPIErrorItem[];
+}
+
+export interface XAPIData extends XAPIError {
   data: {
     user: {
       result: {
@@ -355,7 +308,7 @@ export function isXAPIBookmarksData(body: any): body is XAPIBookmarksData {
   return !!(body.data && body.data.bookmark_timeline_v2);
 }
 
-export function isXAPIError(body: any): body is XAPIData {
+export function isXAPIError(body: any): body is XAPIError {
   return !!(body.errors && body.errors.length > 0);
 }
 

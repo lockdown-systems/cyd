@@ -18,6 +18,9 @@ import {
   XArchiveStartResponse,
   XRateLimitInfo,
   emptyXRateLimitInfo,
+  XIndexTimelineStats,
+  emptyXIndexTimelineStats,
+  DEFAULT_X_RATE_LIMIT_SECONDS,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -64,6 +67,10 @@ export class XAccountController extends BaseAccountController<XProgress> {
   public account: XAccount | null = null;
   private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
 
+  // What the last run of the parser saw. The index jobs use this to tell an
+  // empty account from a timeline Cyd could not read.
+  public timelineStats: XIndexTimelineStats = emptyXIndexTimelineStats();
+
   protected cookies: Record<string, Record<string, string>> = {};
 
   private blueskyService: BlueskyService | null = null;
@@ -78,15 +85,14 @@ export class XAccountController extends BaseAccountController<XProgress> {
     ses.webRequest.onCompleted((details) => {
       // Monitor for rate limits
       if (details.statusCode == 429) {
-        this.rateLimitInfo.isRateLimited = true;
         if (details.responseHeaders) {
-          this.rateLimitInfo.rateLimitReset = Number(
-            details.responseHeaders["x-rate-limit-reset"],
+          this.markRateLimited(
+            Number(details.responseHeaders["x-rate-limit-reset"]),
           );
         } else {
-          // If we can't get it from the headers, set it to 15 minutes from now
-          this.rateLimitInfo.rateLimitReset =
-            Math.floor(Date.now() / 1000) + 900;
+          this.markRateLimited(
+            Math.floor(Date.now() / 1000) + DEFAULT_X_RATE_LIMIT_SECONDS,
+          );
         }
       }
     });
@@ -277,6 +283,14 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return Index.resetThereIsMore(this);
   }
 
+  async indexTimelineStats(): Promise<XIndexTimelineStats> {
+    return this.timelineStats;
+  }
+
+  async resetIndexTimelineStats(): Promise<void> {
+    this.timelineStats = emptyXIndexTimelineStats();
+  }
+
   // When you start archiving tweets you:
   // - Return the URLs path, output path, and all expected filenames
   async archiveTweetsStart(): Promise<XArchiveStartResponse> {
@@ -326,6 +340,13 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
   async resetRateLimitInfo(): Promise<void> {
     this.rateLimitInfo = emptyXRateLimitInfo();
+  }
+
+  // X reports a rate limit as an HTTP 429, and may also report one inside a
+  // response that otherwise looks successful.
+  markRateLimited(rateLimitReset: number): void {
+    this.rateLimitInfo.isRateLimited = true;
+    this.rateLimitInfo.rateLimitReset = rateLimitReset;
   }
 
   async isRateLimited(): Promise<XRateLimitInfo> {

@@ -3,6 +3,8 @@ import type { XAccountController } from "../../x_account_controller";
 import type {
   XAPIData,
   XAPIBookmarksData,
+  XAPIError,
+  XAPIItemContent,
   XAPITimeline,
   XAPIUserCore,
   XAPILegacyTweet,
@@ -13,7 +15,135 @@ import {
   isXAPIData_v2,
   isXAPIError,
 } from "../../types";
+import {
+  DEFAULT_X_RATE_LIMIT_SECONDS,
+  type ResponseData,
+} from "../../../shared_types";
 import { indexTweet } from "./indexTweet";
+
+// The timeline operations Cyd reads. On 2026-09-14 X split
+// UserTweetsAndReplies into UserOriginalsTimeline (the profile timeline),
+// UserRepliesTimeline (/with_replies), and UserRepostsTimeline (/reposts);
+// see docs/x-capture/findings-20260914.md. UserTweetsAndReplies is still
+// matched because X serves it to some sessions.
+const TIMELINE_OPERATIONS = [
+  "UserOriginalsTimeline",
+  "UserRepliesTimeline",
+  "UserRepostsTimeline",
+  "UserTweetsAndReplies",
+  "Likes",
+  "Bookmarks",
+];
+
+// X's error code for a rate limit
+const RATE_LIMIT_ERROR_CODE = 88;
+
+function isTimelineResponse(responseData: ResponseData): boolean {
+  return TIMELINE_OPERATIONS.some((operation) =>
+    responseData.url.includes(`/${operation}?`),
+  );
+}
+
+// Does this error array describe a rate limit? X was only ever seen reporting
+// rate limits as an HTTP 429 with a plain-text body, so this is written
+// against the shape rather than against a captured response.
+function isRateLimitError(body: XAPIError): boolean {
+  return (body.errors ?? []).some(
+    (error) =>
+      error.code == RATE_LIMIT_ERROR_CODE ||
+      [error.message, error.name, error.kind].some((field) =>
+        /rate.?limit/i.test(field ?? ""),
+      ),
+  );
+}
+
+// When the rate limit lifts, in epoch seconds
+function rateLimitReset(
+  responseData: ResponseData,
+  body: XAPIError | null,
+): number {
+  const now = Math.floor(Date.now() / 1000);
+
+  const retryAfter = (body?.errors ?? []).find(
+    (error) => error.retry_after,
+  )?.retry_after;
+  if (retryAfter) {
+    return now + Number(retryAfter);
+  }
+
+  const header = responseData.responseHeaders?.["x-rate-limit-reset"];
+  const reset = Number(Array.isArray(header) ? header[0] : header);
+  if (reset) {
+    return reset;
+  }
+
+  return now + DEFAULT_X_RATE_LIMIT_SECONDS;
+}
+
+function timelineFromBody(
+  body: XAPIData | XAPIBookmarksData,
+): XAPITimeline | null {
+  if (isXAPIBookmarksData(body)) {
+    return body.data.bookmark_timeline_v2;
+  }
+  if (isXAPIData(body)) {
+    return (body as XAPIData).data.user.result.timeline as XAPITimeline;
+  }
+  if (isXAPIData_v2(body)) {
+    return (body as XAPIData).data.user.result.timeline_v2 as XAPITimeline;
+  }
+  return null;
+}
+
+// Every post in a timeline response, whether it arrived as a top-level entry
+// or inside a module. Replies only ever arrive inside modules, where the
+// content hangs off `item` rather than off `content`.
+function postItemContents(timeline: XAPITimeline): XAPIItemContent[] {
+  const itemContents: XAPIItemContent[] = [];
+
+  timeline.timeline.instructions.forEach((instruction) => {
+    if (instruction["type"] != "TimelineAddEntries") {
+      return;
+    }
+    instruction.entries?.forEach((entry) => {
+      if (entry.content.entryType == "TimelineTimelineModule") {
+        entry.content.items?.forEach((item) => {
+          if (item.item?.itemContent) {
+            itemContents.push(item.item.itemContent);
+          }
+        });
+      } else if (entry.content.itemContent) {
+        itemContents.push(entry.content.itemContent);
+      }
+    });
+  });
+
+  return itemContents.filter(
+    (itemContent) => itemContent.itemType == "TimelineTweet",
+  );
+}
+
+// The author and the post, from either of the two shapes X uses. The author's
+// fields live in `core`: as of 2026-09-14 timeline users have no `legacy` at
+// all.
+function postFields(
+  itemContent: XAPIItemContent,
+): { userCore: XAPIUserCore; tweetLegacy: XAPILegacyTweet } | null {
+  const result = itemContent.tweet_results?.result;
+  if (!result) {
+    return null;
+  }
+
+  // __typename "TweetWithVisibilityResults" nests the post one level deeper
+  const post = result.tweet ?? result;
+  const userCore = post.core?.user_results?.result?.core;
+  const tweetLegacy = post.legacy;
+  if (!userCore || !tweetLegacy) {
+    return null;
+  }
+
+  return { userCore, tweetLegacy };
+}
 
 // Returns false if the loop should stop
 export function indexParseTweetsResponseData(
@@ -30,172 +160,80 @@ export function indexParseTweetsResponseData(
   // Rate limited?
   if (responseData.status == 429) {
     log.warn("XAccountController.indexParseTweetsResponseData: RATE LIMITED");
+    controller.markRateLimited(rateLimitReset(responseData, null));
     controller.mitmController.responseData[responseIndex].processed = true;
     return false;
   }
 
-  // Process the next response
-  if (
-    // Tweets
-    (responseData.url.includes("/UserTweetsAndReplies?") ||
-      // Likes
-      responseData.url.includes("/Likes?") ||
-      // Bookmarks
-      responseData.url.includes("/Bookmarks?")) &&
-    responseData.status == 200
-  ) {
-    // For likes and tweets, body is XAPIData
-    // For bookmarks, body is XAPIBookmarksData
-    const body: XAPIData | XAPIBookmarksData = JSON.parse(
-      responseData.responseBody,
-    );
-    let timeline: XAPITimeline;
-    if (isXAPIBookmarksData(body)) {
-      timeline = (body as XAPIBookmarksData).data.bookmark_timeline_v2;
-    } else if (isXAPIData(body)) {
-      timeline = (body as XAPIData).data.user.result.timeline as XAPITimeline;
-    } else if (isXAPIData_v2(body)) {
-      timeline = (body as XAPIData).data.user.result
-        .timeline_v2 as XAPITimeline;
-    } else if (isXAPIError(body)) {
-      log.error(
-        "XAccountController.indexParseTweetsResponseData: XAPIError",
-        body,
-      );
-      controller.mitmController.responseData[responseIndex].processed = true;
-      return false;
-    } else {
-      log.error(
-        "XAccountController.indexParseTweetsResponseData: Invalid response data",
-        responseData.responseBody,
-      );
-      throw new Error("Invalid response data");
-    }
-
-    // Loop through instructions
-    timeline.timeline.instructions.forEach((instructions) => {
-      if (instructions["type"] != "TimelineAddEntries") {
-        return;
-      }
-
-      // If we only have two entries, they both have entryType of TimelineTimelineCursor (one cursorType of Top and the other of Bottom), this means there are no more tweets
-      if (
-        instructions.entries?.length == 2 &&
-        instructions.entries[0].content.entryType == "TimelineTimelineCursor" &&
-        instructions.entries[0].content.cursorType == "Top" &&
-        instructions.entries[1].content.entryType == "TimelineTimelineCursor" &&
-        instructions.entries[1].content.cursorType == "Bottom"
-      ) {
-        controller.thereIsMore = false;
-        return;
-      }
-
-      // Loop through the entries
-      instructions.entries?.forEach((entries) => {
-        let userCore: XAPIUserCore | undefined;
-        let tweetLegacy: XAPILegacyTweet | undefined;
-
-        if (entries.content.entryType == "TimelineTimelineModule") {
-          entries.content.items?.forEach((item) => {
-            if (
-              item.item.itemContent.tweet_results &&
-              item.item.itemContent.tweet_results.result &&
-              item.item.itemContent.tweet_results.result.core &&
-              item.item.itemContent.tweet_results.result.core.user_results &&
-              item.item.itemContent.tweet_results.result.core.user_results
-                .result &&
-              item.item.itemContent.tweet_results.result.core.user_results
-                .result.core &&
-              item.item.itemContent.tweet_results.result.legacy
-            ) {
-              userCore =
-                item.item.itemContent.tweet_results.result.core.user_results
-                  .result.core;
-              tweetLegacy = item.item.itemContent.tweet_results.result.legacy;
-            }
-
-            if (
-              item.item.itemContent.tweet_results &&
-              item.item.itemContent.tweet_results.result &&
-              item.item.itemContent.tweet_results.result.tweet &&
-              item.item.itemContent.tweet_results.result.tweet.core &&
-              item.item.itemContent.tweet_results.result.tweet.core
-                .user_results &&
-              item.item.itemContent.tweet_results.result.tweet.core.user_results
-                .result &&
-              item.item.itemContent.tweet_results.result.tweet.core.user_results
-                .result.core &&
-              item.item.itemContent.tweet_results.result.tweet.legacy
-            ) {
-              userCore =
-                item.item.itemContent.tweet_results.result.tweet.core
-                  .user_results.result.core;
-              tweetLegacy =
-                item.item.itemContent.tweet_results.result.tweet.legacy;
-            }
-
-            if (userCore && tweetLegacy) {
-              indexTweet(controller, responseIndex, userCore, tweetLegacy);
-            }
-          });
-        } else if (entries.content.entryType == "TimelineTimelineItem") {
-          if (
-            entries.content.itemContent &&
-            entries.content.itemContent.tweet_results &&
-            entries.content.itemContent.tweet_results.result &&
-            entries.content.itemContent.tweet_results.result.core &&
-            entries.content.itemContent.tweet_results.result.core
-              .user_results &&
-            entries.content.itemContent.tweet_results.result.core.user_results
-              .result &&
-            entries.content.itemContent.tweet_results.result.core.user_results
-              .result.core &&
-            entries.content.itemContent.tweet_results.result.legacy
-          ) {
-            userCore =
-              entries.content.itemContent.tweet_results.result.core.user_results
-                .result.core;
-            tweetLegacy =
-              entries.content.itemContent.tweet_results.result.legacy;
-          }
-
-          if (
-            entries.content.itemContent &&
-            entries.content.itemContent.tweet_results &&
-            entries.content.itemContent.tweet_results.result &&
-            entries.content.itemContent.tweet_results.result.tweet &&
-            entries.content.itemContent.tweet_results.result.tweet.core &&
-            entries.content.itemContent.tweet_results.result.tweet.core
-              .user_results &&
-            entries.content.itemContent.tweet_results.result.tweet.core
-              .user_results.result &&
-            entries.content.itemContent.tweet_results.result.tweet.core
-              .user_results.result.core &&
-            entries.content.itemContent.tweet_results.result.tweet.legacy
-          ) {
-            userCore =
-              entries.content.itemContent.tweet_results.result.tweet.core
-                .user_results.result.core;
-            tweetLegacy =
-              entries.content.itemContent.tweet_results.result.tweet.legacy;
-          }
-
-          if (userCore && tweetLegacy) {
-            indexTweet(controller, responseIndex, userCore, tweetLegacy);
-          }
-        }
-      });
-    });
-
-    controller.mitmController.responseData[responseIndex].processed = true;
-    log.debug(
-      "XAccountController.indexParseTweetsResponseData: processed",
-      responseIndex,
-    );
-  } else {
+  if (!isTimelineResponse(responseData) || responseData.status != 200) {
     // Skip response
     controller.mitmController.responseData[responseIndex].processed = true;
+    return true;
   }
+
+  // For likes and tweets, body is XAPIData
+  // For bookmarks, body is XAPIBookmarksData
+  const body: XAPIData | XAPIBookmarksData = JSON.parse(
+    responseData.responseBody,
+  );
+
+  if (isXAPIError(body)) {
+    controller.mitmController.responseData[responseIndex].processed = true;
+
+    // A rate limit can arrive inside an otherwise-successful response. Treated
+    // as "no more data" it would end the run with a partial archive the user
+    // believes is complete.
+    if (isRateLimitError(body)) {
+      log.warn(
+        "XAccountController.indexParseTweetsResponseData: RATE LIMITED inside a successful response",
+      );
+      controller.markRateLimited(rateLimitReset(responseData, body));
+      return false;
+    }
+
+    log.error(
+      "XAccountController.indexParseTweetsResponseData: XAPIError",
+      body,
+    );
+    return false;
+  }
+
+  const timeline = timelineFromBody(body);
+  if (timeline === null) {
+    log.error(
+      "XAccountController.indexParseTweetsResponseData: Invalid response data",
+      responseData.responseBody,
+    );
+    throw new Error("Invalid response data");
+  }
+
+  controller.timelineStats.recognizedResponses++;
+
+  const itemContents = postItemContents(timeline);
+  controller.timelineStats.tweetEntries += itemContents.length;
+
+  // A recognized timeline response carrying no posts is the end of the
+  // timeline — and, on the first page, an account with nothing in it. X gives
+  // no other empty-state signal: an empty profile timeline still returns a
+  // who-to-follow module and two cursors.
+  if (itemContents.length == 0) {
+    controller.thereIsMore = false;
+  }
+
+  itemContents.forEach((itemContent) => {
+    const fields = postFields(itemContent);
+    if (!fields) {
+      return;
+    }
+    indexTweet(controller, responseIndex, fields.userCore, fields.tweetLegacy);
+    controller.timelineStats.tweetsSaved++;
+  });
+
+  controller.mitmController.responseData[responseIndex].processed = true;
+  log.debug(
+    "XAccountController.indexParseTweetsResponseData: processed",
+    responseIndex,
+  );
 
   return true;
 }

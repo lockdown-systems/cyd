@@ -12,7 +12,7 @@ export { archiveSaveTweet } from "./helpers_archive";
 
 // Shared helper functions for indexing content
 export {
-  indexContentCheckIfEmpty,
+  indexContentCheckOutcome,
   indexContentWaitForInitialLoad,
   indexContentProcessRateLimit,
   indexContentParsePage,
