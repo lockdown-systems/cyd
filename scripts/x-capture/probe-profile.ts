@@ -450,11 +450,7 @@ async function focusBio(page: Page, how: "tab" | "click"): Promise<string> {
   return "tabbed 50 times without reaching a textarea";
 }
 
-async function probeBio(
-  page: Page,
-  log: CallLog,
-  options: Options,
-): Promise<Attempt[]> {
+async function probeBio(page: Page, log: CallLog): Promise<Attempt[]> {
   const attempts: Attempt[] = [];
 
   for (const bioCase of bioCases) {
@@ -603,7 +599,7 @@ async function main() {
     sections.push(
       formatAttempts(
         "Typing a bio into the textarea",
-        await probeBio(page, log, options),
+        await probeBio(page, log),
       ),
     );
   }
