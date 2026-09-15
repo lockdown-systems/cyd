@@ -24,45 +24,82 @@ const PROTECT_POSTS_SELECTOR = 'input[type="checkbox"]';
 const CONFIRM_BUTTON_SELECTOR =
   'button[data-testid="confirmationSheetConfirm"]';
 
-// X keeps the profile dialog's Save button disabled until it has taken the
-// change, and clicking a disabled button does nothing at all. Clicking it
-// blind is how a run can report success having saved nothing, so wait for the
-// button to come alive first and treat it never doing so as a failure.
-async function saveProfile(
+const BIO_TEXTAREA_SELECTOR = 'div[role="dialog"] textarea';
+
+// Click Save.
+//
+// The button is never disabled: scripts/x-capture/probe-profile.ts found it
+// reads disabled=false with no aria-disabled before any change is made at all.
+// So its state says nothing about whether X has taken a change, and the only
+// way to know a save landed is to read the profile back.
+async function clickSaveProfile(
   vm: XViewModel,
   errorType: AutomationErrorType,
 ): Promise<boolean> {
-  const isEnabledScript = `
-        (() => {
-            const button = document.querySelector('${SAVE_BUTTON_SELECTOR}');
-            if(!button) { return false; }
-            return !button.disabled && button.getAttribute('aria-disabled') !== 'true';
-        })();
-    `;
-
-  let isEnabled = false;
-  for (let i = 0; i < 30; i++) {
-    isEnabled = await vm.getWebview()?.executeJavaScript(isEnabledScript);
-    if (isEnabled) {
-      break;
-    }
-    await vm.sleep(200);
-  }
-
-  if (!isEnabled) {
-    vm.log("saveProfile", "the save button never became clickable");
-    await vm.error(errorType, { reason: "save button never became enabled" });
-    return false;
-  }
-
   if (!(await vm.scriptClickElement(SAVE_BUTTON_SELECTOR))) {
-    vm.log("saveProfile", "failed to click the save button");
+    vm.log("clickSaveProfile", "failed to click the save button");
     await vm.error(errorType, { reason: "failed to click the save button" });
     return false;
   }
 
   await vm.waitForLoadingToFinish();
+  await vm.sleep(3000);
   return true;
+}
+
+/** The banner X serves on the profile, which is the only answer that counts. */
+async function readBannerURL(vm: XViewModel): Promise<string> {
+  await vm.loadURLWithRateLimit(
+    `https://x.com/${vm.account.xAccount?.username ?? ""}`,
+  );
+  return (
+    (await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const image = document.querySelector('a[href$="/header_photo"] img');
+            return image ? image.src : "";
+        })();
+    `)) ?? ""
+  );
+}
+
+/** The bio X serves back into the profile dialog. */
+async function readBioText(vm: XViewModel): Promise<string> {
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
+  await vm.waitForSelector(BIO_TEXTAREA_SELECTOR, PROFILE_SETTINGS_URL);
+  return (
+    (await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const textarea = document.querySelector('${BIO_TEXTAREA_SELECTOR}');
+            return textarea ? textarea.value : "";
+        })();
+    `)) ?? ""
+  );
+}
+
+// Put the bio in the textarea through React's own value setter.
+//
+// Cyd used to type it in with sendInputEvent, a key at a time. Electron's
+// keyDown and keyUp move focus and press Backspace, which is why the tabbing
+// and deleting appeared to work, but they insert no text without a char event,
+// so the textarea kept whatever X had put there and the save wrote it straight
+// back. Assigning .value instead is no good either: React holds its own copy
+// of the value and saves that, not what the DOM shows.
+//
+// The setter plus an input event is what React listens for, and the probe
+// confirmed it survives a reload where a plain assignment does not.
+function setBioScript(bioText: string): string {
+  return `
+        (() => {
+            const textarea = document.querySelector('${BIO_TEXTAREA_SELECTOR}');
+            if(!textarea) { return false; }
+            const setter = Object.getOwnPropertyDescriptor(
+                HTMLTextAreaElement.prototype, 'value'
+            ).set;
+            setter.call(textarea, ${JSON.stringify(bioText)});
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            return true;
+        })();
+    `;
 }
 
 // Put the banner on the page's first file input, the way a person choosing a
@@ -107,15 +144,18 @@ export async function runJobTombstoneUpdateBanner(
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBanner");
   vm.showAutomationNotice = true;
 
-  // Load the profile page
-  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
-
   const bannerDataURL = vm.account.xAccount?.tombstoneBannerDataURL ?? "";
   if (!bannerDataURL) {
     vm.log("runJobTombstoneUpdateBanner", "no banner image to set");
     await vm.finishJob(jobIndex);
     return true;
   }
+
+  // What X shows now, to compare against once the save has been made
+  const bannerBefore = await readBannerURL(vm);
+
+  // Load the profile page
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
 
   // Wait for the file input, and set the banner on it
   await vm.waitForSelector(FILE_INPUT_SELECTOR, PROFILE_SETTINGS_URL);
@@ -142,11 +182,23 @@ export async function runJobTombstoneUpdateBanner(
   }
 
   if (
-    !(await saveProfile(
+    !(await clickSaveProfile(
       vm,
       AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
     ))
   ) {
+    return false;
+  }
+
+  // Read the banner back. A save that clicked cleanly and changed nothing is
+  // exactly the failure this job kept reporting as success.
+  const bannerAfter = await readBannerURL(vm);
+  if (bannerAfter === bannerBefore) {
+    vm.log("runJobTombstoneUpdateBanner", ["banner unchanged", bannerBefore]);
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+      { reason: "the banner did not change", bannerBefore, bannerAfter },
+    );
     return false;
   }
 
@@ -167,75 +219,6 @@ export async function runJobTombstoneUpdateBio(
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBio");
   vm.showAutomationNotice = true;
 
-  // When submitting the profile form, it doesn't seem to get the bio text value from
-  // the <textarea>, so we need to instead inject input events into the webview.
-
-  // Load the profile page
-  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
-
-  // Wait for bio field to appear
-  await vm.waitForSelector('div[role="dialog"] textarea', PROFILE_SETTINGS_URL);
-  await vm.sleep(200);
-
-  // Click in the modal
-  await vm.scriptClickElement('div[role="group"][tabindex="0"]');
-
-  // Press until the bio field is selected
-  vm.log("runJobTombstoneUpdateBio", "pressing tab to select bio field");
-  let selected = false;
-  for (let i = 0; i < 50; i++) {
-    // Press tab
-    await vm.getWebview()?.sendInputEvent({
-      type: "keyDown",
-      keyCode: "Tab",
-    });
-    await vm.sleep(10);
-    await vm.getWebview()?.sendInputEvent({
-      type: "keyUp",
-      keyCode: "Tab",
-    });
-    await vm.sleep(10);
-
-    // Check if the textarea is selected
-    const tagName = await vm
-      .getWebview()
-      ?.executeJavaScript(`document.activeElement.tagName`);
-    if (tagName == "TEXTAREA") {
-      vm.log("runJobTombstoneUpdateBio", "bio textarea selected");
-      selected = true;
-      break;
-    }
-  }
-  if (!selected) {
-    // TODO: error
-    console.error("runJobTombstoneUpdateBio", "bio textarea not found");
-  }
-
-  // Select and delete the existing bio
-  vm.log("runJobTombstoneUpdateBio", "select and delete the existing bio");
-  await vm.getWebview()?.executeJavaScript(`document.activeElement.click()`);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyDown",
-    keyCode: "CommandOrControl+A",
-  });
-  await vm.sleep(10);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyUp",
-    keyCode: "CommandOrControl+A",
-  });
-  await vm.sleep(10);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyDown",
-    keyCode: "Backspace",
-  });
-  await vm.sleep(10);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyUp",
-    keyCode: "Backspace",
-  });
-  await vm.sleep(10);
-
-  // Type the new bio character by character
   let bioText = vm.account.xAccount?.tombstoneUpdateBioText ?? "";
   if (vm.account.xAccount?.tombstoneUpdateBioCreditCyd) {
     bioText = bioText + tombstoneUpdateBioCreditCydText;
@@ -244,88 +227,45 @@ export async function runJobTombstoneUpdateBio(
     bioText = bioText.substring(0, 160);
   }
 
-  function getKeyEventForChar(char: string): { keyCode: string } {
-    // Lowercase letters
-    if (char >= "a" && char <= "z") {
-      return { keyCode: char.toUpperCase() }; // 'A' for 'a'
-    }
-    // Uppercase letters
-    if (char >= "A" && char <= "Z") {
-      return { keyCode: `Shift+${char}` }; // 'Shift+A' for 'A'
-    }
-    // Numbers
-    if (char >= "0" && char <= "9") {
-      return { keyCode: char };
-    }
-    // Space
-    if (char === " ") return { keyCode: "Space" };
+  // Load the profile page and wait for the bio field
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
+  await vm.waitForSelector(BIO_TEXTAREA_SELECTOR, PROFILE_SETTINGS_URL);
 
-    // Shifted symbols
-    const shiftSymbols: Record<string, string> = {
-      "!": "Shift+1",
-      "@": "Shift+2",
-      "#": "Shift+3",
-      $: "Shift+4",
-      "%": "Shift+5",
-      "^": "Shift+6",
-      "&": "Shift+7",
-      "*": "Shift+8",
-      "(": "Shift+9",
-      ")": "Shift+0",
-      _: "Shift+-",
-      "+": "Shift+=",
-      ":": "Shift+;",
-      '"': "Shift+'",
-      "<": "Shift+,",
-      ">": "Shift+.",
-      "?": "Shift+/",
-      "|": "Shift+\\",
-      "~": "Shift+`",
-      "{": "Shift+[",
-      "}": "Shift+]",
-    };
-    if (char in shiftSymbols) {
-      return { keyCode: shiftSymbols[char] };
-    }
-
-    // Direct mapping for some symbols (no shift)
-    const directMap: Record<string, string> = {
-      "-": "-",
-      "=": "=",
-      "[": "[",
-      "]": "]",
-      "\\": "\\",
-      ";": ";",
-      "'": "'",
-      ",": ",",
-      ".": ".",
-      "/": "/",
-      "`": "`",
-    };
-    if (char in directMap) {
-      return { keyCode: directMap[char] };
-    }
-
-    // Fallback
-    return { keyCode: char };
-  }
-
-  for (const char of bioText) {
-    vm.log("runJobTombstoneUpdateBio", ["typing char", char]);
-    const { keyCode } = getKeyEventForChar(char);
-    const webview = vm.getWebview();
-    await webview?.sendInputEvent({ type: "keyDown", keyCode });
-    await vm.sleep(10);
-    await webview?.sendInputEvent({ type: "keyUp", keyCode });
-    await vm.sleep(10);
+  const wasSet = await vm
+    .getWebview()
+    ?.executeJavaScript(setBioScript(bioText));
+  if (!wasSet) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+      {
+        reason: "could not find the bio textarea",
+      },
+    );
+    return false;
   }
 
   if (
-    !(await saveProfile(
+    !(await clickSaveProfile(
       vm,
       AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
     ))
   ) {
+    return false;
+  }
+
+  // Read the bio back, because a save that clicked cleanly and changed nothing
+  // is exactly the failure this job kept reporting as success.
+  const savedBio = await readBioText(vm);
+  if (savedBio !== bioText) {
+    vm.log("runJobTombstoneUpdateBio", ["bio unchanged", savedBio]);
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+      {
+        reason: "the bio did not change",
+        wanted: bioText,
+        got: savedBio,
+      },
+    );
     return false;
   }
 

@@ -33,6 +33,27 @@ describe("jobs_tombstone.ts", () => {
     vi.spyOn(vm.getWebview()!, "executeJavaScript").mockResolvedValue(true);
   });
 
+  /**
+   * The jobs read the profile back to find out whether a save landed, so a
+   * test has to say what X hands back. Everything else the page is asked
+   * answers true, the way a script that found its element does.
+   */
+  const answerWith = (banners: string[], bios: string[]) => {
+    let bannerRead = 0;
+    let bioRead = 0;
+    vi.spyOn(vm.getWebview()!, "executeJavaScript").mockImplementation(
+      async (code: string) => {
+        if (code.includes("header_photo")) {
+          return banners[Math.min(bannerRead++, banners.length - 1)];
+        }
+        if (code.includes("textarea.value")) {
+          return bios[Math.min(bioRead++, bios.length - 1)];
+        }
+        return true;
+      },
+    );
+  };
+
   afterEach(() => {
     resetElectronAPIMocks();
     vi.clearAllMocks();
@@ -40,6 +61,11 @@ describe("jobs_tombstone.ts", () => {
 
   describe("runJobTombstoneUpdateBanner", () => {
     it("should set the banner, apply the crop, and save", async () => {
+      answerWith(
+        ["https://pbs.twimg.com/old", "https://pbs.twimg.com/new"],
+        [],
+      );
+
       const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
 
       expect(result).toBe(true);
@@ -160,21 +186,85 @@ describe("jobs_tombstone.ts", () => {
       expect(vm.finishJob).toHaveBeenCalledWith(0);
     });
 
-    it("should report a save that never went through rather than finishing", async () => {
-      // The save button stays disabled, so clicking it would do nothing
-      vi.spyOn(vm.getWebview()!, "executeJavaScript").mockImplementation(
-        async (code: string) => !code.includes("aria-disabled"),
+    it("should report a banner that did not change rather than finishing", async () => {
+      // The save clicked cleanly and X kept the banner it already had, which
+      // is the failure this job used to report as success.
+      answerWith(
+        ["https://pbs.twimg.com/same", "https://pbs.twimg.com/same"],
+        [],
       );
-      vi.spyOn(vm, "sleep").mockResolvedValue(undefined);
 
       const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
 
       expect(result).toBe(false);
       expect(vm.error).toHaveBeenCalledWith(
         AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
-        { reason: "save button never became enabled" },
+        {
+          reason: "the banner did not change",
+          bannerBefore: "https://pbs.twimg.com/same",
+          bannerAfter: "https://pbs.twimg.com/same",
+        },
       );
       expect(vm.finishJob).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("runJobTombstoneUpdateBio", () => {
+    beforeEach(() => {
+      vm.account.xAccount!.tombstoneUpdateBioText = "Gone to Bluesky";
+      vm.account.xAccount!.tombstoneUpdateBioCreditCyd = false;
+    });
+
+    it("should set the bio through React's value setter, not by typing", async () => {
+      answerWith([], ["Gone to Bluesky"]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(true);
+      // Electron's keyDown and keyUp insert no text without a char event, so
+      // the old typing left the textarea holding whatever X had put there
+      expect(vm.getWebview()?.sendInputEvent).not.toHaveBeenCalled();
+      expect(vm.getWebview()?.executeJavaScript).toHaveBeenCalledWith(
+        expect.stringContaining("HTMLTextAreaElement.prototype"),
+      );
+      expect(vm.getWebview()?.executeJavaScript).toHaveBeenCalledWith(
+        expect.stringContaining('"Gone to Bluesky"'),
+      );
+      expect(vm.scriptClickElement).toHaveBeenCalledWith(
+        'button[data-testid="Profile_Save_Button"]',
+      );
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
+      expect(vm.error).not.toHaveBeenCalled();
+    });
+
+    it("should report a bio that did not change rather than finishing", async () => {
+      answerWith([], ["Seeded test account."]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(false);
+      expect(vm.error).toHaveBeenCalledWith(
+        AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+        {
+          reason: "the bio did not change",
+          wanted: "Gone to Bluesky",
+          got: "Seeded test account.",
+        },
+      );
+      expect(vm.finishJob).not.toHaveBeenCalled();
+    });
+
+    it("should quote the bio text into the script rather than splicing it", async () => {
+      // A bio can hold a quote, which the old typing never had to care about
+      vm.account.xAccount!.tombstoneUpdateBioText = `I'm "gone"`;
+      answerWith([], [`I'm "gone"`]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.getWebview()?.executeJavaScript).toHaveBeenCalledWith(
+        expect.stringContaining(JSON.stringify(`I'm "gone"`)),
+      );
     });
   });
 
