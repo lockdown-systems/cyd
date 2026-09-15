@@ -63,11 +63,11 @@ describe("helpers_unfollow.ts", () => {
         shouldReload: false,
       });
       expect(vm.scriptMouseoverElementNth).toHaveBeenCalledWith(
-        'div[data-testid="cellInnerDiv"] button button',
+        '[data-testid$="-unfollow"]',
         0,
       );
       expect(vm.scriptClickElementNth).toHaveBeenCalledWith(
-        'div[data-testid="cellInnerDiv"] button button',
+        '[data-testid$="-unfollow"]',
         0,
       );
       expect(vm.waitForSelector).toHaveBeenCalledWith(

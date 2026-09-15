@@ -1,5 +1,6 @@
 import type { XViewModel } from "../view_model";
 import { AutomationErrorType } from "../../../automation_errors";
+import { UNFOLLOW_BUTTON_SELECTOR } from "./helpers_shared";
 
 /**
  * Check if there are any accounts left to unfollow
@@ -29,7 +30,7 @@ export async function unfollowEveryoneUnfollowAccount(
   // Mouseover the "Following" button on the next user
   if (
     !(await vm.scriptMouseoverElementNth(
-      'div[data-testid="cellInnerDiv"] button button',
+      UNFOLLOW_BUTTON_SELECTOR,
       accountIndex,
     ))
   ) {
@@ -38,10 +39,7 @@ export async function unfollowEveryoneUnfollowAccount(
 
   // Click the unfollow button
   if (
-    !(await vm.scriptClickElementNth(
-      'div[data-testid="cellInnerDiv"] button button',
-      accountIndex,
-    ))
+    !(await vm.scriptClickElementNth(UNFOLLOW_BUTTON_SELECTOR, accountIndex))
   ) {
     return { success: false, shouldRetry: false, shouldReload: true };
   }

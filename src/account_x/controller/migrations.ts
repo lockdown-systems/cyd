@@ -193,4 +193,10 @@ export const migrations: Migration[] = [
       `ALTER TABLE tweet_media ADD COLUMN endIndex INTEGER;`,
     ],
   },
+  // Add retweetedTweetID to the tweet table. X undoes a repost by naming the
+  // post that was reposted, so a repost has to carry that post's ID.
+  {
+    name: "20260915_add_retweetedTweetID",
+    sql: [`ALTER TABLE tweet ADD COLUMN retweetedTweetID TEXT;`],
+  },
 ];

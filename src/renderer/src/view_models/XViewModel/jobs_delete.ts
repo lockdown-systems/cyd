@@ -14,6 +14,7 @@ import {
   deleteBookmarkItem,
   unfollowEveryoneProcessIteration,
   unfollowEveryoneLoadPage,
+  UNFOLLOW_BUTTON_SELECTOR,
 } from "./jobs_delete/index";
 
 export async function runJobDeleteTweets(
@@ -49,11 +50,11 @@ export async function runJobDeleteTweets(
   vm.progress.newTweetsArchived = 0;
   await vm.syncProgress();
 
-  // Load the replies page
+  // Load the profile page, which is where X's own client deletes posts from
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    `https://x.com/${vm.account.xAccount?.username}/with_replies`,
+    `https://x.com/${vm.account.xAccount?.username}`,
   );
 
   // Hide the browser and start showing other progress instead
@@ -74,12 +75,7 @@ export async function runJobDeleteTweets(
 
     // Delete the tweet with retry logic
     const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
-      deleteTweetItem(
-        vm,
-        ct0,
-        tweetsToDelete.tweets[i].id,
-        vm.account.xAccount?.username || "",
-      ),
+      deleteTweetItem(vm, ct0, tweetsToDelete.tweets[i].id),
     );
 
     if (success) {
@@ -149,11 +145,11 @@ export async function runJobDeleteRetweets(
   vm.progress.retweetsDeleted = 0;
   await vm.syncProgress();
 
-  // Load the tweets page
+  // Load the reposts page, which is where reposts now live
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    `https://x.com/${vm.account.xAccount?.username}`,
+    `https://x.com/${vm.account.xAccount?.username}/reposts`,
   );
 
   // Hide the browser and start showing other progress instead
@@ -178,7 +174,7 @@ export async function runJobDeleteRetweets(
         vm,
         ct0,
         tweetsToDelete.tweets[i].id,
-        vm.account.xAccount?.username || "",
+        tweetsToDelete.tweets[i].rt ?? null,
       ),
     );
 
@@ -279,12 +275,7 @@ export async function runJobDeleteLikes(
 
     // Delete the like with retry logic
     const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
-      deleteLikeItem(
-        vm,
-        ct0,
-        tweetsToDelete.tweets[i].id,
-        vm.account.xAccount?.username || "",
-      ),
+      deleteLikeItem(vm, ct0, tweetsToDelete.tweets[i].id),
     );
 
     if (success) {
@@ -454,7 +445,7 @@ export async function runJobUnfollowEveryone(
 
         // Count the number of accounts to unfollow in the DOM
         numberOfAccountsToUnfollow = await vm.countSelectorsFound(
-          'div[data-testid="cellInnerDiv"] button button',
+          UNFOLLOW_BUTTON_SELECTOR,
         );
         accountToUnfollowIndex = 0;
       }

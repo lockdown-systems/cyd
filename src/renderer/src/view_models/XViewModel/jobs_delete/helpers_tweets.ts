@@ -2,6 +2,7 @@ import type { XViewModel } from "../view_model";
 import { XDeleteTweetsStartResponse } from "../../../../../shared_types";
 import { AutomationErrorType } from "../../../automation_errors";
 import { formatError } from "../../../util";
+import { sendXDeleteMutation } from "./operations";
 
 /**
  * Load the list of tweets to delete from the database
@@ -35,42 +36,36 @@ export async function deleteTweetItem(
   vm: XViewModel,
   ct0: string,
   tweetId: string,
-  username: string,
 ): Promise<number> {
-  return await vm.graphqlDelete(
-    ct0,
-    "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet",
-    `https://x.com/${username}/with_replies`,
-    JSON.stringify({
-      variables: {
-        tweet_id: tweetId,
-        dark_request: false,
-      },
-      queryId: "VaenaVgh5q5ih7kvyVjgtg",
-    }),
-  );
+  return await sendXDeleteMutation(vm, ct0, "DeleteTweet", {
+    tweet_id: tweetId,
+    dark_request: false,
+  });
 }
 
 /**
- * Delete a single retweet via GraphQL API (uses same endpoint as DeleteTweet)
+ * Undo a single repost via GraphQL API
+ *
+ * X undoes a repost by naming the post that was reposted, not the repost
+ * itself. A repost saved before Cyd recorded that identifier only carries its
+ * own, so it is deleted the way Cyd has always deleted one.
+ *
  * @returns HTTP status code
  */
 export async function deleteRetweetItem(
   vm: XViewModel,
   ct0: string,
   retweetId: string,
-  username: string,
+  repostedTweetId: string | null,
 ): Promise<number> {
-  return await vm.graphqlDelete(
-    ct0,
-    "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet",
-    `https://x.com/${username}/with_replies`,
-    JSON.stringify({
-      variables: {
-        tweet_id: retweetId,
-        dark_request: false,
-      },
-      queryId: "VaenaVgh5q5ih7kvyVjgtg",
-    }),
-  );
+  if (repostedTweetId) {
+    return await sendXDeleteMutation(vm, ct0, "DeleteRetweet", {
+      source_tweet_id: repostedTweetId,
+    });
+  }
+
+  return await sendXDeleteMutation(vm, ct0, "DeleteTweet", {
+    tweet_id: retweetId,
+    dark_request: false,
+  });
 }

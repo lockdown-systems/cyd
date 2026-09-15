@@ -149,6 +149,7 @@ export type XTweetItem = {
   d: string; // createdAt
   i: string[]; // image filenames
   v: string[]; // video filenames
+  rt?: string; // retweetedTweetID, the post this one reposted
 };
 
 export type XTweetItemArchive = {

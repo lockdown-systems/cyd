@@ -170,6 +170,18 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
+    "X:getObservedGraphqlQueryIDs",
+    async (_, accountID: number): Promise<Record<string, string>> => {
+      try {
+        const controller = getXAccountController(accountID);
+        return await controller.getObservedGraphqlQueryIDs();
+      } catch (error) {
+        throw new Error(packageExceptionForReport(error as Error));
+      }
+    },
+  );
+
+  ipcMain.handle(
     "X:indexTimelineStats",
     async (_, accountID: number): Promise<XIndexTimelineStats> => {
       try {

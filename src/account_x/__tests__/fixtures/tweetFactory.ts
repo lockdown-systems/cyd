@@ -30,6 +30,7 @@ export type TweetSeed = {
   replyUserID?: string | null;
   isQuote?: number;
   quotedTweet?: string | null;
+  retweetedTweetID?: string | null;
 };
 
 export type ConversationSeed = {
@@ -98,6 +99,7 @@ export function seedTweet(
     replyUserID: null,
     isQuote: 0,
     quotedTweet: null,
+    retweetedTweetID: null,
     ...overrides,
   };
 
@@ -128,8 +130,9 @@ export function seedTweet(
         replyTweetID,
         replyUserID,
         isQuote,
-        quotedTweet
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        quotedTweet,
+        retweetedTweetID
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.tweetID,
       data.username,
@@ -156,6 +159,7 @@ export function seedTweet(
       data.replyUserID,
       data.isQuote,
       data.quotedTweet,
+      data.retweetedTweetID,
     ],
   );
 

@@ -1,6 +1,38 @@
 import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
+import { AutomationErrorType } from "../../automation_errors";
 import { tombstoneUpdateBioCreditCydText } from "./types";
+
+const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
+
+// X's profile settings dialog carries three file inputs. The banner is the
+// first of them, which is the header photo at the top of the dialog.
+const BANNER_FILE_INPUT_SELECTOR = 'input[data-testid="fileInput"]';
+
+// The crop step X shows after a file is chosen
+const APPLY_BUTTON_SELECTOR = '[data-testid="applyButton"]';
+
+const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
+
+// Put the banner on the page's first file input, the way a person choosing a
+// file would. The input takes a File, not a data URL, so the image is decoded
+// in the page and handed over as one.
+function setBannerScript(bannerDataURL: string): string {
+  return `
+        (async () => {
+            const input = document.querySelectorAll('${BANNER_FILE_INPUT_SELECTOR}')[0];
+            if(!input) { return false; }
+            const response = await fetch('${bannerDataURL}');
+            const blob = await response.blob();
+            const file = new File([blob], 'banner.png', { type: 'image/png' });
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        })();
+    `;
+}
 
 export async function runJobTombstoneUpdateBanner(
   vm: XViewModel,
@@ -16,10 +48,34 @@ export async function runJobTombstoneUpdateBanner(
   vm.showAutomationNotice = true;
 
   // Load the profile page
-  await vm.loadURLWithRateLimit("https://x.com/settings/profile");
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
 
-  // TODO: implement
-  await vm.sleep(2000);
+  const bannerDataURL = vm.account.xAccount?.tombstoneBannerDataURL ?? "";
+  if (!bannerDataURL) {
+    vm.log("runJobTombstoneUpdateBanner", "no banner image to set");
+    await vm.finishJob(jobIndex);
+    return true;
+  }
+
+  // Wait for the file input, and set the banner on it
+  await vm.waitForSelector(BANNER_FILE_INPUT_SELECTOR, PROFILE_SETTINGS_URL);
+  const wasSet = await vm
+    .getWebview()
+    ?.executeJavaScript(setBannerScript(bannerDataURL));
+  if (!wasSet) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSetBanner,
+      {},
+    );
+    return false;
+  }
+
+  // Confirm the crop X offers, then save. Both clicks go through the element's
+  // own click(), because the dialog keeps a mask that swallows pointer events.
+  await vm.waitForSelector(APPLY_BUTTON_SELECTOR, PROFILE_SETTINGS_URL);
+  await vm.scriptClickElement(APPLY_BUTTON_SELECTOR);
+  await vm.scriptClickElement(SAVE_BUTTON_SELECTOR);
+  await vm.waitForLoadingToFinish();
 
   await vm.finishJob(jobIndex);
   return true;
@@ -42,13 +98,10 @@ export async function runJobTombstoneUpdateBio(
   // the <textarea>, so we need to instead inject input events into the webview.
 
   // Load the profile page
-  await vm.loadURLWithRateLimit("https://x.com/settings/profile");
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
 
   // Wait for bio field to appear
-  await vm.waitForSelector(
-    'div[role="dialog"] textarea',
-    "https://x.com/settings/profile",
-  );
+  await vm.waitForSelector('div[role="dialog"] textarea', PROFILE_SETTINGS_URL);
   await vm.sleep(200);
 
   // Click in the modal
@@ -201,7 +254,7 @@ export async function runJobTombstoneUpdateBio(
   await vm.waitForPause();
 
   // Click save
-  await vm.scriptClickElement('button[data-testid="Profile_Save_Button"]');
+  await vm.scriptClickElement(SAVE_BUTTON_SELECTOR);
   await vm.sleep(200);
   await vm.waitForLoadingToFinish();
 

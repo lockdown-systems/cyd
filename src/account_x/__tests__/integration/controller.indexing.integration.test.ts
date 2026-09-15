@@ -344,6 +344,25 @@ test("indexParseTweets() saves reposts", async () => {
   const progress: XProgress = await controller.indexParseTweets();
   expect(progress.retweetsIndexed).toBe(2);
   expect(countRows()).toBe(2);
+
+  // X undoes a repost by naming the post that was reposted, so each repost
+  // has to carry that post's ID
+  const reposted = database.exec(
+    controller.db,
+    "SELECT tweetID, retweetedTweetID FROM tweet ORDER BY tweetID",
+    [],
+    "all",
+  ) as { tweetID: string; retweetedTweetID: string | null }[];
+  expect(reposted).toEqual([
+    {
+      tweetID: "2099598114986545360",
+      retweetedTweetID: "2099358318083109242",
+    },
+    {
+      tweetID: "2099598159727210713",
+      retweetedTweetID: "2099459833833406805",
+    },
+  ]);
 });
 
 test("indexParseTweets() saves likes", async () => {

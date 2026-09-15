@@ -298,6 +298,9 @@ export function mockElectronAPI() {
       }),
       indexIsThereMore: vi.fn().mockResolvedValue(false),
       resetThereIsMore: vi.fn().mockResolvedValue(undefined),
+      // By default, the session has observed no operation identifiers, so the
+      // resolver falls back to its seeded constants
+      getObservedGraphqlQueryIDs: vi.fn().mockResolvedValue({}),
       // By default, X answered with a timeline that carried posts
       indexTimelineStats: vi.fn().mockResolvedValue({
         recognizedResponses: 1,

@@ -272,6 +272,11 @@ const electronAPI = {
     resetThereIsMore: (accountID: number) => {
       ipcRenderer.invoke("X:resetThereIsMore", accountID);
     },
+    getObservedGraphqlQueryIDs: (
+      accountID: number,
+    ): Promise<Record<string, string>> => {
+      return ipcRenderer.invoke("X:getObservedGraphqlQueryIDs", accountID);
+    },
     indexTimelineStats: (accountID: number): Promise<XIndexTimelineStats> => {
       return ipcRenderer.invoke("X:indexTimelineStats", accountID);
     },

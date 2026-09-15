@@ -53,6 +53,7 @@ export enum AutomationErrorType {
   x_runJob_unfollowEveryone_ClickUnfollowFailed = "x_runJob_unfollowEveryone_ClickUnfollowFailed",
   x_runJob_unfollowEveryone_WaitForConfirmButtonFailed = "x_runJob_unfollowEveryone_WaitForConfirmButtonFailed",
   x_runJob_unfollowEveryone_ClickConfirmFailed = "x_runJob_unfollowEveryone_ClickConfirmFailed",
+  x_runJob_tombstoneUpdateBanner_FailedToSetBanner = "x_runJob_tombstoneUpdateBanner_FailedToSetBanner",
   x_runJob_UnknownError = "x_runJob_UnknownError",
   x_runError = "x_runError",
   x_unknownError = "x_unknown",
@@ -191,6 +192,8 @@ export const AutomationErrorTypeToMessage = {
     "An unknown error occurred while unfollowing everyone",
   [AutomationErrorType.x_runJob_unfollowEveryone_ClickConfirmFailed]:
     "Failed to click confirm while unfollowing everyone",
+  [AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSetBanner]:
+    "Failed to set the tombstone banner image",
   [AutomationErrorType.x_runJob_UnknownError]: "An unknown error occurred",
   [AutomationErrorType.x_runError]: "Error while in X run function",
   [AutomationErrorType.x_unknownError]: "An unknown error occurred",
