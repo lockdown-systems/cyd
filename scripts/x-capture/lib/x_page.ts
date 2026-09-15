@@ -45,6 +45,12 @@ export const SELECTORS = {
   profileSaveButton: 'button[data-testid="Profile_Save_Button"]',
   bioTextarea: 'div[role="dialog"] textarea',
 
+  // Editing the profile. X gives the profile dialog's file inputs the same
+  // test identifier the composer's carries, so the two are told apart by which
+  // page they are on rather than by the selector.
+  profileFileInput: 'input[data-testid="fileInput"]',
+  profileCropApply: '[data-testid="applyButton"]',
+
   // Accounts
   follow: '[data-testid$="-follow"]',
   unfollow: '[data-testid$="-unfollow"]',

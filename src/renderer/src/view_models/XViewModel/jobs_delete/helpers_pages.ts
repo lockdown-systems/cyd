@@ -2,6 +2,7 @@ import type { XViewModel } from "../view_model";
 import { TimeoutError, URLChangedError } from "../../BaseViewModel";
 import { AutomationErrorType } from "../../../automation_errors";
 import { formatError } from "../../../util";
+import { UNFOLLOW_BUTTON_SELECTOR } from "./helpers_shared";
 
 /**
  * Load the following page and wait for following users to appear
@@ -25,11 +26,7 @@ export async function unfollowEveryoneLoadPage(
 
     // If no following users appear in two seconds, there are no following users
     try {
-      await vm.waitForSelector(
-        'div[data-testid="cellInnerDiv"] button button',
-        followingURL,
-        2000,
-      );
+      await vm.waitForSelector(UNFOLLOW_BUTTON_SELECTOR, followingURL, 2000);
     } catch (e) {
       if (e instanceof TimeoutError) {
         // Were we rate limited?

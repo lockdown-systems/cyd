@@ -73,6 +73,13 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
   protected cookies: Record<string, Record<string, string>> = {};
 
+  // The operation identifiers X's own client used this session, keyed by
+  // operation name. X rotates them whenever it redeploys and names the current
+  // one in every request it makes, so watching its traffic is how Cyd learns a
+  // rotation. In memory for this session only: no persistence, no
+  // invalidation.
+  private observedGraphqlQueryIDs: Record<string, string> = {};
+
   private blueskyService: BlueskyService | null = null;
 
   constructor(accountID: number, mitmController: IMITMController) {
@@ -83,6 +90,9 @@ export class XAccountController extends BaseAccountController<XProgress> {
     // Monitor web request metadata for X-specific functionality
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
     ses.webRequest.onCompleted((details) => {
+      // Learn the operation identifiers X is using right now
+      this.observeGraphqlOperation(details.url);
+
       // Monitor for rate limits
       if (details.statusCode == 429) {
         if (details.responseHeaders) {
@@ -96,6 +106,19 @@ export class XAccountController extends BaseAccountController<XProgress> {
         }
       }
     });
+  }
+
+  // A GraphQL request names its operation identifier and then its operation:
+  // https://x.com/i/api/graphql/<identifier>/<operation>
+  private observeGraphqlOperation(url: string): void {
+    const match = /\/graphql\/([^/?]+)\/([^/?]+)/.exec(url);
+    if (match) {
+      this.observedGraphqlQueryIDs[match[2]] = match[1];
+    }
+  }
+
+  async getObservedGraphqlQueryIDs(): Promise<Record<string, string>> {
+    return this.observedGraphqlQueryIDs;
   }
 
   protected getAccountType(): string {

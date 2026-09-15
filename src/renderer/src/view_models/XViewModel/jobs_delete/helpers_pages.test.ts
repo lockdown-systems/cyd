@@ -47,7 +47,7 @@ describe("helpers_pages.ts", () => {
       await DeleteHelpers.unfollowEveryoneLoadPage(vm);
 
       expect(vm.waitForSelector).toHaveBeenCalledWith(
-        'div[data-testid="cellInnerDiv"] button button',
+        '[data-testid$="-unfollow"]',
         "https://x.com/testuser/following",
         2000,
       );

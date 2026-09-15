@@ -85,6 +85,7 @@ describe("XAccountController - Deletion integration", () => {
       tweetID: "retweet-old",
       text: "RT @friend",
       createdAt: getTimestampDaysAgo(40),
+      retweetedTweetID: "reposted-123",
     });
     seedTweet(controller, {
       tweetID: "retweet-new",
@@ -103,6 +104,7 @@ describe("XAccountController - Deletion integration", () => {
 
     const retweets = await controller.deleteRetweetsStart();
     expect(retweets.tweets.map((tweet) => tweet.id)).toEqual([retweetOld]);
+    expect(retweets.tweets[0].rt).toBe("reposted-123");
 
     const likeActive = seedTweet(controller, {
       tweetID: "like-active",

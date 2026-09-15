@@ -4,7 +4,7 @@ Tooling for the capture sessions that establish how X behaves today
 (lockdown-systems/cyd#709). It is not part of the Cyd build: nothing here is
 imported by the app, and the root `package.json` does not depend on it.
 
-Three pieces:
+Four pieces:
 
 - **`seed.ts`** drives a real Chromium to fill a test account with enough data,
   and enough awkward data, to make a capture worth running.
@@ -13,6 +13,8 @@ Three pieces:
   and empty-state signals.
 - **`promote-fixture.ts`** copies the few decoded responses the tests need into
   `testdata/x/`, using the existing dated filename convention.
+- **`probe-profile.ts`** settles how X's "Edit profile" dialog takes a change,
+  for the tombstone jobs that update the banner and bio.
 
 The walk itself is `docs/x-capture/capture-walk-20260914.md`. The element
 inventory it fills in is `docs/x-capture/element-inventory-20260914.md`.
@@ -188,6 +190,60 @@ capture.
 Only the referrer is kept from the request headers, so no cookies or
 authorization tokens reach the decoded output. Response bodies are kept whole,
 because their shape is the point — check a fixture before committing it.
+
+## Probing the profile dialog
+
+The tombstone jobs put a banner on the profile dialog's file input and type a
+bio into its textarea, then click Save. Both reported success and saved
+nothing, which is the shape of a change X's own code never saw: the DOM holds
+the new value, React's state does not, and Save stays inert.
+
+Rather than guess which way of making the change X notices, try each one and
+watch what X does:
+
+```
+./scripts/x-capture/make-media.sh
+npx tsx scripts/x-capture/probe-profile.ts --account <handle>
+```
+
+The first run answered the first question, on 2026-09-15:
+
+- Every way of delivering the banner worked — Cyd's own `atob` decode, the same
+  with an `input` event, and the browser's own file delivery. All three reached
+  `POST /1.1/account/update_profile_banner.json → 200` and survived a reload.
+- Real key events put the bio on the account. A plain `.value` assignment did
+  not, which is the control behaving as expected.
+- **The Save button is never disabled.** It reads `disabled=false` with no
+  `aria-disabled` before any change is made at all, so its state says nothing
+  about whether X has taken one.
+
+So the file and the typing are not the problem, and what remains is how Cyd
+presses the buttons afterwards: through the element's own `click()` rather than
+a real mouse press, and a quarter of a second after Apply rather than a second
+and a half. The probe now varies one at a time, and for the bio also reports
+where Cyd's tab-towards-the-textarea actually lands.
+
+For each case it records:
+
+- what the Save button looked like before and after,
+- for the banner, whether X opened its crop step at all,
+- the calls that carry the change — `update_profile.json`,
+  `update_profile_banner.json`, `i/media/upload` — separated from the hundred
+  X makes either way,
+- whether the change survived a reload.
+
+The last one is the answer. A request that returns 200 still proves nothing if
+the profile comes back unchanged. The report lands in
+`capture/<date>/profile-probe.md`.
+
+Pass `--only banner` or `--only bio` to run one half, and `--banner <path>` to
+use a particular image.
+
+Unlike the walk, this **writes to the account**: it changes the bio three
+times and the banner up to three times. Use the capture account, and expect to
+re-seed it. It also logs every request the page makes to X, including the
+`upload.twitter.com` media upload that the HAR tooling filters out — which is
+the one call most worth seeing when a banner does not arrive.
 
 ## Promoting fixtures
 

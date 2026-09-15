@@ -12,9 +12,10 @@ import { createMockXViewModel } from "../test_util";
 
 describe("helpers_tweets.ts", () => {
   let vm: XViewModel;
+  let mockElectron: ReturnType<typeof mockElectronAPI>;
 
   beforeEach(() => {
-    mockElectronAPI();
+    mockElectron = mockElectronAPI();
     vm = createMockXViewModel({
       xAccount: createMockXAccount({ username: "testuser" }),
     });
@@ -69,26 +70,35 @@ describe("helpers_tweets.ts", () => {
   });
 
   describe("deleteTweetItem", () => {
-    it("should call graphqlDelete with correct parameters for tweet", async () => {
-      await DeleteHelpers.deleteTweetItem(
-        vm,
-        "test-ct0",
-        "tweet-123",
-        "testuser",
-      );
+    it("should call graphqlDelete with the operation X's own client sends", async () => {
+      await DeleteHelpers.deleteTweetItem(vm, "test-ct0", "tweet-123");
 
       expect(vm.graphqlDelete).toHaveBeenCalledWith(
         "test-ct0",
-        "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet",
-        "https://x.com/testuser/with_replies",
+        "https://x.com/i/api/graphql/nxpZCY2K-I6QoFHAHeojFQ/DeleteTweet",
+        "https://x.com/testuser",
         JSON.stringify({
           variables: {
             tweet_id: "tweet-123",
             dark_request: false,
           },
-          queryId: "VaenaVgh5q5ih7kvyVjgtg",
+          queryId: "nxpZCY2K-I6QoFHAHeojFQ",
         }),
       );
+    });
+
+    it("should use an operation identifier observed this session", async () => {
+      mockElectron.X.getObservedGraphqlQueryIDs.mockResolvedValue({
+        DeleteTweet: "rotated-identifier",
+      });
+
+      await DeleteHelpers.deleteTweetItem(vm, "test-ct0", "tweet-123");
+
+      const call = vi.mocked(vm.graphqlDelete).mock.calls[0];
+      expect(call[1]).toBe(
+        "https://x.com/i/api/graphql/rotated-identifier/DeleteTweet",
+      );
+      expect(call[3]).toContain('"queryId":"rotated-identifier"');
     });
 
     it("should return status code from graphqlDelete", async () => {
@@ -98,7 +108,6 @@ describe("helpers_tweets.ts", () => {
         vm,
         "test-ct0",
         "tweet-123",
-        "testuser",
       );
 
       expect(result).toBe(200);
@@ -106,39 +115,47 @@ describe("helpers_tweets.ts", () => {
   });
 
   describe("deleteRetweetItem", () => {
-    it("should call graphqlDelete with correct parameters for retweet", async () => {
+    it("should undo the repost by naming the post that was reposted", async () => {
       await DeleteHelpers.deleteRetweetItem(
         vm,
         "test-ct0",
         "retweet-456",
-        "testuser",
+        "reposted-123",
       );
 
       expect(vm.graphqlDelete).toHaveBeenCalledWith(
         "test-ct0",
-        "https://x.com/i/api/graphql/VaenaVgh5q5ih7kvyVjgtg/DeleteTweet",
-        "https://x.com/testuser/with_replies",
+        "https://x.com/i/api/graphql/ZyZigVsNiFO6v1dEks1eWg/DeleteRetweet",
+        "https://x.com/testuser/reposts",
+        JSON.stringify({
+          variables: {
+            source_tweet_id: "reposted-123",
+          },
+          queryId: "ZyZigVsNiFO6v1dEks1eWg",
+        }),
+      );
+    });
+
+    it("should delete the repost itself when the reposted post is unknown", async () => {
+      await DeleteHelpers.deleteRetweetItem(
+        vm,
+        "test-ct0",
+        "retweet-456",
+        null,
+      );
+
+      expect(vm.graphqlDelete).toHaveBeenCalledWith(
+        "test-ct0",
+        "https://x.com/i/api/graphql/nxpZCY2K-I6QoFHAHeojFQ/DeleteTweet",
+        "https://x.com/testuser",
         JSON.stringify({
           variables: {
             tweet_id: "retweet-456",
             dark_request: false,
           },
-          queryId: "VaenaVgh5q5ih7kvyVjgtg",
+          queryId: "nxpZCY2K-I6QoFHAHeojFQ",
         }),
       );
-    });
-
-    it("should use same endpoint as deleteTweetItem", async () => {
-      await DeleteHelpers.deleteTweetItem(vm, "ct0", "123", "user");
-      const tweetCall = vi.mocked(vm.graphqlDelete).mock.calls[0];
-
-      vi.clearAllMocks();
-
-      await DeleteHelpers.deleteRetweetItem(vm, "ct0", "456", "user");
-      const retweetCall = vi.mocked(vm.graphqlDelete).mock.calls[0];
-
-      // Same endpoint URL
-      expect(tweetCall[1]).toBe(retweetCall[1]);
     });
   });
 });

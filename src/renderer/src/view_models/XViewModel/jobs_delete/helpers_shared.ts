@@ -2,6 +2,12 @@ import type { XViewModel } from "../view_model";
 import { AutomationErrorType } from "../../../automation_errors";
 import { formatError } from "../../../util";
 
+// The Following button on a followed account. X names it
+// data-testid="<userID>-unfollow", one per account on the following list, so
+// Cyd no longer has to reach it as the button inside the button inside the
+// cell. See docs/x-capture/findings-20260914.md, finding 6.
+export const UNFOLLOW_BUTTON_SELECTOR = '[data-testid$="-unfollow"]';
+
 /**
  * Get the ct0 cookie required for GraphQL mutations
  * @returns The ct0 cookie value, or null if not found

@@ -181,6 +181,12 @@ export interface XAPILegacyTweet {
   id_str: string;
   extended_entities?: XAPILegacyEntities;
   quoted_status_permalink?: any;
+  // Present on a repost, and holding the post that was reposted
+  retweeted_status_result?: {
+    result?: {
+      rest_id?: string;
+    };
+  };
 }
 
 export interface XAPIUserCore {

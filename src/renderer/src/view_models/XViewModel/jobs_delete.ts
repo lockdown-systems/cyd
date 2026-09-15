@@ -49,11 +49,11 @@ export async function runJobDeleteTweets(
   vm.progress.newTweetsArchived = 0;
   await vm.syncProgress();
 
-  // Load the replies page
+  // Load the profile page, which is where X's own client deletes posts from
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    `https://x.com/${vm.account.xAccount?.username}/with_replies`,
+    `https://x.com/${vm.account.xAccount?.username}`,
   );
 
   // Hide the browser and start showing other progress instead
@@ -74,12 +74,7 @@ export async function runJobDeleteTweets(
 
     // Delete the tweet with retry logic
     const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
-      deleteTweetItem(
-        vm,
-        ct0,
-        tweetsToDelete.tweets[i].id,
-        vm.account.xAccount?.username || "",
-      ),
+      deleteTweetItem(vm, ct0, tweetsToDelete.tweets[i].id),
     );
 
     if (success) {
@@ -149,11 +144,11 @@ export async function runJobDeleteRetweets(
   vm.progress.retweetsDeleted = 0;
   await vm.syncProgress();
 
-  // Load the tweets page
+  // Load the reposts page, which is where reposts now live
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
-    `https://x.com/${vm.account.xAccount?.username}`,
+    `https://x.com/${vm.account.xAccount?.username}/reposts`,
   );
 
   // Hide the browser and start showing other progress instead
@@ -178,7 +173,7 @@ export async function runJobDeleteRetweets(
         vm,
         ct0,
         tweetsToDelete.tweets[i].id,
-        vm.account.xAccount?.username || "",
+        tweetsToDelete.tweets[i].rt ?? null,
       ),
     );
 
@@ -254,11 +249,14 @@ export async function runJobDeleteLikes(
   vm.progress.likesDeleted = 0;
   await vm.syncProgress();
 
-  // Load the likes page
+  // Load the likes page. X redirects it into its /i/ namespace, which is where
+  // the referrer for UnfavoriteTweet comes from, so accept the redirect rather
+  // than ending the job on it.
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
     `https://x.com/${vm.account.xAccount?.username}/likes`,
+    ["https://x.com/i/history/likes", "https://x.com/i/history"],
   );
 
   // Hide the browser and start showing other progress instead
@@ -279,12 +277,7 @@ export async function runJobDeleteLikes(
 
     // Delete the like with retry logic
     const { success, statusCode } = await deleteContentRetryLoop(vm, () =>
-      deleteLikeItem(
-        vm,
-        ct0,
-        tweetsToDelete.tweets[i].id,
-        vm.account.xAccount?.username || "",
-      ),
+      deleteLikeItem(vm, ct0, tweetsToDelete.tweets[i].id),
     );
 
     if (success) {
@@ -354,10 +347,13 @@ export async function runJobDeleteBookmarks(
   vm.progress.bookmarksDeleted = 0;
   await vm.syncProgress();
 
-  // Load the bookmarks page
+  // Load the bookmarks page, which X may redirect to /i/history — the referrer
+  // its own client sends from here.
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
-  await vm.loadURLWithRateLimit("https://x.com/i/bookmarks");
+  await vm.loadURLWithRateLimit("https://x.com/i/bookmarks", [
+    "https://x.com/i/history",
+  ]);
 
   // Hide the browser and start showing other progress instead
   vm.showBrowser = false;
@@ -428,8 +424,6 @@ export async function runJobUnfollowEveryone(
   let tries: number;
   let errorTriggered = false;
   let reloadFollowingPage = true;
-  let numberOfAccountsToUnfollow = 0;
-  let accountToUnfollowIndex = 0;
 
   vm.showBrowser = true;
   vm.instructions = vm.t("viewModels.x.jobs.delete.unfollowEveryone");
@@ -451,23 +445,12 @@ export async function runJobUnfollowEveryone(
           return false;
         }
         reloadFollowingPage = false;
-
-        // Count the number of accounts to unfollow in the DOM
-        numberOfAccountsToUnfollow = await vm.countSelectorsFound(
-          'div[data-testid="cellInnerDiv"] button button',
-        );
-        accountToUnfollowIndex = 0;
       }
 
       // Process one unfollow iteration
-      const result = await unfollowEveryoneProcessIteration(
-        vm,
-        accountToUnfollowIndex,
-        numberOfAccountsToUnfollow,
-      );
+      const result = await unfollowEveryoneProcessIteration(vm);
 
       if (result.success) {
-        accountToUnfollowIndex = result.newAccountIndex;
         reloadFollowingPage = result.shouldReload;
 
         if (vm.progress.isUnfollowEveryoneFinished) {
