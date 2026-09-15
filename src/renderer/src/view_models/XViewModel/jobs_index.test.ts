@@ -382,8 +382,8 @@ describe("jobs_index.ts", () => {
 
       const [url, expectedURLs] = vi.mocked(vm.loadURLWithRateLimit).mock
         .calls[0];
-      expect(url).toBe("https://x.com/i/history/likes");
-      expect(expectedURLs).toContain("https://x.com/testuser/likes");
+      expect(url).toBe("https://x.com/testuser/likes");
+      expect(expectedURLs).toContain("https://x.com/i/history/likes");
       expect(expectedURLs).toContain("https://x.com/i/history");
     });
 
@@ -474,6 +474,53 @@ describe("jobs_index.ts", () => {
       expect(result).toBe(true);
       expect(vm.error).not.toHaveBeenCalled();
       expect(vm.finishJob).toHaveBeenCalledWith(0);
+    });
+
+    it("waits out rate limits without spending its retries", async () => {
+      // Waiting and resuming is what a rate limit asks for. Counting each wait
+      // as a failed attempt would report an outage for a run that is working.
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new TimeoutError("article"),
+      );
+      mockElectron.X.isRateLimited
+        .mockResolvedValueOnce({ isRateLimited: true, rateLimitReset: 1 })
+        .mockResolvedValueOnce({ isRateLimited: true, rateLimitReset: 2 })
+        .mockResolvedValueOnce({ isRateLimited: true, rateLimitReset: 3 })
+        .mockResolvedValue({ isRateLimited: false, rateLimitReset: 0 });
+      mockElectron.X.indexTimelineStats.mockResolvedValue({
+        recognizedResponses: 1,
+        tweetEntries: 0,
+        tweetsSaved: 0,
+      });
+
+      const result = await IndexJobs.runJobIndexLikes(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.waitForRateLimit).toHaveBeenCalledTimes(3);
+      expect(vm.error).not.toHaveBeenCalled();
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
+    });
+
+    it("gives up on a timeline that is rate limited every time", async () => {
+      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
+        new TimeoutError("article"),
+      );
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: 1,
+      });
+
+      const result = await IndexJobs.runJobIndexLikes(vm, 0);
+
+      // Stopping without an automation error: a rate limit is a known
+      // condition, recorded as one rather than reported as an outage.
+      expect(result).toBe(true);
+      expect(vm.error).not.toHaveBeenCalled();
+      expect(mockElectron.X.setConfig).toHaveBeenCalledWith(
+        1,
+        "indexLikes_FailedToRetryAfterRateLimit",
+        "true",
+      );
     });
 
     it("finishes quietly when the page says the timeline is empty", async () => {

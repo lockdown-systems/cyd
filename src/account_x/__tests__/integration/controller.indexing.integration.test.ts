@@ -6,6 +6,9 @@
  * - Automation error handling
  */
 
+import fs from "fs";
+import path from "path";
+
 import "../../../__tests__/platform-fixtures/electronMocks";
 import "../../../__tests__/platform-fixtures/network";
 
@@ -467,4 +470,53 @@ test("indexParseTweets() reads the rate limit reset from the response headers", 
   const rateLimitInfo = await controller.isRateLimited();
   expect(rateLimitInfo.isRateLimited).toBe(true);
   expect(rateLimitInfo.rateLimitReset).toBe(1789429535);
+});
+
+test("indexParseTweets() saves the rest when one entry cannot be read", async () => {
+  // No fixture can show a retweet whose original was deleted — the entry is
+  // simply gone from the timeline (findings 5) — and a long-form post was
+  // never observed either. What both would cost, if X ever returns one Cyd
+  // cannot read, is the rest of the archive. They do not.
+  const body = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "..",
+        "testdata",
+        "x",
+        "XUserOriginalsTimeline_20260914_1.json",
+      ),
+      "utf8",
+    ),
+  );
+  const entries = body.data.user.result.timeline.timeline.instructions.find(
+    (instruction: { type: string }) => instruction.type == "TimelineAddEntries",
+  ).entries;
+  const unreadable = entries.find((entry: { entryId: string }) =>
+    entry.entryId.startsWith("tweet-"),
+  );
+  delete unreadable.content.itemContent.tweet_results.result.legacy;
+
+  mitmController.responseData = [
+    {
+      host: "x.com",
+      url: USER_ORIGINALS_URL,
+      status: 200,
+      requestBody: "",
+      responseHeaders: {},
+      responseBody: JSON.stringify(body),
+      processed: false,
+    },
+  ];
+  saveAsAccount("snowyfoxmatch");
+
+  await controller.indexParseTweets();
+
+  expect(countRows()).toBe(19);
+  const stats = await controller.indexTimelineStats();
+  expect(stats.tweetEntries).toBe(20);
+  expect(stats.tweetsSaved).toBe(19);
 });

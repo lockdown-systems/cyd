@@ -24,8 +24,9 @@ import { indexTweet } from "./indexTweet";
 // The timeline operations Cyd reads. On 2026-09-14 X split
 // UserTweetsAndReplies into UserOriginalsTimeline (the profile timeline),
 // UserRepliesTimeline (/with_replies), and UserRepostsTimeline (/reposts);
-// see docs/x-capture/findings-20260914.md. UserTweetsAndReplies is still
-// matched because X serves it to some sessions.
+// see docs/x-capture/findings-20260914.md. X was not seen issuing
+// UserTweetsAndReplies once in that capture; it stays here so that responses
+// recorded before then still parse.
 const TIMELINE_OPERATIONS = [
   "UserOriginalsTimeline",
   "UserRepliesTimeline",

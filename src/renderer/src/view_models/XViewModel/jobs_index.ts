@@ -21,6 +21,9 @@ import {
 // before reporting it. X sometimes just needs another go.
 const MAX_TIMELINE_ATTEMPTS = 3;
 
+// How many rate limits to wait out on one timeline before giving up on it
+const MAX_RATE_LIMIT_WAITS = 5;
+
 interface XTimelineRoute {
   url: string;
   // X redirects some of its timelines; a change to one of these is expected
@@ -53,6 +56,9 @@ type XTimelineRouteResult =
   | { status: "done" }
   // X answered with nothing Cyd could read, so this route is worth another try
   | { status: "unreadable" }
+  // A rate limit was waited out, so this route is worth another try. Not a
+  // failed attempt: waiting and resuming is what a rate limit asks for.
+  | { status: "rateLimited" }
   // The job is over, with or without an automation error having been raised
   | { status: "stop"; errorTriggered: boolean };
 
@@ -103,7 +109,7 @@ async function indexTimelineRoute(
   }
   if (loadResult.rateLimited) {
     // The limit has lifted by now, so load the timeline again
-    return { status: "unreadable" };
+    return { status: "rateLimited" };
   }
 
   if (!loadResult.loaded) {
@@ -174,16 +180,45 @@ async function runIndexTimelineJob(
   let errorTriggered = false;
   for (const route of config.routes) {
     let result: XTimelineRouteResult = { status: "unreadable" };
-    for (let attempt = 1; attempt <= MAX_TIMELINE_ATTEMPTS; attempt++) {
+    let attempts = 0;
+    let rateLimitWaits = 0;
+    while (
+      attempts < MAX_TIMELINE_ATTEMPTS &&
+      rateLimitWaits < MAX_RATE_LIMIT_WAITS
+    ) {
       result = await indexTimelineRoute(vm, jobIndex, route, config);
+
+      if (result.status === "rateLimited") {
+        rateLimitWaits++;
+        vm.log("runIndexTimelineJob", [
+          "waited out a rate limit, loading the timeline again",
+          route.url,
+          rateLimitWaits,
+        ]);
+        continue;
+      }
+
       if (result.status !== "unreadable") {
         break;
       }
+
+      attempts++;
       vm.log("runIndexTimelineJob", [
         "no timeline response to read, trying again",
         route.url,
-        attempt,
+        attempts,
       ]);
+    }
+
+    if (result.status === "rateLimited") {
+      // Rate limited every time. Record it the way a rate limit that beat the
+      // scrolling loop is recorded, and stop rather than report an outage.
+      await window.electron.X.setConfig(
+        vm.account.id,
+        config.failureStateKey,
+        "true",
+      );
+      break;
     }
 
     if (result.status === "unreadable") {
@@ -258,12 +293,14 @@ export async function runJobIndexLikes(
   return runIndexTimelineJob(vm, jobIndex, {
     event: PlausibleEvents.X_JOB_STARTED_INDEX_LIKES,
     instructionsKey: "viewModels.x.jobs.index.likes",
-    // Likes moved into X's /i/ namespace; the old route redirects there
+    // Likes moved into X's /i/ namespace. The capture walked the old route and
+    // watched X redirect it there, which is the URL change that used to end
+    // the job, so load what was walked and let the redirect happen.
     routes: [
       {
-        url: "https://x.com/i/history/likes",
+        url: `https://x.com/${username}/likes`,
         expectedURLs: [
-          `https://x.com/${username}/likes`,
+          "https://x.com/i/history/likes",
           "https://x.com/i/history",
         ],
         emptySelector: 'div[data-testid="emptyState"]',
@@ -290,6 +327,8 @@ export async function runJobIndexBookmarks(
   return runIndexTimelineJob(vm, jobIndex, {
     event: PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS,
     instructionsKey: "viewModels.x.jobs.index.bookmarks",
+    // X's own client sends /i/history as the referrer from this page, so the
+    // route may redirect there.
     routes: [
       {
         url: "https://x.com/i/bookmarks",
