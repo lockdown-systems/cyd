@@ -13,6 +13,12 @@ import type { Page } from "playwright-core";
 export const SELECTORS = {
   // Composing
   composerTextarea: '[data-testid="tweetTextarea_0"]',
+  // X opens /compose/post as a modal over the home timeline, whose own inline
+  // composer carries the same test identifier. Waiting on the unscoped
+  // selector re-resolves to that inline composer the moment the modal closes,
+  // so it never reports detached and every successful post looks like a
+  // failure. Waiting for the modal's own field is what says the post landed.
+  composerDialogTextarea: '[role="dialog"] [data-testid="tweetTextarea_0"]',
   composerTextareaNth: (index: number) =>
     `[data-testid="tweetTextarea_${index}"]`,
   composerFileInput: 'input[data-testid="fileInput"]',
@@ -215,7 +221,7 @@ async function submitComposer(page: Page) {
   }
 
   const composerClosed = page
-    .locator(SELECTORS.composerTextarea)
+    .locator(SELECTORS.composerDialogTextarea)
     .first()
     .waitFor({ state: "detached", timeout: 20000 })
     .then(() => "closed" as const)
