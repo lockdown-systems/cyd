@@ -1,0 +1,19 @@
+{
+    "data": {
+        "user": {
+            "result": {
+                "__typename": "User",
+                "timeline": {
+                    "timeline": {
+                        "instructions": [],
+                        "metadata": {
+                            "scribeConfig": {
+                                "page": "favorites"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

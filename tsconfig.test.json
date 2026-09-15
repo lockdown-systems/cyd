@@ -16,6 +16,7 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "src/**/*.test.ts",
-    "src/**/*.spec.ts"
+    "src/**/*.spec.ts",
+    "scripts/x-capture/lib/**/*.ts"
   ]
 }
