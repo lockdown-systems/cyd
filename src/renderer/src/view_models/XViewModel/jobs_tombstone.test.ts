@@ -89,6 +89,7 @@ describe("jobs_tombstone.ts", () => {
       expect(vm.waitForSelector).toHaveBeenCalledWith(
         '[data-testid="applyButton"]',
         "https://x.com/settings/profile",
+        8000,
       );
       expect(vm.scriptClickElement).toHaveBeenCalledWith(
         '[data-testid="applyButton"]',
@@ -161,6 +162,40 @@ describe("jobs_tombstone.ts", () => {
       expect(input.files).toBe(added);
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe("change");
+    });
+
+    it("should save the banner when X does not open its crop step", async () => {
+      // X only sometimes offers the crop. Seen on 2026-09-15: the probe got it
+      // three times out of three, and a later run got the banner dropped
+      // straight into the dialog ready to save. Waiting for a crop that never
+      // comes turned a run that was about to succeed into an error report.
+      const { TimeoutError } = await import("../automation_failures");
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === '[data-testid="applyButton"]') {
+            throw new TimeoutError(selector);
+          }
+        },
+      );
+      answerWith(
+        [
+          "https://pbs.twimg.com/profile_banners/1/before",
+          "https://pbs.twimg.com/profile_banners/1/after",
+        ],
+        [],
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.scriptClickElement).not.toHaveBeenCalledWith(
+        '[data-testid="applyButton"]',
+      );
+      expect(vm.scriptClickElement).toHaveBeenCalledWith(
+        'button[data-testid="Profile_Save_Button"]',
+      );
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
+      expect(vm.error).not.toHaveBeenCalled();
     });
 
     it("should report a banner it could not set rather than claiming success", async () => {

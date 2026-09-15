@@ -2,6 +2,7 @@ import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { tombstoneUpdateBioCreditCydText } from "./types";
+import { TimeoutError } from "../automation_failures";
 
 const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
 
@@ -10,8 +11,12 @@ const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
 // so it is reached by position among the matches rather than by the selector.
 const FILE_INPUT_SELECTOR = 'input[data-testid="fileInput"]';
 
-// The crop step X shows after a file is chosen
+// The crop step X sometimes shows after a file is chosen
 const APPLY_BUTTON_SELECTOR = '[data-testid="applyButton"]';
+
+// Long enough for X to open its crop step, short enough that a run which is
+// not going to get one is not held up waiting for it.
+const CROP_STEP_TIMEOUT = 8000;
 
 const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
 
@@ -170,10 +175,31 @@ export async function runJobTombstoneUpdateBanner(
     return false;
   }
 
-  // Confirm the crop X offers, then save. Both clicks go through the element's
-  // own click(), because the dialog keeps a mask that swallows pointer events.
-  await vm.waitForSelector(APPLY_BUTTON_SELECTOR, PROFILE_SETTINGS_URL);
-  if (!(await vm.scriptClickElement(APPLY_BUTTON_SELECTOR))) {
+  // X does not always offer a crop. When it does not, the banner goes straight
+  // into the dialog ready to save, and waiting for an Apply button that is
+  // never coming turned a run that was about to succeed into a timeout and an
+  // error report. So take the crop when it is offered and carry on when it is
+  // not. What settles whether the banner landed is reading it back below, not
+  // which steps X put in the way.
+  //
+  // The click goes through the element's own click(), because the dialog keeps
+  // a mask that swallows pointer events.
+  let cropOffered = true;
+  try {
+    await vm.waitForSelector(
+      APPLY_BUTTON_SELECTOR,
+      PROFILE_SETTINGS_URL,
+      CROP_STEP_TIMEOUT,
+    );
+  } catch (error) {
+    if (!(error instanceof TimeoutError)) {
+      throw error;
+    }
+    cropOffered = false;
+    vm.log("runJobTombstoneUpdateBanner", "X offered no crop step");
+  }
+
+  if (cropOffered && !(await vm.scriptClickElement(APPLY_BUTTON_SELECTOR))) {
     await vm.error(
       AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
       { reason: "failed to click the crop's apply button" },
