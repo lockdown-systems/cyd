@@ -32,9 +32,6 @@ describe("XWizardDashboard", () => {
     vi.clearAllMocks();
     mockElectronAPI();
 
-    // Mock feature flag
-    vi.mocked(window.electron.isFeatureEnabled).mockResolvedValue(true);
-
     // Mock util functions
     const {
       xHasSomeData,
@@ -171,9 +168,7 @@ describe("XWizardDashboard", () => {
       expect(text).toContain("Migrate to Bluesky");
     });
 
-    it("should show Tombstone card when feature is enabled", async () => {
-      vi.mocked(window.electron.isFeatureEnabled).mockResolvedValue(true);
-
+    it("should show Tombstone card", async () => {
       const mockModel = createMockModel({ xAccount: { archiveOnly: false } });
 
       wrapper = mount(XWizardDashboard, {
@@ -191,28 +186,6 @@ describe("XWizardDashboard", () => {
       expect(text).toContain("Tombstone");
     });
 
-    it("should hide Tombstone card when feature is disabled", async () => {
-      vi.mocked(window.electron.isFeatureEnabled).mockResolvedValue(false);
-
-      const mockModel = createMockModel({ xAccount: { archiveOnly: false } });
-
-      wrapper = mount(XWizardDashboard, {
-        props: {
-          model: mockModel as XViewModel,
-        },
-        global: {
-          plugins: [i18n],
-        },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      const text = wrapper.text();
-      expect(text).not.toContain("Tombstone");
-    });
-  });
-
-  describe("archiveOnly account", () => {
     it("should show Import X Archive card for archiveOnly accounts", async () => {
       const mockModel = createMockModel({ xAccount: { archiveOnly: true } });
 
@@ -268,8 +241,6 @@ describe("XWizardDashboard", () => {
     });
 
     it("should hide Tombstone card for archiveOnly accounts", async () => {
-      vi.mocked(window.electron.isFeatureEnabled).mockResolvedValue(true);
-
       const mockModel = createMockModel({ xAccount: { archiveOnly: true } });
 
       wrapper = mount(XWizardDashboard, {
@@ -393,8 +364,6 @@ describe("XWizardDashboard", () => {
     });
 
     it("should emit setState with WizardTombstone when Tombstone clicked", async () => {
-      vi.mocked(window.electron.isFeatureEnabled).mockResolvedValue(true);
-
       const mockModel = createMockModel({ xAccount: { archiveOnly: false } });
 
       wrapper = mount(XWizardDashboard, {
@@ -563,25 +532,6 @@ describe("XWizardDashboard", () => {
       expect(xGetLastImportArchive).toHaveBeenCalledWith(1);
       expect(xGetLastBuildDatabase).toHaveBeenCalledWith(1);
       expect(xGetLastDelete).toHaveBeenCalledWith(1);
-    });
-
-    it("should check feature flag for tombstone on mount", async () => {
-      const mockModel = createMockModel();
-
-      wrapper = mount(XWizardDashboard, {
-        props: {
-          model: mockModel as XViewModel,
-        },
-        global: {
-          plugins: [i18n],
-        },
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      expect(window.electron.isFeatureEnabled).toHaveBeenCalledWith(
-        "x_tombstone",
-      );
     });
   });
 });
