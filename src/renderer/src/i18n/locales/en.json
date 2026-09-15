@@ -347,6 +347,7 @@
     "buildFromScratchRecommended": "You don't have a lot of data in your X account, so having Cyd scroll through your profile will be faster.",
     "importArchiveDescription": "Importing your X archive will work great, but you'll need to wait at least a day for X to send it to you if you don't already have it.",
     "importArchiveUnknown": "Importing your X archive is probably the best option, but you'll need to wait at least a day for X to send it to you if you don't already have it.",
+    "lockAccountLabel": "Lock your account",
     "lockAccountEnableProtect": "Enable the \"Protect your posts\" feature, so only your followers can see your posts.",
     "readMore": "Read more",
     "premium": "Premium"
