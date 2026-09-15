@@ -301,6 +301,26 @@ onMounted(async () => {
           </div>
         </div>
 
+        <div v-if="jobsType == 'tombstone'" class="container mt-3">
+          <div class="finished">
+            <h2>{{ t("finished.youJustTombstoned") }}</h2>
+            <ul>
+              <li v-if="model.account.xAccount?.tombstoneUpdateBanner">
+                <i class="fa-solid fa-image delete-bullet" />
+                Updated your banner
+              </li>
+              <li v-if="model.account.xAccount?.tombstoneUpdateBio">
+                <i class="fa-solid fa-pen delete-bullet" />
+                Updated your bio
+              </li>
+              <li v-if="model.account.xAccount?.tombstoneLockAccount">
+                <i class="fa-solid fa-lock delete-bullet" />
+                Locked your account
+              </li>
+            </ul>
+          </div>
+        </div>
+
         <div v-if="jobsType == 'migrateBluesky'" class="container mt-3">
           <div class="finished">
             <h2>{{ t("finished.youJustMigrated") }}</h2>
