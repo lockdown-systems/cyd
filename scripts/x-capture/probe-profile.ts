@@ -260,73 +260,73 @@ interface Attempt {
   persisted: string;
 }
 
-// Ways of putting a file on the input, from the one Cyd uses to the one a
-// person's own click produces. If only the last works, the fix is not a better
-// event — it is delivering the file the way the browser itself does.
-const bannerStrategies: {
+// Round one settled the deliveries: Cyd's own, the same plus an input event,
+// and the browser's own all put the banner on the account. So the file is not
+// the problem, and what is left is how Cyd presses the buttons afterwards.
+//
+// Two things separate Cyd from the run that worked. Cyd clicks through the
+// element's own click() rather than a real mouse press, and it clicks Save a
+// quarter of a second after Apply rather than a second and a half. Vary one at
+// a time and the failure names itself.
+interface BannerCase {
   name: string;
   note: string;
-  apply: (page: Page, bannerPath: string) => Promise<void>;
-}[] = [
+  click: "script" | "real";
+  settleMs: number;
+}
+
+const bannerCases: BannerCase[] = [
   {
-    name: "cyd-change-event",
-    note: "What Cyd does today: build a File, put it on input.files, dispatch change",
-    apply: async (page, bannerPath) => {
-      const base64 = fs.readFileSync(bannerPath).toString("base64");
-      await page.evaluate(
-        ({ selector, data }) => {
-          const input = document.querySelectorAll(
-            selector,
-          )[0] as HTMLInputElement;
-          const binary = atob(data);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-          }
-          const file = new File([bytes], "banner.png", { type: "image/png" });
-          const transfer = new DataTransfer();
-          transfer.items.add(file);
-          input.files = transfer.files;
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        },
-        { selector: SELECTORS.profileFileInput, data: base64 },
-      );
-    },
+    name: "cyd-exact",
+    note: "Cyd's sequence: element.click() on Apply and Save, a quarter second apart",
+    click: "script",
+    settleMs: 250,
   },
   {
-    name: "cyd-input-and-change",
-    note: "The same, but dispatching input before change, in case React listens for input",
-    apply: async (page, bannerPath) => {
-      const base64 = fs.readFileSync(bannerPath).toString("base64");
-      await page.evaluate(
-        ({ selector, data }) => {
-          const input = document.querySelectorAll(
-            selector,
-          )[0] as HTMLInputElement;
-          const binary = atob(data);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-          }
-          const file = new File([bytes], "banner.png", { type: "image/png" });
-          const transfer = new DataTransfer();
-          transfer.items.add(file);
-          input.files = transfer.files;
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        },
-        { selector: SELECTORS.profileFileInput, data: base64 },
-      );
-    },
+    name: "cyd-clicks-settled",
+    note: "The same clicks, three seconds apart, to separate the click from the wait",
+    click: "script",
+    settleMs: 3000,
   },
   {
-    name: "native-set-input-files",
-    note: "The browser's own file delivery, the way a person picking a file produces it",
-    apply: async (page, bannerPath) => {
-      await page.setInputFiles(SELECTORS.profileFileInput, bannerPath);
-    },
+    name: "real-clicks-hurried",
+    note: "Real mouse presses a quarter second apart, the other half of the pair",
+    click: "real",
+    settleMs: 250,
   },
 ];
+
+/** Cyd reaches into the page to click; a person presses the mouse. */
+async function clickAs(page: Page, how: "script" | "real", selector: string) {
+  if (how === "real") {
+    await page.locator(selector).click();
+    return;
+  }
+  await page.evaluate((target) => {
+    const element = document.querySelector(target) as HTMLElement | null;
+    element?.click();
+  }, selector);
+}
+
+async function deliverBanner(page: Page, bannerPath: string) {
+  const base64 = fs.readFileSync(bannerPath).toString("base64");
+  await page.evaluate(
+    ({ selector, data }) => {
+      const input = document.querySelectorAll(selector)[0] as HTMLInputElement;
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const file = new File([bytes], "banner.png", { type: "image/png" });
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      input.files = transfer.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    },
+    { selector: SELECTORS.profileFileInput, data: base64 },
+  );
+}
 
 async function probeBanner(
   page: Page,
@@ -335,68 +335,51 @@ async function probeBanner(
 ): Promise<Attempt[]> {
   const attempts: Attempt[] = [];
 
-  for (const strategy of bannerStrategies) {
-    console.log(`\n→ banner: ${strategy.name}`);
+  for (const bannerCase of bannerCases) {
+    console.log(`\n→ banner: ${bannerCase.name}`);
     await openProfileDialog(page);
     const saveBefore = await readSaveButton(page);
+    const before = await readSavedBannerURL(page, options.account);
+    await openProfileDialog(page);
 
-    try {
-      await strategy.apply(page, options.bannerPath);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.log(`  could not apply: ${message}`);
-      attempts.push({
-        name: strategy.name,
-        note: strategy.note,
-        saveBefore: describeSaveButton(saveBefore),
-        cropAppeared: null,
-        saveAfter: `could not apply: ${message}`,
-        saveEnabled: false,
-        clicked: false,
-        calls: [],
-        persisted: "not attempted",
-      });
-      continue;
-    }
+    await deliverBanner(page, options.bannerPath);
 
-    // X shows a crop step before it will take the image. No crop step is
-    // itself the finding: it means X never noticed the file.
+    // No crop step means X never noticed the file at all.
     let cropAppeared = true;
     try {
       await page
         .locator(SELECTORS.profileCropApply)
         .waitFor({ state: "visible", timeout: STEP_TIMEOUT });
-      await page.locator(SELECTORS.profileCropApply).click();
-      await page.waitForTimeout(1500);
+      await clickAs(page, bannerCase.click, SELECTORS.profileCropApply);
     } catch {
       cropAppeared = false;
     }
     console.log(`  crop step appeared: ${cropAppeared}`);
 
+    await page.waitForTimeout(bannerCase.settleMs);
     const saveAfter = await readSaveButton(page);
-    const enabled = isSaveEnabled(saveAfter);
-    console.log(`  save button: ${describeSaveButton(saveAfter)}`);
 
     const from = log.length;
-    let clicked = false;
-    if (enabled) {
-      await page.locator(SELECTORS.profileSaveButton).click();
-      await page.waitForTimeout(5000);
-      clicked = true;
-    }
+    await clickAs(page, bannerCase.click, SELECTORS.profileSaveButton);
+    await page.waitForTimeout(6000);
 
-    const persisted = clicked
-      ? await readSavedBannerURL(page, options.account)
-      : "not attempted";
+    const after = await readSavedBannerURL(page, options.account);
+    const persisted =
+      after === ""
+        ? "could not read the banner back"
+        : after === before
+          ? `no, still ${before}`
+          : `yes, now ${after}`;
+    console.log(`  persisted: ${persisted}`);
 
     attempts.push({
-      name: strategy.name,
-      note: strategy.note,
+      name: bannerCase.name,
+      note: bannerCase.note,
       saveBefore: describeSaveButton(saveBefore),
       cropAppeared,
       saveAfter: describeSaveButton(saveAfter),
-      saveEnabled: enabled,
-      clicked,
+      saveEnabled: isSaveEnabled(saveAfter),
+      clicked: true,
       calls: log.since(from),
       persisted,
     });
@@ -405,60 +388,67 @@ async function probeBanner(
   return attempts;
 }
 
-// The bio is a controlled textarea, so the question is the same one in a
-// different shape: which of these does React's state hear?
-const bioStrategies: {
+// Round one settled the typing too: real key events put the bio on the
+// account. What is left is how Cyd reaches the textarea — it tabs towards it
+// rather than clicking it — and how it presses Save.
+interface BioCase {
   name: string;
   note: string;
-  apply: (page: Page, text: string) => Promise<void>;
-}[] = [
+  focus: "tab" | "click";
+  click: "script" | "real";
+}
+
+const bioCases: BioCase[] = [
   {
-    name: "keyboard",
-    note: "Real key events, the closest thing to Cyd's sendInputEvent typing",
-    apply: async (page, text) => {
-      await page.locator(SELECTORS.bioTextarea).click();
-      await page.keyboard.press("ControlOrMeta+a");
-      await page.keyboard.press("Backspace");
-      await page.keyboard.type(text, { delay: 20 });
-    },
+    name: "cyd-exact",
+    note: "Cyd's sequence: tab until a textarea has focus, type, then element.click() on Save",
+    focus: "tab",
+    click: "script",
   },
   {
-    name: "native-value-setter",
-    note: "React's own value setter plus an input event, the usual way to drive a controlled field",
-    apply: async (page, text) => {
-      await page.evaluate(
-        ({ selector, value }) => {
-          const textarea = document.querySelector(
-            selector,
-          ) as HTMLTextAreaElement;
-          const setter = Object.getOwnPropertyDescriptor(
-            HTMLTextAreaElement.prototype,
-            "value",
-          )?.set;
-          setter?.call(textarea, value);
-          textarea.dispatchEvent(new Event("input", { bubbles: true }));
-        },
-        { selector: SELECTORS.bioTextarea, value: text },
-      );
-    },
+    name: "tab-real-save-click",
+    note: "The same focus, a real mouse press on Save",
+    focus: "tab",
+    click: "real",
   },
   {
-    name: "plain-value-assignment",
-    note: "Assigning .value directly, which React is expected to ignore, kept as the control",
-    apply: async (page, text) => {
-      await page.evaluate(
-        ({ selector, value }) => {
-          const textarea = document.querySelector(
-            selector,
-          ) as HTMLTextAreaElement;
-          textarea.value = value;
-          textarea.dispatchEvent(new Event("input", { bubbles: true }));
-        },
-        { selector: SELECTORS.bioTextarea, value: text },
-      );
-    },
+    name: "click-script-save-click",
+    note: "Click the textarea instead of tabbing to it, then element.click() on Save",
+    focus: "click",
+    click: "script",
   },
 ];
+
+/**
+ * Cyd does not click the bio field. It clicks the dialog and presses Tab until
+ * something that is a textarea has focus, so whether that lands on the bio, or
+ * on some other textarea, is worth knowing.
+ */
+async function focusBio(page: Page, how: "tab" | "click"): Promise<string> {
+  if (how === "click") {
+    await page.locator(SELECTORS.bioTextarea).click();
+    return "clicked the textarea";
+  }
+
+  await page.evaluate(() => {
+    const group = document.querySelector(
+      'div[role="group"][tabindex="0"]',
+    ) as HTMLElement | null;
+    group?.click();
+  });
+
+  for (let i = 0; i < 50; i++) {
+    await page.keyboard.press("Tab");
+    const focused = await page.evaluate(() => ({
+      tag: document.activeElement?.tagName ?? "",
+      name: document.activeElement?.getAttribute("name") ?? "",
+    }));
+    if (focused.tag === "TEXTAREA") {
+      return `tabbed ${i + 1} times onto ${focused.tag}[name=${focused.name || "unset"}]`;
+    }
+  }
+  return "tabbed 50 times without reaching a textarea";
+}
 
 async function probeBio(
   page: Page,
@@ -467,62 +457,42 @@ async function probeBio(
 ): Promise<Attempt[]> {
   const attempts: Attempt[] = [];
 
-  for (const strategy of bioStrategies) {
-    console.log(`\n→ bio: ${strategy.name}`);
-    // A different bio per strategy, so a reload says which one landed.
-    const text = `Cyd probe ${strategy.name} ${Date.now()}`;
+  for (const bioCase of bioCases) {
+    console.log(`\n→ bio: ${bioCase.name}`);
+    const text = `Cyd probe ${bioCase.name} ${Date.now()}`;
 
     await openProfileDialog(page);
     const saveBefore = await readSaveButton(page);
 
-    try {
-      await strategy.apply(page, text);
-      await page.waitForTimeout(1000);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.log(`  could not apply: ${message}`);
-      attempts.push({
-        name: strategy.name,
-        note: strategy.note,
-        saveBefore: describeSaveButton(saveBefore),
-        cropAppeared: null,
-        saveAfter: `could not apply: ${message}`,
-        saveEnabled: false,
-        clicked: false,
-        calls: [],
-        persisted: "not attempted",
-      });
-      continue;
-    }
+    const focusNote = await focusBio(page, bioCase.focus);
+    console.log(`  focus: ${focusNote}`);
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type(text, { delay: 20 });
+    await page.waitForTimeout(500);
 
     const saveAfter = await readSaveButton(page);
-    const enabled = isSaveEnabled(saveAfter);
-    console.log(`  save button: ${describeSaveButton(saveAfter)}`);
 
     const from = log.length;
-    let clicked = false;
-    if (enabled) {
-      await page.locator(SELECTORS.profileSaveButton).click();
-      await page.waitForTimeout(4000);
-      clicked = true;
-    }
+    await clickAs(page, bioCase.click, SELECTORS.profileSaveButton);
+    await page.waitForTimeout(4000);
 
-    const saved = clicked ? await readSavedBio(page) : "";
-    const persisted = clicked
-      ? saved === text
+    const saved = await readSavedBio(page);
+    const persisted =
+      saved === text
         ? `yes: ${JSON.stringify(saved)}`
-        : `no, X still has ${JSON.stringify(saved)}`
-      : "not attempted";
+        : `no, X still has ${JSON.stringify(saved)}`;
     console.log(`  persisted: ${persisted}`);
 
     attempts.push({
-      name: strategy.name,
-      note: strategy.note,
+      name: bioCase.name,
+      note: `${bioCase.note} — ${focusNote}`,
       saveBefore: describeSaveButton(saveBefore),
       cropAppeared: null,
       saveAfter: describeSaveButton(saveAfter),
-      saveEnabled: enabled,
-      clicked,
+      saveEnabled: isSaveEnabled(saveAfter),
+      clicked: true,
       calls: log.since(from),
       persisted,
     });
@@ -544,14 +514,22 @@ function formatAttempts(title: string, attempts: Attempt[]): string {
     lines.push(`- Save clickable: ${attempt.saveEnabled}`);
     lines.push(`- Save clicked: ${attempt.clicked}`);
     lines.push(`- Survived a reload: ${attempt.persisted}`);
-    if (attempt.calls.length === 0) {
-      lines.push("- Requests on save: none");
+    // The two calls that say whether X took the change, rather than the
+    // hundred it makes either way.
+    const decisive = attempt.calls.filter((call) =>
+      /update_profile(_banner)?\.json|i\/media\/upload/.test(call.path),
+    );
+    if (decisive.length === 0) {
+      lines.push("- Calls that carry the change: none");
     } else {
-      lines.push("- Requests on save:");
-      for (const call of attempt.calls) {
+      lines.push("- Calls that carry the change:");
+      for (const call of decisive) {
         lines.push(`  - ${call.method} ${call.path} → ${call.status}`);
       }
     }
+    lines.push(
+      `- Other requests on save: ${attempt.calls.length - decisive.length}`,
+    );
     lines.push("");
   }
 

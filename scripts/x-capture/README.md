@@ -206,19 +206,35 @@ watch what X does:
 npx tsx scripts/x-capture/probe-profile.ts --account <handle>
 ```
 
-For each way of delivering a banner — the way Cyd does it today, the same with
-an `input` event as well, and the browser's own file delivery — and each way of
-typing a bio — real key events, React's native value setter, a plain `.value`
-assignment as the control — it records:
+The first run answered the first question, on 2026-09-15:
 
-- whether the Save button came out of its disabled state,
+- Every way of delivering the banner worked — Cyd's own `atob` decode, the same
+  with an `input` event, and the browser's own file delivery. All three reached
+  `POST /1.1/account/update_profile_banner.json → 200` and survived a reload.
+- Real key events put the bio on the account. A plain `.value` assignment did
+  not, which is the control behaving as expected.
+- **The Save button is never disabled.** It reads `disabled=false` with no
+  `aria-disabled` before any change is made at all, so its state says nothing
+  about whether X has taken one.
+
+So the file and the typing are not the problem, and what remains is how Cyd
+presses the buttons afterwards: through the element's own `click()` rather than
+a real mouse press, and a quarter of a second after Apply rather than a second
+and a half. The probe now varies one at a time, and for the bio also reports
+where Cyd's tab-towards-the-textarea actually lands.
+
+For each case it records:
+
+- what the Save button looked like before and after,
 - for the banner, whether X opened its crop step at all,
-- which requests X made when Save was clicked, and what they returned,
-- whether the value survived a reload.
+- the calls that carry the change — `update_profile.json`,
+  `update_profile_banner.json`, `i/media/upload` — separated from the hundred
+  X makes either way,
+- whether the change survived a reload.
 
-The last one is the answer. A Save button that enables and a request that
-returns 200 still prove nothing if the profile comes back unchanged. The report
-lands in `capture/<date>/profile-probe.md`.
+The last one is the answer. A request that returns 200 still proves nothing if
+the profile comes back unchanged. The report lands in
+`capture/<date>/profile-probe.md`.
 
 Pass `--only banner` or `--only bio` to run one half, and `--banner <path>` to
 use a particular image.
