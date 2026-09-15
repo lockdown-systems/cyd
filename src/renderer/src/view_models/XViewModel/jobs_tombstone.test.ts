@@ -198,6 +198,47 @@ describe("jobs_tombstone.ts", () => {
       expect(vm.error).not.toHaveBeenCalled();
     });
 
+    it("should wait for the profile to render its banner before reading it", async () => {
+      // X renders the header photo after the load finishes. Reading straight
+      // away got "" from both the before and the after read, which match, so a
+      // banner that had been saved was reported as one that never changed.
+      answerWith(
+        ["https://pbs.twimg.com/old", "https://pbs.twimg.com/new"],
+        [],
+      );
+
+      await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(vm.waitForSelector).toHaveBeenCalledWith(
+        'a[href$="/header_photo"] img',
+        "https://x.com/testuser",
+        10000,
+      );
+    });
+
+    it("should read a profile that renders no banner as having none", async () => {
+      // An account with no banner never grows that element, so the wait
+      // running out is an answer rather than something to throw over.
+      const { TimeoutError } = await import("../automation_failures");
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === 'a[href$="/header_photo"] img') {
+            throw new TimeoutError(selector);
+          }
+        },
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      // Nothing was there before and nothing after, which is a real failure —
+      // but reported as one, rather than thrown out of the job.
+      expect(result).toBe(false);
+      expect(vm.error).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ reason: "the banner did not change" }),
+      );
+    });
+
     it("should report a banner it could not set rather than claiming success", async () => {
       vi.spyOn(vm.getWebview()!, "executeJavaScript").mockResolvedValue(false);
 

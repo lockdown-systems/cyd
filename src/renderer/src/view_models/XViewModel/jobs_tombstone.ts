@@ -20,6 +20,14 @@ const CROP_STEP_TIMEOUT = 8000;
 
 const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
 
+// The banner on the profile page, which is what says whether a save landed.
+const BANNER_IMAGE_SELECTOR = 'a[href$="/header_photo"] img';
+
+// How long to give the profile page to render its banner. An account with no
+// banner never renders one, so running this out is an answer rather than a
+// failure.
+const BANNER_RENDER_TIMEOUT = 10000;
+
 const AUDIENCE_SETTINGS_URL = "https://x.com/settings/audience_and_tagging";
 
 // The "Protect your posts" box is the first checkbox on the audience settings
@@ -54,13 +62,34 @@ async function clickSaveProfile(
 
 /** The banner X serves on the profile, which is the only answer that counts. */
 async function readBannerURL(vm: XViewModel): Promise<string> {
-  await vm.loadURLWithRateLimit(
-    `https://x.com/${vm.account.xAccount?.username ?? ""}`,
-  );
+  const profileURL = `https://x.com/${vm.account.xAccount?.username ?? ""}`;
+  await vm.loadURLWithRateLimit(profileURL);
+
+  // X renders the header photo after the page load finishes, so asking
+  // straight away gets nothing back and reads as "no banner". When both the
+  // before and the after read that way they match, and a banner that was in
+  // fact saved gets reported as one that never changed.
+  //
+  // A profile with no banner never grows this element, so running the timeout
+  // out is an answer, not a failure.
+  try {
+    await vm.waitForSelector(
+      BANNER_IMAGE_SELECTOR,
+      profileURL,
+      BANNER_RENDER_TIMEOUT,
+    );
+  } catch (error) {
+    if (!(error instanceof TimeoutError)) {
+      throw error;
+    }
+    vm.log("readBannerURL", "the profile rendered no banner");
+    return "";
+  }
+
   return (
     (await vm.getWebview()?.executeJavaScript(`
         (() => {
-            const image = document.querySelector('a[href$="/header_photo"] img');
+            const image = document.querySelector('${BANNER_IMAGE_SELECTOR}');
             return image ? image.src : "";
         })();
     `)) ?? ""
