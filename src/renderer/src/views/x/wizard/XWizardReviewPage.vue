@@ -123,6 +123,56 @@ const nextButtonLabel = computed(() => {
   return "";
 });
 
+// Extra conditions shown after the tweet and retweet counts
+const deleteTweetsConditions = computed(() => {
+  const xAccount = props.model.account?.xAccount;
+  const conditions: string[] = [];
+
+  if (xAccount?.deleteTweetsDaysOldEnabled) {
+    conditions.push(
+      t("review.thatAreOlderThan", { days: xAccount.deleteTweetsDaysOld }),
+    );
+  }
+
+  if (
+    xAccount?.deleteTweetsRetweetsThresholdEnabled &&
+    xAccount?.deleteTweetsLikesThresholdEnabled
+  ) {
+    conditions.push(
+      t("review.unlessTheyHaveAtLeastOr", {
+        retweets: xAccount.deleteTweetsRetweetsThreshold,
+        likes: xAccount.deleteTweetsLikesThreshold,
+      }),
+    );
+  } else if (xAccount?.deleteTweetsRetweetsThresholdEnabled) {
+    conditions.push(
+      t("review.unlessTheyHaveAtLeast", {
+        count: xAccount.deleteTweetsRetweetsThreshold,
+        type: t("review.retweets"),
+      }),
+    );
+  } else if (xAccount?.deleteTweetsLikesThresholdEnabled) {
+    conditions.push(
+      t("review.unlessTheyHaveAtLeast", {
+        count: xAccount.deleteTweetsLikesThreshold,
+        type: t("review.likes"),
+      }),
+    );
+  }
+
+  return conditions.join(" ");
+});
+
+const deleteRetweetsConditions = computed(() => {
+  const xAccount = props.model.account?.xAccount;
+  if (!xAccount?.deleteRetweetsDaysOldEnabled) {
+    return "";
+  }
+  return t("review.thatAreOlderThan", {
+    days: xAccount.deleteRetweetsDaysOld,
+  });
+});
+
 // Dynamic breadcrumb buttons
 const breadcrumbButtons = computed(() => {
   const buttons: ButtonInfo[] = [
@@ -340,115 +390,46 @@ onMounted(async () => {
               </h3>
               <ul>
                 <li v-if="hasSomeData && model.account?.xAccount?.deleteTweets">
-                  <b
-                    >{{ deleteReviewStats.tweetsToDelete.toLocaleString() }}
-                    {{ t("review.tweets") }}</b
-                  >
-                  <span
-                    v-if="model.account?.xAccount?.deleteTweetsDaysOldEnabled"
-                  >
-                    {{
-                      t("review.thatAreOlderThan", {
-                        days: model.account?.xAccount?.deleteTweetsDaysOld,
-                      })
-                    }}
-                  </span>
-                  <span
-                    v-if="
-                      model.account?.xAccount
-                        ?.deleteTweetsRetweetsThresholdEnabled &&
-                      !model.account?.xAccount
-                        ?.deleteTweetsLikesThresholdEnabled
-                    "
-                  >
-                    {{
-                      t("review.unlessTheyHaveAtLeast", {
-                        count:
-                          model.account?.xAccount
-                            ?.deleteTweetsRetweetsThreshold,
-                        type: t("review.retweets"),
-                      })
-                    }}
-                  </span>
-                  <span
-                    v-if="
-                      !model.account?.xAccount
-                        ?.deleteTweetsRetweetsThresholdEnabled &&
-                      model.account?.xAccount?.deleteTweetsLikesThresholdEnabled
-                    "
-                  >
-                    {{
-                      t("review.unlessTheyHaveAtLeast", {
-                        count:
-                          model.account?.xAccount?.deleteTweetsLikesThreshold,
-                        type: t("review.likes"),
-                      })
-                    }}
-                  </span>
-                  <span
-                    v-if="
-                      model.account?.xAccount
-                        ?.deleteTweetsRetweetsThresholdEnabled &&
-                      model.account?.xAccount?.deleteTweetsLikesThresholdEnabled
-                    "
-                  >
-                    {{
-                      t("review.unlessTheyHaveAtLeastOr", {
-                        retweets:
-                          model.account?.xAccount
-                            ?.deleteTweetsRetweetsThreshold,
-                        likes:
-                          model.account?.xAccount?.deleteTweetsLikesThreshold,
-                      })
-                    }}
-                  </span>
+                  <b>
+                    {{ deleteReviewStats.tweetsToDelete.toLocaleString() }}
+                    {{ t("review.tweets") }}
+                  </b>
+                  {{ deleteTweetsConditions }}
                   <div v-if="deleteTweetsCountNotArchived > 0">
                     <small class="text-form">
-                      <i class="fa-solid fa-triangle-exclamation" />
-                      <em>
-                        <span
-                          v-if="
-                            deleteTweetsCountNotArchived ==
-                            deleteReviewStats.tweetsToDelete
-                          "
-                        >
-                          {{ t("review.haventSavedHTML") }}
-                        </span>
-                        <span v-else>
-                          {{
-                            t("review.haventSavedHTMLSome", {
-                              count:
-                                deleteTweetsCountNotArchived.toLocaleString(),
-                            })
-                          }}
-                        </span>
+                      <i class="fa-solid fa-triangle-exclamation me-1" />
+                      <em
+                        v-if="
+                          deleteTweetsCountNotArchived ==
+                          deleteReviewStats.tweetsToDelete
+                        "
+                      >
+                        {{ t("review.haventSavedHTML") }}
                       </em>
-                      <span>
-                        {{ t("review.ifYouCare", { archiveLink: "" }) }}
-                        <a href="#" @click="archiveClicked">{{
-                          t("review.archiveYourTweets")
-                        }}</a>
-                        {{ t("review.beforeDeleteThem") }}
-                      </span>
+                      <em v-else>
+                        {{
+                          t("review.haventSavedHTMLSome", {
+                            count:
+                              deleteTweetsCountNotArchived.toLocaleString(),
+                          })
+                        }}
+                      </em>
+                      {{ t("review.ifYouCare") }}
+                      <a href="#" @click="archiveClicked">{{
+                        t("review.archiveYourTweets")
+                      }}</a>
+                      {{ t("review.beforeDeleteThem") }}
                     </small>
                   </div>
                 </li>
                 <li
                   v-if="hasSomeData && model.account?.xAccount?.deleteRetweets"
                 >
-                  <b
-                    >{{ deleteReviewStats.retweetsToDelete.toLocaleString() }}
-                    {{ t("review.retweets") }}</b
-                  >
-                  <span
-                    v-if="model.account?.xAccount?.deleteRetweetsDaysOldEnabled"
-                  >
-                    {{
-                      t("review.thatAreOlderThan", {
-                        days: model.account?.xAccount?.deleteRetweetsDaysOld,
-                      })
-                    }}
-                  </span>
+                  <b>
+                    {{ deleteReviewStats.retweetsToDelete.toLocaleString() }}
+                    {{ t("review.retweets") }}
+                  </b>
+                  {{ deleteRetweetsConditions }}
                 </li>
                 <li v-if="hasSomeData && model.account?.xAccount?.deleteLikes">
                   <b
